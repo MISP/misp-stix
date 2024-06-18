@@ -11,7 +11,8 @@ from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from pymisp import MISPAttribute, MISPEvent, MISPGalaxy, MISPGalaxyCluster, MISPObject
+from pymisp import (
+    MISPAttribute, MISPEvent, MISPGalaxy, MISPGalaxyCluster, MISPObject)
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -120,7 +121,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         report = self._generate_event_report()
         self.__objects.insert(self.__index, report)
 
-    def _define_stix_object_id(self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
+    def _define_stix_object_id(
+            self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
         return f"{feature}--{misp_object['uuid']}"
 
     def _handle_default_identity(self):
@@ -158,10 +160,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__identity_id = f"identity--{event['Orgc']['uuid']}"
             if self.identity_id not in self.unique_ids:
                 identity_args = {
-                    'type': 'identity',
-                    'id': self.identity_id,
-                    'name': event['Orgc']['name'],
-                    'identity_class': 'organization'
+                    'type': 'identity', 'identity_class': 'organization',
+                    'id': self.identity_id, 'name': event['Orgc']['name']
                 }
                 identity = self._create_identity(identity_args)
                 self._append_SDO_without_refs(identity)
@@ -247,9 +247,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def unique_ids(self) -> dict:
         return self.__ids
 
-    ################################################################################
-    #                            MAIN PARSING FUNCTIONS                            #
-    ################################################################################
+    ############################################################################
+    #                          MAIN PARSING FUNCTIONS                          #
+    ############################################################################
 
     def _append_SDO(self, stix_object):
         self.__objects.append(stix_object)
@@ -264,14 +264,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 'info',
                 f'MISP Event exported to STIX {self._version} with misp-stix.'
             ),
-            'created': self.event_timestamp,
-            'modified': self.event_timestamp,
-            'labels': [
-                'Threat-Report',
-                'misp:tool="MISP-STIX-Converter"'
-            ],
-            'created_by_ref': self.identity_id,
-            'interoperability': True
+            'created': self.event_timestamp, 'modified': self.event_timestamp,
+            'labels': ['Threat-Report','misp:tool="MISP-STIX-Converter"'],
+            'created_by_ref': self.identity_id, 'interoperability': True
         }
         markings = self._handle_event_tags_and_galaxies()
         if markings:
@@ -287,14 +282,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             report_id = f"report--{self._misp_event['uuid']}"
             if not self.__object_refs:
                 self._handle_empty_object_refs(report_id, self.event_timestamp)
-            published = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
+            published = self._datetime_from_timestamp(
+                self._misp_event['publish_timestamp']
+            )
             report_args.update(
                 {
-                    'id': report_id,
-                    'type': 'report',
-                    'published': published,
-                    'object_refs': self.__object_refs,
-                    'allow_custom': True
+                    'id': report_id, 'type': 'report', 'published': published,
+                    'object_refs': self.__object_refs, 'allow_custom': True
                 }
             )
             return self._create_report(report_args)
@@ -311,7 +305,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             for stix_object in bundle['objects']:
                 if stix_object['type'] == 'identity':
                     object_id = stix_object['id']
-                    if object_id not in self.unique_ids or object_id not in self._identities:
+                    not_unique = (
+                        object_id not in self.unique_ids or
+                        object_id not in self._identities
+                    )
+                    if not_unique:
                         self._identities[object_id] = stix_object
                     continue
                 if not stix_object.get('name'):
@@ -320,22 +318,35 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 object_type = stix_object['type']
                 object_id = stix_object['id']
                 if object_id not in self._get_object_ids(name, object_type):
-                    self._galaxies_catalog[name][object_type].append(stix_object)
-                if stix_object.get('external_references'):
-                    for reference in stix_object['external_references']:
-                        if reference['source_name'] in self._mapping.source_names():
-                            external_id = reference['external_id']
-                            if object_id not in self._get_object_ids(external_id, object_type):
-                                self._galaxies_catalog[external_id][object_type].append(stix_object)
-                            break
+                    self._galaxies_catalog[name][object_type].append(
+                        stix_object
+                    )
+                if not stix_object.get('external_references'):
+                    continue
+                mapping = self._mapping.source_names()
+                for reference in stix_object['external_references']:
+                    if reference['source_name'] in mapping:
+                        ext_id = reference['external_id']
+                        object_ids = self._get_object_ids(ext_id, object_type)
+                        if object_id not in object_ids:
+                            self._galaxies_catalog[ext_id][object_type].append(
+                                stix_object
+                            )
+                        break
 
-    def _get_object_ids(self, name: str, object_type: str) -> Generator[None, None, str]:
-        return (stix_object['id'] for stix_object in self._galaxies_catalog[name][object_type])
+    def _get_object_ids(
+            self, name: str, object_type: str) -> Generator[None, None, str]:
+        return (
+            stix_object['id'] for stix_object
+            in self._galaxies_catalog[name][object_type]
+        )
 
     def _handle_relationships(self):
         for relationship in self.__relationships:
             if relationship.get('undefined_target_ref'):
-                target_ref = self._find_target_uuid(relationship.pop('undefined_target_ref'))
+                target_ref = self._find_target_uuid(
+                    relationship.pop('undefined_target_ref')
+                )
                 if target_ref is None:
                     continue
                 relationship['target_ref'] = target_ref
@@ -347,18 +358,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if sighting_type == '0':
                 sighting_args = {
                     'id': f"sighting--{sighting['uuid']}",
-                    'type': 'sighting',
-                    'sighting_of_ref': reference_id
+                    'type': 'sighting', 'sighting_of_ref': reference_id
                 }
                 if 'x-misp-' in reference_id:
                     sighting_args['allow_custom'] = True
                 if sighting.get('date_sighting', ''):
-                    date_sighting = self._datetime_from_timestamp(sighting['date_sighting'])
+                    date_sighting = self._datetime_from_timestamp(
+                        sighting['date_sighting']
+                    )
                     sighting_args.update(
-                        {
-                            'created': date_sighting,
-                            'modified': date_sighting
-                        }
+                        {'created': date_sighting, 'modified': date_sighting}
                     )
                 if sighting.get('Organisation', {}):
                     sighting_args['where_sighted_refs'] = [
@@ -369,7 +378,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     ]
                 if sighting.get('source', ''):
                     sighting_args['description'] = sighting['source']
-                getattr(self, self._results_handling_function)(self._create_sighting(sighting_args))
+                getattr(self, self._results_handling_function)(
+                    self._create_sighting(sighting_args)
+                )
             elif sighting_type == '1':
                 self._handle_opinion_object(sighting, reference_id)
 
@@ -379,9 +390,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_identity(identity_id, name)
         return identity_id
 
-    ################################################################################
-    #                         ATTRIBUTES PARSING FUNCTIONS                         #
-    ################################################################################
+    ############################################################################
+    #                       ATTRIBUTES PARSING FUNCTIONS                       #
+    ############################################################################
 
     def _resolve_attribute(self, attribute: Union[MISPAttribute, dict]):
         attribute_type = attribute['type']
@@ -398,51 +409,52 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         except Exception as exception:
             self._attribute_error(attribute, exception)
 
-    def _handle_attribute_indicator(self, attribute: Union[MISPAttribute, dict],
-                                    pattern: str, indicator_args: Optional[dict] = None):
-        indicator_id = getattr(self, self._id_parsing_function['attribute'])('indicator', attribute)
+    def _handle_attribute_indicator(
+            self, attribute: Union[MISPAttribute, dict], pattern: str,
+            indicator_args: Optional[dict] = None):
+        indicator_id = self._parse_stix_object_id(
+            'attribute', 'indicator', attribute
+        )
         indicator_arguments = {
-            'id': indicator_id,
-            'type': 'indicator',
+            'id': indicator_id, 'type': 'indicator',
             'labels': self._create_labels(attribute),
             'kill_chain_phases': self._create_killchain(attribute['category']),
-            'created_by_ref': self.identity_id,
-            'interoperability': True
+            'created_by_ref': self.identity_id, 'interoperability': True
         }
         if indicator_args is not None:
             indicator_arguments.update(indicator_args)
         indicator_arguments['pattern'] = pattern
-        indicator_arguments.update(self._handle_indicator_time_fields(attribute))
+        indicator_arguments.update(
+            self._handle_indicator_time_fields(attribute)
+        )
         if attribute.get('comment'):
             indicator_arguments['description'] = attribute['comment']
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute,
-            indicator_id,
-            indicator_arguments['modified']
+            attribute, indicator_id, indicator_arguments['modified']
         )
         if markings:
             self._handle_markings(indicator_arguments, markings)
-        getattr(self, self._results_handling_function)(self._create_indicator(indicator_arguments))
+        getattr(self, self._results_handling_function)(
+            self._create_indicator(indicator_arguments)
+        )
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], indicator_id)
 
-    def _handle_attribute_observable(self, attribute: Union[MISPAttribute, dict],
-                                     observable: Union[dict, list]):
-        observable_id = getattr(self, self._id_parsing_function['attribute'])('observed-data', attribute)
+    def _handle_attribute_observable(
+            self, attribute: Union[MISPAttribute, dict],
+            observable: Union[dict, list]):
+        observable_id = self._parse_stix_object_id(
+            'attribute', 'observed-data', attribute
+        )
         observable_args = {
-            'id': observable_id,
-            'type': 'observed-data',
-            'labels': self._create_labels(attribute),
-            'number_observed': 1,
-            'created_by_ref': self.identity_id,
-            'allow_custom': True,
+            'id': observable_id, 'type': 'observed-data',
+            'labels': self._create_labels(attribute), 'number_observed': 1,
+            'created_by_ref': self.identity_id, 'allow_custom': True,
             'interoperability': True
         }
         observable_args.update(self._handle_observable_time_fields(attribute))
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute,
-            observable_id,
-            observable_args['modified']
+            attribute, observable_id, observable_args['modified']
         )
         if markings:
             self._handle_markings(observable_args, markings)
@@ -450,27 +462,38 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], observable_id)
 
-    def _handle_attribute_tags_and_galaxies(self, attribute: Union[MISPAttribute, dict],
-                                            object_id: str, timestamp: datetime) -> tuple:
+    def _handle_attribute_tags_and_galaxies(
+            self, attribute: Union[MISPAttribute, dict],
+            object_id: str, timestamp: datetime) -> tuple:
         if attribute.get('Galaxy'):
             tag_names: list = []
             for galaxy in attribute['Galaxy']:
                 galaxy_type = galaxy['type']
                 to_call = self._mapping.galaxy_types_mapping(galaxy_type)
                 if to_call is not None:
-                    getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
+                    getattr(self, to_call.format('attribute'))(
+                        galaxy, object_id, timestamp
+                    )
                 else:
-                    self._handle_undefined_attribute_galaxy(galaxy, object_id, timestamp)
+                    self._handle_undefined_attribute_galaxy(
+                        galaxy, object_id, timestamp
+                    )
                 tag_names.extend(self._quick_fetch_tag_names(galaxy))
-            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
+            return tuple(
+                tag['name'] for tag in attribute.get('Tag', [])
+                if tag['name'] not in tag_names
+            )
         return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
     @staticmethod
     def _parse_AS_value(value: str) -> int:
-        value = ''.join(digit for digit in value if digit.isnumeric() or digit == '.')
+        value = ''.join(
+            digit for digit in value if digit.isnumeric() or digit == '.'
+        )
         return int(value)
 
-    def _parse_attachment_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_attachment_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('data'):
             if attribute.get('to_ids', False):
                 value = self._handle_value_for_pattern(attribute['value'])
@@ -488,7 +511,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_filename_attribute(attribute)
 
-    def _parse_autonomous_system_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_autonomous_system_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
             pattern = f"[{self._create_AS_pattern(value)}]"
@@ -496,37 +520,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_autonomous_system_attribute_observable(attribute)
 
-    def _parse_campaign_name_attribute(self, attribute: Union[MISPAttribute, dict]):
-        campaign_id = getattr(self, self._id_parsing_function['attribute'])('campaign', attribute)
+    def _parse_campaign_name_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
+        campaign_id = self._parse_stix_object_id(
+            'attribute', 'campaign', attribute
+        )
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         campaign_args = {
-            'id': campaign_id,
-            'type': 'campaign',
-            'name': attribute['value'],
-            'created_by_ref': self.identity_id,
-            'labels': self._create_labels(attribute),
+            'id': campaign_id, 'type': 'campaign', 'name': attribute['value'],
+            'created_by_ref': self.identity_id, 'created': timestamp,
+            'modified': timestamp, 'labels': self._create_labels(attribute),
             'interoperability': True,
-            'created': timestamp,
-            'modified': timestamp
         }
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute,
-            campaign_id,
-            timestamp
+            attribute, campaign_id, timestamp
         )
         if markings:
             self._handle_markings(campaign_args, markings)
-        getattr(self, self._results_handling_function)(self._create_campaign(campaign_args))
+        getattr(self, self._results_handling_function)(
+            self._create_campaign(campaign_args)
+        )
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], campaign_id)
 
     def _parse_custom_attribute(self, attribute: Union[MISPAttribute, dict]):
-        custom_id = getattr(self, self._id_parsing_function['attribute'])('x-misp-attribute', attribute)
+        custom_id = self._parse_stix_object_id(
+            'attribute', 'x-misp-attribute', attribute
+        )
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         custom_args = {
-            'id': custom_id,
-            'created': timestamp,
-            'modified': timestamp,
+            'id': custom_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_labels(attribute),
             'created_by_ref': self.identity_id,
             'x_misp_value': attribute['value'],
@@ -537,13 +560,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('comment'):
             custom_args['x_misp_comment'] = attribute['comment']
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute,
-            custom_id,
-            timestamp
+            attribute, custom_id, timestamp
         )
         if markings:
             self._handle_markings(custom_args, markings)
-        getattr(self, self._results_handling_function)(self._create_custom_attribute(custom_args))
+        getattr(self, self._results_handling_function)(
+            self._create_custom_attribute(custom_args)
+        )
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], custom_id)
 
@@ -567,108 +590,139 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     self._handle_attribute_indicator(attribute, pattern)
                     break
             else:
-                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                self._composite_attribute_value_warning(
+                    attribute['type'], attribute['value']
+                )
                 self._parse_custom_attribute(attribute)
         else:
             self._parse_domain_ip_attribute_observable(attribute)
 
-    def _parse_email_attachment_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_attachment_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:body_multipart[*].body_raw_ref.name = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute,
+                f"[email-message:body_multipart[*].body_raw_ref.name = '{value}']"
+            )
         else:
             self._parse_email_attachment_attribute_observable(attribute)
 
     def _parse_email_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-addr:value = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[email-addr:value = '{value}']"
+            )
         else:
             self._parse_email_attribute_observable(attribute)
 
-    def _parse_email_body_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_body_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:body = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[email-message:body = '{value}']"
+            )
         else:
             self._parse_email_body_attribute_observable(attribute)
 
-    def _parse_email_destination_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_destination_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:to_refs[*].value = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[email-message:to_refs[*].value = '{value}']"
+            )
         else:
             self._parse_email_destination_attribute_observable(attribute)
 
-    def _parse_email_header_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_header_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:received_lines = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[email-message:received_lines = '{value}']"
+            )
         else:
             self._parse_email_header_attribute_observable(attribute)
 
-    def _parse_email_reply_to_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_reply_to_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:additional_header_fields.reply_to = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute,
+                f"[email-message:additional_header_fields.reply_to = '{value}']"
+            )
         else:
             self._parse_email_reply_to_attribute_observable(attribute)
 
-    def _parse_email_source_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_source_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:from_ref.value = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[email-message:from_ref.value = '{value}']"
+            )
         else:
             self._parse_email_source_attribute_observable(attribute)
 
-    def _parse_email_subject_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_subject_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:subject = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[email-message:subject = '{value}']"
+            )
         else:
             self._parse_email_subject_attribute_observable(attribute)
 
-    def _parse_email_x_mailer_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_email_x_mailer_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[email-message:additional_header_fields.x_mailer = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute,
+                f"[email-message:additional_header_fields.x_mailer = '{value}']"
+            )
         else:
             self._parse_email_x_mailer_attribute_observable(attribute)
 
     def _parse_filename_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[{self._create_filename_pattern(value)}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[{self._create_filename_pattern(value)}]"
+            )
         else:
             self._parse_filename_attribute_observable(attribute)
 
-    def _parse_github_username_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_github_username_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             prefix = 'user-account'
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[{prefix}:account_type = 'github' AND {prefix}:account_login = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute,
+                f"[{prefix}:account_type = 'github' AND "
+                f"{prefix}:account_login = '{value}']"
+            )
         else:
             self._parse_github_username_attribute_observable(attribute)
 
     def _parse_hash_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
-            pattern = f"[{self._create_hash_pattern(attribute['type'], attribute['value'])}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            hash_value = self._create_hash_pattern(
+                attribute['type'], attribute['value']
+            )
+            self._handle_attribute_indicator(attribute, f"[{hash_value}]")
         else:
             self._parse_hash_attribute_observable(attribute)
 
-    def _parse_hash_composite_attribute(self, attribute: Union[MISPAttribute, dict], hash_type: Optional[str] = None):
+    def _parse_hash_composite_attribute(
+            self, attribute: Union[MISPAttribute, dict],
+            hash_type: Optional[str] = None):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
@@ -676,17 +730,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     if hash_type is None:
                         hash_type = attribute['type'].split('|')[1]
                     pattern = self._create_filename_hash_pattern(
-                        hash_type, value, separator)
+                        hash_type, value, separator
+                    )
                     self._handle_attribute_indicator(attribute, f"[{pattern}]")
                     break
             else:
-                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
-                pattern = f"[{self._create_filename_pattern(value)}]"
-                self._handle_attribute_indicator(attribute, pattern)
+                self._composite_attribute_value_warning(
+                    attribute['type'], attribute['value']
+                )
+                self._handle_attribute_indicator(
+                    attribute, f"[{self._create_filename_pattern(value)}]"
+                )
         else:
-            self._parse_hash_composite_attribute_observable(attribute, hash_type=hash_type)
+            self._parse_hash_composite_attribute_observable(
+                attribute, hash_type=hash_type
+            )
 
-    def _parse_hostname_port_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_hostname_port_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
@@ -694,20 +755,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     hostname, port = value.split(separator)
                     hostname_pattern = self._create_domain_pattern(hostname)
                     port_pattern = self._create_port_pattern(port)
-                    pattern = f"[{hostname_pattern} AND {port_pattern}]"
-                    self._handle_attribute_indicator(attribute, pattern)
+                    self._handle_attribute_indicator(
+                        attribute, f"[{hostname_pattern} AND {port_pattern}]"
+                    )
                     break
             else:
-                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                self._composite_attribute_value_warning(
+                    attribute['type'], attribute['value']
+                )
                 self._parse_custom_attribute(attribute)
         else:
             self._parse_hostname_port_attribute_observable(attribute)
 
-    def _parse_http_method_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_http_method_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[network-traffic:extensions.'http-request-ext'.request_method = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute,
+                f"[network-traffic:extensions.'http-request-ext'.request_method = '{value}']"
+            )
         else:
             self._parse_custom_attribute(attribute)
 
@@ -715,8 +782,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('to_ids', False):
             ip_type = attribute['type'].split('-')[1]
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[{self._create_ip_pattern(ip_type, value)}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[{self._create_ip_pattern(ip_type, value)}]"
+            )
         else:
             self._parse_ip_attribute_observable(attribute)
 
@@ -728,25 +796,33 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     ip_type = attribute['type'].split('|')[0].split('-')[1]
                     ip_value, port_value = value.split(separator)
                     ip_pattern = self._create_ip_pattern(ip_type, ip_value)
-                    port_pattern = self._create_port_pattern(port_value, ip_type=ip_type)
-                    pattern = f"[{ip_pattern} AND {port_pattern}]"
-                    self._handle_attribute_indicator(attribute, pattern)
+                    port_pattern = self._create_port_pattern(
+                        port_value, ip_type=ip_type
+                    )
+                    self._handle_attribute_indicator(
+                        attribute, f"[{ip_pattern} AND {port_pattern}]"
+                    )
                     break
             else:
-                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                self._composite_attribute_value_warning(
+                    attribute['type'], attribute['value']
+                )
                 self._parse_custom_attribute(attribute)
         else:
             self._parse_ip_port_attribute_observable(attribute)
 
-    def _parse_mac_address_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_mac_address_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[mac-addr:value = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[mac-addr:value = '{value}']"
+            )
         else:
             self._parse_mac_address_attribute_observable(attribute)
 
-    def _parse_malware_sample_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_malware_sample_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('data'):
             if attribute.get('to_ids', False):
                 value = self._handle_value_for_pattern(attribute['value'])
@@ -762,14 +838,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     if separator in value:
                         pattern.append(
                             self._create_filename_hash_pattern(
-                                'md5', value, separator)
+                                'md5', value, separator
+                            )
                         )
                         break
                 else:
                     self._composite_attribute_value_warning(
-                        attribute['type'], attribute['value'])
-                pattern.append(self._mapping.malware_sample_additional_pattern_values())
-                self._handle_attribute_indicator(attribute, f"[{' AND '.join(pattern)}]")
+                        attribute['type'], attribute['value']
+                    )
+                pattern.append(
+                    self._mapping.malware_sample_additional_pattern_values()
+                )
+                self._handle_attribute_indicator(
+                    attribute, f"[{' AND '.join(pattern)}]"
+                )
             else:
                 self._parse_malware_sample_attribute_observable(attribute)
         else:
@@ -778,107 +860,130 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_mutex_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[mutex:name = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[mutex:name = '{value}']"
+            )
         else:
             self._parse_mutex_attribute_observable(attribute)
 
     def _parse_port_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[network-traffic:dst_port = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[network-traffic:dst_port = '{value}']"
+            )
         else:
             self._parse_custom_attribute(attribute)
 
     def _parse_regkey_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[{self._create_regkey_pattern(value)}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[{self._create_regkey_pattern(value)}]"
+            )
         else:
             self._parse_regkey_attribute_observable(attribute)
 
-    def _parse_regkey_value_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_regkey_value_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
                     key, data = value.split(separator)
                     key_pattern = self._create_regkey_pattern(key)
-                    pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{data.strip()}']"
-                    self._handle_attribute_indicator(attribute, pattern)
+                    self._handle_attribute_indicator(
+                        attribute,
+                        f'[{key_pattern} AND windows-registry-key:values.data'
+                        f" = '{data.strip()}']"
+                    )
                     break
             else:
-                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
-                pattern = f"[{self._create_regkey_pattern(value)}]"
-                self._handle_attribute_indicator(attribute, pattern)
+                self._composite_attribute_value_warning(
+                    attribute['type'], attribute['value']
+                )
+                self._handle_attribute_indicator(
+                    attribute, f"[{self._create_regkey_pattern(value)}]"
+                )
         else:
             self._parse_regkey_value_attribute_observable(attribute)
 
-    def _parse_size_in_bytes_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_size_in_bytes_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[file:size = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[file:size = '{value}']"
+            )
         else:
             self._parse_custom_attribute(attribute)
 
     def _parse_url_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[url:value = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[url:value = '{value}']"
+            )
         else:
             self._parse_url_attribute_observable(attribute)
 
-    def _parse_user_agent_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_user_agent_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute,
+                "[network-traffic:extensions.'http-request-ext'."
+                f"request_header.'User-Agent' = '{value}']"
+            )
         else:
             self._parse_custom_attribute(attribute)
 
-    def _parse_vulnerability_attribute(self, attribute: Union[MISPAttribute, dict]):
-        vulnerability_id = getattr(self, self._id_parsing_function['attribute'])('vulnerability', attribute)
+    def _parse_vulnerability_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
+        vulnerability_id = self._parse_stix_object_id(
+            'attribute', 'vulnerability', attribute
+        )
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         vulnerability_args = {
-            'id': vulnerability_id,
-            'type': 'vulnerability',
-            'name': attribute['value'],
-            'external_references': [self._get_vulnerability_references(attribute['value'])],
-            'created_by_ref': self.identity_id,
-            'labels': self._create_labels(attribute),
-            'interoperability': True,
-            'created': timestamp,
-            'modified': timestamp
+            'id': vulnerability_id, 'type': 'vulnerability',
+            'name': attribute['value'], 'created': timestamp,
+            'modified': timestamp, 'created_by_ref': self.identity_id,
+            'labels': self._create_labels(attribute), 'interoperability': True,
+            'external_references': [
+                self._get_vulnerability_references(attribute['value'])
+            ]
         }
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute,
-            vulnerability_id,
-            timestamp
+            attribute, vulnerability_id, timestamp
         )
         if markings:
             self._handle_markings(vulnerability_args, markings)
-        getattr(self, self._results_handling_function)(self._create_vulnerability(vulnerability_args))
+        getattr(self, self._results_handling_function)(
+            self._create_vulnerability(vulnerability_args)
+        )
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], vulnerability_id)
 
-    def _parse_x509_fingerprint_attribute(self, attribute: Union[MISPAttribute, dict]):
+    def _parse_x509_fingerprint_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
             hash_type = attribute['type'].split('-')[-1].upper()
-            value = ''.join(character for character in attribute['value'] if character.isalnum())
+            value = ''.join(
+                character for character in attribute['value']
+                if character.isalnum()
+            )
             if not self._check_hash_value(hash_type, value):
                 raise InvalidHashValueError()
-            pattern = f"[x509-certificate:hashes.{hash_type} = '{value}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            self._handle_attribute_indicator(
+                attribute, f"[x509-certificate:hashes.{hash_type} = '{value}']"
+            )
         else:
             self._parse_x509_fingerprint_attribute_observable(attribute)
 
-    ################################################################################
-    #                        MISP OBJECTS PARSING FUNCTIONS                        #
-    ################################################################################
+    ############################################################################
+    #                      MISP OBJECTS PARSING FUNCTIONS                      #
+    ############################################################################
 
     def _resolve_objects(self):
         for misp_object in self._misp_event['Object']:
@@ -893,7 +998,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             except Exception as exception:
                 self._object_error(misp_object, exception)
 
-    def _extract_multiple_object_attributes_escaped(self, attributes: list, force_single: Optional[tuple] = None) -> dict:
+    def _extract_multiple_object_attributes_escaped(
+            self, attributes: list,
+            force_single: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
         if force_single is not None:
             for attribute in attributes:
@@ -909,7 +1016,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             attributes_dict[attribute['object_relation']].append(value)
         return attributes_dict
 
-    def _extract_multiple_object_attributes_with_data_escaped(self, attributes: list, force_single: tuple = (), with_data: tuple = ()) -> dict:
+    def _extract_multiple_object_attributes_with_data_escaped(
+            self, attributes: list, force_single: tuple = (),
+            with_data: tuple = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
@@ -924,111 +1033,121 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return attributes_dict
 
     def _extract_object_attributes_escaped(self, attributes: list) -> dict:
-        return {attribute['object_relation']: self._handle_value_for_pattern(attribute['value']) for attribute in attributes}
+        return {
+            attribute['object_relation']: self._handle_value_for_pattern(attribute['value'])
+            for attribute in attributes
+        }
 
-    def _handle_non_indicator_object(self, misp_object: Union[MISPObject, dict], object_args: dict,
-                                     object_type: str, killchain: bool = False):
-        object_id = getattr(self, self._id_parsing_function['object'])(object_type, misp_object)
+    def _handle_non_indicator_object(
+            self, misp_object: Union[MISPObject, dict], object_args: dict,
+            object_type: str, killchain: bool = False):
+        object_id = self._parse_stix_object_id(
+            'object', object_type, misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         object_args.update(
             {
-                'id': object_id,
-                'type': object_type,
+                'id': object_id, 'type': object_type,
+                'created_by_ref': self.identity_id, 'created': timestamp,
+                'modified': timestamp, 'interoperability': True,
                 'labels': self._create_object_labels(
                     misp_object,
                     to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-                ),
-                'created_by_ref': self.identity_id,
-                'created': timestamp,
-                'modified': timestamp,
-                'interoperability': True
+                )
             }
         )
         if killchain:
-            object_args['kill_chain_phases'] = self._create_killchain(misp_object['meta-category'])
+            object_args['kill_chain_phases'] = self._create_killchain(
+                misp_object['meta-category']
+            )
         markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            object_id,
-            object_args['modified']
+            misp_object, object_id, object_args['modified']
         )
         if markings:
             self._handle_markings(object_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                object_id,
+                misp_object['ObjectReference'], object_id,
                 object_args['modified']
             )
-        self._append_SDO(getattr(self, f"_create_{object_type.replace('-', '_')}")(object_args))
+        self._append_SDO(
+            getattr(self, f"_create_{object_type.replace('-', '_')}")(
+                object_args
+            )
+        )
 
-    def _handle_object_indicator(self, misp_object: Union[MISPObject, dict], pattern: list):
-        indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
+    def _handle_object_indicator(
+            self, misp_object: Union[MISPObject, dict], pattern: list):
+        indicator_id = self._parse_stix_object_id(
+            'object', 'indicator', misp_object
+        )
         indicator_args = {
-            'id': indicator_id,
-            'type': 'indicator',
+            'id': indicator_id, 'type': 'indicator',
             'labels': self._create_object_labels(misp_object, to_ids=True),
-            'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
-            'created_by_ref': self.identity_id,
-            'pattern': f'[{" AND ".join(pattern)}]',
-            'allow_custom': True,
-            'interoperability': True
+            'created_by_ref': self.identity_id, 'allow_custom': True,
+            'pattern': f'[{" AND ".join(pattern)}]', 'interoperability': True,
+            'kill_chain_phases': self._create_killchain(
+                misp_object['meta-category']
+            )
         }
         indicator_args.update(self._handle_indicator_time_fields(misp_object))
         if misp_object.get('comment'):
             indicator_args['description'] = misp_object['comment']
         markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            indicator_id,
-            indicator_args['modified']
+            misp_object, indicator_id, indicator_args['modified']
         )
         if markings:
             self._handle_markings(indicator_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                indicator_id,
+                misp_object['ObjectReference'], indicator_id,
                 indicator_args['modified']
             )
         self._append_SDO(self._create_indicator(indicator_args))
 
-    def _handle_object_observable(self, misp_object: Union[MISPObject, dict], observable: Union[dict, list]):
-        observable_id = getattr(self, self._id_parsing_function['object'])('observed-data', misp_object)
+    def _handle_object_observable(
+            self, misp_object: Union[MISPObject, dict],
+            observable: Union[dict, list]):
+        observable_id = self._parse_stix_object_id(
+            'object', 'observed-data', misp_object
+        )
         observable_args = {
-            'id': observable_id,
-            'type': 'observed-data',
+            'id': observable_id, 'type': 'observed-data',
             'labels': self._create_object_labels(misp_object, to_ids=False),
-            'number_observed': 1,
-            'created_by_ref': self.identity_id,
-            'allow_custom': True,
-            'interoperability': True
+            'number_observed': 1, 'created_by_ref': self.identity_id,
+            'allow_custom': True, 'interoperability': True
         }
         observable_args.update(self._handle_observable_time_fields(misp_object))
         markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            observable_id,
-            observable_args['modified']
+            misp_object, observable_id, observable_args['modified']
         )
         if markings:
             self._handle_markings(observable_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                observable_id,
+                misp_object['ObjectReference'], observable_id,
                 observable_args['modified']
             )
         self._create_observed_data(observable_args, observable)
 
-    def _handle_object_tags_and_galaxies(self, misp_object: Union[MISPObject, dict],
-                                         object_id: str, timestamp: datetime) -> tuple:
-        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
+    def _handle_object_tags_and_galaxies(
+            self, misp_object: Union[MISPObject, dict],
+            object_id: str, timestamp: datetime) -> tuple:
+        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(
+            misp_object
+        )
         if galaxies:
             tag_names = set()
             for galaxy_type, galaxy in galaxies.items():
                 to_call = self._mapping.galaxy_types_mapping(galaxy_type)
                 if to_call is not None:
-                    getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
+                    getattr(self, to_call.format('attribute'))(
+                        galaxy, object_id, timestamp
+                    )
                 else:
-                    self._handle_undefined_attribute_galaxy(galaxy, object_id, timestamp)
+                    self._handle_undefined_attribute_galaxy(
+                        galaxy, object_id, timestamp
+                    )
                 tag_names.update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
@@ -1038,17 +1157,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         properties = {'allow_custom': True}
         for key, values in attributes.items():
             feature = f"x_misp_{key.replace('-', '_')}"
-            properties[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
+            properties[feature] = (
+                values[0] if isinstance(values, list) and len(values) == 1
+                else values
+            )
         return properties
 
-    def _handle_observable_multiple_properties_with_data(self, attributes: dict, name: str) -> dict:
+    def _handle_observable_multiple_properties_with_data(
+            self, attributes: dict, name: str) -> dict:
         properties = {'allow_custom': True}
         for key, values in attributes.items():
             feature = f"x_misp_{key.replace('-', '_')}"
             if key in getattr(self._mapping, f"{name}_data_fields")():
                 properties[feature] = self._handle_custom_data_field(values)
                 continue
-            properties[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
+            properties[feature] = (
+                values[0] if isinstance(values, list) and len(values) == 1
+                else values
+            )
         return properties
 
     @staticmethod
@@ -1059,10 +1185,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return properties
 
     def _handle_parent_process_properties(self, attributes: dict) -> dict:
-        parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in attributes.items()}
+        parent_attributes = {
+            '_'.join(key.split('-')[1:]): values
+            for key, values in attributes.items()
+        }
         return self._handle_observable_multiple_properties(parent_attributes)
 
-    def _handle_pattern_multiple_properties(self, attributes: dict, prefix: str, separator: Optional[str] = ':') -> list:
+    def _handle_pattern_multiple_properties(
+            self, attributes: dict, prefix: str,
+            separator: Optional[str] = ':') -> list:
         pattern = []
         for key, values in attributes.items():
             key = key.replace('-', '_')
@@ -1073,21 +1204,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
         return pattern
 
-    def _handle_pattern_properties(self, attributes: dict, prefix: str,
-                                   separator: Optional[str] = ':') -> list:
+    def _handle_pattern_properties(
+            self, attributes: dict, prefix: str,
+            separator: Optional[str] = ':') -> list:
         pattern = []
         for key, value in attributes.items():
-            pattern.append(f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'")
+            pattern.append(
+                f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'"
+            )
         return pattern
 
-    def _handle_pe_object_references(self, pe_object: dict, to_ids: list) -> Tuple[bool, list]:
+    def _handle_pe_object_references(
+            self, pe_object: dict, to_ids: list) -> Tuple[bool, list]:
         section_uuids = self._fetch_included_reference_uuids(
             pe_object['ObjectReference'],
             'pe-section'
         ) if pe_object.get('ObjectReference') else []
         if section_uuids:
             for section_uuid in section_uuids:
-                section_ids, _ = self._objects_to_parse['pe-section'][section_uuid]
+                section_ids, _ = self._objects_to_parse['pe-section'][
+                    section_uuid
+                ]
                 to_ids.append(section_ids)
         return any(to_ids), section_uuids
 
@@ -1100,16 +1237,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 force_single=getattr(self._mapping, f"{name}_single_fields")()
             )
             pattern = [f"{prefix}:account_type = '{name.split('_')[0]}'"]
-            for key, feature in getattr(self._mapping, f"{name}_object_mapping")().items():
+            mapping = getattr(self._mapping, f"{name}_object_mapping")()
+            for key, feature in mapping.items():
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                    pattern.append(
+                        f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                    )
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_account_object_observable(misp_object, name)
 
-    def _parse_account_object_with_attachment(self, misp_object: Union[MISPObject, dict]):
+    def _parse_account_object_with_attachment(
+            self, misp_object: Union[MISPObject, dict]):
         name = misp_object['name'].replace('-', '_')
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'user-account'
@@ -1119,22 +1262,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 with_data=getattr(self._mapping, f"{name}_data_fields")()
             )
             pattern = [f"{prefix}:account_type = '{name.split('_')[0]}'"]
-            for key, feature in getattr(self._mapping, f"{name}_object_mapping")().items():
+            mapping = getattr(self._mapping, f"{name}_object_mapping")()
+            for key, feature in mapping.items():
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                    pattern.append(
+                        f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                    )
             if attributes:
                 for key, values in attributes.items():
                     for value in values:
                         pattern.extend(
                             self._handle_custom_data_pattern(
-                                prefix,
-                                key.replace('-', '_'),
-                                value
+                                prefix, key.replace('-', '_'), value
                             )
                         )
             self._handle_object_indicator(misp_object, pattern)
         else:
-            self._parse_account_object_with_attachment_observable(misp_object, name)
+            self._parse_account_object_with_attachment_observable(
+                misp_object, name
+            )
 
     def _parse_android_app_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -1143,12 +1289,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['Attribute'],
                 force_single=self._mapping.android_app_single_fields()
             )
-            pattern = []
-            for key, feature in self._mapping.android_app_object_mapping().items():
-                if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            mapping = self._mapping.android_app_object_mapping()
+            pattern = [
+                f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                for key, feature in mapping.items() if attributes.get(key)
+            ]
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_android_app_object_observable(misp_object)
@@ -1162,41 +1311,46 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             pattern = [self._create_AS_pattern(attributes.pop('asn'))]
             if attributes.get('description'):
-                pattern.append(f"{prefix}:name = '{attributes.pop('description')}'")
+                pattern.append(
+                    f"{prefix}:name = '{attributes.pop('description')}'"
+                )
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_asn_object_observable(misp_object)
 
-    def _parse_attack_pattern_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_attack_pattern_object(
+            self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes_escaped(
             misp_object['Attribute'],
             force_single=self._mapping.attack_pattern_single_fields()
         )
         attack_pattern_args = defaultdict(list)
-        for key, feature in self._mapping.attack_pattern_object_mapping().items():
+        for key, field in self._mapping.attack_pattern_object_mapping().items():
             if attributes.get(key):
-                attack_pattern_args[feature] = attributes.pop(key)
+                attack_pattern_args[field] = attributes.pop(key)
         for feature in ('id', 'references'):
             if attributes.get(feature):
                 for value in attributes.pop(feature):
                     reference = self._parse_attack_pattern_reference(
-                        feature,
-                        value
+                        feature, value
                     )
                     attack_pattern_args['external_references'].append(reference)
         if attributes:
-            attack_pattern_args.update(self._handle_observable_multiple_properties(attributes))
+            attack_pattern_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         self._handle_non_indicator_object(
-            misp_object,
-            attack_pattern_args,
-            'attack-pattern',
-            killchain=True
+            misp_object, attack_pattern_args, 'attack-pattern', killchain=True
         )
 
     def _parse_attack_pattern_reference(self, feature: str, value: str) -> dict:
-        source_name, key = self._mapping.attack_pattern_reference_mapping(feature)
+        source_name, key = self._mapping.attack_pattern_reference_mapping(
+            feature
+        )
         if feature == 'id':
             if 'CAPEC' not in value:
                 value = f"CAPEC-{value}"
@@ -1205,26 +1359,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 source_name = 'external_url'
         return {'source_name': source_name, key: value}
 
-    def _parse_course_of_action_object(self, misp_object: Union[MISPObject, dict]):
-        attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+    def _parse_course_of_action_object(
+            self, misp_object: Union[MISPObject, dict]):
+        attributes = self._extract_object_attributes_escaped(
+            misp_object['Attribute']
+        )
         course_of_action_args = {}
         for feature in self._mapping.course_of_action_object_mapping():
             if attributes.get(feature):
                 course_of_action_args[feature] = attributes.pop(feature)
         if attributes:
-            course_of_action_args.update(self._handle_observable_properties(attributes))
-        self._handle_non_indicator_object(misp_object, course_of_action_args, 'course-of-action')
+            course_of_action_args.update(
+                self._handle_observable_properties(attributes)
+            )
+        self._handle_non_indicator_object(
+            misp_object, course_of_action_args, 'course-of-action'
+        )
 
     def _parse_cpe_asset_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'software'
-            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(
+                misp_object['Attribute']
+            )
             pattern = []
-            for key, feature in self._mapping.cpe_asset_object_mapping().items():
+            for key, field in self._mapping.cpe_asset_object_mapping().items():
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                    pattern.append(
+                        f"{prefix}:{field} = '{attributes.pop(key)}'"
+                    )
             if attributes:
-                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_cpe_asset_object_observable(misp_object)
@@ -1239,8 +1406,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes:
                 pattern.extend(
                     self._handle_pattern_multiple_properties(
-                        attributes,
-                        'user-account'
+                        attributes, 'user-account'
                     )
                 )
             self._handle_object_indicator(misp_object, pattern)
@@ -1254,49 +1420,48 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if not isinstance(data, str):
                 data = b64encode(data.getvalue()).decode()
             attachment = {'value': attachment[0], 'data': data}
-        return {
-            'allow_custom': True,
-            'x_misp_attachment': attachment
-        }
+        return {'allow_custom': True, 'x_misp_attachment': attachment}
 
     def _parse_custom_object(self, misp_object: Union[MISPObject, dict]):
-        custom_id = getattr(self, self._id_parsing_function['object'])('x-misp-object', misp_object)
+        custom_id = self._parse_stix_object_id(
+            'object', 'x-misp-object', misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         custom_args = {
-            'id': custom_id,
-            'created': timestamp,
-            'modified': timestamp,
+            'id': custom_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_object_labels(misp_object),
-            'created_by_ref': self.identity_id,
+            'created_by_ref': self.identity_id, 'interoperability': True,
             'x_misp_name': misp_object['name'],
             'x_misp_meta_category': misp_object['meta-category'],
             'x_misp_attributes': [
-                self._parse_custom_object_attribute(attribute) for attribute in misp_object['Attribute']
-            ],
-            'interoperability': True
+                self._parse_custom_object_attribute(attribute)
+                for attribute in misp_object['Attribute']
+            ]
         }
         if misp_object.get('comment'):
             custom_args['x_misp_comment'] = misp_object['comment']
         markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            custom_id,
-            timestamp
+            misp_object, custom_id, timestamp
         )
         if markings:
             self._handle_markings(custom_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                custom_id,
-                timestamp
+                misp_object['ObjectReference'], custom_id, timestamp
             )
         self._append_SDO(self._create_custom_object(custom_args))
 
     @staticmethod
-    def _parse_custom_object_attribute(attribute: Union[MISPAttribute, dict]) -> dict:
-        custom_attribute = {key: attribute[key] for key in _object_attributes_fields}
+    def _parse_custom_object_attribute(
+            attribute: Union[MISPAttribute, dict]) -> dict:
+        custom_attribute = {
+            key: attribute[key] for key in _object_attributes_fields
+        }
         if '(s)' in custom_attribute['object_relation']:
-            custom_attribute['object_relation'] = custom_attribute.pop('object_relation').replace('(s)', '')
+            object_relation = custom_attribute.pop('object_relation')
+            custom_attribute['object_relation'] = object_relation.replace(
+                '(s)', ''
+            )
         for field in _object_attributes_additional_fields:
             if attribute.get(field):
                 custom_attribute[field] = attribute[field]
@@ -1310,17 +1475,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_domain_ip_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'domain-name'
-            attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
+            attributes = self._extract_multiple_object_attributes_escaped(
+                misp_object['Attribute']
+            )
             special_case = ('domain' in attributes and 'hostname' in attributes)
             pattern = []
-            for key, feature in self._mapping.domain_ip_object_mapping().items():
+            for key, field in self._mapping.domain_ip_object_mapping().items():
                 if attributes.get(key):
                     if key == 'hostname' and special_case:
-                        feature = 'x_misp_hostname'
+                        field = 'x_misp_hostname'
                     for value in attributes.pop(key):
-                        pattern.append(f"{prefix}:{feature} = '{value}'")
+                        pattern.append(f"{prefix}:{field} = '{value}'")
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             case = self._fetch_domain_ip_object_case(misp_object['Attribute'])
@@ -1341,19 +1510,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             for feature in ('to', 'cc', 'bcc'):
                 if attributes.get(feature):
                     n = 0
-                    display_names = self._parse_email_display_names(attributes, feature)
+                    display_names = self._parse_email_display_names(
+                        attributes, feature
+                    )
                     for value in attributes.pop(feature):
-                        pattern.append(f"{prefix}:{feature}_refs[{n}].value = '{value}'")
+                        pattern.append(
+                            f"{prefix}:{feature}_refs[{n}].value = '{value}'"
+                        )
                         if value in display_names:
                             pattern.append(
-                                f"{prefix}:{feature}_refs[{n}].display_name = '{display_names[value]}'"
+                                f'{prefix}:{feature}_refs[{n}].display_name'
+                                f" = '{display_names[value]}'"
                             )
                         n += 1
                     display_feature = f'{feature}-display-name'
                     if attributes.get(display_feature):
                         for display_name in attributes.pop(display_feature):
                             pattern.append(
-                                f"{prefix}:{feature}_refs[{n}].display_name = '{display_name}'"
+                                f'{prefix}:{feature}_refs[{n}].display_name'
+                                f" = '{display_name}'"
                             )
                             n += 1
             for key, feature in self._mapping.email_object_mapping().items():
@@ -1363,16 +1538,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes:
                 n = 0
                 for key in self._mapping.email_data_fields():
-                    if attributes.get(key):
-                        for name in attributes.pop(key):
-                            feature = f'body_multipart[{n}]'
-                            if isinstance(name, tuple):
-                                name, data = name
-                                pattern.append(f"{prefix}:{feature}.body_raw_ref.payload_bin = '{data}'")
-                            pattern.append(f"{prefix}:{feature}.body_raw_ref.name = '{name}'")
-                            pattern.append(f"{prefix}:{feature}.content_disposition = '{key}'")
-                            n += 1
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                    if not attributes.get(key):
+                        continue
+                    for name in attributes.pop(key):
+                        feature = f'body_multipart[{n}]'
+                        if isinstance(name, tuple):
+                            name, data = name
+                            pattern.append(
+                                f'{prefix}:{feature}.body_raw_ref.payload_bin'
+                                f" = '{data}'"
+                            )
+                        pattern.append(
+                            f"{prefix}:{feature}.body_raw_ref.name = '{name}'"
+                        )
+                        pattern.append(
+                            f"{prefix}:{feature}.content_disposition = '{key}'"
+                        )
+                        n += 1
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_email_object_observable(misp_object)
@@ -1384,24 +1569,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             force_single=self._mapping.employee_single_fields()
         )
         if 'full-name' not in attributes:
-            name = [attributes.pop(key) for key in ('first-name', 'last-name') if attributes.get(key)]
+            name = [
+                attributes.pop(key) for key in ('first-name', 'last-name')
+                if attributes.get(key)
+            ]
             if name:
                 identity_args['name'] = ' '.join(name)
         for key, feature in self._mapping.employee_object_mapping().items():
             if attributes.get(key):
                 identity_args[feature] = attributes.pop(key)
         contact_information = self._parse_contact_information(
-            attributes,
-            misp_object['name']
+            attributes, misp_object['name']
         )
         if contact_information:
-            identity_args['contact_information'] = ' / '.join(contact_information)
+            identity_args['contact_information'] = ' / '.join(
+                contact_information
+            )
         if attributes:
-            identity_args.update(self._handle_observable_multiple_properties(attributes))
+            identity_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'],
-                    identity_args['id'],
+                    misp_object['ObjectReference'], identity_args['id'],
                     identity_args['modified']
                 )
         self._append_SDO(self._create_identity(identity_args))
@@ -1411,7 +1601,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if misp_object.get('ObjectReference'):
             for reference in misp_object['ObjectReference']:
                 if self._is_reference_included(reference, 'pe'):
-                    self._objects_to_parse['file'][misp_object['uuid']] = to_ids, misp_object
+                    self._objects_to_parse['file'][misp_object['uuid']] = (
+                        to_ids, misp_object
+                    )
                     return
         if to_ids:
             pattern = self._parse_file_object_pattern(misp_object)
@@ -1419,12 +1611,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_file_object_observable(misp_object)
 
-    def _parse_file_object_observable(self, misp_object: Union[MISPObject, dict]):
-        file_args, observable_objects = self._parse_file_observable_object(misp_object)
+    def _parse_file_object_observable(
+            self, misp_object: Union[MISPObject, dict]):
+        file_args, observable_objects = self._parse_file_observable_object(
+            misp_object
+        )
         self._handle_file_observable_objects(file_args, observable_objects)
         self._handle_object_observable(misp_object, observable_objects)
 
-    def _parse_file_object_pattern(self, misp_object: Union[MISPObject, dict]) -> list:
+    def _parse_file_object_pattern(
+            self, misp_object: Union[MISPObject, dict]) -> list:
         prefix = 'file'
         attributes = self._extract_multiple_object_attributes_with_data_escaped(
             misp_object['Attribute'],
@@ -1437,13 +1633,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 try:
                     pattern.append(
                         self._create_hash_pattern(
-                            hash_type,
-                            attributes[hash_type]
+                            hash_type, attributes[hash_type]
                         )
                     )
                     del attributes[hash_type]
                 except InvalidHashValueError:
-                    self._invalid_object_hash_value_error(hash_type, misp_object)
+                    self._invalid_object_hash_value_error(
+                        hash_type, misp_object
+                    )
         for key, feature in self._mapping.file_object_mapping().items():
             if attributes.get(key):
                 for value in attributes.pop(key):
@@ -1461,7 +1658,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     self._parse_malware_sample_object_attribute(malware_sample)
                 )
             except InvalidHashValueError:
-                self._invalid_object_hash_value_error('malware-sample', misp_object)
+                self._invalid_object_hash_value_error(
+                    'malware-sample', misp_object
+                )
                 attributes['malware-sample'] = malware_sample[1]
         if attributes.get('attachment'):
             value = attributes.pop('attachment')
@@ -1469,13 +1668,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 value, data = value
                 if not isinstance(data, str):
                     data = b64encode(data.getvalue()).decode()
-                filename_pattern = self._create_content_ref_pattern(value, 'x_misp_filename')
+                filename_pattern = self._create_content_ref_pattern(
+                    value, 'x_misp_filename'
+                )
                 data_pattern = self._create_content_ref_pattern(data)
                 pattern.append(f'({data_pattern} AND {filename_pattern})')
             else:
-                pattern.append(self._create_content_ref_pattern(value, 'x_misp_filename'))
+                pattern.append(
+                    self._create_content_ref_pattern(value, 'x_misp_filename')
+                )
         if attributes:
-            pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            pattern.extend(
+                self._handle_pattern_multiple_properties(attributes, prefix)
+            )
         return pattern
 
     def _parse_http_request_object(self, misp_object: Union[MISPObject, dict]):
@@ -1486,25 +1691,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 force_single=self._mapping.http_request_single_fields()
             )
             patterns = []
-            for key, feature in self._mapping.http_request_object_mapping('references').items():
+            mapping = self._mapping.http_request_object_mapping('references')
+            for key, feature in mapping.items():
                 if attributes.get(key):
                     value = attributes.pop(key)
-                    pattern = feature.format(self._define_address_type(value)) if 'ip-' in key else feature
+                    pattern = (
+                        feature.format(self._define_address_type(value))
+                        if 'ip-' in key else feature
+                    )
                     patterns.append(f"({prefix}:{pattern} = '{value}')")
             extension = "extensions.'http-request-ext'"
-            for key, feature in self._mapping.http_request_object_mapping('request_extension').items():
+            mapping = self._mapping.http_request_object_mapping(
+                'request_extension'
+            )
+            for key, feature in mapping.items():
                 if attributes.get(key):
-                    patterns.append(f"{prefix}:{extension}.{feature} = '{attributes.pop(key)}'")
+                    patterns.append(
+                        f'{prefix}:{extension}.{feature}'
+                        f" = '{attributes.pop(key)}'"
+                    )
             extension = f"{extension}.request_header"
-            for key, feature in self._mapping.http_request_object_mapping('request_header').items():
+            mapping = self._mapping.http_request_object_mapping(
+                'request_header'
+            )
+            for key, feature in mapping.items():
                 if attributes.get(key):
                     for value in attributes.pop(key):
-                        patterns.append(f"{prefix}:{extension}.'{feature}' = '{value}'")
+                        patterns.append(
+                            f"{prefix}:{extension}.'{feature}' = '{value}'"
+                        )
             if attributes:
                 patterns.extend(
                     self._handle_pattern_multiple_properties(
-                        attributes,
-                        'network-traffic'
+                        attributes, 'network-traffic'
                     )
                 )
             self._handle_object_indicator(misp_object, patterns)
@@ -1520,7 +1739,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             pattern = []
             if attributes.get('filename'):
-                pattern.append(self._create_filename_pattern(attributes.pop('filename')))
+                pattern.append(
+                    self._create_filename_pattern(attributes.pop('filename'))
+                )
             if attributes.get('attachment'):
                 attachment = attributes.pop('attachment')
                 if isinstance(attachment, tuple):
@@ -1530,12 +1751,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     pattern.append(self._create_content_ref_pattern(data))
                 if '.' in attachment:
                     extension = attachment.split('.')[-1]
-                    pattern.append(self._create_content_ref_pattern(f'image/{extension}', 'mime_type'))
-                pattern.append(self._create_content_ref_pattern(attachment, 'x_misp_filename'))
+                    pattern.append(self._create_content_ref_pattern(
+                        f'image/{extension}', 'mime_type')
+                    )
+                pattern.append(
+                    self._create_content_ref_pattern(
+                        attachment, 'x_misp_filename'
+                    )
+                )
             if attributes.get('url'):
-                pattern.append(self._create_content_ref_pattern(attributes.pop('url'), 'url'))
+                pattern.append(
+                    self._create_content_ref_pattern(
+                        attributes.pop('url'), 'url'
+                    )
+                )
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, 'file'))
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(attributes, 'file')
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_image_object_observable(misp_object)
@@ -1566,24 +1799,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_ip_port_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
-            attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
+            attributes = self._extract_multiple_object_attributes_escaped(
+                misp_object['Attribute']
+            )
             patterns = []
-            for key, pattern in self._mapping.ip_port_object_mapping('ip_features').items():
+            ip_mapping = self._mapping.ip_port_object_mapping('ip_features')
+            for key, pattern in ip_mapping.items():
                 if attributes.get(key):
                     for ip_value in attributes.pop(key):
-                        identifier = pattern.format(self._define_address_type(ip_value))
-                        patterns.append(f"({prefix}:{identifier} = '{ip_value}')")
-            for key, pattern in self._mapping.ip_port_object_mapping('domain_features').items():
+                        identifier = pattern.format(
+                            self._define_address_type(ip_value)
+                        )
+                        patterns.append(
+                            f"({prefix}:{identifier} = '{ip_value}')"
+                        )
+            domain_mapping = self._mapping.ip_port_object_mapping(
+                'domain_features'
+            )
+            for key, pattern in domain_mapping.items():
                 if attributes.get(key):
                     for domain_value in attributes.pop(key):
-                        patterns.append(f"({prefix}:{pattern} = '{domain_value}')")
+                        patterns.append(
+                            f"({prefix}:{pattern} = '{domain_value}')"
+                        )
             for asset in ('features', 'timeline'):
-                for key, feature in self._mapping.ip_port_object_mapping(asset).items():
+                mapping = self._mapping.ip_port_object_mapping(asset)
+                for key, feature in mapping.items():
                     if attributes.get(key):
                         for value in attributes.pop(key):
                             patterns.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
-                patterns.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                patterns.extend(
+                    self._handle_pattern_multiple_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, patterns)
         else:
             self._parse_ip_port_object_observable(misp_object)
@@ -1605,14 +1853,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes:
             identity_args.update(
                 self._handle_observable_multiple_properties_with_data(
-                    attributes,
-                    name
+                    attributes, name
                 )
             )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'],
-                    identity_args['id'],
+                    misp_object['ObjectReference'], identity_args['id'],
                     identity_args['modified']
                 )
         self._append_SDO(self._create_identity(identity_args))
@@ -1628,45 +1874,59 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             pattern = []
             for key, feature in self._mapping.lnk_time_fields().items():
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                    pattern.append(
+                        f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                    )
             if attributes.get('filename'):
                 for filename in attributes.pop('filename'):
                     pattern.append(f"{prefix}:name = '{filename}'")
             for feature in self._mapping.lnk_path_fields():
                 if attributes.get(feature):
                     for value in attributes.pop(feature):
-                        pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
+                        pattern.append(
+                            f"{prefix}:parent_directory_ref.path = '{value}'"
+                        )
             for hash_type in self._mapping.lnk_hash_types():
                 if attributes.get(hash_type):
                     try:
                         pattern.append(
                             self._create_hash_pattern(
-                                hash_type,
-                                attributes[hash_type]
+                                hash_type, attributes[hash_type]
                             )
                         )
                         del attributes[hash_type]
                     except InvalidHashValueError:
-                        self._invalid_object_hash_value_error(hash_type, misp_object)
+                        self._invalid_object_hash_value_error(
+                            hash_type, misp_object
+                        )
             if attributes.get('malware-sample'):
                 malware_sample = attributes.pop('malware-sample')
                 try:
                     pattern.append(
-                        self._parse_malware_sample_object_attribute(malware_sample)
+                        self._parse_malware_sample_object_attribute(
+                            malware_sample
+                        )
                     )
                 except InvalidHashValueError:
-                    self._invalid_object_hash_value_error('malware-sample', misp_object)
+                    self._invalid_object_hash_value_error(
+                        'malware-sample', misp_object
+                    )
                     attributes['malware-sample'] = malware_sample[1]
             for key, feature in self._mapping.lnk_object_mapping().items():
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                    pattern.append(
+                        f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                    )
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_lnk_object_observable(misp_object)
 
-    def _parse_malware_sample_object_attribute(self, malware_sample: Union[str, tuple]) -> str:
+    def _parse_malware_sample_object_attribute(
+            self, malware_sample: Union[str, tuple]) -> str:
         pattern = []
         if isinstance(malware_sample, tuple):
             malware_sample, data = malware_sample
@@ -1676,26 +1936,44 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in malware_sample:
                 filename, md5 = malware_sample.split(separator)
-                pattern.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
+                pattern.append(
+                    self._create_content_ref_pattern(
+                        filename, 'x_misp_filename'
+                    )
+                )
                 if not self._check_hash_value('MD5', md5):
                     raise InvalidHashValueError()
-                pattern.append(self._create_content_ref_pattern(md5, 'hashes.MD5'))
-                pattern.append(self._mapping.malware_sample_additional_pattern_values())
+                pattern.append(
+                    self._create_content_ref_pattern(md5, 'hashes.MD5')
+                )
+                pattern.append(
+                    self._mapping.malware_sample_additional_pattern_values()
+                )
                 break
         else:
-            self._composite_attribute_value_warning('malware-sample', malware_sample)
-            pattern.append(self._create_content_ref_pattern(malware_sample, 'x_misp_filename'))
+            self._composite_attribute_value_warning(
+                'malware-sample', malware_sample
+            )
+            pattern.append(
+                self._create_content_ref_pattern(
+                    malware_sample, 'x_misp_filename'
+                )
+            )
         return f"({' AND '.join(pattern)})"
 
     def _parse_mutex_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'mutex'
-            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(
+                misp_object['Attribute']
+            )
             pattern = []
             if attributes.get('name'):
                 pattern.append(f"{prefix}:name = '{attributes.pop('name')}'")
             if attributes:
-                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_mutex_object_observable(misp_object)
@@ -1703,51 +1981,77 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_netflow_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
-            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(
+                misp_object['Attribute']
+            )
             pattern = []
             for ref_type in ('src', 'dst'):
                 reference = []
                 feature = f'{prefix}:{ref_type}_ref'
                 if attributes.get(f'ip-{ref_type}'):
                     ip_value = attributes.pop(f'ip-{ref_type}')
+                    ip_type = self._define_address_type(ip_value)
                     reference.extend(
                         (
-                            f"{feature}.type = '{self._define_address_type(ip_value)}'",
+                            f"{feature}.type = '{ip_type}'",
                             f"{feature}.value = '{ip_value}'"
                         )
                     )
                 if attributes.get(f'{ref_type}-as'):
-                    value = self._parse_AS_value(attributes.pop(f'{ref_type}-as'))
-                    reference.append(f"{feature}.belongs_to_refs[0].number = '{value}'")
+                    value = self._parse_AS_value(
+                        attributes.pop(f'{ref_type}-as')
+                    )
+                    reference.append(
+                        f"{feature}.belongs_to_refs[0].number = '{value}'"
+                    )
                 if reference:
                     pattern.append(f"({' AND '.join(reference)})")
             if attributes.get('protocol'):
-                pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol').lower()}'")
+                protocol = attributes.pop('protocol').lower()
+                pattern.append(f"{prefix}:protocols[0] = '{protocol}'")
             for asset in ('features', 'timeline', 'extensions'):
-                for key, feature in self._mapping.netflow_object_mapping(asset).items():
+                mapping = self._mapping.netflow_object_mapping(asset)
+                for key, feature in mapping.items():
                     if attributes.get(key):
-                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                        pattern.append(
+                            f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                        )
             if attributes:
-                pattern.extend(self._handle_pattern_properties(attributes, 'network-traffic'))
+                pattern.extend(
+                    self._handle_pattern_properties(
+                        attributes, 'network-traffic'
+                    )
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_netflow_object_observable(misp_object)
 
-    def _parse_network_connection_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_network_connection_object(
+            self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
-            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(
+                misp_object['Attribute']
+            )
             pattern = self._parse_network_references_pattern(attributes)
-            for key, feature in self._mapping.network_connection_mapping('features').items():
+            mapping = self._mapping.network_connection_mapping('features')
+            for key, feature in mapping.items():
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                    pattern.append(
+                        f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                    )
             index = 0
             for key in self._mapping.network_connection_mapping('protocols'):
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:protocols[{index}] = '{attributes.pop(key).lower()}'")
+                    protocol = attributes.pop(key).lower()
+                    pattern.append(
+                        f"{prefix}:protocols[{index}] = '{protocol}'"
+                    )
                     index += 1
             if attributes:
-                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_network_connection_object_observable(misp_object)
@@ -1759,26 +2063,40 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes.get(f'ip-{key}'):
                 value = attributes.pop(f'ip-{key}')
                 ip_type = self._define_address_type(value)
-                pattern.append(f"({feature}.type = '{ip_type}' AND {feature}.value = '{value}')")
+                pattern.append(
+                    f"({feature}.type = '{ip_type}' AND "
+                    f"{feature}.value = '{value}')"
+                )
             if attributes.get(f'hostname-{key}'):
                 value = attributes.pop(f'hostname-{key}')
-                pattern.append(f"({feature}.type = 'domain-name' AND {feature}.value = '{value}')")
+                pattern.append(
+                    f"({feature}.type = 'domain-name' AND "
+                    f"{feature}.value = '{value}')"
+                )
         return pattern
 
-    def _parse_network_socket_object_pattern(self, object_attributes: list) -> list:
+    def _parse_network_socket_object_pattern(
+            self, object_attributes: list) -> list:
         attributes = self._extract_multiple_object_attributes_escaped(
                 object_attributes,
                 force_single=self._mapping.network_socket_single_fields()
             )
         prefix = 'network-traffic'
         pattern = self._parse_network_references_pattern(attributes)
-        for key, feature in self._mapping.network_socket_mapping('features').items():
+        socket_mapping = self._mapping.network_socket_mapping('features')
+        for key, feature in socket_mapping.items():
             if attributes.get(key):
-                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                pattern.append(
+                    f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                )
         if attributes.get('protocol'):
-            pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol').lower()}'")
+            protocol = attributes.pop('protocol').lower()
+            pattern.append(
+                f"{prefix}:protocols[0] = '{protocol}'"
+            )
         prefix = f"{prefix}:extensions.'socket-ext'"
-        for key, feature in self._mapping.network_socket_mapping('extension').items():
+        extension_mapping = self._mapping.network_socket_mapping('extension')
+        for key, feature in extension_mapping.items():
             if attributes.get(key):
                 pattern.append(f"{prefix}.{feature} = '{attributes.pop(key)}'")
         if attributes.get('state'):
@@ -1789,7 +2107,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     attributes['state'].append(state)
         if attributes:
             pattern.extend(
-                self._handle_pattern_multiple_properties(attributes, 'network-traffic')
+                self._handle_pattern_multiple_properties(
+                    attributes, 'network-traffic'
+                )
             )
         return pattern
 
@@ -1808,11 +2128,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if contact_info:
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
-            identity_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
+            identity_args.update(
+                self._handle_observable_multiple_properties_with_data(
+                    attributes, name
+                )
+            )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'],
-                    identity_args['id'],
+                    misp_object['ObjectReference'], identity_args['id'],
                     identity_args['modified']
                 )
         self._append_SDO(self._create_identity(identity_args))
@@ -1825,7 +2148,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if 'full-name' not in attributes:
             name_features = ('first-name', 'middle-name', 'last-name')
-            name = [attributes.pop(key) for key in name_features if attributes.get(key)]
+            name = [
+                attributes.pop(key) for key in name_features
+                if attributes.get(key)
+            ]
             if name:
                 identity_args['name'] = ' '.join(name)
         for key, feature in self._mapping.person_object_mapping().items():
@@ -1836,15 +2162,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             misp_object['name']
         )
         if contact_information:
-            identity_args['contact_information'] = ' / '.join(contact_information)
+            identity_args['contact_information'] = ' / '.join(
+                contact_information
+            )
         if attributes:
-            identity_args.update(self._handle_observable_multiple_properties(attributes))
+            identity_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'],
-                    identity_args['id'],
-                    identity_args['modified']
-                )
+                misp_object['ObjectReference'], identity_args['id'],
+                identity_args['modified']
+            )
         self._append_SDO(self._create_identity(identity_args))
 
     def _parse_organization_object(self, misp_object: Union[MISPObject, dict]):
@@ -1863,16 +2192,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if contact_info:
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
-            identity_args.update(self._handle_observable_multiple_properties(attributes))
+            identity_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'],
-                    identity_args['id'],
-                    identity_args['modified']
-                )
+                misp_object['ObjectReference'], identity_args['id'],
+                identity_args['modified']
+            )
         self._append_SDO(self._create_identity(identity_args))
 
-    def _parse_pe_extensions_observable(self, pe_object: dict, uuids: Optional[list] = None) -> dict:
+    def _parse_pe_extensions_observable(
+            self, pe_object: dict, uuids: Optional[list] = None) -> dict:
         custom = False
         attributes = self._extract_multiple_object_attributes_escaped(
             pe_object['Attribute'],
@@ -1890,32 +2221,46 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             extension['optional_header'] = optional_header
         if attributes:
             custom = True
-            extension.update(self._handle_observable_multiple_properties(attributes))
+            extension.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         if uuids is not None:
             for section_uuid in uuids:
                 section = defaultdict(dict)
+                pe_section = self._objects_to_parse['pe-section'].pop(
+                    section_uuid
+                )
                 attributes = self._extract_object_attributes_escaped(
-                    self._objects_to_parse['pe-section'].pop(section_uuid)[1]['Attribute']
+                    pe_section[1]['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping().items():
                     if attributes.get(key):
                         section[feature] = attributes.pop(key)
                 for attribute_type in self._mapping.file_hash_main_types():
                     if attributes.get(attribute_type):
-                        value = self._select_single_feature(attributes, attribute_type)
+                        value = self._select_single_feature(
+                            attributes, attribute_type
+                        )
                         hash_type = self._define_hash_type(attribute_type)
                         if self._check_hash_value(hash_type, value):
                             section['hashes'][hash_type] = value
                         else:
-                            self._invalid_object_hash_value_error(attribute_type, pe_object)
+                            self._invalid_object_hash_value_error(
+                                attribute_type, pe_object
+                            )
                             attributes[attribute_type].append(value)
                 if attributes:
                     custom = True
-                    section.update(self._handle_observable_multiple_properties(attributes))
-                extension['sections'].append(self._create_windowsPESection(section))
+                    section.update(
+                        self._handle_observable_multiple_properties(attributes)
+                    )
+                extension['sections'].append(
+                    self._create_windowsPESection(section)
+                )
         return self._create_PE_extension(extension), custom
 
-    def _parse_pe_extensions_pattern(self, pe_object: dict, uuids: Optional[list] = None) -> list:
+    def _parse_pe_extensions_pattern(
+            self, pe_object: dict, uuids: Optional[list] = None) -> list:
         prefix = "file:extensions.'windows-pebinary-ext'"
         attributes = self._extract_multiple_object_attributes_escaped(
             pe_object['Attribute'],
@@ -1927,42 +2272,47 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 pattern.append(f"{prefix}.{feature} = '{attributes.pop(key)}'")
         for key, feature in self._mapping.pe_object_mapping('header').items():
             if attributes.get(key):
-                pattern.append(f"{prefix}.optional_header.{feature} = '{attributes.pop(key)}'")
+                value = attributes.pop(key)
+                pattern.append(
+                    f"{prefix}.optional_header.{feature} = '{value}'"
+                )
         if attributes:
             pattern.extend(
                 self._handle_pattern_multiple_properties(
-                    attributes,
-                    prefix,
-                    separator='.'
+                    attributes, prefix, separator='.'
                 )
             )
         if uuids is not None:
             for section_uuid in uuids:
                 section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
                 section_object = self._objects_to_parse['pe-section'].pop(section_uuid)[1]
-                attributes = self._extract_object_attributes_escaped(section_object['Attribute'])
+                attributes = self._extract_object_attributes_escaped(
+                    section_object['Attribute']
+                )
                 for key, feature in self._mapping.pe_section_mapping().items():
                     if attributes.get(key):
-                        pattern.append(f"{section_prefix}.{feature} = '{attributes.pop(key)}'")
+                        value = attributes.pop(key)
+                        pattern.append(
+                            f"{section_prefix}.{feature} = '{value}'"
+                        )
                 for hash_type in self._mapping.pe_section_hash_types():
                     if attributes.get(hash_type):
                         try:
                             pattern.append(
                                 self._create_hash_pattern(
-                                    hash_type,
-                                    attributes[hash_type],
+                                    hash_type, attributes[hash_type],
                                     prefix=f'{section_prefix}.hashes'
                                 )
                             )
                             del attributes[hash_type]
                         except InvalidHashValueError:
-                            self._invalid_object_hash_value_error(hash_type, section_object)
+                            self._invalid_object_hash_value_error(
+                                hash_type, section_object
+                            )
                 if attributes:
                     pattern.extend(
                         self._handle_pattern_properties(
-                            attributes,
-                            section_prefix,
-                            separator='.'
+                            attributes, section_prefix, separator='.'
                         )
                     )
         return pattern
@@ -1974,42 +2324,71 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         prefix = 'process'
         pattern = []
-        for key, feature in self._mapping.process_object_mapping('features').items():
+        process_mapping = self._mapping.process_object_mapping('features')
+        for key, feature in process_mapping.items():
             if attributes.get(key):
                 pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
         if attributes.get('image'):
-            pattern.append(self._create_process_image_pattern(attributes.pop('image')))
+            pattern.append(
+                self._create_process_image_pattern(attributes.pop('image'))
+            )
         parent_attributes = self._extract_parent_process_attributes(attributes)
-        for key, feature in self._mapping.process_object_mapping('parent').items():
+        parent_mapping = self._mapping.process_object_mapping('parent')
+        for key, feature in parent_mapping.items():
             if parent_attributes.get(key):
-                pattern.append(f"{prefix}:parent_ref.{feature} = '{parent_attributes.pop(key)}'")
+                value = parent_attributes.pop(key)
+                pattern.append(f"{prefix}:parent_ref.{feature} = '{value}'")
         if parent_attributes:
-            parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in parent_attributes.items()}
-            pattern.extend(self._handle_pattern_multiple_properties(parent_attributes, prefix, separator=':parent_ref.'))
+            parent_attributes = {
+                '_'.join(key.split('-')[1:]): values
+                for key, values in parent_attributes.items()
+            }
+            pattern.extend(
+                self._handle_pattern_multiple_properties(
+                    parent_attributes, prefix, separator=':parent_ref.'
+                )
+            )
         if attributes.get('child-pid'):
             index = 0
             for child_pid in attributes.pop('child-pid'):
-                pattern.append(f"{prefix}:child_refs[{index}].pid = '{child_pid}'")
+                pattern.append(
+                    f"{prefix}:child_refs[{index}].pid = '{child_pid}'"
+                )
                 index += 1
         if attributes:
-            pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            pattern.extend(
+                self._handle_pattern_multiple_properties(attributes, prefix)
+            )
         return pattern
 
     def _parse_registry_key_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'windows-registry-key'
-            attributes = self._extract_object_attributes(misp_object['Attribute'])
-            pattern = self._parse_regkey_key_values_pattern(attributes, prefix)
+            attributes = self._extract_object_attributes(
+                misp_object['Attribute']
+            )
+            pattern = self._parse_regkey_key_values_pattern(
+                attributes, prefix
+            )
             values_prefix = f"{prefix}:values[0]"
             if attributes.get('data'):
-                data = self._sanitize_registry_key_value(attributes.pop('data').strip("'").strip('"'))
+                data = self._sanitize_registry_key_value(
+                    attributes.pop('data').strip("'").strip('"')
+                )
                 pattern.append(f"{values_prefix}.data = '{data}'")
-            attributes = {key: self._handle_value_for_pattern(value) for key, value in attributes.items()}
+            attributes = {
+                key: self._handle_value_for_pattern(value)
+                for key, value in attributes.items()
+            }
             for key, feature in self._mapping.registry_key_mapping().items():
                 if attributes.get(key):
-                    pattern.append(f"{values_prefix}.{feature} = '{attributes.pop(key)}'")
+                    pattern.append(
+                        f"{values_prefix}.{feature} = '{attributes.pop(key)}'"
+                    )
             if attributes:
-                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_registry_key_object_observable(misp_object)
@@ -2020,14 +2399,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             force_single=self._mapping.script_single_fields(),
             with_data=self._mapping.script_data_fields()
         )
-        object_type = 'malware' if 'state' in attributes and 'Malicious' in attributes['state'] else 'tool'
+        object_type = (
+            'malware' if 'state' in attributes
+            and 'Malicious' in attributes['state'] else 'tool'
+        )
         object_args = {}
-        for key, feature in getattr(self._mapping, f'script_to_{object_type}_mapping')().items():
+        mapping = getattr(self._mapping, f'script_to_{object_type}_mapping')
+        for key, feature in mapping().items():
             if key in attributes:
                 object_args[feature] = attributes.pop(key)
         if attributes:
-            object_args.update(self._handle_observable_multiple_properties_with_data(attributes, misp_object['name']))
-        self._handle_non_indicator_object(misp_object, object_args, object_type, killchain=True)
+            object_args.update(
+                self._handle_observable_multiple_properties_with_data(
+                    attributes, misp_object['name']
+                )
+            )
+        self._handle_non_indicator_object(
+            misp_object, object_args, object_type, killchain=True
+        )
 
     def _parse_stix_pattern_object(self, misp_object: Union[MISPObject, dict]):
         indicator_args = {}
@@ -2036,7 +2425,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             feature = self._mapping.stix_pattern_object_mapping(relation)
             if feature is not None:
                 if relation == 'version':
-                    indicator_args[feature] = attribute['value'].strip('stixSTIX ')
+                    indicator_args[feature] = attribute['value'].strip(
+                        'stixSTIX '
+                    )
                     continue
                 indicator_args[feature] = attribute['value']
         self._handle_patterning_object_indicator(misp_object, indicator_args)
@@ -2044,12 +2435,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_url_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'url'
-            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(
+                misp_object['Attribute']
+            )
             pattern = []
             if attributes.get('url'):
                 pattern.append(f"{prefix}:value = '{attributes.pop('url')}'")
             if attributes:
-                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_url_object_observable(misp_object)
@@ -2064,35 +2459,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             pattern = []
             for data_type in ('features', 'timeline'):
-                for key, feature in self._mapping.user_account_object_mapping(data_type).items():
+                mapping = self._mapping.user_account_object_mapping(data_type)
+                for key, feature in mapping.items():
                     if attributes.get(key):
-                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                        pattern.append(
+                            f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                        )
             extension_prefix = f"{prefix}:extensions.'unix-account-ext'"
-            for key, feature in self._mapping.user_account_object_mapping('extension').items():
+            mapping = self._mapping.user_account_object_mapping('extension')
+            for key, feature in mapping.items():
                 if attributes.get(key):
                     values = attributes.pop(key)
                     if isinstance(values, list):
                         for value in values:
-                            pattern.append(f"{extension_prefix}.{feature} = '{value}'")
+                            pattern.append(
+                                f"{extension_prefix}.{feature} = '{value}'"
+                            )
                     else:
-                        pattern.append(f"{extension_prefix}.{feature} = '{values}'")
+                        pattern.append(
+                            f"{extension_prefix}.{feature} = '{values}'"
+                        )
             if attributes:
                 for key, values in attributes.items():
                     if isinstance(values, list):
                         for value in values:
                             pattern.extend(
                                 self._handle_custom_data_pattern(
-                                    prefix,
-                                    key.replace('-', '_'),
-                                    value
+                                    prefix, key.replace('-', '_'), value
                                 )
                             )
                     else:
                         pattern.extend(
                             self._handle_custom_data_pattern(
-                                prefix,
-                                key.replace('-', '_'),
-                                values
+                                prefix, key.replace('-', '_'), values
                             )
                         )
             self._handle_object_indicator(misp_object, pattern)
@@ -2101,33 +2500,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_vulnerability_object(self, misp_object: Union[MISPObject, dict]):
         vulnerability_args = defaultdict(list)
-        attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes_escaped(
+            misp_object['Attribute']
+        )
         if attributes.get('id'):
             vulnerability_args['name'] = attributes['id'][0]
             for vuln in attributes.pop('id'):
                 reference = {
-                    'source_name': 'cve' if vuln.startswith('CVE') else 'vulnerability',
-                    'external_id': vuln
+                    'external_id': vuln, 'source_name': (
+                        'cve' if vuln.startswith('CVE') else 'vulnerability'
+                    )
                 }
                 vulnerability_args['external_references'].append(reference)
         for feature in ('description', 'summary'):
             if attributes.get(feature):
                 vulnerability_args['description'] = self._select_single_feature(
-                    attributes,
-                    feature
+                    attributes, feature
                 )
                 break
         if attributes.get('references'):
             for reference in attributes.pop('references'):
                 vulnerability_args['external_references'].append(
-                    {
-                        'source_name': 'url',
-                        'url': reference
-                    }
+                    {'source_name': 'url', 'url': reference}
                 )
         if attributes:
-            vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
-        self._handle_non_indicator_object(misp_object, vulnerability_args, 'vulnerability')
+            vulnerability_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        self._handle_non_indicator_object(
+            misp_object, vulnerability_args, 'vulnerability'
+        )
 
     def _parse_x509_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -2138,38 +2540,65 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             pattern = []
             if attributes.get('self_signed'):
-                pattern.append(f"{prefix}:is_self_signed = '{attributes.pop('self_signed')}'")
+                value = attributes.pop('self_signed')
+                pattern.append(
+                    f"{prefix}:is_self_signed = '{value}'"
+                )
             for attribute_type in self._mapping.x509_hash_fields():
                 if attributes.get(attribute_type):
-                    hash_type = self._define_hash_type(attribute_type.split('-')[-1])
-                    if self._check_hash_value(hash_type, attributes[attribute_type]):
-                        pattern.append(f"{prefix}:hashes.{hash_type} = '{attributes.pop(attribute_type)}'")
+                    hash_type = self._define_hash_type(
+                        attribute_type.split('-')[-1]
+                    )
+                    valid_hash = self._check_hash_value(
+                        hash_type, attributes[attribute_type]
+                    )
+                    if valid_hash:
+                        value = attributes.pop(attribute_type)
+                        pattern.append(
+                            f"{prefix}:hashes.{hash_type} = '{value}'"
+                        )
                     else:
-                        self._invalid_object_hash_value_error(attribute_type, misp_object)
+                        self._invalid_object_hash_value_error(
+                            attribute_type, misp_object
+                        )
             for data_type in ('features', 'timeline'):
-                for key, feature in self._mapping.x509_object_mapping(data_type).items():
+                mapping = self._mapping.x509_object_mapping(data_type)
+                for key, feature in mapping.items():
                     if attributes.get(key):
-                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                        pattern.append(
+                            f"{prefix}:{feature} = '{attributes.pop(key)}'"
+                        )
             extension = []
-            for key, feature in self._mapping.x509_object_mapping('extension').items():
+            mapping = self._mapping.x509_object_mapping('extension')
+            for key, feature in mapping.items():
                 if attributes.get(key):
                     for value in attributes.pop(key):
                         extension.append(f"{feature}:{value}")
             if extension:
                 name = ','.join(extension)
-                pattern.append(f"{prefix}:x509_v3_extensions.subject_alternative_name = '{name}'")
+                pattern.append(
+                    f'{prefix}:x509_v3_extensions.'
+                    f"subject_alternative_name = '{name}'"
+                )
             if attributes:
-                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_properties(attributes, prefix)
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_x509_object_observable(misp_object)
 
     def _populate_objects_to_parse(self, misp_object: Union[MISPObject, dict]):
         to_ids = self._fetch_ids_flag(misp_object['Attribute'])
-        self._objects_to_parse[misp_object['name']][misp_object['uuid']] = to_ids, misp_object
+        self._objects_to_parse[misp_object['name']][misp_object['uuid']] = (
+            to_ids, misp_object
+        )
 
-    def _resolve_file_to_parse(self, file_object: dict, file_uuid: str, file_ids: bool):
-        pe_uuid = self._fetch_included_reference_uuids(file_object['ObjectReference'], 'pe')
+    def _resolve_file_to_parse(
+            self, file_object: dict, file_uuid: str, file_ids: bool):
+        pe_uuid = self._fetch_included_reference_uuids(
+            file_object['ObjectReference'], 'pe'
+        )
         pe_found = len(pe_uuid)
         if pe_found != 1:
             if pe_found == 0:
@@ -2185,19 +2614,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         pe_uuid = pe_uuid[0]
         pe_ids, pe_object = self._objects_to_parse['pe'].pop(pe_uuid)
         to_ids, section_uuids = self._handle_pe_object_references(
-            pe_object,
-            [file_ids, pe_ids]
+            pe_object, [file_ids, pe_ids]
         )
         if to_ids:
             pattern = self._parse_file_object_pattern(file_object)
-            pattern.extend(self._parse_pe_extensions_pattern(pe_object, section_uuids))
+            pattern.extend(
+                self._parse_pe_extensions_pattern(pe_object, section_uuids)
+            )
             self._handle_object_indicator(file_object, pattern)
         else:
-            file_args, observable = self._parse_file_observable_object(file_object)
+            file_args, observable = self._parse_file_observable_object(
+                file_object
+            )
             try:
                 extension_args, custom = self._parse_pe_extensions_observable(
-                    pe_object,
-                    section_uuids
+                    pe_object, section_uuids
                 )
                 file_args['extensions'] = {
                     'windows-pebinary-ext': extension_args
@@ -2211,7 +2642,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):
-            for file_uuid, misp_object in self._objects_to_parse.pop('file').items():
+            file_objects = self._objects_to_parse.pop('file')
+            for file_uuid, misp_object in file_objects.items():
                 to_ids, file_object = misp_object
                 try:
                     self._resolve_file_to_parse(file_object, file_uuid, to_ids)
@@ -2228,31 +2660,32 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 except Exception as exception:
                     self._object_error(pe_object, exception)
         if self._objects_to_parse.get('pe-section'):
-            for misp_object in self._objects_to_parse.pop('pe-section').values():
+            pe_section = self._objects_to_parse.pop('pe-section')
+            for misp_object in pe_section.values():
                 self._parse_custom_object(misp_object[1])
 
     def _resolve_pe_to_parse(self, pe_object: dict, pe_ids: bool):
         to_ids, section_uuids = self._handle_pe_object_references(
-            pe_object,
-            [pe_ids]
+            pe_object, [pe_ids]
         )
         if to_ids:
-            pattern = self._parse_pe_extensions_pattern(pe_object, section_uuids)
+            pattern = self._parse_pe_extensions_pattern(
+                pe_object, section_uuids
+            )
             self._handle_object_indicator(pe_object, pattern)
         else:
             try:
                 extension_args, custom = self._parse_pe_extensions_observable(
-                    pe_object,
-                    section_uuids
+                    pe_object, section_uuids
                 )
                 file_args = {
-                    'extensions': {
-                        'windows-pebinary-ext': extension_args
-                    }
+                    'extensions': {'windows-pebinary-ext': extension_args}
                 }
                 for feature in ('original', 'internal'):
                     if extension_args.get(f'x_misp_{feature}_filename'):
-                        file_args['name'] = extension_args[f'x_misp_{feature}_filename']
+                        file_args['name'] = extension_args[
+                            f'x_misp_{feature}_filename'
+                        ]
                         break
                 else:
                     file_args['name'] = ''
@@ -2263,19 +2696,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             except Exception as exception:
                 self._object_error(pe_object, exception)
 
-    ################################################################################
-    #                          GALAXIES PARSING FUNCTIONS                          #
-    ################################################################################
+    ############################################################################
+    #                        GALAXIES PARSING FUNCTIONS                        #
+    ############################################################################
 
-    def _check_external_references(self, references: list, values: list, feature: str) -> bool:
+    def _check_external_references(
+            self, references: list, values: list, feature: str) -> bool:
         for reference in references:
-            if reference['source_name'] in self._mapping.source_names() and reference[feature] in values:
+            to_return = (
+                reference['source_name'] in self._mapping.source_names()
+                and reference[feature] in values
+            )
+            if to_return:
                 return True
         return False
 
-    def _check_galaxy_matching(self, cluster: dict, *args: Tuple[str, str]) -> Union[str, None]:
+    def _check_galaxy_matching(
+            self, cluster: dict, *args: Tuple[str, str]) -> Union[str, None]:
         if self._check_galaxy_name(*args):
-            return self._fetch_galaxy_matching_by_name(cluster, *args)
+            return self._fetch_galaxy_matching_by_name(*args)
         if cluster.get('meta') is not None:
             meta = cluster['meta']
             key = 'external_id'
@@ -2284,9 +2723,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     continue
                 if self._check_galaxy_references(meta[key], feature, *args):
                     return self._fetch_galaxy_matching_by_reference(
-                        meta[key],
-                        feature,
-                        *args
+                        meta[key], feature, *args
                     )
 
     def _check_galaxy_name(self, name: str, object_type: str) -> bool:
@@ -2296,17 +2733,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 names += 1
         return names == 1
 
-    def _check_galaxy_references(self, values: str, feature: str, name: str, object_type: str) -> bool:
+    def _check_galaxy_references(self, values: str, feature: str, name: str,
+                                 object_type: str) -> bool:
         numbers = 0
         for stix_object in self._galaxies_catalog[name][object_type]:
-            if stix_object['name'] != name or not stix_object.get('external_references'):
+            to_continue = (
+                stix_object['name'] != name
+                or not stix_object.get('external_references')
+            )
+            if to_continue:
                 continue
-            if self._check_external_references(stix_object['external_references'], values, feature):
+            has_reference = self._check_external_references(
+                stix_object['external_references'], values, feature
+            )
+            if has_reference:
                 numbers += 1
         return numbers == 1
 
     def _define_source_name(self, value: str) -> str:
-        for prefix, source_name in self._mapping.external_id_to_source_name().items():
+        id_mapping = self._mapping.external_id_to_source_name
+        for prefix, source_name in id_mapping().items():
             if value.startswith(f'{prefix}-'):
                 return source_name
         if '-' in value:
@@ -2315,32 +2761,46 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return 'WASC'
         return 'mitre-attack'
 
-    def _fetch_galaxy_matching_by_name(self, cluster: dict, name: str, object_type: str) -> Union[str, None]:
+    def _fetch_galaxy_matching_by_name(
+            self, name: str, object_type: str) -> Union[str, None]:
         for stix_object in self._galaxies_catalog[name][object_type]:
             if stix_object['name'] == name:
                 self._handle_galaxy_matching(object_type, stix_object)
                 return stix_object['id']
 
-    def _fetch_galaxy_matching_by_reference(self, values: list, feature: str, name: str, object_type: str) -> Union[str, None]:
+    def _fetch_galaxy_matching_by_reference(
+            self, values: list, feature: str, name: str,
+            object_type: str) -> Union[str, None]:
         for stix_object in self._galaxies_catalog[name][object_type]:
-            if stix_object['name'] != name or not stix_object.get('external_references'):
+            to_continue = (
+                stix_object['name'] != name
+                or not stix_object.get('external_references')
+            )
+            if to_continue:
                 continue
-            if self._check_external_references(stix_object['external_references'], values, feature):
+            has_reference = self._check_external_references(
+                stix_object['external_references'], values, feature
+            )
+            if has_reference:
                 self._handle_galaxy_matching(object_type, stix_object)
                 return stix_object['id']
 
-    def _handle_attribute_galaxy_relationships(self, source_id: str, target_ids: list, timestamp: datetime):
-        relationships = self._mapping.relationship_specs(source_id.split('--')[0])
+    def _handle_attribute_galaxy_relationships(
+            self, source_id: str, target_ids: list, timestamp: datetime):
+        relationships = self._mapping.relationship_specs(
+            source_id.split('--')[0]
+        )
         if relationships is None:
             for target_id in target_ids:
-                self._parse_galaxy_relationship(source_id, target_id, 'related-to', timestamp)
+                self._parse_galaxy_relationship(
+                    source_id, target_id, 'related-to', timestamp
+                )
         else:
             for target_id in target_ids:
                 target_type = target_id.split('--')[0]
                 self._parse_galaxy_relationship(
                     source_id, target_id,
-                    relationships.get(target_type, 'related-to'),
-                    timestamp
+                    relationships.get(target_type, 'related-to'), timestamp
                 )
         self._handle_object_refs(target_ids)
 
@@ -2373,10 +2833,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if object_ref not in self.__object_refs:
                 self.__object_refs.append(object_ref)
 
-    def _handle_undefined_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                           object_id: str, timestamp: datetime):
+    def _handle_undefined_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            object_id: str, timestamp: datetime):
         object_refs = self._parse_undefined_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
     def _handle_undefined_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_undefined_galaxy(galaxy, self.event_timestamp)
@@ -2410,28 +2873,34 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 return False
             if ' - ' in value:
                 for part in value.split(' - '):
-                    if part in self._galaxies_catalog and object_type in self._galaxies_catalog[part]:
-                        args = (part, object_type)
-                        stix_object_id = self._check_galaxy_matching(cluster, *args)
+                    if object_type in self._galaxies_catalog.get(part, {}):
+                        stix_object_id = self._check_galaxy_matching(
+                            cluster, part, object_type
+                        )
                         if stix_object_id is not None:
                             object_refs.append(stix_object_id)
                             self.__ids[object_id] = stix_object_id
                             return True
         return False
 
-    def _parse_attack_pattern_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                               object_id: str, timestamp: datetime):
+    def _parse_attack_pattern_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            object_id: str, timestamp: datetime):
         object_refs = self._parse_attack_pattern_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
-    def _parse_attack_pattern_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_attack_pattern_event_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_attack_pattern_galaxy(
             galaxy, self.event_timestamp
         )
         self._handle_object_refs(object_refs)
 
-    def _parse_attack_pattern_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                     timestamp: Optional[datetime] = None) -> list:
+    def _parse_attack_pattern_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            timestamp: Optional[datetime] = None) -> list:
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
@@ -2447,23 +2916,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__ids[cluster['uuid']] = attack_pattern_id
         return object_refs
 
-    def _parse_attack_pattern_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_attack_pattern_parent_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_attack_pattern_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
-    def _parse_course_of_action_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                                 object_id: str, timestamp: datetime):
+    def _parse_course_of_action_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            object_id: str, timestamp: datetime):
         object_refs = self._parse_course_of_action_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
-    def _parse_course_of_action_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_course_of_action_event_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_course_of_action_galaxy(
             galaxy, self.event_timestamp
         )
         self._handle_object_refs(object_refs)
 
-    def _parse_course_of_action_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                       timestamp: Optional[datetime] = None) -> list:
+    def _parse_course_of_action_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            timestamp: Optional[datetime] = None) -> list:
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
@@ -2472,13 +2947,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             course_of_action_args = self._create_galaxy_args(
                 cluster, galaxy['name'], course_of_action_id, timestamp
             )
-            course_of_action = self._create_course_of_action(course_of_action_args)
+            course_of_action = self._create_course_of_action(
+                course_of_action_args
+            )
             self._append_SDO_without_refs(course_of_action)
             object_refs.append(course_of_action_id)
             self.__ids[cluster['uuid']] = course_of_action_id
         return object_refs
 
-    def _parse_course_of_action_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_course_of_action_parent_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_course_of_action_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
@@ -2504,19 +2982,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_external_url(url: str) -> dict:
         return {'source_name': 'url', 'url': url}
 
-    def _parse_intrusion_set_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                              object_id: str, timestamp: datetime):
+    def _parse_intrusion_set_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            object_id: str, timestamp: datetime):
         object_refs = self._parse_intrusion_set_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
-    def _parse_intrusion_set_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_intrusion_set_event_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_intrusion_set_galaxy(
             galaxy, self.event_timestamp
         )
         self._handle_object_refs(object_refs)
 
-    def _parse_intrusion_set_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                    timestamp: Optional[datetime] = None) -> list:
+    def _parse_intrusion_set_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            timestamp: Optional[datetime] = None) -> list:
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
@@ -2531,7 +3014,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__ids[cluster['uuid']] = intrusion_set_id
         return object_refs
 
-    def _parse_intrusion_set_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_intrusion_set_parent_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_intrusion_set_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
@@ -2546,7 +3030,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_malware_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                         object_id: str, timestamp: datetime):
         object_refs = self._parse_malware_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
     def _parse_malware_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_malware_galaxy(galaxy, self.event_timestamp)
@@ -2659,30 +3145,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if cluster.get('description'):
             description = cluster['description']
         sector_args = {
-            'id': f"identity--{cluster['uuid']}",
-            'type': 'identity',
-            'name': cluster['value'],
-            'identity_class': 'class',
-            'description': description,
+            'id': f"identity--{cluster['uuid']}", 'type': 'identity',
+            'name': cluster['value'], 'identity_class': 'class',
             'labels': self._create_galaxy_labels(name, cluster),
-            'interoperability': True
+            'description': description, 'interoperability': True
         }
         if timestamp is None:
             if not cluster.get('timestamp'):
                 return sector_args
             timestamp = self._datetime_from_timestamp(cluster['timestamp'])
-        sector_args.update(
-            {
-                'created': timestamp,
-                'modified': timestamp
-            }
-        )
+        sector_args.update({'created': timestamp, 'modified': timestamp})
         return sector_args
 
-    def _parse_threat_actor_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                             object_id: str, timestamp: datetime):
+    def _parse_threat_actor_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            object_id: str, timestamp: datetime):
         object_refs = self._parse_threat_actor_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
     def _parse_threat_actor_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_threat_actor_galaxy(
@@ -2690,8 +3171,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         self._handle_object_refs(object_refs)
 
-    def _parse_threat_actor_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                   timestamp: Optional[datetime] = None) -> list:
+    def _parse_threat_actor_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            timestamp: Optional[datetime] = None) -> list:
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
@@ -2706,7 +3188,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__ids[cluster['uuid']] = threat_actor_id
         return object_refs
 
-    def _parse_threat_actor_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_threat_actor_parent_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_threat_actor_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
@@ -2718,7 +3201,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_tool_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                      object_id: str, timestamp: datetime):
         object_refs = self._parse_tool_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
     def _parse_tool_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_tool_galaxy(galaxy, self.event_timestamp)
@@ -2756,7 +3241,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             custom_id = f"x-misp-galaxy-cluster--{cluster['uuid']}"
             custom_args = self._create_custom_galaxy_args(
-                cluster, galaxy['name'], galaxy['description'], custom_id, timestamp
+                cluster, galaxy['name'], galaxy['description'],
+                custom_id, timestamp
             )
             custom_galaxy = self._create_custom_galaxy(custom_args)
             self._append_SDO_without_refs(custom_galaxy)
@@ -2764,19 +3250,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__ids[cluster['uuid']] = custom_id
         return object_refs
 
-    def _parse_vulnerability_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                              object_id: str, timestamp: datetime):
+    def _parse_vulnerability_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            object_id: str, timestamp: datetime):
         object_refs = self._parse_vulnerability_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
 
-    def _parse_vulnerability_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_vulnerability_event_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_vulnerability_galaxy(
             galaxy, self.event_timestamp
         )
         self._handle_object_refs(object_refs)
 
-    def _parse_vulnerability_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                    timestamp: Optional[datetime] = None) -> list:
+    def _parse_vulnerability_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict],
+            timestamp: Optional[datetime] = None) -> list:
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
@@ -2791,32 +3282,31 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__ids[cluster['uuid']] = vulnerability_id
         return object_refs
 
-    def _parse_vulnerability_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+    def _parse_vulnerability_parent_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_vulnerability_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
-    ################################################################################
-    #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
-    ################################################################################
+    ############################################################################
+    #                  STIX OBJECTS CREATION HELPER FUNCTIONS                  #
+    ############################################################################
 
     @staticmethod
     def _create_attachment_args(value: str, data: str) -> dict:
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         return {
-            'allow_custom': True,
-            'payload_bin': data,
-            'x_misp_filename': value
+            'allow_custom': True, 'payload_bin': data, 'x_misp_filename': value
         }
 
-    def _create_custom_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
-                                   galaxy_name: str, description: str, custom_id: str,
-                                   timestamp: Optional[datetime] = None) -> dict:
+    def _create_custom_galaxy_args(
+            self, cluster: Union[MISPGalaxyCluster, dict],
+            galaxy_name: str, description: str, custom_id: str,
+            timestamp: Optional[datetime] = None) -> dict:
         custom_args = {
             'id': custom_id,
             'labels': self._create_galaxy_labels(galaxy_name, cluster),
-            'x_misp_name': galaxy_name,
-            'x_misp_type': cluster['type'],
+            'x_misp_name': galaxy_name, 'x_misp_type': cluster['type'],
             'x_misp_value': cluster['value'],
             'x_misp_description': f"{description} | {cluster['description']}",
             'interoperability': True
@@ -2830,12 +3320,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if not cluster.get('timestamp'):
                 return custom_args
             timestamp = self._datetime_from_timestamp(cluster['timestamp'])
-        custom_args.update(
-            {
-                'created': timestamp,
-                'modified': timestamp
-            }
-        )
+        custom_args.update({'created': timestamp, 'modified': timestamp})
         return custom_args
 
     def _create_galaxy_args(
@@ -2846,9 +3331,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if cluster['type'].startswith('mitre-') and ' - ' in value:
             value = value.split(' - ')[0].strip()
         galaxy_args = {
-            'id': object_id,
-            'type': object_type,
-            'name': value,
+            'id': object_id, 'type': object_type, 'name': value,
             'labels': self._create_galaxy_labels(name, cluster),
             'interoperability': True
         }
@@ -2858,12 +3341,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if not cluster.get('timestamp'):
                 return galaxy_args
             timestamp = self._datetime_from_timestamp(cluster.pop('timestamp'))
-        galaxy_args.update(
-            {
-                'created': timestamp,
-                'modified': timestamp
-            }
-        )
+        galaxy_args.update({'created': timestamp, 'modified': timestamp})
         if cluster.get('meta'):
             feature = f"{object_type.replace('-', '_')}_meta_mapping"
             meta_args = (
@@ -2889,19 +3367,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _create_killchain(category: str) -> list:
         kill_chain = [
-            {
-                'kill_chain_name': 'misp-category',
-                'phase_name': category
-            }
+            {'kill_chain_name': 'misp-category', 'phase_name': category}
         ]
         return kill_chain
 
     @staticmethod
     def _create_labels(attribute: Union[MISPAttribute, dict]) -> list:
-        return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
+        return [
+            f'misp:{feature}="{attribute[feature]}"'
+            for feature in _label_fields if attribute.get(feature)
+        ]
 
     @staticmethod
-    def _create_object_labels(misp_object: Union[MISPObject, dict], to_ids: Optional[bool] = None) -> list:
+    def _create_object_labels(misp_object: Union[MISPObject, dict],
+                              to_ids: Optional[bool] = None) -> list:
         labels = [
             f'misp:name="{misp_object["name"].replace("|", "-")}"',
             f'misp:meta-category="{misp_object["meta-category"]}"'
@@ -2912,9 +3391,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _handle_identity(self, identity_id: str, name: str):
         identity_args = {
-            'id': identity_id,
-            'name': name,
-            'identity_class': 'organization'
+            'id': identity_id, 'name': name, 'identity_class': 'organization'
         }
         identity = self._create_identity(identity_args)
         self.__objects.insert(self.__index, identity)
@@ -2925,36 +3402,37 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         contact_information = []
         for key in getattr(self._mapping, f"{name}_contact_info_fields")():
             if attributes.get(key):
-                contact_information.append(f"{key}: {'; '.join(attributes.pop(key))}")
+                contact_information.append(
+                    f"{key}: {'; '.join(attributes.pop(key))}"
+                )
         return contact_information
 
-    def _parse_identity_args(self, misp_object: Union[MISPObject, dict], identity_class: str) -> dict:
-        identity_id = getattr(self, self._id_parsing_function['object'])('identity', misp_object)
+    def _parse_identity_args(
+            self, misp_object: Union[MISPObject, dict],
+            identity_class: str) -> dict:
+        identity_id = self._parse_stix_object_id(
+            'object', 'identity', misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         identity_args = {
-            'id': identity_id,
-            'created': timestamp,
-            'modified': timestamp,
+            'id': identity_id, 'created': timestamp, 'modified': timestamp,
+            'created_by_ref': self.identity_id,
+            'identity_class': identity_class, 'interoperability': True,
             'labels': self._create_object_labels(
                 misp_object,
                 to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-            ),
-            'created_by_ref': self.identity_id,
-            'interoperability': True,
-            'identity_class': identity_class,
+            )
         }
         markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            identity_id,
-            timestamp
+            misp_object, identity_id, timestamp
         )
         if markings:
             self._handle_markings(identity_args, markings)
         return identity_args
 
-    ################################################################################
-    #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
-    ################################################################################
+    ############################################################################
+    #                   OBSERVABLE OBJECT PARSING FUNCTIONS.                   #
+    ############################################################################
 
     def _parse_account_args(self, attributes: list, name: str) -> dict:
         attributes = self._extract_multiple_object_attributes(
@@ -2962,56 +3440,66 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             force_single=getattr(self._mapping, f"{name}_single_fields")()
         )
         account_args = {'account_type': name.split('_')[0]}
-        for key, feature in getattr(self._mapping, f"{name}_object_mapping")().items():
+        mapping = getattr(self._mapping, f"{name}_object_mapping")
+        for key, feature in mapping().items():
             if attributes.get(key):
                 account_args[feature] = attributes.pop(key)
         if attributes:
-            account_args.update(self._handle_observable_multiple_properties(attributes))
+            account_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return account_args
 
-    def _parse_account_with_attachment_args(self, object_attributes: list, name: str):
+    def _parse_account_with_attachment_args(
+            self, object_attributes: list, name: str):
         attributes = self._extract_multiple_object_attributes_with_data(
             object_attributes,
             force_single=getattr(self._mapping, f"{name}_single_fields")(),
             with_data=getattr(self._mapping, f"{name}_data_fields")()
         )
         account_args = {'account_type': name.split('_')[0]}
-        for key, feature in getattr(self._mapping, f"{name}_object_mapping")().items():
+        mapping = getattr(self._mapping, f"{name}_object_mapping")
+        for key, feature in mapping().items():
             if attributes.get(key):
                 account_args[feature] = attributes.pop(key)
         if attributes:
-            account_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
+            account_args.update(
+                self._handle_observable_multiple_properties_with_data(
+                    attributes, name
+                )
+            )
         return account_args
 
     def _parse_android_app_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
-            attributes,
-            force_single=self._mapping.android_app_single_fields()
+            attributes, force_single=self._mapping.android_app_single_fields()
         )
         software_args = {}
         for key, feature in self._mapping.android_app_object_mapping().items():
             if attributes.get(key):
                 software_args[feature] = attributes.pop(key)
         if attributes:
-            software_args.update(self._handle_observable_multiple_properties(attributes))
+            software_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return software_args
 
     def _parse_AS_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
-            attributes,
-            force_single=self._mapping.as_single_fields()
+            attributes, force_single=self._mapping.as_single_fields()
         )
         as_args = {'number': self._parse_AS_value(attributes.pop('asn'))}
         if attributes.get('description'):
             as_args['name'] = attributes.pop('description')
         if attributes:
-            as_args.update(self._handle_observable_multiple_properties(attributes))
+            as_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return as_args
 
     def _parse_cpe_asset_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
-            attributes,
-            force_single=self._mapping.cpe_asset_single_fields()
+            attributes, force_single=self._mapping.cpe_asset_single_fields()
         )
         software_args = {}
         if attributes.get('language'):
@@ -3020,20 +3508,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes.get(key):
                 software_args[feature] = attributes.pop(key)
         if attributes:
-            software_args.update(self._handle_observable_multiple_properties(attributes))
+            software_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return software_args
 
     def _parse_credential_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
-            attributes,
-            force_single=self._mapping.credential_single_fields()
+            attributes, force_single=self._mapping.credential_single_fields()
         )
         credential_args = {}
         for key, feature in self._mapping.credential_object_mapping().items():
             if attributes.get(key):
-                credential_args[feature] = self._select_single_feature(attributes, key)
+                credential_args[feature] = self._select_single_feature(
+                    attributes, key
+                )
         if attributes:
-            credential_args.update(self._handle_observable_multiple_properties(attributes))
+            credential_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return credential_args
 
     def _parse_domain_args(self, attributes: dict) -> dict:
@@ -3041,8 +3534,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for feature in ('domain', 'hostname'):
             if attributes.get(feature):
                 domain_args['value'] = self._select_single_feature(
-                    attributes,
-                    feature
+                    attributes, feature
                 )
                 break
         if attributes:
@@ -3051,11 +3543,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_email_args(self, attributes: dict) -> dict:
         email_args = {}
-        if any(key in attributes for key in self._mapping.email_header_fields().keys()):
+        has_header = any(
+            key in attributes for key
+            in self._mapping.email_header_fields().keys()
+        )
+        if has_header:
             header_fields = {}
             for key, feature in self._mapping.email_header_fields().items():
                 if attributes.get(key):
-                    header_fields[feature] = self._select_single_feature(attributes, key)
+                    header_fields[feature] = self._select_single_feature(
+                        attributes, key
+                    )
             email_args['additional_header_fields'] = header_fields
         if attributes.get('send-date'):
             send_date = self._select_single_feature(attributes, 'send-date')
@@ -3064,9 +3562,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             email_args['date'] = send_date
         for key, feature in self._mapping.email_observable_mapping().items():
             if attributes.get(key):
-                email_args[feature] = self._select_single_feature(attributes, key)
+                email_args[feature] = self._select_single_feature(
+                    attributes, key
+                )
         if attributes:
-            email_args.update(self._handle_observable_multiple_properties(attributes))
+            email_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return email_args
 
     def _parse_file_args(self, attributes: dict, misp_object: dict) -> dict:
@@ -3099,18 +3601,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     self._select_single_feature(attributes, key)
                 )
         if attributes:
-            file_args.update(self._handle_observable_multiple_properties(attributes))
+            file_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return file_args
 
     def _parse_http_request_args(self, attributes: dict) -> dict:
         args = {'protocols': ['tcp', 'http']}
         extension = defaultdict(dict)
-        for key, feature in self._mapping.http_request_object_mapping('request_extension').items():
+        extension_mapping = self._mapping.http_request_object_mapping(
+            'request_extension'
+        )
+        for key, feature in extension_mapping.items():
             if attributes.get(key) and feature not in extension:
                 extension[feature] = attributes.pop(key)
-        for key, feature in self._mapping.http_request_object_mapping('request_header').items():
+        field = 'request_header'
+        header_mapping = self._mapping.http_request_object_mapping(field)
+        for key, feature in header_mapping.items():
             if attributes.get(key):
-                extension['request_header'][feature] = self._select_single_feature(attributes, key)
+                extension[field][feature] = self._select_single_feature(
+                    attributes, key
+                )
         if extension:
             args['extensions'] = {'http-request-ext': extension}
         if attributes:
@@ -3122,10 +3633,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if 'protocol' in attributes:
             protocols.add(attributes.pop('protocol'))
         args['protocols'] = list(protocols) if protocols else ['tcp']
-        for key, feature in self._mapping.ip_port_object_mapping('features').items():
+        ip_port_mapping = self._mapping.ip_port_object_mapping('features')
+        for key, feature in ip_port_mapping.items():
             if attributes.get(key):
                 args[feature] = self._select_single_feature(attributes, key)
-        for key, feature in self._mapping.ip_port_object_mapping('timeline').items():
+        timeline_mapping = self._mapping.ip_port_object_mapping('timeline')
+        for key, feature in timeline_mapping.items():
             if attributes.get(key):
                 args[feature] = self._datetime_from_str(attributes.pop(key))
         if attributes:
@@ -3148,16 +3661,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._invalid_object_hash_value_error(hash_type, misp_object)
         for key, feature in self._mapping.lnk_object_mapping().items():
             if attributes.get(key):
-                file_args[feature] = self._select_single_feature(attributes, key)
+                file_args[feature] = self._select_single_feature(
+                    attributes, key
+                )
         for key, feature in self._mapping.lnk_time_fields().items():
             if attributes.get(key):
                 value = self._select_single_feature(attributes, key)
                 file_args[feature] = self._datetime_from_str(value)
         if attributes:
-            file_args.update(self._handle_observable_multiple_properties(attributes))
+            file_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return file_args
 
-    def _parse_malware_sample_additional_fields(self, data: Union[io.BytesIO, str]) -> dict:
+    def _parse_malware_sample_additional_fields(
+            self, data: Union[io.BytesIO, str]) -> dict:
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         return {
@@ -3165,7 +3683,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             **self._mapping.malware_sample_additional_observable_values()
         }
 
-    def _parse_malware_sample_args(self, value: str, data: Union[io.BytesIO, str]) -> dict:
+    def _parse_malware_sample_args(
+            self, value: str, data: Union[io.BytesIO, str]) -> dict:
         args = {'allow_custom': True}
         for separator in self.composite_separators:
             if separator in value:
@@ -3173,10 +3692,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if not self._check_hash_value('MD5', md5):
                     raise InvalidHashValueError()
                 args.update(
-                    {
-                        'hashes': {'MD5': md5},
-                        'x_misp_filename': filename
-                    }
+                    {'hashes': {'MD5': md5}, 'x_misp_filename': filename}
                 )
                 break
         else:
@@ -3185,11 +3701,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         args.update(self._parse_malware_sample_additional_fields(data))
         return args
 
-    def _parse_malware_sample_custom_args(self, value: str, data: Union[io.BytesIO, str]) -> dict:
-        args = {
-            'allow_custom': True,
-            'x_misp_malware_sample': value
-        }
+    def _parse_malware_sample_custom_args(
+            self, value: str, data: Union[io.BytesIO, str]) -> dict:
+        args = {'allow_custom': True, 'x_misp_malware_sample': value}
         args.update(self._parse_malware_sample_additional_fields(data))
         return args
 
@@ -3204,10 +3718,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_netflow_args(self, attributes: dict) -> dict:
         args = self._parse_netflow_protocol(attributes)
-        for key, feature in self._mapping.netflow_object_mapping('features').items():
+        netflow_mapping = self._mapping.netflow_object_mapping('features')
+        for key, feature in netflow_mapping.items():
             if attributes.get(key):
                 args[feature] = attributes.pop(key)
-        for key, feature in self._mapping.netflow_object_mapping('timeline').items():
+        timeline_mapping = self._mapping.netflow_object_mapping('timeline')
+        for key, feature in timeline_mapping.items():
             if attributes.get(key):
                 args[feature] = self._datetime_from_str(attributes.pop(key))
         if attributes:
@@ -3219,7 +3735,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         protocols = set()
         extensions = defaultdict(dict)
         if attributes.get('icmp-type'):
-            extensions['icmp-ext']['icmp_tpye_hex'] = attributes.pop('icmp-type')
+            extensions['icmp-ext']['icmp_tpye_hex'] = attributes.pop(
+                'icmp-type'
+            )
             protocols.add('icmp')
         if attributes.get('tcp-flags'):
             extensions['tcp-ext']['src_flags_hex'] = attributes.pop('tcp-flags')
@@ -3227,17 +3745,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes.get('protocol'):
             protocols.add(attributes.pop('protocol').lower())
         if extensions:
-            return {
-                'extensions': extensions,
-                'protocols': list(protocols)
-            }
+            return {'extensions': extensions, 'protocols': list(protocols)}
         if protocols:
             return {'protocols': list(protocols)}
         return {'protocols': ['ip']}
 
     def _parse_network_connection_args(self, attributes: dict) -> dict:
         network_traffic_args = {}
-        for key, feature in self._mapping.network_connection_mapping('features').items():
+        network_mapping = self._mapping.network_connection_mapping('features')
+        for key, feature in network_mapping.items():
             if attributes.get(key):
                 network_traffic_args[feature] = attributes.pop(key)
         protocols = []
@@ -3248,18 +3764,31 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             protocols.append('tcp')
         network_traffic_args['protocols'] = protocols
         if attributes:
-            network_traffic_args.update(self._handle_observable_properties(attributes))
+            network_traffic_args.update(
+                self._handle_observable_properties(attributes)
+            )
         return network_traffic_args
 
     def _parse_network_socket_args(self, attributes: dict) -> dict:
         network_traffic_args = defaultdict(dict)
-        for key, feature in self._mapping.network_socket_mapping('features').items():
+        socket_mapping = self._mapping.network_socket_mapping('features')
+        for key, feature in socket_mapping.items():
             if attributes.get(key):
                 network_traffic_args[feature] = attributes.pop(key)
-        network_traffic_args['protocols'] = [attributes.pop('protocol').lower()] if attributes.get('protocol') else ['tcp']
-        if attributes.get('address-family') in self._mapping.address_family_enum_list():
+        network_traffic_args['protocols'] = (
+            [attributes.pop('protocol').lower()]
+            if attributes.get('protocol') else ['tcp']
+        )
+        family_in_enum = (
+            attributes.get('address-family')
+            in self._mapping.address_family_enum_list()
+        )
+        if family_in_enum:
             socket_ext = {}
-            for key, field in self._mapping.network_socket_mapping('extension').items():
+            extension_mapping = self._mapping.network_socket_mapping(
+                'extension'
+            )
+            for key, field in extension_mapping.items():
                 if attributes.get(key):
                     value = attributes.pop(key)
                     feature = key.replace('-', '_')
@@ -3275,7 +3804,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         attributes['state'].append(state)
             network_traffic_args['extensions']['socket-ext'] = socket_ext
         if attributes:
-            network_traffic_args.update(self._handle_observable_multiple_properties(attributes))
+            network_traffic_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return network_traffic_args
 
     def _parse_process_args(self, attributes: dict, level: str) -> dict:
@@ -3284,7 +3815,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes.get(key):
                 process_args[feature] = attributes.pop(key)
         if attributes:
-            process_args.update(self._handle_observable_multiple_properties(attributes))
+            process_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
         return process_args
 
     def _parse_registry_key_args(self, attributes: dict) -> dict:
@@ -3299,7 +3832,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if values_args:
             registry_key_args['values'] = [values_args]
         if attributes:
-            registry_key_args.update(self._handle_observable_properties(attributes))
+            registry_key_args.update(
+                self._handle_observable_properties(attributes)
+            )
         return registry_key_args
 
     def _parse_url_args(self, attributes: dict) -> dict:
@@ -3318,17 +3853,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             with_data=self._mapping.user_account_data_fields()
         )
         user_account_args = {}
-        for key, feature in self._mapping.user_account_object_mapping('features').items():
+        account_mapping = self._mapping.user_account_object_mapping('features')
+        for key, feature in account_mapping.items():
             if attributes.get(key):
                 user_account_args[feature] = attributes.pop(key)
-        for key, feature in self._mapping.user_account_object_mapping('timeline').items():
+        timeline_mapping = self._mapping.user_account_object_mapping('timeline')
+        for key, feature in timeline_mapping.items():
             if attributes.get(key):
                 timestamp = attributes.pop(key)
                 if not isinstance(timestamp, datetime):
                     timestamp = self._datetime_from_str(timestamp)
                 user_account_args[feature] = timestamp
         extension = {}
-        for key, feature in self._mapping.user_account_object_mapping('extension').items():
+        extension_mapping = self._mapping.user_account_object_mapping(
+            'extension'
+        )
+        for key, feature in extension_mapping.items():
             if attributes.get(key):
                 extension[feature] = attributes.pop(key)
         if extension:
@@ -3336,8 +3876,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes:
             user_account_args.update(
                 self._handle_observable_multiple_properties_with_data(
-                    attributes,
-                    'user_account'
+                    attributes, 'user_account'
                 )
             )
         return user_account_args
@@ -3359,17 +3898,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 x509_args['hashes'][hash_type] = attributes.pop(feature)
             else:
                 self._invalid_object_hash_value_error(hash_type, misp_object)
-        for key, feature in self._mapping.x509_object_mapping('features').items():
+        x509_mapping = self._mapping.x509_object_mapping('features')
+        for key, feature in x509_mapping.items():
             if attributes.get(key):
                 x509_args[feature] = attributes.pop(key)
-        for key, feature in self._mapping.x509_object_mapping('timeline').items():
+        timeline_mapping = self._mapping.x509_object_mapping('timeline')
+        for key, feature in timeline_mapping.items():
             if attributes.get(key):
                 timestamp = attributes.pop(key)
                 if not isinstance(timestamp, datetime):
                     timestamp = self._datetime_from_str(timestamp)
                 x509_args[feature] = timestamp
         extension = []
-        for key, feature in self._mapping.x509_object_mapping('extension').items():
+        extension_mapping = self._mapping.x509_object_mapping('extension')
+        for key, feature in extension_mapping.items():
             if attributes.get(key):
                 for value in attributes.pop(key):
                     extension.append(f"{feature}:{value}")
@@ -3380,15 +3922,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             x509_args.update(self._handle_observable_properties(attributes))
         return x509_args
 
-    ################################################################################
-    #                         PATTERNS CREATION FUNCTIONS.                         #
-    ################################################################################
+    ############################################################################
+    #                       PATTERNS CREATION FUNCTIONS.                       #
+    ############################################################################
 
     def _create_AS_pattern(self, number: str) -> str:
         return f"autonomous-system:number = '{self._parse_AS_value(number)}'"
 
     @staticmethod
-    def _create_content_ref_pattern(value: str, feature: str = 'payload_bin') -> str:
+    def _create_content_ref_pattern(
+            value: str, feature: str = 'payload_bin') -> str:
         return f"file:content_ref.{feature} = '{value}'"
 
     @staticmethod
@@ -3399,7 +3942,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _create_domain_resolving_pattern(value: str) -> str:
         return f"domain-name:resolves_to_refs[*].value = '{value}'"
 
-    def _create_filename_hash_pattern(self, hash_type: str, attribute_value: str, separator: str) -> str:
+    def _create_filename_hash_pattern(
+            self, hash_type: str, attribute_value: str, separator: str) -> str:
         filename, hash_value = attribute_value.split(separator)
         filename_pattern = self._create_filename_pattern(filename)
         hash_pattern = self._create_hash_pattern(hash_type, hash_value)
@@ -3431,47 +3975,43 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _create_regkey_pattern(key: str) -> str:
         return f"windows-registry-key:key = '{key}'"
 
-    def _handle_patterning_object_indicator(self, misp_object: Union[MISPObject, dict], indicator_args: dict):
-        indicator_id = getattr(self, self._id_parsing_function['object'])(
-            'indicator', misp_object
+    def _handle_patterning_object_indicator(
+            self, misp_object: Union[MISPObject, dict], indicator_args: dict):
+        indicator_id = self._parse_stix_object_id(
+            'object', 'indicator', misp_object
         )
         indicator_args.update(
             {
-                'id': indicator_id,
-                'type': 'indicator',
+                'id': indicator_id, 'type': 'indicator', 'allow_custom': True,
                 'labels': self._create_object_labels(misp_object, to_ids=True),
-                'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
-                'created_by_ref': self.identity_id,
-                'allow_custom': True,
-                'interoperability': True
+                'created_by_ref': self.identity_id, 'interoperability': True,
+                'kill_chain_phases': self._create_killchain(
+                    misp_object['meta-category']
+                )
             }
         )
         indicator_args.update(self._handle_indicator_time_fields(misp_object))
         markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            indicator_id,
-            indicator_args['modified']
+            misp_object, indicator_id, indicator_args['modified']
         )
         if markings:
             self._handle_markings(indicator_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                indicator_id,
+                misp_object['ObjectReference'], indicator_id,
                 indicator_args['modified']
             )
         self._append_SDO(self._create_indicator(indicator_args))
 
-    ################################################################################
-    #                              UTILITY FUNCTIONS.                              #
-    ################################################################################
+    ############################################################################
+    #                            UTILITY FUNCTIONS.                            #
+    ############################################################################
 
     @staticmethod
     def _check_hash_value(attribute_type, value):
         hash_type = attribute_type.upper()
         return not hasattr(Hash, hash_type) or check_hash(
-            getattr(Hash, hash_type),
-            value
+            getattr(Hash, hash_type), value
         )
 
     @staticmethod
@@ -3496,18 +4036,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _extract_parent_process_attributes(attributes: dict) -> dict:
-        parent_fields = tuple(key for key in attributes.keys() if key.startswith('parent-'))
+        parent_fields = tuple(
+            key for key in attributes.keys() if key.startswith('parent-')
+        )
         return {key: attributes.pop(key) for key in parent_fields}
 
     def _fetch_domain_ip_object_case(self, attributes: list) -> str:
-        if not any(attribute['object_relation'] in ('domain', 'hostname') for attribute in attributes):
+        any_domain = any(
+            attribute['object_relation'] in ('domain', 'hostname')
+            for attribute in attributes
+        )
+        if not any_domain:
             return 'exception'
         for attribute in attributes:
-            if attribute['object_relation'] not in self._mapping.domain_ip_standard_fields():
+            custom = (
+                attribute['object_relation'] not in
+                self._mapping.domain_ip_standard_fields()
+            )
+            if custom:
                 return 'custom'
         return 'standard'
 
-    def _fetch_included_reference_uuids(self, references: list, name: str) -> list:
+    def _fetch_included_reference_uuids(
+            self, references: list, name: str) -> list:
         uuids = []
         for reference in references:
             if self._is_reference_included(reference, name):
@@ -3524,7 +4075,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 return object_ref
 
     @staticmethod
-    def _get_matching_email_display_name(display_names: list, address: str) -> Optional[int]:
+    def _get_matching_email_display_name(
+            display_names: list, address: str) -> Optional[int]:
         # Trying first to get a perfect match in case of a very standard first name last name case
         for index, name in enumerate(display_names):
             display_name = name.lower().split(' ')
@@ -3543,20 +4095,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _get_vulnerability_references(vulnerability: str) -> dict:
-        return {
-            'source_name': 'cve',
-            'external_id': vulnerability
-        }
+        return {'source_name': 'cve', 'external_id': vulnerability}
 
-    def _handle_custom_data_field(self, values: Union[list, str, tuple]) -> Union[dict, list, str]:
+    def _handle_custom_data_field(
+            self, values: Union[list, str, tuple]) -> Union[dict, list, str]:
         if isinstance(values, list):
             if len(values) > 1:
-                return [self._parse_custom_data_value(value) for value in values]
+                return [
+                    self._parse_custom_data_value(value) for value in values
+                ]
             return self._parse_custom_data_value(values[0])
         return self._parse_custom_data_value(values)
 
     @staticmethod
-    def _handle_custom_data_pattern(prefix: str, key: str, value: Union[str, tuple]) -> list:
+    def _handle_custom_data_pattern(
+            prefix: str, key: str, value: Union[str, tuple]) -> list:
         if isinstance(value, tuple):
             value, data = value
             if not isinstance(data, str):
@@ -3567,23 +4120,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             ]
         return [f"{prefix}:x_misp_{key} = '{value}'"]
 
-    def _handle_indicator_time_fields(self, attribute: Union[MISPAttribute, dict]) -> dict:
+    def _handle_indicator_time_fields(
+            self, attribute: Union[MISPAttribute, dict]) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        time_fields = {'created': timestamp, 'modified': timestamp, 'valid_from': timestamp}
+        time_fields = {
+            'created': timestamp, 'modified': timestamp, 'valid_from': timestamp
+        }
         stix_fields = _stix_time_fields['indicator']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
             if attribute.get(misp_field):
-                time_fields[stix_field] = self._datetime_from_str(attribute[misp_field])
-        if time_fields.get('valid_until') and time_fields['valid_from'] >= time_fields['valid_until']:
+                time_fields[stix_field] = self._datetime_from_str(
+                    attribute[misp_field]
+                )
+        invalid_time = (
+            time_fields.get('valid_until')
+            and time_fields['valid_from'] >= time_fields['valid_until']
+        )
+        if invalid_time:
             del time_fields['valid_until']
         return time_fields
 
-    def _handle_observable_time_fields(self, attribute: Union[MISPAttribute, dict]) -> dict:
+    def _handle_observable_time_fields(
+            self, attribute: Union[MISPAttribute, dict]) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         time_fields = {'created': timestamp, 'modified': timestamp}
         stix_fields = _stix_time_fields['observed-data']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
-            time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
+            time_fields[stix_field] = (
+                self._datetime_from_str(attribute[misp_field])
+                if attribute.get(misp_field) else timestamp
+            )
         if time_fields['first_observed'] > time_fields['last_observed']:
             if attribute.get('last_seen'):
                 time_fields['first_observed'] = time_fields['last_observed']
@@ -3599,7 +4165,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return sanitized.replace("'", "\\'").replace('"', '\\\\"')
 
     @staticmethod
-    def _parse_custom_data_value(value_to_parse: Union[str, tuple]) -> Union[dict, str]:
+    def _parse_custom_data_value(
+            value_to_parse: Union[str, tuple]) -> Union[dict, str]:
         if isinstance(value_to_parse, tuple):
             value, data = value_to_parse
             if not isinstance(data, str):
@@ -3607,48 +4174,63 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return {'value': value, 'data': data}
         return value_to_parse
 
-    def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
+    def _parse_email_display_names(
+            self, attributes: dict, feature: str) -> dict:
         display_feature = f'{feature}-display-name'
         display_names = {}
         if attributes.get(display_feature):
             for value in attributes[feature]:
                 if isinstance(value, tuple):
                     value = value[0]
-                index = self._get_matching_email_display_name(attributes[display_feature], value)
+                index = self._get_matching_email_display_name(
+                    attributes[display_feature], value
+                )
                 if index is not None:
-                    display_names[value] = attributes[display_feature].pop(index)
+                    display_names[value] = attributes[display_feature].pop(
+                        index
+                    )
                 if not attributes[display_feature]:
                     del attributes[display_feature]
                     break
         return display_names
 
-    def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
+    def _parse_galaxy_relationship(
+            self, source_id: str, target_id: str, relationship_type: str,
+            timestamp: datetime):
         self.__relationships.append(
             {
-                'source_ref': source_id,
-                'target_ref': target_id,
+                'source_ref': source_id, 'target_ref': target_id,
                 'relationship_type': relationship_type,
-                'created': timestamp,
-                'modified': timestamp,
-                'allow_custom': True,
-                'interoperability': True
+                'created': timestamp, 'modified': timestamp,
+                'allow_custom': True, 'interoperability': True
             }
         )
 
-    def _parse_object_relationships(self, references: list, source_id: str, timestamp: datetime):
+    def _parse_stix_object_id(self, feature: str, object_type: str,
+                              misp_object: Union[dict, MISPObject]) -> str:
+        return getattr(self, self._id_parsing_function[feature])(
+            object_type, misp_object
+        )
+
+    def _parse_object_relationships(
+            self, references: list, source_id: str, timestamp: datetime):
         for reference in references:
-            referenced_uuid = reference['referenced_uuid']
-            if any(referenced_uuid in objects for objects in self._objects_to_parse.values()):
+            referenced = reference['referenced_uuid']
+            reference_to_parse = any(
+                referenced in objects
+                for objects in self._objects_to_parse.values()
+            )
+            if reference_to_parse:
                 continue
             relationship = {
-                'source_ref': source_id,
-                'undefined_target_ref': referenced_uuid,
+                'source_ref': source_id, 'undefined_target_ref': referenced,
                 'relationship_type': reference['relationship_type'],
-                'allow_custom': True,
-                'interoperability': True
+                'allow_custom': True, 'interoperability': True
             }
             if reference.get('timestamp'):
-                reference_timestamp = self._datetime_from_timestamp(reference['timestamp'])
+                reference_timestamp = self._datetime_from_timestamp(
+                    reference['timestamp']
+                )
                 relationship.update(
                     {
                         'created': reference_timestamp,
@@ -3657,10 +4239,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 )
             else:
                 relationship.update(
-                    {
-                        'created': timestamp,
-                        'modified': timestamp
-                    }
+                    {'created': timestamp, 'modified': timestamp}
                 )
             self.__relationships.append(relationship)
 
