@@ -256,8 +256,12 @@ class ExternalSTIX2IndicatorMapping(
         return cls.__mac_address_pattern
 
     @classmethod
-    def network_traffic_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.network_traffic_object_mapping().get(field)
+    def network_connection_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.network_connection_object_mapping().get(field)
+
+    @classmethod
+    def network_socket_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.network_socket_object_mapping().get(field)
 
     @classmethod
     def pattern_forbidden_relations(cls) -> tuple:
@@ -756,7 +760,7 @@ class ExternalSTIX2IndicatorConverter(
                     misp_object.add_attribute(f'layer{layer}-protocol', values)
                 continue
             self._parse_network_traffic_attribute(
-                misp_object, keys, values, indicator.id
+                misp_object, keys, values, indicator.id, 'network_connection'
             )
         if misp_object.attributes:
             self.main_parser._add_misp_object(misp_object, indicator)
@@ -795,13 +799,13 @@ class ExternalSTIX2IndicatorConverter(
                     misp_object.add_attribute('protocol', values)
                 continue
             self._parse_network_traffic_attribute(
-                misp_object, keys, values, indicator.id
+                misp_object, keys, values, indicator.id, 'network_socket'
             )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _parse_network_traffic_attribute(
             self, misp_object: MISPObject, keys: list,
-            values: Union[str, tuple], indicator_id: str):
+            values: Union[str, tuple], indicator_id: str, name: str):
         field = keys[0]
         if any(field == f'{feature}_ref' for feature in ('src', 'dst')):
             if isinstance(values, tuple):
@@ -818,7 +822,7 @@ class ExternalSTIX2IndicatorConverter(
                     )
                 )
             return
-        mapping = self._mapping.network_traffic_pattern_mapping(field)
+        mapping = getattr(self._mapping, f'{name}_pattern_mapping')(field)
         if mapping is None:
             self.main_parser._unmapped_pattern_warning(
                 indicator_id, '.'.join(keys)

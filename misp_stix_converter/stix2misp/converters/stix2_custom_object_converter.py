@@ -59,9 +59,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         attribute = {
             "type": custom_attribute.x_misp_type,
             "timestamp": self._timestamp_from_date(custom_attribute.modified),
-            "value": self.main_parser._sanitise_value(
-                custom_attribute.x_misp_value
-            )
+            "value": self._sanitise_value(custom_attribute.x_misp_value)
         }
         for field in _attribute_additional_fields:
             if hasattr(custom_attribute, f'x_misp_{field}'):
@@ -115,3 +113,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                 )
             misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, custom_object)
+
+    @staticmethod
+    def _sanitise_value(value: str) -> str:
+        return value.replace('\\\\', '\\')
