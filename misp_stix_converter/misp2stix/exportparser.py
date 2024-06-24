@@ -37,14 +37,18 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
 
     @property
     def warnings(self) -> dict:
-        return {identifier: list(warnings) for identifier, warnings in self.__warnings.items()}
+        return {
+            identifier: list(warnings)
+            for identifier, warnings in self.__warnings.items()
+        }
 
-    ################################################################################
-    #                           COMMON PARSING FUNCTIONS                           #
-    ################################################################################
+    ############################################################################
+    #                         COMMON PARSING FUNCTIONS                         #
+    ############################################################################
 
     @staticmethod
-    def _extract_multiple_object_attributes(attributes: list, force_single: Optional[tuple] = None) -> dict:
+    def _extract_multiple_object_attributes(
+            attributes: list, force_single: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
         if force_single is not None:
             for attribute in attributes:
@@ -55,11 +59,15 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
                     attributes_dict[relation].append(attribute['value'])
             return attributes_dict
         for attribute in attributes:
-            attributes_dict[attribute['object_relation']].append(attribute['value'])
+            attributes_dict[attribute['object_relation']].append(
+                attribute['value']
+            )
         return attributes_dict
 
     @staticmethod
-    def _extract_multiple_object_attributes_with_data(attributes: list, force_single: tuple = (), with_data: tuple = ()) -> dict:
+    def _extract_multiple_object_attributes_with_data(
+            attributes: list, force_single: tuple = (),
+            with_data: tuple = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
@@ -73,38 +81,50 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         return attributes_dict
 
     @staticmethod
-    def _extract_multiple_object_attributes_with_uuid(attributes: list, with_uuid: Optional[tuple] = None) -> dict:
+    def _extract_multiple_object_attributes_with_uuid(
+            attributes: list, with_uuid: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
         if with_uuid is not None:
             for attribute in attributes:
                 relation = attribute['object_relation']
-                value = (attribute['value'], attribute['uuid']) if relation in with_uuid else attribute['value']
+                value = (
+                    (attribute['value'], attribute['uuid'])
+                    if relation in with_uuid else attribute['value']
+                )
                 attributes_dict[relation].append(value)
             return attributes_dict
         for attribute in attributes:
             attributes_dict[attribute['object_relation']].append(
-                (
-                    attribute['value'],
-                    attribute['uuid']
-                )
+                (attribute['value'], attribute['uuid'])
             )
         return attributes_dict
 
     @staticmethod
     def _extract_object_attributes(attributes: list) -> dict:
-        return {attribute['object_relation']: attribute['value'] for attribute in attributes}
+        return {
+            attribute['object_relation']: attribute['value']
+            for attribute in attributes
+        }
 
     @staticmethod
-    def _extract_object_attributes_with_uuid(attributes: list, with_uuid: Optional[tuple] = None) -> dict:
+    def _extract_object_attributes_with_uuid(
+            attributes: list, with_uuid: Optional[tuple] = None) -> dict:
         if with_uuid is not None:
             attributes_dict = {}
             for attribute in attributes:
                 relation = attribute['object_relation']
-                attributes_dict[relation] = (attribute['value'], attribute['uuid']) if relation in with_uuid else attribute['value']
+                attributes_dict[relation] = (
+                    (attribute['value'], attribute['uuid'])
+                    if relation in with_uuid else attribute['value']
+                )
             return attributes_dict
-        return {attribute['object_relation']: (attribute['value'], attribute['uuid']) for attribute in attributes}
+        return {
+            attr['object_relation']: (attribute['value'], attr['uuid'])
+            for attr in attributes
+        }
 
-    def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict) -> tuple:
+    def _extract_object_attribute_tags_and_galaxies(
+            self, misp_object: dict) -> tuple:
         tags: set = set()
         galaxies: dict = {}
         for attribute in misp_object['Attribute']:
@@ -112,7 +132,9 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
                 for galaxy in attribute['Galaxy']:
                     galaxy_type = galaxy['type']
                     if galaxy_type in galaxies:
-                        self._merge_galaxy_clusters(galaxies[galaxy_type], galaxy)
+                        self._merge_galaxy_clusters(
+                            galaxies[galaxy_type], galaxy
+                        )
                     else:
                         galaxies[galaxy_type] = galaxy
             if attribute.get('Tag'):
@@ -130,7 +152,10 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
                     self._handle_undefined_event_galaxy(galaxy)
-            return tuple(tag['name'] for tag in self._misp_event.get('Tag', []) if tag['name'] not in tag_names)
+            return tuple(
+                tag['name'] for tag in self._misp_event.get('Tag', [])
+                if tag['name'] not in tag_names
+            )
         return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
 
     def _parse_event_galaxies(self, galaxies: list):
@@ -142,9 +167,9 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
             else:
                 self._handle_undefined_parent_galaxy(galaxy)
 
-    ################################################################################
-    #                           COMMON UTILITY FUNCTIONS                           #
-    ################################################################################
+    ############################################################################
+    #                         COMMON UTILITY FUNCTIONS                         #
+    ############################################################################
 
     @staticmethod
     def _datetime_from_str(timestamp: Union[datetime, str]) -> datetime:
@@ -171,7 +196,9 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         return False
 
     def _is_published(self) -> bool:
-        return all(self._misp_event.get(feature) for feature in self.__published_fields)
+        return all(
+            self._misp_event.get(feature) for feature in self.__published_fields
+        )
 
     def _is_reference_included(self, reference: dict, name: str) -> bool:
         if reference['relationship_type'] not in self.__PE_RELATIONSHIP_TYPES:
@@ -189,10 +216,14 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
 
     @staticmethod
     def _quick_fetch_tag_names(galaxy: dict) -> tuple:
-        return tuple(f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"' for cluster in galaxy["GalaxyCluster"])
+        return tuple(
+            f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
+            for cluster in galaxy["GalaxyCluster"]
+        )
 
     @staticmethod
-    def _select_single_feature(attributes: dict, feature: str) -> Union[str, tuple]:
+    def _select_single_feature(
+            attributes: dict, feature: str) -> Union[str, tuple]:
         if isinstance(attributes[feature], list):
             if len(attributes[feature]) == 1:
                 return attributes.pop(feature)[0]
@@ -200,42 +231,57 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         return attributes.pop(feature)
 
 
-    ################################################################################
-    #                     ERRORS & WARNINGS HANDLING FUNCTIONS                     #
-    ################################################################################
+    ############################################################################
+    #                   ERRORS & WARNINGS HANDLING FUNCTIONS                   #
+    ############################################################################
 
-    def _attribute_error(self, attribute: Union[MISPAttribute, dict], exception: Exception):
-        features = f"{attribute['type']} attribute: {attribute['value']} (uuid: {attribute['uuid']})"
+    def _attribute_error(self, attribute: Union[MISPAttribute, dict],
+                         exception: Exception):
+        features = (
+            f"{attribute['type']} attribute: {attribute['value']} "
+            f"(uuid: {attribute['uuid']})"
+        )
         tb = self._parse_traceback(exception)
         message = f"Error with the {features}:\n{tb}."
         self.__errors[self._identifier].append(message)
         self._parse_custom_attribute(attribute)
 
-    def _attribute_galaxy_not_mapped_warning(self, galaxy_type: str, attribute_type: str):
-        message = f"{galaxy_type} galaxy in {attribute_type} attribute not mapped."
-        self.__warnings[self._identifier].add(message)
+    def _attribute_galaxy_not_mapped_warning(
+            self, galaxy_type: str, attribute_type: str):
+        self.__warnings[self._identifier].add(
+            f"{galaxy_type} galaxy in {attribute_type} attribute not mapped."
+        )
 
     def _attribute_not_mapped_warning(self, attribute_type: str):
-        message = f"MISP Attribute type {attribute_type} not mapped."
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'MISP Attribute type {attribute_type} not mapped.'
+        )
 
-    def _composite_attribute_value_warning(self, attribute_type: str, value: str):
-        message = f"The {attribute_type} MISP Attribute should have a composite value: {value}."
-        self.__warnings[self._identifier].add(message)
+    def _composite_attribute_value_warning(
+            self, attribute_type: str, value: str):
+        self.__warnings[self._identifier].add(
+            f'The {attribute_type} MISP Attribute '
+            f'should have a composite value: {value}.'
+        )
 
-    def _invalid_attribute_hash_value_error(self, attribute: Union[MISPAttribute, dict]):
-        features = f"Error with the {attribute['type']} value: {attribute['value']}"
-        message = f"{features} is not a valid {attribute['type']} hash."
-        self.__errors[self._identifier].append(message)
+    def _invalid_attribute_hash_value_error(
+            self, attribute: Union[MISPAttribute, dict]):
+        self.__errors[self._identifier].append(
+            f"Error with the {attribute['type']} value: "
+            f"{attribute['value']} is not a valid {attribute['type']} hash."
+        )
 
-    def _invalid_object_hash_value_error(self, hash_type: str, misp_object: Union[MISPObject, dict]):
-        features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
-        message = f"Error with the {features}: Invalid {hash_type} value."
-        self.__errors[self._identifier].append(message)
+    def _invalid_object_hash_value_error(
+            self, hash_type: str, misp_object: Union[MISPObject, dict]):
+        self.__errors[self._identifier].append(
+            f"Error with the {misp_object['name']} object "
+            f"(uuid: {misp_object['uuid']}): Invalid {hash_type} value."
+        )
 
     def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
-        message = f'{galaxy_type} galaxy in event not mapped.'
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'{galaxy_type} galaxy in event not mapped.'
+        )
 
     def _missing_orgc_error(self):
         self.__errors[self._identifier].append(f'Missing Orgc field.')
@@ -245,7 +291,7 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         self.__errors[self._identifier].append(
             f"Error with the Orgc field missing its {' and '.join(missing)}"
             f"{'values' if len(missing) > 1 else 'value'}. Please make sure"
-            f" both the name and uuid values are provided."
+            ' both the name and uuid values are provided.'
         )
 
     def _object_error(self, misp_object: dict, exception: Exception):
@@ -255,21 +301,26 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         self.__errors[self._identifier].append(message)
         self._parse_custom_object(misp_object)
 
-    def _object_galaxy_not_mapped_warning(self, galaxy_type: str, object_name: str):
-        message = f"{galaxy_type} galaxy in {object_name} object not mapped."
-        self.__warnings[self._identifier].add(message)
+    def _object_galaxy_not_mapped_warning(self, galaxy_type: str, name: str):
+        self.__warnings[self._identifier].add(
+            f"{galaxy_type} galaxy in {name} object not mapped."
+        )
 
-    def _object_galaxy_incompatible_warning(self, galaxy_type: str, object_name: str):
-        message = f"{galaxy_type} galaxy not compatible with the {object_name}"
-        self.__warnings[self._identifier].add(f"{message} STIX 1 conver")
+    def _object_galaxy_incompatible_warning(self, galaxy_type: str, name: str):
+        self.__warnings[self._identifier].add(
+            f'{galaxy_type} galaxy not compatible with '
+            f'the {name} STIX 1 object.'
+        )
 
     def _object_not_mapped_warning(self, object_name: str):
-        message = f"MISP Object name {object_name} not mapped."
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'MISP Object name {object_name} not mapped.'
+        )
 
     def _parent_galaxy_not_mapping_warning(self, galaxy_type: str):
-        message = f'{galaxy_type} galaxy from event level not mapped.'
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'{galaxy_type} galaxy from event level not mapped.'
+        )
 
     @staticmethod
     def _parse_traceback(exception: Exception) -> str:
@@ -277,17 +328,27 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         return f'{tb}{exception.__str__()}'
 
     def _pe_reference_warning(self, file_uuid: str):
-        message = f"Unable to find the pe object related to the file object {file_uuid}."
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            'Unable to find the pe object related to '
+            f'the file object {file_uuid}.'
+        )
 
-    def _referenced_object_name_warning(self, object_name: str, referenced_uuid: str):
-        message = f"Reference to a non existing {object_name} object with uuid: {referenced_uuid}."
-        self.__warnings[self._identifier].add(message)
+    def _referenced_object_name_warning(
+            self, object_name: str, referenced_uuid: str):
+        self.__warnings[self._identifier].add(
+            f'Reference to a non existing {object_name} '
+            f'object with uuid: {referenced_uuid}.'
+        )
 
-    def _required_fields_missing_warning(self, object_type: str, object_name: str):
-        message = f"Missing minimum requirement to build a {object_type} object from a {object_name} MISP Object."
-        self.__warnings[self._identifier].add(message)
+    def _required_fields_missing_warning(
+            self, object_type: str, object_name: str):
+        self.__warnings[self._identifier].add(
+            f'Missing minimum requirement to build a {object_type} '
+            f'object from a {object_name} MISP Object.'
+        )
 
     def _unclear_pe_references_warning(self, file_uuid: str, pe_uuids: list):
-        message = f"The file object {file_uuid} has more than one reference to pe objects: {', '.join(pe_uuids)}"
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'The file object {file_uuid} has more than one reference '
+            f"to pe objects: {', '.join(pe_uuids)}"
+        )
