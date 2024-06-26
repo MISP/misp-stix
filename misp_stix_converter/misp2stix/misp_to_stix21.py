@@ -230,7 +230,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _handle_note_data(self, note, object_id: str):
         note_args = {
             'authors': [note['authors']], 'content': note['note'],
-            'id': f"note--{note['uuid']}", 'object_refs': [object_id]
+            'created': note['created'], 'id': f"note--{note['uuid']}",
+            'modified': note['modified'], 'object_refs': [object_id]
         }
         if note.get('language'):
             note_args['lang'] = note['language']
@@ -245,7 +246,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         opinion_value = int(opinion['opinion'])
         opinion_args = {
             'allow_custom': True, 'authors': [opinion['authors']],
-            'id': f"opinion--{opinion['uuid']}", 'object_refs': [object_id],
+            'created': opinion['created'], 'id': f"opinion--{opinion['uuid']}",
+            'modified': opinion['modified'], 'object_refs': [object_id],
             'opinion': self._parse_opinion_level(opinion_value),
             'x_misp_opinion': opinion_value
         }
