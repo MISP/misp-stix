@@ -175,7 +175,7 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
     def _datetime_from_str(timestamp: Union[datetime, str]) -> datetime:
         if isinstance(timestamp, datetime):
             return timestamp
-        regex = '%Y-%m-%dT%H:%M:%S'
+        regex = f"%Y-%m-%d{'T' if 'T' in timestamp else ' '}%H:%M:%S"
         if '.' in timestamp:
             regex = f'{regex}.%f'
         if timestamp.endswith('Z') or '+' in timestamp:
