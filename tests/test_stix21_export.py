@@ -93,6 +93,105 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         )
         self.assertEqual(note.object_refs, [grouping.id])
 
+    def _test_event_with_analyst_data(self, event):
+        orgc = event['Orgc']
+        event_report = event['EventReport'][0]
+        note = event['Note'][0]
+        attribute = event['Attribute'][0]
+        misp_object = event['Object'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(10)
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *stix_objects = stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        for stix_object, object_ref in zip(stix_objects, object_refs):
+            self.assertEqual(stix_object.id, object_ref)
+        (attr_indicator, attr_opinion, obj_indicator, obj_note, report,
+         report_opinion, relationship, event_note) = stix_objects
+        self._assert_multiple_equal(
+            attr_indicator.id,
+            relationship.target_ref,
+            attr_opinion['object_refs'][0],
+            f"indicator--{attribute['uuid']}"
+        )
+        attribute_opinion = attribute['Opinion'][0]
+        self.assertEqual(
+            attr_opinion.id, f"opinion--{attribute_opinion['uuid']}"
+        )
+        self.assertEqual(attr_opinion.opinion, 'strongly-agree')
+        self.assertEqual(
+            attr_opinion.x_misp_opinion, int(attribute_opinion['opinion'])
+        )
+        self.assertEqual(attr_opinion.explanation, attribute_opinion['comment'])
+        self.assertEqual(attr_opinion.authors, [attribute_opinion['authors']])
+        self.assertEqual(
+            attr_opinion.created,
+            self._datetime_from_str(attribute_opinion['created'])
+        )
+        self.assertEqual(
+            attr_opinion.modified,
+            self._datetime_from_str(attribute_opinion['modified'])
+        )
+        self._assert_multiple_equal(
+            obj_indicator.id,
+            relationship.source_ref,
+            obj_note.object_refs[0],
+            f"indicator--{misp_object['uuid']}"
+        )
+        object_note = misp_object['Attribute'][0]['Note'][0]
+        self.assertEqual(obj_note.id, f"note--{object_note['uuid']}")
+        self.assertEqual(obj_note.content, object_note['note'])
+        self.assertEqual(obj_note.lang, object_note['language'])
+        self.assertEqual(obj_note.authors, [object_note['authors']])
+        self.assertEqual(
+            obj_note.created, self._datetime_from_str(object_note['created'])
+        )
+        self.assertEqual(
+            obj_note.modified, self._datetime_from_str(object_note['modified'])
+        )
+        self._assert_multiple_equal(
+            report.id,
+            report_opinion.object_refs[0],
+            f"note--{event_report['uuid']}"
+        )
+        event_report_opinion = event_report['Opinion'][0]
+        self.assertEqual(
+            report_opinion.id, f"opinion--{event_report_opinion['uuid']}"
+        )
+        self.assertEqual(report_opinion.opinion, 'agree')
+        self.assertEqual(
+            report_opinion.x_misp_opinion, int(event_report_opinion['opinion'])
+        )
+        self.assertEqual(
+            report_opinion.explanation, event_report_opinion['comment']
+        )
+        self.assertEqual(
+            report_opinion.authors, [event_report_opinion['authors']]
+        )
+        self.assertEqual(
+            report_opinion.created,
+            self._datetime_from_str(event_report_opinion['created'])
+        )
+        self.assertEqual(
+            report_opinion.modified,
+            self._datetime_from_str(event_report_opinion['modified'])
+        )
+        self.assertEqual(relationship.relationship_type, 'downloaded-from')
+        self.assertEqual(event_note.id, f"note--{note['uuid']}")
+        self.assertEqual(event_note.content, note['note'])
+        self.assertEqual(event_note.lang, note['language'])
+        self.assertEqual(event_note.authors, [note['authors']])
+        self.assertEqual(
+            event_note.created, self._datetime_from_str(note['created'])
+        )
+        self.assertEqual(
+            event_note.modified, self._datetime_from_str(note['modified'])
+        )
+
     def _test_event_with_attribute_confidence_tags(self, event):
         tlp_tag, *confidence_tags = event['Tag']
         domain, campaign_name, vulnerability_attribute, AS = event['Attribute']
@@ -298,6 +397,10 @@ class TestSTIX21JSONEventExport(TestSTIX21EventExport):
         event = get_base_event()
         self._test_base_event(event['Event'])
 
+    def test_event_with_analyst_data(self):
+        event = get_event_with_analyst_data()
+        self._test_event_with_analyst_data(event['Event'])
+
     def test_event_with_attribute_confidence_tags(self):
         event = get_event_with_attribute_confidence_tags()
         self._test_event_with_attribute_confidence_tags(event['Event'])
@@ -333,6 +436,12 @@ class TestSTIX21MISPEventExport(TestSTIX21EventExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_base_event(misp_event)
+
+    def test_event_with_analyst_data(self):
+        event = get_event_with_analyst_data()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_analyst_data(misp_event)
 
     def test_event_with_attribute_confidence_tags(self):
         event = get_event_with_attribute_confidence_tags()
