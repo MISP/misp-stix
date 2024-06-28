@@ -119,7 +119,7 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
                 )
             return attributes_dict
         return {
-            attr['object_relation']: (attribute['value'], attr['uuid'])
+            attr['object_relation']: (attr['value'], attr['uuid'])
             for attr in attributes
         }
 
