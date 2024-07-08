@@ -313,7 +313,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def event_tags(self) -> list:
-        return self.__event_tags
+        return getattr(self, '__event_tags', {})
 
     @property
     def generic_info_field(self) -> str:
