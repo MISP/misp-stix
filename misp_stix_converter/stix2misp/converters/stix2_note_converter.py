@@ -37,6 +37,10 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
 
     def parse(self, note_ref: str):
         note = self.main_parser._get_stix_object(note_ref)
+        if hasattr(note, 'labels'):
+            self._parse_annotation_object(note)
+
+    def _parse_annotation_object(self, note: Note):
         misp_object = self._create_misp_object('annotation', note)
         self.main_parser._sanitise_object_uuid(misp_object, note.id)
         misp_object.from_dict(**self._parse_timeline(note))
