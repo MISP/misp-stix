@@ -118,8 +118,8 @@ def main():
         help='Path to the file(s) to convert.'
     )
     import_parser.add_argument(
-        '-v', '--version', choices=['1', '2'],
-        required=True, help='STIX major version.'
+        '-v', '--version', choices=['1', '2'], default='2',
+        help='STIX major version.'
     )
     import_parser.add_argument(
         '-s', '--single_output', action='store_true',
@@ -137,7 +137,7 @@ def main():
              '`single_output` argument is not used.'
     )
     import_parser.add_argument(
-        '-d', '--distribution', type=int, default=0,
+        '-d', '--distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
         help='Distribution level for the imported MISP content.'
     )
     import_parser.add_argument(
@@ -153,7 +153,7 @@ def main():
         help='Organisation UUID to use when creating custom Galaxy clusters.'
     )
     import_parser.add_argument(
-        '-cd', '--cluster_distribution', type=int, default=0,
+        '-cd', '--cluster_distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
         help='Galaxy Clusters distribution level in case of External STIX 2 content.'
     )
     import_parser.add_argument(
