@@ -1072,7 +1072,8 @@ def _check_output(
     return output_dir / default_name
 
 
-def _generate_traceback(debug: bool, parser, *output_names: List[Path]) -> dict:
+def _generate_traceback(
+        debug: bool, parser, *output_names: tuple) -> dict:
     traceback = {'success': 1}
     if debug:
         for feature in ('errors', 'warnings'):
