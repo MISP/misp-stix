@@ -122,7 +122,7 @@ def main():
         help='STIX major version.'
     )
     import_parser.add_argument(
-        '-s', '--single_output', action='store_true',
+        '-s', '--single_event', action='store_true',
         help='Produce only one MISP event per STIX file'
              '(in case of multiple Report, Grouping or Incident objects).'
     )
@@ -163,7 +163,7 @@ def main():
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
-    if len(stix_args.file) > 1 and stix_args.single_output and stix_args.output_dir is None:
+    if len(stix_args.file) > 1 and stix_args.single_event and stix_args.output_dir is None:
         stix_args.output_dir = Path(__file__).parents[1] / 'tmp'
     feature = 'MISP to STIX' if stix_args.feature == 'export' else 'STIX to MISP'
     try:
@@ -183,8 +183,8 @@ def main():
                 files = '\n - '.join(str(result) for result in results)
                 print(
                     'Successfully processed your '
-                    f"{'files' if len(results) > 1 else 'file'}. Results "
-                    f"available in:\n - {files}"
+                    f"{'files' if len(stix_args.file) > 1 else 'file'}.\n"
+                    f'Results written in:\n - {files}'
                 )
             else:
                 print(
