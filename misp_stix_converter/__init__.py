@@ -12,7 +12,7 @@ from .misp2stix import stix20_framing, stix21_framing # noqa
 from .misp_stix_converter import ( # noqa
     _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
-    stix_1_to_misp, stix_2_to_misp)
+    stix_1_to_misp, stix_2_to_misp, stix2_to_misp_instance)
 # STIX 1 special helpers
 from .misp_stix_converter import ( # noqa
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
@@ -160,6 +160,21 @@ def main():
         '-cg', '--cluster_sharing_group', type=int, default=None,
         help='Galaxy Clusters sharing group ID in case of External STIX 2 content.'
     )
+    import_parser.add_argument(
+        '-c', '--config', type=Path,
+        help='Config file containing the URL and the authentication key to connect to your MISP.'
+    )
+    import_parser.add_argument(
+        '--url', type=str, help='URL to connect to your MISP instance.'
+    )
+    import_parser.add_argument(
+        '--api_key', type=str,
+        help='Authentication key to connect to your MISP instance.'
+    )
+    import_parser.add_argument(
+        '--skip_ssl', action='store_true',
+        help='Skip SSL certificate checking when connecting to your MISP instance.'
+    )
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
@@ -175,8 +190,13 @@ def main():
                         f'{feature} conversion process:\n {messages}')
         if 'fails' in traceback:
             fails = _handle_return_message(traceback['fails'])
-            print('Failed parsing the following - and the related error '
-                    f'message:\n {fails}')
+            print(
+                'Failed parsing the following - '
+                f'and the related error message:\n {fails}'
+            )
+        if 'pymisp_errors' in traceback:
+            for event_uuid, message in traceback['pymisp_errors'].items():
+                print(f'Error adding MISP Event {event_uuid}: {message}')
         if 'results' in traceback:
             results = traceback['results']
             if isinstance(results, list):
@@ -189,8 +209,27 @@ def main():
             else:
                 print(
                     'Successfully processed your '
-                    f"{'files' if len(stix_args.file) > 1 else 'file'}. "
-                    f"Results available in {results}"
+                    f"{'files' if len(stix_args.file) > 1 else 'file'}.\n"
+                    f"Results written in {results}"
+                )
+        elif 'event_ids' in traceback:
+            event_ids = traceback['event_ids']
+            if isinstance(event_ids, list):
+                links = '\n - '.join(
+                    f'{stix_args.url}/events/view/{event_id}'
+                    for event_id in event_ids
+                )
+                print(
+                    'Successfully processed your '
+                    f"{'files' if len(stix_args.file) > 1 else 'file'}.\n"
+                    f'Results available in MISP:\n - {links}'
+                )
+            else:
+                print(
+                    'Successfully processed your '
+                    f"{'files' if len(stix_args.file) > 1 else 'file'}.\n"
+                    'Results available in MISP: '
+                    f'{stix_args.file}/events/view/{event_ids}'
                 )
         else:
             print(f'No result from the {feature} conversion.')
