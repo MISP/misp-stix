@@ -38,7 +38,7 @@ Package details at PyPI: [misp-stix](https://pypi.org/project/misp-stix/)
 
 ## Install the latest version from the repository for development purposes
 
-**Note**: poetry is required; e.g., `pip3 install poetry`
+**Note**: poetry is strongly recommended; e.g., `pip3 install poetry`
 
 ```
 git clone https://github.com/MISP/misp-stix.git && cd misp-stix
@@ -47,6 +47,17 @@ poetry install
 ```
 
 If you already have poetry face any issue with it while installing or updating misp-stix with it, you can try `pip3 install -U poetry` to make sure you have a version >= 1.2
+
+Alternatively, you can set up a virtual environment with the following:
+
+```
+virtualenv -p python3 venv
+source ./venv/bin/activate
+pip install -U pip
+# Manual install of setuptools to avoid some dependencies issues
+pip install setuptools
+pip install .
+```
 
 ### Running the tests
 
@@ -69,11 +80,39 @@ poetry run pytest tests/test_stix21_export.py
 
 ### Command-line Usage
 
+If you are not already within your virtual environment, you can either choose to prefix all the following example commands with `poetry run`, or simply activate your python environment:
+
+```bash
+# If you chose to use the recommended option
+poetry shell
+
+# OR
+
+# Another option that should work if you followed the example mentioned above with the install instructions
+./venv/bin/activate
 ```
+
+At this point, you should be able to use the command-line feature. Here are a few examples:
+
+```bash
+# Convert an Events collections to STIX 2.1
 misp_stix_converter export --version 2.1 -f tests/test_events_collection_1.json
+
+# Convert a MISP Event and set a specific name for the STIX 2.1 output file
+misp_stix_converter export --version 2.1 -f tests/test_event.misp.json -o tests/test_event.stix21.json
+
+# Convert a STIX 2 Bundle to MISP, and set specific distributions
+misp_stix_converter import -f tmp/test_bundle.stix21.json -o tmp/test_bundle.misp.json -d 1 -cd 1
+# This will set the distribution for the Event, Attributes and Galaxy Clusters to `this community`
+
+# Convert multiple STIX 2 Bundles to MISP and directly push the results to MISP, knowing your authentication key
+misp_stix_converter import -f tmp/*.stix21.json --url https://localhost --api_key _YOUR_AUTHENTICATION_KEY_
+# This will create a MISP Event for each file
 ```
 
 #### Parameters
+
+For more details on the different options presented with the examples, here is the complete description.
 
 ```bash
 usage: misp_stix_converter [-h] [--debug] {export,import} ...
@@ -121,35 +160,36 @@ STIX 1 specific arguments:
 
 ```bash
 usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output_dir OUTPUT_DIR] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies_as_tags] [--org_uuid ORG_UUID] [-cd {0,1,2,3,4}]
-                                  [-cg CLUSTER_SHARING_GROUP] [-c CONFIG] [--url URL] [--api_key API_KEY] [--skip_ssl]
+                                  [-cg CLUSTER_SHARING_GROUP] [-p PRODUCER] [-c CONFIG] [-u URL] [-a API_KEY] [--skip_ssl]
 
 options:
   -h, --help            show this help message and exit
   -f FILE [FILE ...], --file FILE [FILE ...]
                         Path to the file(s) to convert.
   -v {1,2}, --version {1,2}
-                        STIX major version.
+                        STIX major version - default is 2
   -s, --single_event    Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
   -o OUTPUT_NAME, --output_name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_output` argument is used.
   --output_dir OUTPUT_DIR
                         Output path - used in the case of multiple input files when the `single_output` argument is not used.
   -d {0,1,2,3,4}, --distribution {0,1,2,3,4}
-                        Distribution level for the imported MISP content.
+                        Distribution level for the imported MISP content - default is 0
   -sg SHARING_GROUP, --sharing_group SHARING_GROUP
                         Sharing group ID when distribution is 4.
   --galaxies_as_tags    Import MISP Galaxies as tag names instead of the standard Galaxy format.
   --org_uuid ORG_UUID   Organisation UUID to use when creating custom Galaxy clusters.
   -cd {0,1,2,3,4}, --cluster_distribution {0,1,2,3,4}
-                        Galaxy Clusters distribution level in case of External STIX 2 content.
+                        Galaxy Clusters distribution level in case of External STIX 2 content - default id 0
   -cg CLUSTER_SHARING_GROUP, --cluster_sharing_group CLUSTER_SHARING_GROUP
                         Galaxy Clusters sharing group ID in case of External STIX 2 content.
   -p PRODUCER, --producer PRODUCER
                         Producer of the imported content - Please make sure you use a name from the list of existing producer Galaxy Clusters.
   -c CONFIG, --config CONFIG
                         Config file containing the URL and the authentication key to connect to your MISP.
-  --url URL             URL to connect to your MISP instance.
-  --api_key API_KEY     Authentication key to connect to your MISP instance.
+  -u URL, --url URL     URL to connect to your MISP instance.
+  -a API_KEY, --api_key API_KEY
+                        Authentication key to connect to your MISP instance.
   --skip_ssl            Skip SSL certificate checking when connecting to your MISP instance.
 ```
 
