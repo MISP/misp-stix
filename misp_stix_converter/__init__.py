@@ -30,7 +30,6 @@ from .misp_stix_converter import _misp_to_stix, _stix_to_misp # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping # noqa
 from .stix2misp import STIX2PatternParser # noqa
-from .stix2misp import MISP_org_uuid # noqa
 from pathlib import Path
 
 
@@ -119,7 +118,7 @@ def main():
     )
     import_parser.add_argument(
         '-v', '--version', choices=['1', '2'], default='2',
-        help='STIX major version.'
+        help='STIX major version - default is 2'
     )
     import_parser.add_argument(
         '-s', '--single_event', action='store_true',
@@ -138,7 +137,7 @@ def main():
     )
     import_parser.add_argument(
         '-d', '--distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
-        help='Distribution level for the imported MISP content.'
+        help='Distribution level for the imported MISP content - default is 0'
     )
     import_parser.add_argument(
         '-sg', '--sharing_group', type=int, default=None,
@@ -149,12 +148,11 @@ def main():
         help='Import MISP Galaxies as tag names instead of the standard Galaxy format.'
     )
     import_parser.add_argument(
-        '--org_uuid', default=MISP_org_uuid,
-        help='Organisation UUID to use when creating custom Galaxy clusters.'
+        '--org_uuid', help='Organisation UUID to use when creating custom Galaxy clusters.'
     )
     import_parser.add_argument(
         '-cd', '--cluster_distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
-        help='Galaxy Clusters distribution level in case of External STIX 2 content.'
+        help='Galaxy Clusters distribution level in case of External STIX 2 content - default id 0'
     )
     import_parser.add_argument(
         '-cg', '--cluster_sharing_group', type=int, default=None,
