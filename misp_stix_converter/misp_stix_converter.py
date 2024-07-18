@@ -734,7 +734,7 @@ def stix2_to_misp_instance(
     stix_parser.load_stix_bundle(bundle)
     stix_parser.parse_stix_bundle(single_event)
     if stix_parser.single_event:
-        misp_event = misp.add_event(stix_parser.misp_event)
+        misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
             return _generate_traceback(
                 debug, stix_parser, errors={
@@ -745,7 +745,7 @@ def stix2_to_misp_instance(
     event_ids = []
     errors = {}
     for event in stix_parser.misp_events:
-        misp_event = misp.add_event(event)
+        misp_event = misp.add_event(event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
             errors[event.uuid] = misp_event['errors'][1]['message']
             continue
@@ -761,7 +761,10 @@ def stix2_to_misp_instance(
 
 def _from_misp(stix_objects):
     for stix_object in stix_objects:
-        if stix_object['type'] in _STIX2_event_types and any(tag in stix_object.get('labels', []) for tag in _MISP_STIX_tags):
+        labels = stix_object.get('labels', [])
+        if stix_object['type'] not in _STIX2_event_types or not labels:
+            continue
+        if any(tag in labels for tag in _MISP_STIX_tags):
             return True
     return False
 
@@ -1069,7 +1072,6 @@ def _stix_to_misp(args):
     try:
         if args.url is not None and args.api_key is not None:
             misp = PyMISP(args.url, args.api_key, not args.skip_ssl)
-            misp.toggle_global_pythonify()
             return _process_stix_to_misp_instance(misp, args)
         if args.config is not None:
             try:
@@ -1078,7 +1080,6 @@ def _stix_to_misp(args):
                 misp = PyMISP(
                     config['url'], config['api_key'], config['verify_cert']
                 )
-                misp.toggle_global_pythonify()
                 return _process_stix_to_misp_instance(misp, args)
             except (FileNotFoundError, KeyError, json.JSONDecodeError):
                 msg = 'Unable to read configuration file to connect to MISP -'
@@ -1121,6 +1122,9 @@ def _process_stix_to_misp_files(args) -> dict:
 
 
 def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
+    if args.org_uuid is None:
+        my_user = misp.get_user()
+        args.org_uuid = my_user['Organisation']['uuid']
     results = defaultdict(dict)
     success = []
     method = _get_stix_ingestion_method(args.version)
