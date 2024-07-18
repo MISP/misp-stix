@@ -1143,6 +1143,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if self.distribution == 4 and self.sharing_group_id is not None:
             event_args['sharing_group_id'] = self.sharing_group_id
         misp_event.from_dict(**event_args)
+        if self.producer is not None:
+            misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
         return misp_event
 
     def _create_misp_event(
@@ -1157,6 +1159,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if self.distribution == 4 and self.sharing_group_id is not None:
             event_args['sharing_group_id'] = self.sharing_group_id
         misp_event.from_dict(**event_args)
+        if self.producer is not None:
+            misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
 

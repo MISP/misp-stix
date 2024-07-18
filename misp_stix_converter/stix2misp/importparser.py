@@ -72,7 +72,7 @@ def _load_json_file(path):
 
 class STIXtoMISPParser(metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
-                 galaxies_as_tags: bool):
+                 producer: Union[str, None], galaxies_as_tags: bool):
         self._identifier: str
         self.__relationship_types: dict
 
@@ -83,6 +83,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self.__sharing_group_id = self._sanitise_sharing_group_id(
             sharing_group_id
         )
+        self.__producer = producer
         self.__galaxies_as_tags = self._sanitise_galaxies_as_tags(
             galaxies_as_tags
         )
@@ -153,6 +154,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return self.__galaxy_feature
 
     @property
+    def producer(self) -> Union[str, None]:
+        return self.__producer
+
+    @property
     def relationship_types(self) -> dict:
         try:
             return self.__relationship_types
@@ -206,7 +211,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _critical_error(self, exception: Exception):
         self.__errors[self._identifier].add(
-            f'The Following exception was raised: {exception}'
+            f'The following exception was raised: {exception}'
         )
 
     def _custom_object_error(self, custom_object_id: str, exception: Exception):
@@ -472,7 +477,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             with open(galaxy_git, 'rt') as f:
                 git_file_content = f.read()
                 if git_file_content.startswith('gitdir:'):
-                    galaxy_git = _DATA_PATH / 'misp-galaxy' / git_file_content.split(':')[1].strip()
+                    galaxy_git = (
+                        _DATA_PATH / 'misp-galaxy' /
+                        git_file_content.split(':')[1].strip()
+                    )
                 else:
                     return None
 

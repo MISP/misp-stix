@@ -144,6 +144,8 @@ options:
                         Galaxy Clusters distribution level in case of External STIX 2 content.
   -cg CLUSTER_SHARING_GROUP, --cluster_sharing_group CLUSTER_SHARING_GROUP
                         Galaxy Clusters sharing group ID in case of External STIX 2 content.
+  -p PRODUCER, --producer PRODUCER
+                        Producer of the imported content - Please make sure you use a name from the list of existing producer Galaxy Clusters.
   -c CONFIG, --config CONFIG
                         Config file containing the URL and the authentication key to connect to your MISP.
   --url URL             URL to connect to your MISP instance.
