@@ -7,7 +7,8 @@ from .stix21_mapping import MISPtoSTIX21Mapping
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
-from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject
+from pymisp import (
+    MISPAttribute, MISPEventReport, MISPGalaxy, MISPGalaxyCluster, MISPObject)
 from stix2.properties import (
     DictionaryProperty, IDProperty, ListProperty, ReferenceProperty,
     StringProperty, TimestampProperty)
@@ -25,6 +26,10 @@ from stix2.v21.sdo import (
 from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
+
+_MISP_DATA_LAYER = Union[
+    dict, MISPAttribute, MISPEventReport
+]
 
 
 @CustomObject(
@@ -128,6 +133,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     else self._handle_empty_note_refs()
                 )
                 self._append_SDO(Note(**note_args))
+                self._handle_analyst_data(note_args['id'], event_report)
         else:
             self._id_parsing_function = {
                 'attribute': '_define_stix_object_id',
@@ -150,6 +156,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         for attribute in misp_object['Attribute']:
             self._event_report_matching[attribute['uuid']].append(stix_id)
         return stix_id
+
+    def _handle_analyst_data(
+            self, object_id: str, data_layer: _MISP_DATA_LAYER = None):
+        if data_layer is None:
+            data_layer = self._misp_event
+        for note in data_layer.get('Note', []):
+            self._handle_note_data(note, object_id)
+        for opinion in data_layer.get('Opinion', []):
+            self._handle_opinion_data(opinion, object_id)
 
     def _handle_attributes_and_objects(self):
         if self._misp_event.get('Attribute'):
@@ -212,6 +227,36 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
 
+    def _handle_note_data(self, note, object_id: str):
+        note_args = {
+            'authors': [note['authors']], 'content': note['note'],
+            'created': self._datetime_from_str(note['created']),
+            'modified': self._datetime_from_str(note['modified']),
+            'id': f"note--{note['uuid']}", 'object_refs': [object_id]
+        }
+        if note.get('language'):
+            note_args['lang'] = note['language']
+        getattr(self, self._results_handling_function)(Note(**note_args))
+
+    def _handle_object_analyst_data(
+            self, misp_object: Union[MISPObject, dict], object_id: str):
+        for attribute in misp_object['Attribute']:
+            self._handle_analyst_data(object_id, attribute)
+
+    def _handle_opinion_data(self, opinion, object_id: str):
+        opinion_value = int(opinion['opinion'])
+        opinion_args = {
+            'allow_custom': True, 'authors': [opinion['authors']],
+            'created': self._datetime_from_str(opinion['created']),
+            'modified': self._datetime_from_str(opinion['modified']),
+            'id': f"opinion--{opinion['uuid']}", 'object_refs': [object_id],
+            'opinion': self._parse_opinion_level(opinion_value),
+            'x_misp_opinion': opinion_value
+        }
+        if opinion.get('comment'):
+            opinion_args['explanation'] = opinion['comment']
+        getattr(self, self._results_handling_function)(Opinion(**opinion_args))
+
     def _handle_opinion_object(self, sighting: dict, reference_id: str):
         opinion_args = {
             'id': f"opinion--{sighting['uuid']}",
@@ -250,6 +295,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 'object_refs': self.object_refs, 'allow_custom': True
             }
         )
+        self._handle_analyst_data(grouping_id)
         return Grouping(**report_args)
 
     ############################################################################
@@ -754,6 +800,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     else values
                 )
         self._append_SDO(Note(**note_args))
+        self._handle_object_analyst_data(misp_object, note_id)
 
     def _parse_asn_object_observable(
             self, misp_object: Union[MISPObject, dict]):
@@ -1019,6 +1066,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes:
             location_args.update(self._handle_observable_properties(attributes))
         self._append_SDO(self._create_location(location_args))
+        self._handle_object_analyst_data(misp_object, location_id)
 
     def _parse_http_request_object_observable(
             self, misp_object: Union[MISPObject, dict]):
@@ -1821,3 +1869,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             artifact_args['mime_type'] = f"image/{filename.split('.')[-1]}"
         artifact_args['x_misp_filename'] = filename
         return artifact_args
+
+    def _parse_opinion_level(self, opinion: int) -> str:
+        if opinion > 80:
+            return 'strongly-agree'
+        if opinion > 60:
+            return 'agree'
+        if opinion > 40:
+            return 'neutral'
+        if opinion > 20:
+            return 'disagree'
+        return 'strongly-disagree'

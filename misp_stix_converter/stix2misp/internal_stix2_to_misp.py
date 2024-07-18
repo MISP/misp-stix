@@ -8,10 +8,10 @@ from .converters import (
     InternalSTIX2CourseOfActionConverter, InternalSTIX2IdentityConverter,
     InternalSTIX2IndicatorConverter, InternalSTIX2IntrusionSetConverter,
     InternalSTIX2LocationConverter, InternalSTIX2MalwareAnalysisConverter,
-    InternalSTIX2MalwareConverter, InternalSTIX2ObservedDataConverter,
-    InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
-    InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter,
-    STIX2NoteConverter)
+    InternalSTIX2MalwareConverter, InternalSTIX2NoteConverter,
+    InternalSTIX2ObservedDataConverter, InternalSTIX2ThreatActorConverter,
+    InternalSTIX2ToolConverter, InternalSTIX2VulnerabilityConverter,
+    STIX2CustomObjectConverter)
 from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
 from collections import defaultdict
 from pymisp import MISPSighting
@@ -42,7 +42,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._location_parser: InternalSTIX2LocationConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
-        self._note_parser: STIX2NoteConverter
+        self._note_parser: InternalSTIX2NoteConverter
         self._observed_data_parser: InternalSTIX2ObservedDataConverter
         self._threat_actor_parser: InternalSTIX2ThreatActorConverter
         self._tool_parser: InternalSTIX2ToolConverter
@@ -55,7 +55,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         return self._custom_object_parser
 
     @property
-    def note_parser(self) -> STIX2NoteConverter:
+    def note_parser(self) -> InternalSTIX2NoteConverter:
         if not hasattr(self, '_note_parser'):
             self._set_note_parser()
         return self._note_parser
@@ -96,8 +96,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
         self._malware_parser = InternalSTIX2MalwareConverter(self)
 
-    def _set_note_parser(self) -> STIX2NoteConverter:
-        self._note_parser = STIX2NoteConverter(self)
+    def _set_note_parser(self) -> InternalSTIX2NoteConverter:
+        self._note_parser = InternalSTIX2NoteConverter(self)
 
     def _set_observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
         self._observed_data_parser = InternalSTIX2ObservedDataConverter(self)

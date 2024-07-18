@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 
-class STIX2NoteMapping(InternalSTIX2Mapping):
+class InternalSTIX2NoteMapping(InternalSTIX2Mapping):
     __annotation_object_mapping = Mapping(
         content=STIX2Mapping.text_attribute(),
         x_misp_attachment=InternalSTIX2Mapping.attachment_attribute(),
@@ -30,13 +30,17 @@ class STIX2NoteMapping(InternalSTIX2Mapping):
         return cls.__annotation_object_mapping
 
 
-class STIX2NoteConverter(InternalSTIX2Converter):
+class InternalSTIX2NoteConverter(InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
         self._set_main_parser(main)
-        self._mapping = STIX2NoteMapping
+        self._mapping = InternalSTIX2NoteMapping
 
     def parse(self, note_ref: str):
         note = self.main_parser._get_stix_object(note_ref)
+        if hasattr(note, 'labels'):
+            self._parse_annotation_object(note)
+
+    def _parse_annotation_object(self, note: Note):
         misp_object = self._create_misp_object('annotation', note)
         self.main_parser._sanitise_object_uuid(misp_object, note.id)
         misp_object.from_dict(**self._parse_timeline(note))

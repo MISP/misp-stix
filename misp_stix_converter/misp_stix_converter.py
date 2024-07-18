@@ -4,6 +4,7 @@
 import json
 import os
 import sys
+import urllib3
 from .misp2stix.framing import (
     _stix1_attributes_framing, _stix1_framing, _handle_namespaces,
     _create_stix_package)
@@ -24,6 +25,7 @@ from mixbox import idgen
 from mixbox.namespaces import (
     Namespace, NamespaceNotFoundError, register_namespace)
 from pathlib import Path
+from pymisp import MISPEvent, PyMISP, PyMISPError
 from stix.core import (
     Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXPackage)
 from stix.core.ttps import TTPs
@@ -33,6 +35,7 @@ from stix2.v21 import Bundle as Bundle_v21
 from typing import List, Optional, Union
 from uuid import uuid4
 
+urllib3.disable_warnings()
 _cybox_features = (
     'cybox_major_version', 'cybox_minor_version', 'cybox_update_version'
 )
@@ -659,6 +662,10 @@ def stix_1_to_misp(
     return 1
 
 
+def stix1_to_misp_instance():
+    return
+
+
 def stix_2_to_misp(filename: _files_type,
                    cluster_distribution: Optional[int] = 0,
                    cluster_sharing_group_id: Optional[int] = None,
@@ -700,6 +707,52 @@ def stix_2_to_misp(filename: _files_type,
             f.write(misp_event.to_json(indent=4))
         output_names.append(output)
     return _generate_traceback(debug, stix_parser, *output_names)
+
+
+def stix2_to_misp_instance(
+        misp: PyMISP, filename: _files_type,
+        cluster_distribution: Optional[int] = 0,
+        cluster_sharing_group_id: Optional[int] = None,
+        debug: Optional[bool] = False,
+        distribution: Optional[int] = 0,
+        galaxies_as_tags: Optional[bool] = False,
+        organisation_uuid: Optional[str] = MISP_org_uuid,
+        sharing_group_id: Optional[int] = None,
+        single_event: Optional[bool] = False) -> dict:
+    if isinstance(filename, str):
+        filename = Path(filename).resolve()
+    try:
+        bundle = _load_stix2_content(filename)
+    except Exception as error:
+        return {'errors': [f'{filename} -  {error.__str__()}']}
+    parser, args = _get_stix2_parser(
+        _from_misp(bundle.objects), distribution, sharing_group_id,
+        galaxies_as_tags, organisation_uuid,
+        cluster_distribution, cluster_sharing_group_id
+    )
+    stix_parser = parser(*args)
+    stix_parser.load_stix_bundle(bundle)
+    stix_parser.parse_stix_bundle(single_event)
+    if stix_parser.single_event:
+        misp_event = misp.add_event(stix_parser.misp_event)
+        if not isinstance(misp_event, MISPEvent):
+            return _generate_traceback(
+                debug, stix_parser, errors={
+                    stix_parser.misp_event.uuid: misp_event['errors'][1]['message']
+                }
+            )
+        return _generate_traceback(debug, stix_parser, misp_event.id)
+    event_ids = []
+    errors = {}
+    for event in stix_parser.misp_events:
+        misp_event = misp.add_event(event)
+        if not isinstance(misp_event, MISPEvent):
+            errors[event.uuid] = misp_event['errors'][1]['message']
+            continue
+        event_ids.append(misp_event.id)
+    return _generate_traceback(
+        debug, stix_parser, *event_ids, errors=list(errors)
+    )
 
 
 ################################################################################
@@ -1010,21 +1063,42 @@ def _misp_to_stix(stix_args):
     )
 
 
-def _stix_to_misp(stix_args):
-    method = stix_2_to_misp if stix_args.version == '2' else stix_1_to_misp
+def _stix_to_misp(args):
+    if args.config is None and args.url is None and args.api_key is None:
+        return _process_stix_to_misp_files(args)
+    try:
+        if args.url is not None and args.api_key is not None:
+            misp = PyMISP(args.url, args.api_key, not args.skip_ssl)
+            misp.toggle_global_pythonify()
+            return _process_stix_to_misp_instance(misp, args)
+        if args.config is not None:
+            try:
+                with open(args.config, 'rt', encoding='utf-8') as f:
+                    config = json.load(f)
+                misp = PyMISP(
+                    config['url'], config['api_key'], config['verify_cert']
+                )
+                misp.toggle_global_pythonify()
+                return _process_stix_to_misp_instance(misp, args)
+            except (FileNotFoundError, KeyError, json.JSONDecodeError):
+                msg = 'Unable to read configuration file to connect to MISP -'
+    except PyMISPError as error:
+        msg = f'Unable to connect to MISP instance ({error}) -'
+    print(f'{msg} Saving MISP results into files instead.')
+    return _process_stix_to_misp_files(args)
+
+def _process_stix_to_misp_files(args) -> dict:
     results = defaultdict(dict)
     success = []
-    for filename in stix_args.file:
+    method = _get_stix_conversion_method(args.version)
+    for filename in args.file:
         traceback = method(
-            filename, cluster_distribution=stix_args.cluster_distribution,
-            cluster_sharing_group_id=stix_args.cluster_sharing_group,
-            debug=stix_args.debug, distribution=stix_args.distribution,
-            galaxies_as_tags=stix_args.galaxies_as_tags,
-            organisation_uuid=stix_args.org_uuid,
-            output_dir=stix_args.output_dir,
-            output_name=stix_args.output_name,
-            sharing_group_id=stix_args.sharing_group,
-            single_event=stix_args.single_output
+            filename, cluster_distribution=args.cluster_distribution,
+            cluster_sharing_group_id=args.cluster_sharing_group,
+            debug=args.debug, distribution=args.distribution,
+            galaxies_as_tags=args.galaxies_as_tags, output_dir=args.output_dir,
+            organisation_uuid=args.org_uuid, output_name=args.output_name,
+            sharing_group_id=args.sharing_group, single_event=args.single_event
         )
         if traceback.pop('success', 0) == 1:
             success.extend(traceback.pop('results'))
@@ -1043,6 +1117,44 @@ def _stix_to_misp(stix_args):
                 results['fails'][identifier] = tuple(values)
     if success:
         results['results'] = success
+    return results
+
+
+def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
+    results = defaultdict(dict)
+    success = []
+    method = _get_stix_ingestion_method(args.version)
+    for filename in args.file:
+        traceback = method(
+            misp, filename,
+            cluster_distribution=args.cluster_distribution,
+            cluster_sharing_group_id=args.cluster_sharing_group,
+            debug=args.debug,
+            distribution=args.distribution,
+            galaxies_as_tags=args.galaxies_as_tags,
+            organisation_uuid=args.org_uuid,
+            sharing_group_id=args.sharing_group,
+            single_event=args.single_event
+        )
+        if traceback.pop('success', 0) == 1:
+            success.extend(traceback.pop('results'))
+            for key, value in traceback.items():
+                if isinstance(value, dict):
+                    results[key].update(value)
+            continue
+        if 'pymisp_errors' in traceback:
+            results['pymisp_errors'].update(traceback['pymisp_errors'])
+        for field in ('errors', 'warnings'):
+            if field not in traceback:
+                continue
+            content = traceback[field]
+            if isinstance(content, list):
+                results['fails'][filename.name] = content
+                continue
+            for identifier, values in traceback[field].items():
+                results['fails'][identifier] = tuple(values)
+    if success:
+        results['event_ids'] = success
     return results
 
 
@@ -1072,8 +1184,9 @@ def _check_output(
     return output_dir / default_name
 
 
-def _generate_traceback(debug: bool, parser, *output_names: List[Path]) -> dict:
-    traceback = {'success': 1}
+def _generate_traceback(
+        debug: bool, parser, *output_names: tuple, errors: dict = {}) -> dict:
+    traceback = {'pymisp_errors': errors} if errors else {'success': 1}
     if debug:
         for feature in ('errors', 'warnings'):
             brol = getattr(parser, feature)
@@ -1081,3 +1194,15 @@ def _generate_traceback(debug: bool, parser, *output_names: List[Path]) -> dict:
                 traceback[feature] = brol
     traceback['results'] = list(output_names)
     return traceback
+
+
+def _get_stix_conversion_method(version):
+    if version == '2':
+        return stix_2_to_misp
+    return stix_1_to_misp
+
+
+def _get_stix_ingestion_method(version):
+    if version == '2':
+        return stix2_to_misp_instance
+    return stix1_to_misp_instance

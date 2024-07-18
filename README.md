@@ -120,7 +120,8 @@ STIX 1 specific arguments:
 ##### Import parameters
 
 ```bash
-usage: misp_stix_converter import [-h] -f FILE [FILE ...] -v {1,2} [-s] [-o OUTPUT_NAME] [--output_dir OUTPUT_DIR] [-d DISTRIBUTION] [-sg SHARING_GROUP] [--galaxies_as_tags]
+usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output_dir OUTPUT_DIR] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies_as_tags] [--org_uuid ORG_UUID] [-cd {0,1,2,3,4}]
+                                  [-cg CLUSTER_SHARING_GROUP] [-c CONFIG] [--url URL] [--api_key API_KEY] [--skip_ssl]
 
 options:
   -h, --help            show this help message and exit
@@ -128,16 +129,26 @@ options:
                         Path to the file(s) to convert.
   -v {1,2}, --version {1,2}
                         STIX major version.
-  -s, --single_output   Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
+  -s, --single_event    Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
   -o OUTPUT_NAME, --output_name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_output` argument is used.
   --output_dir OUTPUT_DIR
                         Output path - used in the case of multiple input files when the `single_output` argument is not used.
-  -d DISTRIBUTION, --distribution DISTRIBUTION
-                        Distribution level for the imported MIPS content.
+  -d {0,1,2,3,4}, --distribution {0,1,2,3,4}
+                        Distribution level for the imported MISP content.
   -sg SHARING_GROUP, --sharing_group SHARING_GROUP
                         Sharing group ID when distribution is 4.
   --galaxies_as_tags    Import MISP Galaxies as tag names instead of the standard Galaxy format.
+  --org_uuid ORG_UUID   Organisation UUID to use when creating custom Galaxy clusters.
+  -cd {0,1,2,3,4}, --cluster_distribution {0,1,2,3,4}
+                        Galaxy Clusters distribution level in case of External STIX 2 content.
+  -cg CLUSTER_SHARING_GROUP, --cluster_sharing_group CLUSTER_SHARING_GROUP
+                        Galaxy Clusters sharing group ID in case of External STIX 2 content.
+  -c CONFIG, --config CONFIG
+                        Config file containing the URL and the authentication key to connect to your MISP.
+  --url URL             URL to connect to your MISP instance.
+  --api_key API_KEY     Authentication key to connect to your MISP instance.
+  --skip_ssl            Skip SSL certificate checking when connecting to your MISP instance.
 ```
 
 ### In Python scripts

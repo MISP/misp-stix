@@ -317,7 +317,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def generic_info_field(self) -> str:
-        return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+        return (
+            f'STIX {self.stix_version} Bundle ({self._identifier}) '
+            'imported with the MISP-STIX import feature.'
+        )
 
     @property
     def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
