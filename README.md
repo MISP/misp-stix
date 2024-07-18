@@ -80,11 +80,39 @@ poetry run pytest tests/test_stix21_export.py
 
 ### Command-line Usage
 
+If you are not already within your virtual environment, you can either choose to prefix all the following example commands with `poetry run`, or simply activate your python environment:
+
+```bash
+# If you chose to use the recommended option
+poetry shell
+
+# OR
+
+# Another option that should work if you followed the example mentioned above with the install instructions
+./venv/bin/activate
 ```
+
+At this point, you should be able to use the command-line feature. Here are a few examples:
+
+```bash
+# Convert an Events collections to STIX 2.1
 misp_stix_converter export --version 2.1 -f tests/test_events_collection_1.json
+
+# Convert a MISP Event and set a specific name for the STIX 2.1 output file
+misp_stix_converter export --version 2.1 -f tests/test_event.misp.json -o tests/test_event.stix21.json
+
+# Convert a STIX 2 Bundle to MISP, and set specific distributions
+misp_stix_converter import -f tmp/test_bundle.stix21.json -o tmp/test_bundle.misp.json -d 1 -cd 1
+# This will set the distribution for the Event, Attributes and Galaxy Clusters to `this community`
+
+# Convert multiple STIX 2 Bundles to MISP and directly push the results to MISP, knowing your authentication key
+misp_stix_converter import -f tmp/*.stix21.json --url https://localhost --api_key _YOUR_AUTHENTICATION_KEY_
+# This will create a MISP Event for each file
 ```
 
 #### Parameters
+
+For more details on the different options presented with the examples, here is the complete description.
 
 ```bash
 usage: misp_stix_converter [-h] [--debug] {export,import} ...
