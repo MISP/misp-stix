@@ -38,7 +38,7 @@ Package details at PyPI: [misp-stix](https://pypi.org/project/misp-stix/)
 
 ## Install the latest version from the repository for development purposes
 
-**Note**: poetry is required; e.g., `pip3 install poetry`
+**Note**: poetry is strongly recommended; e.g., `pip3 install poetry`
 
 ```
 git clone https://github.com/MISP/misp-stix.git && cd misp-stix
@@ -47,6 +47,17 @@ poetry install
 ```
 
 If you already have poetry face any issue with it while installing or updating misp-stix with it, you can try `pip3 install -U poetry` to make sure you have a version >= 1.2
+
+Alternatively, you can set up a virtual environment with the following:
+
+```
+virtualenv -p python3 venv
+source ./venv/bin/activate
+pip install -U pip
+# Manual install of setuptools to avoid some dependencies issues
+pip install setuptools
+pip install .
+```
 
 ### Running the tests
 
