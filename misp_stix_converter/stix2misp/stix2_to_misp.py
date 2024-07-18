@@ -206,8 +206,10 @@ _VULNERABILITY_TYPING = Union[
 
 class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
-                 galaxies_as_tags: bool):
-        super().__init__(distribution, sharing_group_id, galaxies_as_tags)
+                 producer: Union[str, None], galaxies_as_tags: bool):
+        super().__init__(
+            distribution, sharing_group_id, producer, galaxies_as_tags
+        )
         self._creators: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
