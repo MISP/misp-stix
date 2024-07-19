@@ -1075,7 +1075,7 @@ def _stix_to_misp(args):
         if args.url is not None and args.api_key is not None:
             misp = PyMISP(args.url, args.api_key, not args.skip_ssl)
             return _process_stix_to_misp_instance(misp, args)
-        if args.config is not None:
+        elif args.config is not None:
             try:
                 with open(args.config, 'rt', encoding='utf-8') as f:
                     config = json.load(f)
@@ -1085,6 +1085,8 @@ def _stix_to_misp(args):
                 return _process_stix_to_misp_instance(misp, args)
             except (FileNotFoundError, KeyError, json.JSONDecodeError):
                 msg = 'Unable to read configuration file to connect to MISP -'
+        else:
+            msg = 'Missing URL or API key to connect to MISP instance -'
     except PyMISPError as error:
         msg = f'Unable to connect to MISP instance ({error}) -'
     print(f'{msg} Saving MISP results into files instead.')
