@@ -12,13 +12,13 @@ files = [
 
 [[package]]
 name = "certifi"
-version = "2024.6.2"
+version = "2024.7.4"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "certifi-2024.6.2-py3-none-any.whl", hash = "sha256:ddc6c8ce995e6987e7faf5e3f1b02b302836a0e5d98ece18392cb1a36c72ad56"},
-    {file = "certifi-2024.6.2.tar.gz", hash = "sha256:3cd43f1c6fa7dedc5899d69d3ad0398fd018ad1a17fba83ddaf78aa46c747516"},
+    {file = "certifi-2024.7.4-py3-none-any.whl", hash = "sha256:c198e21b1289c2ab85ee4e67bb4b4ef3ead0892059901a8d5b622f24a1101e90"},
+    {file = "certifi-2024.7.4.tar.gz", hash = "sha256:5a1e7645bc0ec61a09e26c36f6106dd4cf40c6db3a1fb6352b0244e7fb057c7b"},
 ]
 
 [[package]]
@@ -166,13 +166,13 @@ dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "sphinx (<2)", "tox"]
 
 [[package]]
 name = "exceptiongroup"
-version = "1.2.1"
+version = "1.2.2"
 description = "Backport of PEP 654 (exception groups)"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "exceptiongroup-1.2.1-py3-none-any.whl", hash = "sha256:5258b9ed329c5bbdd31a309f53cbfb0b155341807f6ff7606a1e801a891b29ad"},
-    {file = "exceptiongroup-1.2.1.tar.gz", hash = "sha256:a4785e48b045528f5bfe627b6ad554ff32def154f42372786903b7abcfe1aa16"},
+    {file = "exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b"},
+    {file = "exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"},
 ]
 
 [package.extras]
@@ -459,13 +459,13 @@ dev = ["black", "mypy", "pytest"]
 
 [[package]]
 name = "packaging"
-version = "24.0"
+version = "24.1"
 description = "Core utilities for Python packages"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "packaging-24.0-py3-none-any.whl", hash = "sha256:2ddfb553fdf02fb784c234c7ba6ccc288296ceabec964ad2eae3777778130bc5"},
-    {file = "packaging-24.0.tar.gz", hash = "sha256:eb82c5e3e56209074766e6885bb04b8c38a0c015d0a30036ebe7ece34c9989e9"},
+    {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
+    {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
 ]
 
 [[package]]
@@ -485,13 +485,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "publicsuffixlist"
-version = "0.10.1.20240605"
+version = "1.0.2.20240714"
 description = "publicsuffixlist implement"
 optional = false
-python-versions = ">=2.6"
+python-versions = ">=3.5"
 files = [
-    {file = "publicsuffixlist-0.10.1.20240605-py2.py3-none-any.whl", hash = "sha256:cdf988a73cbfccc8410db84b5f0161e5040d0cde539eadfc17479bba57dfda5a"},
-    {file = "publicsuffixlist-0.10.1.20240605.tar.gz", hash = "sha256:ae8ec48bd8a3beadb05fc944ebe609865d9ca362ecf2aa5c9fee2051f4a66356"},
+    {file = "publicsuffixlist-1.0.2.20240714-py2.py3-none-any.whl", hash = "sha256:a7f87fc01aa1f0f3ec6fdcdcc9e68922fd15de58fc3333b841c2535bc40452f9"},
+    {file = "publicsuffixlist-1.0.2.20240714.tar.gz", hash = "sha256:584ea0339fcd8375b9692f1dbbc6b4051b2b9b5a4c863b88902c7ec02b3928dc"},
 ]
 
 [package.extras]
@@ -522,28 +522,28 @@ files = [
 
 [[package]]
 name = "pymisp"
-version = "2.4.190"
+version = "2.4.194"
 description = "Python API for MISP."
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pymisp-2.4.190-py3-none-any.whl", hash = "sha256:0b63b3d7c497239987ad3220eb7bbbe9249e61461278c6c0d6575a6bb8619b40"},
-    {file = "pymisp-2.4.190.tar.gz", hash = "sha256:e7374295bfd8c7d25f56867e4395a029433360d95420e39b7f78eb1d4f8b48b4"},
+    {file = "pymisp-2.4.194-py3-none-any.whl", hash = "sha256:3810f83b7edb2e08b3a6a50e90bdd504c2e2117ae255ab408c4a9253ea82658d"},
+    {file = "pymisp-2.4.194.tar.gz", hash = "sha256:f7adb929a0f8a7f0a7c8a9be7727db247a9a30f3525216747fdbca151eb0a44a"},
 ]
 
 [package.dependencies]
 deprecated = ">=1.2.14,<2.0.0"
-publicsuffixlist = ">=0.10.0.20240403,<0.11.0.0"
+publicsuffixlist = ">=1.0.0.20240620,<2.0.0.0"
 python-dateutil = ">=2.9.0.post0,<3.0.0"
-requests = ">=2.31.0,<3.0.0"
+requests = ">=2.32.3,<3.0.0"
 
 [package.extras]
 brotli = ["urllib3[brotli]"]
-docs = ["Sphinx (>=7.3.6,<8.0.0)", "docutils (>=0.21.1,<0.22.0)", "recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=2.1.0,<3.0.0)"]
+docs = ["Sphinx (>=7.3.7,<8.0.0)", "docutils (>=0.21.1,<0.22.0)", "recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=2.2.0,<3.0.0)"]
 email = ["RTFDE (>=0.1.1,<0.2.0)", "extract_msg (>=0.48.5,<0.49.0)", "oletools (>=0.60.1,<0.61.0)"]
 fileobjects = ["lief (>=0.14.1,<0.15.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
 openioc = ["beautifulsoup4 (>=4.12.3,<5.0.0)"]
-pdfexport = ["reportlab (>=4.1.0,<5.0.0)"]
+pdfexport = ["reportlab (>=4.2.0,<5.0.0)"]
 url = ["pyfaup (>=1.2,<2.0)"]
 virustotal = ["validators (>=0.28.0,<0.29.0)"]
 
@@ -797,13 +797,13 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.2.1"
+version = "2.2.2"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "urllib3-2.2.1-py3-none-any.whl", hash = "sha256:450b20ec296a467077128bff42b73080516e71b56ff59a60a02bef2232c4fa9d"},
-    {file = "urllib3-2.2.1.tar.gz", hash = "sha256:d0570876c61ab9e520d776c38acbbb5b05a776d3f9ff98a5c8fd5162a444cf19"},
+    {file = "urllib3-2.2.2-py3-none-any.whl", hash = "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472"},
+    {file = "urllib3-2.2.2.tar.gz", hash = "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"},
 ]
 
 [package.extras]
@@ -904,4 +904,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "bf28bbe7732a47cdffb4b300eab351b22e4639c10969ad365ad32b0428c46c8c"
+content-hash = "af6e3d439b518c9eba47c807066676c9d9be29d9478c7d04c5724d2ac770a094"
