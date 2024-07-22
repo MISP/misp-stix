@@ -157,9 +157,6 @@ _MALWARE_TYPING = Union[
 _MARKING_DEFINITION_TYPING = Union[
     MarkingDefinition_v20, MarkingDefinition_v21
 ]
-_MISP_FEATURES_TYPING = Union[
-    MISPAttribute, MISPEvent, MISPObject
-]
 _OBSERVED_DATA_PARSER_TYPING = Union[
     ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter
 ]
@@ -319,10 +316,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def generic_info_field(self) -> str:
-        return (
-            f'STIX {self.stix_version} Bundle ({self._identifier}) '
-            'imported with the MISP-STIX import feature.'
-        )
+        message = f'STIX {self.stix_version} Bundle ({self._identifier})'
+        if self.producer is not None:
+            message += f' from {self.producer}'
+        return f'{message} imported with the MISP-STIX import feature.'
 
     @property
     def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
