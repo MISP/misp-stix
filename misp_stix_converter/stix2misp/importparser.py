@@ -72,7 +72,8 @@ def _load_json_file(path):
 
 class STIXtoMISPParser(metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
-                 producer: Union[str, None], galaxies_as_tags: bool):
+                 title: Union[str, None], producer: Union[str, None],
+                 galaxies_as_tags: bool):
         self._identifier: str
         self.__relationship_types: dict
 
@@ -83,6 +84,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self.__sharing_group_id = self._sanitise_sharing_group_id(
             sharing_group_id
         )
+        self.__title = title
         self.__producer = producer
         self.__galaxies_as_tags = self._sanitise_galaxies_as_tags(
             galaxies_as_tags
@@ -132,6 +134,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     @property
     def distribution(self) -> int:
         return self.__distribution
+
+    @property
+    def event_title(self) -> Union[str, None]:
+        return self.__title
 
     @property
     def errors(self) -> dict:

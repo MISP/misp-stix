@@ -677,7 +677,8 @@ def stix_2_to_misp(filename: _files_type,
                    output_name: Optional[_files_type]=None,
                    producer: Optional[str] = None,
                    sharing_group_id: Optional[int] = None,
-                   single_event: Optional[bool] = False) -> dict:
+                   single_event: Optional[bool] = False,
+                   title: Optional[str] = None) -> dict:
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
@@ -686,7 +687,7 @@ def stix_2_to_misp(filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _from_misp(bundle.objects), distribution, sharing_group_id,
-        producer, galaxies_as_tags, organisation_uuid,
+        title, producer, galaxies_as_tags, organisation_uuid,
         cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser(*args)
@@ -720,7 +721,8 @@ def stix2_to_misp_instance(
         organisation_uuid: Optional[str] = MISP_org_uuid,
         producer: Optional[str] = None,
         sharing_group_id: Optional[int] = None,
-        single_event: Optional[bool] = False) -> dict:
+        single_event: Optional[bool] = False,
+        title: Optional[str] = None) -> dict:
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
@@ -729,7 +731,7 @@ def stix2_to_misp_instance(
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _from_misp(bundle.objects), distribution, sharing_group_id,
-        producer, galaxies_as_tags, organisation_uuid,
+        title, producer, galaxies_as_tags, organisation_uuid,
         cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser(*args)
@@ -1104,7 +1106,7 @@ def _process_stix_to_misp_files(args) -> dict:
             galaxies_as_tags=args.galaxies_as_tags, output_dir=args.output_dir,
             organisation_uuid=args.org_uuid, output_name=args.output_name,
             producer=args.producer, sharing_group_id=args.sharing_group,
-            single_event=args.single_event
+            single_event=args.single_event, title=args.title
         )
         if traceback.pop('success', 0) == 1:
             success.extend(traceback.pop('results'))
@@ -1141,7 +1143,8 @@ def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
             debug=args.debug, distribution=args.distribution,
             galaxies_as_tags=args.galaxies_as_tags,
             organisation_uuid=args.org_uuid, producer=args.producer,
-            sharing_group_id=args.sharing_group, single_event=args.single_event
+            sharing_group_id=args.sharing_group,
+            single_event=args.single_event, title=args.title
         )
         if traceback.pop('success', 0) == 1:
             success.extend(traceback.pop('results'))

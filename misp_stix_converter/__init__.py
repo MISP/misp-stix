@@ -160,6 +160,10 @@ def main():
         help='Galaxy Clusters sharing group ID in case of External STIX 2 content.'
     )
     import_parser.add_argument(
+        '-t', '--title', type=str, default=None,
+        help='Title prefix to add to the MISP Event `info` field.'
+    )
+    import_parser.add_argument(
         '-p', '--producer',
         help=(
             'Producer of the imported content - Please make sure you use a '

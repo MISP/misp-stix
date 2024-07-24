@@ -22,13 +22,14 @@ MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self, distribution: Optional[int] = 0,
                  sharing_group_id: Optional[int] = None,
+                 title: Optional[str] = None,
                  producer: Optional[str] = None,
                  galaxies_as_tags: Optional[bool] = False,
                  organisation_uuid: Optional[str] = MISP_org_uuid,
                  cluster_distribution: Optional[int] = 0,
                  cluster_sharing_group_id: Optional[int] = None):
         super().__init__(
-            distribution, sharing_group_id, producer, galaxies_as_tags
+            distribution, sharing_group_id, title, producer, galaxies_as_tags
         )
         self._set_cluster_distribution(
             self._sanitise_distribution(cluster_distribution),

@@ -203,9 +203,10 @@ _VULNERABILITY_TYPING = Union[
 
 class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
-                 producer: Union[str, None], galaxies_as_tags: bool):
+                 title: Union[str, None], producer: Union[str, None],
+                 galaxies_as_tags: bool):
         super().__init__(
-            distribution, sharing_group_id, producer, galaxies_as_tags
+            distribution, sharing_group_id, title, producer, galaxies_as_tags
         )
         self._creators: set = set()
         self._mapping: Union[
@@ -317,9 +318,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @property
     def generic_info_field(self) -> str:
         message = f'STIX {self.stix_version} Bundle ({self._identifier})'
+        if self.event_title is not None:
+            message = f'{self.event_title} {message}'
         if self.producer is not None:
-            message += f' from {self.producer}'
-        return f'{message} imported with the MISP-STIX import feature.'
+            message += f' produced by {self.producer}'
+        return f'{message} and converted with the MISP-STIX import feature.'
 
     @property
     def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
@@ -1151,7 +1154,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         misp_event = MISPEvent(force_timestamps=True)
         self._sanitise_object_uuid(misp_event, stix_object.id)
         event_args = {
-            'info': getattr(stix_object, 'name', self.generic_info_field),
+            'info': self._generate_info_field(stix_object),
             'distribution': self.distribution,
             'timestamp': self._timestamp_from_date(stix_object.modified)
         }
@@ -1198,6 +1201,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @staticmethod
     def _extract_uuid(object_id: str) -> str:
         return object_id.split('--')[-1]
+
+    def _generate_info_field(self, stix_object: _GROUPING_REPORT_TYPING) -> str:
+        if hasattr(stix_object, 'name'):
+            title = stix_object.name
+            if self.event_title is not None:
+                title = f'{self.event_title} {title}'
+            return title
+        return self.generic_info_field
 
     def _handle_creator(self, reference: str) -> str:
         if reference in getattr(self, '_identity', {}):
