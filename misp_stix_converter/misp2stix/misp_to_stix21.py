@@ -132,7 +132,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     list(object_refs) if object_refs
                     else self._handle_empty_note_refs()
                 )
-                self._append_SDO(Note(**note_args))
+                self._append_SDO(self._create_note(note_args))
                 self._handle_analyst_data(note_args['id'], event_report)
         else:
             self._id_parsing_function = {
@@ -199,7 +199,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'created_by_ref': self.identity_id, 'object_refs': [object_id],
             'content': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.'
         }
-        self._append_SDO(Note(**note_args))
+        self._append_SDO(self._create_note(note_args))
 
     def _handle_markings(self, object_args: dict, markings: tuple):
         marking_ids = []
@@ -236,7 +236,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         }
         if note.get('language'):
             note_args['lang'] = note['language']
-        getattr(self, self._results_handling_function)(Note(**note_args))
+        getattr(self, self._results_handling_function)(
+            self._create_note(note_args)
+        )
 
     def _handle_object_analyst_data(
             self, misp_object: Union[MISPObject, dict], object_id: str):
@@ -799,7 +801,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     values[0] if isinstance(values, list) and len(values) == 1
                     else values
                 )
-        self._append_SDO(Note(**note_args))
+        self._append_SDO(self._create_note(note_args))
         self._handle_object_analyst_data(misp_object, note_id)
 
     def _parse_asn_object_observable(
@@ -1749,6 +1751,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if 'is_family' not in malware_args:
             malware_args['is_family'] = False
         return Malware(**malware_args)
+
+    @staticmethod
+    def _create_note(note_args: dict) -> Note:
+        if any(ref.startswith('x-misp-') for ref in note_args['object_refs']):
+            note_args['allow_custom'] = True
+        return Note(**note_args)
 
     def _create_observed_data(self, args: dict, observables: list):
         args['object_refs'] = [observable.id for observable in observables]
