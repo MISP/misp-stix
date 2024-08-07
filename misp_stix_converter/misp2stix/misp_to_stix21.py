@@ -127,6 +127,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     list(object_refs) if object_refs
                     else self._handle_empty_note_refs()
                 )
+                if any(ref.startswith('x-misp-') for ref in note_args['object_refs']):
+                    note_args['allow_custom'] = True
                 self._append_SDO(Note(**note_args))
         else:
             self._id_parsing_function = {
