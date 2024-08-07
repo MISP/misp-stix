@@ -485,13 +485,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "publicsuffixlist"
-version = "1.0.2.20240714"
+version = "1.0.2.20240807"
 description = "publicsuffixlist implement"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "publicsuffixlist-1.0.2.20240714-py2.py3-none-any.whl", hash = "sha256:a7f87fc01aa1f0f3ec6fdcdcc9e68922fd15de58fc3333b841c2535bc40452f9"},
-    {file = "publicsuffixlist-1.0.2.20240714.tar.gz", hash = "sha256:584ea0339fcd8375b9692f1dbbc6b4051b2b9b5a4c863b88902c7ec02b3928dc"},
+    {file = "publicsuffixlist-1.0.2.20240807-py2.py3-none-any.whl", hash = "sha256:99265e1f12bda36f390306fdb8f4650f3ef5a7dba4ac5654dcd81d8a975ff3ec"},
+    {file = "publicsuffixlist-1.0.2.20240807.tar.gz", hash = "sha256:e5885c1654b143b1db75b8bbe92a9c467402167e04f0f571815d0f47ad353a1f"},
 ]
 
 [package.extras]
@@ -522,30 +522,30 @@ files = [
 
 [[package]]
 name = "pymisp"
-version = "2.4.194"
+version = "2.4.195"
 description = "Python API for MISP."
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pymisp-2.4.194-py3-none-any.whl", hash = "sha256:3810f83b7edb2e08b3a6a50e90bdd504c2e2117ae255ab408c4a9253ea82658d"},
-    {file = "pymisp-2.4.194.tar.gz", hash = "sha256:f7adb929a0f8a7f0a7c8a9be7727db247a9a30f3525216747fdbca151eb0a44a"},
+    {file = "pymisp-2.4.195-py3-none-any.whl", hash = "sha256:5603b69f253a43e964e28be20ac90430ec014ae3e10b4335fec14c88b0b10dca"},
+    {file = "pymisp-2.4.195.tar.gz", hash = "sha256:3200bc0934fbd51c8146eae3e5174720cd1987307c1a561312b29f96bb52fe51"},
 ]
 
 [package.dependencies]
 deprecated = ">=1.2.14,<2.0.0"
-publicsuffixlist = ">=1.0.0.20240620,<2.0.0.0"
+publicsuffixlist = ">=1.0.2.20240726,<2.0.0.0"
 python-dateutil = ">=2.9.0.post0,<3.0.0"
 requests = ">=2.32.3,<3.0.0"
 
 [package.extras]
 brotli = ["urllib3[brotli]"]
-docs = ["Sphinx (>=7.3.7,<8.0.0)", "docutils (>=0.21.1,<0.22.0)", "recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=2.2.0,<3.0.0)"]
+docs = ["Sphinx (>=7.4.7,<8.0.0)", "docutils (>=0.21.1,<0.22.0)", "recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=2.2.3,<3.0.0)"]
 email = ["RTFDE (>=0.1.1,<0.2.0)", "extract_msg (>=0.48.5,<0.49.0)", "oletools (>=0.60.1,<0.61.0)"]
-fileobjects = ["lief (>=0.14.1,<0.15.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
+fileobjects = ["lief (>=0.15.0,<0.16.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
 openioc = ["beautifulsoup4 (>=4.12.3,<5.0.0)"]
-pdfexport = ["reportlab (>=4.2.0,<5.0.0)"]
+pdfexport = ["reportlab (>=4.2.2,<5.0.0)"]
 url = ["pyfaup (>=1.2,<2.0)"]
-virustotal = ["validators (>=0.28.0,<0.29.0)"]
+virustotal = ["validators (>=0.33.0,<0.34.0)"]
 
 [[package]]
 name = "pytest"
