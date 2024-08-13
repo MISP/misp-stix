@@ -317,9 +317,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def generic_info_field(self) -> str:
-        message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         if self.event_title is not None:
-            message = f'{self.event_title} {message}'
+            if self.producer is not None:
+                return f'{self.event_title} produced by {self.producer}'
+            return self.event_title
+        message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         if self.producer is not None:
             message += f' produced by {self.producer}'
         return f'{message} and converted with the MISP-STIX import feature.'
