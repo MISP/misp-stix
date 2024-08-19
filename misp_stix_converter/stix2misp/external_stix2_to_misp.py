@@ -20,22 +20,8 @@ MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, distribution: Optional[int] = 0,
-                 sharing_group_id: Optional[int] = None,
-                 title: Optional[str] = None,
-                 producer: Optional[str] = None,
-                 galaxies_as_tags: Optional[bool] = False,
-                 organisation_uuid: Optional[str] = MISP_org_uuid,
-                 cluster_distribution: Optional[int] = 0,
-                 cluster_sharing_group_id: Optional[int] = None):
-        super().__init__(
-            distribution, sharing_group_id, title, producer, galaxies_as_tags
-        )
-        self._set_cluster_distribution(
-            self._sanitise_distribution(cluster_distribution),
-            self._sanitise_sharing_group_id(cluster_sharing_group_id)
-        )
-        self.__organisation_uuid = organisation_uuid
+    def __init__(self):
+        super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
@@ -53,6 +39,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._tool_parser: ExternalSTIX2ToolConverter
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
+    def parse_stix_bundle(
+            self, cluster_distribution: Optional[int] = 0,
+            cluster_sharing_group_id: Optional[int] = None,
+            organisation_uuid: Optional[str] = MISP_org_uuid, **kwargs):
+        self._set_parameters(**kwargs)
+        self._set_cluster_distribution(
+            cluster_distribution, cluster_sharing_group_id
+        )
+        self.__organisation_uuid = organisation_uuid
+        self._parse_stix_bundle()
+
+    ############################################################################
+    #                                PROPERTIES                                #
+    ############################################################################
+
     @property
     def cluster_distribution(self) -> dict:
         return self.__cluster_distribution
@@ -67,6 +68,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def organisation_uuid(self) -> str:
         return self.__organisation_uuid
 
+    ############################################################################
+    #                              PARSER SETTERS                              #
+    ############################################################################
+
     def _set_attack_pattern_parser(self):
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
 
@@ -75,10 +80,16 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _set_cluster_distribution(
             self, distribution: int, sharing_group_id: Union[int, None]):
-        cluster_distribution = {'distribution': distribution}
-        if distribution == 4 and sharing_group_id is not None:
-            cluster_distribution['sharing_group_id'] = sharing_group_id
-        self.__cluster_distribution = cluster_distribution
+        cl_dis = {'distribution': self._sanitise_distribution(distribution)}
+        if distribution == 4:
+            if sharing_group_id is not None:
+                cl_dis['sharing_group_id'] = self._sanitise_sharing_group_id(
+                    sharing_group_id
+                )
+            else:
+                cl_dis['distribution'] = 0
+                self._cluster_distribution_and_sharing_group_id_error()
+        self.__cluster_distribution = cl_dis
 
     def _set_course_of_action_parser(self):
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)

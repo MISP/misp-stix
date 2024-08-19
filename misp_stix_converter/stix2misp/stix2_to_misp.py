@@ -202,12 +202,8 @@ _VULNERABILITY_TYPING = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
-    def __init__(self, distribution: int, sharing_group_id: Union[int, None],
-                 title: Union[str, None], producer: Union[str, None],
-                 galaxies_as_tags: bool):
-        super().__init__(
-            distribution, sharing_group_id, title, producer, galaxies_as_tags
-        )
+    def __init__(self):
+        super().__init__()
         self._creators: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
@@ -259,8 +255,17 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._critical_error(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
 
-    def parse_stix_bundle(self, single_event: Optional[bool] = False):
-        self.__single_event = single_event
+    def parse_stix_content(
+            self, filename: str, single_event: Optional[bool] = False):
+        try:
+            bundle = _load_stix2_content(filename)
+        except Exception as exception:
+            sys.exit(exception)
+        self.load_stix_bundle(bundle)
+        del bundle
+        self.parse_stix_bundle(single_event)
+
+    def _parse_stix_bundle(self):
         try:
             feature = self._mapping.bundle_to_misp_mapping(str(self.__n_report))
         except AttributeError:
@@ -278,16 +283,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for feature in ('_grouping', 'report', *_LOADED_FEATURES):
             if hasattr(self, feature):
                 setattr(self, feature, {})
-
-    def parse_stix_content(
-            self, filename: str, single_event: Optional[bool] = False):
-        try:
-            bundle = _load_stix2_content(filename)
-        except Exception as exception:
-            sys.exit(exception)
-        self.load_stix_bundle(bundle)
-        del bundle
-        self.parse_stix_bundle(single_event)
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -377,10 +372,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if not hasattr(self, '_observed_data_parser'):
             self._set_observed_data_parser()
         return self._observed_data_parser
-
-    @property
-    def single_event(self) -> bool:
-        return self.__single_event
 
     @property
     def stix_version(self) -> str:
@@ -685,13 +676,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self.__misp_events.append(self.misp_event)
 
     def _parse_bundle_with_no_report(self):
-        self.__single_event = True
+        self._set_single_event(True)
         self.__misp_event = self._create_generic_event()
         self._parse_loaded_features()
         self._handle_unparsed_content()
 
     def _parse_bundle_with_single_report(self):
-        self.__single_event = True
+        self._set_single_event(True)
         if hasattr(self, '_report') and self._report is not None:
             for report in self._report.values():
                 self.__misp_event = self._misp_event_from_report(report)
