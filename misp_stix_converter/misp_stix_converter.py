@@ -687,12 +687,12 @@ def stix_2_to_misp(filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, galaxies_as_tags, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
+        title, producer, galaxies_as_tags, single_event,
+        organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
-    stix_parser = parser(*args)
+    stix_parser = parser()
     stix_parser.load_stix_bundle(bundle)
-    stix_parser.parse_stix_bundle(single_event)
+    stix_parser.parse_stix_bundle(**args)
     if output_dir is None:
         output_dir = filename.parent
     if stix_parser.single_event:
@@ -731,12 +731,12 @@ def stix2_to_misp_instance(
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, galaxies_as_tags, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
+        title, producer, galaxies_as_tags, single_event,
+        organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
-    stix_parser = parser(*args)
+    stix_parser = parser()
     stix_parser.load_stix_bundle(bundle)
-    stix_parser.parse_stix_bundle(single_event)
+    stix_parser.parse_stix_bundle(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
@@ -773,9 +773,29 @@ def _from_misp(stix_objects):
     return False
 
 
-def _get_stix2_parser(from_misp: bool, *args: tuple) -> tuple:
+def _get_stix2_parser(from_misp: bool, distribution: int,
+                      sharing_group_id: Union[int, None],
+                      title: Union[str, None], producer: Union[str, None],
+                      galaxies_as_tags: bool, single_event: bool,
+                      organisation_uuid: str, cluster_distribution: int,
+                      cluster_sharing_group_id: Union[int, None]) -> tuple:
+    args = {
+        'distribution': distribution,
+        'galaxies_as_tags': galaxies_as_tags,
+        'producer': producer,
+        'sharing_group_id': sharing_group_id,
+        'single_event': single_event,
+        'title': title
+    }
     if from_misp:
-        return InternalSTIX2toMISPParser, args[:-3]
+        return InternalSTIX2toMISPParser, args
+    args.update(
+        {
+            'cluster_distribution': cluster_distribution,
+            'cluster_sharing_group_id': cluster_sharing_group_id,
+            'organisation_uuid': organisation_uuid
+        }
+    )
     return ExternalSTIX2toMISPParser, args
 
 

@@ -23,6 +23,8 @@ _INDICATOR_TYPING = Union[
 ]
 _DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 
+_DEFAULT_DISTRIBUTION = 0
+
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
@@ -71,29 +73,20 @@ def _load_json_file(path):
 
 
 class STIXtoMISPParser(metaclass=ABCMeta):
-    def __init__(self, distribution: int, sharing_group_id: Union[int, None],
-                 title: Union[str, None], producer: Union[str, None],
-                 galaxies_as_tags: bool):
+    def __init__(self):
         self._identifier: str
+        self.__distribution: int
+        self.__galaxies_as_tags: bool
+        self.__galaxy_feature: str
+        self.__producer: Union[str, None]
         self.__relationship_types: dict
+        self.__sharing_group_id: Union[int, None]
+        self.__title: Union[str, None]
 
         self._clusters: dict = {}
+        self._galaxies: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
-        self.__distribution = self._sanitise_distribution(distribution)
-        self.__sharing_group_id = self._sanitise_sharing_group_id(
-            sharing_group_id
-        )
-        self.__title = title
-        self.__producer = producer
-        self.__galaxies_as_tags = self._sanitise_galaxies_as_tags(
-            galaxies_as_tags
-        )
-        if self.galaxies_as_tags:
-            self.__galaxy_feature = 'as_tag_names'
-        else:
-            self._galaxies: dict = {}
-            self.__galaxy_feature = 'as_container'
         self.__replacement_uuids: dict = {}
 
     def _sanitise_distribution(self, distribution: int) -> int:
@@ -107,7 +100,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self._distribution_value_error(sanitised)
         return 0
 
-    def _sanitise_galaxies_as_tags(self, galaxies_as_tags: bool):
+    def _sanitise_galaxies_as_tags(
+            self, galaxies_as_tags: Union[bool, str, int]) -> bool:
         if isinstance(galaxies_as_tags, bool):
             return galaxies_as_tags
         if galaxies_as_tags in ('true', 'True', '1', 1):
@@ -126,6 +120,32 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         except (TypeError, ValueError) as error:
             self._sharing_group_id_error(error)
             return None
+
+    def _set_parameters(self, distribution: int = _DEFAULT_DISTRIBUTION,
+                        sharing_group_id: Optional[int] = None,
+                        galaxies_as_tags: Optional[bool] = False,
+                        single_event: Optional[bool] = False,
+                        producer: Optional[str] = None,
+                        title: Optional[str] = None):
+        self.__distribution = self._sanitise_distribution(distribution)
+        self.__sharing_group_id = self._sanitise_sharing_group_id(
+            sharing_group_id
+        )
+        if self.sharing_group_id is None and self.distribution == 4:
+            self.__distribution = 0
+            self._distribution_and_sharing_group_id_error()
+        self.__galaxies_as_tags = self._sanitise_galaxies_as_tags(
+            galaxies_as_tags
+        )
+        self.__galaxy_feature = (
+            'as_tag_names' if self.galaxies_as_tags else 'as_container'
+        )
+        self.__single_event = single_event
+        self.__producer = producer
+        self.__title = title
+
+    def _set_single_event(self, single_event: bool):
+        self.__single_event = single_event
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -180,6 +200,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return self.__sharing_group_id
 
     @property
+    def single_event(self) -> bool:
+        return self.__single_event
+
+    @property
     def synonyms_mapping(self) -> dict:
         try:
             return self.__synonyms_mapping
@@ -208,6 +232,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'Error while parsing pattern from indicator with id {indicator_id}'
         )
 
+    def _cluster_distribution_and_sharing_group_id_error(self):
+        self.__errors['init'].add(
+            'Invalid Cluster Sharing Group ID - '
+            'cannot be None when distribution is 4'
+        )
+
     def _course_of_action_error(
             self, course_of_action_id: str, exception: Exception):
         self.__errors[self._identifier].add(
@@ -224,6 +254,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self.__errors[self._identifier].add(
             'Error parsing the Custom object with id'
             f'{custom_object_id}: {self._parse_traceback(exception)}'
+        )
+
+    def _distribution_and_sharing_group_id_error(self):
+        self.__errors['init'].add(
+            'Invalid Sharing Group ID - cannot be None when distribution is 4'
         )
 
     def _distribution_error(self, exception: Exception):
