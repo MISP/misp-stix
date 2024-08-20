@@ -110,8 +110,7 @@ def main():
 
     # IMPORT SUBPARSER
     import_parser = subparsers.add_parser(
-        'import', help='Import STIX to MISP - try '
-                       '`misp_stix_converter import -h` for more help.'
+        'import', help='Import STIX to MISP - try `misp_stix_converter import -h` for more help.'
     )
     import_parser.add_argument(
         '-f', '--file', nargs='+', type=Path, required=True,
@@ -138,7 +137,14 @@ def main():
     )
     import_parser.add_argument(
         '-d', '--distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
-        help='Distribution level for the imported MISP content - default is 0'
+        help='''
+            Distribution level for the imported MISP content (default is 0)
+              - 0: Your organisation only
+              - 1: This community only
+              - 2: Connected communities
+              - 3: All communities
+              - 4: Sharing Group
+            '''
     )
     import_parser.add_argument(
         '-sg', '--sharing_group', type=int, default=None,
@@ -153,7 +159,15 @@ def main():
     )
     import_parser.add_argument(
         '-cd', '--cluster_distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
-        help='Galaxy Clusters distribution level in case of External STIX 2 content - default id 0'
+        help='''
+            Galaxy Clusters distribution level
+            in case of External STIX 2 content (default id 0)
+              - 0: Your organisation only
+              - 1: This community only
+              - 2: Connected communities
+              - 3: All communities
+              - 4: Sharing Group
+        '''
     )
     import_parser.add_argument(
         '-cg', '--cluster_sharing_group', type=int, default=None,
@@ -161,7 +175,7 @@ def main():
     )
     import_parser.add_argument(
         '-t', '--title', type=str, default=None,
-        help='Title prefix to add to the MISP Event `info` field.'
+        help='Title used to set the MISP Event `info` field.'
     )
     import_parser.add_argument(
         '-p', '--producer',
