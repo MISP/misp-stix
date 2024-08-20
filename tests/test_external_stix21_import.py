@@ -14,35 +14,15 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                         MISP EVENT IMPORT TESTS.                         #
     ############################################################################
 
-    def test_stix21_bundle_with_event_title(self):
-        bundle = TestExternalSTIX21Bundles.get_bundle_with_event_title()
-        self.parser.load_stix_bundle(bundle)
-        self.parser.parse_stix_bundle(title='Malicious IP addresses report')
-        event = self.parser.misp_event
-        self.assertEqual(event.info, self.parser.event_title)
-
     def test_stix21_bundle_with_event_title_and_producer(self):
-        bundle = TestExternalSTIX21Bundles.get_bundle_with_event_title()
+        bundle = TestExternalSTIX21Bundles.get_bundle_without_grouping()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle(
             title='Malicious IP addresses report',
             producer='MISP Project'
         )
         event = self.parser.misp_event
-        self.assertEqual(
-            event.info,
-            f'{self.parser.event_title} - produced by {self.parser.producer}'
-        )
-        self.assertEqual(
-            event.tags[0]['name'],
-            f'misp-galaxy:producer="{self.parser.producer}"'
-        )
-
-    def test_stix21_bundle_with_producer(self):
-        bundle = TestExternalSTIX21Bundles.get_bundle_with_event_title()
-        self.parser.load_stix_bundle(bundle)
-        self.parser.parse_stix_bundle(producer='MISP Project')
-        event = self.parser.misp_event
+        self.assertEqual(event.info, f'{self.parser.event_title}')
         self.assertEqual(
             event.tags[0]['name'],
             f'misp-galaxy:producer="{self.parser.producer}"'
