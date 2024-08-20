@@ -1541,7 +1541,7 @@ class TestExternalSTIX20Bundles:
     ############################################################################
 
     @classmethod
-    def get_bundle_with_event_title(cls):
+    def get_bundle_without_report(cls):
         bundle = deepcopy(cls.__bundle)
         bundle['objects'] = [
             deepcopy(cls.__identity), *_IP_ADDRESS_ATTRIBUTES
