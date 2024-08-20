@@ -2,12 +2,50 @@
 # -*- coding: utf-8 -*-
 
 from .test_external_stix20_bundles import TestExternalSTIX20Bundles
-from ._test_stix import TestSTIX21
-from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
+from ._test_stix import TestSTIX20
+from ._test_stix_import import TestExternalSTIX2Import, TestSTIX20Import
 from uuid import uuid5
 
 
-class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
+class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Import):
+
+    ############################################################################
+    #                         MISP EVENT IMPORT TESTS.                         #
+    ############################################################################
+
+    def test_stix20_bundle_with_event_title(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_event_title()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(title='Malicious IP addresses report')
+        event = self.parser.misp_event
+        self.assertEqual(event.info, self.parser.event_title)
+
+    def test_stix20_bundle_with_event_title_and_producer(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_event_title()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(
+            title='Malicious IP addresses report',
+            producer='MISP Project'
+        )
+        event = self.parser.misp_event
+        self.assertEqual(
+            event.info,
+            f'{self.parser.event_title} - produced by {self.parser.producer}'
+        )
+        self.assertEqual(
+            event.tags[0]['name'],
+            f'misp-galaxy:producer="{self.parser.producer}"'
+        )
+
+    def test_stix20_bundle_with_producer(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_event_title()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(producer='MISP Project')
+        event = self.parser.misp_event
+        self.assertEqual(
+            event.tags[0]['name'],
+            f'misp-galaxy:producer="{self.parser.producer}"'
+        )
 
     ############################################################################
     #                        MISP GALAXIES IMPORT TESTS                        #
