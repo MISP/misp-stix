@@ -11,15 +11,13 @@ from .converters import (
     ExternalSTIX2MalwareConverter, ExternalSTIX2ObservedDataConverter,
     ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, STIX2ObservableObjectConverter)
+from .importparser import ExternalSTIXtoMISPParser
 from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
 from collections import defaultdict
 from typing import Optional, Union
 
-MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
 
-
-
-class ExternalSTIX2toMISPParser(STIX2toMISPParser):
+class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
@@ -39,34 +37,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._tool_parser: ExternalSTIX2ToolConverter
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
-    def parse_stix_bundle(
-            self, cluster_distribution: Optional[int] = 0,
-            cluster_sharing_group_id: Optional[int] = None,
-            organisation_uuid: Optional[str] = MISP_org_uuid, **kwargs):
+    def parse_stix_bundle(self, cluster_distribution: Optional[int] = 0,
+                          cluster_sharing_group_id: Optional[int] = None,
+                          organisation_uuid: Optional[str] = None, **kwargs):
         self._set_parameters(**kwargs)
         self._set_cluster_distribution(
             cluster_distribution, cluster_sharing_group_id
         )
-        self.__organisation_uuid = organisation_uuid
+        self._set_organisation_uuid(organisation_uuid)
         self._parse_stix_bundle()
-
-    ############################################################################
-    #                                PROPERTIES                                #
-    ############################################################################
-
-    @property
-    def cluster_distribution(self) -> dict:
-        return self.__cluster_distribution
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
         if not hasattr(self, '_observable_object_parser'):
             self._set_observable_object_parser()
         return self._observable_object_parser
-
-    @property
-    def organisation_uuid(self) -> str:
-        return self.__organisation_uuid
 
     ############################################################################
     #                              PARSER SETTERS                              #
@@ -77,19 +62,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _set_campaign_parser(self):
         self._campaign_parser = ExternalSTIX2CampaignConverter(self)
-
-    def _set_cluster_distribution(
-            self, distribution: int, sharing_group_id: Union[int, None]):
-        cl_dis = {'distribution': self._sanitise_distribution(distribution)}
-        if distribution == 4:
-            if sharing_group_id is not None:
-                cl_dis['sharing_group_id'] = self._sanitise_sharing_group_id(
-                    sharing_group_id
-                )
-            else:
-                cl_dis['distribution'] = 0
-                self._cluster_distribution_and_sharing_group_id_error()
-        self.__cluster_distribution = cl_dis
 
     def _set_course_of_action_parser(self):
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)

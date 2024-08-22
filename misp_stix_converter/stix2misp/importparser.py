@@ -72,6 +72,34 @@ def _load_json_file(path):
         return json.load(f)
 
 
+class ExternalSTIXtoMISPParser(metaclass=ABCMeta):
+    _MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+
+    def _set_cluster_distribution(
+            self, distribution: int, sharing_group_id: Union[int, None]):
+        cl_dis = {'distribution': self._sanitise_distribution(distribution)}
+        if distribution == 4:
+            if sharing_group_id is not None:
+                cl_dis['sharing_group_id'] = self._sanitise_sharing_group_id(
+                    sharing_group_id
+                )
+            else:
+                cl_dis['distribution'] = 0
+                self._cluster_distribution_and_sharing_group_id_error()
+        self.__cluster_distribution = cl_dis
+
+    def _set_organisation_uuid(self, organisation_uuid: Union[str, None]):
+        self.__organisation_uuid = organisation_uuid or self._MISP_org_uuid
+
+    @property
+    def cluster_distribution(self) -> dict:
+        return self.__cluster_distribution
+
+    @property
+    def organisation_uuid(self) -> str:
+        return self.__organisation_uuid
+
+
 class STIXtoMISPParser(metaclass=ABCMeta):
     def __init__(self):
         self._identifier: str
