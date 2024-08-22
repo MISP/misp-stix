@@ -255,15 +255,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._critical_error(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
 
-    def parse_stix_content(
-            self, filename: str, single_event: Optional[bool] = False):
+    def parse_stix_content(self, filename: str, **kwargs):
         try:
             bundle = _load_stix2_content(filename)
         except Exception as exception:
             sys.exit(exception)
         self.load_stix_bundle(bundle)
         del bundle
-        self.parse_stix_bundle(single_event)
+        self.parse_stix_bundle(**kwargs)
 
     def _parse_stix_bundle(self):
         try:
