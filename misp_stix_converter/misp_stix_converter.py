@@ -14,9 +14,8 @@ from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
 from .stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
-from .stix2misp.external_stix2_to_misp import (
-    ExternalSTIX2toMISPParser, MISP_org_uuid)
-from .stix2misp.importparser import _load_stix2_content
+from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
+from .stix2misp.importparser import _load_stix2_content, MISP_org_uuid
 from .stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
 from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
 from collections import defaultdict

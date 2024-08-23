@@ -23,6 +23,8 @@ _INDICATOR_TYPING = Union[
 ]
 _DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 
+MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+
 _DEFAULT_DISTRIBUTION = 0
 
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
@@ -73,8 +75,6 @@ def _load_json_file(path):
 
 
 class ExternalSTIXtoMISPParser(metaclass=ABCMeta):
-    _MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
-
     def _set_cluster_distribution(
             self, distribution: int, sharing_group_id: Union[int, None]):
         cl_dis = {'distribution': self._sanitise_distribution(distribution)}
@@ -89,7 +89,7 @@ class ExternalSTIXtoMISPParser(metaclass=ABCMeta):
         self.__cluster_distribution = cl_dis
 
     def _set_organisation_uuid(self, organisation_uuid: Union[str, None]):
-        self.__organisation_uuid = organisation_uuid or self._MISP_org_uuid
+        self.__organisation_uuid = organisation_uuid or MISP_org_uuid
 
     @property
     def cluster_distribution(self) -> dict:
