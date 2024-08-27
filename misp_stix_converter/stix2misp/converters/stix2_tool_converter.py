@@ -97,7 +97,11 @@ class InternalSTIX2ToolConverter(InternalSTIX2Converter):
         try:
             parser(tool)
         except Exception as exception:
-            self.main_parser._tool_error(tool.id, exception)
+            _traceback = self.main_parser._parse_traceback(exception)
+            self.main_parser._add_error(
+                'Error while parsing the Tool object with id '
+                f'{tool.id}: {_traceback}'
+            )
 
     def _create_cluster(self, tool: _TOOL_TYPING,
                         description: Optional[str] = None,

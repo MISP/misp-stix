@@ -116,7 +116,11 @@ class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
         try:
             parser(attack_pattern)
         except Exception as exception:
-            self.main_parser._attack_pattern_error(attack_pattern.id, exception)
+            _traceback = self.main_parser._parse_traceback(exception)
+            self.main_parser._add_error(
+                'Error parsing the Attack Pattern object with id '
+                f'{attack_pattern.id}: {_traceback}'
+            )
 
     def _create_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
                         description: Optional[str] = None,

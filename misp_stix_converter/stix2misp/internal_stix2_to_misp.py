@@ -17,7 +17,7 @@ from collections import defaultdict
 from pymisp import MISPSighting
 from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21
-from typing import Optional, Union
+from typing import Union
 
 _CUSTOM_TYPING = Union[
     CustomObject_v20,

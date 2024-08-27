@@ -243,14 +243,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 n_report += 1
             feature = self._mapping.stix_object_loading_mapping(object_type)
             if feature is None:
-                self._unable_to_load_stix_object_type_error(object_type)
+                self._add_error(
+                    f'Unable to load STIX object type: {object_type}'
+                )
                 continue
             if hasattr(stix_object, 'created_by_ref'):
                 self._creators.add(stix_object.created_by_ref)
             try:
                 getattr(self, feature)(stix_object)
-            except MarkingDefinitionLoadingError as error:
-                self._marking_definition_error(error)
+            except MarkingDefinitionLoadingError as marking_definition_id:
+                self._add_error(
+                    'Error whil parsing the Marking Definition '
+                    f'object with id {marking_definition_id}'
+                )
             except AttributeError as exception:
                 self._critical_error(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
@@ -589,18 +594,26 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._object_type_loading_error(error)
         except UndefinedIndicatorError as error:
             self._undefined_indicator_error(error)
-        except UndefinedSTIXObjectError as error:
-            self._undefined_object_error(error)
+        except UndefinedSTIXObjectError as object_id:
+            self._add_error(
+                'Unable to define the object identified '
+                f'with the id {object_id}'
+            )
         except UndefinedObservableError as error:
             self._undefined_observable_error(error)
-        except UnknownAttributeTypeError as error:
-            self._unknown_attribute_type_warning(error)
-        except UnknownObjectNameError as error:
-            self._unknown_object_name_warning(error)
+        except UnknownAttributeTypeError as attribute_type:
+            self._add_warning(
+                f'MISP attribute type not mapped: {attribute_type}'
+            )
+        except UnknownObjectNameError as name:
+            self._add_warning(f'MISP object name not mapped: {name}')
         except UnknownParsingFunctionError as error:
             self._unknown_parsing_function_error(error)
-        except UnknownPatternTypeError as error:
-            self._unknown_pattern_type_error(object_ref, error)
+        except UnknownPatternTypeError as pattern_type:
+            self._add_error(
+                'Unknown pattern type in Indicator object with id '
+                f'{object_ref}: {pattern_type}'
+            )
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
@@ -1233,3 +1246,34 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")
                 )
             )
+
+    ############################################################################
+    #                   ERRORS AND WARNINGS HANDLING METHODS                   #
+    ############################################################################
+
+    def _critical_error(self, exception: Exception):
+        self._add_error(f'The following exception was raised: {exception}')
+
+    def _object_ref_loading_error(self, object_ref: str):
+        self._add_error(f'Error loading the STIX object with id {object_ref}')
+
+    def _object_type_loading_error(self, object_type: str):
+        self._add_error(f'Error loading the STIX object of type {object_type}')
+
+    def _unknown_network_protocol_warning(
+            self, protocol: str, object_id: str,
+            object_type: Optional[str] = 'indicator'):
+        message = (
+            'in patterning expression within the indicator with id'
+            if object_type == 'indicator' else
+            f'within the {object_type} object with id'
+        )
+        self._add_warning(
+            f'Unknown network protocol: {protocol}, {message} {object_id}'
+        )
+
+    def _unknown_parsing_function_error(self, feature: Exception):
+        self._add_error(f'Unknown STIX parsing function name: {feature}')
+
+    def _unknown_stix_object_type_error(self, object_type: Exception):
+        self._add_error(f'Unknown STIX object type: {object_type}')

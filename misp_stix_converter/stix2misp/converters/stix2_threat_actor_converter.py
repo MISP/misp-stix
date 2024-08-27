@@ -104,4 +104,8 @@ class InternalSTIX2ThreatActorConverter(
         try:
             parser(threat_actor)
         except Exception as exception:
-            self.main_parser._threat_actor_error(threat_actor.id, exception)
+            _traceback = self.main_parser._parse_traceback(exception)
+            self.main_parser._add_error(
+                'Error while parsing the Threat Actor object with id '
+                f'{threat_actor.id}: {_traceback}'
+            )

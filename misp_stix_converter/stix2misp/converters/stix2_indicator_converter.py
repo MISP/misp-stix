@@ -19,13 +19,17 @@ from .stix2mapping import (
 from abc import ABCMeta
 from collections import defaultdict
 from pymisp import MISPObject
-from stix2.v21.sdo import Indicator
+from stix2.v20.sdo import Indicator as Indicator_v20
+from stix2.v21.sdo import Indicator as Indicator_v21
 from stix2patterns.inspector import _PatternData as PatternData
+from types import GeneratorType
 from typing import TYPE_CHECKING, Tuple, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
+
+_INDICATOR_TYPING = Union[Indicator_v20, Indicator_v21]
 
 
 class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
@@ -308,8 +312,8 @@ class ExternalSTIX2IndicatorConverter(
         try:
             parser(indicator)
         except UnknownPatternMappingError as error:
-            self.main_parser._unknown_pattern_mapping_warning(
-                indicator.id, error.__str__()
+            self._unknown_pattern_mapping_warning(
+                indicator.id, error.__str__().split('_')
             )
             self._create_stix_pattern_object(indicator)
         except InvalidSTIXPatternError as error:
@@ -352,7 +356,7 @@ class ExternalSTIX2IndicatorConverter(
         return self._pattern_parser.pattern
 
     def _handle_pattern_mapping(self, indicator: _INDICATOR_TYPING) -> str:
-        if isinstance(indicator, Indicator):
+        if isinstance(indicator, (Indicator_v20, Indicator_v21)):
             pattern_type = indicator.pattern_type
             if pattern_type != 'stix':
                 try:
@@ -367,6 +371,14 @@ class ExternalSTIX2IndicatorConverter(
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
 
+    # Errors handlin
+    def _no_converted_content_from_pattern_warning(
+            self, indicator: _INDICATOR_TYPING):
+        self.main_parser._add_warning(
+            "No content extracted from the following Indicator's (id: "
+            f'{indicator.id}) pattern: {indicator.pattern}'
+        )
+
     ############################################################################
     #                        INDICATORS PARSING METHODS                        #
     ############################################################################
@@ -380,7 +392,7 @@ class ExternalSTIX2IndicatorConverter(
             field = keys[0]
             mapping = self._mapping.asn_pattern_mapping(field)
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(indicator.id, field)
+                self._unmapped_pattern_warning(indicator.id, field)
                 continue
             if not isinstance(values, tuple):
                 attributes.append(
@@ -405,9 +417,7 @@ class ExternalSTIX2IndicatorConverter(
                 if assertion not in self._mapping.valid_pattern_assertions():
                     continue
                 if keys[0] != 'value':
-                    self.main_parser._unmapped_pattern_warning(
-                        indicator.id, '.'.join(keys)
-                    )
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
                 if isinstance(values, tuple):
                     for value in values:
@@ -417,9 +427,7 @@ class ExternalSTIX2IndicatorConverter(
         if 'asn' in (attr['object_relation'] for attr in attributes):
             self._handle_import_case(indicator, attributes, 'asn')
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_directory_pattern(
@@ -430,9 +438,7 @@ class ExternalSTIX2IndicatorConverter(
                 continue
             mapping = self._mapping.directory_pattern_mapping(keys[0])
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -442,9 +448,7 @@ class ExternalSTIX2IndicatorConverter(
         if misp_object.attributes:
             self.main_parser._add_misp_object(misp_object, indicator)
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_domain_ip_port_pattern(
@@ -459,9 +463,7 @@ class ExternalSTIX2IndicatorConverter(
                 if assertion not in self._mapping.valid_pattern_assertions():
                     continue
                 if keys[0] != 'value':
-                    self.main_parser._unmapped_pattern_warning(
-                        indicator.id, '.'.join(keys)
-                    )
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
                 if isinstance(values, tuple):
                     for value in values:
@@ -469,7 +471,7 @@ class ExternalSTIX2IndicatorConverter(
                 else:
                     attributes.append({'value': values, **mapping})
         if any(key not in features for key in pattern.comparisons.keys()):
-            self.main_parser._unknown_pattern_mapping_warning(
+            self._unknown_pattern_mapping_warning(
                 indicator.id,
                 (
                     key for key in pattern.comparisons.keys()
@@ -482,9 +484,7 @@ class ExternalSTIX2IndicatorConverter(
                 'first-seen', 'last-seen'
             )
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_email_address_pattern(
@@ -495,9 +495,7 @@ class ExternalSTIX2IndicatorConverter(
                 continue
             mapping = self._mapping.email_address_pattern_mapping(keys[0])
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -507,9 +505,7 @@ class ExternalSTIX2IndicatorConverter(
         if attributes:
             self._handle_import_case(indicator, attributes, 'email')
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_email_message_pattern(
@@ -521,7 +517,7 @@ class ExternalSTIX2IndicatorConverter(
             field = '.'.join(keys) if len(keys) > 1 else keys[0]
             mapping = self._mapping.email_message_mapping(field)
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(indicator.id, field)
+                self._unmapped_pattern_warning(indicator.id, field)
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -534,9 +530,7 @@ class ExternalSTIX2IndicatorConverter(
                 'bcc', 'cc', 'to'
             )
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_file_and_pe_pattern(
@@ -554,7 +548,7 @@ class ExternalSTIX2IndicatorConverter(
                         _, _, _, index, _, hash_type = keys
                         mapping = self._mapping.file_hashes_mapping(hash_type)
                         if mapping is None:
-                            self.main_parser._unmapped_pattern_warning(
+                            self._unmapped_pattern_warning(
                                 indicator.id, '.'.join(keys)
                             )
                             continue
@@ -571,7 +565,7 @@ class ExternalSTIX2IndicatorConverter(
                     _, _, _, index, feature = keys
                     mapping = self._mapping.pe_section_pattern_mapping(feature)
                     if mapping is None:
-                        self.main_parser._unmapped_pattern_warning(
+                        self._unmapped_pattern_warning(
                             indicator.id, '.'.join(keys)
                         )
                         continue
@@ -605,9 +599,7 @@ class ExternalSTIX2IndicatorConverter(
                             **{'value': values, **attribute}
                         )
                     continue
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             file_attributes = self._parse_file_attribute(
                 keys, values, indicator.id
@@ -635,9 +627,7 @@ class ExternalSTIX2IndicatorConverter(
             if file_object.attributes:
                 self.main_parser._add_misp_object(file_object, indicator)
             else:
-                self.main_parser._no_converted_content_from_pattern_warning(
-                    indicator
-                )
+                self._no_converted_content_from_pattern_warning(indicator)
                 self._create_stix_pattern_object(indicator)
 
     def _parse_file_attribute(self, keys: list, values: Union[str, tuple],
@@ -653,9 +643,7 @@ class ExternalSTIX2IndicatorConverter(
             else:
                 yield {'value': values, **mapping}
         else:
-            self.main_parser._unmapped_pattern_warning(
-                indicator_id, '.'.join(keys)
-            )
+            self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
 
     def _parse_file_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
@@ -678,9 +666,7 @@ class ExternalSTIX2IndicatorConverter(
                     'file-encoding', 'fullpath', 'modification-time', 'path'
                 )
             else:
-                self.main_parser._no_converted_content_from_pattern_warning(
-                    indicator
-                )
+                self._no_converted_content_from_pattern_warning(indicator)
                 self._create_stix_pattern_object(indicator)
 
     def _parse_ip_address_pattern(
@@ -692,7 +678,7 @@ class ExternalSTIX2IndicatorConverter(
                     if assertion not in self._mapping.valid_pattern_assertions():
                         continue
                     if keys[0] != 'value':
-                        self.main_parser._unmapped_pattern_warning(
+                        self._unmapped_pattern_warning(
                             indicator.id, '.'.join(keys)
                         )
                         continue
@@ -708,9 +694,7 @@ class ExternalSTIX2IndicatorConverter(
         if attributes:
             self._handle_import_case(indicator, attributes, 'ip-port')
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_mutex_pattern(
@@ -733,9 +717,7 @@ class ExternalSTIX2IndicatorConverter(
         if attributes:
             self._handle_import_case(indicator, attributes, 'mutex', 'name')
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_network_connection_pattern(
@@ -765,9 +747,7 @@ class ExternalSTIX2IndicatorConverter(
         if misp_object.attributes:
             self.main_parser._add_misp_object(misp_object, indicator)
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_network_socket_pattern(
@@ -781,9 +761,7 @@ class ExternalSTIX2IndicatorConverter(
                     keys[-1]
                 )
                 if mapping is None:
-                    self.main_parser._unmapped_pattern_warning(
-                        indicator.id, '.'.join(keys)
-                    )
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
                 if isinstance(values, tuple):
                     for value in values:
@@ -824,9 +802,7 @@ class ExternalSTIX2IndicatorConverter(
             return
         mapping = getattr(self._mapping, f'{name}_pattern_mapping')(field)
         if mapping is None:
-            self.main_parser._unmapped_pattern_warning(
-                indicator_id, '.'.join(keys)
-            )
+            self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
             return
         if isinstance(values, tuple):
             for value in values:
@@ -861,9 +837,7 @@ class ExternalSTIX2IndicatorConverter(
                 continue
             mapping = self._mapping.process_pattern_mapping(keys[0])
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -876,9 +850,7 @@ class ExternalSTIX2IndicatorConverter(
                 'args', 'command-line', 'current-directory', 'name', 'pid'
             )
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_registry_key_pattern(
@@ -891,9 +863,7 @@ class ExternalSTIX2IndicatorConverter(
                 keys[-1 if 'values' in keys else 0]
             )
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -906,12 +876,10 @@ class ExternalSTIX2IndicatorConverter(
                 'data', 'data-type', 'name'
             )
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
-    def _parse_sigma_pattern(self, indicator: Indicator):
+    def _parse_sigma_pattern(self, indicator: _INDICATOR_TYPING):
         if hasattr(indicator, 'name') or hasattr(indicator, 'external_references'):
             attributes = []
             for field, mapping in self._mapping.sigma_object_mapping().items():
@@ -963,7 +931,7 @@ class ExternalSTIX2IndicatorConverter(
                 indicator
             )
 
-    def _parse_snort_pattern(self, indicator: Indicator):
+    def _parse_snort_pattern(self, indicator: _INDICATOR_TYPING):
         self.main_parser._add_misp_attribute(
             {
                 'value': indicator.pattern,
@@ -981,9 +949,7 @@ class ExternalSTIX2IndicatorConverter(
                 continue
             mapping = self._mapping.software_pattern_mapping(keys[0])
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -993,9 +959,7 @@ class ExternalSTIX2IndicatorConverter(
         if attributes:
             self._handle_object_case(indicator, attributes, 'software')
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
@@ -1011,7 +975,7 @@ class ExternalSTIX2IndicatorConverter(
             raise UnknownParsingFunctionError(feature)
         parser(compiled_pattern, indicator)
 
-    def _parse_suricata_pattern(self, indicator: Indicator):
+    def _parse_suricata_pattern(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('suricata', indicator)
         for feature, mapping in self._mapping.suricata_object_mapping().items():
             if hasattr(indicator, feature):
@@ -1032,9 +996,7 @@ class ExternalSTIX2IndicatorConverter(
                 if assertion not in self._mapping.valid_pattern_assertions():
                     continue
                 if keys[0] != 'value':
-                    self.main_parser._unmapped_pattern_warning(
-                        indicator.id, '.'.join(keys)
-                    )
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
                 if isinstance(values, tuple):
                     for value in values:
@@ -1046,16 +1008,14 @@ class ExternalSTIX2IndicatorConverter(
                         {'value': values, **self._mapping.url_attribute()}
                     )
         if any(key != 'url' for key in pattern.comparisons.keys()):
-            self.main_parser._unknown_pattern_mapping_warning(
+            self._unknown_pattern_mapping_warning(
                 indicator.id,
                 (key for key in pattern.comparisons.keys() if key != 'url')
             )
         if attributes:
             self._handle_import_case(indicator, attributes, 'url')
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_user_account_pattern(
@@ -1068,9 +1028,7 @@ class ExternalSTIX2IndicatorConverter(
                 keys[-1 if 'unix-account-ext' in keys else 0]
             )
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -1080,9 +1038,7 @@ class ExternalSTIX2IndicatorConverter(
         if attributes:
             self._handle_object_case(indicator, attributes, 'user-account')
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(
-                indicator
-            )
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
     def _parse_x509_pattern(
@@ -1095,9 +1051,7 @@ class ExternalSTIX2IndicatorConverter(
                 keys[1 if 'hashes' in keys else 0]
             )
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -1113,10 +1067,10 @@ class ExternalSTIX2IndicatorConverter(
                 'validity-not-before', 'version'
             )
         else:
-            self.main_parser._no_converted_content_from_pattern_warning(indicator)
+            self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
-    def _parse_yara_pattern(self, indicator: Indicator):
+    def _parse_yara_pattern(self, indicator: _INDICATOR_TYPING):
         if hasattr(indicator, 'pattern_version'):
             misp_object = self._create_misp_object('yara', indicator)
             for feature, mapping in self._mapping.yara_object_mapping().items():
@@ -1145,6 +1099,23 @@ class ExternalSTIX2IndicatorConverter(
                 },
                 indicator
             )
+
+    ############################################################################
+    #                   ERRORS AND WARNINGS HANDLING METHODS                   #
+    ############################################################################
+
+    def _unknown_pattern_mapping_warning(
+            self, indicator_id: str, pattern_types: GeneratorType):
+        self._add_warning(
+            f'Unable to map pattern from the Indicator with id {indicator_id}, '
+            f"containing the following types: {', '.join(pattern_types)}"
+        )
+
+    def _unmapped_pattern_warning(self, indicator_id: str, feature: str):
+        self._add_warning(
+            'Unmapped pattern part in indicator with id '
+            f'{indicator_id}: {feature}'
+        )
 
 
 class InternalSTIX2IndicatorMapping(
@@ -1476,10 +1447,17 @@ class InternalSTIX2IndicatorConverter(
             raise UnknownParsingFunctionError(f"{feature}_indicator")
         try:
             parser(indicator)
-        except AttributeFromPatternParsingError as error:
-            self.main_parser._attribute_from_pattern_parsing_error(error)
+        except AttributeFromPatternParsingError as indicator_id:
+            self.main_parser._add_error(
+                'Error while parsing pattern from '
+                f'indicator with id {indicator_id}'
+            )
         except Exception as exception:
-            self.main_parser._indicator_error(indicator.id, exception)
+            _traceback = self.main_parser._parse_traceback(exception)
+            self.main_parser._add_error(
+                'Error while parsing the Indicator object with id '
+                f'{indicator.id}: {_traceback}'
+            )
 
     ############################################################################
     #                        ATTRIBUTES PARSING METHODS                        #
@@ -1562,7 +1540,7 @@ class InternalSTIX2IndicatorConverter(
         self.main_parser._add_misp_attribute(attribute, indicator)
 
     def _attribute_from_patterning_language_indicator(
-            self, indicator: Indicator):
+            self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = indicator.pattern
         self.main_parser._add_misp_attribute(attribute, indicator)
@@ -1981,7 +1959,8 @@ class InternalSTIX2IndicatorConverter(
             indicator, 'parler-account'
         )
 
-    def _object_from_patterning_language_indicator(self, indicator: Indicator):
+    def _object_from_patterning_language_indicator(
+            self, indicator: _INDICATOR_TYPING):
         name = (
             'suricata' if indicator.pattern_type == 'snort'
             else indicator.pattern_type

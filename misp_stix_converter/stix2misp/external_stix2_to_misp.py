@@ -146,18 +146,24 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 continue
             feature = self._mapping.observable_mapping(observable_type)
             if feature is None:
-                self._observable_object_mapping_error(
-                    unparsed_content[observable_type][0]
+                observable_id = unparsed_content[observable_type][0]
+                self._add_error(
+                    f'Unable to map observable object with id {observable_id}'
                 )
                 continue
             to_call = f'_parse_{feature}_observable_object'
             for object_id in unparsed_content[observable_type]:
                 if self._observable[object_id]['used'][self.misp_event.uuid]:
+                    # if object_id.split('--')[0] not in _force_observables_list:
                     continue
                 try:
                     getattr(self.observable_object_parser, to_call)(object_id)
                 except Exception as exception:
-                    self._observable_object_error(object_id, exception)
+                    _traceback = self._parse_traceback(exception)
+                    self._add_error(
+                        'Error parsing the Observable object with id '
+                        f'{object_id}: {_traceback}'
+                    )
         super()._handle_unparsed_content()
 
     def _parse_loaded_features(self):

@@ -322,7 +322,11 @@ class InternalSTIX2IdentityConverter(
             try:
                 parser(identity)
             except Exception as exception:
-                self.main_parser._identity_error(identity.id, exception)
+                _traceback = self.main_parser._parse_traceback(exception)
+                self.main_parser._add_error(
+                    'Error while parsing the Identity object with id '
+                    f'{identity.id}: {_traceback}
+                )
 
     def _parse_employee_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._create_misp_object('employee', identity)

@@ -247,41 +247,16 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
 
-    def _attack_pattern_error(
-            self, attack_pattern_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        self.__errors[self._identifier].add(
-            'Error parsing the Attack Pattern object with id '
-            f'{attack_pattern_id}: {tb}'
-        )
+    def _add_error(self, error: str):
+        self.__errors[self._identifier].add(error)
 
-    def _attribute_from_pattern_parsing_error(self, indicator_id: str):
-        self.__errors[self._identifier].add(
-            f'Error while parsing pattern from indicator with id {indicator_id}'
-        )
+    def _add_warning(self, warning: str):
+        self.__warnings[self._identifier].add(warning)
 
     def _cluster_distribution_and_sharing_group_id_error(self):
         self.__errors['init'].add(
             'Invalid Cluster Sharing Group ID - '
             'cannot be None when distribution is 4'
-        )
-
-    def _course_of_action_error(
-            self, course_of_action_id: str, exception: Exception):
-        self.__errors[self._identifier].add(
-            'Error parsing the Course of Action object with id'
-            f'{course_of_action_id}: {self._parse_traceback(exception)}'
-        )
-
-    def _critical_error(self, exception: Exception):
-        self.__errors[self._identifier].add(
-            f'The following exception was raised: {exception}'
-        )
-
-    def _custom_object_error(self, custom_object_id: str, exception: Exception):
-        self.__errors[self._identifier].add(
-            'Error parsing the Custom object with id'
-            f'{custom_object_id}: {self._parse_traceback(exception)}'
         )
 
     def _distribution_and_sharing_group_id_error(self):
@@ -304,88 +279,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'Invalid galaxies_as_tags flag: {galaxies_as_tags} (bool expected)'
         )
 
-    def _hash_type_error(self, hash_type: str):
-        self.__errors[self._identifier].add(f'Wrong hash type: {hash_type}')
-
-    def _identity_error(self, identity_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        self.__errors[self._identifier].add(
-            f'Error parsing the Identity object with id {identity_id}: {tb}'
-        )
-
-    def _indicator_error(self, indicator_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        self.__errors[self._identifier].add(
-            f'Error parsing the Indicator object with id {indicator_id}: {tb}'
-        )
-
-    def _intrusion_set_error(self, intrusion_set_id: str, exception: Exception):
-        self.__errors[self._identifier].add(
-            f'Error parsing the Intrusion Set object with id {intrusion_set_id}'
-            f': {self._parse_traceback(exception)}'
-        )
-
-    def _location_error(self, location_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        self.__errors[self._identifier].add(
-            f'Error parsing the Location object with id {location_id}: {tb}'
-        )
-
-    def _malware_error(self, malware_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        self.__errors[self._identifier].add(
-            f'Error parsing the Malware object with id {malware_id}: {tb}'
-        )
-
-    def _marking_definition_error(self, marking_definition_id: str):
-        self.__errors[self._identifier].add(
-            f'Error parsing the Marking Definition object with id '
-            f'{marking_definition_id}'
-        )
-
-    def _no_converted_content_from_pattern_warning(
-            self, indicator: _INDICATOR_TYPING):
-        self.__warnings[self._identifier].add(
-            "No content to extract from the following Indicator's (id: "
-            f'{indicator.id}) pattern: {indicator.pattern}'
-        )
-
-    def _object_ref_loading_error(self, object_ref: str):
-        self.__errors[self._identifier].add(
-            f'Error loading the STIX object with id {object_ref}'
-        )
-
-    def _object_type_loading_error(self, object_type: str):
-        self.__errors[self._identifier].add(
-            f'Error loading the STIX object of type {object_type}'
-        )
-
-    def _observable_mapping_error(
-            self, observed_data_id: str, observable_types: str):
-        self.__errors[self._identifier].add(
-            'Unable to map observable objects related to the Observed Data '
-            f'object with id {observed_data_id} containing the folowing types'
-            f": {observable_types.__str__().replace('_', ', ')}"
-        )
-
-    def _observable_object_error(
-            self, observable_id: str, exception: Exception):
-        self.__errors[self._identifier].add(
-            f'Error parsing the Observable object with id {observable_id}'
-            f': {self._parse_traceback(exception)}'
-        )
-
-    def _observable_object_mapping_error(self, observable_id: str):
-        self.__errors[self._identifier].add(
-            f'Unable to map observable object with id {observable_id}.'
-        )
-
-    def _observed_data_error(self, observed_data_id: str, exception: Exception):
-        self.__errors[self._identifier].add(
-            f'Error parsing the Observed Data object with id {observed_data_id}'
-            f': {self._parse_traceback(exception)}'
-        )
-
     @staticmethod
     def _parse_traceback(exception: Exception) -> str:
         tb = ''.join(traceback.format_tb(exception.__traceback__))
@@ -396,105 +289,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'Wrong sharing group id format: {exception}'
         )
 
-    def _threat_actor_error(self, threat_actor_id: str, exception: Exception):
-        self.__errors[self._identifier].add(
-            f'Error parsing the Threat Actor object with id {threat_actor_id}'
-            f': {self._parse_traceback(exception)}'
-        )
-
-    def _tool_error(self, tool_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        self.__errors[self._identifier].add(
-            f'Error parsing the Tool object with id {tool_id}: {tb}'
-        )
-
-    def _unable_to_load_stix_object_type_error(self, object_type: str):
-        self.__errors[self._identifier].add(
-            f'Unable to load STIX object type: {object_type}'
-        )
-
-    def _undefined_object_error(self, object_id: str):
-        self.__errors[self._identifier].add(
-            f'Unable to define the object identified with the id: {object_id}'
-        )
-
-    def _unknown_attribute_type_warning(self, attribute_type: str):
-        self.__warnings[self._identifier].add(
-            f'MISP attribute type not mapped: {attribute_type}'
-        )
-
-    def _unknown_marking_object_warning(self, marking_ref: str):
-        self.__warnings[self._identifier].add(
-            f'Unknown marking definition object referenced by id {marking_ref}'
-        )
-
-    def _unknown_marking_ref_warning(self, marking_ref: str):
-        self.__warnings[self._identifier].add(
-            f'Unknown marking ref: {marking_ref}'
-        )
-
-    def _unknown_network_protocol_warning(
-            self, protocol: str, object_id: str,
-            object_type: Optional[str] = 'indicator'):
-        message = (
-            'in patterning expression within the indicator with id'
-            if object_type == 'indicator' else
-            f'within the {object_type} object with id'
-        )
-        self.__warnings[self._identifier].add(
-            f'Unknown network protocol: {protocol}, {message} {object_id}'
-        )
-
-    def _unknown_object_name_warning(self, name: str):
-        self.__warnings[self._identifier].add(
-            f'MISP object name not mapped: {name}'
-        )
-
-    def _unknown_parsing_function_error(self, feature: str):
-        self.__errors[self._identifier].add(
-            f'Unknown STIX parsing function name: {feature}'
-        )
-
-    def _unknown_pattern_mapping_warning(
-            self, indicator_id: str, pattern_types: Union[GeneratorType, str]):
-        if not isinstance(pattern_types, GeneratorType):
-            pattern_types = pattern_types.split('_')
-        self.__warnings[self._identifier].add(
-            f'Unable to map pattern from the Indicator with id {indicator_id}, '
-            f"containing the following types: {', '.join(pattern_types)}"
-        )
-
-    def _unknown_pattern_type_error(self, indicator_id: str, pattern_type: str):
-        self.__errors[self._identifier].add(
-            f'Unknown pattern type in indicator with id {indicator_id}'
-            f': {pattern_type}'
-        )
-
-    def _unknown_stix_object_type_error(self, object_type: str):
-        self.__errors[self._identifier].add(
-            f'Unknown STIX object type: {object_type}'
-        )
-
-    def _unmapped_pattern_warning(self, indicator_id: str, feature: str):
-        self.__warnings[self._identifier].add(
-            f'Unmapped pattern part in indicator with id {indicator_id}'
-            f': {feature}'
-        )
-
-    def _vulnerability_error(self, vulnerability_id: str, exception: Exception):
-        self.__errors[self._identifier].add(
-            f'Error parsing the Vulnerability object with id {vulnerability_id}'
-            f': {self._parse_traceback(exception)}'
-        )
-
     ############################################################################
     #            MISP OBJECT RELATIONSHIPS MAPPING CREATION METHODS            #
     ############################################################################
 
     def __get_relationship_types(self):
-        relationships_path = Path(
-            AbstractMISP().resources_path / 'misp-objects' / 'relationships'
-        )
+        relationships_path = resources_path / 'misp-objects' / 'relationships'
         relationships = _load_json_file(relationships_path / 'definition.json')
         self.__relationship_types = {
             relationship['name']: relationship['opposite'] for relationship
