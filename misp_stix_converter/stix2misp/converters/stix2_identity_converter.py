@@ -325,7 +325,7 @@ class InternalSTIX2IdentityConverter(
                 _traceback = self.main_parser._parse_traceback(exception)
                 self.main_parser._add_error(
                     'Error while parsing the Identity object with id '
-                    f'{identity.id}: {_traceback}
+                    f'{identity.id}: {_traceback}'
                 )
 
     def _parse_employee_object(self, identity: _IDENTITY_TYPING):

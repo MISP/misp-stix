@@ -56,7 +56,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             _traceback = self.main_parser._parse_traceback(exception)
             self.main_parser._add_error(
                 'Error parsing the Custom object with id '
-                f'{custom_object.id}: {_traceback}
+                f'{custom_object.id}: {_traceback}'
             )
 
     def _parse_custom_attribute(self, custom_attribute: _CUSTOM_OBJECT_TYPING):
