@@ -356,7 +356,7 @@ class ExternalSTIX2IndicatorConverter(
         return self._pattern_parser.pattern
 
     def _handle_pattern_mapping(self, indicator: _INDICATOR_TYPING) -> str:
-        if isinstance(indicator, (Indicator_v20, Indicator_v21)):
+        if isinstance(indicator, Indicator_v21):
             pattern_type = indicator.pattern_type
             if pattern_type != 'stix':
                 try:
