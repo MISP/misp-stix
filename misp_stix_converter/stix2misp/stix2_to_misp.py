@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import time
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
     ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
@@ -31,7 +30,6 @@ from .importparser import (
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from abc import ABCMeta
 from collections import defaultdict
-from datetime import datetime
 from pymisp import (
     MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
@@ -1234,18 +1232,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if confidence_level >= 25:
             return 'misp:confidence-level="rarely-confident"'
         return 'misp:confidence-level="unconfident"'
-
-    @staticmethod
-    def _timestamp_from_date(date: datetime) -> int:
-        return int(date.timestamp())
-        try:
-            return int(date.timestamp())
-        except AttributeError:
-            return int(
-                time.mktime(
-                    time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")
-                )
-            )
 
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #

@@ -5,8 +5,10 @@ import traceback
 from .exceptions import UnavailableGalaxyResourcesError
 from abc import ABCMeta
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
-from pymisp import AbstractMISP, MISPEvent, MISPObject
+from pymisp import MISPEvent, MISPObject
+from pymisp.abstract import resources_path
 from stix2.exceptions import InvalidValueError
 from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -449,3 +451,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             self.replacement_uuids[object_uuid] = sanitised_uuid
             return sanitised_uuid
         return object_uuid
+
+    ############################################################################
+    #                             UTILITY METHODS.                             #
+    ############################################################################
+
+    @staticmethod
+    def _timestamp_from_date(date: datetime) -> int:
+        return int(date.timestamp())
