@@ -685,7 +685,7 @@ def stix_2_to_misp(filename: _files_type,
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
-        _from_misp(bundle.objects), distribution, sharing_group_id,
+        _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
         title, producer, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
@@ -729,7 +729,7 @@ def stix2_to_misp_instance(
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
-        _from_misp(bundle.objects), distribution, sharing_group_id,
+        _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
         title, producer, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
@@ -762,14 +762,6 @@ def stix2_to_misp_instance(
 #                        STIX CONTENT LOADING FUNCTIONS                        #
 ################################################################################
 
-def _from_misp(stix_objects):
-    for stix_object in stix_objects:
-        labels = stix_object.get('labels', [])
-        if stix_object['type'] not in _STIX2_event_types or not labels:
-            continue
-        if any(tag in labels for tag in _MISP_STIX_tags):
-            return True
-    return False
 
 
 def _get_stix2_parser(from_misp: bool, distribution: int,
@@ -796,6 +788,16 @@ def _get_stix2_parser(from_misp: bool, distribution: int,
         }
     )
     return ExternalSTIX2toMISPParser, args
+
+
+def _is_stix2_from_misp(stix_objects: list):
+    for stix_object in stix_objects:
+        labels = stix_object.get('labels', [])
+        if stix_object['type'] not in _STIX2_event_types or not labels:
+            continue
+        if any(tag in labels for tag in _MISP_STIX_tags):
+            return True
+    return False
 
 
 def _load_stix_event(filename, tries=0):

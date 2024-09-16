@@ -10,13 +10,13 @@ from .misp2stix import stix1_attributes_framing, stix1_framing # noqa
 from .misp2stix import stix20_framing, stix21_framing # noqa
 # Helpers
 from .misp_stix_converter import ( # noqa
-    _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
+    _is_stix2_from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
     stix_1_to_misp, stix_2_to_misp, stix2_to_misp_instance)
 # STIX 1 special helpers
 from .misp_stix_converter import ( # noqa
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
-    _get_observables, _get_threat_actors, _get_ttps, _from_misp)
+    _get_observables, _get_threat_actors, _get_ttps)
 # STIX 1 footers
 from .misp_stix_converter import ( # noqa
     _get_campaigns_footer, _get_courses_of_action_footer, _get_indicators_footer,
