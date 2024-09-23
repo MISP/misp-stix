@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
 import json
+import sys
 import traceback
 from .exceptions import UnavailableGalaxyResourcesError
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
+from mixbox.namespaces import NamespaceNotFoundError
 from pathlib import Path
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
+from stix.core import STIXPackage
 from stix2.exceptions import InvalidValueError
 from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -60,6 +63,26 @@ def _handle_stix2_loading_error(stix2_content: dict):
     return bundle(*stix2_content, allow_custom=True, interoperability=True)
 
 
+def _load_stix1_package(filename, tries=0):
+    try:
+        return STIXPackage.from_xml(filename)
+    except NamespaceNotFoundError:
+        if tries > 0:
+            sys.exit('Cannot handle STIX namespace')
+        _update_namespaces()
+        return _load_stix1_package(filename, tries + 1)
+    except NotImplementedError:
+        sys.exit('Missing python library: stix_edh')
+    except Exception:
+        try:
+            import maec
+            return STIXPackage.from_xml(filename)
+        except ImportError:
+            sys.exit('Missing python library: maec')
+        except Exception as error:
+            sys.exit(f'Error while loading STIX1 package: {error.__str__()}')
+
+
 def _load_stix2_content(filename):
     with open(filename, 'rt', encoding='utf-8') as f:
         stix2_content = f.read()
@@ -74,6 +97,20 @@ def _load_stix2_content(filename):
 def _load_json_file(path):
     with open(path, 'rb') as f:
         return json.load(f)
+
+
+def _update_namespaces():
+    from mixbox.namespaces import Namespace, register_namespace
+    # LIST OF ADDITIONAL NAMESPACES
+    # can add additional ones whenever it is needed
+    ADDITIONAL_NAMESPACES = [
+        Namespace('http://us-cert.gov/ciscp', 'CISCP',
+                  'http://www.us-cert.gov/sites/default/files/STIX_Namespace/ciscp_vocab_v1.1.1.xsd'),
+        Namespace('http://taxii.mitre.org/messages/taxii_xml_binding-1.1', 'TAXII',
+                  'http://docs.oasis-open.org/cti/taxii/v1.1.1/cs01/schemas/TAXII-XMLMessageBinding-Schema.xsd')
+    ]
+    for namespace in ADDITIONAL_NAMESPACES:
+        register_namespace(namespace)
 
 
 class ExternalSTIXtoMISPParser(metaclass=ABCMeta):
@@ -119,6 +156,9 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self.__warnings: defaultdict = defaultdict(set)
         self.__replacement_uuids: dict = {}
 
+    def _populate_misp_event(self):
+        self.misp_events.append(self.misp_event)
+
     def _sanitise_distribution(self, distribution: int) -> int:
         try:
             sanitised = int(distribution)
@@ -150,6 +190,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         except (TypeError, ValueError) as error:
             self._sharing_group_id_error(error)
             return None
+
+    def _set_misp_event(self, misp_event: MISPEvent):
+        self.__misp_event = misp_event
+
+    def _set_misp_events(self):
+        self.__misp_events = []
 
     def _set_parameters(self, distribution: int = _DEFAULT_DISTRIBUTION,
                         sharing_group_id: Optional[int] = None,
@@ -208,6 +254,16 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     @property
     def galaxy_feature(self) -> str:
         return self.__galaxy_feature
+
+    @property
+    def misp_event(self) -> MISPEvent:
+        return self.__misp_event
+
+    @property
+    def misp_events(self) -> Union[list, MISPEvent]:
+        return getattr(
+            self, '_STIXtoMISPParser__misp_events', self.__misp_event
+        )
 
     @property
     def producer(self) -> Union[str, None]:
