@@ -14,7 +14,7 @@ class STIX1toMISPMapping:
         CustomObjectType = '_handle_custom',
         DNSRecordObjectType = '_handle_dns',
         DomainNameObjectType = '_handle_domain_or_url',
-        EmailMessageObjectType = '_handle_email_attribute',
+        EmailMessageObjectType = '_handle_email',
         FileObjectType = '_handle_file',
         HostnameObjectType = '_handle_hostname',
         HTTPSessionObjectType = '_handle_http',

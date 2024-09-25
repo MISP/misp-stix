@@ -53,7 +53,6 @@ class StixObjectTypeError(Exception):
 class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self):
         super().__init__()
-        self._mapping = STIX1toMISPMapping
         self.__galaxies = set()
         self.__references = defaultdict(list)
 
@@ -115,10 +114,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if object_uuid:
             misp_object.uuid = object_uuid
         for attribute in attribute_value:
-            print(attribute)
             attribute['to_ids'] = to_ids
             misp_object.add_attribute(**attribute)
-        print()
         if isinstance(compl_data, dict):
             # if some complementary data is a dictionary containing an uuid,
             # it means we are using it to add an object reference
@@ -219,10 +216,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return event_types['type'], properties.value.value, event_types['relation']
 
     # Return type & value of an email attribute
-    def _handle_email_attribute(self, properties: email_message_object.EmailMessage) -> tuple:
+    def _handle_email(self, properties: email_message_object.EmailMessage) -> tuple:
         if properties.header:
             header = properties.header
-            attributes = self._fetch_attributes_with_key_parsing(header, '_email_mapping')
+            attributes = list(self._fetch_attributes_with_key_parsing(header, 'email_mapping'))
             if header.to:
                 for to in header.to:
                     attributes.append(["email-dst", to.address_value.value, "to"])
@@ -254,7 +251,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # Return type & attributes of a file object
     def _handle_file(self, properties: file_object.File, is_object: bool) -> tuple:
         b_hash, b_file = False, False
-        attributes = []
+        attributes = list(self._fetch_attributes_with_keys(properties, 'file_mapping'))
         if properties.hashes:
             b_hash = True
             for hash_property in properties.hashes:
@@ -265,7 +262,6 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 b_file = True
                 attribute_type, relation = self._mapping.event_types(properties._XSI_TYPE)
                 attributes.append([attribute_type, value, relation])
-        attributes.extend(self._fetch_attributes_with_keys(properties, 'file_mapping'))
         if len(attributes) == 1:
             attribute = attributes[0]
             return attribute[0] if attribute[2] != "fullpath" else "filename", attribute[1], ""
