@@ -229,11 +229,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _handle_note_data(self, note, object_id: str):
         note_args = {
-            'authors': [note['authors']], 'content': note['note'],
+            'content': note['note'],
             'created': self._datetime_from_str(note['created']),
             'modified': self._datetime_from_str(note['modified']),
             'id': f"note--{note['uuid']}", 'object_refs': [object_id]
         }
+        if note.get('authors'):
+            note_args['authors'] = [note['authors']]
+        if note.get('comment'):
+            note_args['abstract'] = note['comment']
         if note.get('language'):
             note_args['lang'] = note['language']
         getattr(self, self._results_handling_function)(
@@ -248,13 +252,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _handle_opinion_data(self, opinion, object_id: str):
         opinion_value = int(opinion['opinion'])
         opinion_args = {
-            'allow_custom': True, 'authors': [opinion['authors']],
             'created': self._datetime_from_str(opinion['created']),
             'modified': self._datetime_from_str(opinion['modified']),
             'id': f"opinion--{opinion['uuid']}", 'object_refs': [object_id],
             'opinion': self._parse_opinion_level(opinion_value),
-            'x_misp_opinion': opinion_value
+            'allow_custom': True, 'x_misp_opinion': opinion_value
         }
+        if opinion.get('authors'):
+            opinion_args['authors'] = [opinion['authors']]
         if opinion.get('comment'):
             opinion_args['explanation'] = opinion['comment']
         getattr(self, self._results_handling_function)(Opinion(**opinion_args))
