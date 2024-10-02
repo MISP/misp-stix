@@ -659,22 +659,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_bundle_with_multiple_reports(self):
         if self.single_event:
             self.__misp_event = self._create_generic_event()
-            if hasattr(self, '_report') and self._report is not None:
+            if getattr(self, '_report', None):
                 for report in self._report.values():
                     self._handle_object_refs(report.object_refs)
-            if hasattr(self, '_grouping') and self._grouping is not None:
+            if getattr(self, '_grouping', None):
                 for grouping in self._grouping.values():
                     self._handle_object_refs(grouping.object_refs)
             self._handle_unparsed_content()
         else:
             self.__misp_events = []
-            if hasattr(self, '_report') and self._report is not None:
+            if getattr(self, '_report', None):
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
                     self._handle_unparsed_content()
                     self.__misp_events.append(self.misp_event)
-            if hasattr(self, '_grouping') and self._grouping is not None:
+            if getattr(self, '_grouping', None):
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
@@ -689,11 +689,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_bundle_with_single_report(self):
         self._set_single_event(True)
-        if hasattr(self, '_report') and self._report is not None:
+        if getattr(self, '_report', None):
             for report in self._report.values():
                 self.__misp_event = self._misp_event_from_report(report)
                 self._handle_object_refs(report.object_refs)
-        elif hasattr(self, '_grouping') and self._grouping is not None:
+        elif getattr(self, '_grouping', None):
             for grouping in self._grouping.values():
                 self.__misp_event = self._misp_event_from_grouping(grouping)
                 self._handle_object_refs(grouping.object_refs)
