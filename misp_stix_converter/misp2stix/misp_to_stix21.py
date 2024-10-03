@@ -236,8 +236,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         }
         if note.get('authors'):
             note_args['authors'] = [note['authors']]
-        if note.get('comment'):
-            note_args['abstract'] = note['comment']
         if note.get('language'):
             note_args['lang'] = note['language']
         getattr(self, self._results_handling_function)(
