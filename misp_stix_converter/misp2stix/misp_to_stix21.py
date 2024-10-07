@@ -95,51 +95,20 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._version = '2.1'
         self._mapping = MISPtoSTIX21Mapping
 
-    def _parse_event_data(self):
-        if self._misp_event.get('EventReport'):
-            self._id_parsing_function = {
-                'attribute': '_define_stix_object_id_from_attribute',
-                'object': '_define_stix_object_id_from_object'
-            }
-            self._event_report_matching = defaultdict(list)
-            self._handle_attributes_and_objects()
-            regex = r'@[!]?\[%s\]\([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\)'
-            for event_report in self._misp_event['EventReport']:
-                timestamp = self._datetime_from_timestamp(
-                    event_report['timestamp']
-                )
-                note_args = {
-                    'id': f"note--{event_report['uuid']}",
-                    'created': timestamp, 'modified': timestamp,
-                    'created_by_ref': self.identity_id,
-                    'content': event_report['content'],
-                    'abstract': event_report['name']
-                }
-                references = {
-                    reference.split('(')[1][:-1]
-                    for feature in ('attribute', 'object')
-                    for reference in re.findall(
-                        regex % feature, event_report['content']
-                    )
-                }
-                object_refs = set()
-                for reference in references:
-                    if reference in self._event_report_matching:
-                        object_refs.update(
-                            self._event_report_matching[reference]
-                        )
-                note_args['object_refs'] = (
-                    list(object_refs) if object_refs
-                    else self._handle_empty_note_refs()
-                )
-                self._append_SDO(self._create_note(note_args))
-                self._handle_analyst_data(note_args['id'], event_report)
-        else:
-            self._id_parsing_function = {
-                'attribute': '_define_stix_object_id',
-                'object': '_define_stix_object_id'
-            }
-            self._handle_attributes_and_objects()
+    def _parse_event_report(self, event_report: Union[MISPEventReport, dict]) -> Note:
+        timestamp = self._datetime_from_timestamp(event_report['timestamp'])
+        note_args = {
+            'id': f"note--{event_report['uuid']}",
+            'created': timestamp, 'modified': timestamp,
+            'created_by_ref': self.identity_id,
+            'content': event_report['content'],
+            'abstract': event_report['name']
+        }
+        references = set(self._parse_event_report_references(event_report))
+        note_args['object_refs'] = (
+            list(references) if references else self._handle_empty_note_refs()
+        )
+        return self._create_note(note_args)
 
     def _define_stix_object_id_from_attribute(
             self, feature: str, attribute: Union[MISPAttribute, dict]) -> str:

@@ -56,6 +56,56 @@ class CustomAttribute:
 
 
 @CustomObject(
+    'x-misp-event-report',
+    [
+        ('id', IDProperty('x-misp-event-report')),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        (
+            'created_by_ref',
+            ReferenceProperty(valid_types='identity', spec_version='2.0')
+        ),
+        (
+            'object_refs',
+            ListProperty(
+                ReferenceProperty(
+                    valid_types=_ANALYST_DATA_REFERENCE_TYPES,
+                    spec_version='2.0'
+                ),
+                required=True
+            )
+        ),
+        ('x_misp_content', StringProperty(required=True)),
+        ('x_misp_name', StringProperty()),
+    ]
+)
+class CustomEventReport:
+    pass
+
+
+@CustomObject(
+    'x-misp-galaxy-cluster',
+    [
+        ('id', IDProperty('x-misp-galaxy-cluster')),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
+        (
+            'created_by_ref',
+            ReferenceProperty(valid_types='identity', spec_version='2.0')
+        ),
+        ('x_misp_name', StringProperty(required=True)),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_description', StringProperty(required=True)),
+        ('x_misp_meta', DictionaryProperty())
+    ]
+)
+class CustomGalaxyCluster:
+    pass
+
+
+@CustomObject(
     'x-misp-object',
     [
         ('id', IDProperty('x-misp-object')),
@@ -85,28 +135,6 @@ class CustomMispObject:
 
 
 @CustomObject(
-    'x-misp-galaxy-cluster',
-    [
-        ('id', IDProperty('x-misp-galaxy-cluster')),
-        ('labels', ListProperty(StringProperty, required=True)),
-        ('created', TimestampProperty(precision='millisecond')),
-        ('modified', TimestampProperty(precision='millisecond')),
-        (
-            'created_by_ref',
-            ReferenceProperty(valid_types='identity', spec_version='2.0')
-        ),
-        ('x_misp_name', StringProperty(required=True)),
-        ('x_misp_type', StringProperty(required=True)),
-        ('x_misp_value', StringProperty(required=True)),
-        ('x_misp_description', StringProperty(required=True)),
-        ('x_misp_meta', DictionaryProperty())
-    ]
-)
-class CustomGalaxyCluster:
-    pass
-
-
-@CustomObject(
     'x-misp-event-note',
     [
         ('id', IDProperty('x-misp-event-note')),
@@ -119,7 +147,7 @@ class CustomGalaxyCluster:
         ('x_misp_event_note', StringProperty(required=True)),
         (
             'object_ref',
-            ReferenceProperty(valid_types=['report'], spec_version='2.0')
+            ReferenceProperty(valid_types='report', spec_version='2.0')
         )
     ]
 )
@@ -161,15 +189,21 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._version = '2.0'
         self._mapping = MISPtoSTIX20Mapping
 
-    def _parse_event_data(self):
-        if self._misp_event.get('Attribute'):
-            for attribute in self._misp_event['Attribute']:
-                self._resolve_attribute(attribute)
-        if self._misp_event.get('Object'):
-            self._objects_to_parse = defaultdict(dict)
-            self._resolve_objects()
-            if self._objects_to_parse:
-                self._resolve_objects_to_parse()
+    def _parse_event_report(
+            self, event_report: Union[MISPEventReport, dict]) -> CustomEventReport:
+        timestamp = self._datetime_from_timestamp(event_report['timestamp'])
+        note_args = {
+            'id': f"x-misp-event-report--{event_report['uuid']}",
+            'created': timestamp, 'modified': timestamp,
+            'created_by_ref': self.identity_id,
+            'x_misp_content': event_report['content']
+        }
+        if event_report.get('name'):
+            note_args['x_misp_name'] = event_report['name']
+        references = set(self._parse_event_report_references(event_report))
+        if references:
+            note_args['object_refs'] = list(references)
+        return CustomEventReport(**note_args)
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         object_type = 'x-misp-event-note'
@@ -245,9 +279,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         )
         return Report(**report_args)
 
-    ################################################################################
-    #                         ATTRIBUTES PARSING FUNCTIONS                         #
-    ################################################################################
+    ############################################################################
+    #                       ATTRIBUTES PARSING FUNCTIONS                       #
+    ############################################################################
 
     def _parse_attachment_attribute_observable(
             self, attribute: Union[MISPAttribute, dict]):

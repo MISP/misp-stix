@@ -117,13 +117,55 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self.__object_refs = []
         self.__relationships = []
         self._handle_identity_from_event()
-        self._parse_event_data()
-        report = self._generate_event_report()
+        if self._misp_event.get('EventReport'):
+            self._id_parsing_function = {
+                'attribute': '_define_stix_object_id_from_attribute',
+                'object': '_define_stix_object_id_from_object'
+            }
+            self._event_report_matching = defaultdict(list)
+            self._handle_attributes_and_objects()
+            for event_report in self._misp_event['EventReport']:
+                note = self._parse_event_report(event_report)
+                self._append_SDO(note)
+                self._handle_analyst_data(note, event_report)
+        else:
+            self._id_parsing_function = {
+                'attribute': '_define_stix_object_id',
+                'object': '_define_stix_object_id'
+            }
+            self._handle_attributes_and_objects()
+        report = self._generate_report_from_event()
         self.__objects.insert(self.__index, report)
 
     def _define_stix_object_id(
             self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
         return f"{feature}--{misp_object['uuid']}"
+
+    def _handle_attributes_and_objects(self):
+        if self._misp_event.get('Attribute'):
+            for attribute in self._misp_event['Attribute']:
+                self._resolve_attribute(attribute)
+        if self._misp_event.get('Object'):
+            self._objects_to_parse = defaultdict(dict)
+            self._resolve_objects()
+            if self._objects_to_parse:
+                self._resolve_objects_to_parse()
+                if self._objects_to_parse.get('annotation'):
+                    objects_to_parse = self._objects_to_parse['annotation']
+                    for misp_object in objects_to_parse.values():
+                        to_ids, annotation_object = misp_object
+                        custom = (
+                            annotation_object.get('ObjectReference') is None or
+                            not self._annotates(
+                                annotation_object['ObjectReference']
+                            )
+                        )
+                        if custom:
+                            self._parse_custom_object(annotation_object)
+                        else:
+                            self._parse_annotation_object(
+                                to_ids, annotation_object
+                            )
 
     def _handle_default_identity(self):
         misp_identity_args = self._mapping.misp_identity_args()
@@ -258,7 +300,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _append_SDO_without_refs(self, stix_object):
         self.__objects.append(stix_object)
 
-    def _generate_event_report(self):
+    def _generate_report_from_event(self):
         report_args = {
             'name': self._misp_event.get(
                 'info',
@@ -391,6 +433,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if identity_id not in self.unique_ids:
             self._handle_identity(identity_id, name)
         return identity_id
+
+    def _parse_event_report_references(
+            self, event_report: Union[MISPEventReport, dict]):
+        references = {
+            reference.split('(')[1][:-1]
+            for feature in ('attribute', 'object')
+            for reference in re.findall(
+                _event_report_regex % feature, event_report['content']
+            )
+        }
+        for reference in references:
+            if reference in self._event_report_matching:
+                yield self._event_report_matching[reference]
 
     ############################################################################
     #                       ATTRIBUTES PARSING FUNCTIONS                       #
