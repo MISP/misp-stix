@@ -13,6 +13,8 @@ class TestSTIX(unittest.TestCase):
 
     @staticmethod
     def _datetime_from_str(timestamp):
+        if isinstance(timestamp, datetime):
+            return timestamp
         regex = f"%Y-%m-%d{'T' if 'T' in timestamp else ' '}%H:%M:%S"
         if '.' in timestamp:
             regex = f'{regex}.%f'
