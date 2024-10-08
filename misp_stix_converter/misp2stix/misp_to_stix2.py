@@ -141,6 +141,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
         return f"{feature}--{misp_object['uuid']}"
 
+    def _define_stix_object_id_from_attribute(
+            self, feature: str, attribute: Union[MISPAttribute, dict]) -> str:
+        attribute_uuid = attribute['uuid']
+        stix_id = f'{feature}--{attribute_uuid}'
+        self._event_report_matching[attribute_uuid].append(stix_id)
+        return stix_id
+
+    def _define_stix_object_id_from_object(
+            self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
+        object_uuid = misp_object['uuid']
+        stix_id = f'{feature}--{object_uuid}'
+        self._event_report_matching[object_uuid].append(stix_id)
+        for attribute in misp_object['Attribute']:
+            self._event_report_matching[attribute['uuid']].append(stix_id)
+        return stix_id
+
     def _handle_attributes_and_objects(self):
         if self._misp_event.get('Attribute'):
             for attribute in self._misp_event['Attribute']:

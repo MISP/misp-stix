@@ -110,22 +110,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         return self._create_note(note_args)
 
-    def _define_stix_object_id_from_attribute(
-            self, feature: str, attribute: Union[MISPAttribute, dict]) -> str:
-        attribute_uuid = attribute['uuid']
-        stix_id = f'{feature}--{attribute_uuid}'
-        self._event_report_matching[attribute_uuid].append(stix_id)
-        return stix_id
-
-    def _define_stix_object_id_from_object(
-            self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
-        object_uuid = misp_object['uuid']
-        stix_id = f'{feature}--{object_uuid}'
-        self._event_report_matching[object_uuid].append(stix_id)
-        for attribute in misp_object['Attribute']:
-            self._event_report_matching[attribute['uuid']].append(stix_id)
-        return stix_id
-
     def _handle_analyst_data(
             self, object_id: str, data_layer: _MISP_DATA_LAYER = None):
         if data_layer is None:
