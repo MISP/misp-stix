@@ -823,6 +823,16 @@ _TEST_EVENT_WITH_ANALYST_DATA = {
                     "referenced_uuid": "f7ef1b4a-964a-4a69-9e21-808f85c56238",
                     "relationship_type": "downloaded-from"
                 }
+            ],
+            "Opinion": [
+                {
+                    "uuid": "74258748-78f2-4b19-bedc-27ec61b1c5df",
+                    "authors": "john.doe@foo.bar",
+                    "created": "2024-06-12 12:52:48",
+                    "modified": "2024-06-12 12:53:58",
+                    "opinion": "50",
+                    "comment": "No warning from my antivirus"
+                }
             ]
         }
     ],
