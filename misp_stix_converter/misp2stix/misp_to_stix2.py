@@ -461,7 +461,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         for reference in references:
             if reference in self._event_report_matching:
-                yield self._event_report_matching[reference]
+                yield from self._event_report_matching[reference]
 
     ############################################################################
     #                       ATTRIBUTES PARSING FUNCTIONS                       #
