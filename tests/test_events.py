@@ -3195,7 +3195,7 @@ def get_base_event():
 
 def get_event_with_analyst_data():
     event = deepcopy(_BASE_EVENT)
-    event['Event'].update(_TEST_EVENT_WITH_ANALYST_DATA)
+    event['Event'].update(deepcopy(_TEST_EVENT_WITH_ANALYST_DATA))
     return event
 
 
