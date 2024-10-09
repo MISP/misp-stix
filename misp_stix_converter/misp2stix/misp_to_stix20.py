@@ -33,6 +33,10 @@ _ANALYST_DATA_REFERENCE_TYPES = [
     'x-misp-attribute', 'x-misp-event-note', 'x-misp-event-report',
     'x-misp-galaxy-cluster', 'x-misp-object'
 ]
+_STIX_OBJECT_TYPING = Union[
+    AttackPattern, Campaign, CourseOfAction, CustomObject, Identity, Indicator,
+    IntrusionSet, Malware, ObservedData, Report, Tool, Vulnerability
+]
 
 
 @CustomObject(
@@ -287,7 +291,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
 
-    def _handle_note_data(self, stix_object, note: Union[MISPNote, dict]):
+    def _handle_note_data(self, stix_object: _STIX_OBJECT_TYPING,
+                          note: Union[MISPNote, dict]):
         note_args = {
             'id': f"x-misp-analyst-note--{note['uuid']}",
             'object_ref': stix_object.id, 'x_misp_note': note['note'],
@@ -303,8 +308,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             CustomAnalystNote(**note_args)
         )
 
-    def _handle_opinion_data(
-            self, stix_object, opinion: Union[MISPOpinion, dict]):
+    def _handle_opinion_data(self, stix_object: _STIX_OBJECT_TYPING,
+                             opinion: Union[MISPOpinion, dict]):
         opinion_args = {
             'id': f"x-misp-analyst-opinion--{opinion['uuid']}",
             'object_ref': stix_object.id, 'x_misp_opinion': opinion['opinion'],
@@ -1408,9 +1413,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_malware(malware_args: dict) -> Malware:
         return Malware(**malware_args)
 
-    def _create_observed_data(self, args: dict, observable: dict):
+    def _create_observed_data(
+            self, args: dict, observable: dict) -> ObservedData:
         args['objects'] = observable
-        getattr(self, self._results_handling_function)(ObservedData(**args))
+        observed_data = ObservedData(**args)
+        getattr(self, self._results_handling_function)(observed_data)
+        return observed_data
 
     @staticmethod
     def _create_PE_extension(extension_args: dict) -> WindowsPEBinaryExt:

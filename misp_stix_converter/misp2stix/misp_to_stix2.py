@@ -19,12 +19,18 @@ from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v20.sdo import (
-    Campaign as Campaign_v20, CustomObject as CustomObject_v20,
-    Indicator as Indicator_v20, Report as Report_v20,
+    AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
+    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
+    Identity as Identity_v20, Indicator as Indicator_v20,
+    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, Report as Report_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (
-    Campaign as Campaign_v21, CustomObject as CustomObject_v21, Grouping,
-    Indicator as Indicator_v21, Report as Report_v21,
+    AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
+    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
+    Grouping, Identity as Identity_v21, Indicator as Indicator_v21,
+    IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
+    ObservedData as ObservedData_v21, Report as Report_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from typing import Generator, Optional, Tuple, Union
 
@@ -44,9 +50,12 @@ _MISP_DATA_LAYER = Union[
     dict, MISPAttribute, MISPEventReport, MISPObject
 ]
 _STIX_OBJECT_TYPING = Union[
-    Campaign_v20, Campaign_v21, CustomObject_v20, CustomObject_v21, Grouping,
-    Indicator_v20, Indicator_v21, Report_v20, Report_v21,
-    Vulnerability_v20, Vulnerability_v21
+    AttackPattern_v20, AttackPattern_v21, Campaign_v20, Campaign_v21,
+    CourseOfAction_v20, CourseOfAction_v21, CustomObject_v20, CustomObject_v21,
+    Grouping, Identity_v20, Identity_v21, Indicator_v20, Indicator_v21,
+    IntrusionSet_v20, IntrusionSet_v21, Location, Malware_v20, Malware_v21,
+    Note, ObservedData_v20, ObservedData_v21, Report_v20, Report_v21,
+    Tool_v20, Tool_v21, Vulnerability_v20, Vulnerability_v21
 ]
 
 
@@ -565,7 +574,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if markings:
             self._handle_markings(observable_args, markings)
-        self._create_observed_data(observable_args, observable)
+        observed_data = self._create_observed_data(observable_args, observable)
+        self._handle_analyst_data(observed_data, attribute)
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], observable_id)
 
@@ -1236,7 +1246,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['ObjectReference'], observable_id,
                 observable_args['modified']
             )
-        self._create_observed_data(observable_args, observable)
+        observed_data = self._create_observed_data(observable_args, observable)
+        self._handle_object_analyst_data(observed_data, misp_object)
 
     def _handle_object_tags_and_galaxies(
             self, misp_object: Union[MISPObject, dict],
@@ -4219,7 +4230,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _get_vulnerability_references(vulnerability: str) -> dict:
         return {'source_name': 'cve', 'external_id': vulnerability}
 
-    def _handle_analyst_time_fields(self, stix_object, misp_object: Union[MISPNote, MISPOpinion]):
+    def _handle_analyst_time_fields(self, stix_object: _STIX_OBJECT_TYPING,
+                                    misp_object: Union[MISPNote, MISPOpinion]):
         for feature in ('created', 'modified'):
             if misp_object.get(feature):
                 yield feature, self._datetime_from_str(misp_object[feature])

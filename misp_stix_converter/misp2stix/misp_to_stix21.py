@@ -28,6 +28,12 @@ from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
+_STIX_OBJECT_TYPING = Union[
+    AttackPattern, Campaign, CourseOfAction, CustomObject, Grouping, Identity,
+    Indicator, IntrusionSet, Location, Malware, Note, ObservedData, Report,
+    Tool, Vulnerability
+]
+
 
 @CustomObject(
     'x-misp-attribute',
@@ -142,7 +148,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
 
-    def _handle_note_data(self, stix_object, note: Union[MISPNote, dict]):
+    def _handle_note_data(self, stix_object: _STIX_OBJECT_TYPING,
+                          note: Union[MISPNote, dict]):
         note_args = {
             'content': note['note'],
             'id': f"note--{note['uuid']}",
@@ -157,8 +164,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._create_note(note_args)
         )
 
-    def _handle_opinion_data(
-            self, stix_object, opinion: Union[MISPOpinion, dict]):
+    def _handle_opinion_data(self, stix_object: _STIX_OBJECT_TYPING,
+                             opinion: Union[MISPOpinion, dict]):
         opinion_value = int(opinion['opinion'])
         opinion_args = {
             'created': self._datetime_from_str(opinion['created']),
@@ -1680,11 +1687,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             note_args['allow_custom'] = True
         return Note(**note_args)
 
-    def _create_observed_data(self, args: dict, observables: list):
+    def _create_observed_data(
+            self, args: dict, observables: list) -> ObservedData:
         args['object_refs'] = [observable.id for observable in observables]
-        getattr(self, self._results_handling_function)(ObservedData(**args))
+        observed_data = ObservedData(**args)
+        getattr(self, self._results_handling_function)(observed_data)
         for observable in observables:
             getattr(self, self._results_handling_function)(observable)
+        return observed_data
 
     @staticmethod
     def _create_opinion(opinion_args: dict) -> Opinion:
