@@ -89,6 +89,33 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
                     data = b64encode(data.getvalue()).decode()
                 self.assertIn(self._sanitize_pattern_value(data), indicator.pattern)
 
+    def _test_event_with_event_report(self, event):
+        orgc = event['Orgc']
+        event_report = event['EventReport'][0]
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(9)
+        identity, report, *stix_objects = bundle.objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event, identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        for stix_object, object_ref in zip(stix_objects, object_refs):
+            self.assertEqual(stix_object.id, object_ref)
+        attack_pattern, ip_src, observed_data, domain_ip, note, _, marking = stix_objects
+        self.assertEqual(note.id, f"x-misp-event-report--{event_report['uuid']}")
+        timestamp = event_report['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        self._assert_multiple_equal(note.created, note.modified, timestamp)
+        self.assertEqual(note.x_misp_content, event_report['content'])
+        self.assertEqual(note.x_misp_name, event_report['name'])
+        object_refs = note.object_refs
+        self.assertEqual(len(object_refs), 3)
+        object_ids = {ip_src.id, observed_data.id, domain_ip.id}
+        self.assertEqual(set(object_refs), object_ids)
+
     def _test_event_with_sightings(self, event):
         orgc = event['Orgc']
         attribute1, attribute2 = event['Attribute']
@@ -189,6 +216,10 @@ class TestSTIX20JSONEventExport(TestSTIX20EventExport):
         event = get_event_with_escaped_values_v20()
         self._test_event_with_escaped_characters(event['Event'])
 
+    def test_event_with_event_report(self):
+        event = get_event_with_event_report()
+        self._test_event_with_event_report(event['Event'])
+
     def test_event_with_sightings(self):
         event = get_event_with_sightings()
         self._test_event_with_sightings(event['Event'])
@@ -214,6 +245,12 @@ class TestSTIX20MISPEventExport(TestSTIX20EventExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_escaped_characters(misp_event)
+
+    def test_event_with_event_report(self):
+        event = get_event_with_event_report()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_event_report(misp_event)
 
     def test_event_with_sightings(self):
         event = get_event_with_sightings()
