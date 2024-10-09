@@ -27,6 +27,36 @@ class TestSTIX20GenericExport(TestSTIX20Export, TestSTIX20):
 
 
 class TestSTIX20EventExport(TestSTIX20GenericExport):
+    def _check_analyst_note(self, stix_object, misp_layer):
+        self.assertEqual(
+            stix_object.id, f"x-misp-analyst-note--{misp_layer['uuid']}"
+        )
+        self.assertEqual(stix_object.x_misp_note, misp_layer['note'])
+        self.assertEqual(stix_object.x_misp_author, misp_layer['authors'])
+        self.assertEqual(stix_object.x_misp_language, misp_layer['language'])
+        self.assertEqual(
+            stix_object.created, self._datetime_from_str(misp_layer['created'])
+        )
+        self.assertEqual(
+            stix_object.modified,
+            self._datetime_from_str(misp_layer['modified'])
+        )
+
+    def _check_analyst_opinion(self, stix_object, misp_layer):
+        self.assertEqual(
+            stix_object.id, f"x-misp-analyst-opinion--{misp_layer['uuid']}"
+        )
+        self.assertEqual(stix_object.x_misp_opinion, int(misp_layer['opinion']))
+        self.assertEqual(stix_object.x_misp_author, misp_layer['authors'])
+        self.assertEqual(stix_object.x_misp_comment, misp_layer['comment'])
+        self.assertEqual(
+            stix_object.created, self._datetime_from_str(misp_layer['created'])
+        )
+        self.assertEqual(
+            stix_object.modified,
+            self._datetime_from_str(misp_layer['modified'])
+        )
+
     def _check_opinion_features(self, opinion, sighting, object_id):
         self.assertEqual(opinion.type, 'x-misp-opinion')
         self.assertEqual(opinion.id, f"x-misp-opinion--{sighting['uuid']}")
@@ -69,6 +99,54 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
             custom.x_misp_event_note,
             "This MISP Event is empty and contains no attribute, object, galaxy or tag."
         )
+
+    def _test_event_with_analyst_data(self, event):
+        orgc = event['Orgc']
+        event_report = event['EventReport'][0]
+        note = event['Note'][0]
+        attribute = event['Attribute'][0]
+        misp_object = event['Object'][0]
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(11)
+        identity, report, *stix_objects = bundle.objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event, identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        for stix_object, object_ref in zip(stix_objects, object_refs):
+            self.assertEqual(stix_object.id, object_ref)
+        (attr_indicator, attr_opinion, obj_indicator, obj_opinion, obj_attr_note,
+         report, report_opinion, relationship, event_note) = stix_objects
+        self._assert_multiple_equal(
+            attr_indicator.id,
+            relationship.target_ref,
+            attr_opinion.object_ref,
+            f"indicator--{attribute['uuid']}"
+        )
+        attribute_opinion = attribute['Opinion'][0]
+        self._check_analyst_opinion(attr_opinion, attribute_opinion)
+        self._assert_multiple_equal(
+            obj_indicator.id,
+            relationship.source_ref,
+            obj_opinion.object_ref,
+            obj_attr_note.object_ref,
+            f"indicator--{misp_object['uuid']}"
+        )
+        object_opinion = misp_object['Opinion'][0]
+        self._check_analyst_opinion(obj_opinion, object_opinion)
+        object_attribute_note = misp_object['Attribute'][0]['Note'][0]
+        self._check_analyst_note(obj_attr_note, object_attribute_note)
+        self._assert_multiple_equal(
+            report.id,
+            report_opinion.object_ref,
+            f"x-misp-event-report--{event_report['uuid']}"
+        )
+        event_report_opinion = event_report['Opinion'][0]
+        self._check_analyst_opinion(report_opinion, event_report_opinion)
+        self.assertEqual(relationship.relationship_type, 'downloaded-from')
+        self._check_analyst_note(event_note, note)
 
     def _test_event_with_escaped_characters(self, event):
         attributes = deepcopy(event['Attribute'])
@@ -212,6 +290,10 @@ class TestSTIX20JSONEventExport(TestSTIX20EventExport):
         event = get_base_event()
         self._test_base_event(event['Event'])
 
+    def test_event_with_analyst_data(self):
+        event = get_event_with_analyst_data()
+        self._test_event_with_analyst_data(event['Event'])
+
     def test_event_with_escaped_characters(self):
         event = get_event_with_escaped_values_v20()
         self._test_event_with_escaped_characters(event['Event'])
@@ -239,6 +321,12 @@ class TestSTIX20MISPEventExport(TestSTIX20EventExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_base_event(misp_event)
+
+    def test_event_with_analyst_data(self):
+        event = get_event_with_analyst_data()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_analyst_data(misp_event)
 
     def test_event_with_escaped_characters(self):
         event = get_event_with_escaped_values_v20()
