@@ -6,10 +6,11 @@ from .stix20_mapping import MISPtoSTIX20Mapping
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
-from pymisp import MISPAttribute, MISPObject
+from pymisp import (
+    MISPAttribute, MISPEventReport, MISPNote, MISPObject, MISPOpinion)
 from stix2.properties import (
-    DictionaryProperty, IDProperty, ListProperty, ReferenceProperty,
-    StringProperty, TimestampProperty)
+    DictionaryProperty, IDProperty, IntegerProperty, ListProperty,
+    ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (
     Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
@@ -24,6 +25,56 @@ from stix2.v20.sdo import (
 from stix2.v20.sro import Relationship, Sighting
 from stix2.v20.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
+
+_ANALYST_DATA_REFERENCE_TYPES = [
+    'attack-pattern', 'campaign', 'course-of-action', 'identity', 'indicator',
+    'intrusion-set', 'malware', 'observed-data', 'report', 'threat-actor',
+    'tool', 'vulnerability', 'x-misp-analyst-note', 'x-misp-analyst-opinion',
+    'x-misp-attribute', 'x-misp-event-note', 'x-misp-event-report',
+    'x-misp-galaxy-cluster', 'x-misp-object'
+]
+
+
+@CustomObject(
+    'x-misp-analyst-note',
+    [
+        ('id', IDProperty('x-misp-analyst-note')),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
+        ('x_misp_note', StringProperty(required=True)),
+        ('x_misp_author', StringProperty()),
+        ('x_misp_language', StringProperty()),
+        (
+            'object_ref',
+            ReferenceProperty(
+                valid_types=_ANALYST_DATA_REFERENCE_TYPES, spec_version='2.0'
+            )
+        )
+    ]
+)
+class CustomAnalystNote:
+    pass
+
+
+@CustomObject(
+    'x-misp-analyst-opinion',
+    [
+        ('id', IDProperty('x-misp-analyst-opinion')),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
+        ('x_misp_opinion', IntegerProperty(required=True)),
+        ('x_misp_author', StringProperty()),
+        ('x_misp_comment', StringProperty()),
+        (
+            'object_ref',
+            ReferenceProperty(
+                valid_types=_ANALYST_DATA_REFERENCE_TYPES, spec_version='2.0'
+            )
+        )
+    ]
+)
+class CustomAnalystOpinion:
+    pass
 
 
 @CustomObject(
@@ -236,6 +287,39 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
 
+    def _handle_note_data(self, stix_object, note: Union[MISPNote, dict]):
+        note_args = {
+            'id': f"x-misp-analyst-note--{note['uuid']}",
+            'object_ref': stix_object.id, 'x_misp_note': note['note'],
+            **dict(self._handle_analyst_time_fields(stix_object, note))
+        }
+        if note.get('authors'):
+            note_args['x_misp_author'] = note['authors']
+        if note.get('language'):
+            note_args['x_misp_language'] = note['language']
+        if stix_object.id.startswith('x-misp-'):
+            note_args['allow_custom'] = True
+        getattr(self, self._results_handling_function)(
+            CustomAnalystNote(**note_args)
+        )
+
+    def _handle_opinion_data(
+            self, stix_object, opinion: Union[MISPOpinion, dict]):
+        opinion_args = {
+            'id': f"x-misp-analyst-opinion--{opinion['uuid']}",
+            'object_ref': stix_object.id, 'x_misp_opinion': opinion['opinion'],
+            **dict(self._handle_analyst_time_fields(stix_object, opinion))
+        }
+        if opinion.get('authors'):
+            opinion_args['x_misp_author'] = opinion['authors']
+        if opinion.get('comment'):
+            opinion_args['x_misp_comment'] = opinion['comment']
+        if stix_object.id.startswith('x-misp-'):
+            opinion_args['allow_custom'] = True
+        getattr(self, self._results_handling_function)(
+            CustomAnalystOpinion(**opinion_args)
+        )
+
     def _handle_opinion_object(self, sighting: dict, reference_id: str):
         opinion_args = {
             'id': f"x-misp-opinion--{sighting['uuid']}",
@@ -277,7 +361,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 'object_refs': self.object_refs, 'allow_custom': True
             }
         )
-        return Report(**report_args)
+        report = self._create_report(report_args)
+        self._handle_analyst_data(report)
+        return report
 
     ############################################################################
     #                       ATTRIBUTES PARSING FUNCTIONS                       #

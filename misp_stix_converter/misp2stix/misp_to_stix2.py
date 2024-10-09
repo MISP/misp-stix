@@ -12,13 +12,23 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from pymisp import (
-    MISPAttribute, MISPEvent, MISPGalaxy, MISPGalaxyCluster, MISPObject)
+    MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
+    MISPNote, MISPObject, MISPOpinion)
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
+from stix2.v20.sdo import (
+    Campaign as Campaign_v20, CustomObject as CustomObject_v20,
+    Indicator as Indicator_v20, Report as Report_v20,
+    Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import (
+    Campaign as Campaign_v21, CustomObject as CustomObject_v21, Grouping,
+    Indicator as Indicator_v21, Report as Report_v21,
+    Vulnerability as Vulnerability_v21)
 from typing import Generator, Optional, Tuple, Union
 
+_event_report_regex = r'@[!]?\[%s\]\([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\)'
 _label_fields = ('type', 'category', 'to_ids')
 _labelled_object_types = ('malware', 'threat-actor', 'tool')
 _misp_time_fields = ('first_seen', 'last_seen')
@@ -29,6 +39,15 @@ _stix_time_fields = {
     'indicator': ('valid_from', 'valid_until'),
     'observed-data': ('first_observed', 'last_observed')
 }
+
+_MISP_DATA_LAYER = Union[
+    dict, MISPAttribute, MISPEventReport, MISPObject
+]
+_STIX_OBJECT_TYPING = Union[
+    Campaign_v20, Campaign_v21, CustomObject_v20, CustomObject_v21, Grouping,
+    Indicator_v20, Indicator_v21, Report_v20, Report_v21,
+    Vulnerability_v20, Vulnerability_v21
+]
 
 
 class InvalidHashValueError(Exception):
@@ -349,9 +368,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     'object_refs': self.__object_refs, 'allow_custom': True
                 }
             )
-            if self._version == '2.1':
-                self._handle_analyst_data(report_id)
-            return self._create_report(report_args)
+            report = self._create_report(report_args)
+            self._handle_analyst_data(report)
+            return report
         return self._handle_unpublished_report(report_args)
 
     def _generate_galaxies_catalog(self):
@@ -400,6 +419,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             stix_object['id'] for stix_object
             in self._galaxies_catalog[name][object_type]
         )
+
+    def _handle_analyst_data(self, stix_object: _STIX_OBJECT_TYPING,
+                             data_layer: _MISP_DATA_LAYER = None):
+        if data_layer is None:
+            data_layer = self._misp_event
+        for note in data_layer.get('Note', []):
+            self._handle_note_data(stix_object, note)
+        for opinion in data_layer.get('Opinion', []):
+            self._handle_opinion_data(stix_object, opinion)
+
+    def _handle_object_analyst_data(self, stix_object: _STIX_OBJECT_TYPING,
+                                    misp_object: Union[MISPObject, dict]):
+        self._handle_analyst_data(stix_object, misp_object)
+        for attribute in misp_object['Attribute']:
+            self._handle_analyst_data(stix_object, attribute)
 
     def _handle_relationships(self):
         for relationship in self.__relationships:
@@ -507,11 +541,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if markings:
             self._handle_markings(indicator_arguments, markings)
-        getattr(self, self._results_handling_function)(
-            self._create_indicator(indicator_arguments)
-        )
-        if self._version == '2.1':
-            self._handle_analyst_data(indicator_id, attribute)
+        indicator = self._create_indicator(indicator_arguments)
+        getattr(self, self._results_handling_function)(indicator)
+        self._handle_analyst_data(indicator, attribute)
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], indicator_id)
 
@@ -612,11 +644,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if markings:
             self._handle_markings(campaign_args, markings)
-        getattr(self, self._results_handling_function)(
-            self._create_campaign(campaign_args)
-        )
-        if self._version == '2.1':
-            self._handle_analyst_data(campaign_id, attribute)
+        campaign = self._create_campaign(campaign_args)
+        getattr(self, self._results_handling_function)(campaign)
+        self._handle_analyst_data(campaign, attribute)
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], campaign_id)
 
@@ -641,11 +671,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if markings:
             self._handle_markings(custom_args, markings)
-        getattr(self, self._results_handling_function)(
-            self._create_custom_attribute(custom_args)
-        )
-        if self._version == '2.1':
-            self._handle_analyst_data(custom_id, attribute)
+        custom_attribute = self._create_custom_attribute(custom_args)
+        getattr(self, self._results_handling_function)(custom_attribute)
+        self._handle_analyst_data(custom_attribute, attribute)
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], custom_id)
 
@@ -1038,11 +1066,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if markings:
             self._handle_markings(vulnerability_args, markings)
-        getattr(self, self._results_handling_function)(
-            self._create_vulnerability(vulnerability_args)
-        )
-        if self._version == '2.1':
-            self._handle_analyst_data(vulnerability_id, attribute)
+        vulnerability = self._create_vulnerability(vulnerability_args)
+        getattr(self, self._results_handling_function)(vulnerability)
+        self._handle_analyst_data(vulnerability, attribute)
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], vulnerability_id)
 
@@ -1151,13 +1177,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['ObjectReference'], object_id,
                 object_args['modified']
             )
-        self._append_SDO(
-            getattr(self, f"_create_{object_type.replace('-', '_')}")(
-                object_args
-            )
-        )
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, object_id)
+        feature = f"_create_{object_type.replace('-', '_')}"
+        stix_object = getattr(self, feature)(object_args)
+        getattr(self, self._results_handling_function)(stix_object)
+        self._handle_object_analyst_data(stix_object, misp_object)
 
     def _handle_object_indicator(
             self, misp_object: Union[MISPObject, dict], pattern: list):
@@ -1186,9 +1209,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['ObjectReference'], indicator_id,
                 indicator_args['modified']
             )
-        self._append_SDO(self._create_indicator(indicator_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, indicator_id)
+        indicator = self._create_indicator(indicator_args)
+        getattr(self, self._results_handling_function)(indicator)
+        self._handle_object_analyst_data(indicator, misp_object)
 
     def _handle_object_observable(
             self, misp_object: Union[MISPObject, dict],
@@ -1534,9 +1557,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._parse_object_relationships(
                 misp_object['ObjectReference'], custom_id, timestamp
             )
-        self._append_SDO(self._create_custom_object(custom_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, custom_id)
+        custom_object = self._create_custom_object(custom_args)
+        getattr(self, self._results_handling_function)(custom_object)
+        self._handle_object_analyst_data(custom_object, misp_object)
 
     @staticmethod
     def _parse_custom_object_attribute(
@@ -1681,9 +1704,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     misp_object['ObjectReference'], identity_args['id'],
                     identity_args['modified']
                 )
-        self._append_SDO(self._create_identity(identity_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, identity_args['id'])
+        identity = self._create_identity(identity_args)
+        getattr(self, self._results_handling_function)(identity)
+        self._handle_object_analyst_data(identity, misp_object)
 
     def _parse_file_object(self, misp_object: Union[MISPObject, dict]):
         to_ids = self._fetch_ids_flag(misp_object['Attribute'])
@@ -1950,9 +1973,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     misp_object['ObjectReference'], identity_args['id'],
                     identity_args['modified']
                 )
-        self._append_SDO(self._create_identity(identity_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, identity_args['id'])
+        identity = self._create_identity(identity_args)
+        getattr(self, self._results_handling_function)(identity)
+        self._handle_object_analyst_data(identity, misp_object)
 
     def _parse_lnk_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -2229,9 +2252,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     misp_object['ObjectReference'], identity_args['id'],
                     identity_args['modified']
                 )
-        self._append_SDO(self._create_identity(identity_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, identity_args['id'])
+        identity = self._create_identity(identity_args)
+        getattr(self, self._results_handling_function)(identity)
+        self._handle_object_analyst_data(identity, misp_object)
 
     def _parse_person_object(self, misp_object: Union[MISPObject, dict]):
         identity_args = self._parse_identity_args(misp_object, 'individual')
@@ -2267,9 +2290,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['ObjectReference'], identity_args['id'],
                 identity_args['modified']
             )
-        self._append_SDO(self._create_identity(identity_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, identity_args['id'])
+        identity = self._create_identity(identity_args)
+        getattr(self, self._results_handling_function)(identity)
+        self._handle_object_analyst_data(identity, misp_object)
 
     def _parse_organization_object(self, misp_object: Union[MISPObject, dict]):
         identity_args = self._parse_identity_args(misp_object, 'organization')
@@ -2295,9 +2318,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['ObjectReference'], identity_args['id'],
                 identity_args['modified']
             )
-        self._append_SDO(self._create_identity(identity_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, identity_args['id'])
+        identity = self._create_identity(identity_args)
+        getattr(self, self._results_handling_function)(identity)
+        self._handle_object_analyst_data(identity, misp_object)
 
     def _parse_pe_extensions_observable(
             self, pe_object: dict, uuids: Optional[list] = None) -> dict:
@@ -4098,9 +4121,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['ObjectReference'], indicator_id,
                 indicator_args['modified']
             )
-        self._append_SDO(self._create_indicator(indicator_args))
-        if self._version == '2.1':
-            self._handle_object_analyst_data(misp_object, indicator_id)
+        indicator = self._create_indicator(indicator_args)
+        getattr(self, self._results_handling_function)(indicator)
+        self._handle_object_analyst_data(indicator, misp_object)
 
     ############################################################################
     #                            UTILITY FUNCTIONS.                            #
@@ -4195,6 +4218,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _get_vulnerability_references(vulnerability: str) -> dict:
         return {'source_name': 'cve', 'external_id': vulnerability}
+
+    def _handle_analyst_time_fields(self, stix_object, misp_object: Union[MISPNote, MISPOpinion]):
+        for feature in ('created', 'modified'):
+            if misp_object.get(feature):
+                yield feature, self._datetime_from_str(misp_object[feature])
+                continue
+            yield feature, stix_object[feature]
 
     def _handle_custom_data_field(
             self, values: Union[list, str, tuple]) -> Union[dict, list, str]:
