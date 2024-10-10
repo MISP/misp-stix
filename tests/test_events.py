@@ -770,6 +770,24 @@ _TEST_EVENT_WITH_ANALYST_DATA = {
                     "comment": "Fully agree with the malicious nature of the IP"
                 }
             ]
+        },
+        {
+            "type": "ip-dst",
+            "category": "Network activity",
+            "to_ids": False,
+            "uuid": "76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+            "timestamp": "1603642920",
+            "value": "8.8.8.8",
+            "Note": [
+                {
+                    "uuid": "31fc7048-9ede-4db9-a423-ef97670ed4c6",
+                    "authors": "opinion@foo.bar",
+                    "created": "2024-06-12 12:52:45",
+                    "modified": "2024-06-12 12:52:45",
+                    "note": "DNS Resolver used to resolve the malicious domain",
+                    "language": "en"
+                }
+            ]
         }
     ],
     "Object": [

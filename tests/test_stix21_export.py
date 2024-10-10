@@ -134,10 +134,10 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         event_report = event['EventReport'][0]
         note = event['Note'][0]
-        attribute = event['Attribute'][0]
+        src_attribute, dst_attribute = event['Attribute']
         misp_object = event['Object'][0]
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(11)
+        stix_objects = self._check_bundle_features(15)
         self._check_spec_versions(stix_objects)
         identity, grouping, *stix_objects = stix_objects
         timestamp = event['timestamp']
@@ -147,16 +147,26 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         object_refs = self._check_grouping_features(grouping, event, identity_id)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        (attr_indicator, attr_opinion, obj_indicator, obj_opinion, obj_attr_note,
+        for stix_object in stix_objects:
+            print(stix_object.type)
+        (attr_indicator, attr_indicator_opinion, observed_data, _,
+         _, obs_data_note, obj_indicator, obj_opinion, obj_attr_note,
          report, report_opinion, relationship, event_note) = stix_objects
         self._assert_multiple_equal(
             attr_indicator.id,
             relationship.target_ref,
-            attr_opinion.object_refs[0],
-            f"indicator--{attribute['uuid']}"
+            attr_indicator_opinion.object_refs[0],
+            f"indicator--{src_attribute['uuid']}"
         )
-        attribute_opinion = attribute['Opinion'][0]
-        self._check_analyst_opinion(attr_opinion, attribute_opinion, 'strongly-agree')
+        attribute_opinion = src_attribute['Opinion'][0]
+        self._check_analyst_opinion(attr_indicator_opinion, attribute_opinion, 'strongly-agree')
+        self._assert_multiple_equal(
+            observed_data.id,
+            obs_data_note.object_refs[0],
+            f"observed-data--{dst_attribute['uuid']}"
+        )
+        attribute_note = dst_attribute['Note'][0]
+        self._check_analyst_note(obs_data_note, attribute_note)
         self._assert_multiple_equal(
             obj_indicator.id,
             relationship.source_ref,
@@ -295,12 +305,8 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        args = (
-            grouping,
-            event,
-            identity_id
-        )
-        for stix_object, object_ref in zip(stix_objects, self._check_grouping_features(*args)):
+        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
         self._check_identities_from_sighting(
             identities,
