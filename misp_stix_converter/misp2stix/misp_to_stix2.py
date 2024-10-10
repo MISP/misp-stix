@@ -23,14 +23,14 @@ from stix2.v20.sdo import (
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
     Identity as Identity_v20, Indicator as Indicator_v20,
     IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
-    ObservedData as ObservedData_v20, Report as Report_v20, Tool as Tool_v20,
+    ObservedData as ObservedData_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
     CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
-    Grouping, Identity as Identity_v21, Indicator as Indicator_v21,
+    Identity as Identity_v21, Indicator as Indicator_v21,
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
-    ObservedData as ObservedData_v21, Report as Report_v21, Tool as Tool_v21,
+    ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from typing import Generator, Optional, Tuple, Union
 
@@ -52,10 +52,10 @@ _MISP_DATA_LAYER = Union[
 _STIX_OBJECT_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21, Campaign_v20, Campaign_v21,
     CourseOfAction_v20, CourseOfAction_v21, CustomObject_v20, CustomObject_v21,
-    Grouping, Identity_v20, Identity_v21, Indicator_v20, Indicator_v21,
+    Identity_v20, Identity_v21, Indicator_v20, Indicator_v21,
     IntrusionSet_v20, IntrusionSet_v21, Location, Malware_v20, Malware_v21,
-    Note, ObservedData_v20, ObservedData_v21, Report_v20, Report_v21,
-    Tool_v20, Tool_v21, Vulnerability_v20, Vulnerability_v21
+    Note, ObservedData_v20, ObservedData_v21, Tool_v20, Tool_v21,
+    Vulnerability_v20, Vulnerability_v21, dict
 ]
 
 
@@ -339,7 +339,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _append_SDO(self, stix_object):
         self.__objects.append(stix_object)
-        self.__object_refs.append(stix_object.id)
+        self.object_refs.append(stix_object.id)
 
     def _append_SDO_without_refs(self, stix_object):
         self.__objects.append(stix_object)
@@ -366,19 +366,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     marking['used'] = True
         if self._is_published():
             report_id = f"report--{self._misp_event['uuid']}"
-            if not self.__object_refs:
+            if not self.object_refs:
                 self._handle_empty_object_refs(report_id, self.event_timestamp)
             published = self._datetime_from_timestamp(
                 self._misp_event['publish_timestamp']
             )
             report_args.update(
                 {
-                    'id': report_id, 'type': 'report', 'published': published,
-                    'object_refs': self.__object_refs, 'allow_custom': True
+                    'id': report_id, 'type': 'report',
+                    'published': published, 'allow_custom': True
                 }
             )
+            self._handle_analyst_data(report_args)
+            report_args['object_refs'] = self.object_refs
             report = self._create_report(report_args)
-            self._handle_analyst_data(report)
             return report
         return self._handle_unpublished_report(report_args)
 
@@ -4203,7 +4204,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return uuids
 
     def _find_target_uuid(self, reference: str) -> Union[str, None]:
-        for object_ref in self.__object_refs:
+        for object_ref in self.object_refs:
             if reference in object_ref:
                 return object_ref
 

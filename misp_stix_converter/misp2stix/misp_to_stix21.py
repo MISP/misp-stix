@@ -29,9 +29,9 @@ from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
 _STIX_OBJECT_TYPING = Union[
-    AttackPattern, Campaign, CourseOfAction, CustomObject, Grouping, Identity,
-    Indicator, IntrusionSet, Location, Malware, Note, ObservedData, Report,
-    Tool, Vulnerability
+    AttackPattern, Campaign, CourseOfAction, CustomObject, Identity,
+    Indicator, IntrusionSet, Location, Malware, Note, ObservedData, Tool,
+    Vulnerability, dict
 ]
 
 
@@ -151,9 +151,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _handle_note_data(self, stix_object: _STIX_OBJECT_TYPING,
                           note: Union[MISPNote, dict]):
         note_args = {
-            'content': note['note'],
-            'id': f"note--{note['uuid']}",
-            'object_refs': [stix_object.id],
+            'content': note['note'], 'id': f"note--{note['uuid']}",
+            'object_refs': [stix_object['id']],
             **dict(self._handle_analyst_time_fields(stix_object, note))
         }
         if note.get('authors'):
@@ -172,7 +171,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'modified': self._datetime_from_str(opinion['modified']),
             'allow_custom': True, 'id': f"opinion--{opinion['uuid']}",
             'opinion': self._parse_opinion_level(opinion_value),
-            'object_refs': [stix_object.id], 'x_misp_opinion': opinion_value,
+            'object_refs': [stix_object['id']], 'x_misp_opinion': opinion_value,
             **dict(self._handle_analyst_time_fields(stix_object, opinion))
         }
         if opinion.get('authors'):
@@ -219,12 +218,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         report_args.update(
             {
                 'id': grouping_id, 'type': 'grouping',
-                'context': 'suspicious-activity',
-                'object_refs': self.object_refs, 'allow_custom': True
+                'context': 'suspicious-activity', 'allow_custom': True
             }
         )
+        self._handle_analyst_data(report_args)
+        report_args['object_refs'] = self.object_refs
         grouping = Grouping(**report_args)
-        self._handle_analyst_data(grouping)
         return grouping
 
     ############################################################################

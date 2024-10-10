@@ -35,7 +35,7 @@ _ANALYST_DATA_REFERENCE_TYPES = [
 ]
 _STIX_OBJECT_TYPING = Union[
     AttackPattern, Campaign, CourseOfAction, CustomObject, Identity, Indicator,
-    IntrusionSet, Malware, ObservedData, Report, Tool, Vulnerability
+    IntrusionSet, Malware, ObservedData, Tool, Vulnerability, dict
 ]
 
 
@@ -295,14 +295,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                           note: Union[MISPNote, dict]):
         note_args = {
             'id': f"x-misp-analyst-note--{note['uuid']}",
-            'object_ref': stix_object.id, 'x_misp_note': note['note'],
+            'object_ref': stix_object['id'], 'x_misp_note': note['note'],
             **dict(self._handle_analyst_time_fields(stix_object, note))
         }
         if note.get('authors'):
             note_args['x_misp_author'] = note['authors']
         if note.get('language'):
             note_args['x_misp_language'] = note['language']
-        if stix_object.id.startswith('x-misp-'):
+        if stix_object['id'].startswith('x-misp-'):
             note_args['allow_custom'] = True
         getattr(self, self._results_handling_function)(
             CustomAnalystNote(**note_args)
@@ -312,14 +312,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                              opinion: Union[MISPOpinion, dict]):
         opinion_args = {
             'id': f"x-misp-analyst-opinion--{opinion['uuid']}",
-            'object_ref': stix_object.id, 'x_misp_opinion': opinion['opinion'],
+            'object_ref': stix_object['id'],
+            'x_misp_opinion': opinion['opinion'],
             **dict(self._handle_analyst_time_fields(stix_object, opinion))
         }
         if opinion.get('authors'):
             opinion_args['x_misp_author'] = opinion['authors']
         if opinion.get('comment'):
             opinion_args['x_misp_comment'] = opinion['comment']
-        if stix_object.id.startswith('x-misp-'):
+        if stix_object['id'].startswith('x-misp-'):
             opinion_args['allow_custom'] = True
         getattr(self, self._results_handling_function)(
             CustomAnalystOpinion(**opinion_args)
@@ -362,12 +363,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         report_args.update(
             {
                 'id': report_id, 'type': 'report',
-                'published': report_args['modified'],
-                'object_refs': self.object_refs, 'allow_custom': True
+                'published': report_args['modified'], 'allow_custom': True
             }
         )
+        self._handle_analyst_data(report_args)
+        report_args['object_refs'] = self.object_refs
         report = self._create_report(report_args)
-        self._handle_analyst_data(report)
         return report
 
     ############################################################################
