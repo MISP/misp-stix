@@ -51,6 +51,9 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             stix_object.modified,
             self._datetime_from_str(misp_layer['modified'])
         )
+        self.assertEqual(
+            stix_object.labels, ['misp:context-layer="Analyst Note"']
+        )
 
     def _check_analyst_opinion(self, stix_object, misp_layer, opinion):
         self.assertEqual(
@@ -69,6 +72,9 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self.assertEqual(
             stix_object.modified,
             self._datetime_from_str(misp_layer['modified'])
+        )
+        self.assertEqual(
+            stix_object.labels, ['misp:context-layer="Analyst Opinion"']
         )
 
     def _check_attribute_confidence_tags(self, stix_object, attribute):
@@ -183,6 +189,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             report_opinion.object_refs[0],
             f"note--{event_report['uuid']}"
         )
+        self.assertEqual(report.labels, ['misp:data-layer="Event Report"'])
         event_report_opinion = event_report['Opinion'][0]
         self._check_analyst_opinion(report_opinion, event_report_opinion, 'agree')
         self.assertEqual(relationship.relationship_type, 'downloaded-from')

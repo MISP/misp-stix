@@ -128,12 +128,24 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
             attr_opinion.object_ref,
             f"indicator--{src_attribute['uuid']}"
         )
+        self._assert_multiple_equal(
+            attr_opinion.type,
+            obj_opinion.type,
+            report_opinion.type,
+            'x-misp-analyst-opinion'
+        )
         attribute_opinion = src_attribute['Opinion'][0]
         self._check_analyst_opinion(attr_opinion, attribute_opinion)
         self._assert_multiple_equal(
             observed_data.id,
             observed_data_note.object_ref,
             f"observed-data--{dst_attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            observed_data_note.type,
+            obj_attr_note.type,
+            event_note.type,
+            'x-misp-analyst-note'
         )
         attribute_note = dst_attribute['Note'][0]
         self._check_analyst_note(observed_data_note, attribute_note)
@@ -153,6 +165,7 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
             report_opinion.object_ref,
             f"x-misp-event-report--{event_report['uuid']}"
         )
+        self.assertEqual(report.type, 'x-misp-event-report')
         event_report_opinion = event_report['Opinion'][0]
         self._check_analyst_opinion(report_opinion, event_report_opinion)
         self.assertEqual(relationship.relationship_type, 'downloaded-from')
