@@ -37,9 +37,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         self._tool_parser: ExternalSTIX2ToolConverter
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
-    def parse_stix_bundle(self, cluster_distribution: Optional[int] = 0,
-                          cluster_sharing_group_id: Optional[int] = None,
-                          organisation_uuid: Optional[str] = None, **kwargs):
+    def parse_stix_bundle(
+            self, cluster_distribution: Optional[int] = 0,
+            cluster_sharing_group_id: Optional[int] = None,
+            organisation_uuid: Optional[str] = MISP_org_uuid, **kwargs):
         self._set_parameters(**kwargs)
         self._set_cluster_distribution(
             cluster_distribution, cluster_sharing_group_id
@@ -52,6 +53,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         if not hasattr(self, '_observable_object_parser'):
             self._set_observable_object_parser()
         return self._observable_object_parser
+
+    ############################################################################
+    #                              PARSER SETTERS                              #
+    ############################################################################
 
     ############################################################################
     #                              PARSER SETTERS                              #
@@ -138,8 +143,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             return super()._handle_unparsed_content()
         unparsed_content = defaultdict(list)
         for object_id, content in self._observable.items():
-            if content['used'][self.misp_event.uuid]:
-                continue
+            if self.misp_event.uuid in content['used']:
+                if content['used'][self.misp_event.uuid]:
+                    continue
             unparsed_content[content['observable'].type].append(object_id)
         for observable_type in self._mapping.observable_object_types():
             if observable_type not in unparsed_content:
@@ -153,9 +159,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 continue
             to_call = f'_parse_{feature}_observable_object'
             for object_id in unparsed_content[observable_type]:
-                if self._observable[object_id]['used'][self.misp_event.uuid]:
-                    # if object_id.split('--')[0] not in _force_observables_list:
-                    continue
+                if self.misp_event.uuid in self._observable[object_id]['used']:
+                    if self._observable[object_id]['used'][self.misp_event.uuid]:
+                        continue
                 try:
                     getattr(self.observable_object_parser, to_call)(object_id)
                 except Exception as exception:

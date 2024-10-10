@@ -322,6 +322,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             'Invalid Sharing Group ID - cannot be None when distribution is 4'
         )
 
+    def _distribution_and_sharing_group_id_error(self):
+        self.__errors['init'].add(
+            'Invalid Sharing Group ID - cannot be None when distribution is 4'
+        )
+
     def _distribution_error(self, exception: Exception):
         self.__errors['init'].add(
             f'Wrong distribution format: {exception}'

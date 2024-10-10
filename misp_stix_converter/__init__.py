@@ -1,4 +1,4 @@
-__version__ = '2.4.194'
+__version__ = '2.4.196.1'
 
 import argparse
 from .misp_stix_mapping import Mapping # noqa
@@ -48,6 +48,10 @@ def _handle_return_message(traceback):
 
 def main():
     parser = argparse.ArgumentParser(description='Convert MISP <-> STIX')
+    parser.add_argument(
+        '-v', '--version', action='version',
+        version=f'{parser.prog} {__version__}'
+    )
     parser.add_argument(
         '--debug', action='store_true', help='Show errors and warnings'
     )
