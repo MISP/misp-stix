@@ -770,6 +770,24 @@ _TEST_EVENT_WITH_ANALYST_DATA = {
                     "comment": "Fully agree with the malicious nature of the IP"
                 }
             ]
+        },
+        {
+            "type": "ip-dst",
+            "category": "Network activity",
+            "to_ids": False,
+            "uuid": "76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+            "timestamp": "1603642920",
+            "value": "8.8.8.8",
+            "Note": [
+                {
+                    "uuid": "31fc7048-9ede-4db9-a423-ef97670ed4c6",
+                    "authors": "opinion@foo.bar",
+                    "created": "2024-06-12 12:52:45",
+                    "modified": "2024-06-12 12:52:45",
+                    "note": "DNS Resolver used to resolve the malicious domain",
+                    "language": "en"
+                }
+            ]
         }
     ],
     "Object": [
@@ -822,6 +840,16 @@ _TEST_EVENT_WITH_ANALYST_DATA = {
                 {
                     "referenced_uuid": "f7ef1b4a-964a-4a69-9e21-808f85c56238",
                     "relationship_type": "downloaded-from"
+                }
+            ],
+            "Opinion": [
+                {
+                    "uuid": "74258748-78f2-4b19-bedc-27ec61b1c5df",
+                    "authors": "john.doe@foo.bar",
+                    "created": "2024-06-12 12:52:48",
+                    "modified": "2024-06-12 12:53:58",
+                    "opinion": "50",
+                    "comment": "No warning from my antivirus"
                 }
             ]
         }
@@ -3185,7 +3213,7 @@ def get_base_event():
 
 def get_event_with_analyst_data():
     event = deepcopy(_BASE_EVENT)
-    event['Event'].update(_TEST_EVENT_WITH_ANALYST_DATA)
+    event['Event'].update(deepcopy(_TEST_EVENT_WITH_ANALYST_DATA))
     return event
 
 

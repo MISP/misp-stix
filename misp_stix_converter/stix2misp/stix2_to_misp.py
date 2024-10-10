@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import time
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
     ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
@@ -31,7 +30,6 @@ from .importparser import (
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from abc import ABCMeta
 from collections import defaultdict
-from datetime import datetime
 from pymisp import (
     MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
@@ -202,12 +200,8 @@ _VULNERABILITY_TYPING = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
-    def __init__(self, distribution: int, sharing_group_id: Union[int, None],
-                 title: Union[str, None], producer: Union[str, None],
-                 galaxies_as_tags: bool):
-        super().__init__(
-            distribution, sharing_group_id, title, producer, galaxies_as_tags
-        )
+    def __init__(self):
+        super().__init__()
         self._creators: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
@@ -247,20 +241,33 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 n_report += 1
             feature = self._mapping.stix_object_loading_mapping(object_type)
             if feature is None:
-                self._unable_to_load_stix_object_type_error(object_type)
+                self._add_error(
+                    f'Unable to load STIX object type: {object_type}'
+                )
                 continue
             if hasattr(stix_object, 'created_by_ref'):
                 self._creators.add(stix_object.created_by_ref)
             try:
                 getattr(self, feature)(stix_object)
-            except MarkingDefinitionLoadingError as error:
-                self._marking_definition_error(error)
+            except MarkingDefinitionLoadingError as marking_definition_id:
+                self._add_error(
+                    'Error whil parsing the Marking Definition '
+                    f'object with id {marking_definition_id}'
+                )
             except AttributeError as exception:
                 self._critical_error(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
 
-    def parse_stix_bundle(self, single_event: Optional[bool] = False):
-        self.__single_event = single_event
+    def parse_stix_content(self, filename: str, **kwargs):
+        try:
+            bundle = _load_stix2_content(filename)
+        except Exception as exception:
+            sys.exit(exception)
+        self.load_stix_bundle(bundle)
+        del bundle
+        self.parse_stix_bundle(**kwargs)
+
+    def _parse_stix_bundle(self):
         try:
             feature = self._mapping.bundle_to_misp_mapping(str(self.__n_report))
         except AttributeError:
@@ -278,16 +285,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for feature in ('_grouping', 'report', *_LOADED_FEATURES):
             if hasattr(self, feature):
                 setattr(self, feature, {})
-
-    def parse_stix_content(
-            self, filename: str, single_event: Optional[bool] = False):
-        try:
-            bundle = _load_stix2_content(filename)
-        except Exception as exception:
-            sys.exit(exception)
-        self.load_stix_bundle(bundle)
-        del bundle
-        self.parse_stix_bundle(single_event)
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -317,11 +314,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def generic_info_field(self) -> str:
-        message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         if self.event_title is not None:
-            message = f'{self.event_title} {message}'
-        if self.producer is not None:
-            message += f' produced by {self.producer}'
+            return self.event_title
+        message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         return f'{message} and converted with the MISP-STIX import feature.'
 
     @property
@@ -375,10 +370,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if not hasattr(self, '_observed_data_parser'):
             self._set_observed_data_parser()
         return self._observed_data_parser
-
-    @property
-    def single_event(self) -> bool:
-        return self.__single_event
 
     @property
     def stix_version(self) -> str:
@@ -601,18 +592,26 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._object_type_loading_error(error)
         except UndefinedIndicatorError as error:
             self._undefined_indicator_error(error)
-        except UndefinedSTIXObjectError as error:
-            self._undefined_object_error(error)
+        except UndefinedSTIXObjectError as object_id:
+            self._add_error(
+                'Unable to define the object identified '
+                f'with the id {object_id}'
+            )
         except UndefinedObservableError as error:
             self._undefined_observable_error(error)
-        except UnknownAttributeTypeError as error:
-            self._unknown_attribute_type_warning(error)
-        except UnknownObjectNameError as error:
-            self._unknown_object_name_warning(error)
+        except UnknownAttributeTypeError as attribute_type:
+            self._add_warning(
+                f'MISP attribute type not mapped: {attribute_type}'
+            )
+        except UnknownObjectNameError as name:
+            self._add_warning(f'MISP object name not mapped: {name}')
         except UnknownParsingFunctionError as error:
             self._unknown_parsing_function_error(error)
-        except UnknownPatternTypeError as error:
-            self._unknown_pattern_type_error(object_ref, error)
+        except UnknownPatternTypeError as pattern_type:
+            self._add_error(
+                'Unknown pattern type in Indicator object with id '
+                f'{object_ref}: {pattern_type}'
+            )
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
@@ -660,22 +659,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_bundle_with_multiple_reports(self):
         if self.single_event:
             self.__misp_event = self._create_generic_event()
-            if hasattr(self, '_report') and self._report is not None:
+            if getattr(self, '_report', None):
                 for report in self._report.values():
                     self._handle_object_refs(report.object_refs)
-            if hasattr(self, '_grouping') and self._grouping is not None:
+            if getattr(self, '_grouping', None):
                 for grouping in self._grouping.values():
                     self._handle_object_refs(grouping.object_refs)
             self._handle_unparsed_content()
         else:
             self.__misp_events = []
-            if hasattr(self, '_report') and self._report is not None:
+            if getattr(self, '_report', None):
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
                     self._handle_unparsed_content()
                     self.__misp_events.append(self.misp_event)
-            if hasattr(self, '_grouping') and self._grouping is not None:
+            if getattr(self, '_grouping', None):
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
@@ -683,18 +682,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self.__misp_events.append(self.misp_event)
 
     def _parse_bundle_with_no_report(self):
-        self.__single_event = True
+        self._set_single_event(True)
         self.__misp_event = self._create_generic_event()
         self._parse_loaded_features()
         self._handle_unparsed_content()
 
     def _parse_bundle_with_single_report(self):
-        self.__single_event = True
-        if hasattr(self, '_report') and self._report is not None:
+        self._set_single_event(True)
+        if getattr(self, '_report', None):
             for report in self._report.values():
                 self.__misp_event = self._misp_event_from_report(report)
                 self._handle_object_refs(report.object_refs)
-        elif hasattr(self, '_grouping') and self._grouping is not None:
+        elif getattr(self, '_grouping', None):
             for grouping in self._grouping.values():
                 self.__misp_event = self._misp_event_from_grouping(grouping)
                 self._handle_object_refs(grouping.object_refs)
@@ -1234,14 +1233,33 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return 'misp:confidence-level="rarely-confident"'
         return 'misp:confidence-level="unconfident"'
 
-    @staticmethod
-    def _timestamp_from_date(date: datetime) -> int:
-        return int(date.timestamp())
-        try:
-            return int(date.timestamp())
-        except AttributeError:
-            return int(
-                time.mktime(
-                    time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")
-                )
-            )
+    ############################################################################
+    #                   ERRORS AND WARNINGS HANDLING METHODS                   #
+    ############################################################################
+
+    def _critical_error(self, exception: Exception):
+        self._add_error(f'The following exception was raised: {exception}')
+
+    def _object_ref_loading_error(self, object_ref: str):
+        self._add_error(f'Error loading the STIX object with id {object_ref}')
+
+    def _object_type_loading_error(self, object_type: str):
+        self._add_error(f'Error loading the STIX object of type {object_type}')
+
+    def _unknown_network_protocol_warning(
+            self, protocol: str, object_id: str,
+            object_type: Optional[str] = 'indicator'):
+        message = (
+            'in patterning expression within the indicator with id'
+            if object_type == 'indicator' else
+            f'within the {object_type} object with id'
+        )
+        self._add_warning(
+            f'Unknown network protocol: {protocol}, {message} {object_id}'
+        )
+
+    def _unknown_parsing_function_error(self, feature: Exception):
+        self._add_error(f'Unknown STIX parsing function name: {feature}')
+
+    def _unknown_stix_object_type_error(self, object_type: Exception):
+        self._add_error(f'Unknown STIX object type: {object_type}')

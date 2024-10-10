@@ -10,13 +10,14 @@ from .misp2stix import stix1_attributes_framing, stix1_framing # noqa
 from .misp2stix import stix20_framing, stix21_framing # noqa
 # Helpers
 from .misp_stix_converter import ( # noqa
-    _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
+    _is_stix1_from_misp, _is_stix2_from_misp,
+    misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
     stix_1_to_misp, stix_2_to_misp, stix2_to_misp_instance)
 # STIX 1 special helpers
 from .misp_stix_converter import ( # noqa
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
-    _get_observables, _get_threat_actors, _get_ttps, _from_misp)
+    _get_observables, _get_threat_actors, _get_ttps)
 # STIX 1 footers
 from .misp_stix_converter import ( # noqa
     _get_campaigns_footer, _get_courses_of_action_footer, _get_indicators_footer,
@@ -110,8 +111,7 @@ def main():
 
     # IMPORT SUBPARSER
     import_parser = subparsers.add_parser(
-        'import', help='Import STIX to MISP - try '
-                       '`misp_stix_converter import -h` for more help.'
+        'import', help='Import STIX to MISP - try `misp_stix_converter import -h` for more help.'
     )
     import_parser.add_argument(
         '-f', '--file', nargs='+', type=Path, required=True,
@@ -138,7 +138,14 @@ def main():
     )
     import_parser.add_argument(
         '-d', '--distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
-        help='Distribution level for the imported MISP content - default is 0'
+        help='''
+            Distribution level for the imported MISP content (default is 0)
+              - 0: Your organisation only
+              - 1: This community only
+              - 2: Connected communities
+              - 3: All communities
+              - 4: Sharing Group
+            '''
     )
     import_parser.add_argument(
         '-sg', '--sharing_group', type=int, default=None,
@@ -153,7 +160,15 @@ def main():
     )
     import_parser.add_argument(
         '-cd', '--cluster_distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
-        help='Galaxy Clusters distribution level in case of External STIX 2 content - default id 0'
+        help='''
+            Galaxy Clusters distribution level
+            in case of External STIX 2 content (default id 0)
+              - 0: Your organisation only
+              - 1: This community only
+              - 2: Connected communities
+              - 3: All communities
+              - 4: Sharing Group
+        '''
     )
     import_parser.add_argument(
         '-cg', '--cluster_sharing_group', type=int, default=None,
@@ -161,7 +176,7 @@ def main():
     )
     import_parser.add_argument(
         '-t', '--title', type=str, default=None,
-        help='Title prefix to add to the MISP Event `info` field.'
+        help='Title used to set the MISP Event `info` field.'
     )
     import_parser.add_argument(
         '-p', '--producer',

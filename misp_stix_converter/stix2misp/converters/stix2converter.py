@@ -212,9 +212,9 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     ############################################################################
 
     def _check_existing_galaxy_name(self, stix_object_name: str) -> Union[list, None]:
-        if stix_object_name in self.synonyms_mapping:
-            return self.synonyms_mapping[stix_object_name]
-        for name, tag_names in self.synonyms_mapping.items():
+        if stix_object_name in self.main_parser.synonyms_mapping:
+            return self.main_parser.synonyms_mapping[stix_object_name]
+        for name, tag_names in self.main_parser.synonyms_mapping.items():
             if stix_object_name in name:
                 return tag_names
 

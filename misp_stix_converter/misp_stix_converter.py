@@ -14,9 +14,9 @@ from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
 from .stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
-from .stix2misp.external_stix2_to_misp import (
-    ExternalSTIX2toMISPParser, MISP_org_uuid)
-from .stix2misp.importparser import _load_stix2_content
+from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
+from .stix2misp.importparser import (
+    _load_stix1_package, _load_stix2_content, MISP_org_uuid)
 from .stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
 from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
 from collections import defaultdict
@@ -639,31 +639,96 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
 #                         STIX to MISP MAIN FUNCTIONS.                         #
 ################################################################################
 
-def stix_1_to_misp(
-        filename: _files_type, output_filename: Optional[_files_type]=None):
-    event = _load_stix_event(filename)
-    if isinstance(event, str):
-        return event
-    title = event.stix_header.title
-    from_misp = (
-        title is not None and
-        all(feature in title for feature in ('Export from ', 'MISP'))
+def stix_1_to_misp(filename: _files_type,
+                   cluster_distribution: Optional[int] = 0,
+                   cluster_sharing_group_id: Optional[int] = None,
+                   debug: Optional[bool] = False,
+                   distribution: Optional[int] = 0,
+                   galaxies_as_tags: Optional[bool] = False,
+                   organisation_uuid: Optional[str] = MISP_org_uuid,
+                   output_dir: Optional[_files_type]=None,
+                   output_name: Optional[_files_type]=None,
+                   producer: Optional[str] = None,
+                   sharing_group_id: Optional[int] = None,
+                   single_event: Optional[bool] = False,
+                   title: Optional[str] = None) -> dict:
+    if isinstance(filename, str):
+        filename = Path(filename).resolve()
+    try:
+        stix_package = _load_stix1_package(filename)
+    except Exception as error:
+        return {'errors': [f'{filename} -  {error.__str__()}']}
+    parser, args = _get_stix1_parser(
+        _is_stix1_from_misp(stix_package), distribution, sharing_group_id,
+        title, producer, galaxies_as_tags, single_event,
+        organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
-    stix_parser = (
-        InternalSTIX1toMISPParser() if from_misp
-        else ExternalSTIX1toMISPParser()
-    )
-    stix_parser.load_event()
-    stix_parser.build_misp_event(event)
-    if output_filename is None:
-        output_filename = f'{filename}.out'
-    with open(output_filename, 'wt', encoding='utf-8') as f:
-        f.write(stix_parser.misp_event.to_json(indent=4))
-    return 1
+    stix_parser = parser()
+    stix_parser.load_stix_package(stix_package)
+    stix_parser.parse_stix_package(**args)
+    if output_dir is None:
+        output_dir = filename.parent
+    if stix_parser.single_event:
+        name = _check_filename(
+            filename.parent, f'{filename.name}.out', output_dir, output_name
+        )
+        with open(name, 'wt', encoding='utf-8') as f:
+            f.write(stix_parser.misp_event.to_json(indent=4))
+        return _generate_traceback(debug, stix_parser, name)
+    output_names = []
+    for misp_event in stix_parser.misp_events:
+        output = output_dir / f'{filename.name}.{misp_event.uuid}.misp.out'
+        with open(output, 'wt', encoding='utf-8') as f:
+            f.write(misp_event.to_json(indent=4))
+        output_names.append(output)
+    return _generate_traceback(debug, stix_parser, *output_names)
 
 
-def stix1_to_misp_instance():
-    return
+def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
+                           cluster_distribution: Optional[int] = 0,
+                           cluster_sharing_group_id: Optional[int] = None,
+                           debug: Optional[bool] = False,
+                           distribution: Optional[int] = 0,
+                           galaxies_as_tags: Optional[bool] = False,
+                           organisation_uuid: Optional[str] = MISP_org_uuid,
+                           producer: Optional[str] = None,
+                           sharing_group_id: Optional[int] = None,
+                           single_event: Optional[bool] = False,
+                           title: Optional[str] = None) -> dict:
+    if isinstance(filename, str):
+        filename = Path(filename).resolve()
+    try:
+        stix_package = _load_stix1_package(filename)
+    except Exception as error:
+        return {'errors': [f'{filename} -  {error.__str__()}']}
+    parser, args = _get_stix1_parser(
+        _is_stix1_from_misp(stix_package), distribution, sharing_group_id,
+        title, producer, galaxies_as_tags, single_event,
+        organisation_uuid, cluster_distribution, cluster_sharing_group_id
+    )
+    stix_parser = parser()
+    stix_parser.load_stix_package(stix_package)
+    stix_parser.parse_stix_package(**args)
+    if stix_parser.single_event:
+        misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
+        if not isinstance(misp_event, MISPEvent):
+            return _generate_traceback(
+                debug, stix_parser, errors={
+                    stix_parser.misp_event.uuid: misp_event['errors'][1]['message']
+                }
+            )
+        return _generate_traceback(debug, stix_parser, misp_event.id)
+    event_ids = []
+    errors = {}
+    for event in stix_parser.misp_events:
+        misp_event = misp.add_event(event, pythonify=True)
+        if not isinstance(misp_event, MISPEvent):
+            errors[event.uuid] = misp_event['errors'][1]['message']
+            continue
+        event_ids.append(misp_event.id)
+    return _generate_traceback(
+        debug, stix_parser, *event_ids, errors=list(errors)
+    )
 
 
 def stix_2_to_misp(filename: _files_type,
@@ -686,13 +751,13 @@ def stix_2_to_misp(filename: _files_type,
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
-        _from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, galaxies_as_tags, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
+        _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
+        title, producer, galaxies_as_tags, single_event,
+        organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
-    stix_parser = parser(*args)
+    stix_parser = parser()
     stix_parser.load_stix_bundle(bundle)
-    stix_parser.parse_stix_bundle(single_event)
+    stix_parser.parse_stix_bundle(**args)
     if output_dir is None:
         output_dir = filename.parent
     if stix_parser.single_event:
@@ -711,18 +776,17 @@ def stix_2_to_misp(filename: _files_type,
     return _generate_traceback(debug, stix_parser, *output_names)
 
 
-def stix2_to_misp_instance(
-        misp: PyMISP, filename: _files_type,
-        cluster_distribution: Optional[int] = 0,
-        cluster_sharing_group_id: Optional[int] = None,
-        debug: Optional[bool] = False,
-        distribution: Optional[int] = 0,
-        galaxies_as_tags: Optional[bool] = False,
-        organisation_uuid: Optional[str] = MISP_org_uuid,
-        producer: Optional[str] = None,
-        sharing_group_id: Optional[int] = None,
-        single_event: Optional[bool] = False,
-        title: Optional[str] = None) -> dict:
+def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
+                           cluster_distribution: Optional[int] = 0,
+                           cluster_sharing_group_id: Optional[int] = None,
+                           debug: Optional[bool] = False,
+                           distribution: Optional[int] = 0,
+                           galaxies_as_tags: Optional[bool] = False,
+                           organisation_uuid: Optional[str] = MISP_org_uuid,
+                           producer: Optional[str] = None,
+                           sharing_group_id: Optional[int] = None,
+                           single_event: Optional[bool] = False,
+                           title: Optional[str] = None) -> dict:
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
@@ -730,13 +794,13 @@ def stix2_to_misp_instance(
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
-        _from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, galaxies_as_tags, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
+        _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
+        title, producer, galaxies_as_tags, single_event,
+        organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
-    stix_parser = parser(*args)
+    stix_parser = parser()
     stix_parser.load_stix_bundle(bundle)
-    stix_parser.parse_stix_bundle(single_event)
+    stix_parser.parse_stix_bundle(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
@@ -763,7 +827,67 @@ def stix2_to_misp_instance(
 #                        STIX CONTENT LOADING FUNCTIONS                        #
 ################################################################################
 
-def _from_misp(stix_objects):
+def _get_stix1_parser(from_misp: bool, distribution: int,
+                      sharing_group_id: Union[int, None],
+                      title: Union[str, None], producer: Union[str, None],
+                      galaxies_as_tags: bool, single_event: bool,
+                      organisation_uuid: str, cluster_distribution: int,
+                      cluster_sharing_group_id: Union[int, None]) -> tuple:
+    args = {
+        'distribution': distribution,
+        'galaxies_as_tags': galaxies_as_tags,
+        'producer': producer,
+        'sharing_group_id': sharing_group_id,
+        'single_event': single_event,
+        'title': title
+    }
+    if from_misp:
+        return InternalSTIX1toMISPParser, args
+    args.update(
+        {
+            'cluster_distribution': cluster_distribution,
+            'cluster_sharing_group_id': cluster_sharing_group_id,
+            'organisation_uuid': organisation_uuid
+        }
+    )
+    return ExternalSTIX1toMISPParser, args
+
+
+def _get_stix2_parser(from_misp: bool, distribution: int,
+                      sharing_group_id: Union[int, None],
+                      title: Union[str, None], producer: Union[str, None],
+                      galaxies_as_tags: bool, single_event: bool,
+                      organisation_uuid: str, cluster_distribution: int,
+                      cluster_sharing_group_id: Union[int, None]) -> tuple:
+    args = {
+        'distribution': distribution,
+        'galaxies_as_tags': galaxies_as_tags,
+        'producer': producer,
+        'sharing_group_id': sharing_group_id,
+        'single_event': single_event,
+        'title': title
+    }
+    if from_misp:
+        return InternalSTIX2toMISPParser, args
+    args.update(
+        {
+            'cluster_distribution': cluster_distribution,
+            'cluster_sharing_group_id': cluster_sharing_group_id,
+            'organisation_uuid': organisation_uuid
+        }
+    )
+    return ExternalSTIX2toMISPParser, args
+
+
+def _is_stix1_from_misp(stix_package: STIXPackage) -> bool:
+    try:
+        title = stix_package.stix_header.title
+    except AttributeError:
+        return False
+    return 'Export from ' in title and 'MISP' in title
+
+
+def _is_stix2_from_misp(stix_objects: list):
     for stix_object in stix_objects:
         labels = stix_object.get('labels', [])
         if stix_object['type'] not in _STIX2_event_types or not labels:
@@ -771,12 +895,6 @@ def _from_misp(stix_objects):
         if any(tag in labels for tag in _MISP_STIX_tags):
             return True
     return False
-
-
-def _get_stix2_parser(from_misp: bool, *args: tuple) -> tuple:
-    if from_misp:
-        return InternalSTIX2toMISPParser, args[:-3]
-    return ExternalSTIX2toMISPParser, args
 
 
 def _load_stix_event(filename, tries=0):

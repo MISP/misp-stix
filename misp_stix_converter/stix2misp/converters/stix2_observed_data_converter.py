@@ -65,6 +65,15 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
         for object_ref in object_refs:
             yield self.main_parser._observable[object_ref]
 
+    # Errors handling
+    def _observable_mapping_error(
+            self, observed_data_id: str, observable_types: Exception):
+        self.main_parser._add_error(
+            'Unable to map observable objects related to the Observed Data '
+            f'object with id {observed_data_id} containing the folowing types'
+            f": {observable_types.__str__().replace('_', ', ')}"
+        )
+
 
 class ExternalSTIX2ObservedDataConverter(
         STIX2ObservedDataConverter, ExternalSTIX2ObservableConverter):
@@ -95,9 +104,7 @@ class ExternalSTIX2ObservedDataConverter(
             else:
                 self._parse_observable_objects(observed_data)
         except UnknownObservableMappingError as observable_types:
-            self.main_parser._observable_mapping_error(
-                observed_data.id, observable_types
-            )
+            self._observable_mapping_error(observed_data.id, observable_types)
 
     def parse_relationships(self):
         for misp_object in self.main_parser.misp_event.objects:
@@ -204,9 +211,7 @@ class ExternalSTIX2ObservedDataConverter(
             object_type = object_ref.split('--')[0]
             mapping = self._mapping.observable_mapping(object_type)
             if mapping is None:
-                self.main_parser._observable_mapping_error(
-                    observed_data.id, object_type
-                )
+                self._observable_mapping_error(observed_data.id, object_type)
                 continue
             feature = f'_parse_{mapping}_observable_object_refs'
             try:
@@ -255,17 +260,13 @@ class ExternalSTIX2ObservedDataConverter(
                 observable_objects.update(observables)
                 continue
             if len(observable_types) == 1:
-                self.main_parser._observable_mapping_error(
-                    observed_data.id, object_type
-                )
+                self._observable_mapping_error(observed_data.id, object_type)
                 continue
             mapping = self._mapping.observable_mapping(
                 observed_data.objects[object_id]['type']
             )
             if mapping is None:
-                self.main_parser._observable_mapping_error(
-                    observed_data.id, object_type
-                )
+                self._observable_mapping_error(observed_data.id, object_type)
                 continue
             feature = f'_parse_{mapping}_observable_objects'
             try:
@@ -2256,9 +2257,7 @@ class InternalSTIX2ObservedDataConverter(
         try:
             parser(observed_data)
         except UnknownObservableMappingError as observable_types:
-            self.main_parser._observable_mapping_error(
-                observed_data.id, observable_types
-            )
+            self._observable_mapping_error(observed_data.id, observable_types)
 
     ############################################################################
     #                        ATTRIBUTES PARSING METHODS                        #

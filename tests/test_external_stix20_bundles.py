@@ -1537,6 +1537,18 @@ class TestExternalSTIX20Bundles:
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################
+    #                              EVENTS SAMPLES                              #
+    ############################################################################
+
+    @classmethod
+    def get_bundle_without_report(cls):
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            deepcopy(cls.__identity), *_IP_ADDRESS_ATTRIBUTES
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    ############################################################################
     #                             GALAXIES SAMPLES                             #
     ############################################################################
 

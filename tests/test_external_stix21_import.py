@@ -10,11 +10,30 @@ from uuid import uuid5
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
 
-    ################################################################################
-    #                          MISP GALAXIES IMPORT TESTS                          #
-    ################################################################################
+    ############################################################################
+    #                         MISP EVENT IMPORT TESTS.                         #
+    ############################################################################
 
-    def _check_location_galaxy_features(self, galaxies, stix_object, galaxy_type, cluster_value=None):
+    def test_stix21_bundle_with_event_title_and_producer(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_without_grouping()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(
+            title='Malicious IP addresses report',
+            producer='MISP Project'
+        )
+        event = self.parser.misp_event
+        self.assertEqual(event.info, f'{self.parser.event_title}')
+        self.assertEqual(
+            event.tags[0]['name'],
+            f'misp-galaxy:producer="{self.parser.producer}"'
+        )
+
+    ############################################################################
+    #                        MISP GALAXIES IMPORT TESTS                        #
+    ############################################################################
+
+    def _check_location_galaxy_features(
+            self, galaxies, stix_object, galaxy_type, cluster_value=None):
         self.assertEqual(len(galaxies), 1)
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)

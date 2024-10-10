@@ -17,7 +17,7 @@ from collections import defaultdict
 from pymisp import MISPSighting
 from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21
-from typing import Optional, Union
+from typing import Union
 
 _CUSTOM_TYPING = Union[
     CustomObject_v20,
@@ -26,14 +26,8 @@ _CUSTOM_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, distribution: Optional[int] = 0,
-                 sharing_group_id: Optional[int] = None,
-                 title: Optional[str] = None,
-                 producer: Optional[str] = None,
-                 galaxies_as_tags: Optional[bool] = False):
-        super().__init__(
-            distribution, sharing_group_id, title, producer, galaxies_as_tags
-        )
+    def __init__(self):
+        super().__init__()
         self._mapping = InternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
@@ -52,6 +46,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._tool_parser: InternalSTIX2ToolConverter
         self._vulnerability_parser: InternalSTIX2VulnerabilityConverter
 
+    def parse_stix_bundle(self, **kwargs):
+        self._set_parameters(**kwargs)
+        self._parse_stix_bundle()
+
+    ############################################################################
+    #                                PROPERTIES                                #
+    ############################################################################
+
     @property
     def custom_object_parser(self) -> STIX2CustomObjectConverter:
         if not hasattr(self, '_custom_object_parser'):
@@ -69,6 +71,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         return getattr(
             self, '_observed_data_parser', self._set_observed_data_parser()
         )
+
+    ############################################################################
+    #                              PARSER SETTERS                              #
+    ############################################################################
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)

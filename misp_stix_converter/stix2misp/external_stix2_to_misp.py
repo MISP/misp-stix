@@ -11,31 +11,15 @@ from .converters import (
     ExternalSTIX2MalwareConverter, ExternalSTIX2ObservedDataConverter,
     ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, STIX2ObservableObjectConverter)
+from .importparser import ExternalSTIXtoMISPParser
 from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
 from collections import defaultdict
 from typing import Optional, Union
 
-MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
 
-
-
-class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, distribution: Optional[int] = 0,
-                 sharing_group_id: Optional[int] = None,
-                 title: Optional[str] = None,
-                 producer: Optional[str] = None,
-                 galaxies_as_tags: Optional[bool] = False,
-                 organisation_uuid: Optional[str] = MISP_org_uuid,
-                 cluster_distribution: Optional[int] = 0,
-                 cluster_sharing_group_id: Optional[int] = None):
-        super().__init__(
-            distribution, sharing_group_id, title, producer, galaxies_as_tags
-        )
-        self._set_cluster_distribution(
-            self._sanitise_distribution(cluster_distribution),
-            self._sanitise_sharing_group_id(cluster_sharing_group_id)
-        )
-        self.__organisation_uuid = organisation_uuid
+class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
+    def __init__(self):
+        super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
@@ -53,9 +37,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._tool_parser: ExternalSTIX2ToolConverter
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
-    @property
-    def cluster_distribution(self) -> dict:
-        return self.__cluster_distribution
+    def parse_stix_bundle(self, cluster_distribution: Optional[int] = 0,
+                          cluster_sharing_group_id: Optional[int] = None,
+                          organisation_uuid: Optional[str] = None, **kwargs):
+        self._set_parameters(**kwargs)
+        self._set_cluster_distribution(
+            cluster_distribution, cluster_sharing_group_id
+        )
+        self._set_organisation_uuid(organisation_uuid)
+        self._parse_stix_bundle()
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
@@ -63,22 +53,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._set_observable_object_parser()
         return self._observable_object_parser
 
-    @property
-    def organisation_uuid(self) -> str:
-        return self.__organisation_uuid
+    ############################################################################
+    #                              PARSER SETTERS                              #
+    ############################################################################
 
     def _set_attack_pattern_parser(self):
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
 
     def _set_campaign_parser(self):
         self._campaign_parser = ExternalSTIX2CampaignConverter(self)
-
-    def _set_cluster_distribution(
-            self, distribution: int, sharing_group_id: Union[int, None]):
-        cluster_distribution = {'distribution': distribution}
-        if distribution == 4 and sharing_group_id is not None:
-            cluster_distribution['sharing_group_id'] = sharing_group_id
-        self.__cluster_distribution = cluster_distribution
 
     def _set_course_of_action_parser(self):
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
@@ -163,18 +146,24 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             feature = self._mapping.observable_mapping(observable_type)
             if feature is None:
-                self._observable_object_mapping_error(
-                    unparsed_content[observable_type][0]
+                observable_id = unparsed_content[observable_type][0]
+                self._add_error(
+                    f'Unable to map observable object with id {observable_id}'
                 )
                 continue
             to_call = f'_parse_{feature}_observable_object'
             for object_id in unparsed_content[observable_type]:
                 if self._observable[object_id]['used'][self.misp_event.uuid]:
+                    # if object_id.split('--')[0] not in _force_observables_list:
                     continue
                 try:
                     getattr(self.observable_object_parser, to_call)(object_id)
                 except Exception as exception:
-                    self._observable_object_error(object_id, exception)
+                    _traceback = self._parse_traceback(exception)
+                    self._add_error(
+                        'Error parsing the Observable object with id '
+                        f'{object_id}: {_traceback}'
+                    )
         super()._handle_unparsed_content()
 
     def _parse_loaded_features(self):
