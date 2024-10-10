@@ -98,14 +98,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._version = '2.1'
         self._mapping = MISPtoSTIX21Mapping
 
-    def _parse_event_report(self, event_report: Union[MISPEventReport, dict]) -> Note:
+    def _parse_event_report(
+            self, event_report: Union[MISPEventReport, dict]) -> Note:
         timestamp = self._datetime_from_timestamp(event_report['timestamp'])
         note_args = {
             'id': f"note--{event_report['uuid']}",
             'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id,
             'content': event_report['content'],
-            'abstract': event_report['name']
+            'abstract': event_report['name'],
+            'labels': ['misp:data-layer="Event Report"']
         }
         references = set(self._parse_event_report_references(event_report))
         note_args['object_refs'] = (
@@ -118,7 +120,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'id': f"note--{self._misp_event['uuid']}",
             'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id, 'object_refs': [object_id],
-            'content': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.'
+            'content': (
+                'This MISP Event is empty and contains '
+                'no attribute, object, galaxy or tag.'
+            )
         }
         self._append_SDO(self._create_note(note_args))
 
@@ -152,6 +157,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                           note: Union[MISPNote, dict]):
         note_args = {
             'content': note['note'], 'id': f"note--{note['uuid']}",
+            'labels': ['misp:context-layer="Analyst Note"'],
             'object_refs': [stix_object['id']],
             **dict(self._handle_analyst_time_fields(stix_object, note))
         }
@@ -170,6 +176,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'created': self._datetime_from_str(opinion['created']),
             'modified': self._datetime_from_str(opinion['modified']),
             'allow_custom': True, 'id': f"opinion--{opinion['uuid']}",
+            'labels': ['misp:context-layer="Analyst Opinion"'],
             'opinion': self._parse_opinion_level(opinion_value),
             'object_refs': [stix_object['id']], 'x_misp_opinion': opinion_value,
             **dict(self._handle_analyst_time_fields(stix_object, opinion))
