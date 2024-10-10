@@ -14,7 +14,7 @@ from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP
-from typing import Optional
+from typing import Optional, Union
 
 class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
@@ -165,7 +165,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             attributes[0].update(self._sanitise_attribute_uuid(ttp.id_))
         return attributes
 
-    def _parse_description(self, stix_object: Indicator | Observable):
+    def _parse_description(self, stix_object: Union[Indicator, Observable]):
         if stix_object.description:
             misp_attribute = {
                 'type': 'text', 'value': stix_object.description.value
