@@ -40,7 +40,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     def parse_stix_bundle(
             self, cluster_distribution: Optional[int] = 0,
             cluster_sharing_group_id: Optional[int] = None,
-            organisation_uuid: Optional[str] = MISP_org_uuid, **kwargs):
+            organisation_uuid: Optional[str] = None, **kwargs):
         self._set_parameters(**kwargs)
         self._set_cluster_distribution(
             cluster_distribution, cluster_sharing_group_id
