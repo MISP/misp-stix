@@ -153,8 +153,6 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         object_refs = self._check_grouping_features(grouping, event, identity_id)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        for stix_object in stix_objects:
-            print(stix_object.type)
         (attr_indicator, attr_indicator_opinion, observed_data, _,
          _, obs_data_note, obj_indicator, obj_opinion, obj_attr_note,
          report, report_opinion, relationship, event_note) = stix_objects
@@ -264,7 +262,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         timestamp = event_report['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
-        self.assertEqual(note.created, timestamp)
+        self._assert_multiple_equal(note.created, note.modified, timestamp)
         self.assertEqual(note.content, event_report['content'])
         object_refs = note.object_refs
         self.assertEqual(len(object_refs), 3)

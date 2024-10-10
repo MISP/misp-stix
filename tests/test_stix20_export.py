@@ -117,8 +117,6 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(report.published, timestamp)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        for stix_object in stix_objects:
-            print(stix_object.type)
         (attr_indicator, attr_opinion, observed_data, observed_data_note,
          obj_indicator, obj_opinion, obj_attr_note, report, report_opinion,
          relationship, event_note) = stix_objects
@@ -194,7 +192,7 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         orgc = event['Orgc']
         event_report = event['EventReport'][0]
         self.parser.parse_misp_event(event)
-        bundle = self._check_bundle_features(9)
+        bundle = self._check_bundle_features(7)
         identity, report, *stix_objects = bundle.objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
@@ -204,7 +202,7 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(report.published, timestamp)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        attack_pattern, ip_src, observed_data, domain_ip, note, _, marking = stix_objects
+        ip_src, observed_data, domain_ip, note, _ = stix_objects
         self.assertEqual(note.id, f"x-misp-event-report--{event_report['uuid']}")
         timestamp = event_report['timestamp']
         if not isinstance(timestamp, datetime):
