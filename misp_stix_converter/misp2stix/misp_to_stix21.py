@@ -165,6 +165,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             note_args['authors'] = [note['authors']]
         if note.get('language'):
             note_args['lang'] = note['language']
+        if stix_object['id'].startswith('x-misp--'):
+            note_args['allow_custom'] = True
         getattr(self, self._results_handling_function)(
             self._create_note(note_args)
         )
@@ -173,8 +175,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                              opinion: Union[MISPOpinion, dict]):
         opinion_value = int(opinion['opinion'])
         opinion_args = {
-            'created': self._datetime_from_str(opinion['created']),
-            'modified': self._datetime_from_str(opinion['modified']),
             'allow_custom': True, 'id': f"opinion--{opinion['uuid']}",
             'labels': ['misp:context-layer="Analyst Opinion"'],
             'opinion': self._parse_opinion_level(opinion_value),
@@ -185,6 +185,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             opinion_args['authors'] = [opinion['authors']]
         if opinion.get('comment'):
             opinion_args['explanation'] = opinion['comment']
+        if stix_object['id'].startswith('x-misp--'):
+            opinion_args['allow_custom'] = True
         getattr(self, self._results_handling_function)(
             self._create_opinion(opinion_args)
         )
