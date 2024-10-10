@@ -4,6 +4,7 @@
 from ... import Mapping
 from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
+from stix2.v21 import Note
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
