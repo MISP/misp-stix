@@ -4,6 +4,7 @@
 from ... import Mapping
 from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
+from stix2.v21 import Note
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
 
     def parse(self, note_ref: str):
         note = self.main_parser._get_stix_object(note_ref)
-        if hasattr(note, 'labels'):
+        if 'misp:name="annotation"' in getattr(note, 'labels', []):
             self._parse_annotation_object(note)
 
     def _parse_annotation_object(self, note: Note):
