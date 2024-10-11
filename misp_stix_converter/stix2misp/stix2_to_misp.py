@@ -366,16 +366,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return self._malware_parser
 
     @property
-    def misp_event(self) -> MISPEvent:
-        return self.__misp_event
-
-    @property
-    def misp_events(self) -> Union[list, MISPEvent]:
-        return getattr(
-            self, '_STIX2toMISPParser__misp_events', self.__misp_event
-        )
-
-    @property
     def observed_data_parser(self) -> _OBSERVED_DATA_PARSER_TYPING:
         if not hasattr(self, '_observed_data_parser'):
             self._set_observed_data_parser()
@@ -654,7 +644,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_bundle_with_multiple_reports(self):
         if self.single_event:
-            self.__misp_event = self._create_generic_event()
+            self._set_misp_event(self._create_generic_event())
             if getattr(self, '_report', None):
                 for report in self._report.values():
                     self._handle_object_refs(report.object_refs)
@@ -663,23 +653,25 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self._handle_object_refs(grouping.object_refs)
             self._handle_unparsed_content()
         else:
-            self.__misp_events = []
+            self._set_misp_events()
             if getattr(self, '_report', None):
                 for report in self._report.values():
-                    self.__misp_event = self._misp_event_from_report(report)
+                    self._set_misp_event(self._misp_event_from_report(report))
                     self._handle_object_refs(report.object_refs)
                     self._handle_unparsed_content()
-                    self.__misp_events.append(self.misp_event)
+                    self._populate_misp_event()
             if getattr(self, '_grouping', None):
                 for grouping in self._grouping.values():
-                    self.__misp_event = self._misp_event_from_grouping(grouping)
+                    self._set_misp_event(
+                        self._misp_event_from_grouping(grouping)
+                    )
                     self._handle_object_refs(grouping.object_refs)
                     self._handle_unparsed_content()
-                    self.__misp_events.append(self.misp_event)
+                    self._populate_misp_event()
 
     def _parse_bundle_with_no_report(self):
         self._set_single_event(True)
-        self.__misp_event = self._create_generic_event()
+        self._set_misp_event(self._create_generic_event())
         self._parse_loaded_features()
         self._handle_unparsed_content()
 
@@ -687,11 +679,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._set_single_event(True)
         if getattr(self, '_report', None):
             for report in self._report.values():
-                self.__misp_event = self._misp_event_from_report(report)
+                self._set_misp_event(self._misp_event_from_report(report))
                 self._handle_object_refs(report.object_refs)
         elif getattr(self, '_grouping', None):
             for grouping in self._grouping.values():
-                self.__misp_event = self._misp_event_from_grouping(grouping)
+                self._set_misp_event(self._misp_event_from_grouping(grouping))
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
