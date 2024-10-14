@@ -132,19 +132,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ############################################################################
     def _load_analyst_note(self, note: Note):
         note_dict = self._parse_analyst_note(note)
-        note_ref = self._sanitise_uuid(note.id)
-        referenced = self._sanitise_uuid(note.object_refs[0])
-        note_dict.update({'object_uuid': referenced, 'uuid': note_ref})
-        self._analyst_data[referenced].append(note_ref)
-        super()._load_note(note_ref, note_dict)
+        note_dict['uuid'] = self._sanitise_uuid(note.id)
+        self._analyst_data[note.object_refs[0]].append(note.id)
+        super()._load_note(note.id, note_dict)
 
     def _load_analyst_opinion(self, opinion: Opinion):
         opinion_dict = self._parse_analyst_opinion(opinion)
-        opinion_ref = self._sanitise_uuid(opinion.id)
-        referenced = self._sanitise_uuid(opinion.object_refs[0])
-        opinion_dict.update({'object_uuid': referenced, 'uuid': opinion_ref})
-        self._analyst_data[referenced].append(opinion_ref)
-        super()._load_opinion(opinion_ref, opinion_dict)
+        opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
+        self._analyst_data[opinion.object_refs[0]].append(opinion.id)
+        super()._load_opinion(opinion.id, opinion_dict)
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
         self._check_uuid(custom_attribute.id)

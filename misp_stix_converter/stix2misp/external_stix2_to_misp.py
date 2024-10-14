@@ -111,30 +111,20 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
 
     def _load_analyst_note(self, note: Note):
         note_dict = self._parse_analyst_note(note)
-        note_ref = self._sanitise_uuid(note.id)
-        for object_ref in note.object_refs:
-            referenced = self._sanitise_uuid(object_ref)
-            self._analyst_data[referenced].append(note_ref)
         if len(note.object_refs) == 1:
-            note_dict.update({'object_uuid': referenced, 'uuid': note_ref})
-        super()._load_note(note_ref, note_dict)
-        try:
-            self._note[note_ref] = note_dict
-        except AttributeError:
-            self._note = {note_ref: note_dict}
+            note_dict['uuid'] = self._sanitise_uuid(note.id)
+        for object_ref in note.object_refs:
+            self._analyst_data[object_ref].append(note.id)
+        super()._load_note(note.id, note_dict)
 
     def _load_analyst_opinion(self, opinion: Opinion):
         opinion_dict = self._parse_analyst_opinion(opinion)
         opinion_dict['opinion'] = self._mapping.opinion_mapping(opinion.opinion)
-        opinion_ref = self._sanitise_uuid(opinion.id)
-        for object_ref in opinion.object_refs:
-            referenced = self._sanitise_uuid(object_ref)
-            self._analyst_data[referenced].append(opinion_ref)
         if len(opinion.object_refs) == 1:
-            opinion_dict.update(
-                {'object_uuid': referenced, 'uuid': opinion_ref}
-            )
-        super()._load_opinion(opinion_ref, opinion_dict)
+            opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
+        for object_ref in opinion.object_refs:
+            self._analyst_data[object_ref].append(opinion.id)
+        super()._load_opinion(opinion.id, opinion_dict)
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
         self._check_uuid(observable.id)

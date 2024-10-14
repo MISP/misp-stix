@@ -1052,6 +1052,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                             stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
+        if stix_object.id in self._analyst_data:
+            for reference in self._analyst_data[stix_object.id]:
+                getattr(self, f"_add_{reference.split('--')[0]}")(
+                    misp_attribute, reference
+                )
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 if marking in self.event_tags:
@@ -1073,6 +1078,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
+        if stix_object.id in self._analyst_data:
+            for reference in self._analyst_data[stix_object.id]:
+                getattr(self, f"_add_{reference.split('--')[0]}")(
+                    misp_object, reference
+                )
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 if marking in self.event_tags:
@@ -1095,6 +1105,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     for attribute in misp_object.attributes:
                         attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
+
+    def _add_note(self, data_layer, reference: str):
+        note = self._note[reference]
+        if note.get('uuid') is None:
+            note['uuid'] = self._create_v5_uuid(f'{reference} - {data_layer.uuid}')
+        data_layer.add_note(**note)
+
+    def _add_opinion(self, data_layer, reference: str):
+        opinion = self._opinion[reference]
+        if opinion.get('uuid') is None:
+            opinion['uuid'] = self._create_v5_uuid(f'{reference} - {data_layer.uuid}')
+        data_layer.add_opinion(**opinion)
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
@@ -1122,6 +1144,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if self.distribution == 4 and self.sharing_group_id is not None:
             event_args['sharing_group_id'] = self.sharing_group_id
         misp_event.from_dict(**event_args)
+        if stix_object.id in self._analyst_data:
+            for reference in self._analyst_data[stix_object.id]:
+                getattr(self, f"_add_{reference.split('--')[0]}")(
+                    misp_event, reference
+                )
         if self.producer is not None:
             misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
         self._handle_misp_event_tags(misp_event, stix_object)
