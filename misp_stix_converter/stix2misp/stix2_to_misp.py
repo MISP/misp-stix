@@ -734,7 +734,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(note, 'abstract'):
             note_dict['comment'] = note.abstract
         if hasattr(note, 'authors'):
-            note_dict['authors'] = note.authors
+            note_dict['authors'] = ', '.join(note.authors)
         if hasattr(note, 'lang'):
             note_dict['language'] = note.lang
         return note_dict
@@ -746,7 +746,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             'created': opinion.created, 'modified': opinion.modified
         }
         if hasattr(opinion, 'authors'):
-            opinion_dict['authors'] = opinion.authors
+            opinion_dict['authors'] = ', '.join(opinion.authors)
         return opinion_dict
 
     ############################################################################
