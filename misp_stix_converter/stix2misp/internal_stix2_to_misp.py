@@ -14,14 +14,19 @@ from .converters import (
     STIX2CustomObjectConverter)
 from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
 from collections import defaultdict
-from pymisp import MISPSighting
+from pymisp import MISPAttribute, MISPEventReport, MISPObject, MISPSighting
 from stix2.v20.sdo import CustomObject as CustomObject_v20
-from stix2.v21.sdo import CustomObject as CustomObject_v21
+from stix2.v20.sro import Sighting as Sighting_v20
+from stix2.v21.sdo import CustomObject as CustomObject_v21, Note, Opinion
+from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Union
 
 _CUSTOM_TYPING = Union[
     CustomObject_v20,
     CustomObject_v21
+]
+_SIGHTING_TYPING = Union[
+    Sighting_v20, Sighting_v21
 ]
 
 
@@ -125,6 +130,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
+    def _load_analyst_note(self, note: Note):
+        note_dict = self._parse_analyst_note(note)
+        note_dict['uuid'] = self._sanitise_uuid(note.id)
+        self._analyst_data[note.object_refs[0]].append(note.id)
+        super()._load_note(note.id, note_dict)
+
+    def _load_analyst_opinion(self, opinion: Opinion):
+        opinion_dict = self._parse_analyst_opinion(opinion)
+        opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
+        self._analyst_data[opinion.object_refs[0]].append(opinion.id)
+        super()._load_opinion(opinion.id, opinion_dict)
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
         self._check_uuid(custom_attribute.id)
@@ -168,6 +184,27 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sighting = defaultdict(lambda: defaultdict(list))
             self._sighting['custom_opinion'][object_ref].append(sighting)
 
+    def _load_event_report(self, note: Note):
+        note_ref = self._sanitise_uuid(note.id)
+        event_report = {
+            'uuid': note_ref, 'content': note.content,
+            'timestamp': note.modified
+        }
+        if hasattr(note, 'abstract'):
+            event_report['name'] = note.abstract
+        misp_event_report = MISPEventReport()
+        misp_event_report.from_dict(**event_report)
+        super()._load_note(note_ref, misp_event_report)
+
+    def _load_note(self, note: Note):
+        if 'misp:context-layer="Analyst Note"' in getattr(note, 'labels', []):
+            self._load_analyst_note(note)
+        elif 'misp:data-layer="Event Report"' in getattr(note, 'labels', []):
+            self._load_event_report(note)
+        else:
+            self._check_uuid(note.id)
+            super()._load_note(note.id, note)
+
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
         self._check_uuid(observable.id)
         try:
@@ -175,9 +212,42 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             self._observable = {observable.id: observable}
 
+    def _load_opinion(self, opinion: Opinion):
+        if 'misp:context-layer="Analyst Opinion"' in getattr(opinion, 'labels', []):
+            self._load_analyst_opinion(opinion)
+        else:
+            object_ref = self._sanitise_uuid(opinion.object_refs[0])
+            try:
+                self._sighting['opinion'][object_ref].append(opinion)
+            except AttributeError:
+                self._sighting = defaultdict(lambda: defaultdict(list))
+                self._sighting['opinion'][object_ref].append(opinion)
+
+    def _load_sighting(self, sighting: _SIGHTING_TYPING):
+        sighting_of_ref = self._sanitise_uuid(sighting.sighting_of_ref)
+        try:
+            self._sighting['sighting'][sighting_of_ref].append(sighting)
+        except AttributeError:
+            self._sighting = defaultdict(lambda: defaultdict(list))
+            self._sighting['sighting'][sighting_of_ref].append(sighting)
+
     ############################################################################
     #                    MAIN STIX OBJECTS PARSING METHODS.                    #
     ############################################################################
+
+    def _handle_attribute_sightings(self, attribute: MISPAttribute):
+        attribute_uuid = attribute.uuid
+        if attribute_uuid in self.replacement_uuids:
+            attribute_uuid = self.replacement_uuids[attribute_uuid]
+        if attribute_uuid in self._sighting.get('sighting', {}):
+            for sighting in self._sighting['sighting'][attribute_uuid]:
+                attribute.add_sighting(self._parse_sighting(sighting))
+        if attribute_uuid in self._sighting.get('opinion', {}):
+            for opinion in self._sighting['opinion'][attribute_uuid]:
+                attribute.add_sighting(self._parse_opinion(opinion))
+        elif attribute_uuid in self._sighting.get('custom_opinion', {}):
+            for sighting in self._sighting['custom_opinion'][attribute_uuid]:
+                attribute.add_sighting(sighting)
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
@@ -190,3 +260,39 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._unknown_stix_object_type_error(error)
             except UnknownParsingFunctionError as error:
                 self._unknown_parsing_function_error(error)
+
+    def _handle_object_sightings(self, misp_object: MISPObject):
+        object_uuid = misp_object.uuid
+        if object_uuid in self.replacement_uuids:
+            object_uuid = self.replacement_uuids[object_uuid]
+        if object_uuid in self._sighting.get('sighting', {}):
+            for sighting in self._sighting['sighting'][object_uuid]:
+                misp_sighting = self._parse_sighting(sighting)
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(misp_sighting)
+        if object_uuid in self._sighting.get('opinion', {}):
+            for sighting in self._sighting['opinion'][object_uuid]:
+                misp_sighting = self._parse_opinion(sighting)
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(misp_sighting)
+        elif misp_object.uuid in self._sighting.get('custom_opinion', {}):
+            for sighting in self._sighting['custom_opinion'][object_uuid]:
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(sighting)
+
+    def _parse_opinion(self, opinion: Opinion) -> MISPSighting:
+        misp_sighting = MISPSighting()
+        sighting_args = {
+            'date_sighting': self._timestamp_from_date(opinion.modified),
+            'type': '1' if 'disagree' in opinion.opinion else '0'
+        }
+        if hasattr(opinion, 'x_misp_source'):
+            sighting_args['source'] = opinion.x_misp_source
+        if hasattr(opinion, 'x_misp_author_ref'):
+            identity = self._identity[opinion.x_misp_author_ref]
+            sighting_args['Organisation'] = {
+                'uuid': self._sanitise_uuid(identity.id),
+                'name': identity.name
+            }
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting

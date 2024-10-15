@@ -7,6 +7,9 @@ from typing import Union
 
 
 class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
+    __object_type_refs_to_skip = (
+        'note', *STIX2toMISPMapping.object_type_refs_to_skip()
+    )
     __pattern_forbidden_relations = (
         ' < ',
         ' <= ',
@@ -22,6 +25,13 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
 
     # MAIN STIX OBJECTS MAPPING
+    __stix_object_loading_mapping = Mapping(
+        **{
+            'note': '_load_analyst_note',
+            'opinion': '_load_analyst_opinion',
+            **STIX2toMISPMapping.stix_object_loading_mapping()
+        }
+    )
     __observable_mapping = Mapping(
         **{
             'autonomous-system': 'as',
@@ -176,6 +186,17 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                 ),
                 'url'
             )
+        }
+    )
+
+    # MISP OPINION MAPPING
+    __opinion_mapping = Mapping(
+        **{
+            'agree': 75,
+            'disagree': 25,
+            'neutral': 50,
+            'strongly-agree': 100,
+            'strongly-disagree': 0
         }
     )
 
@@ -552,8 +573,16 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__network_traffic_object_mapping.get(field)
 
     @classmethod
+    def object_type_refs_to_skip(cls) -> tuple:
+        return cls.__object_type_refs_to_skip
+
+    @classmethod
     def observable_mapping(cls, field: str) -> Union[str, None]:
         return cls.__observable_mapping.get(field)
+
+    @classmethod
+    def opinion_mapping(cls, field: str) -> int:
+        return cls.__opinion_mapping.get(field, 50)
 
     @classmethod
     def pattern_forbidden_relations(cls) -> tuple:
@@ -618,6 +647,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def software_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__software_pattern_mapping.get(field)
+
+    @classmethod
+    def stix_object_loading_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__stix_object_loading_mapping.get(field)
 
     @classmethod
     def user_account_object_mapping(cls) -> dict:

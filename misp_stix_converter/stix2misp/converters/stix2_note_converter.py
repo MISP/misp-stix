@@ -38,7 +38,7 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
 
     def parse(self, note_ref: str):
         note = self.main_parser._get_stix_object(note_ref)
-        if hasattr(note, 'labels'):
+        if 'misp:name="annotation"' in getattr(note, 'labels', []):
             self._parse_annotation_object(note)
 
     def _parse_annotation_object(self, note: Note):

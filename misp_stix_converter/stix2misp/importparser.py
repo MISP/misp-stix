@@ -150,8 +150,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self.__sharing_group_id: Union[int, None]
         self.__title: Union[str, None]
 
-        self._clusters: dict = {}
-        self._galaxies: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
         self.__replacement_uuids: dict = {}
