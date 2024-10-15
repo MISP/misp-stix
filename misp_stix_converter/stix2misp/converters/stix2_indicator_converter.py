@@ -1106,13 +1106,13 @@ class ExternalSTIX2IndicatorConverter(
 
     def _unknown_pattern_mapping_warning(
             self, indicator_id: str, pattern_types: GeneratorType):
-        self._add_warning(
+        self.main_parser._add_warning(
             f'Unable to map pattern from the Indicator with id {indicator_id}, '
             f"containing the following types: {', '.join(pattern_types)}"
         )
 
     def _unmapped_pattern_warning(self, indicator_id: str, feature: str):
-        self._add_warning(
+        self.main_parser._add_warning(
             'Unmapped pattern part in indicator with id '
             f'{indicator_id}: {feature}'
         )
