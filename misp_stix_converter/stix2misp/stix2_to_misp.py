@@ -2,20 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from .converters import (
-    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
-    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter,
-    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter,
-    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
-    ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter,
-    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter,
-    ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
-    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
-    ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter,
-    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter,
-    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter,
-    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter)
 from .exceptions import (
     MarkingDefinitionLoadingError, ObjectRefLoadingError,
     ObjectTypeLoadingError, SynonymsResourceJSONError,
@@ -25,8 +11,7 @@ from .exceptions import (
     UnknownParsingFunctionError, UnknownPatternTypeError,
     UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
-from .importparser import (
-    STIXtoMISPParser, _INDICATOR_TYPING, _load_stix2_content)
+from .importparser import STIXtoMISPParser, _load_stix2_content
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from abc import ABCMeta
 from collections import defaultdict
@@ -93,24 +78,6 @@ _OBSERVABLE_TYPING = Union[
     NetworkTraffic_v21, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate
 ]
-_ATTACK_PATTERN_PARSER_TYPING = Union[
-    ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter
-]
-_ATTACK_PATTERN_TYPING = Union[
-    AttackPattern_v20, AttackPattern_v21
-]
-_CAMPAIGN_PARSER_TYPING = Union[
-    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter
-]
-_CAMPAIGN_TYPING = Union[
-    Campaign_v20, Campaign_v21
-]
-_COURSE_OF_ACTION_PARSER_TYPING = Union[
-    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter
-]
-_COURSE_OF_ACTION_TYPING = Union[
-    CourseOfAction_v20, CourseOfAction_v21
-]
 _GALAXY_OBJECTS_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21,
     Campaign_v20, Campaign_v21,
@@ -125,50 +92,14 @@ _GALAXY_OBJECTS_TYPING = Union[
 _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
 ]
-_IDENTITY_PARSER_TYPING = Union[
-    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter
-]
-_IDENTITY_TYPING = Union[
-    Identity_v20, Identity_v21
-]
-_INDICATOR_PARSER_TYPING = Union[
-    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter
-]
-_INTRUSION_SET_PARSER_TYPING = Union[
-    ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter
-]
-_INTRUSION_SET_TYPING = Union[
-    IntrusionSet_v20, IntrusionSet_v21
-]
-_LOCATION_PARSER_TYPING = Union[
-    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter
-]
-_MALWARE_ANALYSIS_PARSER_TYPING = Union[
-    ExternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareAnalysisConverter
-]
-_MALWARE_PARSER_TYPING = Union[
-    ExternalSTIX2MalwareConverter, InternalSTIX2MalwareConverter
-]
-_MALWARE_TYPING = Union[
-    Malware_v20, Malware_v21
-]
 _MARKING_DEFINITION_TYPING = Union[
     MarkingDefinition_v20, MarkingDefinition_v21
 ]
 _NOTE_TYPING = Union[
     MISPEventReport, Note, CustomObject_v20, dict
 ]
-_OBSERVED_DATA_PARSER_TYPING = Union[
-    ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter
-]
-_OBSERVED_DATA_TYPING = Union[
-    ObservedData_v20, ObservedData_v21
-]
 _OPINION_TYPING = Union[
     Opinion, CustomObject_v20, dict
-]
-_RELATIONSHIP_TYPING = Union[
-    Relationship_v20, Relationship_v21
 ]
 _REPORT_TYPING = Union[
     Report_v20, Report_v21
@@ -184,24 +115,6 @@ _SDO_TYPING = Union[
 ]
 _SIGHTING_TYPING = Union[
     Sighting_v20, Sighting_v21
-]
-_THREAT_ACTOR_PARSER_TYPING = Union[
-    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter
-]
-_THREAT_ACTOR_TYPING = Union[
-    ThreatActor_v20, ThreatActor_v21
-]
-_TOOL_PARSER_TYPING = Union[
-    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter
-]
-_TOOL_TYPING = Union[
-    Tool_v20, Tool_v21
-]
-_VULNERABILITY_PARSER_TYPING = Union[
-    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter
-]
-_VULNERABILITY_TYPING = Union[
-    Vulnerability_v20, Vulnerability_v21
 ]
 
 
@@ -301,24 +214,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
 
     @property
-    def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
-        if not hasattr(self, '_attack_pattern_parser'):
-            self._set_attack_pattern_parser()
-        return self._attack_pattern_parser
-
-    @property
-    def campaign_parser(self) -> _CAMPAIGN_PARSER_TYPING:
-        if not hasattr(self, '_campaign_parser'):
-            self._set_campaign_parser()
-        return self._campaign_parser
-
-    @property
-    def course_of_action_parser(self) -> _COURSE_OF_ACTION_PARSER_TYPING:
-        if not hasattr(self, '_course_of_action_parser'):
-            self._set_course_of_action_parser()
-        return self._course_of_action_parser
-
-    @property
     def event_tags(self) -> list:
         return self.__event_tags
 
@@ -330,68 +225,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return f'{message} and converted with the MISP-STIX import feature.'
 
     @property
-    def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
-        if not hasattr(self, '_identity_parser'):
-            self._set_identity_parser()
-        return self._identity_parser
-
-    @property
-    def indicator_parser(self) -> _INDICATOR_PARSER_TYPING:
-        if not hasattr(self, '_indicator_parser'):
-            self._set_indicator_parser()
-        return self._indicator_parser
-
-    @property
-    def intrusion_set_parser(self) -> _INTRUSION_SET_PARSER_TYPING:
-        if not hasattr(self, '_intrusion_set_parser'):
-            self._set_intrusion_set_parser()
-        return self._intrusion_set_parser
-
-    @property
-    def location_parser(self) -> _LOCATION_PARSER_TYPING:
-        if not hasattr(self, '_location_parser'):
-            self._set_location_parser()
-        return self._location_parser
-
-    @property
-    def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
-        if not hasattr(self, '_malware_analysis_parser'):
-            self._set_malware_analysis_parser()
-        return self._malware_analysis_parser
-
-    @property
-    def malware_parser(self) -> _MALWARE_PARSER_TYPING:
-        if not hasattr(self, '_malware_parser'):
-            self._set_malware_parser()
-        return self._malware_parser
-
-    @property
-    def observed_data_parser(self) -> _OBSERVED_DATA_PARSER_TYPING:
-        if not hasattr(self, '_observed_data_parser'):
-            self._set_observed_data_parser()
-        return self._observed_data_parser
-
-    @property
     def stix_version(self) -> str:
         return self.__stix_version
-
-    @property
-    def threat_actor_parser(self) -> _THREAT_ACTOR_PARSER_TYPING:
-        if not hasattr(self, '_threat_actor_parser'):
-            self._set_threat_actor_parser()
-        return self._threat_actor_parser
-
-    @property
-    def tool_parser(self) -> _TOOL_PARSER_TYPING:
-        if not hasattr(self, '_tool_parser'):
-            self._set_tool_parser()
-        return self._tool_parser
-
-    @property
-    def vulnerability_parser(self) -> _VULNERABILITY_PARSER_TYPING:
-        if not hasattr(self, '_vulnerability_parser'):
-            self._set_vulnerability_parser()
-        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
