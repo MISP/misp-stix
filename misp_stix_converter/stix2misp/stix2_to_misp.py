@@ -78,17 +78,6 @@ _OBSERVABLE_TYPING = Union[
     NetworkTraffic_v21, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate
 ]
-_GALAXY_OBJECTS_TYPING = Union[
-    AttackPattern_v20, AttackPattern_v21,
-    Campaign_v20, Campaign_v21,
-    CourseOfAction_v20, CourseOfAction_v21,
-    IntrusionSet_v20, IntrusionSet_v21,
-    Location,
-    Malware_v20, Malware_v21,
-    ThreatActor_v20, ThreatActor_v21,
-    Tool_v20, Tool_v21,
-    Vulnerability_v20, Vulnerability_v21
-]
 _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
 ]
