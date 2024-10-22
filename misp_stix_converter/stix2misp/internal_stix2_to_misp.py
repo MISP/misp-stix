@@ -207,16 +207,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sighting['custom_opinion'][object_ref].append(sighting)
 
     def _load_event_report(self, note: Note):
-        note_ref = self._sanitise_uuid(note.id)
-        event_report = {
-            'uuid': note_ref, 'content': note.content,
-            'timestamp': note.modified
-        }
-        if hasattr(note, 'abstract'):
-            event_report['name'] = note.abstract
         misp_event_report = MISPEventReport()
-        misp_event_report.from_dict(**event_report)
-        super()._load_note(note_ref, misp_event_report)
+        misp_event_report.from_dict(
+            uuid=self._sanitise_uuid(note.id), content=note.content,
+            name=note.abstract, timestamp=note.modified
+        )
+        super()._load_note(note.id, misp_event_report)
 
     def _load_note(self, note: Note):
         if 'misp:context-layer="Analyst Note"' in getattr(note, 'labels', []):
@@ -318,3 +314,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             }
         misp_sighting.from_dict(**sighting_args)
         return misp_sighting
+
+    ############################################################################
+    #                      MISP FEATURES CREATION METHODS                      #
+    ############################################################################
+
+    def _add_event_report(self, event_report: MISPEventReport):
+        self.misp_event.add_event_report(**event_report)
