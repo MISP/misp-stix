@@ -194,7 +194,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             UnavailableSynonymsResourceError
         ) as error:
             self._critical_error(error)
-        for feature in ('_grouping', 'report', *_LOADED_FEATURES):
+        for feature in ('_grouping', '_report', *_LOADED_FEATURES):
             if hasattr(self, feature):
                 setattr(self, feature, {})
 
