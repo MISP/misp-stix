@@ -363,7 +363,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _get_stix_object(self, object_ref: str):
         object_type = object_ref.split('--')[0]
         if object_type.startswith('x-misp-'):
-            object_type = object_type.replace('x-misp', 'custom')
+            object_type = (
+                'note' if object_type == 'x-misp-event-report'
+                else object_type.replace('x-misp', 'custom')
+            )
         feature = f"_{object_type.replace('-', '_')}"
         try:
             return getattr(self, feature)[object_ref]

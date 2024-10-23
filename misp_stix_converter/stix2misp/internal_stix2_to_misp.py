@@ -206,19 +206,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sighting = defaultdict(lambda: defaultdict(list))
             self._sighting['custom_opinion'][object_ref].append(sighting)
 
-    def _load_event_report(self, note: Note):
-        misp_event_report = MISPEventReport()
-        misp_event_report.from_dict(
-            uuid=self._sanitise_uuid(note.id), content=note.content,
-            name=note.abstract, timestamp=note.modified
-        )
-        super()._load_note(note.id, misp_event_report)
-
     def _load_note(self, note: Note):
         if 'misp:context-layer="Analyst Note"' in getattr(note, 'labels', []):
             self._load_analyst_note(note)
-        elif 'misp:data-layer="Event Report"' in getattr(note, 'labels', []):
-            self._load_event_report(note)
         else:
             self._check_uuid(note.id)
             super()._load_note(note.id, note)

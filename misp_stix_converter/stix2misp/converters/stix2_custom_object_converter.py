@@ -5,6 +5,7 @@ from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
 from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping
+from pymisp import MISPEventReport
 from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21
 from typing import TYPE_CHECKING, Union
@@ -28,6 +29,7 @@ class STIX2CustomObjectMapping(InternalSTIX2Mapping):
     __custom_object_mapping = Mapping(
         **{
             'x-misp-attribute': '_parse_custom_attribute',
+            'x-misp-event-report': '_parse_custom_event_report',
             'x-misp-galaxy-cluster': '_parse_custom_galaxy_cluster',
             'x-misp-object': '_parse_custom_object'
         }
@@ -74,6 +76,17 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             )
         )
         self.main_parser._add_misp_attribute(attribute, custom_attribute)
+
+    def _parse_custom_event_report(
+            self, custom_event_report: _CUSTOM_OBJECT_TYPING):
+        event_report = MISPEventReport()
+        event_report.from_dict(
+            content=custom_event_report.x_misp_content,
+            name=custom_event_report.x_misp_name,
+            timestamp=custom_event_report.modified,
+            uuid=self.main_parser._sanitise_uuid(custom_event_report.id)
+        )
+        self.main_parser._add_event_report(event_report)
 
     def _parse_custom_galaxy_cluster(
             self, custom_galaxy: _CUSTOM_OBJECT_TYPING):
