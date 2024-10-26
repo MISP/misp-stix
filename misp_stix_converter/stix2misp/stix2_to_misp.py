@@ -221,14 +221,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
 
-    def _load_attack_pattern(self, attack_pattern: _ATTACK_PATTERN_TYPING):
+    def _load_attack_pattern(
+            self, attack_pattern: AttackPattern_v20 | AttackPattern_v21):
         self._check_uuid(attack_pattern.id)
         try:
             self._attack_pattern[attack_pattern.id] = attack_pattern
         except AttributeError:
             self._attack_pattern = {attack_pattern.id: attack_pattern}
 
-    def _load_campaign(self, campaign: _CAMPAIGN_TYPING):
+    def _load_campaign(self, campaign: Campaign_v20 | Campaign_v21):
         self._check_uuid(campaign.id)
         try:
             self._campaign[campaign.id] = campaign
@@ -236,7 +237,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._campaign = {campaign.id: campaign}
 
     def _load_course_of_action(
-            self, course_of_action: _COURSE_OF_ACTION_TYPING):
+            self, course_of_action: CourseOfAction_v20 | CourseOfAction_v21):
         self._check_uuid(course_of_action.id)
         try:
             self._course_of_action[course_of_action.id] = course_of_action
@@ -250,21 +251,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._grouping = {grouping.id: grouping}
 
-    def _load_identity(self, identity: _IDENTITY_TYPING):
+    def _load_identity(self, identity: Identity_v20 | Identity_v21):
         self._check_uuid(identity.id)
         try:
             self._identity[identity.id] = identity
         except AttributeError:
             self._identity = {identity.id: identity}
 
-    def _load_indicator(self, indicator: _INDICATOR_TYPING):
+    def _load_indicator(self, indicator: Indicator_v20 | Indicator_v21):
         self._check_uuid(indicator.id)
         try:
             self._indicator[indicator.id] = indicator
         except AttributeError:
             self._indicator = {indicator.id: indicator}
 
-    def _load_intrusion_set(self, intrusion_set: _INTRUSION_SET_TYPING):
+    def _load_intrusion_set(
+            self, intrusion_set: IntrusionSet_v20 | IntrusionSet_v21):
         self._check_uuid(intrusion_set.id)
         try:
             self._intrusion_set[intrusion_set.id] = intrusion_set
@@ -278,7 +280,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._location = {location['id']: location}
 
-    def _load_malware(self, malware: _MALWARE_TYPING):
+    def _load_malware(self, malware: Malware_v20 | Malware_v21):
         self._check_uuid(malware.id)
         try:
             self._malware[malware.id] = malware
@@ -306,7 +308,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._note = {note_ref: note}
 
-    def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
+    def _load_observed_data(
+            self, observed_data: ObservedData_v20 | ObservedData_v21):
         self._check_uuid(observed_data.id)
         try:
             self._observed_data[observed_data.id] = observed_data
@@ -319,7 +322,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._opinion = {opinion_ref: opinion_dict}
 
-    def _load_relationship(self, relationship: _RELATIONSHIP_TYPING):
+    def _load_relationship(
+            self, relationship: Relationship_v20 | Relationship_v21):
         reference = (relationship.target_ref, relationship.relationship_type)
         source_uuid = self._sanitise_uuid(relationship.source_ref)
         try:
@@ -335,21 +339,23 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._report = {report.id: report}
 
-    def _load_threat_actor(self, threat_actor: _THREAT_ACTOR_TYPING):
+    def _load_threat_actor(
+            self, threat_actor: ThreatActor_v20 | ThreatActor_v21):
         self._check_uuid(threat_actor.id)
         try:
             self._threat_actor[threat_actor.id] = threat_actor
         except AttributeError:
             self._threat_actor = {threat_actor.id: threat_actor}
 
-    def _load_tool(self, tool: _TOOL_TYPING):
+    def _load_tool(self, tool: Tool_v20 | Tool_v21):
         self._check_uuid(tool.id)
         try:
             self._tool[tool.id] = tool
         except AttributeError:
             self._tool = {tool.id: tool}
 
-    def _load_vulnerability(self, vulnerability: _VULNERABILITY_TYPING):
+    def _load_vulnerability(
+            self, vulnerability: Vulnerability_v20 | Vulnerability_v21):
         self._check_uuid(vulnerability.id)
         try:
             self._vulnerability[vulnerability.id] = vulnerability
