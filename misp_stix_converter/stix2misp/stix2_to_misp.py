@@ -969,14 +969,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self, stix_object: _GROUPING_REPORT_TYPING) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
         self._sanitise_object_uuid(misp_event, stix_object.id)
+        timestamp = self._timestamp_from_date(stix_object.modified)
         event_args = {
             'info': self._generate_info_field(stix_object),
-            'distribution': self.distribution,
-            'timestamp': self._timestamp_from_date(stix_object.modified)
+            'distribution': self.distribution, 'timestamp': timestamp
         }
         if self.distribution == 4 and self.sharing_group_id is not None:
             event_args['sharing_group_id'] = self.sharing_group_id
         misp_event.from_dict(**event_args)
+        if hasattr(stix_object, 'description'):
+            event_report = MISPEventReport()
+            event_report.from_dict(
+                content=stix_object.description, timestamp=timestamp,
+                name=f'STIX {self.stix_version} {stix_object.type} description',
+                uuid=self._create_v5_uuid(f'description - {stix_object.id}')
+            )
+            misp_event.add_event_report(**event_report)
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
                 getattr(self, f"_add_{reference.split('--')[0]}")(
