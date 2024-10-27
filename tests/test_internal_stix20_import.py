@@ -1079,6 +1079,29 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(attribute.object_relation, 'ip')
             self.assertEqual(attribute.value, observables[index].value)
 
+    def test_stix20_bundle_with_event_report(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_event_report()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        (_, report, attack_pattern, ip_indicator, observed_data,
+         domain_indicator, report_object, *_) = bundle.objects
+        self._check_misp_event_features(event, report)
+        ip_address, attachment = event.attributes
+        domain_ip = event.objects[0]
+        self.assertEqual(ip_address.uuid, ip_indicator.id.split('--')[1])
+        self.assertEqual(
+            attack_pattern.id.split('--')[1],
+            ip_address.galaxies[0].clusters[0].uuid
+        )
+        self.assertEqual(attachment.uuid, observed_data.id.split('--')[1])
+        self.assertEqual(domain_ip.uuid, domain_indicator.id.split('--')[1])
+        event_report = event.event_reports[0]
+        self.assertEqual(event_report.uuid, report_object.id.split('--')[1])
+        self.assertEqual(event_report.timestamp, report_object.modified)
+        self.assertEqual(event_report.content, report_object.x_misp_content)
+        self.assertEqual(event_report.name, report_object.x_misp_name)
+
     def test_stix20_bundle_with_invalid_uuids(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_invalid_uuids()
         report, ap1, coa1, indicator1 = bundle.objects[1:5]
