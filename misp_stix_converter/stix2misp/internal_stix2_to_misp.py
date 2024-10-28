@@ -160,6 +160,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _load_analyst_opinion(self, opinion: Opinion):
         opinion_dict = self._parse_analyst_opinion(opinion)
+        opinion_dict['opinion'] = opinion.x_misp_opinion
         opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
         self._analyst_data[opinion.object_refs[0]].append(opinion.id)
         super()._load_opinion(opinion.id, opinion_dict)
