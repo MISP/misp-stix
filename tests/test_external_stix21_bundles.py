@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from ._test_stix_import import TestSTIX2Bundles
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -8,6 +9,127 @@ from stix2.parsing import dict_to_stix2
 
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
+_ANALYST_DATA_SAMPLES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[ipv4-addr:value = '194.78.89.250']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z"
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the IP",
+        "authors": [
+            "opinion@foo.bar"
+        ],
+        "opinion": "strongly-agree",
+        "object_refs": [
+            "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "ipv4-addr--ad0f8e2f-ab1b-496d-b157-97ac3767029b"
+        ]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--ad0f8e2f-ab1b-496d-b157-97ac3767029b",
+        "value": "8.8.8.8"
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "content": "DNS Resolver used to resolve the malicious domain",
+        "authors": [
+            "opinion@foo.bar"
+        ],
+        "object_refs": [
+            "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4"
+        ],
+        "lang": "en"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z"
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--74258748-78f2-4b19-bedc-27ec61b1c5df",
+        "created": "2024-06-12T12:52:48.000Z",
+        "modified": "2024-06-12T12:53:58.000Z",
+        "explanation": "No warning from my antivirus",
+        "authors": [
+            "john.doe@foo.bar"
+        ],
+        "opinion": "neutral",
+        "object_refs": [
+            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
+        ]
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--dc14f700-6822-46bd-9b65-fb2703cf707f",
+        "created": "2024-06-12T12:51:16.000Z",
+        "modified": "2024-06-12T12:51:16.000Z",
+        "content": "Should be the Putty agent",
+        "authors": [
+            "john.doe@foo.bar"
+        ],
+        "object_refs": [
+            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
+        ],
+        "lang": "en"
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--bbd17601-425f-4dd5-82ed-0b18115bee98",
+        "created": "2024-06-25T06:33:45.000Z",
+        "modified": "2024-06-25T06:33:45.000Z",
+        "content": "Straight to the point Event",
+        "authors": [
+            "reporter@gfoo.bar"
+        ],
+        "object_refs": [
+            "grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c"
+        ],
+        "lang": "en"
+    }
+]
 _ARTIFACT_OBJECTS = [
     {
         "type": "observed-data",
@@ -1747,7 +1869,7 @@ _X509_OBJECTS = [
 ]
 
 
-class TestExternalSTIX21Bundles:
+class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     __bundle = {
         "type": "bundle",
         "id": "bundle--314e4210-e41a-4952-9f3c-135d7d577112"
@@ -1769,10 +1891,7 @@ class TestExternalSTIX21Bundles:
         "created": "2020-10-25T16:22:00Z",
         "modified": "2020-10-25T16:22:00Z",
         "name": "MISP-STIX-Converter test event",
-        "context": "suspicious-activity",
-        "labels": [
-            "Threat-Report"
-        ]
+        "context": "suspicious-activity"
     }
     __indicator = {
         "type": "indicator",
@@ -1801,12 +1920,13 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
-        bundle['objects'] = [
-            deepcopy(cls.__identity), deepcopy(cls.__grouping), *stix_objects
-        ]
-        bundle['objects'][1]['object_refs'] = [
-            stix_object['id'] for stix_object in stix_objects
-        ]
+        grouping = deepcopy(cls.__grouping)
+        grouping.update(
+            cls._populate_references(
+                *(stix_object['id'] for stix_object in stix_objects)
+            )
+        )
+        bundle['objects'] = [deepcopy(cls.__identity), grouping, *stix_objects]
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
@@ -1822,18 +1942,37 @@ class TestExternalSTIX21Bundles:
             "target_ref": attribute_galaxy['id']
         }
         bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        indicator = deepcopy(cls.__indicator)
+        grouping.update(
+            cls._populate_references(
+                event_galaxy['id'], indicator['id'],
+                attribute_galaxy['id'], relationship['id']
+            )
+        )
         bundle['objects'] = [
-            deepcopy(cls.__identity), deepcopy(cls.__grouping),
-            event_galaxy, cls.__indicator, attribute_galaxy, relationship
-        ]
-        bundle['objects'][1]['object_refs'] = [
-            stix_object['id'] for stix_object in bundle['objects'][2:]
+            deepcopy(cls.__identity), grouping, event_galaxy,
+            indicator, attribute_galaxy, relationship
         ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################
     #                              EVENTS SAMPLES                              #
     ############################################################################
+
+    @classmethod
+    def get_bundle_with_analyst_data(cls):
+        return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
+
+    @classmethod
+    def get_bundle_with_grouping_description(cls):
+        bundle = deepcopy(cls.__bundle)
+        indicator = deepcopy(cls.__indicator)
+        grouping = cls._handle_report_with_description(
+            deepcopy(cls.__grouping), indicator['id']
+        )
+        bundle['objects'] = [deepcopy(cls.__identity), grouping, indicator]
+        return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
     def get_bundle_without_grouping(cls):
@@ -1937,40 +2076,6 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_network_traffic_objects(cls):
         return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS)
-
-    @classmethod
-    def get_bundle_with_opinion_objects(cls):
-        agree_opinion = {
-            "type": "opinion",
-            "spec_version": "2.1",
-            "id": "opinion--3b7f3754-a31c-4bf8-a97f-a8ff10aab5a3",
-            "created_by_ref": "identity--b3bca3c2-1f3d-4b54-b44f-dac42c3a8f01",
-            "created": "2024-02-17T00:47:42.000Z",
-            "modified": "2024-02-17T00:47:42.000Z",
-            "opinion": "agree",
-            "explanation": "Not confirmed; possibly malicious (if marked or otherwise evaluated as malicious-activity) or benign (if marked as benign); no other information on the subject known to the opinion author. Please see AIS Scoring Framework used for Indicator Enrichment at https://www.cisa.gov/ais.",
-            "object_refs": [
-                "observed-data--e812789e-e49d-47e2-b334-8ee0e8a766ce"
-            ]
-        }
-        strongly_disagree_opinion = {
-            "type": "opinion",
-            "spec_version": "2.1",
-            "id": "opinion--b01efc25-77b4-4003-b18b-f6e24b5cd9f7",
-            "created_by_ref": "identity--f431f809-377b-45e0-aa1c-6a4751cae5ff",
-            "created": "2016-05-12T08:17:27.000Z",
-            "modified": "2016-05-12T08:17:27.000Z",
-            "opinion": "strongly-disagree",
-            "explanation": "This doesn't seem like it is feasible.",
-            "object_refs": [
-                "software--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
-            ]
-        }
-        return cls.__assemble_bundle(
-            agree_opinion, strongly_disagree_opinion,
-            deepcopy(_DIRECTORY_OBJECTS[1]), deepcopy(_SOFTWARE_OBJECTS[0]),
-            deepcopy(_DIRECTORY_OBJECTS[-1]), *deepcopy(_SOFTWARE_OBJECTS[2:-1])
-        )
 
     @classmethod
     def get_bundle_with_process_objects(cls):

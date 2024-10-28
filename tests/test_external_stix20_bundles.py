@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from ._test_stix_import import TestSTIX2Bundles
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -1456,7 +1457,7 @@ _X509_OBJECTS = [
 ]
 
 
-class TestExternalSTIX20Bundles:
+class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     __bundle = {
         "type": "bundle",
         "id": "bundle--314e4210-e41a-4952-9f3c-135d7d577112",
@@ -1478,10 +1479,7 @@ class TestExternalSTIX20Bundles:
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "MISP-STIX-Converter test event",
         "published": "2020-10-25T16:22:00Z",
-        "labels": [
-            "Threat-Report",
-            "misp:tool=\"MISP-STIX-Converter\""
-        ]
+        "labels": ["Threat-Report"]
     }
     __indicator = {
         "type": "indicator",
@@ -1527,18 +1525,33 @@ class TestExternalSTIX20Bundles:
             "target_ref": attribute_galaxy['id']
         }
         bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(cls.__indicator)
+        report.update(
+            cls._populate_references(
+                event_galaxy['id'], indicator['id'],
+                attribute_galaxy['id'], relationship['id']
+            )
+        )
         bundle['objects'] = [
-            deepcopy(cls.__identity), deepcopy(cls.__report),
-            event_galaxy, cls.__indicator, attribute_galaxy, relationship
-        ]
-        bundle['objects'][1]['object_refs'] = [
-            stix_object['id'] for stix_object in bundle['objects'][2:]
+            deepcopy(cls.__identity), report, event_galaxy,
+            indicator, attribute_galaxy, relationship
         ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################
     #                              EVENTS SAMPLES                              #
     ############################################################################
+
+    @classmethod
+    def get_bundle_with_report_description(cls):
+        bundle = deepcopy(cls.__bundle)
+        indicator = deepcopy(cls.__indicator)
+        report = cls._handle_report_with_description(
+            deepcopy(cls.__report), indicator['id']
+        )
+        bundle['objects'] = [deepcopy(cls.__identity), report, indicator]
+        return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
     def get_bundle_without_report(cls):
