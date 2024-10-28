@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from ._test_stix_import import TestSTIX2Bundles
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -7814,7 +7815,7 @@ _X509_OBSERVABLE_OBJECT = [
 ]
 
 
-class TestInternalSTIX21Bundles:
+class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     __bundle = {
         "type": "bundle",
         "id": "bundle--1dec4c6d-b06a-4f9a-a3e9-7bcdbac4f83a"
@@ -7846,12 +7847,13 @@ class TestInternalSTIX21Bundles:
     @classmethod
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
-        bundle['objects'] = [
-            deepcopy(cls.__identity), deepcopy(cls.__grouping), *stix_objects
-        ]
-        bundle['objects'][1]['object_refs'] = [
-            stix_object['id'] for stix_object in stix_objects
-        ]
+        grouping = deepcopy(cls.__grouping)
+        grouping.update(
+            cls._populate_references(
+                *(stix_object['id'] for stix_object in stix_objects)
+            )
+        )
+        bundle['objects'] = [deepcopy(cls.__identity), grouping, *stix_objects]
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################

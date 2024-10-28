@@ -12,6 +12,20 @@ from ._test_stix import TestSTIX
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 
 
+class TestSTIX2Bundles:
+    @staticmethod
+    def _populate_references(*object_ids):
+        references = defaultdict(list)
+        for object_id in object_ids:
+            feature = (
+                'object_marking_refs'
+                if object_id.startswith('marking-definition--')
+                else 'object_refs'
+            )
+            references[feature].append(object_id)
+        return references
+
+
 class TestSTIX2Import(TestSTIX):
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
@@ -1611,6 +1625,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             version.uuid,
             uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
         )
+
 
 class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
