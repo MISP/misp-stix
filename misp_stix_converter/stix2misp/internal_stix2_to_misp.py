@@ -152,17 +152,29 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
-    def _load_analyst_note(self, note: Note):
-        note_dict = self._parse_analyst_note(note)
-        note_dict['uuid'] = self._sanitise_uuid(note.id)
-        self._analyst_data[note.object_refs[0]].append(note.id)
+
+    def _load_analyst_note(self, note: CustomObject_v20):
+        note_dict = {
+            'created': note.created, 'modified': note.modified,
+            'note': note.x_misp_note, 'uuid': self._sanitise_uuid(note.id)
+        }
+        if hasattr(note, 'x_misp_author'):
+            note_dict['authors'] = note.x_misp_author
+        if hasattr(note, 'x_misp_language'):
+            note_dict['language'] = note.x_misp_language
+        self._analyst_data[note.object_ref].append(note.id)
         super()._load_note(note.id, note_dict)
 
-    def _load_analyst_opinion(self, opinion: Opinion):
-        opinion_dict = self._parse_analyst_opinion(opinion)
-        opinion_dict['opinion'] = opinion.x_misp_opinion
-        opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
-        self._analyst_data[opinion.object_refs[0]].append(opinion.id)
+    def _load_analyst_opinion(self, opinion: CustomObject_v20):
+        opinion_dict = {
+            'comment': getattr(opinion, 'x_misp_comment', ''),
+            'created': opinion.created, 'modified': opinion.modified,
+            'opinion': opinion.x_misp_opinion,
+            'uuid': self._sanitise_uuid(opinion.id)
+        }
+        if hasattr(opinion, 'x_misp_author'):
+            opinion_dict['authors'] = opinion.x_misp_author
+        self._analyst_data[opinion.object_ref].append(opinion.id)
         super()._load_opinion(opinion.id, opinion_dict)
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
@@ -209,7 +221,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _load_note(self, note: Note):
         if 'misp:context-layer="Analyst Note"' in getattr(note, 'labels', []):
-            self._load_analyst_note(note)
+            note_dict = {
+                'uuid': self._sanitise_uuid(note.id),
+                **self._parse_analyst_note(note)
+            }
+            self._analyst_data[note.object_refs[0]].append(note.id)
+            super()._load_note(note.id, note_dict)
         else:
             self._check_uuid(note.id)
             super()._load_note(note.id, note)
@@ -223,7 +240,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _load_opinion(self, opinion: Opinion):
         if 'misp:context-layer="Analyst Opinion"' in getattr(opinion, 'labels', []):
-            self._load_analyst_opinion(opinion)
+            opinion_dict = {
+                'opinion': opinion.x_misp_opinion,
+                'uuid': self._sanitise_uuid(opinion.id),
+                **self._parse_analyst_opinion(opinion)
+            }
+            self._analyst_data[opinion.object_refs[0]].append(opinion.id)
+            super()._load_opinion(opinion.id, opinion_dict)
         else:
             object_ref = self._sanitise_uuid(opinion.object_refs[0])
             try:

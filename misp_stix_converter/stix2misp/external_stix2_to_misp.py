@@ -154,8 +154,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         super()._load_note(note.id, note_dict)
 
     def _load_analyst_opinion(self, opinion: Opinion):
-        opinion_dict = self._parse_analyst_opinion(opinion)
-        opinion_dict['opinion'] = self._mapping.opinion_mapping(opinion.opinion)
+        opinion_dict = {
+            'opinion': self._mapping.opinion_mapping(opinion.opinion),
+            **self._parse_analyst_opinion(opinion)
+        }
         if len(opinion.object_refs) == 1:
             opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
         for object_ref in opinion.object_refs:
