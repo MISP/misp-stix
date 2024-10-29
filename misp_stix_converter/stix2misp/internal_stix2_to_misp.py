@@ -337,7 +337,5 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self, event_report: MISPEventReport, stix_object_id: str):
         if stix_object_id in self._analyst_data:
             for reference in self._analyst_data[stix_object_id]:
-                getattr(self, f"_add_{reference.split('--')[0]}")(
-                    event_report, reference
-                )
+                self._add_analyst_data(event_report, reference)
         self.misp_event.add_event_report(**event_report)

@@ -53,22 +53,10 @@ from typing import Optional, Union
 
 # Some constants
 _LOADED_FEATURES = (
-    '_attack_pattern',
-    '_campaign',
-    '_course_of_action',
-    '_custom_attribute',
-    '_custom_object',
-    '_identity',
-    '_indicator',
-    '_intrusion_set',
-    '_malware',
-    '_malware_analysis',
-    '_note',
-    '_observed_data',
-    '_opinion',
-    '_threat_actor',
-    '_tool',
-    '_vulnerability'
+    '_attack_pattern', '_campaign', '_course_of_action', '_custom_attribute',
+    '_custom_object', '_identity', '_indicator', '_intrusion_set', '_malware',
+    '_malware_analysis', '_note', '_observed_data', '_opinion',
+    '_threat_actor', '_tool', '_vulnerability'
 )
 
 # Typing
@@ -77,6 +65,10 @@ _OBSERVABLE_TYPING = Union[
     EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic_v21, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate
+]
+
+_DATA_LAYER_TYPING = Union[
+    MISPAttribute, MISPEvent, MISPEventReport, MISPObject
 ]
 _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
@@ -94,13 +86,9 @@ _REPORT_TYPING = Union[
     Report_v20, Report_v21
 ]
 _SDO_TYPING = Union[
-    Campaign_v20, Campaign_v21,
-    CustomObject_v20, CustomObject_v21,
-    Grouping,
-    Indicator_v20, Indicator_v21,
-    ObservedData_v20, ObservedData_v21,
-    Report_v20, Report_v21,
-    Vulnerability_v20, Vulnerability_v21
+    Campaign_v20, Campaign_v21, CustomObject_v20, CustomObject_v21, Grouping,
+    Indicator_v20, Indicator_v21, ObservedData_v20, ObservedData_v21,
+    Report_v20, Report_v21, Vulnerability_v20, Vulnerability_v21
 ]
 _SIGHTING_TYPING = Union[
     Sighting_v20, Sighting_v21
@@ -881,15 +869,40 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                      MISP FEATURES CREATION METHODS                      #
     ############################################################################
 
+    def _add_analyst_data(self, data_layer: _DATA_LAYER_TYPING, reference: str):
+        object_type = reference.split('--')[0]
+        if object_type.startswith('x-misp-'):
+            return getattr(self, f"_add_analyst_{object_type.split('-')[-1]}")(
+                data_layer, reference
+            )
+        return getattr(self, f"_add_analyst_{object_type}")(
+            data_layer, reference
+        )
+
+    def _add_analyst_note(self, data_layer: _DATA_LAYER_TYPING, reference: str):
+        note = self._note[reference]
+        if note.get('uuid') is None:
+            note['uuid'] = self._create_v5_uuid(
+                f'{reference} - {data_layer.uuid}'
+            )
+        data_layer.add_note(**note)
+
+    def _add_analyst_opinion(
+            self, data_layer: _DATA_LAYER_TYPING, reference: str):
+        opinion = self._opinion[reference]
+        if opinion.get('uuid') is None:
+            opinion['uuid'] = self._create_v5_uuid(
+                f'{reference} - {data_layer.uuid}'
+            )
+        data_layer.add_opinion(**opinion)
+
     def _add_misp_attribute(self, attribute: dict,
                             stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
-                getattr(self, f"_add_{reference.split('--')[0]}")(
-                    misp_attribute, reference
-                )
+                self._add_analyst_data(misp_attribute, reference)
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 if marking in self.event_tags:
@@ -913,9 +926,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                          stix_object: _SDO_TYPING) -> MISPObject:
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
-                getattr(self, f"_add_{reference.split('--')[0]}")(
-                    misp_object, reference
-                )
+                self._add_analyst_data(misp_object, reference)
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 if marking in self.event_tags:
@@ -938,18 +949,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     for attribute in misp_object.attributes:
                         attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
-
-    def _add_note(self, data_layer, reference: str):
-        note = self._note[reference]
-        if note.get('uuid') is None:
-            note['uuid'] = self._create_v5_uuid(f'{reference} - {data_layer.uuid}')
-        data_layer.add_note(**note)
-
-    def _add_opinion(self, data_layer, reference: str):
-        opinion = self._opinion[reference]
-        if opinion.get('uuid') is None:
-            opinion['uuid'] = self._create_v5_uuid(f'{reference} - {data_layer.uuid}')
-        data_layer.add_opinion(**opinion)
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
@@ -987,9 +986,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_event.add_event_report(**event_report)
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
-                getattr(self, f"_add_{reference.split('--')[0]}")(
-                    misp_event, reference
-                )
+                self._add_analyst_data(misp_event, reference)
         if self.producer is not None:
             misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
         self._handle_misp_event_tags(misp_event, stix_object)
