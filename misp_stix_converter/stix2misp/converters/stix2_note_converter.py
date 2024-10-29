@@ -69,4 +69,4 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
             content=note.content, name=note.abstract, timestamp=note.modified,
             uuid=self.main_parser._sanitise_uuid(note.id)
         )
-        self.main_parser._add_event_report(event_report)
+        self.main_parser._add_event_report(event_report, note.id)

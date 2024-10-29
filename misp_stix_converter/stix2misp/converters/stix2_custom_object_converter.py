@@ -14,11 +14,7 @@ if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _attribute_additional_fields = (
-    'category',
-    'comment',
-    'data',
-    'to_ids',
-    'uuid'
+    'category', 'comment', 'data', 'to_ids', 'uuid'
 )
 _CUSTOM_OBJECT_TYPING = Union[
     CustomObject_v20, CustomObject_v21
@@ -86,7 +82,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             timestamp=custom_event_report.modified,
             uuid=self.main_parser._sanitise_uuid(custom_event_report.id)
         )
-        self.main_parser._add_event_report(event_report)
+        self.main_parser._add_event_report(event_report, custom_event_report.id)
 
     def _parse_custom_galaxy_cluster(
             self, custom_galaxy: _CUSTOM_OBJECT_TYPING):
