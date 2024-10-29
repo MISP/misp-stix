@@ -14,6 +14,23 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
     #                   SPECIFIC STIX 2.0 CHECKING FUNCTIONS                   #
     ############################################################################
 
+    def _check_misp_note(self, misp_note, stix_note):
+        self.assertEqual(misp_note.uuid, stix_note.id.split('--')[1])
+        self.assertEqual(misp_note.note, stix_note.x_misp_note)
+        self.assertEqual(misp_note.created, stix_note.created)
+        self.assertEqual(misp_note.modified, stix_note.modified)
+        self.assertEqual(misp_note.language, stix_note.x_misp_language)
+        self.assertEqual(misp_note.authors, stix_note.x_misp_author)
+
+    def _check_misp_opinion(self, misp_opinion, stix_opinion):
+        self.assertEqual(misp_opinion.uuid, stix_opinion.id.split('--')[1])
+        self.assertEqual(misp_opinion.uuid, stix_opinion.id.split('--')[1])
+        self.assertEqual(misp_opinion.opinion, stix_opinion.x_misp_opinion)
+        self.assertEqual(misp_opinion.created, stix_opinion.created)
+        self.assertEqual(misp_opinion.modified, stix_opinion.modified)
+        self.assertEqual(misp_opinion.comment, stix_opinion.x_misp_comment)
+        self.assertEqual(misp_opinion.authors, stix_opinion.x_misp_author)
+
     def _check_observed_data_attribute(self, attribute, observed_data):
         self.assertEqual(attribute.uuid, observed_data.id.split('--')[1])
         self._assert_multiple_equal(
@@ -1031,6 +1048,31 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
     ############################################################################
     #                         MISP EVENTS IMPORT TESTS                         #
     ############################################################################
+
+    def test_stix20_bundle_with_analyst_data(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_analyst_data()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        (_, report, attr_indicator, attr_opinion, observed_data, attr_note,
+         obj_indicator, obj_opinion, obj_note, report_note, report_opinion,
+         grouping_note) = bundle.objects
+        self._check_misp_event_features(event, report)
+        attribute1, attribute2 = event.attributes
+        self.assertEqual(attribute1.uuid, attr_indicator.id.split('--')[1])
+        self._check_misp_opinion(attribute1.opinions[0], attr_opinion)
+        self.assertEqual(attribute2.uuid, observed_data.id.split('--')[1])
+        self._check_misp_note(attribute2.notes[0], attr_note)
+        file_object = event.objects[0]
+        self.assertEqual(file_object.uuid, obj_indicator.id.split('--')[1])
+        self._check_misp_note(file_object.notes[0], obj_note)
+        self._check_misp_opinion(file_object.opinions[0], obj_opinion)
+        event_report = event.event_reports[0]
+        self.assertEqual(event_report.uuid, report_note.id.split('--')[1])
+        self.assertEqual(event_report.content, report_note.x_misp_content)
+        self.assertEqual(event_report.name, report_note.x_misp_name)
+        self._check_misp_opinion(event_report.opinions[0], report_opinion)
+        self._check_misp_note(event.notes[0], grouping_note)
 
     def test_stix20_bundle_with_custom_labels(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_labels()

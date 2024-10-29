@@ -397,6 +397,147 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         ]
     }
 ]
+_ANALYST_DATA_SAMPLES = [
+    {
+        "type": "indicator",
+        "id": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '194.78.89.250']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "x-misp-analyst-opinion",
+        "id": "x-misp-analyst-opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "object_ref": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "x_misp_author": "opinion@foo.bar",
+        "x_misp_comment": "Fully agree with the malicious nature of the IP",
+        "x_misp_opinion": 100
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "dst_ref": "1",
+                "protocols": [
+                    "tcp"
+                ]
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "8.8.8.8"
+            }
+        },
+        "labels": [
+            "misp:type=\"ip-dst\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "x-misp-analyst-note",
+        "id": "x-misp-analyst-note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "object_ref": "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "x_misp_author": "opinion@foo.bar",
+        "x_misp_language": "en",
+        "x_misp_note": "DNS Resolver used to resolve the malicious domain"
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "file"
+            }
+        ],
+        "labels": [
+            "misp:name=\"file\"",
+            "misp:meta-category=\"file\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "x-misp-analyst-opinion",
+        "id": "x-misp-analyst-opinion--74258748-78f2-4b19-bedc-27ec61b1c5df",
+        "created": "2024-06-12T12:52:48.000Z",
+        "modified": "2024-06-12T12:53:58.000Z",
+        "object_ref": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "x_misp_author": "john.doe@foo.bar",
+        "x_misp_comment": "No warning from my antivirus",
+        "x_misp_opinion": 50
+    },
+    {
+        "type": "x-misp-analyst-note",
+        "id": "x-misp-analyst-note--dc14f700-6822-46bd-9b65-fb2703cf707f",
+        "created": "2024-06-12T12:51:16.000Z",
+        "modified": "2024-06-12T12:51:16.000Z",
+        "object_ref": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "x_misp_author": "john.doe@foo.bar",
+        "x_misp_language": "en",
+        "x_misp_note": "Should be the Putty agent"
+    },
+    {
+        "type": "x-misp-event-report",
+        "id": "x-misp-event-report--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "object_refs": [
+            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
+        ],
+        "x_misp_content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
+        "x_misp_name": "Summary of the case"
+    },
+    {
+        "type": "x-misp-analyst-opinion",
+        "id": "x-misp-analyst-opinion--0178d298-4e02-4471-a115-8f3e381fe530",
+        "created": "2024-06-25T11:46:25.000Z",
+        "modified": "2024-06-25T11:46:25.000Z",
+        "object_ref": "x-misp-event-report--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "x_misp_author": "anonymous@foo.bar",
+        "x_misp_comment": "Event though it is a concise report, I agree with it",
+        "x_misp_opinion": 75
+    },
+    {
+        "type": "x-misp-analyst-note",
+        "id": "x-misp-analyst-note--bbd17601-425f-4dd5-82ed-0b18115bee98",
+        "created": "2024-06-25T06:33:45.000Z",
+        "modified": "2024-06-25T06:33:45.000Z",
+        "object_ref": "report--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+        "x_misp_author": "reporter@gfoo.bar",
+        "x_misp_language": "en",
+        "x_misp_note": "Straight to the point Event"
+    }
+]
 _ANDROID_APP_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
@@ -6664,6 +6805,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     ############################################################################
     #                              EVENTS SAMPLES                              #
     ############################################################################
+
+    @classmethod
+    def get_bundle_with_analyst_data(cls):
+        return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
 
     @classmethod
     def get_bundle_with_custom_labels(cls):

@@ -273,7 +273,10 @@ class TestSTIX21Import(TestSTIX2Import):
 
     def _check_misp_opinion(self, misp_opinion, stix_opinion):
         self.assertEqual(misp_opinion.uuid, stix_opinion.id.split('--')[1])
-        self.assertEqual(misp_opinion.opinion, self.opinion_mapping(stix_opinion.opinion))
+        if hasattr(stix_opinion, 'x_misp_opinion'):
+            self.assertEqual(misp_opinion.opinion, stix_opinion.x_misp_opinion)
+        else:
+            self.assertEqual(misp_opinion.opinion, self.opinion_mapping(stix_opinion.opinion))
         self.assertEqual(misp_opinion.created, stix_opinion.created)
         self.assertEqual(misp_opinion.modified, stix_opinion.modified)
         self.assertEqual(misp_opinion.comment, stix_opinion.explanation)

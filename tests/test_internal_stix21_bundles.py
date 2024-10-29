@@ -453,6 +453,215 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         }
     }
 ]
+_ANALYST_DATA_SAMPLES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '194.78.89.250']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the IP",
+        "authors": [
+            "opinion@foo.bar"
+        ],
+        "opinion": "strongly-agree",
+        "object_refs": [
+            "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238"
+        ],
+        "labels": [
+            "misp:context-layer=\"Analyst Opinion\""
+        ],
+        "x_misp_opinion": 90
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+            "ipv4-addr--76fd763a-45fb-49a6-a732-64aeedbfd7d4"
+        ],
+        "labels": [
+            "misp:type=\"ip-dst\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "dst_ref": "ipv4-addr--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "protocols": [
+            "tcp"
+        ]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "value": "8.8.8.8"
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "content": "DNS Resolver used to resolve the malicious domain",
+        "authors": [
+            "opinion@foo.bar"
+        ],
+        "object_refs": [
+            "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4"
+        ],
+        "labels": [
+            "misp:context-layer=\"Analyst Note\""
+        ],
+        "lang": "en"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "file"
+            }
+        ],
+        "labels": [
+            "misp:name=\"file\"",
+            "misp:meta-category=\"file\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--74258748-78f2-4b19-bedc-27ec61b1c5df",
+        "created": "2024-06-12T12:52:48.000Z",
+        "modified": "2024-06-12T12:53:58.000Z",
+        "explanation": "No warning from my antivirus",
+        "authors": [
+            "john.doe@foo.bar"
+        ],
+        "opinion": "neutral",
+        "object_refs": [
+            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
+        ],
+        "labels": [
+            "misp:context-layer=\"Analyst Opinion\""
+        ],
+        "x_misp_opinion": 60
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--dc14f700-6822-46bd-9b65-fb2703cf707f",
+        "created": "2024-06-12T12:51:16.000Z",
+        "modified": "2024-06-12T12:51:16.000Z",
+        "content": "Should be the Putty agent",
+        "authors": [
+            "john.doe@foo.bar"
+        ],
+        "object_refs": [
+            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
+        ],
+        "labels": [
+            "misp:context-layer=\"Analyst Note\""
+        ],
+        "lang": "en"
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "abstract": "Summary of the case",
+        "content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
+        "object_refs": [
+            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
+        ],
+        "labels": [
+            "misp:data-layer=\"Event Report\""
+        ]
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--0178d298-4e02-4471-a115-8f3e381fe530",
+        "created": "2024-06-25T11:46:25.000Z",
+        "modified": "2024-06-25T11:46:25.000Z",
+        "explanation": "Event though it is a concise report, I agree with it",
+        "authors": [
+            "anonymous@foo.bar"
+        ],
+        "opinion": "agree",
+        "object_refs": [
+            "note--44ceb474-6493-48de-b753-bbd0470e0e54"
+        ],
+        "labels": [
+            "misp:context-layer=\"Analyst Opinion\""
+        ],
+        "x_misp_opinion": 68
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--bbd17601-425f-4dd5-82ed-0b18115bee98",
+        "created": "2024-06-25T06:33:45.000Z",
+        "modified": "2024-06-25T06:33:45.000Z",
+        "content": "Straight to the point Event",
+        "authors": [
+            "reporter@gfoo.bar"
+        ],
+        "object_refs": [
+            "grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c"
+        ],
+        "labels": [
+            "misp:context-layer=\"Analyst Note\""
+        ],
+        "lang": "en"
+    }
+]
 _ANDROID_APP_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -8141,6 +8350,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     ############################################################################
     #                              EVENTS SAMPLES                              #
     ############################################################################
+
+    @classmethod
+    def get_bundle_with_analyst_data(cls):
+        return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
 
     @classmethod
     def get_bundle_with_custom_labels(cls):
