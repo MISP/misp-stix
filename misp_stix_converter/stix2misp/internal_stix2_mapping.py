@@ -21,7 +21,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'x-misp-analyst-note': '_load_analyst_note',
             'x-misp-analyst-opinion': '_load_analyst_opinion',
             'x-misp-attribute': '_load_custom_attribute',
-            'x-misp-event-report': '_load_event_report',
+            'x-misp-event-report': '_load_note',
             'x-misp-galaxy-cluster': '_load_custom_galaxy_cluster',
             'x-misp-object': '_load_custom_object',
             'x-misp-opinion': '_load_custom_opinion',

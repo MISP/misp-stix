@@ -1275,6 +1275,31 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                         MISP EVENTS IMPORT TESTS                         #
     ############################################################################
 
+    def test_stix21_bundle_with_analyst_data(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_analyst_data()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        (_, grouping, attr_indicator, attr_opinion, _, _, ip_address,
+         attr_note, obj_indicator, obj_opinion, obj_note, report_note,
+         report_opinion, grouping_note) = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        attribute1, attribute2 = event.attributes
+        self.assertEqual(attribute1.uuid, attr_indicator.id.split('--')[1])
+        self._check_misp_opinion(attribute1.opinions[0], attr_opinion)
+        self.assertEqual(attribute2.uuid, ip_address.id.split('--')[1])
+        self._check_misp_note(attribute2.notes[0], attr_note)
+        file_object = event.objects[0]
+        self.assertEqual(file_object.uuid, obj_indicator.id.split('--')[1])
+        self._check_misp_note(file_object.notes[0], obj_note)
+        self._check_misp_opinion(file_object.opinions[0], obj_opinion)
+        event_report = event.event_reports[0]
+        self.assertEqual(event_report.uuid, report_note.id.split('--')[1])
+        self.assertEqual(event_report.content, report_note.content)
+        self.assertEqual(event_report.name, report_note.abstract)
+        self._check_misp_opinion(event_report.opinions[0], report_opinion)
+        self._check_misp_note(event.notes[0], grouping_note)
+
     def test_stix21_bundle_with_custom_labels(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_labels()
         self.parser.load_stix_bundle(bundle)
@@ -1318,6 +1343,29 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             attribute.value,
             f'{domain.value}|{address.value}'
         )
+
+    def test_stix21_bundle_with_event_report(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_event_report()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        (_, grouping, attack_pattern, ip_indicator, observed_data,
+         _, _, domain_indicator, note_object, *_) = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        ip_address, attachment = event.attributes
+        self.assertEqual(ip_address.uuid, ip_indicator.id.split('--')[1])
+        self.assertEqual(
+            attack_pattern.id.split('--')[1],
+            ip_address.galaxies[0].clusters[0].uuid
+        )
+        self.assertEqual(attachment.uuid, observed_data.id.split('--')[1])
+        domain_ip = event.objects[0]
+        self.assertEqual(domain_ip.uuid, domain_indicator.id.split('--')[1])
+        event_report = event.event_reports[0]
+        self.assertEqual(event_report.uuid, note_object.id.split('--')[1])
+        self.assertEqual(event_report.timestamp, note_object.modified)
+        self.assertEqual(event_report.content, note_object.content)
+        self.assertEqual(event_report.name, note_object.abstract)
 
     def test_stix21_bundle_with_invalid_uuids(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_invalid_uuids()

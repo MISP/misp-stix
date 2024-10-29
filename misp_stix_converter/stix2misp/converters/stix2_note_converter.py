@@ -4,6 +4,7 @@
 from ... import Mapping
 from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
+from pymisp import MISPEventReport
 from stix2.v21 import Note
 from typing import TYPE_CHECKING
 
@@ -38,7 +39,10 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
 
     def parse(self, note_ref: str):
         note = self.main_parser._get_stix_object(note_ref)
-        if 'misp:name="annotation"' in getattr(note, 'labels', []):
+        labels = getattr(note, 'labels', [])
+        if 'misp:data-layer="Event Report"' in labels:
+            self._parse_event_report(note)
+        elif 'misp:name="annotation"' in labels:
             self._parse_annotation_object(note)
 
     def _parse_annotation_object(self, note: Note):
@@ -58,3 +62,11 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
                     self.main_parser._sanitise_uuid(object_ref), 'annotates'
                 )
         self.main_parser._add_misp_object(misp_object, note)
+
+    def _parse_event_report(self, note: Note):
+        event_report = MISPEventReport()
+        event_report.from_dict(
+            content=note.content, name=note.abstract, timestamp=note.modified,
+            uuid=self.main_parser._sanitise_uuid(note.id)
+        )
+        self.main_parser._add_event_report(event_report, note.id)

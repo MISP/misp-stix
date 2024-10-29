@@ -14,6 +14,25 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                         MISP EVENT IMPORT TESTS.                         #
     ############################################################################
 
+    def test_stix21_bundle_with_analyst_data(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_analyst_data()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        (_, grouping, attr_indicator, attr_opinion, _, ip_address, attr_note,
+         obj_indicator, obj_opinion, obj_note, grouping_note) = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        attribute1, attribute2 = event.attributes
+        self.assertEqual(attribute1.uuid, attr_indicator.id.split('--')[1])
+        self._check_misp_opinion(attribute1.opinions[0], attr_opinion)
+        self.assertEqual(attribute2.uuid, ip_address.id.split('--')[1])
+        self._check_misp_note(attribute2.notes[0], attr_note)
+        file_object = event.objects[0]
+        self.assertEqual(file_object.uuid, obj_indicator.id.split('--')[1])
+        self._check_misp_note(file_object.notes[0], obj_note)
+        self._check_misp_opinion(file_object.opinions[0], obj_opinion)
+        self._check_misp_note(event.notes[0], grouping_note)
+
     def test_stix21_bundle_with_event_title_and_producer(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_without_grouping()
         self.parser.load_stix_bundle(bundle)
@@ -27,6 +46,23 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             event.tags[0]['name'],
             f'misp-galaxy:producer="{self.parser.producer}"'
         )
+
+    def test_stix21_bundle_with_grouping_description(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_grouping_description()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(event.attributes[0].uuid, indicator.id.split('--')[1])
+        event_report = event.event_reports[0]
+        self.assertEqual(
+            event_report.uuid,
+            uuid5(self._UUIDv4, f'description - {grouping.id}')
+        )
+        self.assertEqual(event_report.content, grouping.description)
+        self.assertEqual(event_report.name, 'STIX 2.1 grouping description')
+        self.assertEqual(event_report.timestamp, grouping.modified)
 
     ############################################################################
     #                        MISP GALAXIES IMPORT TESTS                        #
@@ -799,33 +835,6 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             encapsulated2.relationship_type,
             'encapsulated-by'
         )
-
-    def test_stix21_bundle_with_opinion_objects(self):
-        bundle = TestExternalSTIX21Bundles.get_bundle_with_opinion_objects()
-        self.parser.load_stix_bundle(bundle)
-        self.parser.parse_stix_bundle()
-        event = self.parser.misp_event
-        _, grouping, opinion1, opinion2, od1, od2, directory, software1, software2 = bundle.objects
-        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(len(misp_objects), 3)
-        sighted_directory, sighted_software, software = misp_objects
-        self._check_directory_object(sighted_directory, od1, directory)
-        self._check_software_object(sighted_software, od2, software1)
-        self._check_software_object(software, od2, software2)
-        for directory_attribute in sighted_directory.attributes:
-            self.assertEqual(len(directory_attribute.sightings), 1)
-            sighting = directory_attribute.sightings[0]
-            self.assertEqual(
-                sighting.date_sighting, datetime.timestamp(opinion1.modified)
-            )
-            self.assertEqual(sighting.type, '0')
-        for software_attribute in sighted_software.attributes:
-            self.assertEqual(len(software_attribute.sightings), 1)
-            sighting = software_attribute.sightings[0]
-            self.assertEqual(
-                sighting.date_sighting, datetime.timestamp(opinion2.modified)
-            )
-            self.assertEqual(sighting.type, '1')
 
     def test_stix21_bundle_with_process_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_process_objects()

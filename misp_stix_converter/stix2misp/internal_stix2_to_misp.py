@@ -60,86 +60,121 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ############################################################################
 
     @property
+    def attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
+        if not hasattr(self, '_attack_pattern_parser'):
+            self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
+        return self._attack_pattern_parser
+
+    @property
+    def campaign_parser(self) -> InternalSTIX2CampaignConverter:
+        if not hasattr(self, '_campaign_parser'):
+            self._campaign_parser = InternalSTIX2CampaignConverter(self)
+        return self._campaign_parser
+
+    @property
+    def course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
+        if not hasattr(self, '_course_of_action_parser'):
+            self._course_of_action_parser = InternalSTIX2CourseOfActionConverter(self)
+        return self._course_of_action_parser
+
+    @property
     def custom_object_parser(self) -> STIX2CustomObjectConverter:
         if not hasattr(self, '_custom_object_parser'):
-            self._set_custom_object_parser()
+            self._custom_object_parser = STIX2CustomObjectConverter(self)
         return self._custom_object_parser
 
     @property
+    def identity_parser(self) -> InternalSTIX2IdentityConverter:
+        if not hasattr(self, '_identity_parser'):
+            self._identity_parser = InternalSTIX2IdentityConverter(self)
+        return self._identity_parser
+
+    @property
+    def indicator_parser(self) -> InternalSTIX2IndicatorConverter:
+        if not hasattr(self, '_indicator_parser'):
+            self._indicator_parser = InternalSTIX2IndicatorConverter(self)
+        return self._indicator_parser
+
+    @property
+    def intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
+        if not hasattr(self, '_intrusion_set_parser'):
+            self._intrusion_set_parser = InternalSTIX2IntrusionSetConverter(self)
+        return self._intrusion_set_parser
+
+    @property
+    def location_parser(self) -> InternalSTIX2LocationConverter:
+        if not hasattr(self, '_location_parser'):
+            self._location_parser = InternalSTIX2LocationConverter(self)
+        return self._location_parser
+
+    @property
+    def malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
+        if not hasattr(self, '_malware_analysis_parser'):
+            self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
+        return self._malware_analysis_parser
+
+    @property
+    def malware_parser(self) -> InternalSTIX2MalwareConverter:
+        if not hasattr(self, '_malware_parser'):
+            self._malware_parser = InternalSTIX2MalwareConverter(self)
+        return self._malware_parser
+
+    @property
     def note_parser(self) -> InternalSTIX2NoteConverter:
-        if not hasattr(self, '_note_parser'):
-            self._set_note_parser()
+        if not hasattr(self, 'note_parser_'):
+            self._note_parser = InternalSTIX2NoteConverter(self)
         return self._note_parser
 
     @property
     def observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
-        return getattr(
-            self, '_observed_data_parser', self._set_observed_data_parser()
-        )
-
-    ############################################################################
-    #                              PARSER SETTERS                              #
-    ############################################################################
-
-    def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
-        self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
-
-    def _set_campaign_parser(self) -> InternalSTIX2CampaignConverter:
-        self._campaign_parser = InternalSTIX2CampaignConverter(self)
-
-    def _set_course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
-        self._course_of_action_parser = InternalSTIX2CourseOfActionConverter(self)
-
-    def _set_custom_object_parser(self) -> STIX2CustomObjectConverter:
-        self._custom_object_parser = STIX2CustomObjectConverter(self)
-
-    def _set_identity_parser(self) -> InternalSTIX2IdentityConverter:
-        self._identity_parser = InternalSTIX2IdentityConverter(self)
-
-    def _set_indicator_parser(self) -> InternalSTIX2IndicatorConverter:
-        self._indicator_parser = InternalSTIX2IndicatorConverter(self)
-
-    def _set_intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
-        self._intrusion_set_parser = InternalSTIX2IntrusionSetConverter(self)
-
-    def _set_location_parser(self) -> InternalSTIX2LocationConverter:
-        self._location_parser = InternalSTIX2LocationConverter(self)
-
-    def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
-        self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
-
-    def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
-        self._malware_parser = InternalSTIX2MalwareConverter(self)
-
-    def _set_note_parser(self) -> InternalSTIX2NoteConverter:
-        self._note_parser = InternalSTIX2NoteConverter(self)
-
-    def _set_observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
-        self._observed_data_parser = InternalSTIX2ObservedDataConverter(self)
+        if not hasattr(self, '_observed_data_parser'):
+            self._observed_data_parser = InternalSTIX2ObservedDataConverter(self)
         return self._observed_data_parser
 
-    def _set_threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
-        self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
+    @property
+    def threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
+        if not hasattr(self, '_threat_actor_parser'):
+            self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
+        return self._threat_actor_parser
 
-    def _set_tool_parser(self) -> InternalSTIX2ToolConverter:
-        self._tool_parser = InternalSTIX2ToolConverter(self)
+    @property
+    def tool_parser(self) -> InternalSTIX2ToolConverter:
+        if not hasattr(self, '_tool_parser'):
+            self._tool_parser = InternalSTIX2ToolConverter(self)
+        return self._tool_parser
 
-    def _set_vulnerability_parser(self) -> InternalSTIX2VulnerabilityConverter:
-        self._vulnerability_parser = InternalSTIX2VulnerabilityConverter(self)
+    @property
+    def vulnerability_parser(self) -> InternalSTIX2VulnerabilityConverter:
+        if not hasattr(self, '_vulnerability_parser'):
+            self._vulnerability_parser = InternalSTIX2VulnerabilityConverter(self)
+        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
-    def _load_analyst_note(self, note: Note):
-        note_dict = self._parse_analyst_note(note)
-        note_dict['uuid'] = self._sanitise_uuid(note.id)
-        self._analyst_data[note.object_refs[0]].append(note.id)
+
+    def _load_analyst_note(self, note: CustomObject_v20):
+        note_dict = {
+            'created': note.created, 'modified': note.modified,
+            'note': note.x_misp_note, 'uuid': self._sanitise_uuid(note.id)
+        }
+        if hasattr(note, 'x_misp_author'):
+            note_dict['authors'] = note.x_misp_author
+        if hasattr(note, 'x_misp_language'):
+            note_dict['language'] = note.x_misp_language
+        self._analyst_data[note.object_ref].append(note.id)
         super()._load_note(note.id, note_dict)
 
-    def _load_analyst_opinion(self, opinion: Opinion):
-        opinion_dict = self._parse_analyst_opinion(opinion)
-        opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
-        self._analyst_data[opinion.object_refs[0]].append(opinion.id)
+    def _load_analyst_opinion(self, opinion: CustomObject_v20):
+        opinion_dict = {
+            'comment': getattr(opinion, 'x_misp_comment', ''),
+            'created': opinion.created, 'modified': opinion.modified,
+            'opinion': opinion.x_misp_opinion,
+            'uuid': self._sanitise_uuid(opinion.id)
+        }
+        if hasattr(opinion, 'x_misp_author'):
+            opinion_dict['authors'] = opinion.x_misp_author
+        self._analyst_data[opinion.object_ref].append(opinion.id)
         super()._load_opinion(opinion.id, opinion_dict)
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
@@ -184,23 +219,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sighting = defaultdict(lambda: defaultdict(list))
             self._sighting['custom_opinion'][object_ref].append(sighting)
 
-    def _load_event_report(self, note: Note):
-        note_ref = self._sanitise_uuid(note.id)
-        event_report = {
-            'uuid': note_ref, 'content': note.content,
-            'timestamp': note.modified
-        }
-        if hasattr(note, 'abstract'):
-            event_report['name'] = note.abstract
-        misp_event_report = MISPEventReport()
-        misp_event_report.from_dict(**event_report)
-        super()._load_note(note_ref, misp_event_report)
-
     def _load_note(self, note: Note):
         if 'misp:context-layer="Analyst Note"' in getattr(note, 'labels', []):
-            self._load_analyst_note(note)
-        elif 'misp:data-layer="Event Report"' in getattr(note, 'labels', []):
-            self._load_event_report(note)
+            note_dict = {
+                'uuid': self._sanitise_uuid(note.id),
+                **self._parse_analyst_note(note)
+            }
+            self._analyst_data[note.object_refs[0]].append(note.id)
+            super()._load_note(note.id, note_dict)
         else:
             self._check_uuid(note.id)
             super()._load_note(note.id, note)
@@ -214,7 +240,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _load_opinion(self, opinion: Opinion):
         if 'misp:context-layer="Analyst Opinion"' in getattr(opinion, 'labels', []):
-            self._load_analyst_opinion(opinion)
+            opinion_dict = {
+                'opinion': opinion.x_misp_opinion,
+                'uuid': self._sanitise_uuid(opinion.id),
+                **self._parse_analyst_opinion(opinion)
+            }
+            self._analyst_data[opinion.object_refs[0]].append(opinion.id)
+            super()._load_opinion(opinion.id, opinion_dict)
         else:
             object_ref = self._sanitise_uuid(opinion.object_refs[0])
             try:
@@ -296,3 +328,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             }
         misp_sighting.from_dict(**sighting_args)
         return misp_sighting
+
+    ############################################################################
+    #                      MISP FEATURES CREATION METHODS                      #
+    ############################################################################
+
+    def _add_event_report(
+            self, event_report: MISPEventReport, stix_object_id: str):
+        if stix_object_id in self._analyst_data:
+            for reference in self._analyst_data[stix_object_id]:
+                self._add_analyst_data(event_report, reference)
+        self.misp_event.add_event_report(**event_report)

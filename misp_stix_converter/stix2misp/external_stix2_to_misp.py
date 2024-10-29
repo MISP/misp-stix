@@ -54,61 +54,93 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         self._set_organisation_uuid(organisation_uuid)
         self._parse_stix_bundle()
 
+    ############################################################################
+    #                                PROPERTIES                                #
+    ############################################################################
+
+    @property
+    def attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
+        if not hasattr(self, '_attack_pattern_parser'):
+            self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
+        return self._attack_pattern_parser
+
+    @property
+    def campaign_parser(self) -> ExternalSTIX2CampaignConverter:
+        if not hasattr(self, '_campaign_parser'):
+            self._campaign_parser = ExternalSTIX2CampaignConverter(self)
+        return self._campaign_parser
+
+    @property
+    def course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
+        if not hasattr(self, '_course_of_action_parser'):
+            self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
+        return self._course_of_action_parser
+
+    @property
+    def identity_parser(self) -> ExternalSTIX2IdentityConverter:
+        if not hasattr(self, '_identity_parser'):
+            self._identity_parser = ExternalSTIX2IdentityConverter(self)
+        return self._identity_parser
+
+    @property
+    def indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
+        if not hasattr(self, '_indicator_parser'):
+            self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
+        return self._indicator_parser
+
+    @property
+    def intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
+        if not hasattr(self, '_intrusion_set_parser'):
+            self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
+        return self._intrusion_set_parser
+
+    @property
+    def location_parser(self) -> ExternalSTIX2LocationConverter:
+        if not hasattr(self, '_location_parser'):
+            self._location_parser = ExternalSTIX2LocationConverter(self)
+        return self._location_parser
+
+    @property
+    def malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
+        if not hasattr(self, '_malware_analysis_parser'):
+            self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
+        return self._malware_analysis_parser
+
+    @property
+    def malware_parser(self) -> ExternalSTIX2MalwareConverter:
+        if not hasattr(self, '_malware_parser'):
+            self._malware_parser = ExternalSTIX2MalwareConverter(self)
+        return self._malware_parser
+
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
         if not hasattr(self, '_observable_object_parser'):
             self._set_observable_object_parser()
         return self._observable_object_parser
 
-    ############################################################################
-    #                              PARSER SETTERS                              #
-    ############################################################################
+    @property
+    def observed_data_parser(self) -> ExternalSTIX2ObservedDataConverter:
+        if not hasattr(self, '_observed_data_parser'):
+            self._observed_data_parser = ExternalSTIX2ObservedDataConverter(self)
+        return self._observed_data_parser
 
-    ############################################################################
-    #                              PARSER SETTERS                              #
-    ############################################################################
+    @property
+    def threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
+        if not hasattr(self, '_threat_actor_parser'):
+            self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
+        return self._threat_actor_parser
 
-    def _set_attack_pattern_parser(self):
-        self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
+    @property
+    def tool_parser(self) -> ExternalSTIX2ToolConverter:
+        if not hasattr(self, '_tool_parser'):
+            self._tool_parser = ExternalSTIX2ToolConverter(self)
+        return self._tool_parser
 
-    def _set_campaign_parser(self):
-        self._campaign_parser = ExternalSTIX2CampaignConverter(self)
-
-    def _set_course_of_action_parser(self):
-        self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
-
-    def _set_identity_parser(self):
-        self._identity_parser = ExternalSTIX2IdentityConverter(self)
-
-    def _set_indicator_parser(self):
-        self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
-
-    def _set_intrusion_set_parser(self):
-        self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
-
-    def _set_location_parser(self):
-        self._location_parser = ExternalSTIX2LocationConverter(self)
-
-    def _set_malware_analysis_parser(self):
-        self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
-
-    def _set_malware_parser(self):
-        self._malware_parser = ExternalSTIX2MalwareConverter(self)
-
-    def _set_observable_object_parser(self):
-        self._observable_object_parser = STIX2ObservableObjectConverter(self)
-
-    def _set_observed_data_parser(self):
-        self._observed_data_parser = ExternalSTIX2ObservedDataConverter(self)
-
-    def _set_threat_actor_parser(self):
-        self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
-
-    def _set_tool_parser(self):
-        self._tool_parser = ExternalSTIX2ToolConverter(self)
-
-    def _set_vulnerability_parser(self):
-        self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
+    @property
+    def vulnerability_parser(self) -> ExternalSTIX2VulnerabilityConverter:
+        if not hasattr(self, '_vulnerability_parser'):
+            self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
+        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -123,8 +155,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         super()._load_note(note.id, note_dict)
 
     def _load_analyst_opinion(self, opinion: Opinion):
-        opinion_dict = self._parse_analyst_opinion(opinion)
-        opinion_dict['opinion'] = self._mapping.opinion_mapping(opinion.opinion)
+        opinion_dict = {
+            'opinion': self._mapping.opinion_mapping(opinion.opinion),
+            **self._parse_analyst_opinion(opinion)
+        }
         if len(opinion.object_refs) == 1:
             opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
         for object_ref in opinion.object_refs:

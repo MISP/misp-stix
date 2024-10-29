@@ -2,20 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from .converters import (
-    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
-    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter,
-    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter,
-    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
-    ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter,
-    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter,
-    ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
-    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
-    ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter,
-    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter,
-    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter,
-    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter)
 from .exceptions import (
     MarkingDefinitionLoadingError, ObjectRefLoadingError,
     ObjectTypeLoadingError, SynonymsResourceJSONError,
@@ -25,8 +11,7 @@ from .exceptions import (
     UnknownParsingFunctionError, UnknownPatternTypeError,
     UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
-from .importparser import (
-    STIXtoMISPParser, _INDICATOR_TYPING, _load_stix2_content)
+from .importparser import STIXtoMISPParser, _load_stix2_content
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from abc import ABCMeta
 from collections import defaultdict
@@ -68,22 +53,10 @@ from typing import Optional, Union
 
 # Some constants
 _LOADED_FEATURES = (
-    '_attack_pattern',
-    '_campaign',
-    '_course_of_action',
-    '_custom_attribute',
-    '_custom_object',
-    '_identity',
-    '_indicator',
-    '_intrusion_set',
-    '_malware',
-    '_malware_analysis',
-    '_note',
-    '_observed_data',
-    '_opinion',
-    '_threat_actor',
-    '_tool',
-    '_vulnerability'
+    '_attack_pattern', '_campaign', '_course_of_action', '_custom_attribute',
+    '_custom_object', '_identity', '_indicator', '_intrusion_set', '_malware',
+    '_malware_analysis', '_note', '_observed_data', '_opinion',
+    '_threat_actor', '_tool', '_vulnerability'
 )
 
 # Typing
@@ -93,64 +66,12 @@ _OBSERVABLE_TYPING = Union[
     NetworkTraffic_v21, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate
 ]
-_ATTACK_PATTERN_PARSER_TYPING = Union[
-    ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter
-]
-_ATTACK_PATTERN_TYPING = Union[
-    AttackPattern_v20, AttackPattern_v21
-]
-_CAMPAIGN_PARSER_TYPING = Union[
-    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter
-]
-_CAMPAIGN_TYPING = Union[
-    Campaign_v20, Campaign_v21
-]
-_COURSE_OF_ACTION_PARSER_TYPING = Union[
-    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter
-]
-_COURSE_OF_ACTION_TYPING = Union[
-    CourseOfAction_v20, CourseOfAction_v21
-]
-_GALAXY_OBJECTS_TYPING = Union[
-    AttackPattern_v20, AttackPattern_v21,
-    Campaign_v20, Campaign_v21,
-    CourseOfAction_v20, CourseOfAction_v21,
-    IntrusionSet_v20, IntrusionSet_v21,
-    Location,
-    Malware_v20, Malware_v21,
-    ThreatActor_v20, ThreatActor_v21,
-    Tool_v20, Tool_v21,
-    Vulnerability_v20, Vulnerability_v21
+
+_DATA_LAYER_TYPING = Union[
+    MISPAttribute, MISPEvent, MISPEventReport, MISPObject
 ]
 _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
-]
-_IDENTITY_PARSER_TYPING = Union[
-    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter
-]
-_IDENTITY_TYPING = Union[
-    Identity_v20, Identity_v21
-]
-_INDICATOR_PARSER_TYPING = Union[
-    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter
-]
-_INTRUSION_SET_PARSER_TYPING = Union[
-    ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter
-]
-_INTRUSION_SET_TYPING = Union[
-    IntrusionSet_v20, IntrusionSet_v21
-]
-_LOCATION_PARSER_TYPING = Union[
-    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter
-]
-_MALWARE_ANALYSIS_PARSER_TYPING = Union[
-    ExternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareAnalysisConverter
-]
-_MALWARE_PARSER_TYPING = Union[
-    ExternalSTIX2MalwareConverter, InternalSTIX2MalwareConverter
-]
-_MALWARE_TYPING = Union[
-    Malware_v20, Malware_v21
 ]
 _MARKING_DEFINITION_TYPING = Union[
     MarkingDefinition_v20, MarkingDefinition_v21
@@ -158,50 +79,19 @@ _MARKING_DEFINITION_TYPING = Union[
 _NOTE_TYPING = Union[
     MISPEventReport, Note, CustomObject_v20, dict
 ]
-_OBSERVED_DATA_PARSER_TYPING = Union[
-    ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter
-]
-_OBSERVED_DATA_TYPING = Union[
-    ObservedData_v20, ObservedData_v21
-]
 _OPINION_TYPING = Union[
     Opinion, CustomObject_v20, dict
-]
-_RELATIONSHIP_TYPING = Union[
-    Relationship_v20, Relationship_v21
 ]
 _REPORT_TYPING = Union[
     Report_v20, Report_v21
 ]
 _SDO_TYPING = Union[
-    Campaign_v20, Campaign_v21,
-    CustomObject_v20, CustomObject_v21,
-    Grouping,
-    Indicator_v20, Indicator_v21,
-    ObservedData_v20, ObservedData_v21,
-    Report_v20, Report_v21,
-    Vulnerability_v20, Vulnerability_v21
+    Campaign_v20, Campaign_v21, CustomObject_v20, CustomObject_v21, Grouping,
+    Indicator_v20, Indicator_v21, ObservedData_v20, ObservedData_v21,
+    Report_v20, Report_v21, Vulnerability_v20, Vulnerability_v21
 ]
 _SIGHTING_TYPING = Union[
     Sighting_v20, Sighting_v21
-]
-_THREAT_ACTOR_PARSER_TYPING = Union[
-    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter
-]
-_THREAT_ACTOR_TYPING = Union[
-    ThreatActor_v20, ThreatActor_v21
-]
-_TOOL_PARSER_TYPING = Union[
-    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter
-]
-_TOOL_TYPING = Union[
-    Tool_v20, Tool_v21
-]
-_VULNERABILITY_PARSER_TYPING = Union[
-    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter
-]
-_VULNERABILITY_TYPING = Union[
-    Vulnerability_v20, Vulnerability_v21
 ]
 
 
@@ -292,31 +182,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             UnavailableSynonymsResourceError
         ) as error:
             self._critical_error(error)
-        for feature in ('_grouping', 'report', *_LOADED_FEATURES):
+        for feature in ('_grouping', '_report', *_LOADED_FEATURES):
             if hasattr(self, feature):
                 setattr(self, feature, {})
 
     ############################################################################
     #                                PROPERTIES                                #
     ############################################################################
-
-    @property
-    def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
-        if not hasattr(self, '_attack_pattern_parser'):
-            self._set_attack_pattern_parser()
-        return self._attack_pattern_parser
-
-    @property
-    def campaign_parser(self) -> _CAMPAIGN_PARSER_TYPING:
-        if not hasattr(self, '_campaign_parser'):
-            self._set_campaign_parser()
-        return self._campaign_parser
-
-    @property
-    def course_of_action_parser(self) -> _COURSE_OF_ACTION_PARSER_TYPING:
-        if not hasattr(self, '_course_of_action_parser'):
-            self._set_course_of_action_parser()
-        return self._course_of_action_parser
 
     @property
     def event_tags(self) -> list:
@@ -330,81 +202,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return f'{message} and converted with the MISP-STIX import feature.'
 
     @property
-    def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
-        if not hasattr(self, '_identity_parser'):
-            self._set_identity_parser()
-        return self._identity_parser
-
-    @property
-    def indicator_parser(self) -> _INDICATOR_PARSER_TYPING:
-        if not hasattr(self, '_indicator_parser'):
-            self._set_indicator_parser()
-        return self._indicator_parser
-
-    @property
-    def intrusion_set_parser(self) -> _INTRUSION_SET_PARSER_TYPING:
-        if not hasattr(self, '_intrusion_set_parser'):
-            self._set_intrusion_set_parser()
-        return self._intrusion_set_parser
-
-    @property
-    def location_parser(self) -> _LOCATION_PARSER_TYPING:
-        if not hasattr(self, '_location_parser'):
-            self._set_location_parser()
-        return self._location_parser
-
-    @property
-    def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
-        if not hasattr(self, '_malware_analysis_parser'):
-            self._set_malware_analysis_parser()
-        return self._malware_analysis_parser
-
-    @property
-    def malware_parser(self) -> _MALWARE_PARSER_TYPING:
-        if not hasattr(self, '_malware_parser'):
-            self._set_malware_parser()
-        return self._malware_parser
-
-    @property
-    def observed_data_parser(self) -> _OBSERVED_DATA_PARSER_TYPING:
-        if not hasattr(self, '_observed_data_parser'):
-            self._set_observed_data_parser()
-        return self._observed_data_parser
-
-    @property
     def stix_version(self) -> str:
         return self.__stix_version
-
-    @property
-    def threat_actor_parser(self) -> _THREAT_ACTOR_PARSER_TYPING:
-        if not hasattr(self, '_threat_actor_parser'):
-            self._set_threat_actor_parser()
-        return self._threat_actor_parser
-
-    @property
-    def tool_parser(self) -> _TOOL_PARSER_TYPING:
-        if not hasattr(self, '_tool_parser'):
-            self._set_tool_parser()
-        return self._tool_parser
-
-    @property
-    def vulnerability_parser(self) -> _VULNERABILITY_PARSER_TYPING:
-        if not hasattr(self, '_vulnerability_parser'):
-            self._set_vulnerability_parser()
-        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
 
-    def _load_attack_pattern(self, attack_pattern: _ATTACK_PATTERN_TYPING):
+    def _load_attack_pattern(
+            self, attack_pattern: AttackPattern_v20 | AttackPattern_v21):
         self._check_uuid(attack_pattern.id)
         try:
             self._attack_pattern[attack_pattern.id] = attack_pattern
         except AttributeError:
             self._attack_pattern = {attack_pattern.id: attack_pattern}
 
-    def _load_campaign(self, campaign: _CAMPAIGN_TYPING):
+    def _load_campaign(self, campaign: Campaign_v20 | Campaign_v21):
         self._check_uuid(campaign.id)
         try:
             self._campaign[campaign.id] = campaign
@@ -412,7 +225,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._campaign = {campaign.id: campaign}
 
     def _load_course_of_action(
-            self, course_of_action: _COURSE_OF_ACTION_TYPING):
+            self, course_of_action: CourseOfAction_v20 | CourseOfAction_v21):
         self._check_uuid(course_of_action.id)
         try:
             self._course_of_action[course_of_action.id] = course_of_action
@@ -426,21 +239,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._grouping = {grouping.id: grouping}
 
-    def _load_identity(self, identity: _IDENTITY_TYPING):
+    def _load_identity(self, identity: Identity_v20 | Identity_v21):
         self._check_uuid(identity.id)
         try:
             self._identity[identity.id] = identity
         except AttributeError:
             self._identity = {identity.id: identity}
 
-    def _load_indicator(self, indicator: _INDICATOR_TYPING):
+    def _load_indicator(self, indicator: Indicator_v20 | Indicator_v21):
         self._check_uuid(indicator.id)
         try:
             self._indicator[indicator.id] = indicator
         except AttributeError:
             self._indicator = {indicator.id: indicator}
 
-    def _load_intrusion_set(self, intrusion_set: _INTRUSION_SET_TYPING):
+    def _load_intrusion_set(
+            self, intrusion_set: IntrusionSet_v20 | IntrusionSet_v21):
         self._check_uuid(intrusion_set.id)
         try:
             self._intrusion_set[intrusion_set.id] = intrusion_set
@@ -454,7 +268,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._location = {location['id']: location}
 
-    def _load_malware(self, malware: _MALWARE_TYPING):
+    def _load_malware(self, malware: Malware_v20 | Malware_v21):
         self._check_uuid(malware.id)
         try:
             self._malware[malware.id] = malware
@@ -482,7 +296,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._note = {note_ref: note}
 
-    def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
+    def _load_observed_data(
+            self, observed_data: ObservedData_v20 | ObservedData_v21):
         self._check_uuid(observed_data.id)
         try:
             self._observed_data[observed_data.id] = observed_data
@@ -495,7 +310,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._opinion = {opinion_ref: opinion_dict}
 
-    def _load_relationship(self, relationship: _RELATIONSHIP_TYPING):
+    def _load_relationship(
+            self, relationship: Relationship_v20 | Relationship_v21):
         reference = (relationship.target_ref, relationship.relationship_type)
         source_uuid = self._sanitise_uuid(relationship.source_ref)
         try:
@@ -511,21 +327,23 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._report = {report.id: report}
 
-    def _load_threat_actor(self, threat_actor: _THREAT_ACTOR_TYPING):
+    def _load_threat_actor(
+            self, threat_actor: ThreatActor_v20 | ThreatActor_v21):
         self._check_uuid(threat_actor.id)
         try:
             self._threat_actor[threat_actor.id] = threat_actor
         except AttributeError:
             self._threat_actor = {threat_actor.id: threat_actor}
 
-    def _load_tool(self, tool: _TOOL_TYPING):
+    def _load_tool(self, tool: Tool_v20 | Tool_v21):
         self._check_uuid(tool.id)
         try:
             self._tool[tool.id] = tool
         except AttributeError:
             self._tool = {tool.id: tool}
 
-    def _load_vulnerability(self, vulnerability: _VULNERABILITY_TYPING):
+    def _load_vulnerability(
+            self, vulnerability: Vulnerability_v20 | Vulnerability_v21):
         self._check_uuid(vulnerability.id)
         try:
             self._vulnerability[vulnerability.id] = vulnerability
@@ -539,7 +357,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _get_stix_object(self, object_ref: str):
         object_type = object_ref.split('--')[0]
         if object_type.startswith('x-misp-'):
-            object_type = object_type.replace('x-misp', 'custom')
+            object_type = (
+                'note' if object_type == 'x-misp-event-report'
+                else object_type.replace('x-misp', 'custom')
+            )
         feature = f"_{object_type.replace('-', '_')}"
         try:
             return getattr(self, feature)[object_ref]
@@ -1048,15 +869,40 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                      MISP FEATURES CREATION METHODS                      #
     ############################################################################
 
+    def _add_analyst_data(self, data_layer: _DATA_LAYER_TYPING, reference: str):
+        object_type = reference.split('--')[0]
+        if object_type.startswith('x-misp-'):
+            return getattr(self, f"_add_analyst_{object_type.split('-')[-1]}")(
+                data_layer, reference
+            )
+        return getattr(self, f"_add_analyst_{object_type}")(
+            data_layer, reference
+        )
+
+    def _add_analyst_note(self, data_layer: _DATA_LAYER_TYPING, reference: str):
+        note = self._note[reference]
+        if note.get('uuid') is None:
+            note['uuid'] = self._create_v5_uuid(
+                f'{reference} - {data_layer.uuid}'
+            )
+        data_layer.add_note(**note)
+
+    def _add_analyst_opinion(
+            self, data_layer: _DATA_LAYER_TYPING, reference: str):
+        opinion = self._opinion[reference]
+        if opinion.get('uuid') is None:
+            opinion['uuid'] = self._create_v5_uuid(
+                f'{reference} - {data_layer.uuid}'
+            )
+        data_layer.add_opinion(**opinion)
+
     def _add_misp_attribute(self, attribute: dict,
                             stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
-                getattr(self, f"_add_{reference.split('--')[0]}")(
-                    misp_attribute, reference
-                )
+                self._add_analyst_data(misp_attribute, reference)
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 if marking in self.event_tags:
@@ -1080,9 +926,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                          stix_object: _SDO_TYPING) -> MISPObject:
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
-                getattr(self, f"_add_{reference.split('--')[0]}")(
-                    misp_object, reference
-                )
+                self._add_analyst_data(misp_object, reference)
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 if marking in self.event_tags:
@@ -1106,18 +950,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
 
-    def _add_note(self, data_layer, reference: str):
-        note = self._note[reference]
-        if note.get('uuid') is None:
-            note['uuid'] = self._create_v5_uuid(f'{reference} - {data_layer.uuid}')
-        data_layer.add_note(**note)
-
-    def _add_opinion(self, data_layer, reference: str):
-        opinion = self._opinion[reference]
-        if opinion.get('uuid') is None:
-            opinion['uuid'] = self._create_v5_uuid(f'{reference} - {data_layer.uuid}')
-        data_layer.add_opinion(**opinion)
-
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         event_args = {
@@ -1136,19 +968,25 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self, stix_object: _GROUPING_REPORT_TYPING) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
         self._sanitise_object_uuid(misp_event, stix_object.id)
+        timestamp = self._timestamp_from_date(stix_object.modified)
         event_args = {
             'info': self._generate_info_field(stix_object),
-            'distribution': self.distribution,
-            'timestamp': self._timestamp_from_date(stix_object.modified)
+            'distribution': self.distribution, 'timestamp': timestamp
         }
         if self.distribution == 4 and self.sharing_group_id is not None:
             event_args['sharing_group_id'] = self.sharing_group_id
         misp_event.from_dict(**event_args)
+        if hasattr(stix_object, 'description'):
+            event_report = MISPEventReport()
+            event_report.from_dict(
+                content=stix_object.description, timestamp=timestamp,
+                name=f'STIX {self.stix_version} {stix_object.type} description',
+                uuid=self._create_v5_uuid(f'description - {stix_object.id}')
+            )
+            misp_event.add_event_report(**event_report)
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
-                getattr(self, f"_add_{reference.split('--')[0]}")(
-                    misp_event, reference
-                )
+                self._add_analyst_data(misp_event, reference)
         if self.producer is not None:
             misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
         self._handle_misp_event_tags(misp_event, stix_object)
