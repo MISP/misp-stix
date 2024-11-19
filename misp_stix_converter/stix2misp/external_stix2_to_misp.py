@@ -61,7 +61,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
         if not hasattr(self, '_observable_object_parser'):
-            self._set_observable_object_parser()
+            self._observable_object_parser = STIX2ObservableObjectConverter(self)
         return self._observable_object_parser
 
     @property
