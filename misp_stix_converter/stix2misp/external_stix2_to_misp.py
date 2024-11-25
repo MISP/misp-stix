@@ -166,9 +166,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             return super()._handle_unparsed_content()
         unparsed_content = defaultdict(list)
         for object_id, content in self._observable.items():
-            if self.misp_event.uuid in content['used']:
-                if content['used'][self.misp_event.uuid]:
-                    continue
+            if content['used'].get(self.misp_event.uuid, True):
+                continue
             unparsed_content[content['observable'].type].append(object_id)
         for observable_type in self._mapping.observable_object_types():
             if observable_type not in unparsed_content:
