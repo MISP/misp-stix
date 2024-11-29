@@ -962,6 +962,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         misp_event.from_dict(**event_args)
         if self.producer is not None:
             misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
+        elif len(self._creators) == 1:
+            producer = self._handle_creator(tuple(self._creators)[0])
+            misp_event.add_tag(f'misp-galaxy:producer="{producer}"')
         return misp_event
 
     def _create_misp_event(
@@ -989,6 +992,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._add_analyst_data(misp_event, reference)
         if self.producer is not None:
             misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
+        elif hasattr(stix_object, 'created_by_ref'):
+            producer = self._handle_creator(stix_object.created_by_ref)
+            misp_event.add_tag(f'misp-galaxy:producer="{producer}"')
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
 
