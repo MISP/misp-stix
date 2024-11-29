@@ -104,16 +104,17 @@ class ExternalSTIX2IdentityConverter(
         self._mapping = ExternalSTIX2IdentityMapping
 
     def parse(self, identity_ref: str):
-        identity = self.main_parser._get_stix_object(identity_ref)
-        if getattr(identity, 'identity_class', None) == 'class':
-            self._parse_galaxy(identity, 'sector')
-        else:
-            name = self._fetch_identity_object_name(identity)
-            getattr(self, f'_parse_{name}_object')(identity)
-            misp_object = self._create_misp_object(name, identity)
-            for attribute in self._generic_parser(identity, name):
-                misp_object.add_attribute(**attribute)
-            self.main_parser._add_misp_object(misp_object, identity)
+        if identity_ref not in self.main_parser._creators:
+            identity = self.main_parser._get_stix_object(identity_ref)
+            if getattr(identity, 'identity_class', None) == 'class':
+                self._parse_galaxy(identity, 'sector')
+            else:
+                name = self._fetch_identity_object_name(identity)
+                getattr(self, f'_parse_{name}_object')(identity)
+                misp_object = self._create_misp_object(name, identity)
+                for attribute in self._generic_parser(identity, name):
+                    misp_object.add_attribute(**attribute)
+                self.main_parser._add_misp_object(misp_object, identity)
 
     @staticmethod
     def _fetch_identity_object_name(identity: _IDENTITY_TYPING) -> str:
