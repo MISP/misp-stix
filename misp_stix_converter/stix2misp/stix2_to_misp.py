@@ -191,8 +191,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
 
     @property
-    def event_tags(self) -> list:
-        return self.__event_tags
+    def event_tags(self) -> set:
+        return getattr(self, '_event_tags', set())
 
     @property
     def generic_info_field(self) -> str:
@@ -422,7 +422,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
-        self.__event_tags = set()
+        self._event_tags = set()
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 misp_event.add_tag(marking)
