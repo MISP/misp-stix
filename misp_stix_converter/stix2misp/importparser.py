@@ -15,17 +15,10 @@ from stix.core import STIXPackage
 from stix2.exceptions import InvalidValueError
 from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
 from stix2.v20.bundle import Bundle as Bundle_v20
-from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
-from stix2.v21.sdo import Indicator as Indicator_v21
-from types import GeneratorType
 from typing import Optional, Union
 from uuid import UUID, uuid5
 
-_INDICATOR_TYPING = Union[
-    Indicator_v20,
-    Indicator_v21
-]
 _DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 
 MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
