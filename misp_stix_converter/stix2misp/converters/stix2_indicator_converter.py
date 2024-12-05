@@ -9,7 +9,6 @@ from ..exceptions import (
     UndefinedIndicatorError, UndefinedSTIXObjectError,
     UnknownParsingFunctionError, UnknownPatternMappingError,
     UnknownPatternTypeError)
-from ..importparser import _INDICATOR_TYPING
 from ..stix2_pattern_parser import STIX2PatternParser
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
@@ -371,14 +370,6 @@ class ExternalSTIX2IndicatorConverter(
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
 
-    # Errors handlin
-    def _no_converted_content_from_pattern_warning(
-            self, indicator: _INDICATOR_TYPING):
-        self.main_parser._add_warning(
-            "No content extracted from the following Indicator's (id: "
-            f'{indicator.id}) pattern: {indicator.pattern}'
-        )
-
     ############################################################################
     #                        INDICATORS PARSING METHODS                        #
     ############################################################################
@@ -630,8 +621,8 @@ class ExternalSTIX2IndicatorConverter(
                 self._no_converted_content_from_pattern_warning(indicator)
                 self._create_stix_pattern_object(indicator)
 
-    def _parse_file_attribute(self, keys: list, values: Union[str, tuple],
-                              indicator_id: str) -> dict:
+    def _parse_file_attribute(
+            self, keys: list, values: Union[str, tuple], indicator_id: str):
         feature, index = (
             ('file_hashes', 1) if 'hashes' in keys else ('file_pattern', 0)
         )
@@ -1103,6 +1094,13 @@ class ExternalSTIX2IndicatorConverter(
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
+
+    def _no_converted_content_from_pattern_warning(
+            self, indicator: _INDICATOR_TYPING):
+        self.main_parser._add_warning(
+            "No content extracted from the following Indicator's (id: "
+            f'{indicator.id}) pattern: {indicator.pattern}'
+        )
 
     def _unknown_pattern_mapping_warning(
             self, indicator_id: str, pattern_types: GeneratorType):
