@@ -206,6 +206,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         observable['misp_object'] = misp_object
         return misp_object
 
+
 class STIX2ObservableObjectConverter(
         STIX2SampleObervableParser, ExternalSTIX2ObservableConverter):
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
@@ -615,10 +616,6 @@ class STIX2ObservableObjectConverter(
 class STIX2SampleObservableConverter(STIX2SampleObervableParser):
     def __init__(self, main: _MAIN_CONVERTER_TYPING):
         self._main_converter = main
-
-    @property
-    def event_uuid(self) -> str:
-        return self.main_parser.misp_event.uuid
 
     @property
     def main_parser(self) -> 'ExternalSTIX2toMISPParser':
