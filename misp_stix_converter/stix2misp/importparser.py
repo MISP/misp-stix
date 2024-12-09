@@ -444,28 +444,24 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return uuid5(_UUIDv4, value)
 
     def _sanitise_attribute_uuid(
-            self, object_id: str, comment: Optional[str] = None) -> dict:
+            self, object_id: str,
+            comment: Optional[str] = None, **kwargs) -> dict:
         attribute_uuid = self._extract_uuid(object_id)
         attribute_comment = f'Original UUID was: {attribute_uuid}'
+        if comment is not None:
+            attribute_comment = f'{comment} - {attribute_comment}'
         if attribute_uuid in self.replacement_uuids:
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
-                'comment': (
-                    attribute_comment if comment is None
-                    else f'{comment} - {attribute_comment}'
-                )
+                'comment': attribute_comment, **kwargs
             }
         if UUID(attribute_uuid).version not in _RFC_VERSIONS:
             sanitised_uuid = self._create_v5_uuid(attribute_uuid)
             self.replacement_uuids[attribute_uuid] = sanitised_uuid
             return {
-                'uuid': sanitised_uuid,
-                'comment': (
-                    attribute_comment if comment is None
-                    else f'{comment} - {attribute_comment}'
-                )
+                'uuid': sanitised_uuid, 'comment': attribute_comment, **kwargs
             }
-        attribute = {'uuid': attribute_uuid}
+        attribute = {'uuid': attribute_uuid, **kwargs}
         if comment is not None:
             attribute['comment'] = comment
         return attribute
