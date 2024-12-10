@@ -897,29 +897,30 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         data_layer.add_opinion(**opinion)
 
     def _add_misp_attribute(self, attribute: dict,
-                            stix_object: _SDO_TYPING) -> MISPAttribute:
+                            *stix_objects: tuple) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
-        if stix_object.id in self._analyst_data:
-            for reference in self._analyst_data[stix_object.id]:
-                self._add_analyst_data(misp_attribute, reference)
-        for marking in self._handle_tags_from_stix_fields(stix_object):
-            if isinstance(marking, str):
-                if marking in self.event_tags:
+        for stix_object in stix_objects:
+            if stix_object.id in self._analyst_data:
+                for reference in self._analyst_data[stix_object.id]:
+                    self._add_analyst_data(misp_attribute, reference)
+            for marking in self._handle_tags_from_stix_fields(stix_object):
+                if isinstance(marking, str):
+                    if marking in self.event_tags:
+                        continue
+                    misp_attribute.add_tag(marking)
                     continue
-                misp_attribute.add_tag(marking)
-                continue
-            if not self.galaxies_as_tags:
-                clusters = defaultdict(list)
-                for cluster in marking['cluster']:
-                    if cluster.uuid not in self.event_tags:
-                        clusters[cluster.type].append(cluster)
-                for galaxy in self._aggregate_galaxy_clusters(clusters):
-                    misp_attribute.add_galaxy(galaxy)
-            if marking.get('tags'):
-                for tag in marking['tags']:
-                    if tag not in self.event_tags:
-                        misp_attribute.add_tag(tag)
+                if not self.galaxies_as_tags:
+                    clusters = defaultdict(list)
+                    for cluster in marking['cluster']:
+                        if cluster.uuid not in self.event_tags:
+                            clusters[cluster.type].append(cluster)
+                    for galaxy in self._aggregate_galaxy_clusters(clusters):
+                        misp_attribute.add_galaxy(galaxy)
+                if marking.get('tags'):
+                    for tag in marking['tags']:
+                        if tag not in self.event_tags:
+                            misp_attribute.add_tag(tag)
         return self.misp_event.add_attribute(**misp_attribute)
 
     def _add_misp_object(self, misp_object: MISPObject,
