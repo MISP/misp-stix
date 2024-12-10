@@ -444,8 +444,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return uuid5(_UUIDv4, value)
 
     def _sanitise_attribute_uuid(
-            self, object_id: str,
-            comment: Optional[str] = None, **kwargs) -> dict:
+            self, object_id: str, comment: Optional[str] = None,
+            **kwargs) -> dict:
         attribute_uuid = self._extract_uuid(object_id)
         attribute_comment = f'Original UUID was: {attribute_uuid}'
         if comment is not None:
