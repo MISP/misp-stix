@@ -448,9 +448,9 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             **kwargs) -> dict:
         attribute_uuid = self._extract_uuid(object_id)
         attribute_comment = f'Original UUID was: {attribute_uuid}'
-        if comment is not None:
-            attribute_comment = f'{comment} - {attribute_comment}'
         if attribute_uuid in self.replacement_uuids:
+            if comment is not None:
+                attribute_comment = f'{comment} - {attribute_comment}'
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
                 'comment': attribute_comment, **kwargs
@@ -458,6 +458,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         if UUID(attribute_uuid).version not in _RFC_VERSIONS:
             sanitised_uuid = self._create_v5_uuid(attribute_uuid)
             self.replacement_uuids[attribute_uuid] = sanitised_uuid
+            if comment is not None:
+                attribute_comment = f'{comment} - {attribute_comment}'
             return {
                 'uuid': sanitised_uuid, 'comment': attribute_comment, **kwargs
             }
