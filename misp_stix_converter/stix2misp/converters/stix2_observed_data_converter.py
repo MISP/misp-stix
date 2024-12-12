@@ -541,11 +541,6 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
-            if observable['used'].get(self.event_uuid, False):
-                self._handle_misp_object_fields(
-                    observable['misp_object'], observed_data
-                )
-                continue
             misp_object = self._handle_observable_object_refs_parsing(
                 observable, observed_data, 'directory'
             )
@@ -2202,7 +2197,6 @@ class ExternalSTIX2ObservedDataConverter(
             self.main_parser._sanitise_uuid(observed_data.id), misp_object.uuid
         )
         return misp_object
-
 
     def _handle_misp_object_fields(
             self, misp_object: Union[MISPAttribute, MISPObject],
