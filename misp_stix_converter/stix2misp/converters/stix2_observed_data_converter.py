@@ -2369,7 +2369,6 @@ class ExternalSTIX2ObservedDataConverter(
         )
         return misp_object
 
-
     def _handle_misp_object_fields(
             self, misp_object: Union[MISPAttribute, MISPObject],
             observed_data: ObservedData_v21):
