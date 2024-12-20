@@ -536,25 +536,25 @@ files = [
 
 [[package]]
 name = "pymisp"
-version = "2.5.1"
+version = "2.5.3"
 description = "Python API for MISP."
 optional = false
-python-versions = "<4.0,>=3.8"
+python-versions = "<4.0,>=3.9"
 files = [
-    {file = "pymisp-2.5.1-py3-none-any.whl", hash = "sha256:29afd529b1e18ebf7a242c68ab240561dbf5b706d11612d75fc692413fd92990"},
-    {file = "pymisp-2.5.1.tar.gz", hash = "sha256:8aa3aa9e8ad9d9eb7a31e8ad5c07741855d4bac6efa65d83ea6a62689efae2c2"},
+    {file = "pymisp-2.5.3-py3-none-any.whl", hash = "sha256:d6847ab17ef178bb59631a210861d2979607130a34c17d786fc708297e53a7d9"},
+    {file = "pymisp-2.5.3.tar.gz", hash = "sha256:9c38970d49214455fa40f8eff64360f8a921651ed0047efa2403d0abc7a616e0"},
 ]
 
 [package.dependencies]
-deprecated = ">=1.2.14,<2.0.0"
-publicsuffixlist = ">=1.0.2.20241017,<2.0.0.0"
+deprecated = ">=1.2.15,<2.0.0"
+publicsuffixlist = ">=1.0.2.20241216,<2.0.0.0"
 python-dateutil = ">=2.9.0.post0,<3.0.0"
 requests = ">=2.32.3,<3.0.0"
 
 [package.extras]
 brotli = ["urllib3[brotli]"]
 docs = ["Sphinx (>=8,<9)", "docutils (>=0.21.1,<0.22.0)", "recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=2.5.0,<3.0.0)"]
-email = ["RTFDE (>=0.1.1,<0.2.0)", "extract_msg (>=0.51,<0.52)", "oletools (>=0.60.1,<0.61.0)"]
+email = ["RTFDE (>=0.1.1,<0.2.0)", "extract_msg (>=0.52,<0.53)", "oletools (>=0.60.1,<0.61.0)"]
 fileobjects = ["lief (>=0.15.0,<0.16.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
 openioc = ["beautifulsoup4 (>=4.12.3,<5.0.0)"]
 pdfexport = ["reportlab (>=4.2.5,<5.0.0)"]
@@ -954,5 +954,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.8"
-content-hash = "67683dcf917757a6192c8375a97a2a7cbc244b482260aa9be9342829399f4b5c"
+python-versions = "^3.9"
+content-hash = "eb171c9e02764cf8cff6767500fbf90862740484451bd081cc80db9059ff7c73"
