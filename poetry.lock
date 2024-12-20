@@ -536,18 +536,18 @@ files = [
 
 [[package]]
 name = "pymisp"
-version = "2.5.3"
+version = "2.5.4"
 description = "Python API for MISP."
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "pymisp-2.5.3-py3-none-any.whl", hash = "sha256:d6847ab17ef178bb59631a210861d2979607130a34c17d786fc708297e53a7d9"},
-    {file = "pymisp-2.5.3.tar.gz", hash = "sha256:9c38970d49214455fa40f8eff64360f8a921651ed0047efa2403d0abc7a616e0"},
+    {file = "pymisp-2.5.4-py3-none-any.whl", hash = "sha256:e1a9e8a691430c8e4ac115ddceb4ffc0cdfff7124104cb6a50ca6262597c06cb"},
+    {file = "pymisp-2.5.4.tar.gz", hash = "sha256:368fef2152d9d276d8b476b0f1c72376e9ead49bf58631e31bdb5d7ed86d603f"},
 ]
 
 [package.dependencies]
 deprecated = ">=1.2.15,<2.0.0"
-publicsuffixlist = ">=1.0.2.20241216,<2.0.0.0"
+publicsuffixlist = ">=1.0.2.20241218,<2.0.0.0"
 python-dateutil = ">=2.9.0.post0,<3.0.0"
 requests = ">=2.32.3,<3.0.0"
 
@@ -555,7 +555,7 @@ requests = ">=2.32.3,<3.0.0"
 brotli = ["urllib3[brotli]"]
 docs = ["Sphinx (>=8,<9)", "docutils (>=0.21.1,<0.22.0)", "recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=2.5.0,<3.0.0)"]
 email = ["RTFDE (>=0.1.1,<0.2.0)", "extract_msg (>=0.52,<0.53)", "oletools (>=0.60.1,<0.61.0)"]
-fileobjects = ["lief (>=0.15.0,<0.16.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
+fileobjects = ["lief (>=0.16.0,<0.17.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
 openioc = ["beautifulsoup4 (>=4.12.3,<5.0.0)"]
 pdfexport = ["reportlab (>=4.2.5,<5.0.0)"]
 url = ["pyfaup (>=1.2,<2.0)"]
