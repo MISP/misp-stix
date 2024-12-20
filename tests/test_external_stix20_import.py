@@ -27,6 +27,23 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             f'misp-galaxy:producer="{self.parser.producer}"'
         )
 
+    def test_stix21_bundle_with_report_description(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_report_description()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        self._check_misp_event_features(event, report)
+        self.assertEqual(event.attributes[0].uuid, indicator.id.split('--')[1])
+        event_report = event.event_reports[0]
+        self.assertEqual(
+            event_report.uuid,
+            uuid5(self._UUIDv4, f'description - {report.id}')
+        )
+        self.assertEqual(event_report.content, report.description)
+        self.assertEqual(event_report.name, 'STIX 2.0 report description')
+        self.assertEqual(event_report.timestamp, report.modified)
+
     ############################################################################
     #                        MISP GALAXIES IMPORT TESTS                        #
     ############################################################################

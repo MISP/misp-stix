@@ -62,19 +62,13 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'malware': '_load_malware',
             'malware-analysis': '_load_malware_analysis',
             'marking-definition': '_load_marking_definition',
-            'note': '_load_note',
             'observed-data': '_load_observed_data',
-            'opinion': '_load_opinion',
             'relationship': '_load_relationship',
             'report': '_load_report',
             'sighting': '_load_sighting',
             'threat-actor': '_load_threat_actor',
             'tool': '_load_tool',
             'vulnerability': '_load_vulnerability',
-            'x-misp-attribute': '_load_custom_attribute',
-            'x-misp-galaxy-cluster': '_load_custom_galaxy_cluster',
-            'x-misp-object': '_load_custom_object',
-            'x-misp-opinion': '_load_custom_opinion',
             **dict.fromkeys(
                 __observable_object_types,
                 '_load_observable_object'
@@ -99,6 +93,7 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'tool': 'tool_parser',
             'vulnerability': 'vulnerability_parser',
             'x-misp-attribute': 'custom_object_parser',
+            'x-misp-event-report': 'custom_object_parser',
             'x-misp-galaxy-cluster': 'custom_object_parser',
             'x-misp-object': 'custom_object_parser'
         }
@@ -1026,8 +1021,8 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__ssdeep_attribute
 
     @classmethod
-    def stix_object_loading_mapping(cls, field: str) -> Union[str, None]:
-        return cls.__stix_object_loading_mapping.get(field)
+    def stix_object_loading_mapping(cls) -> dict:
+        return cls.__stix_object_loading_mapping
 
     @classmethod
     def stix_to_misp_mapping(cls, field: str) -> Union[str, None]:

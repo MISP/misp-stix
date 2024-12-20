@@ -18,7 +18,7 @@ from .stix2_malware_analysis_converter import (  # noqa
     InternalSTIX2MalwareAnalysisConverter)
 from .stix2_malware_converter import (  # noqa
     ExternalSTIX2MalwareConverter, InternalSTIX2MalwareConverter)
-from .stix2_note_converter import STIX2NoteConverter  # noqa
+from .stix2_note_converter import InternalSTIX2NoteConverter  # noqa
 from .stix2_observable_objects_converter import STIX2ObservableObjectConverter  # noqa
 from .stix2_observed_data_converter import (  # noqa
     ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter)

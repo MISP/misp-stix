@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from ._test_stix_import import TestSTIX2Bundles
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -394,6 +395,147 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"False\""
         ]
+    }
+]
+_ANALYST_DATA_SAMPLES = [
+    {
+        "type": "indicator",
+        "id": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '194.78.89.250']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "x-misp-analyst-opinion",
+        "id": "x-misp-analyst-opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "object_ref": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "x_misp_author": "opinion@foo.bar",
+        "x_misp_comment": "Fully agree with the malicious nature of the IP",
+        "x_misp_opinion": 100
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "dst_ref": "1",
+                "protocols": [
+                    "tcp"
+                ]
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "8.8.8.8"
+            }
+        },
+        "labels": [
+            "misp:type=\"ip-dst\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "x-misp-analyst-note",
+        "id": "x-misp-analyst-note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "object_ref": "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "x_misp_author": "opinion@foo.bar",
+        "x_misp_language": "en",
+        "x_misp_note": "DNS Resolver used to resolve the malicious domain"
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "file"
+            }
+        ],
+        "labels": [
+            "misp:name=\"file\"",
+            "misp:meta-category=\"file\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "x-misp-analyst-opinion",
+        "id": "x-misp-analyst-opinion--74258748-78f2-4b19-bedc-27ec61b1c5df",
+        "created": "2024-06-12T12:52:48.000Z",
+        "modified": "2024-06-12T12:53:58.000Z",
+        "object_ref": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "x_misp_author": "john.doe@foo.bar",
+        "x_misp_comment": "No warning from my antivirus",
+        "x_misp_opinion": 50
+    },
+    {
+        "type": "x-misp-analyst-note",
+        "id": "x-misp-analyst-note--dc14f700-6822-46bd-9b65-fb2703cf707f",
+        "created": "2024-06-12T12:51:16.000Z",
+        "modified": "2024-06-12T12:51:16.000Z",
+        "object_ref": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "x_misp_author": "john.doe@foo.bar",
+        "x_misp_language": "en",
+        "x_misp_note": "Should be the Putty agent"
+    },
+    {
+        "type": "x-misp-event-report",
+        "id": "x-misp-event-report--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "object_refs": [
+            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
+        ],
+        "x_misp_content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
+        "x_misp_name": "Summary of the case"
+    },
+    {
+        "type": "x-misp-analyst-opinion",
+        "id": "x-misp-analyst-opinion--0178d298-4e02-4471-a115-8f3e381fe530",
+        "created": "2024-06-25T11:46:25.000Z",
+        "modified": "2024-06-25T11:46:25.000Z",
+        "object_ref": "x-misp-event-report--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "x_misp_author": "anonymous@foo.bar",
+        "x_misp_comment": "Event though it is a concise report, I agree with it",
+        "x_misp_opinion": 75
+    },
+    {
+        "type": "x-misp-analyst-note",
+        "id": "x-misp-analyst-note--bbd17601-425f-4dd5-82ed-0b18115bee98",
+        "created": "2024-06-25T06:33:45.000Z",
+        "modified": "2024-06-25T06:33:45.000Z",
+        "object_ref": "report--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+        "x_misp_author": "reporter@gfoo.bar",
+        "x_misp_language": "en",
+        "x_misp_note": "Straight to the point Event"
     }
 ]
 _ANDROID_APP_INDICATOR_OBJECT = {
@@ -2631,6 +2773,127 @@ _EMPLOYEE_OBJECT = {
     ],
     "x_misp_employee_type": "Supervisor"
 }
+_EVENT_REPORT = [
+    {
+        "type": "attack-pattern",
+        "id": "attack-pattern--c2f59d25-87fe-44aa-8f83-e8e59d077bf5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "DNS Server",
+        "description": "Adversaries may compromise third-party DNS servers that can be used during targeting.",
+        "labels": [
+            "misp:galaxy-name=\"Attack Pattern\"",
+            "misp:galaxy-type=\"mitre-attack-pattern\""
+        ],
+        "external_references": [
+            {
+                "source_name": "mitre-attack",
+                "external_id": "T1584.002"
+            },
+            {
+                "source_name": "url",
+                "url": "https://attack.mitre.org/techniques/T1584/002"
+            }
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f9b286a9-3ed6-4ace-a60c-a5fe6529a783",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--f715be9f-845f-4d8c-8dce-852b353b3488",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "name": "google_screenshot.png",
+                "content_ref": "1"
+            },
+            "1": {
+                "type": "artifact",
+                "payload_bin": "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"
+            }
+        },
+        "labels": [
+            "misp:type=\"attachment\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f91abf56-b017-462a-849f-d03ae0187498",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[domain-name:value = 'google.com' AND domain-name:resolves_to_refs[*].value = '8.8.8.8']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "network"
+            }
+        ],
+        "labels": [
+            "misp:name=\"domain-ip\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "x-misp-event-report",
+        "id": "x-misp-event-report--0d8fdacd-5ed2-42ca-a286-d4880b198827",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "object_refs": [
+            "indicator--f9b286a9-3ed6-4ace-a60c-a5fe6529a783",
+            "observed-data--f715be9f-845f-4d8c-8dce-852b353b3488",
+            "indicator--f91abf56-b017-462a-849f-d03ae0187498"
+        ],
+        "x_misp_content": "This Event showcases a @[object](f91abf56-b017-462a-849f-d03ae0187498) MISP Object with its @[attribute](7ef43014-e2d6-4a13-b8fd-129fe4009310) value (also reported in a single attribute @[attribute](f9b286a9-3ed6-4ace-a60c-a5fe6529a783)) and the corresponding @[attribute](07a4c4aa-7380-44b5-82d4-06628ee3afba), contextualised with a @[tag](misp-galaxy:mitre-attack-pattern=\"DNS Server - T1584.002\") Galaxy Cluster.\r\n\r\nThe event is also illustrated with the screenshot picturing the case we have here: @![attribute](f715be9f-845f-4d8c-8dce-852b353b3488)\r\n\r\nThe information here is public, as the @[tag](tlp:clear) tag indicates.\r\n",
+        "x_misp_name": "EventReport Test"
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--d0eec38e-f8eb-4fa3-896c-f764cd6d8737",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "indicates",
+        "source_ref": "indicator--f9b286a9-3ed6-4ace-a60c-a5fe6529a783",
+        "target_ref": "attack-pattern--c2f59d25-87fe-44aa-8f83-e8e59d077bf5"
+    },
+    {
+        "type": "marking-definition",
+        "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+        "created": "2017-01-20T00:00:00.000Z",
+        "definition_type": "tlp",
+        "definition": {
+            "tlp": "white"
+        }
+    }
+]
 _FILE_AND_PE_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5ac47782-e1b8-40b6-96b4-02510a00020f",
@@ -6235,7 +6498,7 @@ _X509_OBSERVABLE_OBJECT = {
 }
 
 
-class TestInternalSTIX20Bundles:
+class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     __bundle = {
         "type": "bundle",
         "id": "bundle--314e4210-e41a-4952-9f3c-135d7d577112",
@@ -6266,12 +6529,13 @@ class TestInternalSTIX20Bundles:
     @classmethod
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
-        bundle['objects'] = [
-            deepcopy(cls.__identity), deepcopy(cls.__report), *stix_objects
-        ]
-        bundle['objects'][1]['object_refs'] = [
-            stix_object['id'] for stix_object in stix_objects
-        ]
+        report = deepcopy(cls.__report)
+        report.update(
+            cls._populate_references(
+                *(stix_object['id'] for stix_object in stix_objects)
+            )
+        )
+        bundle['objects'] = [deepcopy(cls.__identity),report, *stix_objects]
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################
@@ -6543,12 +6807,20 @@ class TestInternalSTIX20Bundles:
     ############################################################################
 
     @classmethod
+    def get_bundle_with_analyst_data(cls):
+        return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
+
+    @classmethod
     def get_bundle_with_custom_labels(cls):
         indicator = deepcopy(_DOMAIN_IP_INDICATOR_ATTRIBUTE)
         indicator['labels'].append('Attribute tag')
         observed_data = deepcopy(_DOMAIN_IP_OBSERVABLE_OBJECTS[0])
         observed_data['labels'].append('Object tag')
         return cls.__assemble_bundle(indicator, observed_data)
+
+    @classmethod
+    def get_bundle_with_event_report(cls):
+        return cls.__assemble_bundle(*_EVENT_REPORT)
 
     @classmethod
     def get_bundle_with_invalid_uuids(cls):

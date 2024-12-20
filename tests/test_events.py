@@ -751,6 +751,139 @@ _TEST_EVENT_REPORT = {
     ]
 }
 
+_TEST_EVENT_WITH_ANALYST_DATA = {
+    "Attribute": [
+        {
+            "type": "ip-src",
+            "category": "Network activity",
+            "to_ids": True,
+            "uuid": "f7ef1b4a-964a-4a69-9e21-808f85c56238",
+            "timestamp": "1603642920",
+            "value": "194.78.89.250",
+            "Opinion": [
+                {
+                    "uuid": "e6039f2f-d705-41d0-859d-89845546cd7b",
+                    "authors": "opinion@foo.bar",
+                    "created": "2024-06-12 12:49:45",
+                    "modified": "2024-06-12 12:51:41",
+                    "opinion": "100",
+                    "comment": "Fully agree with the malicious nature of the IP"
+                }
+            ]
+        },
+        {
+            "type": "ip-dst",
+            "category": "Network activity",
+            "to_ids": False,
+            "uuid": "76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+            "timestamp": "1603642920",
+            "value": "8.8.8.8",
+            "Note": [
+                {
+                    "uuid": "31fc7048-9ede-4db9-a423-ef97670ed4c6",
+                    "authors": "opinion@foo.bar",
+                    "created": "2024-06-12 12:52:45",
+                    "modified": "2024-06-12 12:52:45",
+                    "note": "DNS Resolver used to resolve the malicious domain",
+                    "language": "en"
+                }
+            ]
+        }
+    ],
+    "Object": [
+        {
+            "name": "file",
+            "meta-category": "file",
+            "description": "File object describing a file with meta-information",
+            "uuid": "eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "malware-sample",
+                    "category": "Payload delivery",
+                    "to_ids": True,
+                    "uuid": "0054005c-4834-42da-9451-f8b2b22713b0",
+                    "timestamp": "1603642920",
+                    "object_relation": "malware-sample",
+                    "value": "bin.exe|0cdc9b1b45064e6315f83b150c0fc0eb",
+                    "Note": [
+                        {
+                            "uuid": "dc14f700-6822-46bd-9b65-fb2703cf707f",
+                            "authors": "john.doe@foo.bar",
+                            "created": "2024-06-12 12:51:16",
+                            "modified": "2024-06-12 12:51:16",
+                            "note": "Should be the Putty agent",
+                            "language": "en"
+                        }
+                    ]
+                },
+                {
+                    "type": "filename",
+                    "category": "Payload delivery",
+                    "to_ids": False,
+                    "uuid": "04cdfd84-0cff-405c-9719-c99c9b985d13",
+                    "timestamp": "1603642920",
+                    "object_relation": "filename",
+                    "value": "bin.exe"
+                },
+                {
+                    "type": "md5",
+                    "category": "Payload delivery",
+                    "to_ids": True,
+                    "uuid": "1e473613-4f55-4d74-a8d7-d86f06d89bb1",
+                    "timestamp": "1718102925",
+                    "object_relation": "md5",
+                    "value": "0cdc9b1b45064e6315f83b150c0fc0eb"
+                }
+            ],
+            "ObjectReference": [
+                {
+                    "referenced_uuid": "f7ef1b4a-964a-4a69-9e21-808f85c56238",
+                    "relationship_type": "downloaded-from"
+                }
+            ],
+            "Opinion": [
+                {
+                    "uuid": "74258748-78f2-4b19-bedc-27ec61b1c5df",
+                    "authors": "john.doe@foo.bar",
+                    "created": "2024-06-12 12:52:48",
+                    "modified": "2024-06-12 12:53:58",
+                    "opinion": "50",
+                    "comment": "No warning from my antivirus"
+                }
+            ]
+        }
+    ],
+    "EventReport": [
+        {
+            "uuid": "44ceb474-6493-48de-b753-bbd0470e0e54",
+            "name": "Summary of the case",
+            "content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
+            "timestamp": "1718105682",
+            "Opinion": [
+                {
+                    "uuid": "0178d298-4e02-4471-a115-8f3e381fe530",
+                    "authors": "anonymous@foo.bar",
+                    "created": "2024-06-25 11:46:25",
+                    "modified": "2024-06-25 11:46:25",
+                    "opinion": "75",
+                    "comment": "Event though it is a concise report, I agree with it"
+                }
+            ]
+        }
+    ],
+    "Note": [
+        {
+            "uuid": "bbd17601-425f-4dd5-82ed-0b18115bee98",
+            "authors": "reporter@gfoo.bar",
+            "created": "2024-06-25 06:33:45",
+            "modified": "2024-06-25 06:33:45",
+            "note": "Straight to the point Event",
+            "language": "en"
+        }
+    ]
+}
+
 _TEST_ATTACK_PATTERN_GALAXY = {
     "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
     "name": "Attack Pattern",
@@ -3076,6 +3209,12 @@ _OBSERVABLE_ATTRIBUTE = {
 
 def get_base_event():
     return deepcopy(_BASE_EVENT)
+
+
+def get_event_with_analyst_data():
+    event = deepcopy(_BASE_EVENT)
+    event['Event'].update(deepcopy(_TEST_EVENT_WITH_ANALYST_DATA))
+    return event
 
 
 def get_event_with_attribute_confidence_tags():

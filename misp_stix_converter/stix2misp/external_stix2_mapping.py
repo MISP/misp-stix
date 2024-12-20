@@ -7,6 +7,9 @@ from typing import Union
 
 
 class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
+    __object_type_refs_to_skip = (
+        'note', *STIX2toMISPMapping.object_type_refs_to_skip()
+    )
     __pattern_forbidden_relations = (
         ' < ',
         ' <= ',
@@ -22,6 +25,13 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
 
     # MAIN STIX OBJECTS MAPPING
+    __stix_object_loading_mapping = Mapping(
+        **{
+            'note': '_load_analyst_note',
+            'opinion': '_load_analyst_opinion',
+            **STIX2toMISPMapping.stix_object_loading_mapping()
+        }
+    )
     __observable_mapping = Mapping(
         **{
             'autonomous-system': 'as',
@@ -176,6 +186,17 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                 ),
                 'url'
             )
+        }
+    )
+
+    # MISP OPINION MAPPING
+    __opinion_mapping = Mapping(
+        **{
+            'agree': 75,
+            'disagree': 25,
+            'neutral': 50,
+            'strongly-agree': 100,
+            'strongly-disagree': 0
         }
     )
 
@@ -472,7 +493,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
 
     @classmethod
-    def asn_pattern_mapping(cls, field) -> Union[dict, None]:
+    def asn_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__asn_pattern_mapping.get(field)
 
     @classmethod
@@ -480,7 +501,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__course_of_action_object_mapping
 
     @classmethod
-    def directory_pattern_mapping(cls, field) -> Union[dict, None]:
+    def directory_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__directory_object_mapping.get(field)
 
     @classmethod
@@ -488,15 +509,15 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__directory_object_mapping
 
     @classmethod
-    def domain_ip_pattern_mapping(cls, field) -> Union[dict, None]:
+    def domain_ip_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__domain_ip_pattern_mapping.get(field)
 
     @classmethod
-    def email_address_pattern_mapping(cls, field) -> Union[dict, None]:
+    def email_address_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__email_address_pattern_mapping.get(field)
 
     @classmethod
-    def email_message_mapping(cls, field) -> Union[dict, None]:
+    def email_message_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__email_object_mapping.get(field)
 
     @classmethod
@@ -512,7 +533,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__file_hashes_mapping
 
     @classmethod
-    def file_hashes_pattern_mapping(cls, field) -> Union[dict, None]:
+    def file_hashes_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__file_hashes_mapping.get(field)
 
     @classmethod
@@ -524,23 +545,23 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__file_object_mapping
 
     @classmethod
-    def file_pattern_mapping(cls, field) -> Union[dict, None]:
+    def file_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__file_object_mapping.get(field)
 
     @classmethod
-    def galaxy_name_mapping(cls, field) -> Union[dict, None]:
+    def galaxy_name_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__galaxy_name_mapping.get(field)
 
     @classmethod
-    def http_request_extension_mapping(cls, field) -> Union[dict, None]:
+    def http_request_extension_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__http_request_extension_mapping.get(field)
 
     @classmethod
-    def network_connection_object_reference_mapping(cls, field) -> Union[str, None]:
+    def network_connection_object_reference_mapping(cls, field: str) -> Union[str, None]:
         return cls.__network_connection_object_reference_mapping.get(field)
 
     @classmethod
-    def network_socket_object_reference_mapping(cls, field) -> Union[str, None]:
+    def network_socket_object_reference_mapping(cls, field: str) -> Union[str, None]:
         return cls.__network_socket_object_reference_mapping.get(field)
 
     @classmethod
@@ -548,19 +569,27 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__network_traffic_object_mapping
 
     @classmethod
-    def network_traffic_pattern_mapping(cls, field) -> Union[dict, None]:
+    def network_traffic_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__network_traffic_object_mapping.get(field)
 
     @classmethod
-    def observable_mapping(cls, field) -> Union[str, None]:
+    def object_type_refs_to_skip(cls) -> tuple:
+        return cls.__object_type_refs_to_skip
+
+    @classmethod
+    def observable_mapping(cls, field: str) -> Union[str, None]:
         return cls.__observable_mapping.get(field)
+
+    @classmethod
+    def opinion_mapping(cls, field: str) -> int:
+        return cls.__opinion_mapping.get(field, 50)
 
     @classmethod
     def pattern_forbidden_relations(cls) -> tuple:
         return cls.__pattern_forbidden_relations
 
     @classmethod
-    def pattern_mapping(cls, field) -> Union[str, None]:
+    def pattern_mapping(cls, field: str) -> Union[str, None]:
         return cls.__pattern_mapping.get(field)
 
     @classmethod
@@ -568,7 +597,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__pe_object_mapping
 
     @classmethod
-    def pe_pattern_mapping(cls, field) -> Union[dict, None]:
+    def pe_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__pe_object_mapping.get(field)
 
     @classmethod
@@ -576,7 +605,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__pe_optional_header_mapping
 
     @classmethod
-    def pe_optional_header_pattern_mapping(cls, field) -> Union[dict, None]:
+    def pe_optional_header_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__pe_optional_header_mapping.get(field)
 
     @classmethod
@@ -584,7 +613,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__pe_section_object_mapping
 
     @classmethod
-    def pe_section_pattern_mapping(cls, field) -> Union[dict, None]:
+    def pe_section_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__pe_section_object_mapping.get(field)
 
     @classmethod
@@ -592,7 +621,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__process_object_mapping
 
     @classmethod
-    def process_pattern_mapping(cls, field) -> Union[dict, None]:
+    def process_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__process_pattern_mapping.get(field)
 
     @classmethod
@@ -604,7 +633,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__registry_key_object_mapping
 
     @classmethod
-    def registry_key_pattern_mapping(cls, field) -> Union[dict, None]:
+    def registry_key_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__registry_key_pattern_mapping.get(field)
 
     @classmethod
@@ -616,15 +645,19 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__software_object_mapping
 
     @classmethod
-    def software_pattern_mapping(cls, field) -> Union[dict, None]:
+    def software_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__software_pattern_mapping.get(field)
+
+    @classmethod
+    def stix_object_loading_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__stix_object_loading_mapping.get(field)
 
     @classmethod
     def user_account_object_mapping(cls) -> dict:
         return cls.__user_account_object_mapping
 
     @classmethod
-    def user_account_pattern_mapping(cls, field) -> Union[dict, None]:
+    def user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__user_account_pattern_mapping.get(field)
 
     @classmethod
@@ -632,7 +665,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__x509_hashes_mapping
 
     @classmethod
-    def x509_hashes_pattern_mapping(cls, field) -> Union[dict, None]:
+    def x509_hashes_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__x509_hashes_mapping.get(field)
 
     @classmethod
@@ -640,7 +673,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__x509_object_mapping
 
     @classmethod
-    def x509_pattern_mapping(cls, field) -> Union[dict, None]:
+    def x509_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__x509_object_mapping.get(field)
 
     @classmethod

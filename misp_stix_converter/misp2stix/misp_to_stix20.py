@@ -6,10 +6,11 @@ from .stix20_mapping import MISPtoSTIX20Mapping
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
-from pymisp import MISPAttribute, MISPObject
+from pymisp import (
+    MISPAttribute, MISPEventReport, MISPNote, MISPObject, MISPOpinion)
 from stix2.properties import (
-    DictionaryProperty, IDProperty, ListProperty, ReferenceProperty,
-    StringProperty, TimestampProperty)
+    DictionaryProperty, IDProperty, IntegerProperty, ListProperty,
+    ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (
     Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
@@ -24,6 +25,60 @@ from stix2.v20.sdo import (
 from stix2.v20.sro import Relationship, Sighting
 from stix2.v20.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
+
+_ANALYST_DATA_REFERENCE_TYPES = [
+    'attack-pattern', 'campaign', 'course-of-action', 'identity', 'indicator',
+    'intrusion-set', 'malware', 'observed-data', 'report', 'threat-actor',
+    'tool', 'vulnerability', 'x-misp-analyst-note', 'x-misp-analyst-opinion',
+    'x-misp-attribute', 'x-misp-event-note', 'x-misp-event-report',
+    'x-misp-galaxy-cluster', 'x-misp-object'
+]
+_STIX_OBJECT_TYPING = Union[
+    AttackPattern, Campaign, CourseOfAction, CustomObject, Identity, Indicator,
+    IntrusionSet, Malware, ObservedData, Tool, Vulnerability, dict
+]
+
+
+@CustomObject(
+    'x-misp-analyst-note',
+    [
+        ('id', IDProperty('x-misp-analyst-note')),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
+        ('x_misp_note', StringProperty(required=True)),
+        ('x_misp_author', StringProperty()),
+        ('x_misp_language', StringProperty()),
+        (
+            'object_ref',
+            ReferenceProperty(
+                valid_types=_ANALYST_DATA_REFERENCE_TYPES, spec_version='2.0'
+            )
+        )
+    ]
+)
+class CustomAnalystNote:
+    pass
+
+
+@CustomObject(
+    'x-misp-analyst-opinion',
+    [
+        ('id', IDProperty('x-misp-analyst-opinion')),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
+        ('x_misp_opinion', IntegerProperty(required=True)),
+        ('x_misp_author', StringProperty()),
+        ('x_misp_comment', StringProperty()),
+        (
+            'object_ref',
+            ReferenceProperty(
+                valid_types=_ANALYST_DATA_REFERENCE_TYPES, spec_version='2.0'
+            )
+        )
+    ]
+)
+class CustomAnalystOpinion:
+    pass
 
 
 @CustomObject(
@@ -52,6 +107,56 @@ from typing import Optional, Union
     ]
 )
 class CustomAttribute:
+    pass
+
+
+@CustomObject(
+    'x-misp-event-report',
+    [
+        ('id', IDProperty('x-misp-event-report')),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        (
+            'created_by_ref',
+            ReferenceProperty(valid_types='identity', spec_version='2.0')
+        ),
+        (
+            'object_refs',
+            ListProperty(
+                ReferenceProperty(
+                    valid_types=_ANALYST_DATA_REFERENCE_TYPES,
+                    spec_version='2.0'
+                ),
+                required=True
+            )
+        ),
+        ('x_misp_content', StringProperty(required=True)),
+        ('x_misp_name', StringProperty()),
+    ]
+)
+class CustomEventReport:
+    pass
+
+
+@CustomObject(
+    'x-misp-galaxy-cluster',
+    [
+        ('id', IDProperty('x-misp-galaxy-cluster')),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
+        (
+            'created_by_ref',
+            ReferenceProperty(valid_types='identity', spec_version='2.0')
+        ),
+        ('x_misp_name', StringProperty(required=True)),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_description', StringProperty(required=True)),
+        ('x_misp_meta', DictionaryProperty())
+    ]
+)
+class CustomGalaxyCluster:
     pass
 
 
@@ -85,28 +190,6 @@ class CustomMispObject:
 
 
 @CustomObject(
-    'x-misp-galaxy-cluster',
-    [
-        ('id', IDProperty('x-misp-galaxy-cluster')),
-        ('labels', ListProperty(StringProperty, required=True)),
-        ('created', TimestampProperty(precision='millisecond')),
-        ('modified', TimestampProperty(precision='millisecond')),
-        (
-            'created_by_ref',
-            ReferenceProperty(valid_types='identity', spec_version='2.0')
-        ),
-        ('x_misp_name', StringProperty(required=True)),
-        ('x_misp_type', StringProperty(required=True)),
-        ('x_misp_value', StringProperty(required=True)),
-        ('x_misp_description', StringProperty(required=True)),
-        ('x_misp_meta', DictionaryProperty())
-    ]
-)
-class CustomGalaxyCluster:
-    pass
-
-
-@CustomObject(
     'x-misp-event-note',
     [
         ('id', IDProperty('x-misp-event-note')),
@@ -119,7 +202,7 @@ class CustomGalaxyCluster:
         ('x_misp_event_note', StringProperty(required=True)),
         (
             'object_ref',
-            ReferenceProperty(valid_types=['report'], spec_version='2.0')
+            ReferenceProperty(valid_types='report', spec_version='2.0')
         )
     ]
 )
@@ -161,15 +244,21 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._version = '2.0'
         self._mapping = MISPtoSTIX20Mapping
 
-    def _parse_event_data(self):
-        if self._misp_event.get('Attribute'):
-            for attribute in self._misp_event['Attribute']:
-                self._resolve_attribute(attribute)
-        if self._misp_event.get('Object'):
-            self._objects_to_parse = defaultdict(dict)
-            self._resolve_objects()
-            if self._objects_to_parse:
-                self._resolve_objects_to_parse()
+    def _parse_event_report(
+            self, event_report: Union[MISPEventReport, dict]) -> CustomEventReport:
+        timestamp = self._datetime_from_timestamp(event_report['timestamp'])
+        note_args = {
+            'id': f"x-misp-event-report--{event_report['uuid']}",
+            'created': timestamp, 'modified': timestamp,
+            'created_by_ref': self.identity_id,
+            'x_misp_content': event_report['content']
+        }
+        if event_report.get('name'):
+            note_args['x_misp_name'] = event_report['name']
+        references = set(self._parse_event_report_references(event_report))
+        if references:
+            note_args['object_refs'] = list(references)
+        return CustomEventReport(**note_args)
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         object_type = 'x-misp-event-note'
@@ -201,6 +290,41 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             object_args['labels'].append(marking)
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
+
+    def _handle_note_data(self, stix_object: _STIX_OBJECT_TYPING,
+                          note: Union[MISPNote, dict]):
+        note_args = {
+            'id': f"x-misp-analyst-note--{note['uuid']}",
+            'object_ref': stix_object['id'], 'x_misp_note': note['note'],
+            **dict(self._handle_analyst_time_fields(stix_object, note))
+        }
+        if note.get('authors'):
+            note_args['x_misp_author'] = note['authors']
+        if note.get('language'):
+            note_args['x_misp_language'] = note['language']
+        if stix_object['id'].startswith('x-misp-'):
+            note_args['allow_custom'] = True
+        getattr(self, self._results_handling_function)(
+            CustomAnalystNote(**note_args)
+        )
+
+    def _handle_opinion_data(self, stix_object: _STIX_OBJECT_TYPING,
+                             opinion: Union[MISPOpinion, dict]):
+        opinion_args = {
+            'id': f"x-misp-analyst-opinion--{opinion['uuid']}",
+            'object_ref': stix_object['id'],
+            'x_misp_opinion': opinion['opinion'],
+            **dict(self._handle_analyst_time_fields(stix_object, opinion))
+        }
+        if opinion.get('authors'):
+            opinion_args['x_misp_author'] = opinion['authors']
+        if opinion.get('comment'):
+            opinion_args['x_misp_comment'] = opinion['comment']
+        if stix_object['id'].startswith('x-misp-'):
+            opinion_args['allow_custom'] = True
+        getattr(self, self._results_handling_function)(
+            CustomAnalystOpinion(**opinion_args)
+        )
 
     def _handle_opinion_object(self, sighting: dict, reference_id: str):
         opinion_args = {
@@ -239,15 +363,17 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         report_args.update(
             {
                 'id': report_id, 'type': 'report',
-                'published': report_args['modified'],
-                'object_refs': self.object_refs, 'allow_custom': True
+                'published': report_args['modified'], 'allow_custom': True
             }
         )
-        return Report(**report_args)
+        self._handle_analyst_data(report_args)
+        report_args['object_refs'] = self.object_refs
+        report = self._create_report(report_args)
+        return report
 
-    ################################################################################
-    #                         ATTRIBUTES PARSING FUNCTIONS                         #
-    ################################################################################
+    ############################################################################
+    #                       ATTRIBUTES PARSING FUNCTIONS                       #
+    ############################################################################
 
     def _parse_attachment_attribute_observable(
             self, attribute: Union[MISPAttribute, dict]):
@@ -1288,9 +1414,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_malware(malware_args: dict) -> Malware:
         return Malware(**malware_args)
 
-    def _create_observed_data(self, args: dict, observable: dict):
+    def _create_observed_data(
+            self, args: dict, observable: dict) -> ObservedData:
         args['objects'] = observable
-        getattr(self, self._results_handling_function)(ObservedData(**args))
+        observed_data = ObservedData(**args)
+        getattr(self, self._results_handling_function)(observed_data)
+        return observed_data
 
     @staticmethod
     def _create_PE_extension(extension_args: dict) -> WindowsPEBinaryExt:

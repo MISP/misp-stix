@@ -11,15 +11,19 @@ from .converters import (
     ExternalSTIX2MalwareConverter, ExternalSTIX2ObservedDataConverter,
     ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, STIX2ObservableObjectConverter)
+from .importparser import ExternalSTIXtoMISPParser
 from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
 from collections import defaultdict
+from pymisp import MISPAttribute, MISPObject
+from stix2.v20.sro import Sighting as Sighting_v20
+from stix2.v21.sdo import Note, Opinion
+from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Optional, Union
 
-MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+_SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
 
 
-
-class ExternalSTIX2toMISPParser(STIX2toMISPParser):
+class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
@@ -42,12 +46,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def parse_stix_bundle(
             self, cluster_distribution: Optional[int] = 0,
             cluster_sharing_group_id: Optional[int] = None,
-            organisation_uuid: Optional[str] = MISP_org_uuid, **kwargs):
+            organisation_uuid: Optional[str] = None, **kwargs):
         self._set_parameters(**kwargs)
         self._set_cluster_distribution(
             cluster_distribution, cluster_sharing_group_id
         )
-        self.__organisation_uuid = organisation_uuid
+        self._set_organisation_uuid(organisation_uuid)
         self._parse_stix_bundle()
 
     ############################################################################
@@ -55,8 +59,58 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     ############################################################################
 
     @property
-    def cluster_distribution(self) -> dict:
-        return self.__cluster_distribution
+    def attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
+        if not hasattr(self, '_attack_pattern_parser'):
+            self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
+        return self._attack_pattern_parser
+
+    @property
+    def campaign_parser(self) -> ExternalSTIX2CampaignConverter:
+        if not hasattr(self, '_campaign_parser'):
+            self._campaign_parser = ExternalSTIX2CampaignConverter(self)
+        return self._campaign_parser
+
+    @property
+    def course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
+        if not hasattr(self, '_course_of_action_parser'):
+            self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
+        return self._course_of_action_parser
+
+    @property
+    def identity_parser(self) -> ExternalSTIX2IdentityConverter:
+        if not hasattr(self, '_identity_parser'):
+            self._identity_parser = ExternalSTIX2IdentityConverter(self)
+        return self._identity_parser
+
+    @property
+    def indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
+        if not hasattr(self, '_indicator_parser'):
+            self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
+        return self._indicator_parser
+
+    @property
+    def intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
+        if not hasattr(self, '_intrusion_set_parser'):
+            self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
+        return self._intrusion_set_parser
+
+    @property
+    def location_parser(self) -> ExternalSTIX2LocationConverter:
+        if not hasattr(self, '_location_parser'):
+            self._location_parser = ExternalSTIX2LocationConverter(self)
+        return self._location_parser
+
+    @property
+    def malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
+        if not hasattr(self, '_malware_analysis_parser'):
+            self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
+        return self._malware_analysis_parser
+
+    @property
+    def malware_parser(self) -> ExternalSTIX2MalwareConverter:
+        if not hasattr(self, '_malware_parser'):
+            self._malware_parser = ExternalSTIX2MalwareConverter(self)
+        return self._malware_parser
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
@@ -65,71 +119,51 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         return self._observable_object_parser
 
     @property
-    def organisation_uuid(self) -> str:
-        return self.__organisation_uuid
+    def observed_data_parser(self) -> ExternalSTIX2ObservedDataConverter:
+        if not hasattr(self, '_observed_data_parser'):
+            self._observed_data_parser = ExternalSTIX2ObservedDataConverter(self)
+        return self._observed_data_parser
 
-    ############################################################################
-    #                              PARSER SETTERS                              #
-    ############################################################################
+    @property
+    def threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
+        if not hasattr(self, '_threat_actor_parser'):
+            self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
+        return self._threat_actor_parser
 
-    def _set_attack_pattern_parser(self):
-        self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
+    @property
+    def tool_parser(self) -> ExternalSTIX2ToolConverter:
+        if not hasattr(self, '_tool_parser'):
+            self._tool_parser = ExternalSTIX2ToolConverter(self)
+        return self._tool_parser
 
-    def _set_campaign_parser(self):
-        self._campaign_parser = ExternalSTIX2CampaignConverter(self)
-
-    def _set_cluster_distribution(
-            self, distribution: int, sharing_group_id: Union[int, None]):
-        cl_dis = {'distribution': self._sanitise_distribution(distribution)}
-        if distribution == 4:
-            if sharing_group_id is not None:
-                cl_dis['sharing_group_id'] = self._sanitise_sharing_group_id(
-                    sharing_group_id
-                )
-            else:
-                cl_dis['distribution'] = 0
-                self._cluster_distribution_and_sharing_group_id_error()
-        self.__cluster_distribution = cl_dis
-
-    def _set_course_of_action_parser(self):
-        self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
-
-    def _set_identity_parser(self):
-        self._identity_parser = ExternalSTIX2IdentityConverter(self)
-
-    def _set_indicator_parser(self):
-        self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
-
-    def _set_intrusion_set_parser(self):
-        self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
-
-    def _set_location_parser(self):
-        self._location_parser = ExternalSTIX2LocationConverter(self)
-
-    def _set_malware_analysis_parser(self):
-        self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
-
-    def _set_malware_parser(self):
-        self._malware_parser = ExternalSTIX2MalwareConverter(self)
-
-    def _set_observable_object_parser(self):
-        self._observable_object_parser = STIX2ObservableObjectConverter(self)
-
-    def _set_observed_data_parser(self):
-        self._observed_data_parser = ExternalSTIX2ObservedDataConverter(self)
-
-    def _set_threat_actor_parser(self):
-        self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
-
-    def _set_tool_parser(self):
-        self._tool_parser = ExternalSTIX2ToolConverter(self)
-
-    def _set_vulnerability_parser(self):
-        self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
+    @property
+    def vulnerability_parser(self) -> ExternalSTIX2VulnerabilityConverter:
+        if not hasattr(self, '_vulnerability_parser'):
+            self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
+        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
+
+    def _load_analyst_note(self, note: Note):
+        note_dict = self._parse_analyst_note(note)
+        if len(note.object_refs) == 1:
+            note_dict['uuid'] = self._sanitise_uuid(note.id)
+        for object_ref in note.object_refs:
+            self._analyst_data[object_ref].append(note.id)
+        super()._load_note(note.id, note_dict)
+
+    def _load_analyst_opinion(self, opinion: Opinion):
+        opinion_dict = {
+            'opinion': self._mapping.opinion_mapping(opinion.opinion),
+            **self._parse_analyst_opinion(opinion)
+        }
+        if len(opinion.object_refs) == 1:
+            opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
+        for object_ref in opinion.object_refs:
+            self._analyst_data[object_ref].append(opinion.id)
+        super()._load_opinion(opinion.id, opinion_dict)
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
         self._check_uuid(observable.id)
@@ -139,9 +173,25 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             self._observable = {observable.id: to_load}
 
+    def _load_sighting(self, sighting: _SIGHTING_TYPING):
+        sighting_of_ref = self._sanitise_uuid(sighting.sighting_of_ref)
+        try:
+            self._sighting[sighting_of_ref].append(sighting)
+        except AttributeError:
+            self._sighting = defaultdict(list)
+            self._sighting[sighting_of_ref].append(sighting)
+
     ############################################################################
     #                    MAIN STIX OBJECTS PARSING METHODS.                    #
     ############################################################################
+
+    def _handle_attribute_sightings(self, attribute: MISPAttribute):
+        attribute_uuid = attribute.uuid
+        if attribute_uuid in self.replacement_uuids:
+            attribute_uuid = self.replacement_uuids[attribute_uuid]
+        if attribute_uuid in self._sighting:
+            for sighting in self._sighting[attribute_uuid]:
+                attribute.add_sighting(self._parse_sighting(sighting))
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
@@ -161,6 +211,16 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             except UnknownParsingFunctionError as error:
                 self._unknown_parsing_function_error(error)
 
+    def _handle_object_sightings(self, misp_object: MISPObject):
+        object_uuid = misp_object.uuid
+        if object_uuid in self.replacement_uuids:
+            object_uuid = self.replacement_uuids[object_uuid]
+        if object_uuid in self._sighting:
+            for sighting in self._sighting[object_uuid]:
+                misp_sighting = self._parse_sighting(sighting)
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(misp_sighting)
+
     def _handle_unparsed_content(self):
         if not hasattr(self, '_observable'):
             return super()._handle_unparsed_content()
@@ -174,8 +234,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             feature = self._mapping.observable_mapping(observable_type)
             if feature is None:
-                self._observable_object_mapping_error(
-                    unparsed_content[observable_type][0]
+                observable_id = unparsed_content[observable_type][0]
+                self._add_error(
+                    f'Unable to map observable object with id {observable_id}'
                 )
                 continue
             to_call = f'_parse_{feature}_observable_object'
@@ -186,7 +247,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 try:
                     getattr(self.observable_object_parser, to_call)(object_id)
                 except Exception as exception:
-                    self._observable_object_error(object_id, exception)
+                    _traceback = self._parse_traceback(exception)
+                    self._add_error(
+                        'Error parsing the Observable object with id '
+                        f'{object_id}: {_traceback}'
+                    )
         super()._handle_unparsed_content()
 
     def _parse_loaded_features(self):

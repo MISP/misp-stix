@@ -12,6 +12,35 @@ from ._test_stix import TestSTIX
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 
 
+class TestSTIX2Bundles:
+    @staticmethod
+    def _handle_report_with_description(report, indicator_id):
+        report['name'] = 'HTRAN - Persistent threat'
+        report['description'] = (
+            'HTran is a rudimentary connection bouncer, designed to redirect '
+            'TCP traffic destined for one host to an alternate host. '
+            'The source code copyright notice indicates that HTran was authored '
+            'by "lion", a well-known Chinese hacker and member of "HUC", the '
+            'Honker Union of China. The purpose of this type of tool is to '
+            'disguise either the true source or destination of Internet '
+            'traffic in the course of hacking activity.'
+        )
+        report['object_refs'] = [indicator_id]
+        return report
+
+    @staticmethod
+    def _populate_references(*object_ids):
+        references = defaultdict(list)
+        for object_id in object_ids:
+            feature = (
+                'object_marking_refs'
+                if object_id.startswith('marking-definition--')
+                else 'object_refs'
+            )
+            references[feature].append(object_id)
+        return references
+
+
 class TestSTIX2Import(TestSTIX):
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
@@ -208,6 +237,17 @@ class TestSTIX21Import(TestSTIX2Import):
     _objects_v21 = defaultdict(dict)
     _galaxies_v21 = defaultdict(dict)
 
+    __opinion_mapping = {
+        'strongly-disagree': 0,
+        'disagree': 25,
+        'neutral': 50,
+        'agree': 75,
+        'strongly-agree': 100
+    }
+
+    def opinion_mapping(self, field):
+        return self.__opinion_mapping.get(field)
+
     @classmethod
     def tearDownClass(self):
         attributes_documentation = AttributesDocumentationUpdater(
@@ -222,6 +262,25 @@ class TestSTIX21Import(TestSTIX2Import):
             'import'
         )
         objects_documentation.check_import_mapping('stix21')
+
+    def _check_misp_note(self, misp_note, stix_note):
+        self.assertEqual(misp_note.uuid, stix_note.id.split('--')[1])
+        self.assertEqual(misp_note.note, stix_note.content)
+        self.assertEqual(misp_note.created, stix_note.created)
+        self.assertEqual(misp_note.modified, stix_note.modified)
+        self.assertEqual(misp_note.language, stix_note.lang)
+        self.assertEqual(misp_note.authors, stix_note.authors[0])
+
+    def _check_misp_opinion(self, misp_opinion, stix_opinion):
+        self.assertEqual(misp_opinion.uuid, stix_opinion.id.split('--')[1])
+        if hasattr(stix_opinion, 'x_misp_opinion'):
+            self.assertEqual(misp_opinion.opinion, stix_opinion.x_misp_opinion)
+        else:
+            self.assertEqual(misp_opinion.opinion, self.opinion_mapping(stix_opinion.opinion))
+        self.assertEqual(misp_opinion.created, stix_opinion.created)
+        self.assertEqual(misp_opinion.modified, stix_opinion.modified)
+        self.assertEqual(misp_opinion.comment, stix_opinion.explanation)
+        self.assertEqual(misp_opinion.authors, stix_opinion.authors[0])
 
     def _populate_attack_pattern_documentation(self, **kwargs):
         if 'misp_object' in kwargs:
@@ -1611,6 +1670,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             version.uuid,
             uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
         )
+
 
 class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):

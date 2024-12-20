@@ -87,8 +87,10 @@ class InternalSTIX2CourseOfActionConverter(InternalSTIX2Converter):
         try:
             parser(course_of_action)
         except Exception as exception:
-            self.main_parser._course_of_action_error(
-                course_of_action.id, exception
+            _traceback = self.main_parser._parse_traceback(exception)
+            self.main_parser._add_error(
+                'Error parsing the Course of Action object with id '
+                f'{course_of_action.id}: {_traceback}'
             )
 
     def _create_cluster(self, course_of_action: _COURSE_OF_ACTION_TYPING,
