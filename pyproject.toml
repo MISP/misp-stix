@@ -49,6 +49,7 @@ mixbox = "^1.0.3"
 maec = "^4.1.0"
 stix-edh = "1.0.3"
 misp-lib-stix2 = "^3.0.1"
+setuptools = "*"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.3"
