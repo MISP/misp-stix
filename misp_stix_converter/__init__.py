@@ -133,12 +133,12 @@ def main():
     import_parser.add_argument(
         '-o', '--output_name', type=Path,
         help='Output file name - used in the case of a single input file or '
-             'when the `single_output` argument is used.'
+             'when the `single_event` argument is used.'
     )
     import_parser.add_argument(
         '--output_dir', type=Path,
         help='Output path - used in the case of multiple input files when the '
-             '`single_output` argument is not used.'
+             '`single_event` argument is not used.'
     )
     import_parser.add_argument(
         '-d', '--distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
@@ -207,7 +207,7 @@ def main():
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
-    if len(stix_args.file) > 1 and stix_args.single_event and stix_args.output_dir is None:
+    if len(stix_args.file) > 1 and stix_args.single_output and stix_args.output_dir is None:
         stix_args.output_dir = Path(__file__).parents[1] / 'tmp'
     feature = 'MISP to STIX' if stix_args.feature == 'export' else 'STIX to MISP'
     try:
