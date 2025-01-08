@@ -75,21 +75,21 @@ def main():
         required=True, help='STIX specific version.'
     )
     export_parser.add_argument(
-        '-s', '--single_output', action='store_true',
+        '-s', '--single-output', action='store_true',
         help='Produce only one result file (in case of multiple input file).'
     )
     export_parser.add_argument(
-        '-m', '--in_memory', action='store_true',
+        '-m', '--in-memory', action='store_true',
         help='Store result in memory (in case of multiple result files) '
              'instead of storing it in tmp files.'
     )
     export_parser.add_argument(
-        '--output_dir', type=Path,
+        '--output-dir', type=Path,
         help='Output path - used in the case of multiple input files when the '
              '`single_output` argument is not used.'
     )
     export_parser.add_argument(
-        '-o', '--output_name', type=Path,
+        '-o', '--output-name', type=Path,
         help='Output file name - used in the case of a single input file or '
              'when the `single_output` argument is used.'
     )
@@ -126,17 +126,17 @@ def main():
         help='STIX major version - default is 2'
     )
     import_parser.add_argument(
-        '-s', '--single_event', action='store_true',
+        '-s', '--single-event', action='store_true',
         help='Produce only one MISP event per STIX file'
              '(in case of multiple Report, Grouping or Incident objects).'
     )
     import_parser.add_argument(
-        '-o', '--output_name', type=Path,
+        '-o', '--output-name', type=Path,
         help='Output file name - used in the case of a single input file or '
              'when the `single_event` argument is used.'
     )
     import_parser.add_argument(
-        '--output_dir', type=Path,
+        '--output-dir', type=Path,
         help='Output path - used in the case of multiple input files when the '
              '`single_event` argument is not used.'
     )
@@ -152,18 +152,18 @@ def main():
             '''
     )
     import_parser.add_argument(
-        '-sg', '--sharing_group', type=int, default=None,
+        '-sg', '--sharing-group', type=int, default=None,
         help='Sharing group ID when distribution is 4.'
     )
     import_parser.add_argument(
-        '--galaxies_as_tags', action='store_true',
+        '--galaxies-as-tags', action='store_true',
         help='Import MISP Galaxies as tag names instead of the standard Galaxy format.'
     )
     import_parser.add_argument(
-        '--org_uuid', help='Organisation UUID to use when creating custom Galaxy clusters.'
+        '--org-uuid', help='Organisation UUID to use when creating custom Galaxy clusters.'
     )
     import_parser.add_argument(
-        '-cd', '--cluster_distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
+        '-cd', '--cluster-distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
         help='''
             Galaxy Clusters distribution level
             in case of External STIX 2 content (default id 0)
@@ -175,7 +175,7 @@ def main():
         '''
     )
     import_parser.add_argument(
-        '-cg', '--cluster_sharing_group', type=int, default=None,
+        '-csg', '--cluster-sharing-group', type=int, default=None,
         help='Galaxy Clusters sharing group ID in case of External STIX 2 content.'
     )
     import_parser.add_argument(
@@ -197,11 +197,11 @@ def main():
         '-u', '--url', type=str, help='URL to connect to your MISP instance.'
     )
     import_parser.add_argument(
-        '-a', '--api_key', type=str,
+        '-a', '--api-key', type=str,
         help='Authentication key to connect to your MISP instance.'
     )
     import_parser.add_argument(
-        '--skip_ssl', action='store_true',
+        '--skip-ssl', action='store_true',
         help='Skip SSL certificate checking when connecting to your MISP instance.'
     )
     import_parser.set_defaults(func=_stix_to_misp)
