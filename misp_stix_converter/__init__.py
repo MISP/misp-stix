@@ -207,7 +207,11 @@ def main():
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
-    if len(stix_args.file) > 1 and stix_args.single_output and stix_args.output_dir is None:
+    single = (
+        stix_args.single_output if stix_args.feature == 'export'
+        else stix_args.single_event
+    )
+    if len(stix_args.file) > 1 and single and stix_args.output_dir is None:
         stix_args.output_dir = Path(__file__).parents[1] / 'tmp'
     feature = 'MISP to STIX' if stix_args.feature == 'export' else 'STIX to MISP'
     try:
