@@ -160,6 +160,10 @@ def main():
         help='Import MISP Galaxies as tag names instead of the standard Galaxy format.'
     )
     import_parser.add_argument(
+        '--no-force-galaxy-cluster', action='store_true',
+        help='Do not force the creation of custom Galaxy clusters in some specific cases when STIX objects could be converted either as clusters or MISP objects for instance.'
+    )
+    import_parser.add_argument(
         '--org-uuid', help='Organisation UUID to use when creating custom Galaxy clusters.'
     )
     import_parser.add_argument(
