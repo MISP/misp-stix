@@ -2,12 +2,12 @@
 
 <img src="https://raw.githubusercontent.com/MISP/misp-stix/main/documentation/logos/misp-stix.png" width="125" height="125">
 
-[![Python version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![Python version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![MISP-STIX version](https://badge.fury.io/gh/MISP%2Fmisp-stix.svg)](https://badge.fury.io/gh/MISP%2Fmisp-stix)
 [![Github Actions](https://github.com/MISP/misp-stix/workflows/misp-stix/badge.svg)](https://github.com/MISP/misp-stix/actions?query=workflow%3Amisp-stix)
 [![License](https://img.shields.io/github/license/MISP/misp-stix.svg)](#License)
 
-MISP-STIX-converter is a Python library (>=3.8) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
+MISP-STIX-converter is a Python library (>=3.9) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
 The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in PyPI.
 
@@ -132,26 +132,26 @@ Main feature:
 ##### Export parameters
 
 ```bash
-usage: misp_stix_converter export [-h] -f FILE [FILE ...] -v {1.1.1,1.2,2.0,2.1} [-s] [-m] [--output_dir OUTPUT_DIR] [-o OUTPUT_NAME] [--level {attribute,event}] [--format {json,xml}] [-n NAMESPACE] [-org ORG]
+usage: misp_stix_converter export [-h] -f FILE [FILE ...] -v {1.1.1,1.2,2.0,2.1} [-s] [-m] [--output-dir OUTPUT_DIR] [-o OUTPUT_NAME] [--level {attribute,event}] [--format {json,xml}] [-n NAMESPACE] [-org ORG]
 
 options:
   -h, --help            show this help message and exit
-  -f FILE [FILE ...], --file FILE [FILE ...]
+  -f, --file FILE [FILE ...]
                         Path to the file(s) to convert.
-  -v {1.1.1,1.2,2.0,2.1}, --version {1.1.1,1.2,2.0,2.1}
+  -v, --version {1.1.1,1.2,2.0,2.1}
                         STIX specific version.
-  -s, --single_output   Produce only one result file (in case of multiple input file).
-  -m, --in_memory       Store result in memory (in case of multiple result files) instead of storing it in tmp files.
-  --output_dir OUTPUT_DIR
+  -s, --single-output   Produce only one result file (in case of multiple input file).
+  -m, --in-memory       Store result in memory (in case of multiple result files) instead of storing it in tmp files.
+  --output-dir OUTPUT_DIR
                         Output path - used in the case of multiple input files when the `single_output` argument is not used.
-  -o OUTPUT_NAME, --output_name OUTPUT_NAME
+  -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_output` argument is used.
 
 STIX 1 specific arguments:
   --level {attribute,event}
                         MISP data structure level.
   --format {json,xml}   STIX 1 format.
-  -n NAMESPACE, --namespace NAMESPACE
+  -n, --namespace NAMESPACE
                         Namespace to be used in the STIX 1 header.
   -org ORG              Organisation name to be used in the STIX 1 header.
 ```
@@ -159,38 +159,40 @@ STIX 1 specific arguments:
 ##### Import parameters
 
 ```bash
-usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output_dir OUTPUT_DIR] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies_as_tags] [--org_uuid ORG_UUID] [-cd {0,1,2,3,4}]
-                                  [-cg CLUSTER_SHARING_GROUP] [-p PRODUCER] [-c CONFIG] [-u URL] [-a API_KEY] [--skip_ssl]
+usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output-dir OUTPUT_DIR] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies-as-tags] [--no-force-galaxy-cluster]
+                                  [--org-uuid ORG_UUID] [-cd {0,1,2,3,4}] [-csg CLUSTER_SHARING_GROUP] [-t TITLE] [-p PRODUCER] [-c CONFIG] [-u URL] [-a API_KEY] [--skip-ssl]
 
 options:
   -h, --help            show this help message and exit
-  -f FILE [FILE ...], --file FILE [FILE ...]
+  -f, --file FILE [FILE ...]
                         Path to the file(s) to convert.
-  -v {1,2}, --version {1,2}
-                        STIX major version - default is 2
-  -s, --single_event    Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
-  -o OUTPUT_NAME, --output_name OUTPUT_NAME
-                        Output file name - used in the case of a single input file or when the `single_output` argument is used.
-  --output_dir OUTPUT_DIR
-                        Output path - used in the case of multiple input files when the `single_output` argument is not used.
-  -d {0,1,2,3,4}, --distribution {0,1,2,3,4}
-                        Distribution level for the imported MISP content - default is 0
-  -sg SHARING_GROUP, --sharing_group SHARING_GROUP
+  -v, --version {1,2}   STIX major version - default is 2
+  -s, --single-event    Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
+  -o, --output-name OUTPUT_NAME
+                        Output file name - used in the case of a single input file or when the `single_event` argument is used.
+  --output-dir OUTPUT_DIR
+                        Output path - used in the case of multiple input files when the `single_event` argument is not used.
+  -d, --distribution {0,1,2,3,4}
+                        Distribution level for the imported MISP content (default is 0) - 0: Your organisation only - 1: This community only - 2: Connected communities - 3: All communities - 4: Sharing Group
+  -sg, --sharing-group SHARING_GROUP
                         Sharing group ID when distribution is 4.
-  --galaxies_as_tags    Import MISP Galaxies as tag names instead of the standard Galaxy format.
-  --org_uuid ORG_UUID   Organisation UUID to use when creating custom Galaxy clusters.
-  -cd {0,1,2,3,4}, --cluster_distribution {0,1,2,3,4}
-                        Galaxy Clusters distribution level in case of External STIX 2 content - default id 0
-  -cg CLUSTER_SHARING_GROUP, --cluster_sharing_group CLUSTER_SHARING_GROUP
+  --galaxies-as-tags    Import MISP Galaxies as tag names instead of the standard Galaxy format.
+  --no-force-galaxy-cluster
+                        Do not force the creation of custom Galaxy clusters in some specific cases when STIX objects could be converted either as clusters or MISP objects for instance.
+  --org-uuid ORG_UUID   Organisation UUID to use when creating custom Galaxy clusters.
+  -cd, --cluster-distribution {0,1,2,3,4}
+                        Galaxy Clusters distribution level in case of External STIX 2 content (default id 0) - 0: Your organisation only - 1: This community only - 2: Connected communities - 3: All communities - 4:
+                        Sharing Group
+  -csg, --cluster-sharing-group CLUSTER_SHARING_GROUP
                         Galaxy Clusters sharing group ID in case of External STIX 2 content.
-  -p PRODUCER, --producer PRODUCER
+  -t, --title TITLE     Title used to set the MISP Event `info` field.
+  -p, --producer PRODUCER
                         Producer of the imported content - Please make sure you use a name from the list of existing producer Galaxy Clusters.
-  -c CONFIG, --config CONFIG
-                        Config file containing the URL and the authentication key to connect to your MISP.
-  -u URL, --url URL     URL to connect to your MISP instance.
-  -a API_KEY, --api_key API_KEY
+  -c, --config CONFIG   Config file containing the URL and the authentication key to connect to your MISP.
+  -u, --url URL         URL to connect to your MISP instance.
+  -a, --api-key API_KEY
                         Authentication key to connect to your MISP instance.
-  --skip_ssl            Skip SSL certificate checking when connecting to your MISP instance.
+  --skip-ssl            Skip SSL certificate checking when connecting to your MISP instance.
 ```
 
 ### In Python scripts
@@ -325,8 +327,8 @@ You can find there all the different cases illustrated with examples.
 misp-stix is released under a BSD 2-Clause "Simplified" License allow easy reuse with other libraries.
 
 ~~~
-Copyright 2019-2023 Christian Studer
-Copyright 2019-2023 CIRCL - Computer Incident Response Center Luxembourg c/o "security made in Lëtzebuerg" (SMILE) g.i.e.
+Copyright 2019-2025 Christian Studer
+Copyright 2019-2025 CIRCL - Computer Incident Response Center Luxembourg c/o "security made in Lëtzebuerg" (SMILE) g.i.e.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
