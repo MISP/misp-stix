@@ -179,7 +179,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _set_parameters(self, distribution: int = _DEFAULT_DISTRIBUTION,
                         sharing_group_id: Optional[int] = None,
-                        force_galaxy_cluster: Optional[bool] = False,
+                        force_contextual_data: Optional[bool] = False,
                         galaxies_as_tags: Optional[bool] = False,
                         single_event: Optional[bool] = False,
                         producer: Optional[str] = None,
@@ -191,7 +191,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         if self.sharing_group_id is None and self.distribution == 4:
             self.__distribution = 0
             self._distribution_and_sharing_group_id_error()
-        self.__force_galaxy_cluster = force_galaxy_cluster
+        self.__force_contextual_data = force_contextual_data
         self.__galaxies_as_tags = galaxies_as_tags
         self.__galaxy_feature = (
             'as_tag_names' if self.galaxies_as_tags else 'as_container'
@@ -220,8 +220,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return self.__errors
 
     @property
-    def force_galaxy_cluster(self) -> bool:
-        return self.__force_galaxy_cluster
+    def force_contextual_data(self) -> bool:
+        return self.__force_contextual_data
 
     @property
     def galaxies_as_tags(self) -> bool:

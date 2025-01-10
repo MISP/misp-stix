@@ -644,7 +644,7 @@ def stix_1_to_misp(filename: _files_type,
                    cluster_sharing_group_id: Optional[int] = None,
                    debug: Optional[bool] = False,
                    distribution: Optional[int] = 0,
-                   force_galaxy_cluster: Optional[bool] = False,
+                   force_contextual_data: Optional[bool] = False,
                    galaxies_as_tags: Optional[bool] = False,
                    organisation_uuid: Optional[str] = MISP_org_uuid,
                    output_dir: Optional[_files_type]=None,
@@ -661,7 +661,7 @@ def stix_1_to_misp(filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix1_parser(
         _is_stix1_from_misp(stix_package), distribution, sharing_group_id,
-        title, producer, force_galaxy_cluster, galaxies_as_tags, single_event,
+        title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
@@ -690,7 +690,7 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
                            cluster_sharing_group_id: Optional[int] = None,
                            debug: Optional[bool] = False,
                            distribution: Optional[int] = 0,
-                           force_galaxy_cluster: Optional[bool] = False,
+                           force_contextual_data: Optional[bool] = False,
                            galaxies_as_tags: Optional[bool] = False,
                            organisation_uuid: Optional[str] = MISP_org_uuid,
                            producer: Optional[str] = None,
@@ -705,7 +705,7 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix1_parser(
         _is_stix1_from_misp(stix_package), distribution, sharing_group_id,
-        title, producer, force_galaxy_cluster, galaxies_as_tags, single_event,
+        title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
@@ -738,7 +738,7 @@ def stix_2_to_misp(filename: _files_type,
                    cluster_sharing_group_id: Optional[int] = None,
                    debug: Optional[bool] = False,
                    distribution: Optional[int] = 0,
-                   force_galaxy_cluster: Optional[bool] = False,
+                   force_contextual_data: Optional[bool] = False,
                    galaxies_as_tags: Optional[bool] = False,
                    organisation_uuid: Optional[str] = MISP_org_uuid,
                    output_dir: Optional[_files_type]=None,
@@ -755,7 +755,7 @@ def stix_2_to_misp(filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, force_galaxy_cluster, galaxies_as_tags, single_event,
+        title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
@@ -784,7 +784,7 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
                            cluster_sharing_group_id: Optional[int] = None,
                            debug: Optional[bool] = False,
                            distribution: Optional[int] = 0,
-                           force_galaxy_cluster: Optional[bool] = False,
+                           force_contextual_data: Optional[bool] = False,
                            galaxies_as_tags: Optional[bool] = False,
                            organisation_uuid: Optional[str] = MISP_org_uuid,
                            producer: Optional[str] = None,
@@ -799,7 +799,7 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, force_galaxy_cluster, galaxies_as_tags, single_event,
+        title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
@@ -834,12 +834,12 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
 def _get_stix1_parser(
         from_misp: bool, distribution: int, sharing_group_id: Union[int, None],
         title: Union[str, None], producer: Union[str, None],
-        force_galaxy_cluster: bool, galaxies_as_tags: bool, single_event: bool,
+        force_contextual_data: bool, galaxies_as_tags: bool, single_event: bool,
         organisation_uuid: str, cluster_distribution: int,
         cluster_sharing_group_id: Union[int, None]) -> tuple:
     args = {
         'distribution': distribution,
-        'force_galaxy_cluster': force_galaxy_cluster,
+        'force_contextual_data': force_contextual_data,
         'galaxies_as_tags': galaxies_as_tags,
         'producer': producer,
         'sharing_group_id': sharing_group_id,
@@ -861,12 +861,12 @@ def _get_stix1_parser(
 def _get_stix2_parser(
         from_misp: bool, distribution: int, sharing_group_id: Union[int, None],
         title: Union[str, None], producer: Union[str, None],
-        force_galaxy_cluster: bool, galaxies_as_tags: bool, single_event: bool,
+        force_contextual_data: bool, galaxies_as_tags: bool, single_event: bool,
         organisation_uuid: str, cluster_distribution: int,
         cluster_sharing_group_id: Union[int, None]) -> tuple:
     args = {
         'distribution': distribution,
-        'force_galaxy_cluster': force_galaxy_cluster,
+        'force_contextual_data': force_contextual_data,
         'galaxies_as_tags': galaxies_as_tags,
         'producer': producer,
         'sharing_group_id': sharing_group_id,
@@ -1227,7 +1227,7 @@ def _process_stix_to_misp_files(args) -> dict:
         'cluster_sharing_group_id': args.cluster_sharing_group,
         'debug': args.debug,
         'distribution': args.distribution,
-        'force_galaxy_cluster': not args.no_force_galaxy_cluster,
+        'force_contextual_data': not args.no_force_contextual_data,
         'galaxies_as_tags': args.galaxies_as_tags,
         'output_dir': args.output_dir,
         'organisation_uuid': args.org_uuid,
@@ -1271,7 +1271,7 @@ def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
         'cluster_sharing_group_id': args.cluster_sharing_group,
         'debug': args.debug,
         'distribution': args.distribution,
-        'force_galaxy_cluster': not args.no_force_galaxy_cluster,
+        'force_contextual_data': not args.no_force_contextual_data,
         'galaxies_as_tags': args.galaxies_as_tags,
         'organisation_uuid': args.org_uuid,
         'producer': args.producer,
