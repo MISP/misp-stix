@@ -422,7 +422,7 @@ class InternalSTIX2IdentityConverter(
             misp_object.add_attribute(
                 **self._populate_object_attribute(
                     {'type': 'attachment', 'object_relation': 'portrait'},
-                    f'{identity.id} - porttrait', identity.x_misp_portrait
+                    f'{identity.id} - portrait', identity.x_misp_portrait
                 )
             )
         self.main_parser._add_misp_object(misp_object, identity)
