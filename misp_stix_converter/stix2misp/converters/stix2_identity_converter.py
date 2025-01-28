@@ -403,9 +403,9 @@ class InternalSTIX2IdentityConverter(
         )
         if hasattr(identity, 'x_misp_attachment'):
             misp_object.add_attribute(
-                **self._populate_object_attribute(
+                **self._populate_object_attributes(
                     {'type': 'attachment', 'object_relation': 'attachment'},
-                    f'{identity.id} - attachment', identity.x_misp_attachment
+                    identity.x_misp_attachment, f'{identity.id} - attachment'
                 )
             )
         self.main_parser._add_misp_object(misp_object, identity)
@@ -420,9 +420,9 @@ class InternalSTIX2IdentityConverter(
         misp_object = self._parse_identity_object_attributes(identity, 'person')
         if hasattr(identity, 'x_misp_portrait'):
             misp_object.add_attribute(
-                **self._populate_object_attribute(
+                **self._populate_object_attributes(
                     {'type': 'attachment', 'object_relation': 'portrait'},
-                    f'{identity.id} - portrait', identity.x_misp_portrait
+                    identity.x_misp_portrait, f'{identity.id} - portrait'
                 )
             )
         self.main_parser._add_misp_object(misp_object, identity)
