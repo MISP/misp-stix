@@ -15,11 +15,21 @@ from .importparser import ExternalSTIXtoMISPParser
 from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPObject
+from stix2.v20.observables import (
+    _Extension as Extension_v20, _STIXBase20 as STIXBase_v20)
 from stix2.v20.sro import Sighting as Sighting_v20
+from stix2.v21.observables import (
+    _Extension as Extension_v21, _STIXBase21 as STIXBase_v21)
 from stix2.v21.sdo import Note, Opinion
 from stix2.v21.sro import Sighting as Sighting_v21
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 
+_EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
+_INDICATOR_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
+_OBSERVABLE_FIELDS_TO_SKIP = (
+    'defanged', 'granular_markings', 'id', 'object_marking_refs',
+    'spec_version', 'type'
+)
 _SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
 
 
@@ -258,3 +268,88 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             for observable in self._observable.values():
                 observable['used'][self.misp_event.uuid] = False
         super()._parse_loaded_features()
+
+    ############################################################################
+    #       METHODS TO LINK INDICATORS AND OBSERVABLES WITH SIMILAR DATA       #
+    ############################################################################
+
+    def _fetch_indicator_references(
+            self, observable: _OBSERVABLE_TYPING) -> Iterator[str]:
+        observable_references = tuple(
+            self._fetch_observable_references(observable)
+        )
+        for indicator_id, patterns in self._indicator_references.items():
+            if not any(ref in patterns for ref in observable_references):
+                continue
+            yield indicator_id
+
+    def _fetch_observable_references(
+            self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
+        for key, values in observable.items():
+            if key in _OBSERVABLE_FIELDS_TO_SKIP:
+                continue
+            if isinstance(values, dict):
+                yield from self._fetch_observable_references(values)
+                continue
+            if isinstance(values, list):
+                for value in values:
+                    if isinstance(value, _EXTENSION_TYPES):
+                        yield from self._fetch_observable_references(value)
+                        continue
+                    yield f'{key} - {value}'
+                continue
+            if isinstance(values, _EXTENSION_TYPES):
+                yield from self._fetch_observable_references(values)
+                continue
+            yield f'{key} - {values}'
+
+    def _set_indicator_references(self):
+        score = 0
+        for feature, count in _INDICATOR_FIELDS.items():
+            if getattr(self, feature, []):
+                score += count
+        if score in (0, 1, 2, 4, 6):
+            return
+        pattern_parser = self.indicator_parser._compile_stix_pattern
+        self._indicator_references = {
+            indicator_id: tuple(f'{val[0][-1]} - {val[-1]}' for val in pattern)
+            for indicator_id, indicator in self._indicator.items()
+            for pattern in pattern_parser(indicator).comparisons.values()
+        }
+        if score in (3, 7):
+            for observable_id, observable in self._observable.items():
+                indicator_references = set(
+                    self._fetch_indicator_references(observable['observable'])
+                )
+                if not indicator_references:
+                    continue
+                for reference in indicator_references:
+                    indicator = self._indicator[reference]
+                    self._indicator[reference] = {
+                        'indicator': indicator,
+                        'observable_ref': observable_id
+                    }
+                observable['indicator_refs'] = tuple(indicator_references)
+        if score >= 5:
+            for observed_id, observed_data in self._observed_data.items():
+                if not hasattr(observed_data, 'objects'):
+                    continue
+                indicator_refs = {}
+                for observable_id, observable in observed_data.objects.items():
+                    indicator_references = set(
+                        self._fetch_indicator_references(observable)
+                    )
+                    if not indicator_references:
+                        continue
+                    for reference in indicator_references:
+                        indicator = self._indicator[reference]
+                        self._indicator[reference] = {
+                            'indicator': indicator,
+                            'observable_ref': observed_id
+                        }
+                    indicator_refs[observable_id] = tuple(indicator_references)
+                if indicator_refs:
+                    self._observed_data[observed_id] = {
+                        'indicator_refs': indicator_refs,
+                        'observed_data': observed_data
+                    }
