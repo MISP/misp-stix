@@ -363,23 +363,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         if len(indicator_references) == 1:
             return next(iter(indicator_references))
         # in case multiple indicators describe values from a single observable
-        count = defaultdict(int)
-        for indicator_id in indicator_references:
-            patterns = self.indicator_references[indicator_id]
-            for pattern in patterns:
-                if pattern in observable_references:
-                    count[indicator_id] += 1
-        max_count = max(count.values())
-        indicator_ids = [
-            key for key, value in count.items() if value == max_count
-        ]
-        if len(indicator_ids) != 1:
-            # multiple hits at this point means it's a weird document
-            self._add_warning(
-                f'Multiple indicators matching observable: {observable.id}'
-            )
-            return tuple(indicator_ids)
-        return indicator_ids[0]
+        self._add_warning(
+            f'Multiple indicators matching observable: {observable.id}'
+        )
+        return tuple(indicator_references)
 
     def _fetch_observable_references(
             self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
