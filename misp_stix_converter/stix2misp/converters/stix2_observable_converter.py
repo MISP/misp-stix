@@ -7,6 +7,7 @@ from .stix2converter import (
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
+from collections import defaultdict
 from pymisp import MISPObject
 from stix2.v20.observables import (
     Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
@@ -34,7 +35,7 @@ from stix2.v21.observables import (
     WindowsRegistryKey as WindowsRegistryKey_v21,
     WindowsRegistryValueType as WindowsRegistryValue_v21,
     X509Certificate as X509Certificate_v21)
-from typing import Iterator, Optional, Tuple, Union
+from typing import Iterator, Optional, Union
 
 # TYPINGS
 _ARTIFACT_TYPING = Union[
@@ -79,14 +80,19 @@ _NETWORK_TRAFFIC_TYPING = Union[
     NetworkTraffic_v20, NetworkTraffic_v21
 ]
 _OBSERVABLE_TYPING = Union[
+    dict,
+    Directory_v20, Directory_v21,
     EmailMessage_v20, EmailMessage_v21,
     Mutex_v20, Mutex_v21,
     NetworkTraffic_v20, NetworkTraffic_v21,
-    WindowsRegistryValue_v20, WindowsRegistryValue_v21,
     Software_v20, Software_v21,
     UNIXAccountExt_v20, UNIXAccountExt_v21,
     URL_v20, URL_v21,
     UserAccount_v20, UserAccount_v21,
+    WindowsExtension_v20, WindowsExtension_v21,
+    WindowsPESection_v20, WindowsPESection_v21,
+    WindowsRegistryValue_v20, WindowsRegistryValue_v21
+]
 ]
 _PROCESS_TYPING = Union[
     Process_v20, Process_v21
@@ -196,8 +202,44 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class STIX2ObservableConverter(STIX2Converter):
+    def _check_indicator_reference(self, reference: str, field: str) ->bool:
+        return field in self.main_parser.indicator_references[reference]
+
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable[object_ref]
+
+    def _get_indicator_reference(self, observable: _OBSERVABLE_TYPING,
+                                 indicator_references: tuple) -> str | tuple:
+        count = defaultdict(int)
+        observable_references = tuple(
+            self.main_parser._fetch_observable_references(observable)
+        )
+        for indicator_id in indicator_references:
+            patterns = self.indicator_references[indicator_id]
+            for pattern in patterns:
+                if pattern in observable_references:
+                    count[indicator_id] += 1
+        max_count = max(count.values())
+        indicator_ids = [
+            key for key, value in count.items() if value == max_count
+        ]
+        # multiple hits at this point means it's a weird document
+        return indicator_ids[0]
+
+    def _handle_hash_attribute(self, indicator_ref: str, hash_type: str,
+                               value: str, object_id: str) -> Iterator[dict]:
+        mapping = self._mapping.file_hashes_mapping(hash_type)
+        if mapping is not None:
+            to_ids = self._check_indicator_reference(
+                indicator_ref, f'{hash_type} - {value}'
+            )
+            attribute = {'to_ids': to_ids, **mapping}
+            yield self._populate_object_attribute(
+                attribute, value,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+        else:
+            self._hash_type_error(hash_type)
 
     def _handle_misp_object_storage(
             self, observable: dict, misp_object: MISPObject):
@@ -208,6 +250,52 @@ class STIX2ObservableConverter(STIX2Converter):
             observable['misp_object'].append(misp_object)
         else:
             observable['misp_object'] = [observable['misp_object'], misp_object]
+
+    def _handle_object_attributes(
+            self, observable: _OBSERVABLE_TYPING, mapping: dict,
+            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+        values = observable[field]
+        if isinstance(values, list):
+            for value in values:
+                to_ids = self._check_indicator_reference(
+                    indicator_ref, f'{field} - {value}'
+                )
+                yield self._populate_object_attribute(
+                    {'to_ids': to_ids, **mapping}, value,
+                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                )
+        else:
+            to_ids = self._check_indicator_reference(
+                indicator_ref, f'{field} - {values}'
+            )
+            yield self._populate_object_attribute(
+                {'to_ids': to_ids, **mapping}, values,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+
+    def _handle_object_attributes_with_data(
+            self, observable: _OBSERVABLE_TYPING, mapping: dict,
+            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+        values = observable[field]
+        if isinstance(values, list):
+            for value in values:
+                to_ids = self._check_indicator_reference(
+                    indicator_ref,
+                    f"{field} - {value['value'] if isinstance(value, dict) else value}"
+                )
+                yield self._populate_object_attribute_with_data(
+                    {'to_ids': to_ids, **mapping}, value,
+                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                )
+        else:
+            to_ids = self._check_indicator_reference(
+                indicator_ref,
+                f"{field} - {values['value'] if isinstance(values, dict) else values}"
+            )
+            yield self._populate_object_attribute_with_data(
+                {'to_ids': to_ids, **mapping}, values,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
 
     def _parse_email_observable(
             self, observable: _EMAIL_MESSAGE_TYPING,
