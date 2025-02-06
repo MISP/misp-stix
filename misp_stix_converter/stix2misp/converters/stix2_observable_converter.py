@@ -226,7 +226,7 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 class STIX2ObservableConverter(STIX2Converter):
     def _check_indicator_reference(self, reference: str, field: str) ->bool:
-        return field in self.main_parser.indicator_references[reference]
+        return field in self.main_parser.indicator_references.get(reference, [])
 
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable[object_ref]
@@ -249,20 +249,20 @@ class STIX2ObservableConverter(STIX2Converter):
         # multiple hits at this point means it's a weird document
         return indicator_ids[0]
 
-    def _handle_hash_attribute(self, indicator_ref: str, hash_type: str,
-                               value: str, object_id: str) -> Iterator[dict]:
-        mapping = self._mapping.file_hashes_mapping(hash_type)
+    def _handle_hash_attribute(
+            self, indicator_ref: str, hash_type: str, value: str,
+            object_id: str, mapping: Optional[str] = 'file') -> dict:
+        mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
         if mapping is not None:
             to_ids = self._check_indicator_reference(
                 indicator_ref, f'{hash_type} - {value}'
             )
             attribute = {'to_ids': to_ids, **mapping}
-            yield self._populate_object_attribute(
+            return self._populate_object_attribute(
                 attribute, value,
                 f'{indicator_ref} - {object_id}' if to_ids else object_id
             )
-        else:
-            self._hash_type_error(hash_type)
+        self._hash_type_error(hash_type)
 
     def _handle_misp_object_storage(
             self, observable: dict, misp_object: MISPObject):
@@ -322,52 +322,58 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_email_observable(
             self, observable: _EMAIL_MESSAGE_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
-        for field, attribute in self._mapping.email_object_mapping().items():
+        for field, mapping in self._mapping.email_object_mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    attribute, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, mapping, indicator_ref, field, object_id
                 )
         if hasattr(observable, 'additional_header_fields'):
             mapping = self._mapping.email_additional_header_fields_mapping
             email_header = observable.additional_header_fields
-            for field, attribute in mapping().items():
+            for field, mapping in mapping().items():
                 if email_header.get(field):
-                    yield from self._populate_object_attributes(
-                        attribute, email_header[field], object_id
+                    yield from self._handle_object_attributes(
+                        email_header, mapping, indicator_ref, field, object_id
                     )
 
     def _parse_email_reference_observable(
-            self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            self, observable: _EMAIL_ADDRESS_TYPING,
+            feature: str, object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
+        mapping = getattr(self._mapping, f'{feature}_attribute')()
         if hasattr(observable, 'display_name'):
-            yield {
-                'value': observable.value,
-                **getattr(self._mapping, f'{feature}_attribute')(),
-                'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - {feature} - {observable.value}'
-                )
-            }
-            relation = f'{feature}-display-name'
-            attribute = getattr(
-                self._mapping, f"{relation.replace('-', '_')}_attribute"
+            yield from self._handle_object_attributes(
+                observable, mapping, indicator_ref, 'value', object_id
             )
-            yield {
-                'value': observable.display_name, **attribute(),
-                'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - {relation} - {observable.display_name}'
-                )
-            }
+            mapping = getattr(
+                self._mapping, f"{feature}_display_name_attribute"
+            )
+            yield from self._handle_object_attributes(
+                observable, mapping, indicator_ref, 'display_name', object_id
+            )
         else:
+            to_ids = self._check_indicator_reference(
+                indicator_ref, f'value - {observable.value}'
+            )
             attribute = {
-                'value': observable.value,
-                **getattr(self._mapping, f'{feature}_attribute')()
+                'value': observable.value, 'to_ids': to_ids, **mapping
             }
-            if hasattr(observable, 'id'):
+            if to_ids:
+                attribute['uuid'] = self.main_parser._create_v5_uuid(
+                    f'{indicator_ref} - {object_id} - '
+                    f'{feature} - {observable.value}'
+                )
+            elif hasattr(observable, 'id'):
                 attribute.update(
                     self.main_parser._sanitise_attribute_uuid(object_id)
                 )
@@ -378,37 +384,36 @@ class STIX2ObservableConverter(STIX2Converter):
             yield attribute
 
     def _parse_file_observable(
-            self, observable: _FILE_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            self, observable: _FILE_TYPING, object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
-                attribute = self._mapping.file_hashes_mapping(hash_type)
-                if attribute is None:
-                    self.main_parser._add_error(
-                        f'Wrong hash_type: {hash_type}'
-                    )
-                    continue
-                yield from self._populate_object_attributes(
-                    attribute, value, object_id
+                yield self._handle_hash_attribute(
+                    indicator_ref, hash_type, value, object_id
                 )
         for field, mapping in self._mapping.file_object_mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes_with_data(
-                    mapping, getattr(observable, field), object_id
+                yield from self._handle_object_attributes_with_data(
+                    observable, mapping, indicator_ref, field, object_id
                 )
     
     def _parse_generic_observable(
-            self, observable: _OBSERVABLE_TYPING, name: str,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            self, observable: _GENERIC_OBSERVABLE_TYPING,
+            name: str, object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
         feature = f'{name}_object_mapping'
         for field, mapping in getattr(self._mapping, feature)().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, mapping, indicator_ref, field, object_id
                 )
 
     def _parse_http_request_observable(
@@ -430,109 +435,103 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_network_socket_observable(
             self, observable: _NETWORK_TRAFFIC_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
         for protocol in observable.protocols:
-            protocol_value = protocol.upper()
-            yield {
-                'value': protocol_value, **self._mapping.protocol_attribute(),
-                'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - protocol - {protocol_value}'
-                )
-            }
+            yield self._populate_object_attribute(
+                self._mapping.protocol_attribute(), protocol.upper(), object_id
+            )
         socket_extension = observable.extensions['socket-ext']
         mapping = self._mapping.network_socket_extension_mapping
         for field, attribute in mapping().items():
             if hasattr(socket_extension, field):
-                yield from self._populate_object_attributes(
-                    attribute, getattr(socket_extension, field), object_id
+                yield from self._handle_object_attributes(
+                    socket_extension, attribute, indicator_ref, field, object_id
                 )
         for feature in ('blocking', 'listening'):
             if getattr(socket_extension, f'is_{feature}', False):
-                yield {
-                    **self._mapping.state_attribute(),
-                    'value': feature, 'uuid': self.main_parser._create_v5_uuid(
-                        f'{object_id} - state - {feature}'
-                    )
-                }
+                yield self._populate_object_attribute(
+                    self._mapping.state_attribute(), feature, object_id
+                )
 
     def _parse_network_traffic_observable(
             self, observable: _NETWORK_TRAFFIC_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
         mapping = self._mapping.network_traffic_object_mapping()
         for field, attribute in mapping.items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    attribute, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, attribute, indicator_ref, field, object_id
                 )
         for protocol in observable.protocols:
-            protocol_value = protocol.upper()
-            yield {
-                'value': protocol_value, **self._mapping.protocol_attribute(),
-                'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - protocol - {protocol_value}'
-                )
-            }
+            yield self._populate_object_attribute(
+                self._mapping.protocol_attribute(), protocol.upper(), object_id
+            )
 
     def _parse_network_traffic_reference_observable(
             self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING,
-            object_id: str, name: Optional[str] = 'network_traffic'):
+            object_id: str, name: Optional[str] = 'network_traffic',
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         attribute = getattr(self._mapping, f'{name}_reference_mapping')(
             f'{observable.type}_{asset}'
         )
         if attribute is not None:
-            yield {
-                'value': observable.value, **attribute,
-                'uuid': self.main_parser._create_v5_uuid(
-                    f"{object_id} - {attribute['object_relation']}"
-                    f' - {observable.value}'
-                )
-            }
+            yield from self._handle_object_attributes(
+                observable, attribute, indicator_ref, 'value', object_id
+            )
 
-    def _parse_pe_extension_observable(self, extension: _EXTENSION_TYPING,
-                                       reference: str) -> Iterator[dict]:
+    def _parse_pe_extension_observable(
+            self, extension: _EXTENSION_TYPING, reference: str,
+            indicator_ref: Optional[str] = '') -> Iterator[dict]:
         if hasattr(extension, 'optional_header'):
             if hasattr(extension.optional_header, 'address_of_entry_point'):
-                yield from self._populate_object_attributes(
+                yield from self._handle_object_attributes(
+                    extension.eptional_jeader,
                     self._mapping.entrypoint_address_attribute(),
-                    extension.optional_header.address_of_entry_point,
-                    reference
+                    indicator_ref, 'address_of_entry_point', reference
                 )
         for field, mapping in self._mapping.pe_object_mapping().items():
             if hasattr(extension, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(extension, field), reference
+                yield from self._handle_object_attributes(
+                    extension, mapping, indicator_ref, field, reference
                 )
 
-    def _parse_pe_section_observable(self, section: _SECTION_TYPING,
-                                     reference: str) -> Iterator[dict]:
+    def _parse_pe_section_observable(
+            self, section: _SECTION_TYPING, reference: str,
+            indicator_ref: Optional[str] = '') -> Iterator[dict]:
         for field, mapping in self._mapping.pe_section_object_mapping().items():
             if hasattr(section, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(section, field), reference
+                yield from self._handle_object_attributes(
+                    section, mapping, indicator_ref, field, reference
                 )
         if hasattr(section, 'hashes'):
             for hash_type, hash_value in section.hashes.items():
-                attribute = self._mapping.file_hashes_mapping(hash_type)
-                if attribute is None:
-                    self.main_parser.hash_type_error(hash_type)
-                    continue
-                yield from self._populate_object_attributes(
-                    attribute, hash_value, reference
+                yield self._handle_hash_attribute(
+                    indicator_ref, hash_type, hash_value, reference
                 )
 
     def _parse_process_observable(
-            self, observable: _PROCESS_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            self, observable: _PROCESS_TYPING, object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
         for field, mapping in self._mapping.process_object_mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, mapping, indicator_ref, field, object_id
                 )
         if hasattr(observable, 'arguments'):
             value = ' '.join(observable.arguments)
@@ -556,41 +555,49 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_registry_key_observable(
             self, observable: _REGISTRY_KEY_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
         mapping = self._mapping.registry_key_object_mapping
         for field, attribute in mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    attribute, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, attribute, indicator_ref, field, object_id
                 )
         if len(observable.get('values', [])) == 1:
-            registry_key_value = observable['values'][0]
+            key_value = observable['values'][0]
             values_mapping = self._mapping.registry_key_values_mapping
             for field, attribute in values_mapping().items():
-                if hasattr(registry_key_value, field):
-                    yield from self._populate_object_attributes(
-                        attribute, getattr(registry_key_value, field), object_id
+                if hasattr(key_value, field):
+                    yield from self._handle_object_attributes(
+                        key_value, attribute, indicator_ref, field, object_id
                     )
 
     def _parse_x509_observable(
             self, observable: _X509_CERTIFICATE_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
         if hasattr(observable, 'hashes'):
             for hash_type, hash_value in observable.hashes.items():
-                attribute = self._mapping.x509_hashes_mapping(hash_type)
-                if attribute is not None:
-                    yield from self._populate_object_attributes(
-                        attribute, hash_value, object_id
-                    )
+                yield self._handle_hash_attribute(
+                    indicator_ref, hash_type, hash_value, object_id, 'x509'
+                )
         for field, mapping in self._mapping.x509_object_mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, mapping, indicator_ref, field, object_id
                 )
+
+    # Errors handling
+    def _hash_type_error(self, hash_type: str):
+        self.main_parser._add_error(f'Wrong hash_type: {hash_type}')
 
 
 class ExternalSTIX2ObservableMapping(
@@ -699,48 +706,68 @@ class ExternalSTIX2ObservableMapping(
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
     def _parse_artifact_observable(
-            self, observable: _ARTIFACT_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            self, observable: _ARTIFACT_TYPING, object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
-        if hasattr(observable, 'payload_bin'):
+        object_relation = 'payload_bin'
+        if hasattr(observable, object_relation):
+            data = observable.payload_bin
+            to_ids = self._check_indicator_reference(
+                indicator_ref, f'{object_relation} - {data}'
+            )
             value = getattr(observable, 'id', object_id.split(' - ')[0])
-            yield from self._populate_object_attributes_with_data(
-                {'type': 'attachment', 'object_relation': 'payload_bin'},
-                {'data': observable.payload_bin, 'value': value.split('--')[1]},
-                object_id
+            attribute = {'object_relation': object_relation, 'to_ids': to_ids}
+            yield from self._populate_object_attribute_with_data(
+                attribute, {'data': data, 'value': value.split('--')[1]},
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
             )
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
-                attribute = self._mapping.file_hashes_mapping(hash_type)
-                if attribute is None:
-                    self.main_parser.hash_type_error(hash_type)
-                    continue
-                yield from self._populate_object_attributes(
-                    attribute, value, object_id
+                yield self._handle_hash_attribute(
+                    indicator_ref, hash_type, value, object_id
                 )
         for field, mapping in self._mapping.artifact_object_mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
+                yield from self._handle_object_attributes_with_data(
+                    observable, mapping, indicator_ref, field, object_id
                 )
 
     def _parse_asn_observable(
             self, observable: _AUTONOMOUS_SYSTEM_TYPING,
-            observed_data_id: Optional[str] = None) -> Iterator:
-        object_id = getattr(observable, 'id', observed_data_id)
-        yield from self._populate_object_attributes(
-            self._mapping.asn_attribute(),
-            self._parse_AS_value(observable.number), object_id
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
+        if object_id is None:
+            object_id = observable.id
+        to_ids = self._check_indicator_reference(
+            indicator_ref,  f'number - {observable.number}'
+        )
+        yield self._populate_object_attribute(
+            {'to_ids': to_ids, **self._mapping.asn_attribute()},
+            self._parser_AS_value(observable.number),
+            f'{indicator_ref} - {object_id}' if to_ids else object_id
         )
         if hasattr(observable, 'name'):
-            yield from self._populate_object_attributes(
-                self._mapping.description_attribute(), observable.name,
-                object_id
+            name_ids = self._check_indicator_reference(
+                indicator_ref, f'name - {observable.name}'
+            )
+            yield self._populate_object_attribute(
+                {'to_ids': name_ids, **self._mapping.description_attribute()},
+                observable.name,
+                f'{indicator_ref} - {object_id}' if name_ids else object_id
             )
 
-    def _parse_domain_observable(self, observable: _DOMAIN_TYPING,
-                                 object_id: Optional[str] = None) -> dict:
+    def _parse_domain_observable(
+            self, observable: _DOMAIN_TYPING, object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> dict:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
+        if object_id is None:
+            object_id = observable.id
         attribute = {
             'value': observable.value, **self._mapping.domain_attribute()
         }
@@ -756,9 +783,17 @@ class ExternalSTIX2ObservableConverter(
 
     def _parse_ip_belonging_to_AS_observable(
             self, observable: _IP_OBSERVABLE_TYPING,
-            object_id: Optional[str] = None) -> dict:
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> dict:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
+        if object_id is None:
+            object_id = observable.id
+        to_ids = self._get_indicator_reference(
+            indicator_ref, f'value - {observable.value}'
+        )
         attribute = {
-            'value': observable.value,
+            'value': observable.value, 'to_ids': to_ids,
             **self._mapping.subnet_announced_attribute()
         }
         if object_id is None:
@@ -772,9 +807,19 @@ class ExternalSTIX2ObservableConverter(
         return attribute
 
     def _parse_ip_observable(self, observable: _IP_OBSERVABLE_TYPING,
-                             object_id: Optional[str] = None) -> dict:
+                             object_id: Optional[str] = None,
+                             indicator_ref: str | tuple = '') -> dict:
+        if isinstance(indicator_ref, tuple):
+            indicator_ref = self._get_indicator_reference(indicator_ref)
+        if object_id is None:
+            object_id = observable.id
+        indicator_ref = self._get_indicator_reference(
+            f'{observable.type} - value - {observable.value}'
+        )
         attribute = {
-            'value': observable.value, **self._mapping.ip_attribute()
+            'value': observable.value,
+            'to_ids': indicator_ref in indicator_refs,
+            **self._mapping.ip_attribute()
         }
         if object_id is None:
             attribute.update(
@@ -1080,7 +1125,7 @@ class InternalSTIX2ObservableConverter(
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
-                    self.main_parser.hash_type_error(hash_type)
+                    self._hash_type_error(hash_type)
                     continue
                 yield from self._populate_object_attributes(
                     attribute, value, object_id
