@@ -93,9 +93,9 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         else:
             galaxy_type = custom_galaxy.x_misp_type
             cluster_args = {
-                'type': galaxy_type,
-                'value': custom_galaxy.x_misp_value,
-                'description': custom_galaxy.x_misp_description
+                'type': galaxy_type, 'value': custom_galaxy.x_misp_value,
+                'description': custom_galaxy.x_misp_description,
+                'uuid': self.main_parser._sanitise_uuid(custom_galaxy.id)
             }
             if hasattr(custom_galaxy, 'x_misp_meta'):
                 cluster_args['meta'] = custom_galaxy.x_misp_meta
