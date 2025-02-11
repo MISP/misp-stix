@@ -399,14 +399,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except ObjectTypeLoadingError as error:
             self._object_type_loading_error(error)
         except UndefinedIndicatorError as error:
-            self._undefined_indicator_error(error)
+            self._add_error(f'Undefined Indicator error: {error}')
         except UndefinedSTIXObjectError as object_id:
             self._add_error(
                 'Unable to define the object identified '
                 f'with the id {object_id}'
             )
         except UndefinedObservableError as error:
-            self._undefined_observable_error(error)
+            self._add_error(f'Undefined Observable error: {error}')
         except UnknownAttributeTypeError as attribute_type:
             self._add_warning(
                 f'MISP attribute type not mapped: {attribute_type}'
