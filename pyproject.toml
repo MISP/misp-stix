@@ -51,7 +51,7 @@ stix-edh = "1.0.3"
 misp-lib-stix2 = "^3.0.1"
 setuptools = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8 = "^3.8.3"
 pytest = "^7.1.2"
 
