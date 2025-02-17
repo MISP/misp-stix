@@ -720,7 +720,7 @@ class ExternalSTIX2ObservableConverter(
             )
             value = getattr(observable, 'id', object_id.split(' - ')[0])
             attribute = {'object_relation': object_relation, 'to_ids': to_ids}
-            yield from self._populate_object_attribute_with_data(
+            yield self._populate_object_attribute_with_data(
                 attribute, {'data': data, 'value': value.split('--')[1]},
                 f'{indicator_ref} - {object_id}' if to_ids else object_id
             )
