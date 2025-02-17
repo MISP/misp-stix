@@ -789,7 +789,7 @@ class ExternalSTIX2ObservableConverter(
             indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
-        to_ids = self._get_indicator_reference(
+        to_ids = self._check_indicator_reference(
             indicator_ref, f'value - {observable.value}'
         )
         attribute = {
@@ -813,12 +813,11 @@ class ExternalSTIX2ObservableConverter(
             indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
-        indicator_ref = self._get_indicator_reference(
-            f'{observable.type} - value - {observable.value}'
+        to_ids = self._check_indicator_reference(
+            indicator_ref, f'value - {observable.value}'
         )
         attribute = {
-            'value': observable.value,
-            'to_ids': indicator_ref in indicator_refs,
+            'value': observable.value, 'to_ids': to_ids,
             **self._mapping.ip_attribute()
         }
         if object_id is None:
