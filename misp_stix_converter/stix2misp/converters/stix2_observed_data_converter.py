@@ -2154,7 +2154,7 @@ class ExternalSTIX2ObservedDataConverter(
             if hasattr(registry_value, field):
                 misp_object.add_attribute(
                     **self._populate_object_attribute(
-                        attribute, object_id, getattr(registry_value, field)
+                        attribute, getattr(registry_value, field), object_id
                     )
                 )
         misp_object = self.main_parser._add_misp_object(
