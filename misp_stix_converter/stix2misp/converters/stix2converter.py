@@ -108,7 +108,7 @@ class STIX2Converter(metaclass=ABCMeta):
                     f" - {value['value']}"
                 )
             }
-        return self._populate_object_attribute(mapping, object_id, value)
+        return self._populate_object_attribute(mapping, value, object_id)
 
     def _populate_object_attributes(
             self, mapping: dict, values: Union[list, str],
