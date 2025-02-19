@@ -359,7 +359,7 @@ class STIX2ObservableConverter(STIX2Converter):
                 self._mapping, f"{feature}_display_name_attribute"
             )
             yield from self._handle_object_attributes(
-                observable, mapping, indicator_ref, 'display_name', object_id
+                observable, mapping(), indicator_ref, 'display_name', object_id
             )
         else:
             to_ids = self._check_indicator_reference(
