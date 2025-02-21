@@ -7,11 +7,12 @@ from .stix2_observable_converter import (
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, Directory, DomainName, EmailMessage, File,
-    NetworkTraffic, Process, Software, UserAccount, WindowsRegistryKey,
+    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
+    EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+    NetworkTraffic, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate)
 from stix2.v21.sdo import Malware
-from typing import Dict, Iterator, Optional, TYPE_CHECKING, Union
+from typing import Iterator, Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -31,6 +32,9 @@ _OBSERVABLE_TYPING = Union[
     Artifact, AutonomousSystem, Directory, DomainName, EmailMessage, File,
     NetworkTraffic, Process, Software, UserAccount, WindowsRegistryKey,
     X509Certificate
+]
+_SINGLE_ATTRIBUTE_OBSERVABLE_TYPING = Union[
+    DomainName, EmailAddress, IPv4Address, IPv6Address, MACAddress, Mutex, URL
 ]
 
 
@@ -232,21 +236,25 @@ class STIX2ObservableObjectConverter(
         self._mapping = ExternalSTIX2ObservableMapping
 
     def _create_misp_attribute(
-            self, attribute_type: str, observable: DomainName,
-            feature: Optional[str] = 'value', comment: Optional[str] = None,
-            indicator_ref: Optional[str] = '',
-            **kwargs: Dict[str, str | bool]) -> MISPAttribute:
+            self, observable: _SINGLE_ATTRIBUTE_OBSERVABLE_TYPING,
+            attribute_type: str, feature: Optional[str] = 'value',
+            comment: Optional[str] = None, indicator_ref: Optional[str] = '',
+            **kwargs: dict[str, str | bool]) -> dict:
+        value = getattr(observable, feature)
         if kwargs.get('to_ids', False):
             attribute = {'type': attribute_type, **kwargs}
             if comment is not None:
                 attribute['comment'] = comment
-            return self._populate_object_attribute(
-                attribute, getattr(observable, feature),
-                f'{indicator_ref} - {observable.id}'
-            )
+            return {
+                'value': value, **attribute,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{indicator_ref} - {observable.id} - '
+                    f'{attribute_type} - {value}'
+                )
+            }
         return {
-            'value': getattr(observable, feature), 'type': attribute_type,
-            **kwargs, **self.main_parser._sanitise_attribute_uuid(
+            'value': value, 'type': attribute_type, **kwargs,
+            **self.main_parser._sanitise_attribute_uuid(
                 observable.id, comment=comment
             )
         }
