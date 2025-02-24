@@ -65,6 +65,40 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
         for object_ref in object_refs:
             yield self.main_parser._observable[object_ref]
 
+    def _create_misp_attribute(
+            self, attribute_type: str, value: str, indicator_ref: str | tuple,
+            object_id: str, single: Optional[bool] = False,
+            **attribute: dict[str, str | bool]) -> dict:
+        if attribute.get('to_ids', False):
+            comment = attribute.pop('comment')
+            attribute['comment'] = f'Indicator ID: {indicator_ref} - {comment}'
+            object_id = f'{indicator_ref} - {object_id}'
+        if not single:
+            object_id = f'{object_id} - {attribute_type} - {value}'
+        return {
+            'type': attribute_type, 'value': value,
+            'uuid': self.main_parser._create_v5_uuid(object_id),
+            **attribute
+        }
+
+    def _create_single_misp_attribute(
+            self, attribute_type: str, value: str, indicator_ref: str | tuple,
+            object_id: str, **attribute: dict[str, str | bool]) -> dict:
+        if attribute.get('to_ids', False):
+            comment = attribute.pop('comment')
+            attribute['comment'] = f'Indicator ID: {indicator_ref} - {comment}'
+            object_id = f'{indicator_ref} - {object_id}'
+            return {
+                'type': attribute_type, 'value': value,
+                'uuid': self.main_parser._create_v5_uuid(object_id),
+                **attribute
+            }
+        return {
+            'type': attribute_type, 'value': value,
+            'uuid': self.main_parser._sanitise_attribute_uuid(object_id),
+            **attribute
+        }
+
     # Errors handling
     def _observable_mapping_error(
             self, observed_data_id: str, observable_types: Exception):
