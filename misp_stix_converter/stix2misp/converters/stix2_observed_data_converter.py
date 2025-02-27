@@ -1697,7 +1697,8 @@ class ExternalSTIX2ObservedDataConverter(
         return self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _parse_ip_address_observable_object_refs(
-            self, observed_data: ObservedData_v21, *object_refs: tuple):
+            self, observed_data: ObservedData_v21, *object_refs: tuple,
+            indicator_refs: Optional[dict] = {}):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
             if observable is None:
@@ -1711,46 +1712,41 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             attribute = self._parse_generic_observable_object_ref_as_attribute(
-                observable['observable'], observed_data, 'ip-dst'
+                observable['observable'], observed_data, 'ip-dst',
+                indicator_ref=indicator_refs.get(object_ref, '')
             )
             observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_ip_address_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
-            observable_objects: Optional[dict] = None):
+            observable_objects: Optional[dict] = None,
+            indicator_refs: Optional[dict] = {}):
         if observable_objects is not None:
             for object_id, observable in observable_objects.items():
                 if observable['used']:
                     continue
                 attribute = self._parse_generic_observable_object_as_attribute(
-                    observed_data, object_id, 'ip-dst'
+                    observed_data, object_id, 'ip-dst',
+                    indicator_ref=indicator_refs.get(object_id, '')
                 )
                 observable.update({'misp_attribute': attribute, 'used': True})
             return
         if len(observed_data.objects) == 1:
-            ip_address = next(iter(observed_data.objects.values()))
-            if ip_address.get('id') is not None:
-                return self._parse_generic_observable_object_ref_as_attribute(
-                    ip_address, observed_data, 'ip-dst'
-                )
-            return self.main_parser._add_misp_attribute(
-                {
-                    'type': 'ip-dst', 'value': ip_address.value,
-                    **self._parse_timeline(observed_data),
-                    **self.main_parser._sanitise_attribute_uuid(
-                        observed_data.id
-                    )
-                },
-                observed_data
+            object_id = next(iter(observed_data.objects.keys()))
+            return self._parse_generic_observable_object_as_attribute(
+                observed_data, object_id, 'ip-dst', single=True,
+                indicator_ref=indicator_refs.get(object_id, '')
             )
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
-                observed_data, identifier, 'ip-dst'
+                observed_data, identifier, 'ip-dst',
+                indicator_ref=indicator_refs.get(identifier, '')
             )
 
     def _parse_mac_address_observable_object_refs(
-            self, observed_data: ObservedData_v21, *object_refs: tuple):
+            self, observed_data: ObservedData_v21, *object_refs: tuple,
+            indicator_refs: Optional[dict] = {}):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
             if observable is None:
@@ -1764,46 +1760,41 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             attribute = self._parse_generic_observable_object_ref_as_attribute(
-                observable['observable'], observed_data, 'mac-address'
+                observable['observable'], observed_data, 'mac-address',
+                indicator_ref=indicator_refs.get(object_ref, '')
             )
             observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_mac_address_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
-            observable_objects: Optional[dict] = None):
+            observable_objects: Optional[dict] = None,
+            indicator_refs: Optional[dict] = {}):
         if observable_objects is not None:
             for object_id, observable in observable_objects.items():
                 if observable['used']:
                     continue
                 attribute = self._parse_generic_observable_object_as_attribute(
-                    observed_data, object_id, 'mac-address'
+                    observed_data, object_id, 'mac-address',
+                    indiiator_ref=indicator_refs.get(object_id, '')
                 )
                 observable.update({'misp_attribute': attribute, 'used': True})
             return
         if len(observed_data.objects) == 1:
-            mac_address = next(iter(observed_data.objects.values()))
-            if mac_address.get('id') is not None:
-                return self._parse_generic_observable_object_ref_as_attribute(
-                    mac_address, observed_data, 'mac-address'
-                )
-            return self.main_parser._add_misp_attribute(
-                {
-                    'type': 'mac-address', 'value': mac_address.value,
-                    **self._parse_timeline(observed_data),
-                    **self.main_parser._sanitise_attribute_uuid(
-                        observed_data.id
-                    )
-                },
-                observed_data
+            object_id = next(iter(observed_data.objects.keys()))
+            return self._parse_generic_observable_object_as_attribute(
+                observed_data, object_id, 'mac-address', single=True,
+                indicator_ref=indicator_refs.get(object_id, '')
             )
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
-                observed_data, identifier, 'mac-address'
+                observed_data, identifier, 'mac-address',
+                indiiator_ref=indicator_refs.get(identifier, '')
             )
 
     def _parse_mutex_observable_object_refs(
-            self, observed_data: ObservedData_v21, *object_refs: tuple):
+            self, observed_data: ObservedData_v21, *object_refs: tuple,
+            indicator_refs: Optional[dict] = {}):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
             if observable is None:
@@ -1817,42 +1808,36 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             attribute = self._parse_generic_observable_object_ref_as_attribute(
-                observable['observable'], observed_data, 'mutex', feature='name'
+                observable['observable'], observed_data, 'mutex',
+                feature='name', indicator_ref=indicator_refs.get(object_ref, '')
             )
             observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_mutex_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
-            observable_objects: Optional[dict] = None):
+            observable_objects: Optional[dict] = None,
+            indicator_refs: Optional[dict] = {}):
         if observable_objects is not None:
             for object_id, observable in observable_objects.items():
                 if observable['used']:
                     continue
                 attribute = self._parse_generic_observable_object_as_attribute(
-                    observed_data, object_id, 'mutex', feature='name'
+                    observed_data, object_id, 'mutex', feature='name',
+                    indicator_ref=indicator_refs.get(object_id, '')
                 )
                 observable.update({'misp_attribute': attribute, 'used': True})
             return
         if len(observed_data.objects) == 1:
-            mutex = next(iter(observed_data.objects.values()))
-            if mutex.get('id') is not None:
-                return self._parse_generic_observable_object_ref_as_attribute(
-                    mutex, observed_data, 'mutex', feature='name'
-                )
-            return self.main_parser._add_misp_attribute(
-                {
-                    'type': 'mutex', 'value': mutex.name,
-                    **self._parse_timeline(observed_data),
-                    **self.main_parser._sanitise_attribute_uuid(
-                        observed_data.id
-                    )
-                },
-                observed_data
+            object_id = next(iter(observed_data.objects.keys()))
+            return self._parse_generic_observable_object_as_attribute(
+                observed_data, object_id, 'mutex', feature='name', single=True,
+                indicator_ref=indicator_refs.get(object_id, '')
             )
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
-                observed_data, identifier, 'mutex', feature='name'
+                observed_data, identifier, 'mutex', feature='name',
+                indicator_ref=indicator_refs.get(identifier, '')
             )
 
     def _parse_network_traffic_observable_object(
@@ -1896,7 +1881,8 @@ class ExternalSTIX2ObservedDataConverter(
         return self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _parse_network_traffic_observable_object_refs(
-            self, observed_data: ObservedData_v21, *object_refs: tuple):
+            self, observed_data: ObservedData_v21, *object_refs: tuple,
+            indicator_refs: Optional[dict] = {}):
         for object_ref in object_refs or observed_data.object_refs:
             if object_ref.split('--')[0] != 'network-traffic':
                 continue
