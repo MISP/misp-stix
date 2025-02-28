@@ -457,7 +457,7 @@ class STIX2ObservableConverter(STIX2Converter):
         if hasattr(extension, 'optional_header'):
             if hasattr(extension.optional_header, 'address_of_entry_point'):
                 yield from self._handle_object_attributes(
-                    extension.eptional_jeader,
+                    extension.optional_header,
                     self._mapping.entrypoint_address_attribute(),
                     indicator_ref, 'address_of_entry_point', reference
                 )
