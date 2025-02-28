@@ -823,7 +823,8 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             attribute = self._parse_generic_observable_object_ref_as_attribute(
-                domain, observed_data, 'domain', indicator_refs=indicator_refs
+                domain, observed_data, 'domain',
+                indicator_ref=indicator_refs.get(object_ref, '')
             )
             observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
@@ -1651,27 +1652,21 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_generic_observable_object_ref_as_attribute(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
             observed_data: _OBSERVED_DATA_TYPING, attribute_type: str,
-            feature: Optional[str] = 'value', value: Optional[str] = None,
-            indicator_refs: Optional[dict] = {}) -> MISPAttribute:
-        comment = (
-            f'Observed Data ID: {observed_data.id} - '
-            f'Observable ID: {observable_object.id}'
-        )
-        object_id = f'{observed_data.id} - {observable_object.id}'
+            feature: Optional[str] = 'value', indicator_ref: str | tuple = '',
+            value: Optional[str] = None) -> MISPAttribute:
+        attribute = self._parse_timeline(observed_data)
+        comment = f'Observed Data ID: {observed_data.id}'
         strict_value = getattr(observable_object, feature)
-        if indicator_refs:
-            key_value = f'{feature} - {strict_value}'
-            if key_value in indicator_refs:
-                indicator_id = self._get_indicator_reference(
-                    f'{observable_object.type} - {key_value}'
-                )
-                return self._add_misp_attribute_from_observable_and_indicator(
-                    attribute_type, value or strict_value, indicator_id,
-                    object_id, comment, observed_data, observable_object
-                )
-        return self._add_misp_attribute_from_observable(
-            attribute_type, value or strict_value, object_id, observed_data,
-            observable_object, comment=comment
+        to_ids = self._check_indicator_reference(
+            indicator_ref, f'{feature} - {strict_value}'
+        )
+        return self.main_parser._add_misp_attribute(
+            self._create_single_misp_attribute(
+                attribute_type, value or strict_value, indicator_ref,
+                observable_object.id, to_ids=to_ids, comment=comment,
+                **attribute
+            ),
+            observed_data
         )
 
     def _parse_generic_single_observable_object(
@@ -2138,7 +2133,7 @@ class ExternalSTIX2ObservedDataConverter(
         if reference in observed_data.object_refs:
             referenced_object = self._parse_generic_observable_object_ref(
                 observable['observable'], observed_data, name, False,
-                oui='oui', indicator_ref=indicator_ref
+                indicator_ref=indicator_ref
             )
             observable['misp_object'] = referenced_object
             observable['used'][self.event_uuid] = True
@@ -2538,30 +2533,36 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             misp_object = self._parse_generic_observable_object_ref(
-                observable['observable'], observed_data, 'x509', False
+                observable['observable'], observed_data, 'x509', False,
+                indicator_ref=indicator_refs.get(object_ref, '')
             )
             observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
 
     def _parse_x509_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
-            observable_objects: Optional[dict] = None):
+            observable_objects: Optional[dict] = None,
+            indicator_refs: Optional[dict] = {}):
         if observable_objects is not None:
             for object_id, observable in observable_objects.items():
                 if observable['used']:
                     continue
                 misp_object = self._parse_generic_observable_object(
-                    observed_data, object_id, 'x509', False
+                    observed_data, object_id, 'x509', False,
+                    indicator_ref=indicator_refs.get(object_id, '')
                 )
                 observable.update({'misp_object': misp_object, 'used': True})
             return
         if len(observed_data.objects) == 1:
             return self._parse_generic_single_observable_object(
-                observed_data, 'x509', False
+                observed_data, 'x509', False, indicator_ref=indicator_refs.get(
+                    next(iter(observed_data.objects.keys()), '')
+                )
             )
         for identifier in observed_data.objects:
             self._parse_generic_observable_object(
-                observed_data, identifier, 'x509', False
+                observed_data, identifier, 'x509', False,
+                indicator_ref=indicator_refs.get(identifier, '')
             )
 
     ############################################################################
@@ -3939,6 +3940,10 @@ class InternalSTIX2ObservedDataConverter(
                 continue
             if any(hasattr(observable, feature) for feature in ref_features):
                 return observable
+
+    def _fetch_observables(self, object_refs: Union[tuple, str]) -> Generator:
+        for object_ref in object_refs:
+            yield self._fetch_observable(object_ref)
 
     @staticmethod
     def _fetch_observables_v20(observed_data: ObservedData_v20):
