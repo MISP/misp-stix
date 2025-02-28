@@ -797,33 +797,35 @@ class ExternalSTIX2ObservableConverter(
             return 'network-socket'
         return 'network-traffic'
 
-    def _parse_url_observable(self, observable: _URL_TYPING,
-                              observed_data_id: str) -> Iterator[dict]:
+    def _parse_url_observable(
+            self, observable: _URL_TYPING,  observed_data_id: str,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
         object_id = getattr(observable, 'id', observed_data_id)
         for field, mapping in self._mapping.url_object_mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, mapping, indicator_ref, field, object_id
                 )
 
     def _parse_user_account_observable(
             self, observable: _USER_ACCOUNT_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
+            object_id: Optional[str] = None,
+            indicator_ref: str | tuple = '') -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         user_account_mapping = self._mapping.user_account_object_mapping
         for field, attribute in user_account_mapping().items():
             if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    attribute, getattr(observable, field), object_id
+                yield from self._handle_object_attributes(
+                    observable, attribute, indicator_ref, field, object_id
                 )
         if 'unix-account-ext' in getattr(observable, 'extensions', {}):
             extension = observable.extensions['unix-account-ext']
             mapping = self._mapping.unix_user_account_extension_object_mapping
             for field, attribute in mapping().items():
                 if hasattr(extension, field):
-                    yield from self._populate_object_attributes(
-                        attribute, getattr(extension, field), object_id
+                    yield from self._handle_object_attributes(
+                        observable, attribute, indicator_ref, field, object_id
                     )
 
 
