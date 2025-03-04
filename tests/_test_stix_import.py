@@ -5,11 +5,12 @@ import json
 from base64 import b64encode
 from collections import defaultdict
 from misp_stix_converter import (
-    ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
-    InternalSTIX2toMISPParser, MISP_org_uuid)
+    ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
+    MISP_org_uuid)
 from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
-from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
+from .update_documentation import (
+    AttributesDocumentationUpdater, ObjectsDocumentationUpdater)
 
 
 class TestSTIX2Bundles:
@@ -379,7 +380,7 @@ class TestSTIX21Import(TestSTIX2Import):
 
 
 class TestExternalSTIX2Import(TestSTIX2Import):
-    _galaxy_name_mapping = ExternalSTIX2toMISPMapping().galaxy_name_mapping
+    _galaxy_name_mapping = ExternalSTIX2Mapping().galaxy_name_mapping
 
     def setUp(self):
         self.parser = ExternalSTIX2toMISPParser()
