@@ -855,10 +855,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
                 "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set.",
                 "icon": "user-secret"
             },
-            "country": {
-                "name": "Country",
-                "description": "Country meta information based on the database provided by geonames.org."
-            },
             "course-of-action": {
                 "name": "Course of Action",
                 "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes.",
@@ -869,14 +865,15 @@ class ExternalSTIX2Mapping(STIX2Mapping):
                 "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor.",
                 "icon": "user-secret"
             },
+            "location": {
+                "name": "Location",
+                "description": "A Location represents a geographic location. The location may be described as any, some or all of the following: region (e.g., North America), civic address (e.g. New York, US), latitude and longitude.",
+                "icon": "globe"
+            },
             "malware": {
                 "name": "Malware",
                 "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim.",
                 "icon": "optin-monster"
-            },
-            "region": {
-                "name": "Regions UN M49",
-                "description": "Regions based on UN M49."
             },
             "sector": {
                 "name": "Sector",
