@@ -3,6 +3,7 @@
 
 from .. import Mapping
 from abc import ABCMeta
+from typing import Union
 
 
 class STIX2toMISPMapping(metaclass=ABCMeta):
@@ -103,15 +104,15 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     }
 
     @classmethod
-    def bundle_to_misp_mapping(cls, field: str) -> str | None:
+    def bundle_to_misp_mapping(cls, field: str) -> Union[str, None]:
         return cls.__bundle_to_misp_mapping.get(field)
 
     @classmethod
-    def identity_references(cls, identity_id: str) -> str | None:
+    def identity_references(cls, identity_id: str) -> Union[str, None]:
         return cls.__identity_references.get(identity_id)
 
     @classmethod
-    def marking_extension_mapping(cls, field: str) -> str | None:
+    def marking_extension_mapping(cls, field: str) -> Union[str, None]:
         return cls.__marking_extension_mapping.get(field)
 
     @classmethod
@@ -131,5 +132,5 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__stix_object_loading_mapping
 
     @classmethod
-    def stix_to_misp_mapping(cls, field: str) -> str | None:
+    def stix_to_misp_mapping(cls, field: str) -> Union[str, None]:
         return cls.__stix_to_misp_mapping.get(field)

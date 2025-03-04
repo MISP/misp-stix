@@ -3,6 +3,7 @@
 
 from .. import Mapping
 from .stix2_mapping import STIX2toMISPMapping
+from typing import Union
 
 
 class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
@@ -30,5 +31,5 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__object_type_refs_to_skip
 
     @classmethod
-    def stix_object_loading_mapping(cls, field: str) -> str | None:
+    def stix_object_loading_mapping(cls, field: str) -> Union[str, None]:
         return cls.__stix_object_loading_mapping.get(field)
