@@ -261,7 +261,8 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         mapping = self._mapping.galaxy_name_mapping(galaxy_type)
         name = mapping['name']
         galaxy_args = {
-            'description': mapping['description'], 'namespace': 'stix'
+            'description': mapping['description'], 'namespace': 'stix',
+            **self.main_parser.cluster_distribution
         }
         if galaxy_type not in ('country', 'region', 'sector'):
             version = getattr(stix_object, 'spec_version', '2.0')
