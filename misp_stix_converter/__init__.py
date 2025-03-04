@@ -30,6 +30,7 @@ from .misp_stix_converter import ( # noqa
 from .misp_stix_converter import _misp_to_stix, _stix_to_misp # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping # noqa
+from .stix2misp import ExternalSTIX2Mapping  # noqa
 from .stix2misp import STIX2PatternParser # noqa
 from .stix2misp import MISP_org_uuid # noqa
 from pathlib import Path

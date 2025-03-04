@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ..exceptions import (
-    ObjectRefLoadingError, ObjectTypeLoadingError, UndefinedSTIXObjectError)
+from ..exceptions import UndefinedSTIXObjectError
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
