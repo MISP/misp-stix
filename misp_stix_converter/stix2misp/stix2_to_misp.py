@@ -851,13 +851,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(sighting, 'description'):
             sighting_args['source'] = sighting.description
         if hasattr(sighting, 'where_sighted_refs'):
-            identity = self._identity[sighting.where_sighted_refs[0]]
-            sighting_args['Organisation'] = {
-                'uuid': self._sanitise_uuid(identity.id),
-                'name': identity.name
-            }
-        misp_sighting.from_dict(**sighting_args)
-        return misp_sighting
+            for reference in sighting.where_sighted_refs:
+                identity = self._identity.get(reference)
+                if identity is None:
+                    continue
+                sighting_args['Organisation'] = {
+                    'uuid': self._sanitise_uuid(identity.id),
+                    'name': identity.name
+                }
+                misp_sighting.from_dict(**sighting_args)
+                return misp_sighting
 
     def _parse_sightings(self):
         for attribute in self.misp_event.attributes:

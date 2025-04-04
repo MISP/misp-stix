@@ -191,7 +191,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             attribute_uuid = self.replacement_uuids[attribute_uuid]
         if attribute_uuid in self._sighting:
             for sighting in self._sighting[attribute_uuid]:
-                attribute.add_sighting(self._parse_sighting(sighting))
+                misp_sighting = self._parse_sighting(sighting)
+                if misp_sighting is not None:
+                    attribute.add_sighting(misp_sighting)
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
@@ -218,8 +220,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         if object_uuid in self._sighting:
             for sighting in self._sighting[object_uuid]:
                 misp_sighting = self._parse_sighting(sighting)
-                for attribute in misp_object.attributes:
-                    attribute.add_sighting(misp_sighting)
+                if misp_sighting is not None:
+                    for attribute in misp_object.attributes:
+                        attribute.add_sighting(misp_sighting)
 
     def _handle_unparsed_content(self):
         if not hasattr(self, '_observable'):
