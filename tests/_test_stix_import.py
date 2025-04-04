@@ -1967,7 +1967,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_tool_galaxy(self, galaxy, tool):
         meta = self._check_galaxy_fields_with_external_id(
-            galaxy, tool, 'mitre-tool', 'Tool'
+            galaxy, tool, 'mitre-tool', 'mitre-tool'
         )
         if hasattr(tool, 'aliases'):
             self.assertEqual(meta['synonyms'], tool.aliases)
