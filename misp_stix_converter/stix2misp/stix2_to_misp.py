@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
 import sys
 from .exceptions import (
     MarkingDefinitionLoadingError, ObjectRefLoadingError,
@@ -398,14 +399,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except ObjectTypeLoadingError as error:
             self._object_type_loading_error(error)
         except UndefinedIndicatorError as error:
-            self._undefined_indicator_error(error)
+            self._add_error(f'Undefined Indicator error: {error}')
         except UndefinedSTIXObjectError as object_id:
             self._add_error(
                 'Unable to define the object identified '
                 f'with the id {object_id}'
             )
         except UndefinedObservableError as error:
-            self._undefined_observable_error(error)
+            self._add_error(f'Undefined Observable error: {error}')
         except UnknownAttributeTypeError as attribute_type:
             self._add_warning(
                 f'MISP attribute type not mapped: {attribute_type}'
@@ -850,13 +851,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(sighting, 'description'):
             sighting_args['source'] = sighting.description
         if hasattr(sighting, 'where_sighted_refs'):
-            identity = self._identity[sighting.where_sighted_refs[0]]
-            sighting_args['Organisation'] = {
-                'uuid': self._sanitise_uuid(identity.id),
-                'name': identity.name
-            }
-        misp_sighting.from_dict(**sighting_args)
-        return misp_sighting
+            for reference in sighting.where_sighted_refs:
+                identity = self._identity.get(reference)
+                if identity is None:
+                    continue
+                sighting_args['Organisation'] = {
+                    'uuid': self._sanitise_uuid(identity.id),
+                    'name': identity.name
+                }
+                misp_sighting.from_dict(**sighting_args)
+                return misp_sighting
 
     def _parse_sightings(self):
         for attribute in self.misp_event.attributes:

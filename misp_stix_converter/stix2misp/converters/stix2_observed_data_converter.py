@@ -61,11 +61,18 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
-    def _fetch_observables(self, object_refs: Union[tuple, str]) -> Generator:
-        for object_ref in object_refs:
-            yield self.main_parser._observable[object_ref]
+    def _fetch_observable(self, object_ref: str) -> Union[dict, None]:
+        return self.main_parser._observable.get(object_ref)
 
     # Errors handling
+    def _missing_observable_object_error(
+            self, observed_data_id: str, observable_object_id: str):
+        self.main_parser._add_error(
+            f'Missing observable object with id {observable_object_id} '
+            'mentioned as object reference in the Observed Data object '
+            f'with id {observed_data_id}.'
+        )
+
     def _observable_mapping_error(
             self, observed_data_id: str, observable_types: Exception):
         self.main_parser._add_error(
@@ -203,6 +210,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_object'], observed_data
@@ -310,6 +322,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_object'], observed_data
@@ -384,6 +401,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable[
@@ -499,6 +521,11 @@ class ExternalSTIX2ObservedDataConverter(
             *contains_refs: tuple) -> Generator:
         for contained_ref in contains_refs:
             contained = self._fetch_observable(contained_ref)
+            if contained is None:
+                self._missing_observable_object_error(
+                    observed_data.id, contained_ref
+                )
+                continue
             if contained['used'].get(self.event_uuid, False):
                 contained_object = contained['misp_object']
                 self._handle_misp_object_fields(contained_object, observed_data)
@@ -541,6 +568,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_object'], observed_data
@@ -591,6 +623,11 @@ class ExternalSTIX2ObservedDataConverter(
             if not object_ref.startswith('domain-name--'):
                 continue
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             domain = observable['observable']
             if hasattr(domain, 'resolves_to_refs'):
                 if observable['used'].get(self.event_uuid, False):
@@ -632,6 +669,11 @@ class ExternalSTIX2ObservedDataConverter(
                 observable['misp_object'] = misp_object
                 for resolved_ref in domain.resolves_to_refs:
                     resolved = self._fetch_observable(resolved_ref)
+                    if resolved is None:
+                        self._missing_observable_object_error(
+                            observed_data.id, resolved_ref
+                        )
+                        continue
                     resolved_observable = resolved['observable']
                     if resolved_observable.type == 'domain-name':
                         if resolved['used'].get(self.event_uuid, False):
@@ -655,6 +697,11 @@ class ExternalSTIX2ObservedDataConverter(
                 if object_ref in self.referenced_ids:
                     for referencing_id in self.referenced_ids[object_ref]:
                         referencing = self._fetch_observable(referencing_id)
+                        if referencing is None:
+                            self._missing_observable_object_error(
+                                observed_data.id, referencing_id
+                            )
+                            continue
                         if referencing['observable'].type != 'domain-name':
                             continue
                         if referencing['used'].get(self.event_uuid, False):
@@ -717,6 +764,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_attribute'], observed_data
@@ -854,6 +906,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 for attribute in observable['misp_attribute']:
                     self._handle_misp_object_fields(attribute, observed_data)
@@ -946,6 +1003,11 @@ class ExternalSTIX2ObservedDataConverter(
             if object_ref.split('--')[0] != 'email-message':
                 continue
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             email_message = observable['observable']
             misp_object = self._parse_generic_observable_object_ref(
                 email_message, observed_data, 'email', False
@@ -954,17 +1016,27 @@ class ExternalSTIX2ObservedDataConverter(
             observable['misp_object'] = misp_object
             if hasattr(email_message, 'from_ref'):
                 observable = self._fetch_observable(email_message.from_ref)
-                attributes = self._parse_email_reference_observable(
-                    observable['observable'], 'from'
-                )
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-                self._handle_misp_object_storage(observable, misp_object)
+                if observable is None:
+                    self._missing_observable_object_error(
+                        observed_data.id, email_message.from_ref
+                    )
+                else:
+                    attributes = self._parse_email_reference_observable(
+                        observable['observable'], 'from'
+                    )
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
+                    self._handle_misp_object_storage(observable, misp_object)
             for feature in ('to', 'cc', 'bcc'):
                 field = f'{feature}_refs'
                 if hasattr(email_message, field):
                     for reference in getattr(email_message, field):
                         observable = self._fetch_observable(reference)
+                        if observable is None:
+                            self._missing_observable_object_error(
+                                observed_data.id, reference
+                            )
+                            continue
                         attributes = self._parse_email_reference_observable(
                             observable['observable'], feature
                         )
@@ -987,6 +1059,11 @@ class ExternalSTIX2ObservedDataConverter(
                     observable = self._fetch_observable(
                         multipart.body_raw_ref
                     )
+                    if observable is None:
+                        self._missing_observable_object_error(
+                            observed_data.id, multipart.body_raw_ref
+                        )
+                        continue
                     if observable['used'].get(self.event_uuid, False):
                         referenced_object = observable['misp_object']
                         self._handle_misp_object_fields(
@@ -1134,13 +1211,18 @@ class ExternalSTIX2ObservedDataConverter(
                 )
             else:
                 parent = self._fetch_observable(parent_ref)
-                parent_object = self._handle_observable_object_refs_parsing(
-                    parent, observed_data, 'directory'
-                )
-                self._handle_misp_object_references(
-                    misp_object, parent_object.uuid,
-                    relationship_type='contained-in'
-                )
+                if parent is None:
+                    self._missing_observable_object_error(
+                        observed_data.id, parent_ref
+                    )
+                else:
+                    parent_object = self._handle_observable_object_refs_parsing(
+                        parent, observed_data, 'directory'
+                    )
+                    self._handle_misp_object_references(
+                        misp_object, parent_object.uuid,
+                        relationship_type='contained-in'
+                    )
         if hasattr(observable_object, 'content_ref'):
             content_ref = observable_object.content_ref
             if content_ref not in observed_data.object_refs:
@@ -1150,13 +1232,18 @@ class ExternalSTIX2ObservedDataConverter(
                 )
             else:
                 content = self._fetch_observable(content_ref)
-                artifact = self._handle_observable_object_refs_parsing(
-                    content, observed_data, 'artifact', False
-                )
-                self._handle_misp_object_references(
-                    artifact, misp_object.uuid,
-                    relationship_type='content-of'
-                )
+                if content is None:
+                    self._missing_observable_object_error(
+                        observed_data.id, content_ref
+                    )
+                else:
+                    artifact = self._handle_observable_object_refs_parsing(
+                        content, observed_data, 'artifact', False
+                    )
+                    self._handle_misp_object_references(
+                        artifact, misp_object.uuid,
+                        relationship_type='content-of'
+                    )
 
     def _parse_file_observable_object_references(
             self, misp_object: MISPObject, file_object: _FILE_TYPING,
@@ -1210,6 +1297,11 @@ class ExternalSTIX2ObservedDataConverter(
         for object_ref in object_refs or observed_data.object_refs:
             object_type = object_ref.split('--')[0]
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             misp_object = self._handle_observable_object_refs_parsing(
                 observable, observed_data, object_type,
                 (object_type == 'directory')
@@ -1422,6 +1514,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_attribute'], observed_data
@@ -1470,6 +1567,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_attribute'], observed_data
@@ -1518,6 +1620,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_attribute'], observed_data
@@ -1608,6 +1715,11 @@ class ExternalSTIX2ObservedDataConverter(
             if object_ref.split('--')[0] != 'network-traffic':
                 continue
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             network_traffic = observable['observable']
             name = self._parse_network_traffic_observable_fields(
                 network_traffic
@@ -1618,9 +1730,13 @@ class ExternalSTIX2ObservedDataConverter(
             feature = f"_parse_{name.replace('-', '_')}_reference_observable"
             for asset in ('src', 'dst'):
                 if hasattr(network_traffic, f'{asset}_ref'):
-                    referenced = self._fetch_observable(
-                        getattr(network_traffic, f'{asset}_ref')
-                    )
+                    reference = getattr(network_traffic, f'{asset}_ref')
+                    referenced = self._fetch_observable(reference)
+                    if referenced is None:
+                        self._missing_observable_object_error(
+                            observed_data.id, reference
+                        )
+                        continue
                     referenced_observable = referenced['observable']
                     attributes = getattr(self, feature)(
                         asset, referenced_observable,
@@ -1632,6 +1748,11 @@ class ExternalSTIX2ObservedDataConverter(
             if hasattr(network_traffic, 'encapsulates_refs'):
                 for reference in network_traffic.encapsulates_refs:
                     encapsulated_observable = self._fetch_observable(reference)
+                    if encapsulated_observable is None:
+                        self._missing_observable_object_error(
+                            observed_data.id, reference
+                        )
+                        continue
                     name = self._parse_network_traffic_observable_fields(
                         encapsulated_observable['observable']
                     )
@@ -1643,6 +1764,11 @@ class ExternalSTIX2ObservedDataConverter(
                 referenced_observable = self._fetch_observable(
                     network_traffic.encapsulated_by_ref
                 )
+                if referenced_observable is None:
+                    self._missing_observable_object_error(
+                        observed_data.id, network_traffic.encapsulated_by_ref
+                    )
+                    continue
                 name = self._parse_network_traffic_observable_fields(
                     referenced_observable['observable']
                 )
@@ -1704,6 +1830,11 @@ class ExternalSTIX2ObservedDataConverter(
         for object_ref in object_refs or observed_data.object_refs:
             object_type = object_ref.split('--')[0]
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             misp_object = self._handle_observable_object_refs_parsing(
                 observable, observed_data, object_type, False
             )
@@ -1798,6 +1929,11 @@ class ExternalSTIX2ObservedDataConverter(
             reference: str, relationship_type: str,
             name: Optional[str] = 'process'):
         observable = self._fetch_observable(reference)
+        if observable is None:
+            self._missing_observable_object_error(
+                observed_data.id, reference
+            )
+            return
         if observable['used'].get(self.event_uuid, False):
             self._handle_misp_object_fields(misp_object, observed_data)
             self._handle_misp_object_references(
@@ -1879,6 +2015,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_object'], observed_data
@@ -1901,6 +2042,11 @@ class ExternalSTIX2ObservedDataConverter(
                 creator_observable = self._fetch_observable(
                     observable_object.creator_user_ref
                 )
+                if creator_observable is None:
+                    self._missing_observable_object_error(
+                        observed_data.id, observable_object.creator_user_ref
+                    )
+                    continue
                 if creator_observable['used'].get(self.event_uuid, False):
                     creator_object = creator_observable['misp_object']
                     self._handle_misp_object_fields(
@@ -2020,6 +2166,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_object'], observed_data
@@ -2056,6 +2207,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_attribute'], observed_data
@@ -2104,6 +2260,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_object'], observed_data
@@ -2140,6 +2301,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
             observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, object_ref
+                )
+                continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
                     observable['misp_object'], observed_data
@@ -2259,6 +2425,17 @@ class InternalSTIX2ObservedDataConverter(
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
 
+    def _fetch_observables(self, observed_data_id: str,
+                           object_refs: Union[tuple, str]) -> Generator:
+        for object_ref in object_refs:
+            observable = self._fetch_observable(object_ref)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data_id, object_ref
+                )
+                continue
+            yield self.main_parser._observable[object_ref]
+
     ############################################################################
     #                        ATTRIBUTES PARSING METHODS                        #
     ############################################################################
@@ -2321,7 +2498,9 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_attachment_observable_v21(
             self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        observables = tuple(self._fetch_observables(observed_data.object_refs))
+        observables = tuple(
+            self._fetch_observables(observed_data.id, observed_data.object_refs)
+        )
         if len(observables) > 1:
             attribute.update(
                 self._attribute_from_attachment_observable(observables)
@@ -2340,7 +2519,9 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_domain_ip_observable_v21(
             self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        domain, address = self._fetch_observables(observed_data.object_refs)
+        domain, address = self._fetch_observables(
+            observed_data.id, observed_data.object_refs
+        )
         attribute['value'] = f'{domain.value}|{address.value}'
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
@@ -2490,7 +2671,9 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_hostname_port_observable_v21(
             self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        domain, network = self._fetch_observables(observed_data.object_refs)
+        domain, network = self._fetch_observables(
+            observed_data.id, observed_data.object_refs
+        )
         attribute['value'] = f'{domain.value}|{network.dst_port}'
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
@@ -2515,7 +2698,7 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_ip_port_observable_v21(
             self, observed_data: ObservedData_v21):
         network, address = self._fetch_observables(
-            observed_data.object_refs
+            observed_data.id, observed_data.object_refs
         )
         self._attribute_from_ip_port_observable(
             network, address.value, observed_data
@@ -2548,7 +2731,9 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_malware_sample_observable_v21(
             self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        observables = tuple(self._fetch_observables(observed_data.object_refs))
+        observables = tuple(
+            self._fetch_observables(observed_data.id, observed_data.object_refs)
+        )
         if len(observables) > 1:
             attribute.update(
                 self._attribute_from_malware_sample_observable(observables)
@@ -2728,8 +2913,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_email_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('email', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable in observables.values():
             if observable.type != 'email-message':
@@ -2828,8 +3015,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_file_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         file_object = self._create_misp_object('file', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable in observables.values():
             if observable.type != 'file':
@@ -2924,8 +3113,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_http_request_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('http-request', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable_id, observable in observables.items():
             object_id = getattr(
@@ -2976,8 +3167,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_image_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('image', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable in observables.values():
             if observable.type == 'file':
@@ -3012,8 +3205,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_ip_port_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('ip-port', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable in observables.values():
             if observable.type == 'network-traffic':
@@ -3072,8 +3267,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_lnk_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('lnk', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable in observables.values():
             if observable.type != 'file':
@@ -3123,8 +3320,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_netflow_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('netflow', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable in observables.values():
             if observable.type != 'network-traffic':
@@ -3175,8 +3374,10 @@ class InternalSTIX2ObservedDataConverter(
 
     def _object_from_network_connection_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable_id, observable in observables.items():
             if observable.type != 'network-traffic':
@@ -3204,8 +3405,10 @@ class InternalSTIX2ObservedDataConverter(
 
     def _object_from_network_socket_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         for observable_id, observable in observables.items():
             if observable.type != 'network-traffic':
@@ -3272,8 +3475,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_process_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('process', observed_data)
-        observables = getattr(self, f'_fetch_observables_with_id_{version}')(
-            observed_data
+        observables = dict(
+            getattr(self, f'_fetch_observables_with_id_{version}')(
+                observed_data
+            )
         )
         main_process = self._fetch_main_process(observables)
         attributes = self._parse_process_observable(
@@ -3516,7 +3721,9 @@ class InternalSTIX2ObservedDataConverter(
         return observables[0] if len(observables) == 1 else observables
 
     def _fetch_observables_v21(self, observed_data: ObservedData_v21):
-        observables = tuple(self._fetch_observables(observed_data.object_refs))
+        observables = tuple(
+            self._fetch_observables(observed_data.id, observed_data.object_refs)
+        )
         return observables[0] if len(observables) == 1 else observables
 
     @staticmethod
@@ -3524,8 +3731,12 @@ class InternalSTIX2ObservedDataConverter(
         return observed_data.objects
 
     def _fetch_observables_with_id_v21(
-            self, observed_data: ObservedData_v21) -> dict:
-        return {
-            reference: self.main_parser._observable[reference]
-            for reference in observed_data.object_refs
-        }
+            self, observed_data: ObservedData_v21) -> Generator:
+        for reference in observed_data.object_refs:
+            observable = self._fetch_observable(reference)
+            if observable is None:
+                self._missing_observable_object_error(
+                    observed_data.id, reference
+                )
+                continue
+            yield reference, observable

@@ -161,17 +161,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self._distribution_value_error(sanitised)
         return 0
 
-    def _sanitise_galaxies_as_tags(
-            self, galaxies_as_tags: Union[bool, str, int]) -> bool:
-        if isinstance(galaxies_as_tags, bool):
-            return galaxies_as_tags
-        if galaxies_as_tags in ('true', 'True', '1', 1):
-            return True
-        if galaxies_as_tags in ('false', 'False', '0', 0):
-            return False
-        self._galaxies_as_tags_error(galaxies_as_tags)
-        return False
-
     def _sanitise_sharing_group_id(
             self, sharing_group_id: Union[int, None]) -> Union[int, None]:
         if sharing_group_id is None:
@@ -190,6 +179,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _set_parameters(self, distribution: int = _DEFAULT_DISTRIBUTION,
                         sharing_group_id: Optional[int] = None,
+                        force_contextual_data: Optional[bool] = False,
                         galaxies_as_tags: Optional[bool] = False,
                         single_event: Optional[bool] = False,
                         producer: Optional[str] = None,
@@ -201,9 +191,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         if self.sharing_group_id is None and self.distribution == 4:
             self.__distribution = 0
             self._distribution_and_sharing_group_id_error()
-        self.__galaxies_as_tags = self._sanitise_galaxies_as_tags(
-            galaxies_as_tags
-        )
+        self.__force_contextual_data = force_contextual_data
+        self.__galaxies_as_tags = galaxies_as_tags
         self.__galaxy_feature = (
             'as_tag_names' if self.galaxies_as_tags else 'as_container'
         )
@@ -229,6 +218,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     @property
     def errors(self) -> dict:
         return self.__errors
+
+    @property
+    def force_contextual_data(self) -> bool:
+        return self.__force_contextual_data
 
     @property
     def galaxies_as_tags(self) -> bool:
@@ -326,11 +319,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     def _distribution_value_error(self, distribution: int):
         self.__errors['init'].add(
             f'Invalid distribution value: {distribution}'
-        )
-
-    def _galaxies_as_tags_error(self, galaxies_as_tags):
-        self.__errors['init'].add(
-            f'Invalid galaxies_as_tags flag: {galaxies_as_tags} (bool expected)'
         )
 
     @staticmethod

@@ -196,9 +196,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class STIX2ObservableConverter(STIX2Converter):
-    def _fetch_observable(self, object_ref: str) -> dict:
-        return self.main_parser._observable[object_ref]
-
     def _handle_misp_object_storage(
             self, observable: dict, misp_object: MISPObject):
         observable['used'][self.event_uuid] = True

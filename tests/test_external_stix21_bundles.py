@@ -978,17 +978,18 @@ _LOCATION_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "sweden",
         "description": "Sweden",
-        "country": "SE"
+        "country": "SE",
+        "region": "northern-europe"
     },
     {
-        "type": "location",
+        "administrative_area": "US-DC",
+        "country": "US",
+        "created": "2021-03-13T20:09:21.286293Z",
+        "id": "location--78a7f0f3-ea60-4ca2-894e-9e825b94b592",
+        "modified": "2021-12-01T16:19:51.601791Z",
+        "name": "District of Columbia",
         "spec_version": "2.1",
-        "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Northern Europe",
-        "description": "Nothern Europe",
-        "region": "northern-europe"
+        "type": "location"
     }
 ]
 _MAC_ADDRESS_ATTRIBUTES = [

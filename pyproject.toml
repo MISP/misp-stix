@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "misp-stix"
-version = "2.4.196.1"
+version = "2025.4.4"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
@@ -16,10 +16,11 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Information Technology',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Topic :: Security'
 ]
 
@@ -40,19 +41,20 @@ include = [
 misp_stix_converter = 'misp_stix_converter:main'
 
 [tool.poetry.dependencies]
-python = "^3.8"
-pymisp = "^2.4.196"
+python = "^3.9"
+pymisp = "^2.5.4"
 stix = "^1.2.0"
 cybox = "^2.1.0"
 mixbox = "^1.0.3"
 maec = "^4.1.0"
 stix-edh = "1.0.3"
 misp-lib-stix2 = "^3.0.1"
+setuptools = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8 = "^3.8.3"
 pytest = "^7.1.2"
 
 [build-system]
-requires = ["poetry_core>=1.2", "setuptools>=65.1.1"]
+requires = ["poetry_core>=1.2", "setuptools"]
 build-backend = "poetry.core.masonry.api"
