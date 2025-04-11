@@ -506,14 +506,14 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "publicsuffixlist"
-version = "1.0.2.20250408"
+version = "1.0.2.20250411"
 description = "publicsuffixlist implement"
 optional = false
 python-versions = ">=3.5"
 groups = ["main"]
 files = [
-    {file = "publicsuffixlist-1.0.2.20250408-py2.py3-none-any.whl", hash = "sha256:61e8f80394d9a4dbf8d73b0e282753debff4bce548679f1fb5a9923b4919bbb2"},
-    {file = "publicsuffixlist-1.0.2.20250408.tar.gz", hash = "sha256:2c36d48261dba30e88448d08dacd9ec91bfd97f854a47f6e6ccc5ccf5ae9e2e2"},
+    {file = "publicsuffixlist-1.0.2.20250411-py2.py3-none-any.whl", hash = "sha256:61929a95b7abbfec1267e1c94fcf9925f6889807a24788bc5da65e2c30cf68b5"},
+    {file = "publicsuffixlist-1.0.2.20250411.tar.gz", hash = "sha256:50ec80f21044f192c2871fb772f1c22ace102b370ae1c03262296d8311543e7f"},
 ]
 
 [package.extras]
@@ -896,14 +896,14 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.3.0"
+version = "2.4.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "urllib3-2.3.0-py3-none-any.whl", hash = "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df"},
-    {file = "urllib3-2.3.0.tar.gz", hash = "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"},
+    {file = "urllib3-2.4.0-py3-none-any.whl", hash = "sha256:4e16665048960a0900c702d4a66415956a584919c03361cac9f1df5c5dd7e813"},
+    {file = "urllib3-2.4.0.tar.gz", hash = "sha256:414bc6535b787febd7567804cc015fee39daab8ad86268f1310a9250697de466"},
 ]
 
 [package.extras]
