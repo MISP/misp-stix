@@ -50,7 +50,7 @@ from stix2.v21.sdo import (
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import (
     Relationship as Relationship_v21, Sighting as Sighting_v21)
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 
 # Some constants
 _LOADED_FEATURES = (
@@ -575,6 +575,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                   MARKING DEFINITIONS PARSING METHODS.                   #
     ############################################################################
 
+    def _parse_acs_access_privilege(
+            self, extension_definition: dict, privilege: dict,
+            privilege_action: str) -> Iterator[str, str]:
+        rule_effect = privilege['rule_effect']
+        yield 'rule_effect', rule_effect
+        if rule_effect == 'permit':
+            extension_definition['tags'].append(
+                f'acs-marking:privilege_action="{privilege_action}"'
+            )
+        for field, scope in privilege['privilege_scope'].items():
+            yield f'privilege_scope.{field}', scope
+
     def _parse_acs_marking_definition(
             self, extension_definition: dict,
             marking_definition: _MARKING_DEFINITION_TYPING,
@@ -593,9 +605,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
             }
         meta = {}
-        for key, value in extension.items():
-            if isinstance(value, dict):
-                for field, subvalues in value.items():
+        for key, values in extension.items():
+            if isinstance(values, dict):
+                for field, subvalues in values.items():
                     if field in self._mapping.marking_vocabularies_fields():
                         if isinstance(subvalues, list):
                             for subvalue in subvalues:
@@ -609,37 +621,41 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     meta[f'{key}.{field}'] = subvalues
                 continue
             if key == 'access_privilege':
-                if len(value) == 1:
-                    access_privilege = value[0]
-                    for feature, privilege in access_privilege.items():
-                        if isinstance(privilege, dict):
-                            for field, scope in privilege.items():
-                                meta[f'{key}.{feature}.{field}'] = scope
-                            continue
-                        if (feature == 'privilege_action' and
-                                access_privilege['rule_effect'] == 'permit'):
-                            extension_definition['tags'].append(
-                                f'acs-marking:{feature}="{privilege}"'
-                            )
-                        meta[f'{key}.{feature}'] = privilege
+                if len(values) == 1:
+                    privilege = values[0]
+                    privilege_action = privilege['privilege_action']
+                    meta[f'{key}.privilege_action'] = privilege_action
+                    entries = self._parse_acs_access_privilege(
+                        extension_definition, privilege, privilege_action
+                    )
+                    for field, value in dict(entries):
+                        meta[f'{key}.{field}'] = value
                     continue
-                for privilege in value:
-                    feature = f"{key}.{privilege['privilege_action']}"
-                    for field, scope in privilege['privilege_scope'].items():
-                        meta[f'{feature}.privilege_scope.{field}'] = scope
-                    meta[f'{feature}.rule_effect'] = privilege['rule_effect']
+                privileges = {}
+                for privilege in values:
+                    privilege_action = privilege['privilege_action']
+                    privileges[privilege_action] = dict(
+                        self._parse_acs_access_privilege(
+                            extension_definition, privilege, privilege_action
+                        )
+                    )
+                meta[f'{key}.privilege_action'] = list(privileges.keys())
+                for privilege_action, privilege in privileges.items():
+                    feature = f"{key}.{privilege_action}"
+                    for field, value in privilege.items():
+                        meta[f'{feature}.{field}'] = value
                 continue
             if key == 'further_sharing':
-                if len(value) == 1:
-                    for field, subvalue in value[0].items():
+                if len(values) == 1:
+                    for field, subvalue in values[0].items():
                         meta[f'{key}.{field}'] = subvalue
                     continue
-                for sharing in value:
+                for sharing in values:
                     feature = f"{key}.{sharing['rule_effect']}"
                     meta[f"{feature}.sharing_scope"] = sharing['sharing_scope']
                 continue
             if key != 'extension_type':
-                meta[key] = value
+                meta[key] = values
         galaxy_cluster = self._create_misp_galaxy_cluster(
             collection_uuid=self._create_v5_uuid(name),
             meta=meta, type=f'stix-{version}-acs-marking',
