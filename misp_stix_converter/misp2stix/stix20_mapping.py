@@ -22,10 +22,13 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     __cluster_to_stix_object = dict(MISPtoSTIX2Mapping.cluster_to_stix_object())
     __galaxy_types_mapping = dict(MISPtoSTIX2Mapping.galaxy_types_mapping())
     for galaxy_type in MISPtoSTIX2Mapping.generic_galaxy_types():
-        key = f'stix-2.0-{galaxy_type}'
-        __cluster_to_stix_object[key] = galaxy_type
-        feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
-        __galaxy_types_mapping[key] = feature
+        for version in ('2.0', '2.1'):
+            key = f'stix-{version}-{galaxy_type}'
+            __cluster_to_stix_object[key] = galaxy_type
+            feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
+            __galaxy_types_mapping[key] = feature
+    __cluster_to_stix_object = Mapping(**__cluster_to_stix_object)
+    __galaxy_types_mapping = Mapping(**__galaxy_types_mapping)
     __malware_sample_additional_observable_values = {
         "mime_type": "application/zip"
     }
