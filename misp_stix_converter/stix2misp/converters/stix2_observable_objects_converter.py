@@ -35,6 +35,8 @@ _OBSERVABLE_TYPING = Union[
 
 
 class STIX2SampleObervableParser(metaclass=ABCMeta):
+    def _fetch_observable(self, object_ref: str) -> dict:
+        return self.main_parser._observable[object_ref]
 
     def _parse_artifact_observable_object(
             self, artifact_ref: str, *args) -> MISPObject:
@@ -234,9 +236,6 @@ class STIX2ObservableObjectConverter(
             misp_object, observable.get('id')
         )
         return misp_object
-
-    def _fetch_observable(self, object_ref: str) -> dict:
-        return self.main_parser._observable[object_ref]
 
     def _parse_as_observable_object(self, as_ref: str) -> _MISP_CONTENT_TYPING:
         observable = self._fetch_observable(as_ref)
