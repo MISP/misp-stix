@@ -51,7 +51,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'reference_from_CAPEC'
     )
     __generic_galaxy_types = (
-        'attack-pattern', 'campaign', 'course-of-actiion', 'intrusion-set',
+        'attack-pattern', 'campaign', 'course-of-action', 'intrusion-set',
         'malware', 'threat-actor', 'tool', 'vulnerability'
     )
     __misp_identity_args = Mapping(
