@@ -167,7 +167,10 @@ _CAMPAIGN_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "admin@338",
+        "name": "RRN",
+        "aliases": [
+            "Doppelganger"
+        ],
         "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors.",
         "first_seen": "2020-10-25T16:22:00.000Z"
     },

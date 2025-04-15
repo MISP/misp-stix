@@ -103,11 +103,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, event_campaign, indicator, attribute_campaign, _ = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_campaign)
-        self.assertEqual(meta, {})
+        self.assertEqual(meta, {'synonyms': event_campaign.aliases})
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        self._check_galaxy_features(attribute.galaxies, attribute_campaign),
+        meta = self._check_galaxy_features(attribute.galaxies, attribute_campaign)
         self.assertEqual(meta, {})
 
     def test_stix21_bundle_with_course_of_action_galaxy(self):
