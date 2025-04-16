@@ -5804,6 +5804,18 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
+    def _check_attack_pattern_meta_fields(self, stix_object, meta):
+        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
+        if meta.get('refs') is not None:
+            for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
+                self.assertEqual(external_ref.url, ref)
+        for killchain_phase, killchain in zip(stix_object.kill_chain_phases, meta['kill_chain']):
+            killchain_name, *_, phase_name = killchain.split(':')
+            self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
+            self.assertEqual(killchain_phase.phase_name, phase_name)
+        if meta.get('synonyms') is not None:
+            self.assertEqual(stix_object.aliases, meta['synonyms'])
+
     def _check_location_meta_fields(self, stix_object, meta):
         for key, values in meta.items():
             self.assertEqual(getattr(stix_object, f'x_misp_{key}'), values)
@@ -5982,6 +5994,22 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             )
         )
 
+    def test_event_with_custom_attack_pattern_20_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.0')
+        self._test_event_with_attack_pattern_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            attack_pattern = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_attack_pattern_21_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.1')
+        self._test_event_with_attack_pattern_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            attack_pattern = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()
         self._test_event_with_custom_galaxy(event['Event'])
@@ -6069,6 +6097,18 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_course_of_action_galaxy(misp_event)
+
+    def test_event_with_custom_attack_pattern_20_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_attack_pattern_galaxy(misp_event)
+
+    def test_event_with_custom_attack_pattern_21_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_attack_pattern_galaxy(misp_event)
 
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()

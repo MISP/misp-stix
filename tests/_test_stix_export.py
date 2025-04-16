@@ -92,15 +92,6 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
-    def _check_attack_pattern_meta_fields(self, stix_object, meta):
-        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
-        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
-            self.assertEqual(external_ref.url, ref)
-        for killchain_phase, killchain in zip(stix_object.kill_chain_phases, meta['kill_chain']):
-            killchain_name, *_, phase_name = killchain.split(':')
-            self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
-            self.assertEqual(killchain_phase.phase_name, phase_name)
-
     def _check_attack_pattern_object(self, attack_pattern, misp_object, identity_id):
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self.assertEqual(attack_pattern.created_by_ref, identity_id)

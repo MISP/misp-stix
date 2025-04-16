@@ -85,10 +85,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             meta['external_id'],
             event_ap.external_references[0].external_id
         )
+        self.assertEqual(meta['synonyms'], event_ap.aliases)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        self._check_galaxy_features(attribute.galaxies, attribute_ap)
+        meta = self._check_galaxy_features(attribute.galaxies, attribute_ap)
         killchain = attribute_ap.kill_chain_phases[0]
         self.assertEqual(
             meta['kill_chain'],

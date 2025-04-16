@@ -964,6 +964,27 @@ _TEST_COURSE_OF_ACTION_GALAXY = {
     ]
 }
 
+_TEST_CUSTOM_ATTACK_PATTERN_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "external_id": "CAPEC-163",
+                "kill_chain": [
+                    "mandiant-attack-lifecycle-model:initial-compromise"
+                ],
+                "synonyms": [
+                    "Spear Phishing"
+                ]
+            },
+            "uuid": "ef6eb51e-e601-5d4f-8aad-124c4f5507b0",
+            "value": "Spear Phishing Attack Pattern used by admin@338",
+            "description": "The preferred attack vector used by admin@338 is spear-phishing emails. Using content that is relevant to the target, these emails are designed to entice the target to open an attachment that contains the malicious PIVY server code."
+        }
+    ],
+    "description": "Attack Patterns are a type of TTP that describe ways that adversaries attempt to compromise targets. Attack Patterns are used to help categorize attacks, generalize specific attacks to the patterns that they follow, and provide detailed information about how attacks are performed.",
+    "uuid": "2d018cbb-4236-53c8-aeba-0aa1b51e636e"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3323,6 +3344,20 @@ def get_event_with_course_of_action_galaxy():
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
+    return event
+
+
+def get_event_with_custom_attack_pattern_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_ATTACK_PATTERN_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-attack-pattern'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-attack-pattern',
+            'name': f'STIX {version} Attack Pattern'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
     return event
 
 

@@ -285,6 +285,9 @@ _ATTACK_PATTERN_OBJECTS = [
         ],
         "name": "Spear Phishing Attack Pattern used by admin@338",
         "description": "The preferred attack vector used by admin@338 is spear-phishing emails. Using content that is relevant to the target, these emails are designed to entice the target to open an attachment that contains the malicious PIVY server code.",
+        "aliases": [
+            "Spear Phishing"
+        ],
         "kill_chain_phases": [
             {
                 "kill_chain_name": "mandiant-attack-lifecycle-model",
