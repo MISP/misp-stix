@@ -1004,6 +1004,24 @@ _TEST_CUSTOM_CAMPAIGN_GALAXY = {
     "uuid": "3d29c2ad-cb5a-5173-8ef6-1afd3bd2ed34"
 }
 
+_TEST_CUSTOM_COURSE_OF_ACTION_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "external_id": "T1203",
+                "refs": [
+                    "https://attack.mitre.org/mitigations/T1203"
+                ]
+            },
+            "uuid": "58334ddd-728f-575a-a0df-b211ef74f679",
+            "value": "Exploitation for Client Execution Mitigation",
+            "description": "Browser sandboxes can be used to mitigate some of the impact of exploitation, but sandbox escapes may still exist"
+        }
+    ],
+    "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes.",
+    "uuid": "e0b51d22-4971-5444-879c-317f5bfa959e"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3388,6 +3406,20 @@ def get_event_with_custom_campaign_galaxy(version: str):
         {
             'type': f'stix-{version}-campaign',
             'name': f'STIX {version} Campaign'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_course_of_action_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_COURSE_OF_ACTION_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-course-of-action'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-course-of-action',
+            'name': f'STIX {version} Course of Action'
         }
     )
     event['Event']['Galaxy'] = [custom_galaxy]

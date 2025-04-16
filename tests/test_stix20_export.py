@@ -4768,6 +4768,22 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             campaign = self.parser.stix_objects[-1]
         )
 
+    def test_event_with_custom_course_of_action_20_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.0')
+        self._test_event_with_course_of_action_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            course_of_action = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_course_of_action_21_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.1')
+        self._test_event_with_course_of_action_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            course_of_action = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()
         self._test_event_with_custom_galaxy(event['Event'])
@@ -4864,6 +4880,18 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_campaign_galaxy(misp_event)
+
+    def test_event_with_custom_course_of_action_20_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_course_of_action_galaxy(misp_event)
+
+    def test_event_with_custom_course_of_action_21_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_course_of_action_galaxy(misp_event)
 
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()
