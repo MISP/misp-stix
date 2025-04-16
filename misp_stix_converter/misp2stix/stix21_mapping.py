@@ -48,8 +48,8 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         **MISPtoSTIX2Mapping.galaxy_types_mapping()
     }
     for galaxy_type in MISPtoSTIX2Mapping.generic_galaxy_types():
-        for version in ():
-            key = f'stix-2.1-{galaxy_type}'
+        for version in ('2.0', '2.1'):
+            key = f'stix-{version}-{galaxy_type}'
             __cluster_to_stix_object[key] = galaxy_type
             feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
             __galaxy_types_mapping[key] = feature
