@@ -234,6 +234,11 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'Technique ID': '_parse_external_id'
         }
     )
+    __campaign_meta_mapping = Mapping(
+        synonyms='_parse_synonyms_meta_field'
+    )
+    __generic_meta_fields = (
+        'first_seen', 'last_seen', 'objective'
     )
     __intrusion_set_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
@@ -913,6 +918,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         return cls.__attribute_types_mapping
 
     @classmethod
+    def campaign_meta_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__campaign_meta_mapping.get(field)
+
+    @classmethod
     def cluster_to_stix_object(cls) -> dict:
         return cls.__cluster_to_stix_object
 
@@ -1011,6 +1020,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def generic_galaxy_types(cls) -> tuple:
         return cls.__generic_galaxy_types
+
+    @classmethod
+    def generic_meta_fields(cls) -> tuple:
+        return cls.__generic_meta_fields
 
     @classmethod
     def github_user_data_fields(cls) -> tuple:

@@ -3053,6 +3053,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_refs = self._parse_attack_pattern_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
+    def _parse_campaign_attribute_galaxy(
+            self, galaxy: MISPGalaxy | dict,
+            object_id: str, timestamp: datetime):
+        object_refs = self._parse_campaign_galaxy(galaxy)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
+
+    def _parse_campaign_event_galaxy(self, galaxy: MISPGalaxy | dict):
+        object_refs = self._parse_campaign_galaxy(galaxy, self.event_timestamp)
+        self._handle_object_refs(object_refs)
+
+    def _parse_campaign_galaxy(
+            self, galaxy: MISPGalaxy | dict,
+            timestamp: Optional[datetime] = None) -> list:
+        object_refs = []
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            campaign_id = f"campaign--{cluster['uuid']}"
+            campaign_args = self._create_galaxy_args(
+                cluster, galaxy['name'], campaign_id, timestamp
+            )
+            campaign = self._create_campaign(campaign_args)
+            self._append_SDO_without_refs(campaign)
+            object_refs.append(campaign_id)
+            self.__ids[cluster['uuid']] = campaign_id
+        return object_refs
+
+    def _parse_campaign_parent_galaxy(self, galaxy: MISPGalaxy | dict):
+        object_refs = self._parse_campaign_galaxy(galaxy)
+        self._handle_object_refs(object_refs)
+
     def _parse_course_of_action_attribute_galaxy(
             self, galaxy: Union[MISPGalaxy, dict],
             object_id: str, timestamp: datetime):
@@ -3211,6 +3244,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         meta_args = defaultdict(list)
         field = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
+            if key in self._mapping.generic_meta_fields():
+                meta_args[key] = values
+                continue
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
                 self._parse_external_references(meta_args, values, feature)
