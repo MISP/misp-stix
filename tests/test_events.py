@@ -985,6 +985,25 @@ _TEST_CUSTOM_ATTACK_PATTERN_GALAXY = {
     "uuid": "2d018cbb-4236-53c8-aeba-0aa1b51e636e"
 }
 
+_TEST_CUSTOM_CAMPAIGN_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "synonyms": [
+                    "Doppelganger"
+                ],
+                "last_seen": "2020-10-25T16:22:00Z",
+                "objective": "manipulation"
+            },
+            "uuid": "0dd0896b-8834-5025-a4d4-c0f4bbf7d403",
+            "value": "RRN",
+            "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors."
+        }
+    ],
+    "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set.",
+    "uuid": "3d29c2ad-cb5a-5173-8ef6-1afd3bd2ed34"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3355,6 +3374,20 @@ def get_event_with_custom_attack_pattern_galaxy(version: str):
         {
             'type': f'stix-{version}-attack-pattern',
             'name': f'STIX {version} Attack Pattern'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_campaign_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_CAMPAIGN_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-campaign'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-campaign',
+            'name': f'STIX {version} Campaign'
         }
     )
     event['Event']['Galaxy'] = [custom_galaxy]

@@ -83,12 +83,14 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, event_campaign, indicator, attribute_campaign, _ = bundle.objects
         self._check_misp_event_features(event, report)
         meta = self._check_galaxy_features(event.galaxies, event_campaign)
-        self.assertEqual(meta, {'synonyms': event_campaign.aliases})
+        self.assertEqual(meta['synonyms'], event_campaign.aliases)
+        self.assertEqual(meta['objective'], event_campaign.objective)
+        self.assertEqual(meta['first_seen'], event_campaign.first_seen)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         meta = self._check_galaxy_features(attribute.galaxies, attribute_campaign)
-        self.assertEqual(meta, {})
+        self.assertEqual(meta, {'first_seen': attribute_campaign.first_seen})
 
     def test_stix20_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_course_of_action_galaxy()

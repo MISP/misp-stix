@@ -171,6 +171,7 @@ _CAMPAIGN_OBJECTS = [
         "aliases": [
             "Doppelganger"
         ],
+        "objective": "manipulation",
         "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors.",
         "first_seen": "2020-10-25T16:22:00.000Z"
     },

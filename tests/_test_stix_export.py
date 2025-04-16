@@ -164,6 +164,13 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
+    def _check_campaign_meta_fields(self, stix_object, meta):
+        self.assertEqual(stix_object.aliases, meta['synonyms'])
+        self.assertEqual(
+            stix_object.last_seen, self._datetime_from_str(meta['last_seen'])
+        )
+        self.assertEqual(stix_object.objective, meta['objective'])
+
     def _check_course_of_action_meta_fields(self, stix_object, meta):
         self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):

@@ -4620,6 +4620,15 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self._check_galaxy_features(attack_pattern, galaxy, timestamp)
 
+    def _test_event_with_campaign_galaxy(self, event):
+        galaxy = event['Galaxy'][0]
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        campaign = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(campaign.type, 'campaign')
+        self._check_galaxy_features(campaign, galaxy, timestamp)
+
     def _test_event_with_course_of_action_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -4743,6 +4752,22 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             attack_pattern = self.parser.stix_objects[-1]
         )
 
+    def test_event_with_custom_campaign_20_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.0')
+        self._test_event_with_campaign_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            campaign = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_campaign_21_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.1')
+        self._test_event_with_campaign_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            campaign = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()
         self._test_event_with_custom_galaxy(event['Event'])
@@ -4827,6 +4852,18 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_attack_pattern_galaxy(misp_event)
+
+    def test_event_with_custom_campaign_20_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_campaign_galaxy(misp_event)
+
+    def test_event_with_custom_campaign_21_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_campaign_galaxy(misp_event)
 
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()
