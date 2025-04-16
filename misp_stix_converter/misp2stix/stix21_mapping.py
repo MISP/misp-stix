@@ -55,6 +55,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             __galaxy_types_mapping[key] = feature
     __cluster_to_stix_object = Mapping(**__cluster_to_stix_object)
     __galaxy_types_mapping = Mapping(**__galaxy_types_mapping)
+    __attack_pattern_meta_mapping = Mapping(
+        kill_chain='_parse_kill_chain',
+        synonyms='_parse_synonyms_meta_field'
+    )
     __malware_sample_additional_observable_values = Mapping(
         mime_type="application/zip",
         encryption_algorithm="mime-type-indicated",
@@ -308,6 +312,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def annotation_single_fields(cls) -> tuple:
         return cls.__annotation_single_fields
+
+    @classmethod
+    def attack_pattern_meta_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__attack_pattern_meta_mapping.get(field)
 
     @classmethod
     def attribute_types_mapping(cls, field) -> Union[str, None]:

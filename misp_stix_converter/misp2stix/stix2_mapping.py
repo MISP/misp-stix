@@ -234,8 +234,6 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'Technique ID': '_parse_external_id'
         }
     )
-    __attack_pattern_meta_mapping = Mapping(
-        kill_chain='_parse_kill_chain'
     )
     __intrusion_set_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
@@ -897,10 +895,6 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def as_single_fields(cls) -> tuple:
         return cls.__as_single_fields
-
-    @classmethod
-    def attack_pattern_meta_mapping(cls, field: str) -> Union[str, None]:
-        return cls.__attack_pattern_meta_mapping.get(field)
 
     @classmethod
     def attack_pattern_object_mapping(cls) -> dict:
