@@ -3242,7 +3242,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_meta_fields(
             self, cluster_meta: dict, object_type: str, value: str) -> dict:
         meta_args = defaultdict(list)
-        field = f"{object_type.replace('-', '_')}_meta_mapping"
+        mapping = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
             if key in self._mapping.generic_meta_fields():
                 meta_args[key] = values
@@ -3251,7 +3251,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if feature is not None:
                 self._parse_external_references(meta_args, values, feature)
                 continue
-            to_call = getattr(self._mapping, field)(key)
+            to_call = getattr(self._mapping, mapping)(key)
             if to_call is not None:
                 args = [
                     meta_args, values if isinstance(values, list) else [values]

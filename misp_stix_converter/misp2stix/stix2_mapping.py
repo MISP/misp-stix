@@ -238,7 +238,8 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         synonyms='_parse_synonyms_meta_field'
     )
     __generic_meta_fields = (
-        'first_seen', 'last_seen', 'objective'
+        'first_seen', 'goals', 'last_seen', 'objective', 'primary_motivation',
+        'resource_level', 'secondary_motivations'
     )
     __intrusion_set_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
