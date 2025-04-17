@@ -656,6 +656,9 @@ _INTRUSION_SET_OBJECTS = [
         "name": "APT1",
         "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006.",
         "first_seen": "2020-10-25T16:22:00.000Z",
+        "goals": [
+            "Gather information on victims"
+        ],
         "resource_level": "government",
         "primary_motivation": "organizational-gain",
         "aliases": [

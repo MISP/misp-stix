@@ -121,6 +121,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_misp_event_features(event, report)
         meta = self._check_galaxy_features(event.galaxies, event_is)
         self.assertEqual(meta['synonyms'], event_is.aliases)
+        self.assertEqual(meta['goals'], event_is.goals)
         self.assertEqual(meta['resource_level'], event_is.resource_level)
         self.assertEqual(meta['primary_motivation'], event_is.primary_motivation)
         self.assertEqual(len(event.attributes), 1)

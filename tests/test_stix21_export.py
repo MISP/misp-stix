@@ -6055,6 +6055,22 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         event = get_event_with_custom_galaxy()
         self._test_event_with_custom_galaxy(event['Event'])
 
+    def test_event_with_custom_intrusion_set_20_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.0')
+        self._test_event_with_intrusion_set_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            intrusion_set = self.parser.stix_objects[-1],
+        )
+
+    def test_event_with_custom_intrusion_set_21_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.1')
+        self._test_event_with_intrusion_set_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            intrusion_set = self.parser.stix_objects[-1],
+        )
+
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
         self._test_event_with_intrusion_set_galaxy(event['Event'])
@@ -6180,6 +6196,18 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_galaxy(misp_event)
+
+    def test_event_with_custom_intrusion_set_20_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_intrusion_set_galaxy(misp_event)
+
+    def test_event_with_custom_intrusion_set_21_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_intrusion_set_galaxy(misp_event)
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()

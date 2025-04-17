@@ -1022,6 +1022,30 @@ _TEST_CUSTOM_COURSE_OF_ACTION_GALAXY = {
     "uuid": "e0b51d22-4971-5444-879c-317f5bfa959e"
 }
 
+_TEST_CUSTOM_INTRUSION_SET_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "synonyms": [
+                    "Comment Crew",
+                    "Comment Group",
+                    "Shady Rat"
+                ],
+                "goals": [
+                    "Gather information on victims"
+                ],
+                "primary_motivation": "organizational-gain",
+                "resource_level": "government"
+            },
+            "uuid": "86ddf25a-5c34-52c8-a9c3-07a06f3cc5d3",
+            "value": "APT1",
+            "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006."
+        }
+    ],
+    "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor.",
+    "uuid": "7205e3fa-e1eb-5215-a68f-35ab2b4eb87d"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3431,6 +3455,20 @@ def get_event_with_custom_galaxy():
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_TEA_MATRIX_GALAXY)
     ]
+    return event
+
+
+def get_event_with_custom_intrusion_set_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_INTRUSION_SET_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-intrusion-set'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-intrusion-set',
+            'name': f'STIX {version} Intrusion Set'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
     return event
 
 

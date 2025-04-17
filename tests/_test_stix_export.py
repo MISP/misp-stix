@@ -299,14 +299,24 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_intrusion_set_meta_fields(self, stix_object, meta):
         aliases = [
-            synonym for synonym in meta['synonyms']
+            synonym for synonym in meta.get('synonyms', [])
             if synonym != stix_object.name
         ]
         if aliases:
             self.assertEqual(stix_object.aliases, aliases)
-        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
-        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
-            self.assertEqual(external_ref.url, ref)
+        if meta.get('external_id') is not None:
+            external_ref, *external_refs = stix_object.external_references
+            self.assertEqual(external_ref.external_id, meta['external_id'])
+            for external_ref, ref in zip(external_refs, meta['refs']):
+                self.assertEqual(external_ref.url, ref)
+        if meta.get('goals') is not None:
+            self.assertEqual(stix_object.goals, meta['goals'])
+        if meta.get('primary_motivation') is not None:
+            self.assertEqual(
+                stix_object.primary_motivation, meta['primary_motivation']
+            )
+        if meta.get('resource_level') is not None:
+            self.assertEqual(stix_object.resource_level, meta['resource_level'])
 
     def _check_intrusion_set_object(self, intrusion_set, misp_object, identity_id):
         self.assertEqual(intrusion_set.type, 'intrusion-set')
