@@ -3186,6 +3186,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _parse_kill_chain(meta_args: dict, values: list):
+        if not isinstance(values, list):
+            values = [values]
         for value in values:
             name, *_, phase = value.split(':')
             meta_args['kill_chain_phases'].append(
@@ -3253,9 +3255,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             to_call = getattr(self._mapping, mapping)(key)
             if to_call is not None:
-                args = [
-                    meta_args, values if isinstance(values, list) else [values]
-                ]
+                args = [meta_args, values]
                 if 'synonyms' in to_call:
                     args.append(value)
                 getattr(self, to_call)(*args)
@@ -3267,6 +3267,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_synonyms_21_meta_field(
             self, meta_args: dict, values: list, cluster_value: str):
+        if not isinstance(values, list):
+            values = [values]
         aliases = [value for value in values if value != cluster_value]
         if aliases:
             feature = 'aliases' if self._version == '2.1' else 'x_misp_synonyms'
@@ -3275,6 +3277,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _parse_synonyms_meta_field(
         meta_args: dict, values: list, cluster_value: str):
+        if not isinstance(values, list):
+            values = [values]
         aliases = [value for value in values if value != cluster_value]
         if aliases:
             meta_args['aliases'] = aliases
@@ -3399,7 +3403,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_tool_types(self, meta_args: dict, values: list):
         feature = 'tool_types' if self._version == '2.1' else 'labels'
-        meta_args[feature] = values
+        meta_args[feature] = values if isinstance(values, list) else [values]
 
     def _parse_undefined_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                 timestamp: Optional[datetime] = None) -> list:
