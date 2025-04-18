@@ -40,11 +40,13 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     __cluster_to_stix_object = {
         'country': 'location',
         'region': 'location',
+        'stix-2.1-location': 'location',
         **MISPtoSTIX2Mapping.cluster_to_stix_object()
     }
     __galaxy_types_mapping = {
         'country': '_parse_location_{}_galaxy',
         'region': '_parse_location_{}_galaxy',
+        'stix-2.1-location': '_parse_location_{}_galaxy',
         **MISPtoSTIX2Mapping.galaxy_types_mapping()
     }
     for galaxy_type in MISPtoSTIX2Mapping.generic_galaxy_types():
@@ -58,6 +60,9 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     __attack_pattern_meta_mapping = Mapping(
         kill_chain='_parse_kill_chain',
         synonyms='_parse_synonyms_meta_field'
+    )
+    __location_meta_mapping = Mapping(
+        country='_parse_country_meta_field',
     )
     __malware_sample_additional_observable_values = Mapping(
         mime_type="application/zip",
@@ -384,6 +389,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def lnk_uuid_fields(cls) -> tuple:
         return cls.__lnk_uuid_fields
+
+    @classmethod
+    def location_meta_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__location_meta_mapping.get(field)
 
     @classmethod
     def malware_sample_additional_observable_values(cls) -> dict:
