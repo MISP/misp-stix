@@ -1046,6 +1046,25 @@ _TEST_CUSTOM_INTRUSION_SET_GALAXY = {
     "uuid": "7205e3fa-e1eb-5215-a68f-35ab2b4eb87d"
 }
 
+_TEST_CUSTOM_LOCATION_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "administrative_area": "US-DC",
+                "country": "US"
+            },
+            "uuid": "4a8023c8-fba6-54e8-b81e-37d515a7617c",
+            "value": "District of Columbia",
+            "type": "stix-2.1-location",
+            "description": "District of columbia"
+        }
+    ],
+    "description": "A Location represents a geographic location. The location may be described as any, some or all of the following: region (e.g., North America), civic address (e.g. New York, US), latitude and longitude.",
+    "uuid": "4f858bdf-8213-5d43-999b-d22c2074983d",
+    "type": "stix-2.1-location",
+    "name": "STIX 2.1 Location"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3469,6 +3488,14 @@ def get_event_with_custom_intrusion_set_galaxy(version: str):
         }
     )
     event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_location_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_CUSTOM_LOCATION_GALAXY)
+    ]
     return event
 
 
