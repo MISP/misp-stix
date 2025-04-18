@@ -26,6 +26,7 @@ from stix2.v21.sdo import (
     Report, ThreatActor, Tool, Vulnerability)
 from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
+from stix2validator.v21.shoulds import countries as check_country
 from typing import Optional, Union
 
 _STIX_OBJECT_TYPING = Union[
@@ -1543,6 +1544,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self.populate_unique_ids(ids)
         return object_refs
 
+    def _parse_country_meta_field(self, meta_args: dict, country: str):
+        meta_args['country'] = country
+        if check_country(meta_args) is not None:
+            self._country_code_warning(country)
+
     def _parse_location_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                          object_id: str, timestamp: datetime):
         object_refs = self._parse_location_galaxy(galaxy, timestamp)
@@ -1558,7 +1564,23 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                                timestamp: Optional[datetime] = None) -> list:
         if galaxy['type'] == 'country':
             return self._parse_country_galaxy(galaxy, timestamp)
-        return self._parse_region_galaxy(galaxy, timestamp)
+        if galaxy['type'] == 'region':
+            return self._parse_region_galaxy(galaxy, timestamp)
+        object_refs = []
+        ids = {}
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            location_id = f"location--{cluster['uuid']}"
+            location_args = self._create_galaxy_args(
+                cluster, galaxy['name'], location_id, timestamp
+            )
+            location = self._create_location(location_args)
+            self._append_SDO_without_refs(location)
+            object_refs.append(location_id)
+            ids[cluster['uuid']] = location_id
+        self.populate_unique_ids(ids)
+        return object_refs
 
     def _parse_location_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_location_galaxy(galaxy)
