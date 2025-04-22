@@ -1061,12 +1061,26 @@ _MALWARE_OBJECTS = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "MANITSME",
+        "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files.",
+        "aliases": [
+            "ManItsMe"
+        ],
+        "architecture_execution_envs": [
+            "x86-64"
+        ],
+        "capabilities": [
+            "accesses-remote-machines",
+            "communicates-with-c2"
+        ],
+        "first_seen": "2020-10-25T16:22:00.000Z",
+        "implementation_languages": [
+            "c++"
+        ],
         "malware_types": [
             "backdoor",
             "dropper",
             "remote-access-trojan"
-        ],
-        "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files."
+        ]
     },
     {
         "type": "malware",

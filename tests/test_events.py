@@ -1065,6 +1065,18 @@ _TEST_CUSTOM_LOCATION_GALAXY = {
     "name": "STIX 2.1 Location"
 }
 
+_TEST_CUSTOM_MALWARE_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "uuid": "d7ec91c0-e001-5992-9258-b0147fc71014",
+            "value": "MANITSME",
+            "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files."
+        }
+    ],
+    "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim.",
+    "uuid": "5de9a83d-06f0-532b-bcf6-54eaf4db61c8"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3496,6 +3508,53 @@ def get_event_with_custom_location_galaxy():
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_CUSTOM_LOCATION_GALAXY)
     ]
+    return event
+
+
+def get_event_with_custom_malware_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_MALWARE_GALAXY)
+    cluster = custom_galaxy['GalaxyCluster'][0]
+    cluster['type'] = f'stix-{version}-malware'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-malware',
+            'name': f'STIX {version} Malware'
+        }
+    )
+    if version == '2.1':
+        cluster['meta'] = {
+            "synonyms": [
+                "ManItsMe"
+            ],
+            "architecture_execution_envs": [
+                    "x86-64"
+            ],
+            "capabilities": [
+                "accesses-remote-machines",
+                "communicates-with-c2"
+            ],
+            "first_seen": "2020-10-25T16:22:00Z",
+            "implementation_languages": [
+                "c++"
+            ],
+            "is_family": True,
+            "malware_types": [
+                "backdoor",
+                "dropper",
+                "remote-access-trojan"
+            ]
+        }
+        event['Event']['Galaxy'] = [custom_galaxy]
+        return event
+    cluster['meta'] = {
+        'labels': [
+            'backdoor',
+            'dropper',
+            'remote-access-trojan'
+        ]
+    }
+    event['Event']['Galaxy'] = [custom_galaxy]
     return event
 
 

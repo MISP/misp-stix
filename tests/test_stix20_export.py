@@ -4590,16 +4590,35 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
 
 class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
     def _check_attack_pattern_meta_fields(self, stix_object, meta):
-        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
-        if meta.get('refs') is not None:
-            for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
-                self.assertEqual(external_ref.url, ref)
-        for killchain_phase, killchain in zip(stix_object.kill_chain_phases, meta['kill_chain']):
-            killchain_name, *_, phase_name = killchain.split(':')
-            self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
-            self.assertEqual(killchain_phase.phase_name, phase_name)
+        super()._check_attack_pattern_meta_fields(stix_object, meta)
         if meta.get('synonyms') is not None:
             self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
+
+    def _check_malware_meta_fields(self, stix_object, meta):
+        super()._check_malware_meta_fields(stix_object, meta)
+        # Custom Malware Galaxy Cluster fields
+        if meta.get('architecture_execution_env') is not None:
+            self.assertEqual(
+                stix_object.x_misp_architecture_execution_env,
+                meta['architecture_execution_env']
+            )
+        if meta.get('capabilities') is not None:
+            self.assertEqual(
+                stix_object.x_misp_capabilities, meta['capabilities']
+            )
+        if meta.get('implementation_languages') is not None:
+            self.assertEqual(
+                stix_object.x_misp_implementation_languages,
+                meta['implementation_languages']
+            )
+        if meta.get('is_family') is not None:
+            self.assertEqual(stix_object.x_misp_is_family, meta['is_family'])
+        if meta.get('labels') is not None:
+            for label in meta['labels']:
+                self.assertIn(label, stix_object.labels)
+        elif meta.get('malware_types') is not None:
+            for malware_type in meta['malware_types']:
+                self.assertIn(malware_type, stix_object.labels)
 
     def _run_galaxy_tests(self, event, timestamp):
         orgc = event['Orgc']
@@ -4804,6 +4823,22 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             intrusion_set = self.parser.stix_objects[-1],
         )
 
+    def test_event_with_custom_malware_20_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.0')
+        self._test_event_with_malware_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            malware = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_malware_21_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.1')
+        self._test_event_with_malware_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            malware = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
         self._test_event_with_intrusion_set_galaxy(event['Event'])
@@ -4926,6 +4961,18 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_intrusion_set_galaxy(misp_event)
+
+    def test_event_with_custom_malware_20_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_malware_galaxy(misp_event)
+
+    def test_event_with_custom_malware_21_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_malware_galaxy(misp_event)
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()

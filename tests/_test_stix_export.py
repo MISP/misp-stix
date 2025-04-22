@@ -92,6 +92,17 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
+    def _check_attack_pattern_meta_fields(self, stix_object, meta):
+        external_ref, *external_refs = stix_object.external_references
+        self.assertEqual(external_ref.external_id, meta['external_id'])
+        if meta.get('refs') is not None:
+            for external_ref, ref in zip(external_refs, meta['refs']):
+                self.assertEqual(external_ref.url, ref)
+        for killchain_phase, killchain in zip(stix_object.kill_chain_phases, meta['kill_chain']):
+            killchain_name, *_, phase_name = killchain.split(':')
+            self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
+            self.assertEqual(killchain_phase.phase_name, phase_name)
+
     def _check_attack_pattern_object(self, attack_pattern, misp_object, identity_id):
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self.assertEqual(attack_pattern.created_by_ref, identity_id)
@@ -382,7 +393,7 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_malware_meta_fields(self, stix_object, meta):
         aliases = [
-            synonym for synonym in meta['synonyms']
+            synonym for synonym in meta.get('synonyms', [])
             if synonym != stix_object.name
         ]
         if aliases:
@@ -390,10 +401,17 @@ class TestSTIX2Export(TestSTIX):
                 self.assertEqual(stix_object.aliases, meta['synonyms'])
             else:
                 self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
-        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
-        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
-            self.assertEqual(external_ref.url, ref)
-        self.assertEqual(stix_object.x_misp_mitre_platforms, meta['mitre_platforms'])
+        # Regular Malware Galaxy Cluster fields
+        if meta.get('external_id') is not None:
+            external_ref, *external_refs = stix_object.external_references
+            self.assertEqual(external_ref.external_id, meta['external_id'])
+            for external_ref, ref in zip(external_refs, meta['refs']):
+                self.assertEqual(external_ref.url, ref)
+        if meta.get('mitre_platform') is not None:
+            self.assertEqual(
+                stix_object.x_misp_mitre_platforms,
+                meta['mitre_platforms']
+            )
 
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])

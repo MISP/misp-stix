@@ -185,6 +185,18 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, event_malware, indicator, attribute_malware, _ = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_malware)
+        self.assertEqual(meta['synonyms'], event_malware.aliases)
+        self.assertEqual(
+            meta['architecture_execution_envs'],
+            event_malware.architecture_execution_envs
+        )
+        self.assertEqual(meta['capabilities'], event_malware.capabilities)
+        self.assertEqual(meta['first_seen'], event_malware.first_seen)
+        self.assertEqual(
+            meta['implementation_languages'],
+            event_malware.implementation_languages
+        )
+        self.assertEqual(meta['is_family'], event_malware.is_family)
         self.assertEqual(meta['malware_types'], event_malware.malware_types)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
