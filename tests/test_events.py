@@ -1077,6 +1077,32 @@ _TEST_CUSTOM_MALWARE_GALAXY = {
     "uuid": "5de9a83d-06f0-532b-bcf6-54eaf4db61c8"
 }
 
+_TEST_CUSTOM_THREAT_ACTOR_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "synonyms": [
+                    "Greenfield",
+                    "JackWang",
+                    "Wang Dong"
+                ],
+                "primary_motivation": "organizational-gain",
+                "resource_level": "government",
+                "roles": [
+                    "malware-author",
+                    "agent",
+                    "infrastructure-operator"
+                ]
+            },
+            "uuid": "68f82328-1545-54eb-9f75-bfc6967c172c",
+            "value": "Ugly Gorilla",
+            "description": "Ugly gorilla"
+        }
+    ],
+    "description": "Threat Actors are actual individuals, groups, or organizations believed to be operating with malicious intent. A Threat Actor is not an Intrusion Set but may support or be affiliated with various Intrusion Sets, groups, or organizations over time.",
+    "uuid": "69073dcd-d569-5589-81a0-e1a36ec7c3f0"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3554,6 +3580,23 @@ def get_event_with_custom_malware_galaxy(version: str):
             'remote-access-trojan'
         ]
     }
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_threat_actor_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_THREAT_ACTOR_GALAXY)
+    cluster = custom_galaxy['GalaxyCluster'][0]
+    cluster['type'] = f'stix-{version}-threat-actor'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-threat-actor',
+            'name': f'STIX {version} Threat Actor'
+        }
+    )
+    field = 'threat_actor_types' if version == '2.1' else 'labels'
+    cluster['meta'][field] = ["nation-state", "spy"]
     event['Event']['Galaxy'] = [custom_galaxy]
     return event
 

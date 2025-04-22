@@ -320,14 +320,9 @@ class TestSTIX2Export(TestSTIX):
             self.assertEqual(external_ref.external_id, meta['external_id'])
             for external_ref, ref in zip(external_refs, meta['refs']):
                 self.assertEqual(external_ref.url, ref)
-        if meta.get('goals') is not None:
-            self.assertEqual(stix_object.goals, meta['goals'])
-        if meta.get('primary_motivation') is not None:
-            self.assertEqual(
-                stix_object.primary_motivation, meta['primary_motivation']
-            )
-        if meta.get('resource_level') is not None:
-            self.assertEqual(stix_object.resource_level, meta['resource_level'])
+        for field in ('goals', 'primary_motivation', 'resource_level'):
+            if meta.get(field) is not None:
+                self.assertEqual(getattr(stix_object, field), meta[field])
 
     def _check_intrusion_set_object(self, intrusion_set, misp_object, identity_id):
         self.assertEqual(intrusion_set.type, 'intrusion-set')
@@ -604,6 +599,9 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_threat_actor_meta_fields(self, stix_object, meta):
         self.assertEqual(stix_object.aliases, meta['synonyms'])
+        for field in ('primary_motivation', 'resource_level', 'roles'):
+            if field in meta:
+                self.assertEqual(getattr(stix_object, field), meta[field])
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
