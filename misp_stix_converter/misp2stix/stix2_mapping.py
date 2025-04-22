@@ -253,20 +253,26 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     __malware_meta_mapping = Mapping(
         **{
             'kill_chain': '_parse_kill_chain',
+            'labels': '_parse_malware_types',
+            'malware_types': '_parse_malware_types',
             'synonyms': '_parse_synonyms_21_meta_field',
             'type': '_parse_malware_types'
         }
     )
     __threat_actor_meta_mapping = Mapping(
         **{
+            'labels': '_parse_threat_actor_types',
             'synonyms': '_parse_synonyms_meta_field',
+            'threat_actor_types': '_parse_threat_actor_types',
             'type': '_parse_threat_actor_types'
         }
     )
     __tool_meta_mapping = Mapping(
         **{
+            'labels': '_parse_tool_types',
             'kill_chain': '_parse_kill_chain',
             'synonyms': '_parse_synonyms_21_meta_field',
+            'tool_types': '_parse_tool_types',
             'type': '_parse_tool_types'
         }
     )
