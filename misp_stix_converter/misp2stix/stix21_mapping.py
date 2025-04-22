@@ -70,7 +70,7 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             ),
             'threat-actor': (
                 'first_seen', 'goals', 'last_seen', 'personal_motivations',
-                'primary_motication', 'resource_level', 'roles',
+                'primary_motivation', 'resource_level', 'roles',
                 'secondary_motivations', 'sophistication'
             ),
             **MISPtoSTIX2Mapping.generic_meta_mapping()

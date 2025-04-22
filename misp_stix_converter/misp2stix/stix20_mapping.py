@@ -35,7 +35,7 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     __generic_meta_mapping = Mapping(
         **{
             'threat-actor': (
-                'goals', 'personal_motivations', 'primary_motication',
+                'goals', 'personal_motivations', 'primary_motivation',
                 'resource_level', 'roles', 'secondary_motivations',
                 'sophistication'
             ),
