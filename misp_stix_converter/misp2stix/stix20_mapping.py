@@ -32,6 +32,16 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     __attack_pattern_meta_mapping = Mapping(
         kill_chain='_parse_kill_chain'
     )
+    __generic_meta_mapping = Mapping(
+        **{
+            'threat-actor': (
+                'goals', 'personal_motivations', 'primary_motication',
+                'resource_level', 'roles', 'secondary_motivations',
+                'sophistication'
+            ),
+            **MISPtoSTIX2Mapping.generic_meta_mapping()
+        }
+    )
     __malware_sample_additional_observable_values = {
         "mime_type": "application/zip"
     }
@@ -201,6 +211,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def galaxy_types_mapping(cls, field: str) -> Union[str, None]:
         return cls.__galaxy_types_mapping.get(field)
+
+    @classmethod
+    def generic_meta_mapping(cls, object_type: str) -> Union[tuple, list]:
+        return cls.__generic_meta_mapping.get(object_type, [])
 
     @classmethod
     def lnk_time_fields(cls) -> dict:

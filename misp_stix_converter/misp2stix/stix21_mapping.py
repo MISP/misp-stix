@@ -61,6 +61,21 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         kill_chain='_parse_kill_chain',
         synonyms='_parse_synonyms_meta_field'
     )
+    __generic_meta_mapping = Mapping(
+        **{
+            'location': ('administrative_area', 'region'),
+            'malware': (
+                'architecture_execution_envs', 'capabilities', 'first_seen',
+                'implementation_languages', 'is_family', 'last_seen'
+            ),
+            'threat-actor': (
+                'first_seen', 'goals', 'last_seen', 'personal_motivations',
+                'primary_motication', 'resource_level', 'roles',
+                'secondary_motivations', 'sophistication'
+            ),
+            **MISPtoSTIX2Mapping.generic_meta_mapping()
+        }
+    )
     __location_meta_mapping = Mapping(
         country='_parse_country_meta_field',
     )
@@ -369,6 +384,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def galaxy_types_mapping(cls, field: str) -> Union[str, None]:
         return cls.__galaxy_types_mapping.get(field)
+
+    @classmethod
+    def generic_meta_mapping(cls, object_type: str) -> Union[tuple, list]:
+        return cls.__generic_meta_mapping.get(object_type, [])
 
     @classmethod
     def geolocation_object_mapping(cls) -> dict:

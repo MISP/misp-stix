@@ -237,10 +237,15 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     __campaign_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
     )
-    __generic_meta_fields = (
-        'administrative_area', 'first_seen', 'goals', 'last_seen',
-        'objective', 'primary_motivation', 'region', 'resource_level',
-        'secondary_motivations'
+    __generic_meta_mapping = Mapping(
+        **{
+            'campaign': ('first_seen', 'last_seen', 'objective'),
+            'intrusion-set': (
+                'first_seen', 'goals', 'last_seen', 'primary_motivation',
+                'resource_level', 'secondary_motivations'
+            ),
+            'tool': ('tool_version',)
+        }
     )
     __intrusion_set_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
@@ -1024,8 +1029,8 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         return cls.__generic_galaxy_types
 
     @classmethod
-    def generic_meta_fields(cls) -> tuple:
-        return cls.__generic_meta_fields
+    def generic_meta_mapping(cls) -> dict:
+        return cls.__generic_meta_mapping
 
     @classmethod
     def github_user_data_fields(cls) -> tuple:
