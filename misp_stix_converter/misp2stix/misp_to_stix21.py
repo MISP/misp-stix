@@ -114,6 +114,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         note_args['object_refs'] = (
             list(references) if references else self._handle_empty_note_refs()
         )
+        if any(ref.startswith('x-misp-') for ref in note_args['object_refs']):
+            note_args['allow_custom'] = True
         return self._create_note(note_args)
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
