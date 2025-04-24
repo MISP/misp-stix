@@ -33,7 +33,6 @@ class STIX2ToolMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__tool_meta_mapping
 
 
-
 class ExternalSTIX2ToolMapping(
         STIX2ToolMapping, ExternalSTIX2Mapping):
     pass
