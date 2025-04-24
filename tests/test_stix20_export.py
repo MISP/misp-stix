@@ -4629,6 +4629,15 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             for label in meta['threat_actor_types']:
                 self.assertIn(label, stix_object.labels)
 
+    def _check_tool_meta_fields(self, stix_object, meta):
+        super()._check_tool_meta_fields(stix_object, meta)
+        if meta.get('labels') is not None:
+            for label in meta['labels']:
+                self.assertIn(label, stix_object.labels)
+        elif meta.get('tool_types') is not None:
+            for label in meta['tool_types']:
+                self.assertIn(label, stix_object.labels)
+
     def _run_galaxy_tests(self, event, timestamp):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
@@ -4864,6 +4873,22 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             threat_actor = self.parser.stix_objects[-1]
         )
 
+    def test_event_with_custom_tool_20_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.0')
+        self._test_event_with_tool_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            tool = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_tool_21_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.1')
+        self._test_event_with_tool_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            tool = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
         self._test_event_with_intrusion_set_galaxy(event['Event'])
@@ -5010,6 +5035,18 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_threat_actor_galaxy(misp_event)
+
+    def test_event_with_custom_tool_20_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_tool_galaxy(misp_event)
+
+    def test_event_with_custom_tool_21_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_tool_galaxy(misp_event)
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()

@@ -605,17 +605,32 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
-            synonym for synonym in meta['synonyms']
+            synonym for synonym in meta.get('synonyms', [])
             if synonym != stix_object.name
         ]
-        if hasattr(stix_object, 'aliases'):
-            self.assertEqual(stix_object.aliases, aliases)
+        if aliases:
+            if hasattr(stix_object, 'aliases'):
+                self.assertEqual(stix_object.aliases, aliases)
+            else:
+                self.assertEqual(stix_object.x_misp_synonyms, aliases)
+        if meta.get('external_id') is not None:
+            external_id, *external_refs = stix_object.external_references
+            self.assertEqual(external_id.external_id, meta['external_id'])
         else:
-            self.assertEqual(stix_object.x_misp_synonyms, aliases)
-        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
-        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
+            external_refs = stix_object.external_references
+        for external_ref, ref in zip(external_refs, meta['refs']):
             self.assertEqual(external_ref.url, ref)
-        self.assertEqual(stix_object.x_misp_mitre_platforms, meta['mitre_platforms'])
+        if meta.get('mitre_platforms') is not None:
+            self.assertEqual(
+                stix_object.x_misp_mitre_platforms, meta['mitre_platforms']
+            )
+        if meta.get('tool_version') is not None:
+            self.assertEqual(stix_object.tool_version, meta['tool_version'])
+        if meta.get('kill_chain') is not None:
+            for killchain_phase, killchain in zip(stix_object.kill_chain_phases, meta['kill_chain']):
+                killchain_name, *_, phase_name = killchain.split(':')
+                self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
+                self.assertEqual(killchain_phase.phase_name, phase_name)
 
     def _check_vulnerability_meta_fields(self, stix_object, meta):
         self.assertEqual(

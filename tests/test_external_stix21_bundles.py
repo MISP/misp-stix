@@ -1624,6 +1624,7 @@ _TOOL_OBJECTS = [
         "tool_types": [
             "credential-exploitation"
         ],
+        "tool_version": "2.1.0",
         "description": "Windows password hash dumper",
         "kill_chain_phases": [
             {

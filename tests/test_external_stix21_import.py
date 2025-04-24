@@ -254,6 +254,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             [f'{killchain.kill_chain_name}:{killchain.phase_name}']
         )
         self.assertEqual(meta['tool_types'], attribute_tool.tool_types)
+        self.assertEqual(meta['tool_version'], attribute_tool.tool_version)
 
     def test_stix21_bundle_with_vulnerability_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_vulnerability_galaxy()

@@ -1103,6 +1103,27 @@ _TEST_CUSTOM_THREAT_ACTOR_GALAXY = {
     "uuid": "69073dcd-d569-5589-81a0-e1a36ec7c3f0"
 }
 
+_TEST_CUSTOM_TOOL_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "tool_version": "2.1.0",
+                "refs": [
+                    "http://www.foofus.net/fizzgig/fgdump/"
+                ],
+                "kill_chain": [
+                    "mandiant-attack-lifecycle-model:escalate-privileges"
+                ]
+            },
+            "uuid": "8ad88bfb-1172-5149-8f15-10ef14fa5868",
+            "value": "fgdump",
+            "description": "Windows password hash dumper"
+        }
+    ],
+    "description": "Tools are legitimate software that can be used by threat actors to perform attacks. Knowing how and when threat actors use such tools can be important for understanding how campaigns are executed. Unlike malware, these tools or software packages are often found on a system and have legitimate purposes for power users, system administrators, network administrators, or even normal users.",
+    "uuid": "77e81218-13f5-537a-acfa-caf14fbe1810"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3597,6 +3618,23 @@ def get_event_with_custom_threat_actor_galaxy(version: str):
     )
     field = 'threat_actor_types' if version == '2.1' else 'labels'
     cluster['meta'][field] = ["nation-state", "spy"]
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_tool_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_TOOL_GALAXY)
+    cluster = custom_galaxy['GalaxyCluster'][0]
+    cluster['type'] = f'stix-{version}-tool'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-tool',
+            'name': f'STIX {version} Tool'
+        }
+    )
+    field = 'tool_types' if version == '2.1' else 'labels'
+    cluster['meta'][field] = ["credential-exploitation"]
     event['Event']['Galaxy'] = [custom_galaxy]
     return event
 
