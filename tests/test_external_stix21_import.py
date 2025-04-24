@@ -85,10 +85,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             meta['external_id'],
             event_ap.external_references[0].external_id
         )
+        self.assertEqual(meta['synonyms'], event_ap.aliases)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        self._check_galaxy_features(attribute.galaxies, attribute_ap)
+        meta = self._check_galaxy_features(attribute.galaxies, attribute_ap)
         killchain = attribute_ap.kill_chain_phases[0]
         self.assertEqual(
             meta['kill_chain'],
@@ -103,12 +104,14 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, event_campaign, indicator, attribute_campaign, _ = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_campaign)
-        self.assertEqual(meta, {})
+        self.assertEqual(meta['synonyms'], event_campaign.aliases)
+        self.assertEqual(meta['objective'], event_campaign.objective)
+        self.assertEqual(meta['first_seen'], event_campaign.first_seen)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        self._check_galaxy_features(attribute.galaxies, attribute_campaign),
-        self.assertEqual(meta, {})
+        meta = self._check_galaxy_features(attribute.galaxies, attribute_campaign)
+        self.assertEqual(meta, {'first_seen': attribute_campaign.first_seen})
 
     def test_stix21_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_course_of_action_galaxy()
@@ -139,6 +142,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_is)
         self.assertEqual(meta['synonyms'], event_is.aliases)
+        self.assertEqual(meta['goals'], event_is.goals)
         self.assertEqual(meta['resource_level'], event_is.resource_level)
         self.assertEqual(meta['primary_motivation'], event_is.primary_motivation)
         self.assertEqual(len(event.attributes), 1)
@@ -181,6 +185,18 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, event_malware, indicator, attribute_malware, _ = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_malware)
+        self.assertEqual(meta['synonyms'], event_malware.aliases)
+        self.assertEqual(
+            meta['architecture_execution_envs'],
+            event_malware.architecture_execution_envs
+        )
+        self.assertEqual(meta['capabilities'], event_malware.capabilities)
+        self.assertEqual(meta['first_seen'], event_malware.first_seen)
+        self.assertEqual(
+            meta['implementation_languages'],
+            event_malware.implementation_languages
+        )
+        self.assertEqual(meta['is_family'], event_malware.is_family)
         self.assertEqual(meta['malware_types'], event_malware.malware_types)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
@@ -238,6 +254,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             [f'{killchain.kill_chain_name}:{killchain.phase_name}']
         )
         self.assertEqual(meta['tool_types'], attribute_tool.tool_types)
+        self.assertEqual(meta['tool_version'], attribute_tool.tool_version)
 
     def test_stix21_bundle_with_vulnerability_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_vulnerability_galaxy()

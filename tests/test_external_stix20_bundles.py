@@ -167,7 +167,11 @@ _CAMPAIGN_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "admin@338",
+        "name": "RRN",
+        "aliases": [
+            "Doppelganger"
+        ],
+        "objective": "manipulation",
         "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors.",
         "first_seen": "2020-10-25T16:22:00.000Z"
     },
@@ -652,6 +656,9 @@ _INTRUSION_SET_OBJECTS = [
         "name": "APT1",
         "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006.",
         "first_seen": "2020-10-25T16:22:00.000Z",
+        "goals": [
+            "Gather information on victims"
+        ],
         "resource_level": "government",
         "primary_motivation": "organizational-gain",
         "aliases": [

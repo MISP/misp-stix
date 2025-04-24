@@ -21,6 +21,8 @@ _CAMPAIGN_TYPING = Union[
 class STIX2CampaignMapping(ExternalSTIX2Mapping):
     __campaign_meta_mapping = Mapping(
         aliases='synonyms',
+        first_seen='first_seen',
+        last_seen='last_seen',
         objective='objective'
     )
 

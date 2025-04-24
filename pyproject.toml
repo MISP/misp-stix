@@ -50,6 +50,7 @@ maec = "^4.1.0"
 stix-edh = "1.0.3"
 misp-lib-stix2 = "^3.0.1"
 setuptools = "*"
+stix2-validator = "^3.2.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^3.8.3"

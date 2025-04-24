@@ -964,6 +964,181 @@ _TEST_COURSE_OF_ACTION_GALAXY = {
     ]
 }
 
+_TEST_CUSTOM_ATTACK_PATTERN_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "external_id": "CAPEC-163",
+                "kill_chain": [
+                    "mandiant-attack-lifecycle-model:initial-compromise"
+                ],
+                "synonyms": [
+                    "Spear Phishing"
+                ]
+            },
+            "uuid": "ef6eb51e-e601-5d4f-8aad-124c4f5507b0",
+            "value": "Spear Phishing Attack Pattern used by admin@338",
+            "description": "The preferred attack vector used by admin@338 is spear-phishing emails. Using content that is relevant to the target, these emails are designed to entice the target to open an attachment that contains the malicious PIVY server code."
+        }
+    ],
+    "description": "Attack Patterns are a type of TTP that describe ways that adversaries attempt to compromise targets. Attack Patterns are used to help categorize attacks, generalize specific attacks to the patterns that they follow, and provide detailed information about how attacks are performed.",
+    "uuid": "2d018cbb-4236-53c8-aeba-0aa1b51e636e"
+}
+
+_TEST_CUSTOM_CAMPAIGN_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "synonyms": [
+                    "Doppelganger"
+                ],
+                "last_seen": "2020-10-25T16:22:00Z",
+                "objective": "manipulation"
+            },
+            "uuid": "0dd0896b-8834-5025-a4d4-c0f4bbf7d403",
+            "value": "RRN",
+            "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors."
+        }
+    ],
+    "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set.",
+    "uuid": "3d29c2ad-cb5a-5173-8ef6-1afd3bd2ed34"
+}
+
+_TEST_CUSTOM_COURSE_OF_ACTION_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "external_id": "T1203",
+                "refs": [
+                    "https://attack.mitre.org/mitigations/T1203"
+                ]
+            },
+            "uuid": "58334ddd-728f-575a-a0df-b211ef74f679",
+            "value": "Exploitation for Client Execution Mitigation",
+            "description": "Browser sandboxes can be used to mitigate some of the impact of exploitation, but sandbox escapes may still exist"
+        }
+    ],
+    "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes.",
+    "uuid": "e0b51d22-4971-5444-879c-317f5bfa959e"
+}
+
+_TEST_CUSTOM_INTRUSION_SET_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "synonyms": [
+                    "Comment Crew",
+                    "Comment Group",
+                    "Shady Rat"
+                ],
+                "goals": [
+                    "Gather information on victims"
+                ],
+                "primary_motivation": "organizational-gain",
+                "resource_level": "government"
+            },
+            "uuid": "86ddf25a-5c34-52c8-a9c3-07a06f3cc5d3",
+            "value": "APT1",
+            "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006."
+        }
+    ],
+    "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor.",
+    "uuid": "7205e3fa-e1eb-5215-a68f-35ab2b4eb87d"
+}
+
+_TEST_CUSTOM_LOCATION_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "administrative_area": "US-DC",
+                "country": "US"
+            },
+            "uuid": "4a8023c8-fba6-54e8-b81e-37d515a7617c",
+            "value": "District of Columbia",
+            "type": "stix-2.1-location",
+            "description": "District of columbia"
+        }
+    ],
+    "description": "A Location represents a geographic location. The location may be described as any, some or all of the following: region (e.g., North America), civic address (e.g. New York, US), latitude and longitude.",
+    "uuid": "4f858bdf-8213-5d43-999b-d22c2074983d",
+    "type": "stix-2.1-location",
+    "name": "STIX 2.1 Location"
+}
+
+_TEST_CUSTOM_MALWARE_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "uuid": "d7ec91c0-e001-5992-9258-b0147fc71014",
+            "value": "MANITSME",
+            "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files."
+        }
+    ],
+    "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim.",
+    "uuid": "5de9a83d-06f0-532b-bcf6-54eaf4db61c8"
+}
+
+_TEST_CUSTOM_THREAT_ACTOR_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "synonyms": [
+                    "Greenfield",
+                    "JackWang",
+                    "Wang Dong"
+                ],
+                "primary_motivation": "organizational-gain",
+                "resource_level": "government",
+                "roles": [
+                    "malware-author",
+                    "agent",
+                    "infrastructure-operator"
+                ]
+            },
+            "uuid": "68f82328-1545-54eb-9f75-bfc6967c172c",
+            "value": "Ugly Gorilla",
+            "description": "Ugly gorilla"
+        }
+    ],
+    "description": "Threat Actors are actual individuals, groups, or organizations believed to be operating with malicious intent. A Threat Actor is not an Intrusion Set but may support or be affiliated with various Intrusion Sets, groups, or organizations over time.",
+    "uuid": "69073dcd-d569-5589-81a0-e1a36ec7c3f0"
+}
+
+_TEST_CUSTOM_TOOL_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "tool_version": "2.1.0",
+                "refs": [
+                    "http://www.foofus.net/fizzgig/fgdump/"
+                ],
+                "kill_chain": [
+                    "mandiant-attack-lifecycle-model:escalate-privileges"
+                ]
+            },
+            "uuid": "8ad88bfb-1172-5149-8f15-10ef14fa5868",
+            "value": "fgdump",
+            "description": "Windows password hash dumper"
+        }
+    ],
+    "description": "Tools are legitimate software that can be used by threat actors to perform attacks. Knowing how and when threat actors use such tools can be important for understanding how campaigns are executed. Unlike malware, these tools or software packages are often found on a system and have legitimate purposes for power users, system administrators, network administrators, or even normal users.",
+    "uuid": "77e81218-13f5-537a-acfa-caf14fbe1810"
+}
+
+_TEST_CUSTOM_VULNERABILITY_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "external_id": "CVE-2009-4324"
+            },
+            "uuid": "548bae32-76f7-5cbe-8154-df9ac92b29f5",
+            "value": "CVE-2009-4324",
+            "description": "Adobe acrobat PDF's used by admin@338"
+        }
+    ],
+    "description": "A Vulnerability is a weakness or defect in the requirements, designs, or implementations of the computational logic (e.g., code) found in software and some hardware components (e.g., firmware) that can be directly exploited to negatively impact the confidentiality, integrity, or availability of that system.",
+    "uuid": "90ec1934-1ab3-5f62-a526-53a5f7f61b90"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3326,11 +3501,170 @@ def get_event_with_course_of_action_galaxy():
     return event
 
 
+def get_event_with_custom_attack_pattern_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_ATTACK_PATTERN_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-attack-pattern'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-attack-pattern',
+            'name': f'STIX {version} Attack Pattern'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_campaign_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_CAMPAIGN_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-campaign'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-campaign',
+            'name': f'STIX {version} Campaign'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_course_of_action_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_COURSE_OF_ACTION_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-course-of-action'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-course-of-action',
+            'name': f'STIX {version} Course of Action'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
 def get_event_with_custom_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_TEA_MATRIX_GALAXY)
     ]
+    return event
+
+
+def get_event_with_custom_intrusion_set_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_INTRUSION_SET_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-intrusion-set'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-intrusion-set',
+            'name': f'STIX {version} Intrusion Set'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_location_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_CUSTOM_LOCATION_GALAXY)
+    ]
+    return event
+
+
+def get_event_with_custom_malware_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_MALWARE_GALAXY)
+    cluster = custom_galaxy['GalaxyCluster'][0]
+    cluster['type'] = f'stix-{version}-malware'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-malware',
+            'name': f'STIX {version} Malware'
+        }
+    )
+    if version == '2.1':
+        cluster['meta'] = {
+            "synonyms": [
+                "ManItsMe"
+            ],
+            "architecture_execution_envs": [
+                    "x86-64"
+            ],
+            "capabilities": [
+                "accesses-remote-machines",
+                "communicates-with-c2"
+            ],
+            "first_seen": "2020-10-25T16:22:00Z",
+            "implementation_languages": [
+                "c++"
+            ],
+            "is_family": True,
+            "malware_types": [
+                "backdoor",
+                "dropper",
+                "remote-access-trojan"
+            ]
+        }
+        event['Event']['Galaxy'] = [custom_galaxy]
+        return event
+    cluster['meta'] = {
+        'labels': [
+            'backdoor',
+            'dropper',
+            'remote-access-trojan'
+        ]
+    }
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_threat_actor_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_THREAT_ACTOR_GALAXY)
+    cluster = custom_galaxy['GalaxyCluster'][0]
+    cluster['type'] = f'stix-{version}-threat-actor'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-threat-actor',
+            'name': f'STIX {version} Threat Actor'
+        }
+    )
+    field = 'threat_actor_types' if version == '2.1' else 'labels'
+    cluster['meta'][field] = ["nation-state", "spy"]
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_tool_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_TOOL_GALAXY)
+    cluster = custom_galaxy['GalaxyCluster'][0]
+    cluster['type'] = f'stix-{version}-tool'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-tool',
+            'name': f'STIX {version} Tool'
+        }
+    )
+    field = 'tool_types' if version == '2.1' else 'labels'
+    cluster['meta'][field] = ["credential-exploitation"]
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_vulnerability_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_VULNERABILITY_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-vulnerability'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-vulnerability',
+            'name': f'STIX {version} Vulnerability'
+        }
+    )
+    event['Event']['Galaxy'] = [custom_galaxy]
     return event
 
 

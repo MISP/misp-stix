@@ -285,6 +285,9 @@ _ATTACK_PATTERN_OBJECTS = [
         ],
         "name": "Spear Phishing Attack Pattern used by admin@338",
         "description": "The preferred attack vector used by admin@338 is spear-phishing emails. Using content that is relevant to the target, these emails are designed to entice the target to open an attachment that contains the malicious PIVY server code.",
+        "aliases": [
+            "Spear Phishing"
+        ],
         "kill_chain_phases": [
             {
                 "kill_chain_name": "mandiant-attack-lifecycle-model",
@@ -317,7 +320,11 @@ _CAMPAIGN_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "admin@338",
+        "name": "RRN",
+        "aliases": [
+            "Doppelganger"
+        ],
+        "objective": "manipulation",
         "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors.",
         "first_seen": "2020-10-25T16:22:00.000Z"
     },
@@ -892,6 +899,9 @@ _INTRUSION_SET_OBJECTS = [
         "name": "APT1",
         "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006.",
         "first_seen": "2020-10-25T16:22:00.000Z",
+        "goals": [
+            "Gather information on victims"
+        ],
         "resource_level": "government",
         "primary_motivation": "organizational-gain",
         "aliases": [
@@ -1051,12 +1061,26 @@ _MALWARE_OBJECTS = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "MANITSME",
+        "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files.",
+        "aliases": [
+            "ManItsMe"
+        ],
+        "architecture_execution_envs": [
+            "x86-64"
+        ],
+        "capabilities": [
+            "accesses-remote-machines",
+            "communicates-with-c2"
+        ],
+        "first_seen": "2020-10-25T16:22:00.000Z",
+        "implementation_languages": [
+            "c++"
+        ],
         "malware_types": [
             "backdoor",
             "dropper",
             "remote-access-trojan"
-        ],
-        "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files."
+        ]
     },
     {
         "type": "malware",
@@ -1600,6 +1624,7 @@ _TOOL_OBJECTS = [
         "tool_types": [
             "credential-exploitation"
         ],
+        "tool_version": "2.1.0",
         "description": "Windows password hash dumper",
         "kill_chain_phases": [
             {

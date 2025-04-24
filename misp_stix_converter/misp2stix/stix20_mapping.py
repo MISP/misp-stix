@@ -22,10 +22,26 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     __cluster_to_stix_object = dict(MISPtoSTIX2Mapping.cluster_to_stix_object())
     __galaxy_types_mapping = dict(MISPtoSTIX2Mapping.galaxy_types_mapping())
     for galaxy_type in MISPtoSTIX2Mapping.generic_galaxy_types():
-        key = f'stix-2.0-{galaxy_type}'
-        __cluster_to_stix_object[key] = galaxy_type
-        feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
-        __galaxy_types_mapping[key] = feature
+        for version in ('2.0', '2.1'):
+            key = f'stix-{version}-{galaxy_type}'
+            __cluster_to_stix_object[key] = galaxy_type
+            feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
+            __galaxy_types_mapping[key] = feature
+    __cluster_to_stix_object = Mapping(**__cluster_to_stix_object)
+    __galaxy_types_mapping = Mapping(**__galaxy_types_mapping)
+    __attack_pattern_meta_mapping = Mapping(
+        kill_chain='_parse_kill_chain'
+    )
+    __generic_meta_mapping = Mapping(
+        **{
+            'threat-actor': (
+                'goals', 'personal_motivations', 'primary_motivation',
+                'resource_level', 'roles', 'secondary_motivations',
+                'sophistication'
+            ),
+            **MISPtoSTIX2Mapping.generic_meta_mapping()
+        }
+    )
     __malware_sample_additional_observable_values = {
         "mime_type": "application/zip"
     }
@@ -161,6 +177,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     )
 
     @classmethod
+    def attack_pattern_meta_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__attack_pattern_meta_mapping.get(field)
+
+    @classmethod
     def attribute_types_mapping(cls, field: str) -> Union[str, None]:
         return cls.__attribute_types_mapping.get(field)
 
@@ -191,6 +211,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def galaxy_types_mapping(cls, field: str) -> Union[str, None]:
         return cls.__galaxy_types_mapping.get(field)
+
+    @classmethod
+    def generic_meta_mapping(cls, object_type: str) -> Union[tuple, list]:
+        return cls.__generic_meta_mapping.get(object_type, [])
 
     @classmethod
     def lnk_time_fields(cls) -> dict:

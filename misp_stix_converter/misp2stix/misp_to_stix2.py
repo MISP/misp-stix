@@ -3053,6 +3053,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_refs = self._parse_attack_pattern_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
+    def _parse_campaign_attribute_galaxy(
+            self, galaxy: MISPGalaxy | dict,
+            object_id: str, timestamp: datetime):
+        object_refs = self._parse_campaign_galaxy(galaxy)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
+
+    def _parse_campaign_event_galaxy(self, galaxy: MISPGalaxy | dict):
+        object_refs = self._parse_campaign_galaxy(galaxy, self.event_timestamp)
+        self._handle_object_refs(object_refs)
+
+    def _parse_campaign_galaxy(
+            self, galaxy: MISPGalaxy | dict,
+            timestamp: Optional[datetime] = None) -> list:
+        object_refs = []
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            campaign_id = f"campaign--{cluster['uuid']}"
+            campaign_args = self._create_galaxy_args(
+                cluster, galaxy['name'], campaign_id, timestamp
+            )
+            campaign = self._create_campaign(campaign_args)
+            self._append_SDO_without_refs(campaign)
+            object_refs.append(campaign_id)
+            self.__ids[cluster['uuid']] = campaign_id
+        return object_refs
+
+    def _parse_campaign_parent_galaxy(self, galaxy: MISPGalaxy | dict):
+        object_refs = self._parse_campaign_galaxy(galaxy)
+        self._handle_object_refs(object_refs)
+
     def _parse_course_of_action_attribute_galaxy(
             self, galaxy: Union[MISPGalaxy, dict],
             object_id: str, timestamp: datetime):
@@ -3153,6 +3186,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _parse_kill_chain(meta_args: dict, values: list):
+        if not isinstance(values, list):
+            values = [values]
         for value in values:
             name, *_, phase = value.split(':')
             meta_args['kill_chain_phases'].append(
@@ -3209,17 +3244,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_meta_fields(
             self, cluster_meta: dict, object_type: str, value: str) -> dict:
         meta_args = defaultdict(list)
-        field = f"{object_type.replace('-', '_')}_meta_mapping"
+        mapping = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
+            if key in self._mapping.generic_meta_mapping(object_type):
+                meta_args[key] = values
+                continue
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
                 self._parse_external_references(meta_args, values, feature)
                 continue
-            to_call = getattr(self._mapping, field)(key)
+            to_call = getattr(self._mapping, mapping)(key)
             if to_call is not None:
-                args = [
-                    meta_args, values if isinstance(values, list) else [values]
-                ]
+                args = [meta_args, values]
                 if 'synonyms' in to_call:
                     args.append(value)
                 getattr(self, to_call)(*args)
@@ -3231,6 +3267,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_synonyms_21_meta_field(
             self, meta_args: dict, values: list, cluster_value: str):
+        if not isinstance(values, list):
+            values = [values]
         aliases = [value for value in values if value != cluster_value]
         if aliases:
             feature = 'aliases' if self._version == '2.1' else 'x_misp_synonyms'
@@ -3239,6 +3277,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _parse_synonyms_meta_field(
         meta_args: dict, values: list, cluster_value: str):
+        if not isinstance(values, list):
+            values = [values]
         aliases = [value for value in values if value != cluster_value]
         if aliases:
             meta_args['aliases'] = aliases
@@ -3363,7 +3403,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_tool_types(self, meta_args: dict, values: list):
         feature = 'tool_types' if self._version == '2.1' else 'labels'
-        meta_args[feature] = values
+        meta_args[feature] = values if isinstance(values, list) else [values]
 
     def _parse_undefined_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                 timestamp: Optional[datetime] = None) -> list:
