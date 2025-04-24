@@ -1124,6 +1124,21 @@ _TEST_CUSTOM_TOOL_GALAXY = {
     "uuid": "77e81218-13f5-537a-acfa-caf14fbe1810"
 }
 
+_TEST_CUSTOM_VULNERABILITY_GALAXY = {
+    "GalaxyCluster": [
+        {
+            "meta": {
+                "external_id": "CVE-2009-4324"
+            },
+            "uuid": "548bae32-76f7-5cbe-8154-df9ac92b29f5",
+            "value": "CVE-2009-4324",
+            "description": "Adobe acrobat PDF's used by admin@338"
+        }
+    ],
+    "description": "A Vulnerability is a weakness or defect in the requirements, designs, or implementations of the computational logic (e.g., code) found in software and some hardware components (e.g., firmware) that can be directly exploited to negatively impact the confidentiality, integrity, or availability of that system.",
+    "uuid": "90ec1934-1ab3-5f62-a526-53a5f7f61b90"
+}
+
 _TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
@@ -3635,6 +3650,20 @@ def get_event_with_custom_tool_galaxy(version: str):
     )
     field = 'tool_types' if version == '2.1' else 'labels'
     cluster['meta'][field] = ["credential-exploitation"]
+    event['Event']['Galaxy'] = [custom_galaxy]
+    return event
+
+
+def get_event_with_custom_vulnerability_galaxy(version: str):
+    event = deepcopy(_BASE_EVENT)
+    custom_galaxy = deepcopy(_TEST_CUSTOM_VULNERABILITY_GALAXY)
+    custom_galaxy['GalaxyCluster'][0]['type'] = f'stix-{version}-vulnerability'
+    custom_galaxy.update(
+        {
+            'type': f'stix-{version}-vulnerability',
+            'name': f'STIX {version} Vulnerability'
+        }
+    )
     event['Event']['Galaxy'] = [custom_galaxy]
     return event
 

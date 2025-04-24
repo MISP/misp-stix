@@ -633,13 +633,22 @@ class TestSTIX2Export(TestSTIX):
                 self.assertEqual(killchain_phase.phase_name, phase_name)
 
     def _check_vulnerability_meta_fields(self, stix_object, meta):
-        self.assertEqual(
-            stix_object.external_references[0],
-            {
-                'source_name': 'cve',
-                'external_id': meta['aliases'][0]
-            }
-        )
+        if meta.get('aliases') is not None:
+            self.assertEqual(
+                stix_object.external_references[0],
+                {
+                    'source_name': 'cve',
+                    'external_id': meta['aliases'][0]
+                }
+            )
+        if meta.get('external_id') is not None:
+            self.assertEqual(
+                stix_object.external_references[0],
+                {
+                    'source_name': 'cve',
+                    'external_id': meta['external_id']
+                }
+            )
 
     @staticmethod
     def _datetime_from_timestamp(timestamp):
