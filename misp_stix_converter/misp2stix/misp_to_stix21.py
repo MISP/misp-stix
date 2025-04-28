@@ -1518,12 +1518,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 continue
             location_id = f"location--{cluster['uuid']}"
             country_value = cluster['meta'].get('ISO', cluster['value'])
-            country = countries.lookup(country_value)
-            if country is None:
-                self._country_code_warning(country_value)
             location_args = {
                 'id': location_id, 'type': 'location',
-                'country': country.alpha_2 if country else country_value,
+                'country': self._parse_country_value(country_value),
                 'description': f"{galaxy['description']} | {cluster['value']}",
                 'labels': self._create_galaxy_labels(galaxy['name'], cluster),
                 'name': cluster['description'], 'interoperability': True,
@@ -1548,12 +1545,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return object_refs
 
     def _parse_country_meta_field(self, meta_args: dict, country: str):
-        country_object = countries.lookup(country)
-        if country_object is None:
-            self._country_code_warning(country)
-            meta_args['country'] = country
-            return
-        meta_args['country'] = country_object.alpha_2
+        meta_args['country'] = self._parse_country_value(country)
+
+    def _parse_country_value(
+            self, country_value: str, alpha_3: Optional[bool] = False) ->str:
+        try:
+            country = countries.lookup(country_value)
+            if country is None:
+                self._country_code_warning(country_value)
+                return country_value
+            return country.alpha_3 if alpha_3 else country.alpha_2
+        except LookupError:
+            self._country_code_warning(country_value)
+            return country_value
 
     def _parse_location_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                          object_id: str, timestamp: datetime):
