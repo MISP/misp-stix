@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import re
 from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
 from .stix21_mapping import MISPtoSTIX21Mapping
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
+from pycountry import countries
 from pymisp import (
     MISPAttribute, MISPEventReport, MISPGalaxy, MISPGalaxyCluster, MISPNote,
     MISPObject, MISPOpinion)
@@ -26,7 +26,6 @@ from stix2.v21.sdo import (
     Report, ThreatActor, Tool, Vulnerability)
 from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
-from stix2validator.v21.shoulds import countries as check_country
 from typing import Optional, Union
 
 _STIX_OBJECT_TYPING = Union[
@@ -1518,16 +1517,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
             location_id = f"location--{cluster['uuid']}"
+            country_value = cluster['meta'].get('ISO', cluster['value'])
             location_args = {
                 'id': location_id, 'type': 'location',
+                'country': self._parse_country_value(country_value),
                 'description': f"{galaxy['description']} | {cluster['value']}",
                 'labels': self._create_galaxy_labels(galaxy['name'], cluster),
-                'name': cluster['description'], 'interoperability': True
+                'name': cluster['description'], 'interoperability': True,
+                **self._parse_meta_custom_fields(cluster['meta'])
             }
-            location_args['country'] = cluster['meta']['ISO']
-            location_args.update(
-                self._parse_meta_custom_fields(cluster['meta'])
-            )
             if timestamp is None:
                 if not cluster.get('timestamp'):
                     location = self._create_location(location_args)
@@ -1547,9 +1545,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return object_refs
 
     def _parse_country_meta_field(self, meta_args: dict, country: str):
-        meta_args['country'] = country
-        if check_country(meta_args) is not None:
-            self._country_code_warning(country)
+        meta_args['country'] = self._parse_country_value(country)
+
+    def _parse_country_value(
+            self, country_value: str, alpha_3: Optional[bool] = False) ->str:
+        try:
+            country = countries.lookup(country_value)
+            if country is None:
+                self._country_code_warning(country_value)
+                return country_value
+            return country.alpha_3 if alpha_3 else country.alpha_2
+        except LookupError:
+            self._country_code_warning(country_value)
+            return country_value
 
     def _parse_location_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                          object_id: str, timestamp: datetime):
