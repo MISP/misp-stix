@@ -221,7 +221,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
             description: Optional[str] = None,
             cluster_value: Optional[str] = None) -> dict:
-        value = cluster_value or stix_object.name
+        value = cluster_value or getattr(stix_object, 'name', stix_object.id)
         cluster_args = {
             'value': value, **self.main_parser.cluster_distribution,
             'uuid': self.main_parser._create_v5_uuid(
