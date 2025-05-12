@@ -628,7 +628,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     entries = self._parse_acs_access_privilege(
                         extension_definition, privilege, privilege_action
                     )
-                    for field, value in dict(entries):
+                    for field, value in dict(entries).items():
                         meta[f'{key}.{field}'] = value
                     continue
                 privileges = {}
