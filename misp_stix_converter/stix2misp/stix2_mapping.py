@@ -3,6 +3,7 @@
 
 from .. import Mapping
 from abc import ABCMeta
+from stix2.v21.common import MarkingDefinition
 from typing import Union
 
 
@@ -97,6 +98,65 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'x-misp-object': 'custom_object_parser'
         }
     )
+    __tlp2_marking_definitions = Mapping(
+        **{
+            "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487": MarkingDefinition(
+                id="marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+                created="2022-10-01T00:00:00.000Z",
+                name="TLP:CLEAR",
+                extensions={
+                    "extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d": {
+                        "extension_type": "property-extension",
+                        "tlp_2_0": "clear"
+                    }
+                }
+            ),
+            "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb": MarkingDefinition(
+                id="marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+                created="2022-10-01T00:00:00.000Z",
+                name="TLP:GREEN",
+                extensions={
+                    "extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d": {
+                        "extension_type": "property-extension",
+                        "tlp_2_0": "green"
+                    }
+                }
+            ),
+            "marking-definition--55d920b0-5e8b-4f79-9ee9-91f868d9b421": MarkingDefinition(
+                id="marking-definition--55d920b0-5e8b-4f79-9ee9-91f868d9b421",
+                created="2022-10-01T00:00:00.000Z",
+                name="TLP:AMBER",
+                extensions={
+                    "extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d": {
+                        "extension_type": "property-extension",
+                        "tlp_2_0" : "amber"
+                    }
+                }
+            ),
+            "marking-definition--939a9414-2ddd-4d32-a0cd-375ea402b003": MarkingDefinition(
+                id="marking-definition--939a9414-2ddd-4d32-a0cd-375ea402b003",
+                created="2022-10-01T00:00:00.000Z",
+                name="TLP:AMBER+STRICT",
+                extensions={
+                    "extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d": {
+                        "extension_type": "property-extension",
+                        "tlp_2_0": "amber+strict"
+                    }
+                }
+            ),
+            "marking-definition--e828b379-4e03-4974-9ac4-e53a884c97c1": MarkingDefinition(
+                id="marking-definition--e828b379-4e03-4974-9ac4-e53a884c97c1",
+                created="2022-10-01T00:00:00.000Z",
+                name="TLP:RED",
+                extensions={
+                    "extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d": {
+                        "extension_type": "property-extension",
+                        "tlp_2_0": "red"
+                    }
+                }
+            )
+        }
+    )
 
     # KNOWN IDENTITY REFERENCES
     __identity_references = {
@@ -134,3 +194,7 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def stix_to_misp_mapping(cls, field: str) -> Union[str, None]:
         return cls.__stix_to_misp_mapping.get(field)
+
+    @classmethod
+    def tlp2_marking_definitions(cls, marking_id: str) -> Union[MarkingDefinition, None]:
+        return cls.__tlp2_marking_definitions.get(marking_id)

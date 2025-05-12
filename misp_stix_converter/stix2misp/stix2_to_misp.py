@@ -1068,6 +1068,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return self._mapping.identity_references(reference) or 'misp-stix'
 
     def _is_tlp_marking(self, marking_ref: str) -> bool:
+        tlp_2_marking = self._mapping.tlp2_marking_definitions(marking_ref)
+        if tlp_2_marking is not None:
+            self._load_marking_definition(tlp_2_marking)
+            return True
         for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):
             if marking_ref == marking.id:
                 self._load_marking_definition(marking)
