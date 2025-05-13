@@ -1392,6 +1392,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     @staticmethod
     def _create_identity(identity_args: dict) -> Identity:
+        if any(field.startswith('x_') for field in identity_args):
+            identity_args['allow_custom'] = True
         return Identity(**identity_args)
 
     def _create_identity_object(self, orgname: str) -> Identity:
