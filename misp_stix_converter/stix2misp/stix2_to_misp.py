@@ -94,6 +94,10 @@ _SDO_TYPING = Union[
 _SIGHTING_TYPING = Union[
     Sighting_v20, Sighting_v21
 ]
+_STIX_OBJECT_TYPING = Union[
+    _OBSERVABLE_TYPING, _GROUPING_REPORT_TYPING,
+    _MARKING_DEFINITION_TYPING, _SDO_TYPING, _SIGHTING_TYPING
+]
 
 
 class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
@@ -132,32 +136,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def load_stix_bundle(self, bundle: Union[Bundle_v20, Bundle_v21]):
         self._identifier = bundle.id
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
-        n_report = 0
-        for stix_object in bundle.objects:
-            try:
-                object_type = stix_object.type
-            except AttributeError:
-                object_type = stix_object['type']
-            if object_type in ('grouping', 'report'):
-                n_report += 1
-            feature = self._mapping.stix_object_loading_mapping(object_type)
-            if feature is None:
-                self._add_error(
-                    f'Unable to load STIX object type: {object_type}'
-                )
-                continue
-            if hasattr(stix_object, 'created_by_ref'):
-                self._creators.add(stix_object.created_by_ref)
-            try:
-                getattr(self, feature)(stix_object)
-            except MarkingDefinitionLoadingError as marking_definition_id:
-                self._add_error(
-                    'Error whil parsing the Marking Definition '
-                    f'object with id {marking_definition_id}'
-                )
-            except AttributeError as exception:
-                self._critical_error(exception)
-        self.__n_report = 2 if n_report >= 2 else n_report
+        reports_groupings, stix_objects = self._partition_stix_objects(
+            bundle.objects
+        )
+        n_reports = len(reports_groupings)
+        self.__n_report = 2 if n_reports >= 2 else n_reports
+        if reports_groupings:
+            object_refs = set()
+            for stix_object in reports_groupings:
+                self._load_stix_object(stix_object)
+                object_refs.update(stix_object.object_refs)
+                if hasattr(stix_object, 'object_marking_refs'):
+                    object_refs.update(stix_object.object_marking_refs)
+        for stix_object in stix_objects:
+            self._load_stix_object(stix_object)
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
@@ -167,6 +159,26 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self.load_stix_bundle(bundle)
         del bundle
         self.parse_stix_bundle(**kwargs)
+
+    def _load_stix_object(self, stix_object: _STIX_OBJECT_TYPING):
+        object_type = stix_object['type']
+        feature = self._mapping.stix_object_loading_mapping(object_type)
+        if feature is None:
+            self._add_error(
+                f'Unable to load STIX object type: {object_type}'
+            )
+            return
+        if hasattr(stix_object, 'created_by_ref'):
+            self._creators.add(stix_object.created_by_ref)
+        try:
+            getattr(self, feature)(stix_object)
+        except MarkingDefinitionLoadingError as marking_definition_id:
+            self._add_error(
+                'Error whil parsing the Marking Definition '
+                f'object with id {marking_definition_id}'
+            )
+        except AttributeError as exception:
+            self._critical_error(exception)
 
     def _parse_stix_bundle(self):
         try:
@@ -186,6 +198,17 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for feature in ('_grouping', '_report', *_LOADED_FEATURES):
             if hasattr(self, feature):
                 setattr(self, feature, {})
+
+    @staticmethod
+    def _partition_stix_objects(stix_objects: list) -> tuple[list]:
+        reports_groupings = []
+        other_objects = []
+        for stix_object in stix_objects:
+            if stix_object['type'] in ('grouping', 'report'):
+                reports_groupings.append(stix_object)
+            else:
+                other_objects.append(stix_object)
+        return reports_groupings, other_objects
 
     ############################################################################
     #                                PROPERTIES                                #
