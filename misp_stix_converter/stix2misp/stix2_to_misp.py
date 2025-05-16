@@ -141,15 +141,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
         n_reports = len(reports_groupings)
         self.__n_report = 2 if n_reports >= 2 else n_reports
+        object_refs = set()
         if reports_groupings:
-            object_refs = set()
             for stix_object in reports_groupings:
                 self._load_stix_object(stix_object)
                 object_refs.update(stix_object.object_refs)
                 if hasattr(stix_object, 'object_marking_refs'):
                     object_refs.update(stix_object.object_marking_refs)
+        standalone_objects = set()
         for stix_object in stix_objects:
+            if stix_object['id'] not in object_refs:
+                standalone_objects.add(stix_object['id'])
             self._load_stix_object(stix_object)
+        self.__standalone_object_refs = tuple(standalone_objects)
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
@@ -224,6 +228,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return self.event_title
         message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         return f'{message} and converted with the MISP-STIX import feature.'
+
+    @property
+    def standalone_object_refs(self) -> tuple:
+        return self.__standalone_object_refs
 
     @property
     def stix_version(self) -> str:
