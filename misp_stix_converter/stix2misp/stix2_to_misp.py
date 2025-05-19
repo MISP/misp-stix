@@ -68,6 +68,9 @@ _OBSERVABLE_TYPING = Union[
     X509Certificate
 ]
 
+_BUNDLE_TYPING = Union[
+    Bundle_v20, Bundle_v21
+]
 _DATA_LAYER_TYPING = Union[
     MISPAttribute, MISPEvent, MISPEventReport, MISPObject
 ]
@@ -133,27 +136,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._tool: dict
         self._vulnerability: dict
 
-    def load_stix_bundle(self, bundle: Union[Bundle_v20, Bundle_v21]):
+    def load_stix_bundle(self, bundle: _BUNDLE_TYPING):
         self._identifier = bundle.id
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
-        reports_groupings, stix_objects = self._partition_stix_objects(
-            bundle.objects
-        )
-        n_reports = len(reports_groupings)
-        self.__n_report = 2 if n_reports >= 2 else n_reports
-        object_refs = set()
-        if reports_groupings:
-            for stix_object in reports_groupings:
-                self._load_stix_object(stix_object)
-                object_refs.update(stix_object.object_refs)
-                if hasattr(stix_object, 'object_marking_refs'):
-                    object_refs.update(stix_object.object_marking_refs)
-        standalone_objects = set()
-        for stix_object in stix_objects:
-            if stix_object['id'] not in object_refs:
-                standalone_objects.add(stix_object['id'])
-            self._load_stix_object(stix_object)
-        self.__standalone_object_refs = tuple(standalone_objects)
+        self.__n_report = self._load_stix_bundle(bundle)
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
@@ -203,17 +189,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if hasattr(self, feature):
                 setattr(self, feature, {})
 
-    @staticmethod
-    def _partition_stix_objects(stix_objects: list) -> tuple[list]:
-        reports_groupings = []
-        other_objects = []
-        for stix_object in stix_objects:
-            if stix_object['type'] in ('grouping', 'report'):
-                reports_groupings.append(stix_object)
-            else:
-                other_objects.append(stix_object)
-        return reports_groupings, other_objects
-
     ############################################################################
     #                                PROPERTIES                                #
     ############################################################################
@@ -228,10 +203,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return self.event_title
         message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         return f'{message} and converted with the MISP-STIX import feature.'
-
-    @property
-    def standalone_object_refs(self) -> tuple:
-        return self.__standalone_object_refs
 
     @property
     def stix_version(self) -> str:
@@ -401,19 +372,32 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except KeyError:
             raise ObjectRefLoadingError(object_ref)
 
-    def _handle_unparsed_content(self):
-        if hasattr(self, '_observed_data_parser'):
-            if hasattr(self.observed_data_parser, '_observable_relationships'):
-                self.observed_data_parser.parse_relationships()
-        if hasattr(self, '_relationship'):
-            if hasattr(self, '_sighting'):
-                self._parse_relationships_and_sightings()
-            else:
-                self._parse_relationships()
-        elif hasattr(self, '_sighting'):
-            self._parse_sightings()
-        else:
-            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+    def _handle_misp_event_tags(
+            self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
+        self._event_tags = set()
+        for marking in self._handle_tags_from_stix_fields(stix_object):
+            if isinstance(marking, str):
+                misp_event.add_tag(marking)
+                self.event_tags.add(marking)
+                continue
+            if not self.galaxies_as_tags:
+                clusters = defaultdict(list)
+                for cluster in marking['cluster']:
+                    clusters[cluster.type].append(cluster)
+                    self.event_tags.add(cluster.uuid)
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    misp_event.add_galaxy(galaxy)
+            if marking.get('tags'):
+                for tag in marking['tags']:
+                    self.event_tags.add(tag)
+                    misp_event.add_tag(tag)
+        if hasattr(stix_object, 'labels'):
+            labels = (
+                label for label in stix_object.labels
+                if label.lower() != 'threat-report'
+            )
+            for label in labels:
+                misp_event.add_tag(label)
 
     def _handle_object(self, object_type: str, object_ref: str):
         feature = self._mapping.stix_to_misp_mapping(object_type)
@@ -452,32 +436,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 f'{object_ref}: {pattern_type}'
             )
 
-    def _handle_misp_event_tags(
-            self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
-        self._event_tags = set()
-        for marking in self._handle_tags_from_stix_fields(stix_object):
-            if isinstance(marking, str):
-                misp_event.add_tag(marking)
-                self.event_tags.add(marking)
-                continue
-            if not self.galaxies_as_tags:
-                clusters = defaultdict(list)
-                for cluster in marking['cluster']:
-                    clusters[cluster.type].append(cluster)
-                    self.event_tags.add(cluster.uuid)
-                for galaxy in self._aggregate_galaxy_clusters(clusters):
-                    misp_event.add_galaxy(galaxy)
-            if marking.get('tags'):
-                for tag in marking['tags']:
-                    self.event_tags.add(tag)
-                    misp_event.add_tag(tag)
-        if hasattr(stix_object, 'labels'):
-            labels = (
-                label for label in stix_object.labels
-                if label.lower() != 'threat-report'
-            )
-            for label in labels:
-                misp_event.add_tag(label)
+    def _handle_unparsed_content(self):
+        if hasattr(self, '_observed_data_parser'):
+            if hasattr(self.observed_data_parser, '_observable_relationships'):
+                self.observed_data_parser.parse_relationships()
+        if hasattr(self, '_relationship'):
+            if hasattr(self, '_sighting'):
+                self._parse_relationships_and_sightings()
+            else:
+                self._parse_relationships()
+        elif hasattr(self, '_sighting'):
+            self._parse_sightings()
+        else:
+            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
         misp_event = self._create_misp_event(grouping)

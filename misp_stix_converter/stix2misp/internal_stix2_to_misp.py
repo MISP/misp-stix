@@ -12,7 +12,7 @@ from .converters import (
     InternalSTIX2ObservedDataConverter, InternalSTIX2ThreatActorConverter,
     InternalSTIX2ToolConverter, InternalSTIX2VulnerabilityConverter,
     STIX2CustomObjectConverter)
-from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
+from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPEventReport, MISPObject, MISPSighting
 from stix2.v20.sdo import CustomObject as CustomObject_v20
@@ -54,6 +54,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def parse_stix_bundle(self, **kwargs):
         self._set_parameters(**kwargs)
         self._parse_stix_bundle()
+
+    def _load_stix_bundle(self, bundle: _BUNDLE_TYPING) -> int:
+        n_report = 0
+        for stix_object in bundle.objects:
+            if stix_object['type'] in ('grouping', 'report'):
+                n_report += 1
+            self._load_stix_object(stix_object)
+        return 2 if n_report >= 2 else n_report
 
     ############################################################################
     #                                PROPERTIES                                #

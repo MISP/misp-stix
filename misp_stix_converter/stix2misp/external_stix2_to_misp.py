@@ -12,7 +12,7 @@ from .converters import (
     ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, STIX2ObservableObjectConverter)
 from .importparser import ExternalSTIXtoMISPParser
-from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
+from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.sro import Sighting as Sighting_v20
@@ -53,6 +53,38 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         )
         self._set_organisation_uuid(organisation_uuid)
         self._parse_stix_bundle()
+
+    def _load_stix_bundle(self, bundle: _BUNDLE_TYPING) -> int:
+        reports_groupings, stix_objects = self._partition_stix_objects(
+            bundle.objects
+        )
+        object_refs = set()
+        if reports_groupings:
+            for stix_object in reports_groupings:
+                self._load_stix_object(stix_object)
+                object_refs.update(stix_object.object_refs)
+                if hasattr(stix_object, 'object_marking_refs'):
+                    object_refs.update(stix_object.object_marking_refs)
+        standalone_objects = set()
+        for stix_object in stix_objects:
+            if stix_object['id'] not in object_refs:
+                standalone_objects.add(stix_object['id'])
+            self._load_stix_object(stix_object)
+        if standalone_objects:
+            self.__standalone_object_refs = tuple(standalone_objects)
+        n_reports = len(reports_groupings)
+        return 2 if n_reports >= 2 else n_reports
+
+    @staticmethod
+    def _partition_stix_objects(stix_objects: list) -> tuple[list]:
+        reports_groupings = []
+        other_objects = []
+        for stix_object in stix_objects:
+            if stix_object['type'] in ('grouping', 'report'):
+                reports_groupings.append(stix_object)
+            else:
+                other_objects.append(stix_object)
+        return reports_groupings, other_objects
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -123,6 +155,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         if not hasattr(self, '_observed_data_parser'):
             self._observed_data_parser = ExternalSTIX2ObservedDataConverter(self)
         return self._observed_data_parser
+
+    @property
+    def standalone_object_refs(self) -> tuple:
+        return self.__standalone_object_refs
 
     @property
     def threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
