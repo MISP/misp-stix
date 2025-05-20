@@ -1527,7 +1527,7 @@ class ExternalSTIX2ObservedDataConverter(
             attribute = self._parse_generic_observable_object_ref_as_attribute(
                 observable['observable'], observed_data, 'ip-dst'
             )
-            observable['misp_attributes'] = attribute
+            observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_ip_address_observable_objects(
