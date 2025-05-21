@@ -261,6 +261,33 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                         attribute.add_sighting(misp_sighting)
 
     def _handle_unparsed_content(self):
+        if hasattr(self, 'standalone_object_refs'):
+            for object_ref in self.standalone_object_refs:
+                object_type = object_ref.split('--')[0]
+                if object_type in self._mapping.observable_object_types():
+                    observable = self._observable[object_ref]
+                    if observable['used'].get(self.misp_event.uuid) is None:
+                        observable['used'][self.misp_event.uuid] = False
+                    continue
+                if object_type == 'marking-definition':
+                    print(self.errors)
+                    marking = self._marking_definition.get(object_ref)
+                    if isinstance(marking, str):
+                        self.misp_event.add_tag(marking)
+                        continue
+                    for tag in marking.get('tags', []):
+                        self.misp_event.add_tag(tag)
+                    if marking.get('cluster') is not None:
+                        cluster = self._clusters.get(object_ref)
+                        if cluster is None:
+                            cluster = {
+                                'cluster': marking['cluster'], 'used': {}
+                            }
+                            self._clusters[object_ref] = cluster
+                        if cluster['used'].get(self.misp_event.uuid) is None:
+                            cluster['used'][self.misp_event.uuid] = False
+                    continue
+                self._handle_object(object_type, object_ref)
         if not hasattr(self, '_observable'):
             return super()._handle_unparsed_content()
         unparsed_content = defaultdict(list)
