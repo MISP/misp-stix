@@ -3149,7 +3149,7 @@ class InternalSTIX2ObservedDataConverter(
                     for attribute in content:
                         misp_object.add_attribute(**attribute)
             if getattr(observable, 'extensions', {}).get('http-request-ext'):
-                attributes = self._parse_http_request_extension_observable(
+                attributes = self._parse_http_request_observable(
                     observable.extensions['http-request-ext'], object_id
                 )
                 for attribute in attributes:
