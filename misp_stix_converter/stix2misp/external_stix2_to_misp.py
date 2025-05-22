@@ -270,7 +270,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                         observable['used'][self.misp_event.uuid] = False
                     continue
                 if object_type == 'marking-definition':
-                    print(self.errors)
                     marking = self._marking_definition.get(object_ref)
                     if isinstance(marking, str):
                         self.misp_event.add_tag(marking)

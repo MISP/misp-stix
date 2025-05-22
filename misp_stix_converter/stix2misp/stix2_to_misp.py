@@ -698,8 +698,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 'version': ''.join(version.split('.')),
                 'uuid': self._create_v5_uuid(name), 'name': name,
                 'description': (
-                    f'STIX {version} Marking Definition extension'
-                    ' to support ACS Markings'
+                    f'STIX {version} Marking Definition '
+                    'extension to support ACS Markings'
                 )
             }
         meta = {}
