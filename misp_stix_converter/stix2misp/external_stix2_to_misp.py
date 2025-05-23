@@ -18,7 +18,7 @@ from pymisp import MISPAttribute, MISPObject
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.sdo import Note, Opinion
 from stix2.v21.sro import Sighting as Sighting_v21
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 
 _SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
 
@@ -54,17 +54,22 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         self._set_organisation_uuid(organisation_uuid)
         self._parse_stix_bundle()
 
-    def _load_stix_bundle(self, bundle: _BUNDLE_TYPING) -> int:
-        reports_groupings, stix_objects = self._partition_stix_objects(
+    def _extract_object_refs(self, stix_object) -> Iterator[str]:
+        for field, value in stix_object.items():
+            if field.endswith('_ref') or field.endswith('_refs'):
+                if isinstance(value, list):
+                    yield from value
+                    continue
+                yield value
+                continue
+            if field == 'extensions':
+                for extension in value.values():
+                    yield from self._extract_object_refs(extension)
+
+    def _load_stix_bundle(self, bundle: _BUNDLE_TYPING):
+        stix_objects, object_refs = self._partition_stix_objects(
             bundle.objects
         )
-        object_refs = set()
-        if reports_groupings:
-            for stix_object in reports_groupings:
-                self._load_stix_object(stix_object)
-                object_refs.update(stix_object.object_refs)
-                if hasattr(stix_object, 'object_marking_refs'):
-                    object_refs.update(stix_object.object_marking_refs)
         standalone_objects = set()
         for stix_object in stix_objects:
             if stix_object['id'] not in object_refs:
@@ -72,19 +77,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             self._load_stix_object(stix_object)
         if standalone_objects:
             self.__standalone_object_refs = tuple(standalone_objects)
-        n_reports = len(reports_groupings)
-        return 2 if n_reports >= 2 else n_reports
 
-    @staticmethod
-    def _partition_stix_objects(stix_objects: list) -> tuple[list]:
-        reports_groupings = []
-        other_objects = []
+    def _partition_stix_objects(self, stix_objects: list) -> tuple[list]:
+        partitioned = []
+        object_refs = set()
         for stix_object in stix_objects:
             if stix_object['type'] in ('grouping', 'report'):
-                reports_groupings.append(stix_object)
-            else:
-                other_objects.append(stix_object)
-        return reports_groupings, other_objects
+                self._load_stix_object(stix_object)
+                object_refs.update(stix_object.object_refs)
+                if hasattr(stix_object, 'object_marking_refs'):
+                    object_refs.update(stix_object.object_marking_refs)
+                continue
+            partitioned.append(stix_object)
+            if stix_object['type'] not in ('relationship', 'sighting'):
+                object_refs.update(self._extract_object_refs(stix_object))
+        return partitioned, object_refs
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -264,6 +271,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         if hasattr(self, 'standalone_object_refs'):
             for object_ref in self.standalone_object_refs:
                 object_type = object_ref.split('--')[0]
+                if object_type in ('relationship', 'sighting'):
+                    continue
                 if object_type in self._mapping.observable_object_types():
                     observable = self._observable[object_ref]
                     if observable['used'].get(self.misp_event.uuid) is None:

@@ -139,7 +139,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def load_stix_bundle(self, bundle: _BUNDLE_TYPING):
         self._identifier = bundle.id
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
-        self.__n_report = self._load_stix_bundle(bundle)
+        self._load_stix_bundle(bundle)
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
@@ -171,8 +171,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._critical_error(exception)
 
     def _parse_stix_bundle(self):
+        n_reports = sum(
+            len(getattr(self, feature, {}))
+            for feature in ('_report', '_grouping')
+        )
         try:
-            feature = self._mapping.bundle_to_misp_mapping(str(self.__n_report))
+            feature = self._mapping.bundle_to_misp_mapping(
+                str(2 if n_reports >= 2 else n_reports)
+            )
         except AttributeError:
             sys.exit(
                 'No STIX content loaded, please run `load_stix_content` first.'

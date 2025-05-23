@@ -56,12 +56,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._parse_stix_bundle()
 
     def _load_stix_bundle(self, bundle: _BUNDLE_TYPING) -> int:
-        n_report = 0
         for stix_object in bundle.objects:
-            if stix_object['type'] in ('grouping', 'report'):
-                n_report += 1
             self._load_stix_object(stix_object)
-        return 2 if n_report >= 2 else n_report
 
     ############################################################################
     #                                PROPERTIES                                #
