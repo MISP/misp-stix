@@ -217,7 +217,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if self.identity_id not in self.unique_ids:
             identity = self._create_identity(misp_identity_args)
             self._append_SDO_without_refs(identity)
-            self.__ids[self.identity_id] = self.identity_id
+            self.unique_ids[self.identity_id] = self.identity_id
 
     def _handle_event_timestamp(self) -> datetime:
         event_timestamp = self._misp_event.get('timestamp')
@@ -236,7 +236,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self.__identity_id = f"identity--{orgc['uuid']}"
             if self.identity_id not in self.unique_ids:
-                self.__ids[self.identity_id] = self.identity_id
+                self.unique_ids[self.identity_id] = self.identity_id
                 identity = self._create_identity_object(orgc['name'])
                 self._append_SDO_without_refs(identity)
                 self.__index += 1
@@ -251,7 +251,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 }
                 identity = self._create_identity(identity_args)
                 self._append_SDO_without_refs(identity)
-                self.__ids[self.identity_id] = self.identity_id
+                self.unique_ids[self.identity_id] = self.identity_id
         else:
             self._handle_default_identity()
 
@@ -316,9 +316,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @property
     def object_refs(self) -> list:
         return self.__object_refs
-
-    def populate_unique_ids(self, unique_ids: dict):
-        self.__ids.update(unique_ids)
 
     @property
     def stix_objects(self) -> list:
@@ -2952,7 +2949,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             identity = self._create_identity(self._identities[identity_id])
             self.__objects.insert(0, identity)
             self.__index += 1
-            self.__ids[identity_id] = identity_id
+            self.unique_ids[identity_id] = identity_id
         stix_object['allow_custom'] = True
         self._append_SDO_without_refs(
             getattr(self, f"_create_{object_type.replace('-', '_')}")(
@@ -3000,7 +2997,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     stix_object_id = self._check_galaxy_matching(cluster, *args)
                     if stix_object_id is not None:
                         object_refs.append(stix_object_id)
-                        self.__ids[object_id] = stix_object_id
+                        self.unique_ids[object_id] = stix_object_id
                         return True
                 return False
             if ' - ' in value:
@@ -3011,7 +3008,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         )
                         if stix_object_id is not None:
                             object_refs.append(stix_object_id)
-                            self.__ids[object_id] = stix_object_id
+                            self.unique_ids[object_id] = stix_object_id
                             return True
         return False
 
@@ -3045,7 +3042,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._create_attack_pattern(attack_pattern_args)
             )
             object_refs.append(attack_pattern_id)
-            self.__ids[cluster['uuid']] = attack_pattern_id
+            self.unique_ids[cluster['uuid']] = attack_pattern_id
         return object_refs
 
     def _parse_attack_pattern_parent_galaxy(
@@ -3079,7 +3076,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             campaign = self._create_campaign(campaign_args)
             self._append_SDO_without_refs(campaign)
             object_refs.append(campaign_id)
-            self.__ids[cluster['uuid']] = campaign_id
+            self.unique_ids[cluster['uuid']] = campaign_id
         return object_refs
 
     def _parse_campaign_parent_galaxy(self, galaxy: MISPGalaxy | dict):
@@ -3117,7 +3114,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             self._append_SDO_without_refs(course_of_action)
             object_refs.append(course_of_action_id)
-            self.__ids[cluster['uuid']] = course_of_action_id
+            self.unique_ids[cluster['uuid']] = course_of_action_id
         return object_refs
 
     def _parse_course_of_action_parent_galaxy(
@@ -3176,7 +3173,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
             self._append_SDO_without_refs(intrusion_set)
             object_refs.append(intrusion_set_id)
-            self.__ids[cluster['uuid']] = intrusion_set_id
+            self.unique_ids[cluster['uuid']] = intrusion_set_id
         return object_refs
 
     def _parse_intrusion_set_parent_galaxy(
@@ -3218,7 +3215,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             malware = self._create_malware(malware_args)
             self._append_SDO_without_refs(malware)
             object_refs.append(malware_id)
-            self.__ids[cluster['uuid']] = malware_id
+            self.unique_ids[cluster['uuid']] = malware_id
         return object_refs
 
     def _parse_malware_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
@@ -3286,7 +3283,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_sector_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                              timestamp: Union[datetime, None]) -> list:
         object_refs = []
-        ids = {}
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
@@ -3296,8 +3292,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             sector = self._create_identity(sector_args)
             self._append_SDO_without_refs(sector)
             object_refs.append(sector.id)
-            ids[cluster['uuid']] = sector.id
-        self.populate_unique_ids(ids)
+            self.unique_ids[cluster['uuid']] = sector.id
         return object_refs
 
     def _parse_sector_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
@@ -3357,7 +3352,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             threat_actor = self._create_threat_actor(threat_actor_args)
             self._append_SDO_without_refs(threat_actor)
             object_refs.append(threat_actor_id)
-            self.__ids[cluster['uuid']] = threat_actor_id
+            self.unique_ids[cluster['uuid']] = threat_actor_id
         return object_refs
 
     def _parse_threat_actor_parent_galaxy(
@@ -3394,7 +3389,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             tool = self._create_tool(tool_args)
             self._append_SDO_without_refs(tool)
             object_refs.append(tool_id)
-            self.__ids[cluster['uuid']] = tool_id
+            self.unique_ids[cluster['uuid']] = tool_id
         return object_refs
 
     def _parse_tool_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
@@ -3419,7 +3414,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             custom_galaxy = self._create_custom_galaxy(custom_args)
             self._append_SDO_without_refs(custom_galaxy)
             object_refs.append(custom_id)
-            self.__ids[cluster['uuid']] = custom_id
+            self.unique_ids[cluster['uuid']] = custom_id
         return object_refs
 
     def _parse_vulnerability_attribute_galaxy(
@@ -3451,7 +3446,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             vulnerability = self._create_vulnerability(vulnerability_args)
             self._append_SDO_without_refs(vulnerability)
             object_refs.append(vulnerability_id)
-            self.__ids[cluster['uuid']] = vulnerability_id
+            self.unique_ids[cluster['uuid']] = vulnerability_id
         return object_refs
 
     def _parse_vulnerability_parent_galaxy(

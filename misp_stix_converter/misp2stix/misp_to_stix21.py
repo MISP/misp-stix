@@ -1512,7 +1512,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_country_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                               timestamp: Union[datetime, None]) -> list:
         object_refs = []
-        ids = {}
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
@@ -1531,7 +1530,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     location = self._create_location(location_args)
                     self._append_SDO_without_refs(location)
                     object_refs.append(location_id)
-                    ids[cluster['uuid']] = location_id
+                    self.unique_ids[cluster['uuid']] = location_id
                     continue
                 timestamp = self._datetime_from_timestamp(
                     cluster.pop('timestamp')
@@ -1540,8 +1539,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)
             object_refs.append(location_id)
-            ids[cluster['uuid']] = location_id
-        self.populate_unique_ids(ids)
+            self.unique_ids[cluster['uuid']] = location_id
         return object_refs
 
     def _parse_country_meta_field(self, meta_args: dict, country: str):
@@ -1577,7 +1575,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if galaxy['type'] == 'region':
             return self._parse_region_galaxy(galaxy, timestamp)
         object_refs = []
-        ids = {}
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
@@ -1588,8 +1585,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)
             object_refs.append(location_id)
-            ids[cluster['uuid']] = location_id
-        self.populate_unique_ids(ids)
+            self.unique_ids[cluster['uuid']] = location_id
         return object_refs
 
     def _parse_location_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
@@ -1599,7 +1595,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_region_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                              timestamp: Union[datetime, None]) -> list:
         object_refs = []
-        ids = {}
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
@@ -1612,8 +1607,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)
             object_refs.append(location.id)
-            ids[cluster['uuid']] = location.id
-        self.populate_unique_ids(ids)
+            self.unique_ids[cluster['uuid']] = location.id
         return object_refs
 
     ############################################################################
