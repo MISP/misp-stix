@@ -2962,8 +2962,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
-            if object_ref not in self.__object_refs:
-                self.__object_refs.append(object_ref)
+            if object_ref not in self.object_refs:
+                self.object_refs.append(object_ref)
 
     def _handle_undefined_attribute_galaxy(
             self, galaxy: Union[MISPGalaxy, dict],
