@@ -702,7 +702,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._galaxies[galaxy_type] = {
                 'namespace': 'stix', 'type': galaxy_type,
                 'version': ''.join(version.split('.')),
-                'uuid': self._create_v5_uuid(name), 'name': name,
+                'uuid': identifier.split('--')[1], 'name': name,
                 'description': (
                     f'STIX {version} Marking Definition '
                     'extension to support ACS Markings'
@@ -764,14 +764,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             collection_uuid=self._create_v5_uuid(name),
             meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
+            uuid=marking_definition.id.split('--')[1],
             value=extension.get('name', extension['identifier']),
             source=(
                 self._handle_creator(marking_definition.created_by_ref)
                 if hasattr(marking_definition, 'created_by_ref') else
                 extension['responsible_entity_custodian']
-            ),
-            uuid=self._create_v5_uuid(
-                f'{marking_definition.id} - {identifier}'
             )
         )
         extension_definition['cluster'].append(galaxy_cluster)
