@@ -5,7 +5,7 @@ from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
 from .stix20_mapping import MISPtoSTIX20Mapping
 from base64 import b64encode
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, UTC
 from pymisp import (
     MISPAttribute, MISPEventReport, MISPNote, MISPObject, MISPOpinion)
 from stix2.properties import (
@@ -246,7 +246,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_event_report(
             self, event_report: Union[MISPEventReport, dict]) -> CustomEventReport:
-        timestamp = self._datetime_from_timestamp(event_report['timestamp'])
+        timestamp = (
+            self._datetime_from_timestamp(event_report['timestamp'])
+            if event_report.get('timestamp') else datetime.now(UTC)
+        )
         note_args = {
             'id': f"x-misp-event-report--{event_report['uuid']}",
             'created': timestamp, 'modified': timestamp,

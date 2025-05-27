@@ -9,7 +9,7 @@ from .exportparser import MISPtoSTIXParser
 from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
@@ -223,7 +223,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         event_timestamp = self._misp_event.get('timestamp')
         if event_timestamp is not None:
             return self._datetime_from_timestamp(event_timestamp)
-        return datetime.now()
+        return datetime.now(UTC)
 
     def _handle_identity_from_event(self) -> str:
         orgc = self._misp_event.get('Orgc', {})
@@ -640,7 +640,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         campaign_id = self._parse_stix_object_id(
             'attribute', 'campaign', attribute
         )
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = (
+            self._datetime_from_timestamp(attribute['timestamp'])
+            if attribute.get('timestamp') is not None else datetime.now(UTC)
+        )
         campaign_args = {
             'id': campaign_id, 'type': 'campaign', 'name': attribute['value'],
             'created_by_ref': self.identity_id, 'created': timestamp,
@@ -662,7 +665,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         custom_id = self._parse_stix_object_id(
             'attribute', 'x-misp-attribute', attribute
         )
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = (
+            self._datetime_from_timestamp(attribute['timestamp'])
+            if attribute.get('timestamp') is not None else datetime.now(UTC)
+        )
         custom_args = {
             'id': custom_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_labels(attribute),
@@ -1059,7 +1065,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         vulnerability_id = self._parse_stix_object_id(
             'attribute', 'vulnerability', attribute
         )
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = (
+            self._datetime_from_timestamp(attribute['timestamp'])
+            if attribute.get('timestamp') is not None else datetime.now(UTC)
+        )
         vulnerability_args = {
             'id': vulnerability_id, 'type': 'vulnerability',
             'name': attribute['value'], 'created': timestamp,
@@ -1159,7 +1168,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_id = self._parse_stix_object_id(
             'object', object_type, misp_object
         )
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = (
+            self._datetime_from_timestamp(misp_object['timestamp'])
+            if misp_object.get('timestamp') is not None else datetime.now(UTC)
+        )
         object_args.update(
             {
                 'id': object_id, 'type': object_type,
@@ -1543,7 +1555,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         custom_id = self._parse_stix_object_id(
             'object', 'x-misp-object', misp_object
         )
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = (
+            self._datetime_from_timestamp(misp_object['timestamp'])
+            if misp_object.get('timestamp') is not None else datetime.now(UTC)
+        )
         custom_args = {
             'id': custom_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_object_labels(misp_object),
@@ -3580,7 +3595,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         identity_id = self._parse_stix_object_id(
             'object', 'identity', misp_object
         )
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = (
+            self._datetime_from_timestamp(misp_object['timestamp'])
+            if misp_object.get('timestamp') else datetime.now(UTC)
+        )
         identity_args = {
             'id': identity_id, 'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id,
@@ -4298,37 +4316,43 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return [f"{prefix}:x_misp_{key} = '{value}'"]
 
     def _handle_indicator_time_fields(
-            self, attribute: Union[MISPAttribute, dict]) -> dict:
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+            self, data_layer: Union[MISPAttribute, MISPObject, dict]) -> dict:
+        timestamp = (
+            self._datetime_from_timestamp(data_layer['timestamp'])
+            if data_layer.get('timestamp') is not None else datetime.now(UTC)
+        )
         time_fields = {
             'created': timestamp, 'modified': timestamp, 'valid_from': timestamp
         }
         stix_fields = _stix_time_fields['indicator']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
-            if attribute.get(misp_field):
+            if data_layer.get(misp_field):
                 time_fields[stix_field] = self._datetime_from_str(
-                    attribute[misp_field]
+                    data_layer[misp_field]
                 )
         invalid_time = (
-            time_fields.get('valid_until')
-            and time_fields['valid_from'] >= time_fields['valid_until']
+            time_fields.get('valid_until') and
+            time_fields['valid_from'] >= time_fields['valid_until']
         )
         if invalid_time:
             del time_fields['valid_until']
         return time_fields
 
     def _handle_observable_time_fields(
-            self, attribute: Union[MISPAttribute, dict]) -> dict:
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+            self, data_layer: Union[MISPAttribute, MISPObject, dict]) -> dict:
+        timestamp = (
+            self._datetime_from_timestamp(data_layer['timestamp'])
+            if data_layer.get('timestamp') is not None else datetime.now(UTC)
+        )
         time_fields = {'created': timestamp, 'modified': timestamp}
         stix_fields = _stix_time_fields['observed-data']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
             time_fields[stix_field] = (
-                self._datetime_from_str(attribute[misp_field])
-                if attribute.get(misp_field) else timestamp
+                self._datetime_from_str(data_layer[misp_field])
+                if data_layer.get(misp_field) else timestamp
             )
         if time_fields['first_observed'] > time_fields['last_observed']:
-            if attribute.get('last_seen'):
+            if data_layer.get('last_seen'):
                 time_fields['first_observed'] = time_fields['last_observed']
             else:
                 time_fields['last_observed'] = time_fields['first_observed']
