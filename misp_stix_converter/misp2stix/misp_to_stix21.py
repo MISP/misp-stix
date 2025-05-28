@@ -564,9 +564,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_patterning_language_attribute(
             self, attribute: Union[MISPAttribute, dict]):
-        indicator_args = {'pattern_type': attribute['type']}
         self._handle_attribute_indicator(
-            attribute, f"[{attribute['value']}]", indicator_args=indicator_args
+            attribute, f"[{attribute['value']}]",
+            pattern_type=attribute['type']
         )
 
     def _parse_regkey_attribute_observable(
@@ -722,7 +722,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'interoperability': True
         }
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, note_id, timestamp
+            misp_object, note_args
         )
         if markings:
             self._handle_markings(note_args, markings)
@@ -996,7 +996,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if misp_object.get('comment'):
             location_args['description'] = misp_object['comment']
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, location_id, location_args['modified']
+            misp_object, location_args
         )
         if markings:
             self._handle_markings(location_args, markings)

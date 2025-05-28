@@ -525,18 +525,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _handle_attribute_indicator(
             self, attribute: Union[MISPAttribute, dict], pattern: str,
-            indicator_args: Optional[dict] = None):
+            **kwargs: Optional[dict]):
         indicator_id = self._parse_stix_object_id(
             'attribute', 'indicator', attribute
         )
         indicator_arguments = {
-            'id': indicator_id, 'type': 'indicator',
-            'labels': self._create_labels(attribute),
+            'id': indicator_id, 'created_by_ref': self.identity_id,
+            'type': 'indicator', 'labels': self._create_labels(attribute),
             'kill_chain_phases': self._create_killchain(attribute['category']),
-            'created_by_ref': self.identity_id, 'interoperability': True
+            'interoperability': True, **kwargs
         }
-        if indicator_args is not None:
-            indicator_arguments.update(indicator_args)
         indicator_arguments['pattern'] = pattern
         indicator_arguments.update(
             self._handle_indicator_time_fields(attribute)
@@ -544,7 +542,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('comment'):
             indicator_arguments['description'] = attribute['comment']
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute, indicator_id, indicator_arguments['modified']
+            attribute, indicator_arguments
         )
         if markings:
             self._handle_markings(indicator_arguments, markings)
@@ -568,7 +566,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         observable_args.update(self._handle_observable_time_fields(attribute))
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute, observable_id, observable_args['modified']
+            attribute, observable_args
         )
         if markings:
             self._handle_markings(observable_args, markings)
@@ -579,7 +577,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _handle_attribute_tags_and_galaxies(
             self, attribute: Union[MISPAttribute, dict],
-            object_id: str, timestamp: datetime) -> tuple:
+            object_args: dict) -> tuple:
         if attribute.get('Galaxy'):
             tag_names: list = []
             for galaxy in attribute['Galaxy']:
@@ -587,11 +585,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 to_call = self._mapping.galaxy_types_mapping(galaxy_type)
                 if to_call is not None:
                     getattr(self, to_call.format('attribute'))(
-                        galaxy, object_id, timestamp
+                        galaxy, object_args
                     )
                 else:
                     self._handle_undefined_attribute_galaxy(
-                        galaxy, object_id, timestamp
+                        galaxy, object_args
                     )
                 tag_names.extend(self._quick_fetch_tag_names(galaxy))
             return tuple(
@@ -651,7 +649,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'interoperability': True,
         }
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute, campaign_id, timestamp
+            attribute, campaign_args
         )
         if markings:
             self._handle_markings(campaign_args, markings)
@@ -681,7 +679,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('comment'):
             custom_args['x_misp_comment'] = attribute['comment']
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute, custom_id, timestamp
+            attribute, custom_args
         )
         if markings:
             self._handle_markings(custom_args, markings)
@@ -1079,7 +1077,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             ]
         }
         markings = self._handle_attribute_tags_and_galaxies(
-            attribute, vulnerability_id, timestamp
+            attribute, vulnerability_args
         )
         if markings:
             self._handle_markings(vulnerability_args, markings)
@@ -1188,7 +1186,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 misp_object['meta-category']
             )
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, object_id, object_args['modified']
+            misp_object, object_args
         )
         if markings:
             self._handle_markings(object_args, markings)
@@ -1220,7 +1218,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if misp_object.get('comment'):
             indicator_args['description'] = misp_object['comment']
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, indicator_id, indicator_args['modified']
+            misp_object, indicator_args
         )
         if markings:
             self._handle_markings(indicator_args, markings)
@@ -1247,7 +1245,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         observable_args.update(self._handle_observable_time_fields(misp_object))
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, observable_id, observable_args['modified']
+            misp_object, observable_args
         )
         if markings:
             self._handle_markings(observable_args, markings)
@@ -1261,7 +1259,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _handle_object_tags_and_galaxies(
             self, misp_object: Union[MISPObject, dict],
-            object_id: str, timestamp: datetime) -> tuple:
+            object_args: dict) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(
             misp_object
         )
@@ -1271,11 +1269,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 to_call = self._mapping.galaxy_types_mapping(galaxy_type)
                 if to_call is not None:
                     getattr(self, to_call.format('attribute'))(
-                        galaxy, object_id, timestamp
+                        galaxy, object_args
                     )
                 else:
                     self._handle_undefined_attribute_galaxy(
-                        galaxy, object_id, timestamp
+                        galaxy, object_args
                     )
                 tag_names.update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags if tag not in tag_names)
@@ -1573,7 +1571,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if misp_object.get('comment'):
             custom_args['x_misp_comment'] = misp_object['comment']
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, custom_id, timestamp
+            misp_object, custom_args
         )
         if markings:
             self._handle_markings(custom_args, markings)
@@ -2978,11 +2976,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self.object_refs.append(object_ref)
 
     def _handle_undefined_attribute_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict],
-            object_id: str, timestamp: datetime):
+            self, galaxy: Union[MISPGalaxy, dict], object_args: dict):
+        timestamp = object_args['modified']
         object_refs = self._parse_undefined_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            object_args['id'], object_refs, timestamp
         )
 
     def _handle_undefined_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
@@ -3028,11 +3026,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return False
 
     def _parse_attack_pattern_attribute_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict],
-            object_id: str, timestamp: datetime):
+            self, galaxy: Union[MISPGalaxy, dict], attack_pattern_args: dict):
+        timestamp = attack_pattern_args['modified']
         object_refs = self._parse_attack_pattern_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            attack_pattern_args['id'], object_refs, timestamp
         )
 
     def _parse_attack_pattern_event_galaxy(
@@ -3066,11 +3064,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_object_refs(object_refs)
 
     def _parse_campaign_attribute_galaxy(
-            self, galaxy: MISPGalaxy | dict,
-            object_id: str, timestamp: datetime):
+            self, galaxy: MISPGalaxy | dict, campaign_args: dict):
         object_refs = self._parse_campaign_galaxy(galaxy)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            campaign_args['id'], object_refs, campaign_args['modified']
         )
 
     def _parse_campaign_event_galaxy(self, galaxy: MISPGalaxy | dict):
@@ -3099,11 +3096,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_object_refs(object_refs)
 
     def _parse_course_of_action_attribute_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict],
-            object_id: str, timestamp: datetime):
+            self, galaxy: Union[MISPGalaxy, dict], course_of_action_args: dict):
+        timestamp = course_of_action_args['modified']
         object_refs = self._parse_course_of_action_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            course_of_action_args['id'], object_refs, timestamp
         )
 
     def _parse_course_of_action_event_galaxy(
@@ -3160,11 +3157,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return {'source_name': 'url', 'url': url}
 
     def _parse_intrusion_set_attribute_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict],
-            object_id: str, timestamp: datetime):
+            self, galaxy: Union[MISPGalaxy, dict], intrusion_set_args: dict):
+        timestamp = intrusion_set_args['modified']
         object_refs = self._parse_intrusion_set_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            intrusion_set_args['id'], object_refs, timestamp
         )
 
     def _parse_intrusion_set_event_galaxy(
@@ -3206,11 +3203,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 {'kill_chain_name': name, 'phase_name': phase}
             )
 
-    def _parse_malware_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                        object_id: str, timestamp: datetime):
+    def _parse_malware_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict], malware_args: dict):
+        timestamp = malware_args['modified']
         object_refs = self._parse_malware_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            malware_args['id'], object_refs, timestamp
         )
 
     def _parse_malware_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
@@ -3295,6 +3293,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if aliases:
             meta_args['aliases'] = aliases
 
+    def _parse_sector_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict], sector_args: dict):
+        timestamp = sector_args['modified']
+        object_refs = self._parse_sector_galaxy(galaxy, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            sector_args['id'], object_refs, timestamp
+        )
+
+    def _parse_sector_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_sector_galaxy(galaxy, self.event_timestamp)
+        self._handle_object_refs(object_refs)
+
     def _parse_sector_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                              timestamp: Union[datetime, None]) -> list:
         object_refs = []
@@ -3310,41 +3320,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.unique_ids[cluster['uuid']] = sector.id
         return object_refs
 
-    def _parse_sector_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                       object_id: str, timestamp: datetime):
-        object_refs = self._parse_sector_galaxy(galaxy, timestamp)
-        self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
-        )
-
-    def _parse_sector_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
-        object_refs = self._parse_sector_galaxy(galaxy, self.event_timestamp)
+    def _parse_sector_parent_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_sector_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
-    def _create_sector_galaxy_args(
-            self, cluster: Union[MISPGalaxyCluster, dict], description: str,
-            name: str, timestamp: datetime) -> dict:
-        if cluster.get('description'):
-            description = cluster['description']
-        sector_args = {
-            'id': f"identity--{cluster['uuid']}", 'type': 'identity',
-            'name': cluster['value'], 'identity_class': 'class',
-            'labels': self._create_galaxy_labels(name, cluster),
-            'description': description, 'interoperability': True
-        }
-        if timestamp is None:
-            if not cluster.get('timestamp'):
-                return sector_args
-            timestamp = self._datetime_from_timestamp(cluster['timestamp'])
-        sector_args.update({'created': timestamp, 'modified': timestamp})
-        return sector_args
-
     def _parse_threat_actor_attribute_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict],
-            object_id: str, timestamp: datetime):
+            self, galaxy: Union[MISPGalaxy, dict], threat_actor_args: dict):
+        timestamp = threat_actor_args['modified']
         object_refs = self._parse_threat_actor_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            threat_actor_args['id'], object_refs, timestamp
         )
 
     def _parse_threat_actor_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
@@ -3380,11 +3366,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         feature = 'threat_actor_types' if self._version == '2.1' else 'labels'
         meta_args[feature] = values if isinstance(values, list) else [values]
 
-    def _parse_tool_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                                     object_id: str, timestamp: datetime):
+    def _parse_tool_attribute_galaxy(
+            self, galaxy: Union[MISPGalaxy, dict], tool_args: dict):
+        timestamp = tool_args['modified']
         object_refs = self._parse_tool_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            tool_args['id'], object_refs, timestamp
         )
 
     def _parse_tool_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
@@ -3433,11 +3420,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return object_refs
 
     def _parse_vulnerability_attribute_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict],
-            object_id: str, timestamp: datetime):
+            self, galaxy: Union[MISPGalaxy, dict], vulnerability_args: dict):
+        timestamp = vulnerability_args['modified']
         object_refs = self._parse_vulnerability_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            vulnerability_args['id'], object_refs, timestamp
         )
 
     def _parse_vulnerability_event_galaxy(
@@ -3571,6 +3558,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             labels.append(f'misp:to_ids="{to_ids}"')
         return labels
 
+    def _create_sector_galaxy_args(
+            self, cluster: Union[MISPGalaxyCluster, dict], description: str,
+            name: str, timestamp: datetime) -> dict:
+        if cluster.get('description'):
+            description = cluster['description']
+        sector_args = {
+            'id': f"identity--{cluster['uuid']}", 'type': 'identity',
+            'name': cluster['value'], 'identity_class': 'class',
+            'labels': self._create_galaxy_labels(name, cluster),
+            'description': description, 'interoperability': True
+        }
+        if timestamp is None:
+            if not cluster.get('timestamp'):
+                return sector_args
+            timestamp = self._datetime_from_timestamp(cluster['timestamp'])
+        sector_args.update({'created': timestamp, 'modified': timestamp})
+        return sector_args
+
     def _handle_identity(self, identity_id: str, name: str):
         identity_args = {
             'id': identity_id, 'name': name, 'identity_class': 'organization'
@@ -3609,7 +3614,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         }
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, identity_id, timestamp
+            misp_object, identity_args
         )
         if markings:
             self._handle_markings(identity_args, markings)
@@ -4177,7 +4182,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         indicator_args.update(self._handle_indicator_time_fields(misp_object))
         markings = self._handle_object_tags_and_galaxies(
-            misp_object, indicator_id, indicator_args['modified']
+            misp_object, indicator_args
         )
         if markings:
             self._handle_markings(indicator_args, markings)
