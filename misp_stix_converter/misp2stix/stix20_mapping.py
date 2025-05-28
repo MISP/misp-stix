@@ -19,8 +19,16 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     __attribute_types_mapping = MISPtoSTIX2Mapping.attribute_types_mapping()
 
     # STIX 2.0 specific GALAXIES MAPPING
-    __cluster_to_stix_object = dict(MISPtoSTIX2Mapping.cluster_to_stix_object())
-    __galaxy_types_mapping = dict(MISPtoSTIX2Mapping.galaxy_types_mapping())
+    __cluster_to_stix_object = {
+        'stix-2.0-acs-marking': 'marking-definition',
+        'stix-2.1-acs-marking': 'marking-definition',
+        **MISPtoSTIX2Mapping.cluster_to_stix_object()
+    }
+    __galaxy_types_mapping = {
+        'stix-2.0-acs-marking': '_parse_acs_marking_{}_galaxy',
+        'stix-2.1-acs-marking': '_parse_acs_marking_{}_galaxy',
+        **MISPtoSTIX2Mapping.galaxy_types_mapping()
+    }
     for galaxy_type in MISPtoSTIX2Mapping.generic_galaxy_types():
         for version in ('2.0', '2.1'):
             key = f'stix-{version}-{galaxy_type}'

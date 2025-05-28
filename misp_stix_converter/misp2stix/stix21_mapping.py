@@ -40,12 +40,16 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     __cluster_to_stix_object = {
         'country': 'location',
         'region': 'location',
+        'stix-2.0-acs-marking': 'marking-definition',
+        'stix-2.1-acs-marking': 'marking-definition',
         'stix-2.1-location': 'location',
         **MISPtoSTIX2Mapping.cluster_to_stix_object()
     }
     __galaxy_types_mapping = {
         'country': '_parse_location_{}_galaxy',
         'region': '_parse_location_{}_galaxy',
+        'stix-2.0-acs-marking': '_parse_acs_marking_{}_galaxy',
+        'stix-2.1-acs-marking': '_parse_acs_marking_{}_galaxy',
         'stix-2.1-location': '_parse_location_{}_galaxy',
         **MISPtoSTIX2Mapping.galaxy_types_mapping()
     }
