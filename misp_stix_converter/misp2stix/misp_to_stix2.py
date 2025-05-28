@@ -80,7 +80,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._results_handling_function = '_append_SDO'
         with open(filename, 'rt', encoding='utf-8') as f:
             json_content = json.loads(f.read())
-        if json_content.get('response'):
+        if 'response' in json_content:
             json_content = json_content['response']
             if isinstance(json_content, list):
                 if not self.__initiated:
@@ -96,10 +96,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     if 'Attribute' in content:
                         self.parse_misp_attribute(content)
             else:
-                if 'Attribute' in json_content:
-                    self.parse_misp_attributes(json_content)
-                else:
+                if 'Event' in json_content or 'info' in json_content:
                     self.parse_misp_event(json_content)
+                else:
+                    self.parse_misp_attributes(json_content)
 
     def parse_misp_attribute(self, attribute: Union[MISPAttribute, dict]):
         self._results_handling_function = '_append_SDO_without_refs'
