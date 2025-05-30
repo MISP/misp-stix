@@ -799,18 +799,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 return extension_definition
         raise MarkingDefinitionLoadingError(marking_definition.id)
 
-    def _parse_markings(self, marking_refs: list):
-        for marking_ref in marking_refs:
-            try:
-                marking_definition = self._get_stix_object(marking_ref)
-            except ObjectTypeLoadingError as error:
-                self._object_type_loading_error(error)
-                continue
-            except ObjectRefLoadingError as error:
-                self._object_ref_loading_error(error)
-                continue
-            yield marking_definition
-
     ############################################################################
     #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
     ############################################################################
