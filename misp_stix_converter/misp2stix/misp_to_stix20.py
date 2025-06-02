@@ -259,8 +259,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if event_report.get('name'):
             note_args['x_misp_name'] = event_report['name']
         references = set(self._parse_event_report_references(event_report))
-        if references:
-            note_args['object_refs'] = list(references)
+        note_args['object_refs'] = (
+            list(references) if references else
+            [f"report--{self._misp_event['uuid']}"]
+        )
         return CustomEventReport(**note_args)
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
