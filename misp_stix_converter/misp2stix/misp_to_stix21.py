@@ -1498,6 +1498,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                        GALAXIES PARSING FUNCTIONS                        #
     ############################################################################
 
+    def _create_acs_marking_definition(
+            self, marking_id: str, galaxy_uuid: dict,
+            extension_definition: dict) -> MarkingDefinition:
+        return MarkingDefinition(
+            id=marking_id, interoperability=True,
+            extensions={
+                f"extension-definition--{galaxy_uuid}": extension_definition
+            }
+        )
+
     def _create_region_galaxy_args(
             self, cluster: Union[MISPGalaxyCluster, dict], description: str,
             name: str, timestamp: datetime) -> dict:
@@ -1518,121 +1528,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             timestamp = self._datetime_from_timestamp(cluster['timestamp'])
         location_args.update({'created': timestamp, 'modified': timestamp})
         return location_args
-
-    def _parse_acs_definition_with_multiple_access_privileges(
-            self, meta: dict) -> dict:
-        access_privileges = {
-            access_privilege: {} for access_privilege in
-            meta['access_privilege.privilege_action']
-        }
-        marking_definition = {}
-        for feature, value in meta.items():
-            field, *fields = feature.split('.')
-            if field == 'access_privilege':
-                access_privilege, *keys = fields
-                if access_privilege == 'privilege_action':
-                    continue
-                current = access_privileges[access_privilege]
-                for i, key in enumerate(keys[1:]):
-                    if i == len(keys) - 2:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
-                continue
-            if fields:
-                current = marking_definition.setdefault(field, {})
-                for i, key in enumerate(fields):
-                    if i == len(fields) - 1:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
-                continue
-            marking_definition[feature] = value
-        marking_definition['access_privilege'] = [
-            {'privilege_action': privilege_action, **access_privilege}
-            for privilege_action, access_privilege in access_privileges.items()
-        ]
-        return marking_definition
-
-    def _parse_acs_definition_with_single_access_privilege(
-            self, meta: dict) -> dict:
-        access_privilege = {}
-        marking_definition = {}
-        for feature, value in meta.items():
-            field, *fields = feature.split('.')
-            if fields:
-                current = (
-                    access_privilege if field == 'access_privilege'
-                    else marking_definition
-                )
-                for i, key in enumerate(fields):
-                    if i == len(fields) - 1:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
-                continue
-            marking_definition[feature] = value
-        marking_definition['access_privilege'] = [access_privilege]
-        return marking_definition
-
-    def _parse_acs_definition_without_access_privilege(
-            self, meta: dict) -> dict:
-        marking_definition = {}
-        for feature, value in meta.items():
-            fields = feature.split('.')
-            if len(fields) > 1:
-                current = marking_definition
-                for i, key in enumerate(fields):
-                    if i == len(fields) - 1:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
-                continue
-            marking_definition[feature] = value
-        return marking_definition
-
-    def _parse_acs_marking_attribute_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict], marking_args: dict):
-        object_refs = self._parse_acs_marking_galaxy(galaxy)
-        self._handle_object_refs(object_refs)
-        marking_args['object_marking_refs'] = object_refs
-
-    def _parse_acs_marking_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
-        object_refs = self._parse_acs_marking_galaxy(galaxy)
-        self._handle_object_refs(object_refs)
-
-    def _parse_acs_marking_galaxy(
-            self, galaxy: Union[MISPGalaxy, dict]) -> list:
-        object_refs = []
-        for cluster in galaxy['GalaxyCluster']:
-            if self._is_galaxy_parsed(object_refs, cluster):
-                continue
-            marking_id = f"marking-definition--{cluster['uuid']}"
-            meta = cluster['meta']
-            privilege_actions = meta.get('access_privilege.privilege_action')
-            feature = (
-                self._parse_acs_definition_without_access_privilege
-                if privilege_actions is None else
-                self._parse_acs_definition_with_multiple_access_privileges
-                if isinstance(privilege_actions, list) and
-                len(privilege_actions) > 1 else
-                self._parse_acs_definition_with_single_access_privilege
-            )
-            marking_args = {
-                'id': marking_id,
-                'extensions': {
-                    f"extension-definition--{galaxy['uuid']}": feature(meta)
-                }
-            }
-            marking_definition = self._create_marking_definition(marking_args)
-            self._append_SDO_without_refs(marking_definition)
-            object_refs.append(marking_id)
-            self.unique_ids[cluster['uuid']] = marking_id
-        return object_refs
-
-    def _parse_acs_marking_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
-        object_refs = self._parse_acs_marking_galaxy(galaxy)
-        self._handle_object_refs(object_refs)
 
     def _parse_country_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                               timestamp: Union[datetime, None]) -> list:

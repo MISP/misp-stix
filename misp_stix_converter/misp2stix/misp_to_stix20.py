@@ -161,6 +161,19 @@ class CustomGalaxyCluster:
 
 
 @CustomObject(
+    'x-misp-marking-definition',
+    [
+        ('id', IDProperty('x-misp-marking-definition')),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('definition_type', StringProperty(required=True)),
+        ('definition', DictionaryProperty(required=True))
+    ]
+)
+class CustomMarkingDefinition:
+    pass
+
+
+@CustomObject(
     'x-misp-object',
     [
         ('id', IDProperty('x-misp-object')),
@@ -1331,6 +1344,19 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         x509_args = self._parse_x509_args(misp_object)
         observable_object = {'0': X509Certificate(**x509_args)}
         self._handle_object_observable(misp_object, observable_object)
+
+    ############################################################################
+    #                        GALAXIES PARSING FUNCTIONS                        #
+    ############################################################################
+
+    def _create_acs_marking_definition(
+            self, marking_id: str, galaxy_uuid: str,
+            extension_definition: dict) -> CustomMarkingDefinition:
+        return CustomMarkingDefinition(
+            id=f'x-misp-{marking_id}', definition=extension_definition,
+            definition_type=f'acs-extension-definition--{galaxy_uuid}',
+            allow_custom=True, interoperability=True
+        )
 
     ############################################################################
     #                  STIX OBJECTS CREATION HELPER FUNCTIONS                  #
