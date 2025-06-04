@@ -90,7 +90,14 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         meta = self._check_galaxy_features(attribute.galaxies, attribute_campaign)
-        self.assertEqual(meta, {'first_seen': attribute_campaign.first_seen})
+        self.assertEqual(
+            meta,
+            {
+                'first_seen': attribute_campaign.first_seen,
+                'created': attribute_campaign.created,
+                'modified': attribute_campaign.modified
+            }
+        )
 
     def test_stix20_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_course_of_action_galaxy()
