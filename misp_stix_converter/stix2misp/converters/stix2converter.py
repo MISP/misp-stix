@@ -281,7 +281,8 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
         meta = {
-            field: stix_object[field] for field in ('created', 'modified')
+            field: stix_object[field].strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+            for field in ('created', 'modified')
             if stix_object.get(field) is not None
         }
         if hasattr(self._mapping, mapping):
