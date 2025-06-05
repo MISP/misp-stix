@@ -708,7 +708,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     'extension to support ACS Markings'
                 )
             }
-        meta = {}
+        meta = {
+            field: marking_definition[field].strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+            for field in ('created', 'modified')
+            if marking_definition.get(field) is not None
+        }
         for key, values in extension.items():
             if isinstance(values, dict):
                 for field, subvalues in values.items():
