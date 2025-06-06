@@ -67,15 +67,18 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'location': ('administrative_area', 'region'),
+            'location': (
+                'administrative_area', 'created', 'modified', 'region'
+            ),
             'malware': (
-                'architecture_execution_envs', 'capabilities', 'first_seen',
-                'implementation_languages', 'is_family', 'last_seen'
+                'architecture_execution_envs', 'capabilities', 'created',
+                'first_seen', 'implementation_languages', 'is_family',
+                'last_seen', 'modified'
             ),
             'threat-actor': (
-                'first_seen', 'goals', 'last_seen', 'personal_motivations',
-                'primary_motivation', 'resource_level', 'roles',
-                'secondary_motivations', 'sophistication'
+                'created', 'first_seen', 'goals', 'last_seen', 'modified',
+                'personal_motivations', 'primary_motivation', 'resource_level',
+                'roles', 'secondary_motivations', 'sophistication'
             ),
             **MISPtoSTIX2Mapping.generic_meta_mapping()
         }

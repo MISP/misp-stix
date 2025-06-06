@@ -239,12 +239,17 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'campaign': ('first_seen', 'last_seen', 'objective'),
-            'intrusion-set': (
-                'first_seen', 'goals', 'last_seen', 'primary_motivation',
-                'resource_level', 'secondary_motivations'
+            'attack-pattern': ('created', 'modified'),
+            'campaign': (
+                'created', 'first_seen', 'last_seen', 'modified', 'objective'
             ),
-            'tool': ('tool_version',)
+            'course-of-action': ('created', 'modified'),
+            'intrusion-set': (
+                'created', 'first_seen', 'goals', 'last_seen', 'modified',
+                'primary_motivation', 'resource_level', 'secondary_motivations'
+            ),
+            'tool': ('created', 'modified', 'tool_version'),
+            'vulnerability': ('created', 'modified')
         }
     )
     __intrusion_set_meta_mapping = Mapping(

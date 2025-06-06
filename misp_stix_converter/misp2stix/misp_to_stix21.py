@@ -1499,18 +1499,48 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ############################################################################
 
     def _create_acs_marking_definition(
-            self, marking_id: str, galaxy_uuid: dict,
+            self, marking_id: str, galaxy_uuid: str, marking_definition: dict,
             extension_definition: dict) -> MarkingDefinition:
         return MarkingDefinition(
-            id=marking_id, interoperability=True,
+            id=marking_id, interoperability=True, **marking_definition,
             extensions={
                 f"extension-definition--{galaxy_uuid}": extension_definition
             }
         )
 
+    def _create_country_galaxy_args(
+            self, cluster: MISPGalaxyCluster | dict, description: str,
+            name: str, timestamp: datetime | None) -> dict:
+        meta = cluster['meta']
+        country_value = meta.get('ISO', cluster['value'])
+        location_args = {
+            'id': f"location--{cluster['uuid']}", 'type': 'location',
+            'country': self._parse_country_value(country_value),
+            'description': f"{description} | {cluster['value']}",
+            'labels': self._create_galaxy_labels(name, cluster),
+            'name': cluster['description'], 'interoperability': True,
+        }
+        if meta.get('created') is not None:
+            location_args['created'] = meta.pop('created')
+            location_args['modified'] = meta.pop(
+                'modified', location_args['created']
+            )
+            return location_args
+        if meta.get('modified') is not None:
+            modified = meta.pop('modified')
+            location_args.update({'created': modified, 'modified': modified})
+            return location_args
+        if timestamp is None:
+            if not cluster.get('timestamp'):
+                return location_args
+            timestamp = self._datetime_from_timestamp(cluster.pop('timestamp'))
+        location_args.update({'created': timestamp, 'modified': timestamp})
+        return location_args
+
     def _create_region_galaxy_args(
-            self, cluster: Union[MISPGalaxyCluster, dict], description: str,
-            name: str, timestamp: datetime) -> dict:
+            self, cluster: MISPGalaxyCluster | dict, description: str,
+            name: str, timestamp: datetime| None) -> dict:
+        meta = cluster['meta']
         region_value = cluster['value'].split(' - ')[1]
         location_args = {
             'id': f"location--{cluster['uuid']}", 'type': 'location',
@@ -1522,45 +1552,22 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 or region_value.lower().replace(' ', '-')
             )
         }
+        if meta.get('created') is not None:
+            location_args['created'] = meta.pop('created')
+            location_args['modified'] = meta.pop(
+                'modified', location_args['created']
+            )
+            return location_args
+        if meta.get('modified') is not None:
+            modified = meta.pop('modified')
+            location_args.update({'created': modified, 'modified': modified})
+            return location_args
         if timestamp is None:
             if not cluster.get('timestamp'):
                 return location_args
             timestamp = self._datetime_from_timestamp(cluster['timestamp'])
         location_args.update({'created': timestamp, 'modified': timestamp})
         return location_args
-
-    def _parse_country_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                              timestamp: Union[datetime, None]) -> list:
-        object_refs = []
-        for cluster in galaxy['GalaxyCluster']:
-            if self._is_galaxy_parsed(object_refs, cluster):
-                continue
-            location_id = f"location--{cluster['uuid']}"
-            country_value = cluster['meta'].get('ISO', cluster['value'])
-            location_args = {
-                'id': location_id, 'type': 'location',
-                'country': self._parse_country_value(country_value),
-                'description': f"{galaxy['description']} | {cluster['value']}",
-                'labels': self._create_galaxy_labels(galaxy['name'], cluster),
-                'name': cluster['description'], 'interoperability': True,
-                **self._parse_meta_custom_fields(cluster['meta'])
-            }
-            if timestamp is None:
-                if not cluster.get('timestamp'):
-                    location = self._create_location(location_args)
-                    self._append_SDO_without_refs(location)
-                    object_refs.append(location_id)
-                    self.unique_ids[cluster['uuid']] = location_id
-                    continue
-                timestamp = self._datetime_from_timestamp(
-                    cluster.pop('timestamp')
-                )
-            location_args.update({'created': timestamp, 'modified': timestamp})
-            location = self._create_location(location_args)
-            self._append_SDO_without_refs(location)
-            object_refs.append(location_id)
-            self.unique_ids[cluster['uuid']] = location_id
-        return object_refs
 
     def _parse_country_meta_field(self, meta_args: dict, country: str):
         meta_args['country'] = self._parse_country_value(country)
@@ -1577,23 +1584,27 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._country_code_warning(country_value)
             return country_value
 
-    def _parse_location_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+    def _parse_location_attribute_galaxy(self, galaxy: MISPGalaxy | dict,
                                          object_id: str, timestamp: datetime):
-        object_refs = self._parse_location_galaxy(galaxy, timestamp)
+        to_call = (
+            self._parse_territorial_location_galaxy
+            if galaxy['type'] in ('country', 'region')
+            else self._parse_location_galaxy
+        )
         self._handle_attribute_galaxy_relationships(
-            object_id, object_refs, timestamp
+            object_id, to_call(galaxy, timestamp), timestamp
         )
 
-    def _parse_location_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
-        object_refs = self._parse_location_galaxy(galaxy, self.event_timestamp)
-        self._handle_object_refs(object_refs)
+    def _parse_location_event_galaxy(self, galaxy: MISPGalaxy | dict):
+        to_call = (
+            self._parse_territorial_location_galaxy
+            if galaxy['type'] in ('country', 'region')
+            else self._parse_location_galaxy
+        )
+        self._handle_object_refs(to_call(galaxy, self.event_timestamp))
 
-    def _parse_location_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+    def _parse_location_galaxy(self, galaxy: MISPGalaxy | dict,
                                timestamp: Optional[datetime] = None) -> list:
-        if galaxy['type'] == 'country':
-            return self._parse_country_galaxy(galaxy, timestamp)
-        if galaxy['type'] == 'region':
-            return self._parse_region_galaxy(galaxy, timestamp)
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
@@ -1608,17 +1619,23 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self.unique_ids[cluster['uuid']] = location_id
         return object_refs
 
-    def _parse_location_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
-        object_refs = self._parse_location_galaxy(galaxy)
-        self._handle_object_refs(object_refs)
+    def _parse_location_parent_galaxy(self, galaxy: MISPGalaxy | dict):
+        to_call = (
+            self._parse_territorial_location_galaxy
+            if galaxy['type'] in ('country', 'region')
+            else self._parse_location_galaxy
+        )
+        self._handle_object_refs(to_call(galaxy))
 
-    def _parse_region_galaxy(self, galaxy: Union[MISPGalaxy, dict],
-                             timestamp: Union[datetime, None]) -> list:
+    def _parse_territorial_location_galaxy(
+            self, galaxy: MISPGalaxy | dict,
+            timestamp: Optional[datetime] = None) -> list:
+        to_call = f"_create_{galaxy['type']}_galaxy_args"
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
-            location_args = self._create_region_galaxy_args(
+            location_args = getattr(self, to_call)(
                 cluster, galaxy['description'], galaxy['name'], timestamp
             )
             location_args.update(

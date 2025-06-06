@@ -3115,6 +3115,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             marking_id = f"marking-definition--{cluster['uuid']}"
             meta = cluster['meta']
+            marking_definition = {
+                feature: meta.pop(feature)
+                for feature in ('created', 'modified')
+                if meta.get(feature) is not None
+            }
             privilege_actions = meta.get('access_privilege.privilege_action')
             feature = (
                 self._parse_acs_definition_without_access_privilege
@@ -3125,7 +3130,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._parse_acs_definition_with_single_access_privilege
             )
             marking_definition = self._create_acs_marking_definition(
-                marking_id, galaxy['uuid'], feature(meta)
+                marking_id, galaxy['uuid'], marking_definition, feature(meta)
             )
             self._append_SDO_without_refs(marking_definition)
             object_refs.append(marking_id)
@@ -3617,21 +3622,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         if cluster.get('description') is not None:
             galaxy_args['description'] = cluster['description']
-        if timestamp is None:
-            if not cluster.get('timestamp'):
-                return galaxy_args
-            timestamp = self._datetime_from_timestamp(cluster.pop('timestamp'))
-        galaxy_args.update({'created': timestamp, 'modified': timestamp})
         if cluster.get('meta'):
-            feature = f"{object_type.replace('-', '_')}_meta_mapping"
+            mapping = f"{object_type.replace('-', '_')}_meta_mapping"
             meta_args = (
                 self._parse_meta_fields(cluster['meta'], object_type, value)
-                if hasattr(self._mapping, feature) else
+                if hasattr(self._mapping, mapping) else
                 self._parse_meta_custom_fields(cluster['meta'])
             )
             if object_type in _labelled_object_types and 'labels' in meta_args:
                 galaxy_args['labels'].extend(meta_args.pop('labels'))
             galaxy_args.update(meta_args)
+        if galaxy_args.get('created') is not None:
+            if galaxy_args.get('modified') is None:
+                galaxy_args['modified'] = galaxy_args['created']
+            return galaxy_args
+        if galaxy_args.get('modified') is not None:
+            if galaxy_args.get('created') is None:
+                galaxy_args['created'] = galaxy_args['modified']
+            return galaxy_args
+        if timestamp is None:
+            if not cluster.get('timestamp'):
+                return galaxy_args
+            timestamp = self._datetime_from_timestamp(cluster.pop('timestamp'))
+        galaxy_args.update({'created': timestamp, 'modified': timestamp})
         return galaxy_args
 
     @staticmethod

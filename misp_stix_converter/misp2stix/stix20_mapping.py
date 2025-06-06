@@ -42,10 +42,11 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     )
     __generic_meta_mapping = Mapping(
         **{
+            'malware': ('created', 'modified'),
             'threat-actor': (
-                'goals', 'personal_motivations', 'primary_motivation',
-                'resource_level', 'roles', 'secondary_motivations',
-                'sophistication'
+                'created', 'goals', 'modified', 'personal_motivations',
+                'primary_motivation', 'resource_level', 'roles',
+                'secondary_motivations', 'sophistication'
             ),
             **MISPtoSTIX2Mapping.generic_meta_mapping()
         }

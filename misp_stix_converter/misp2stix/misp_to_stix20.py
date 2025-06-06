@@ -1350,12 +1350,18 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ############################################################################
 
     def _create_acs_marking_definition(
-            self, marking_id: str, galaxy_uuid: str,
+            self, marking_id: str, galaxy_uuid: str, marking_definition: dict,
             extension_definition: dict) -> CustomMarkingDefinition:
+        if marking_definition.get('created') is not None:
+            if marking_definition.get('modified') is None:
+                marking_definition['modified'] = marking_definition['created']
+        elif marking_definition.get('modified') is not None:
+            if marking_definition.get('created') is None:
+                marking_definition['created'] = marking_definition['modified']
         return CustomMarkingDefinition(
             id=f'x-misp-{marking_id}', definition=extension_definition,
             definition_type=f'acs-extension-definition--{galaxy_uuid}',
-            allow_custom=True, interoperability=True
+            interoperability=True, **marking_definition
         )
 
     ############################################################################
