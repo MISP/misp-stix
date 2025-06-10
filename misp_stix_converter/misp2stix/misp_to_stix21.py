@@ -1755,10 +1755,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Malware(**malware_args)
 
     @staticmethod
-    def _create_marking_definition(marking_args: dict) -> MarkingDefinition:
-        return MarkingDefinition(**marking_args)
-
-    @staticmethod
     def _create_note(note_args: dict) -> Note:
         if any(ref.startswith('x-misp-') for ref in note_args['object_refs']):
             note_args['allow_custom'] = True
