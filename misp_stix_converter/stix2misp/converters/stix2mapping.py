@@ -337,6 +337,16 @@ class STIX2Mapping:
         name_enc=__file_encoding_attribute,
         size=__size_in_bytes_attribute
     )
+    __network_connection_object_mapping = Mapping(
+        src_port=__src_port_attribute,
+        dst_port=__dst_port_attribute,
+        start=__first_packet_seen_attribute,
+        end=__last_packet_seen_attribute,
+        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-bytes-count'},
+        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-bytes-count'},
+        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
+        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'}
+    )
     __network_socket_extension_mapping = Mapping(
         address_family=__address_family_attribute,
         protocol_family=__domain_family_attribute,
@@ -627,6 +637,10 @@ class STIX2Mapping:
     @classmethod
     def name_attribute(cls) -> dict:
         return cls.__name_attribute
+
+    @classmethod
+    def network_connection_object_mapping(cls) -> dict:
+        return cls.__network_connection_object_mapping
 
     @classmethod
     def network_socket_extension_mapping(cls) -> dict:
@@ -1378,14 +1392,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_ip_version={'type': 'counter', 'object_relation': 'ip_version'}
     )
     __network_connection_object_mapping = Mapping(
-        src_port=STIX2Mapping.src_port_attribute(),
-        dst_port=STIX2Mapping.dst_port_attribute(),
-        start=STIX2Mapping.first_packet_seen_attribute(),
-        end=STIX2Mapping.last_packet_seen_attribute(),
-        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-bytes-count'},
-        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-bytes-count'},
-        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
-        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'},
+        **STIX2Mapping.network_connection_object_mapping(),
         x_misp_community_id=__community_id_attribute,
         x_misp_hostname_dst=STIX2Mapping.hostname_dst_attribute(),
         x_misp_hostname_src=STIX2Mapping.hostname_src_attribute()
