@@ -285,19 +285,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                         observable['used'][self.misp_event.uuid] = False
                     continue
                 if object_type == 'marking-definition':
-                    marking = self._marking_definition.get(object_ref)
-                    if isinstance(marking, str):
+                    markings = self._marking_definition.get(object_ref)
+                    if isinstance(markings, str):
+                        self.misp_event.add_tag(markings)
+                        continue
+                    for marking in markings:
                         self.misp_event.add_tag(marking)
                         continue
-                    for tag in marking.get('tags', []):
-                        self.misp_event.add_tag(tag)
-                    if marking.get('cluster') is not None:
-                        cluster = self._clusters.get(object_ref)
-                        if cluster is None:
-                            cluster = {
-                                'cluster': marking['cluster'], 'used': {}
-                            }
-                            self._clusters[object_ref] = cluster
+                    if object_ref in self._clusters:
+                        cluster = self._clusters[object_ref]
                         if cluster['used'].get(self.misp_event.uuid) is None:
                             cluster['used'][self.misp_event.uuid] = False
                     continue

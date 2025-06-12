@@ -16,6 +16,13 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             '2': '_parse_bundle_with_multiple_reports'
         }
     )
+    __marking_cluster_handling = Mapping(
+        **{
+            'MISPAttribute': '_handle_attribute_marking_clusters',
+            'MISPEvent': '_handle_event_marking_clusters',
+            'MISPObject': '_handle_object_marking_clusters'
+        }
+    )
     __marking_extension_mapping = Mapping(
         **{
             'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce': 'acs'
@@ -169,6 +176,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def identity_references(cls, identity_id: str) -> Union[str, None]:
         return cls.__identity_references.get(identity_id)
+
+    @classmethod
+    def marking_cluster_handling(cls, field: str) -> Union[str, None]:
+        return cls.__marking_cluster_handling.get(field)
 
     @classmethod
     def marking_extension_mapping(cls, field: str) -> Union[str, None]:
