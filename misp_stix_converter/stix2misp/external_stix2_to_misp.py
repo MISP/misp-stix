@@ -249,6 +249,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     if self.misp_event.uuid not in observable['used']:
                         observable['used'][self.misp_event.uuid] = False
                 continue
+            if object_type == 'marking-definition':
+                if object_ref in self._clusters:
+                    cluster = self._clusters[object_ref]
+                    if cluster['used'].get(self.misp_event.uuid) is None:
+                        cluster['used'][self.misp_event.uuid] = False
+                continue
             try:
                 self._handle_object(object_type, object_ref)
             except UnknownStixObjectTypeError as error:
