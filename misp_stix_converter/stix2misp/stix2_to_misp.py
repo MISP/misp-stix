@@ -494,10 +494,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
-        for cluster in self._clusters.values():
+        for cluster_id, cluster in self._clusters.items():
             if self.misp_event.uuid not in cluster['used']:
                 continue
             if not cluster['used'][self.misp_event.uuid]:
+                if cluster_id in self._marking_definition:
+                    for tag in self._marking_definition[cluster_id]:
+                        if tag not in self.event_tags:
+                            self.misp_event.add_tag(tag)
+                            self.event_tags.add(tag)
                 misp_cluster = cluster['cluster']
                 if isinstance(misp_cluster, list):
                     for cluster in misp_cluster:
