@@ -307,10 +307,22 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         galaxy_type = object_type or stix_object.type
         if galaxy_type not in self.main_parser._galaxies:
             self._create_galaxy_args(stix_object, galaxy_type)
+        galaxy_cluster = self._create_cluster(
+            stix_object, galaxy_type=object_type
+        )
+        if hasattr(stix_object, 'object_marking_refs'):
+            for marking_ref in stix_object.object_marking_refs:
+                if marking_ref not in self.main_parser._clusters:
+                    continue
+                cluster = self.main_parser._clusters[marking_ref]
+                if cluster['used'].get(self.event_uuid) is None:
+                    cluster['used'][self.event_uuid] = False
+                for misp_cluster in cluster['cluster']:
+                    galaxy_cluster.add_cluster_relation(
+                        misp_cluster.uuid, 'marked-with'
+                    )
         return {
-            'cluster': self._create_cluster(
-                stix_object, galaxy_type=object_type
-            ),
+            'cluster': galaxy_cluster,
             'used': {self.event_uuid: False}
         }
 
