@@ -66,7 +66,7 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             'location': ('administrative_area', 'region'),
             'malware': (
                 'architecture_execution_envs', 'capabilities', 'first_seen',
-                'implementation_languages', 'is_family', 'last_seen'
+                'implementation_languages', 'last_seen'
             ),
             'threat-actor': (
                 'first_seen', 'goals', 'last_seen', 'personal_motivations',

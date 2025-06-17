@@ -252,6 +252,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __malware_meta_mapping = Mapping(
         **{
+            'is_family': '_parse_malware_is_family_field',
             'kill_chain': '_parse_kill_chain',
             'labels': '_parse_malware_types',
             'malware_types': '_parse_malware_types',

@@ -3221,6 +3221,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__ids[cluster['uuid']] = malware_id
         return object_refs
 
+    def _parse_malware_is_family_field(
+            self, meta_args: dict, is_family: list | bool | int | str):
+        if isinstance(is_family, list):
+            is_family = is_family[0]
+        feature = 'is_family'
+        if self._version == '2.0':
+            feature = f'x_misp_{feature}'
+        meta_args[feature] = (
+            is_family if isinstance(is_family, bool) else
+            True if is_family in ('True', 'true', '1', 1) else False
+        )
+
     def _parse_malware_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_malware_galaxy(galaxy)
         self._handle_object_refs(object_refs)
