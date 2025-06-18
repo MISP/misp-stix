@@ -3259,6 +3259,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         mapping = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
             if key in self._mapping.generic_meta_mapping(object_type):
+                single = self._mapping.generic_meta_mapping(object_type)[key]
+                if single and isinstance(values, list):
+                    meta_args[key] = values[0]
+                    continue
                 meta_args[key] = values
                 continue
             feature = self._mapping.external_references_fields(key)

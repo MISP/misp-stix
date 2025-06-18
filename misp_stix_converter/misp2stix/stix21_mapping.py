@@ -63,16 +63,22 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'location': ('administrative_area', 'region'),
-            'malware': (
-                'architecture_execution_envs', 'capabilities', 'first_seen',
-                'implementation_languages', 'last_seen'
-            ),
-            'threat-actor': (
-                'first_seen', 'goals', 'last_seen', 'personal_motivations',
-                'primary_motivation', 'resource_level', 'roles',
-                'secondary_motivations', 'sophistication'
-            ),
+            'location': {
+                'administrative_area': True, 'created': True,
+                'modified': True, 'region': True
+            },
+            'malware': {
+                'architecture_execution_envs': False, 'capabilities': False,
+                'created': True, 'first_seen': True, 'last_seen': True,
+                'implementation_languages': False, 'modified': True
+            },
+            'threat-actor': {
+                'created': True, 'first_seen': True, 'goals': False,
+                'last_seen': True, 'modified': True, 'resource_level': True,
+                'personal_motivations': False, 'primary_motivation': True,
+                'roles': False, 'secondary_motivations': False,
+                'sophistication': True
+            },
             **MISPtoSTIX2Mapping.generic_meta_mapping()
         }
     )
@@ -386,8 +392,8 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         return cls.__galaxy_types_mapping.get(field)
 
     @classmethod
-    def generic_meta_mapping(cls, object_type: str) -> Union[tuple, list]:
-        return cls.__generic_meta_mapping.get(object_type, [])
+    def generic_meta_mapping(cls, object_type: str) -> dict:
+        return cls.__generic_meta_mapping.get(object_type, {})
 
     @classmethod
     def geolocation_object_mapping(cls) -> dict:
