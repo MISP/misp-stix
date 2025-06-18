@@ -42,12 +42,13 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'malware': ('created', 'modified'),
-            'threat-actor': (
-                'created', 'goals', 'modified', 'personal_motivations',
-                'primary_motivation', 'resource_level', 'roles',
-                'secondary_motivations', 'sophistication'
-            ),
+            'malware': {'created': True, 'modified': True},
+            'threat-actor': {
+                'created': True, 'goals': False, 'modified': True,
+                'personal_motivations': False, 'primary_motivation': True,
+                'resource_level': True, 'roles': False,
+                'secondary_motivations': False, 'sophistication': True
+            },
             **MISPtoSTIX2Mapping.generic_meta_mapping()
         }
     )
@@ -222,8 +223,8 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         return cls.__galaxy_types_mapping.get(field)
 
     @classmethod
-    def generic_meta_mapping(cls, object_type: str) -> Union[tuple, list]:
-        return cls.__generic_meta_mapping.get(object_type, [])
+    def generic_meta_mapping(cls, object_type: str) -> dict:
+        return cls.__generic_meta_mapping.get(object_type, {})
 
     @classmethod
     def lnk_time_fields(cls) -> dict:

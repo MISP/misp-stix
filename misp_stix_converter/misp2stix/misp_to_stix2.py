@@ -3116,9 +3116,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             marking_id = f"marking-definition--{cluster['uuid']}"
             meta = cluster['meta']
             marking_definition = {
-                feature: meta.pop(feature)
+                feature: values[0] if isinstance(values, list) else values
                 for feature in ('created', 'modified')
-                if meta.get(feature) is not None
+                if (values := meta.get(feature)) is not None
             }
             privilege_actions = meta.get('access_privilege.privilege_action')
             feature = (
@@ -3385,6 +3385,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         mapping = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
             if key in self._mapping.generic_meta_mapping(object_type):
+                single = self._mapping.generic_meta_mapping(object_type)[key]
+                if single and isinstance(values, list):
+                    meta_args[key] = values[0]
+                    continue
                 meta_args[key] = values
                 continue
             feature = self._mapping.external_references_fields(key)
