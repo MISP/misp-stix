@@ -1569,11 +1569,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         location_args.update({'created': timestamp, 'modified': timestamp})
         return location_args
 
-    def _parse_country_meta_field(self, meta_args: dict, country: str):
+    def _parse_country_meta_field(self, meta_args: dict, country: list | str):
+        if isinstance(country, list):
+            country = country[0]
         meta_args['country'] = self._parse_country_value(country)
 
     def _parse_country_value(
-            self, country_value: str, alpha_3: Optional[bool] = False) ->str:
+            self, country_value: str, alpha_3: Optional[bool] = False) -> str:
         try:
             country = countries.lookup(country_value)
             if country is None:
