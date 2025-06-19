@@ -1,4 +1,4 @@
-__version__ = '2025.6.12'
+__version__ = '2025.6.19'
 
 import argparse
 from .misp_stix_mapping import Mapping # noqa
