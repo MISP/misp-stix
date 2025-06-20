@@ -734,9 +734,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     for field, subvalue in values[0].items():
                         meta[f'{key}.{field}'] = subvalue
                     continue
+                further_sharing = defaultdict(list)
                 for sharing in values:
-                    feature = f"{key}.{sharing['rule_effect']}"
-                    meta[f"{feature}.sharing_scope"] = sharing['sharing_scope']
+                    feature = f"{key}.{sharing['rule_effect']}.sharing_scope"
+                    further_sharing[feature].extend(sharing['sharing_scope'])
+                meta.update(further_sharing)
                 continue
             if key != 'extension_type':
                 meta[key] = values
