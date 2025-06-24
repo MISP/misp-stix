@@ -67,18 +67,13 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'location': {
-                'administrative_area': True, 'created': True,
-                'modified': True, 'region': True
-            },
+            'location': {'administrative_area': True, 'region': True},
             'malware': {
                 'architecture_execution_envs': False, 'capabilities': False,
-                'created': True, 'first_seen': True, 'last_seen': True,
-                'implementation_languages': False, 'modified': True
+                'implementation_languages': False
             },
             'threat-actor': {
-                'created': True, 'first_seen': True, 'goals': False,
-                'last_seen': True, 'modified': True, 'resource_level': True,
+                'goals': False, 'resource_level': True,
                 'personal_motivations': False, 'primary_motivation': True,
                 'roles': False, 'secondary_motivations': False,
                 'sophistication': True
@@ -87,7 +82,7 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         }
     )
     __location_meta_mapping = Mapping(
-        country='_parse_country_meta_field',
+        country='_parse_country_meta_field'
     )
     __malware_sample_additional_observable_values = Mapping(
         mime_type="application/zip",

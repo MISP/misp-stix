@@ -10,6 +10,7 @@ from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime, UTC
+from dateutil import parser
 from pathlib import Path
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
@@ -40,6 +41,7 @@ _labelled_object_types = ('malware', 'threat-actor', 'tool')
 _misp_time_fields = ('first_seen', 'last_seen')
 _object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
+_sdo_time_fields = ('created', 'modified', *_misp_time_fields)
 _special_characters = (' ', '.')
 _stix_time_fields = {
     'indicator': ('valid_from', 'valid_until'),
@@ -3288,6 +3290,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_refs = self._parse_course_of_action_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
+    @staticmethod
+    def _parse_datetime_meta_field(value: datetime | list | str) -> datetime:
+        if isinstance(value, list):
+            value = value[0]
+        if isinstance(value, str):
+            dt_value = parser.isoparse(value)
+        return dt_value.astimezone(UTC)
+
     def _parse_external_id(self, external_id: str) -> dict:
         return {
             'source_name': self._define_source_name(external_id),
@@ -3422,6 +3432,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         meta_args = defaultdict(list)
         mapping = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
+            if key in _sdo_time_fields:
+                meta_args[key] = self._parse_datetime_meta_field(values)
+                continue
             if key in self._mapping.generic_meta_mapping(object_type):
                 single = self._mapping.generic_meta_mapping(object_type)[key]
                 if single and isinstance(values, list):
@@ -3433,8 +3446,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if feature is not None:
                 self._parse_external_references(meta_args, values, feature)
                 continue
-            to_call = getattr(self._mapping, mapping)(key)
-            if to_call is not None:
+            if (to_call := getattr(self._mapping, mapping)(key)) is not None:
                 args = [meta_args, values]
                 if 'synonyms' in to_call:
                     args.append(value)

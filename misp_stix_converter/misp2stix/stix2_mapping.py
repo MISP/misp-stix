@@ -274,19 +274,12 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'attack-pattern': {'created': True, 'modified': True},
-            'campaign': {
-                'created': True, 'first_seen': True, 'last_seen': True,
-                'modified': True, 'objective': True
-            },
-            'course-of-action': {'created': True, 'modified': True},
+            'campaign': {'objective': True},
             'intrusion-set': {
-                'created': True, 'first_seen': True, 'goals': False,
-                'last_seen': True, 'modified': True, 'primary_motivation': True,
+                'goals': False, 'primary_motivation': True,
                 'resource_level': True, 'secondary_motivations': False
             },
-            'tool': {'created': True, 'modified': True, 'tool_version': True},
-            'vulnerability': {'created': True, 'modified': True}
+            'tool': {'tool_version': True}
         }
     )
     __intrusion_set_meta_mapping = Mapping(
@@ -312,17 +305,15 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __tool_meta_mapping = Mapping(
         **{
-            'labels': '_parse_tool_types',
             'kill_chain': '_parse_kill_chain',
+            'labels': '_parse_tool_types',
             'synonyms': '_parse_synonyms_21_meta_field',
             'tool_types': '_parse_tool_types',
             'type': '_parse_tool_types'
         }
     )
     __vulnerability_meta_mapping = Mapping(
-        **{
-            'aliases': '_parse_external_references'
-        }
+        aliases='_parse_external_references'
     )
 
     # MISP OBJECTS MAPPING
