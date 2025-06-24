@@ -234,6 +234,41 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'Technique ID': '_parse_external_id'
         }
     )
+    __acs_marking_meta_mapping = Mapping(
+        authority_reference=False,
+        caveat=False,
+        classification=True,
+        classification_reason=True,
+        classified_by=True,
+        classified_on=True,
+        compilation_reason=True,
+        create_date_time=True,
+        declass_date=True,
+        declass_event=True,
+        declass_exemption=True,
+        declass_period=True,
+        derived_from=True,
+        disposition_date=True,
+        disposition_process=True,
+        entity=False,
+        formal_determination=False,
+        identifier=True,
+        logical_authority_category=False,
+        name=True,
+        permitted_nationalities=False,
+        permitted_organizations=False,
+        policy_reference=True,
+        privilege_action=True,
+        released_by=True,
+        released_on=True,
+        responsible_entity_custodian=True,
+        responsible_entity_originator=True,
+        rule_effect=True,
+        sci_controls=False,
+        sensitivity=False,
+        shareability=False,
+        sharing_scope=False
+    )
     __campaign_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
     )
@@ -905,6 +940,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'x509-fingerprint-sha1',
         'x509-fingerprint-sha256'
     )
+
+    @classmethod
+    def acs_marking_meta_mapping(cls, field: str) -> bool:
+        return cls.__acs_marking_meta_mapping.get(field, True)
 
     @classmethod
     def address_family_enum_list(cls) -> tuple:

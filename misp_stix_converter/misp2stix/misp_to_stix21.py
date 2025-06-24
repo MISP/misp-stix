@@ -1504,7 +1504,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return MarkingDefinition(
             id=marking_id, interoperability=True, **marking_definition,
             extensions={
-                f"extension-definition--{galaxy_uuid}": extension_definition
+                f"extension-definition--{galaxy_uuid}": {
+                    'extension_type': 'property-extension',
+                    **extension_definition
+                }
             }
         )
 

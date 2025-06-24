@@ -3025,35 +3025,62 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                             return True
         return False
 
+    def _parse_acs_definition_fields(
+            self, definition: dict, values: list | str, *fields: tuple):
+        for index, key in enumerate(fields):
+            if index != (len(fields) - 1):
+                definition = definition.setdefault(key, {})
+                continue
+            definition[key] = (
+                values[0] if isinstance(values, list) and
+                self._mapping.acs_marking_meta_mapping(key) else values
+            )
+
+    def _parse_acs_definition_further_sharing(
+            self, marking_definition: dict, values: list | str, *fields: tuple):
+        if fields[0] in ('sharing_scope', 'rule_effect'):
+            if 'further_sharing' not in marking_definition:
+                marking_definition['further_sharing'] = [{}]
+            marking_definition['further_sharing'][0][fields[-1]] = (
+                values[0] if isinstance(values, list) and
+                self._mapping.acs_marking_meta_mapping(fields[-1]) else values
+            )
+            return
+        marking_definition['further_sharing'].append(
+            {'rule_effect': fields[1], 'sharing_scope': values}
+        )
+
     def _parse_acs_definition_with_multiple_access_privileges(
             self, meta: dict) -> dict:
         access_privileges = {
             access_privilege: {} for access_privilege in
             meta['access_privilege.privilege_action']
         }
-        marking_definition = {}
-        for feature, value in meta.items():
+        marking_definition = defaultdict(list)
+        for feature, values in meta.items():
             field, *fields = feature.split('.')
             if field == 'access_privilege':
                 access_privilege, *keys = fields
                 if access_privilege == 'privilege_action':
                     continue
-                current = access_privileges[access_privilege]
-                for i, key in enumerate(keys[1:]):
-                    if i == len(keys) - 2:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
+                self._parse_acs_definition_fields(
+                    access_privileges[access_privilege], values, *keys
+                )
+                continue
+            if field == 'further_sharing':
+                self._parse_acs_definition_further_sharing(
+                    marking_definition, values, *fields
+                )
                 continue
             if fields:
-                current = marking_definition.setdefault(field, {})
-                for i, key in enumerate(fields):
-                    if i == len(fields) - 1:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
+                self._parse_acs_definition_fields(
+                    marking_definition.setdefault(field, {}), values, *fields
+                )
                 continue
-            marking_definition[feature] = value
+            marking_definition[feature] = (
+                values[0] if isinstance(values, list) and
+                self._mapping.acs_marking_meta_mapping(feature) else values
+            )
         marking_definition['access_privilege'] = [
             {'privilege_action': privilege_action, **access_privilege}
             for privilege_action, access_privilege in access_privileges.items()
@@ -3063,38 +3090,49 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_acs_definition_with_single_access_privilege(
             self, meta: dict) -> dict:
         access_privilege = {}
-        marking_definition = {}
-        for feature, value in meta.items():
+        marking_definition = defaultdict(list)
+        for feature, values in meta.items():
             field, *fields = feature.split('.')
+            if field == 'further_sharing':
+                self._parse_acs_definition_further_sharing(
+                    marking_definition, values, *fields
+                )
+                continue
             if fields:
                 current = (
                     access_privilege if field == 'access_privilege'
                     else marking_definition
                 )
-                for i, key in enumerate(fields):
-                    if i == len(fields) - 1:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
+                self._parse_acs_definition_fields(
+                    current, values, *feature.split('.')
+                )
                 continue
-            marking_definition[feature] = value
+            marking_definition[feature] = (
+                values[0] if isinstance(values, list) and
+                self._mapping.acs_marking_meta_mapping(feature) else values
+            )
         marking_definition['access_privilege'] = [access_privilege]
         return marking_definition
 
     def _parse_acs_definition_without_access_privilege(
             self, meta: dict) -> dict:
         marking_definition = {}
-        for feature, value in meta.items():
-            fields = feature.split('.')
-            if len(fields) > 1:
-                current = marking_definition
-                for i, key in enumerate(fields):
-                    if i == len(fields) - 1:
-                        current[key] = value
-                    else:
-                        current = current.setdefault(key, {})
+        for feature, values in meta.items():
+            field, *fields = feature.split('.')
+            if field == 'further_sharing':
+                self._parse_acs_definition_further_sharing(
+                    marking_definition, values, *fields
+                )
                 continue
-            marking_definition[feature] = value
+            if fields:
+                self._parse_acs_definition_fields(
+                    marking_definition, values, *feature.split('.')
+                )
+                continue
+            marking_definition[feature] = (
+                values[0] if isinstance(values, list) and
+                self._mapping.acs_marking_meta_mapping(feature) else values
+            )
         return marking_definition
 
     def _parse_acs_marking_attribute_galaxy(
@@ -3118,7 +3156,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             marking_definition = {
                 feature: values[0] if isinstance(values, list) else values
                 for feature in ('created', 'modified')
-                if (values := meta.get(feature)) is not None
+                if (values := meta.pop(feature, None)) is not None
             }
             privilege_actions = meta.get('access_privilege.privilege_action')
             feature = (
