@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
+_DATETIME_REGEX = '%Y-%m-%dT%H:%M:%S'
 
 _GALAXY_OBJECTS_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21,
@@ -278,13 +279,19 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         galaxy_args.update({'type': galaxy_type, 'name': name})
         self.main_parser._galaxies[galaxy_type] = galaxy_args
 
+    @staticmethod
+    def _handle_datetime_meta_fields(stix_object: _GALAXY_OBJECTS_TYPING):
+        for field in ('created', 'modified', 'first_seen', 'last_seen'):
+            if stix_object.get(field) is not None:
+                dt_value = stix_object[field]
+                yield field, dt_value.strftime(
+                    f'{_DATETIME_REGEX}.%fZ' if dt_value.microsecond != 0
+                    else f'{_DATETIME_REGEX}Z'
+                )
+
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
-        meta = {
-            field: stix_object[field].strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-            for field in ('created', 'modified', 'first_seen', 'last_seen')
-            if stix_object.get(field) is not None
-        }
+        meta = dict(self._handle_datetime_meta_fields(stix_object))
         if hasattr(self._mapping, mapping):
             for feature, field in getattr(self._mapping, mapping)().items():
                 if hasattr(stix_object, feature):
