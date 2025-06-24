@@ -498,7 +498,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if self.misp_event.uuid not in cluster['used']:
                 continue
             if not cluster['used'][self.misp_event.uuid]:
-                if cluster_id in self._marking_definition:
+                if cluster_id in getattr(self, '_marking_definition', {}):
                     for tag in self._marking_definition[cluster_id]:
                         if tag not in self.event_tags:
                             self.misp_event.add_tag(tag)
