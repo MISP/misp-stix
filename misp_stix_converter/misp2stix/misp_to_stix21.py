@@ -99,8 +99,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._mapping = MISPtoSTIX21Mapping
 
     def _parse_event_report(
-            self, event_report: Union[MISPEventReport, dict]) -> Note:
-        timestamp = self._datetime_from_timestamp(event_report['timestamp'])
+            self, event_report: MISPEventReport | dict) -> Note:
+        timestamp = self._parse_timestamp_value(event_report)
         note_args = {
             'id': f"note--{event_report['uuid']}",
             'created': timestamp, 'modified': timestamp,
@@ -708,7 +708,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if not object_refs:
             return self._parse_custom_object(misp_object)
         note_id = self._parse_stix_object_id('object', 'note', misp_object)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = self._parse_timestamp_value(misp_object)
         note_args = {
             'id': note_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_object_labels(misp_object, to_ids=to_ids),
@@ -975,7 +975,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         location_id = self._parse_stix_object_id(
             'object', 'location', misp_object
         )
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = self._parse_timestamp_value(misp_object)
         location_args = {
             'id': location_id, 'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id, 'interoperability': True,

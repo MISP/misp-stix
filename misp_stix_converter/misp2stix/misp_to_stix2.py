@@ -10,6 +10,7 @@ from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
+from dateutil import parser
 from pathlib import Path
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
@@ -33,6 +34,12 @@ from stix2.v21.sdo import (
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from typing import Generator, Optional, Tuple, Union
+
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+    UTC = timezone.utc
 
 _event_report_regex = r'@[!]?\[%s\]\([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\)'
 _label_fields = ('type', 'category', 'to_ids')
@@ -643,7 +650,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         campaign_id = self._parse_stix_object_id(
             'attribute', 'campaign', attribute
         )
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._parse_timestamp_value(attribute)
         campaign_args = {
             'id': campaign_id, 'type': 'campaign', 'name': attribute['value'],
             'created_by_ref': self.identity_id, 'created': timestamp,
@@ -665,7 +672,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         custom_id = self._parse_stix_object_id(
             'attribute', 'x-misp-attribute', attribute
         )
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._parse_timestamp_value(attribute)
         custom_args = {
             'id': custom_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_labels(attribute),
@@ -1062,7 +1069,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         vulnerability_id = self._parse_stix_object_id(
             'attribute', 'vulnerability', attribute
         )
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._parse_timestamp_value(attribute)
         vulnerability_args = {
             'id': vulnerability_id, 'type': 'vulnerability',
             'name': attribute['value'], 'created': timestamp,
@@ -1162,7 +1169,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_id = self._parse_stix_object_id(
             'object', object_type, misp_object
         )
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = self._parse_timestamp_value(misp_object)
         object_args.update(
             {
                 'id': object_id, 'type': object_type,
@@ -1546,7 +1553,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         custom_id = self._parse_stix_object_id(
             'object', 'x-misp-object', misp_object
         )
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = self._parse_timestamp_value(misp_object)
         custom_args = {
             'id': custom_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_object_labels(misp_object),
@@ -3601,7 +3608,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         identity_id = self._parse_stix_object_id(
             'object', 'identity', misp_object
         )
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = self._parse_timestamp_value(misp_object)
         identity_args = {
             'id': identity_id, 'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id,
@@ -4319,16 +4326,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return [f"{prefix}:x_misp_{key} = '{value}'"]
 
     def _handle_indicator_time_fields(
-            self, attribute: Union[MISPAttribute, dict]) -> dict:
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+            self, data_layer: Union[MISPAttribute, MISPObject, dict]) -> dict:
+        timestamp = self._parse_timestamp_value(data_layer)
         time_fields = {
             'created': timestamp, 'modified': timestamp, 'valid_from': timestamp
         }
         stix_fields = _stix_time_fields['indicator']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
-            if attribute.get(misp_field):
+            if data_layer.get(misp_field):
                 time_fields[stix_field] = self._datetime_from_str(
-                    attribute[misp_field]
+                    data_layer[misp_field]
                 )
         invalid_time = (
             time_fields.get('valid_until')
@@ -4339,17 +4346,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return time_fields
 
     def _handle_observable_time_fields(
-            self, attribute: Union[MISPAttribute, dict]) -> dict:
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+            self, data_layer: Union[MISPAttribute, MISPObject, dict]) -> dict:
+        timestamp = self._parse_timestamp_value(data_layer)
         time_fields = {'created': timestamp, 'modified': timestamp}
         stix_fields = _stix_time_fields['observed-data']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
             time_fields[stix_field] = (
-                self._datetime_from_str(attribute[misp_field])
-                if attribute.get(misp_field) else timestamp
+                self._datetime_from_str(data_layer[misp_field])
+                if data_layer.get(misp_field) else timestamp
             )
         if time_fields['first_observed'] > time_fields['last_observed']:
-            if attribute.get('last_seen'):
+            if data_layer.get('last_seen'):
                 time_fields['first_observed'] = time_fields['last_observed']
             else:
                 time_fields['last_observed'] = time_fields['first_observed']
@@ -4440,6 +4447,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     {'created': timestamp, 'modified': timestamp}
                 )
             self.__relationships.append(relationship)
+
+    def _parse_timestamp_value(
+            self, misp_data_layer: _MISP_DATA_LAYER) -> datetime:
+        if misp_data_layer.get('timestamp') is not None:
+            return self._datetime_from_timestamp(misp_data_layer['timestamp'])
+        return datetime.now(UTC)
 
     @staticmethod
     def _sanitise_meta_field(key: str, strict: Optional[bool] = False) -> str:

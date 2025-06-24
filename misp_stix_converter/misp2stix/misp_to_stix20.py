@@ -245,8 +245,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._mapping = MISPtoSTIX20Mapping
 
     def _parse_event_report(
-            self, event_report: Union[MISPEventReport, dict]) -> CustomEventReport:
-        timestamp = self._datetime_from_timestamp(event_report['timestamp'])
+            self, event_report: MISPEventReport | dict) -> CustomEventReport:
+        timestamp = self._parse_timestamp_value(event_report)
         note_args = {
             'id': f"x-misp-event-report--{event_report['uuid']}",
             'created': timestamp, 'modified': timestamp,
