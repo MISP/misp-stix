@@ -7,6 +7,8 @@ from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
 from datetime import datetime
 from uuid import uuid5
 
+_ACS_EXTENSION_ID = 'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce'
+
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
 
@@ -63,6 +65,63 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(event_report.content, grouping.description)
         self.assertEqual(event_report.name, 'STIX 2.1 grouping description')
         self.assertEqual(event_report.timestamp, grouping.modified)
+
+    def test_stix21_bundle_with_unreferenced_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_unreferenced_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        (_, indicator1, grouping, indicator2, ip1, ip2, ip3, malware1,
+         malware2, marking1, marking2, _) = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(event.attributes), 5)
+        attribute1, attribute2, *attributes = event.attributes
+        self._assert_multiple_equal(attribute1.type, attribute2.type, 'ip-dst')
+        self.assertEqual(attribute1.uuid, indicator2.id.split('--')[1])
+        self.assertEqual(attribute1.value, indicator2.pattern.split(' = ')[1].strip("']"))
+        self.assertEqual(len(attribute1.galaxies), 2)
+        extension_definition = marking1.extensions[_ACS_EXTENSION_ID]
+        names = ('ACS Marking', 'Malware')
+        for galaxy, name, stix_object in zip(attribute1.galaxies, names, (extension_definition, malware2)):
+            self.assertEqual(galaxy.name, f'STIX 2.1 {name}')
+            self.assertEqual(galaxy.clusters[0].value, stix_object['name'])
+        self.assertEqual(len(attribute1.tags), 5)
+        attribute_tags = tuple(tag.name for tag in attribute1.tags)
+        for access_privilege in extension_definition['access_privilege']:
+            tag = f'acs-marking:privilege_action="{access_privilege["privilege_action"]}"'
+            self.assertIn(tag, attribute_tags)
+        control_set = extension_definition['control_set']
+        self.assertIn(
+            f'acs-marking:classification="{control_set["classification"]}"',
+            attribute_tags
+        )
+        self.assertIn(
+            f'acs-marking:formal_determination="{control_set["formal_determination"][0]}"',
+            attribute_tags
+        )
+        for attribute, indicator in zip((attribute1, attribute2), (indicator2, indicator1)):
+            self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+            self.assertEqual(attribute.value, indicator.pattern.split(' = ')[1].strip("']"))
+        for attribute, observable in zip(attributes, (ip1, ip3, ip2)):
+            self.assertEqual(attribute.type, 'ip-dst')
+            self.assertEqual(attribute.uuid, observable.id.split('--')[1])
+            self.assertEqual(attribute.value, observable.value)
+        extension_definition = marking2.extensions[_ACS_EXTENSION_ID]
+        for galaxy, name, stix_object in zip(event.galaxies, names, (extension_definition, malware1)):
+            self.assertEqual(galaxy.name, f'STIX 2.1 {name}')
+            self.assertEqual(galaxy.clusters[0].value, stix_object['name'])
+        event_tags = tuple(
+            tag.name for tag in event.tags
+            if tag.name != 'misp-galaxy:producer="MISP-Project"'
+        )
+        self.assertEqual(len(event_tags), 4)
+        control_set = extension_definition['control_set']
+        self.assertIn(
+            f'acs-marking:classification="{control_set["classification"]}"',
+            event_tags
+        )
+        for entity in control_set['entity']:
+            self.assertIn(f'acs-marking:entity="{entity}"', event_tags)
 
     ############################################################################
     #                        MISP GALAXIES IMPORT TESTS                        #
