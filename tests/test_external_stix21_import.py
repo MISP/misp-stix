@@ -16,6 +16,58 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                         MISP EVENT IMPORT TESTS.                         #
     ############################################################################
 
+    def _check_acs_marking_features(self, meta, definition):
+        for key, value in definition.items():
+            if key == 'extension_type':
+                continue
+            if key == 'access_privilege':
+                access_privileges = []
+                for privilege in value:
+                    action = privilege['privilege_action']
+                    access_privileges.append(action)
+                    feature = f'access_privilege.{action}'
+                    self.assertEqual(
+                        meta[f'{feature}.rule_effect'], privilege['rule_effect']
+                    )
+                    for scope, scopes in privilege['privilege_scope'].items():
+                        self.assertEqual(
+                            meta[f'{feature}.privilege_scope.{scope}'], scopes
+                        )
+                self.assertEqual(
+                    meta['access_privilege.privilege_action'],
+                    access_privileges
+                )
+                continue
+            if key == 'control_set':
+                for feature, control in value.items():
+                    self.assertEqual(meta[f'control_set.{feature}'], control)
+                continue
+            self.assertEqual(meta[key], value)
+
+    def test_stix21_bundle_with_acs_marking(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_acs_marking()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, ip_address, marking1, marking2 = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(event.galaxies), 1)
+        event_galaxy = event.galaxies[0]
+        self.assertEqual(event_galaxy.name, 'STIX 2.1 ACS Marking')
+        self.assertEqual(len(event_galaxy.clusters), 2)
+        cluster1, cluster2 = event_galaxy.clusters
+        definition1 = marking1.extensions[_ACS_EXTENSION_ID]
+        self.assertEqual(cluster1.value, definition1['name'])
+        self._check_acs_marking_features(cluster1.meta, definition1)
+        definition2 = marking2.extensions[_ACS_EXTENSION_ID]
+        self.assertEqual(cluster2.value, definition2['name'])
+        self._check_acs_marking_features(cluster2.meta, definition2)
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.type, 'ip-dst')
+        self.assertEqual(attribute.uuid, ip_address.id.split('--')[1])
+        self.assertEqual(attribute.value, ip_address.value)
+
     def test_stix21_bundle_with_analyst_data(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_analyst_data()
         self.parser.load_stix_bundle(bundle)

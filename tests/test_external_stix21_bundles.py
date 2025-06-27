@@ -2091,6 +2091,13 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     ############################################################################
 
     @classmethod
+    def get_bundle_with_acs_marking(cls):
+        ip_address = deepcopy(_IP_ADDRESS_ATTRIBUTES[2])
+        acs_marking_definitions = deepcopy(_ACS_MARKING_DEFINITION_OBJECTS)
+        ip_address['object_marking_refs'] = [acs_marking_definitions[0]['id']]
+        return cls.__assemble_bundle(ip_address, *acs_marking_definitions)
+
+    @classmethod
     def get_bundle_with_analyst_data(cls):
         return cls.__assemble_bundle(*deepcopy(_ANALYST_DATA_SAMPLES))
 
