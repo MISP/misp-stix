@@ -601,38 +601,41 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         attribute.add_tag(tag)
 
     def _handle_attribute_marking_clusters(
-            self, marking_ref: str, misp_attribute: MISPAttribute):
+            self, misp_attribute: MISPAttribute, *marking_refs: tuple[str]):
         clusters = defaultdict(list)
-        cluster_storage = self._clusters[marking_ref]
-        for cluster in cluster_storage['cluster']:
-            if cluster.uuid not in self.event_tags:
-                clusters[cluster.type].append(cluster)
+        for marking_ref in marking_refs:
+            cluster_storage = self._clusters[marking_ref]
+            for cluster in cluster_storage['cluster']:
+                if cluster.uuid not in self.event_tags:
+                    clusters[cluster.type].append(cluster)
+            cluster_storage['used'][self.misp_event.uuid] = True
         for galaxy in self._aggregate_galaxy_clusters(clusters):
             misp_attribute.add_galaxy(galaxy)
-        cluster_storage['used'][self.misp_event.uuid] = True
 
     def _handle_event_marking_clusters(
-            self, marking_ref: str, misp_event: MISPEvent):
+            self, misp_event: MISPEvent, *marking_refs: tuple[str]):
         clusters = defaultdict(list)
-        cluster_storage = self._clusters[marking_ref]
-        for cluster in cluster_storage['cluster']:
-            clusters[cluster.type].append(cluster)
-            self.event_tags.add(cluster.uuid)
+        for marking_ref in marking_refs:
+            cluster_storage = self._clusters[marking_ref]
+            for cluster in cluster_storage['cluster']:
+                clusters[cluster.type].append(cluster)
+                self.event_tags.add(cluster.uuid)
+            cluster_storage['used'][misp_event.uuid] = True
         for galaxy in self._aggregate_galaxy_clusters(clusters):
             misp_event.add_galaxy(galaxy)
-        cluster_storage['used'][misp_event.uuid] = True
 
     def _handle_object_marking_clusters(
-            self, marking_ref: str, misp_object: MISPObject):
+            self, misp_object: MISPObject, *marking_refs: tuple[str]):
         clusters = defaultdict(list)
-        cluster_storage = self._clusters[marking_ref]
-        for cluster in cluster_storage['cluster']:
-            if cluster.uuid not in self.event_tags:
-                clusters[cluster.type].append(cluster)
+        for marking_ref in marking_refs:
+            cluster_storage = self._clusters[marking_ref]
+            for cluster in cluster_storage['cluster']:
+                if cluster.uuid not in self.event_tags:
+                    clusters[cluster.type].append(cluster)
+            cluster_storage['used'][self.misp_event.uuid] = True
         for galaxy in self._aggregate_galaxy_clusters(clusters):
             for attribute in misp_object.attributes:
                 attribute.add_galaxy(galaxy)
-        cluster_storage['used'][self.misp_event.uuid] = True
 
     def _handle_tags_from_stix_fields(
             self, misp_layer: MISPAttribute | MISPEvent | MISPObject,
@@ -640,14 +643,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(stix_object, 'confidence'):
             yield self._parse_confidence_level(stix_object.confidence)
         if hasattr(stix_object, 'object_marking_refs'):
+            cluster_ids = []
             for marking_ref in stix_object.object_marking_refs:
                 try:
                     marking_definition = self._get_stix_object(marking_ref)
                     if marking_ref in self._clusters:
-                        to_call = self._mapping.marking_cluster_handling(
-                            misp_layer.__class__.__name__
-                        )
-                        getattr(self, to_call)(marking_ref, misp_layer)
+                        cluster_ids.append(marking_ref)
                 except ObjectTypeLoadingError as error:
                     if self._is_tlp_marking(marking_ref):
                         yield self._get_stix_object(marking_ref)
@@ -661,6 +662,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         self._object_ref_loading_error(error)
                     continue
                 yield marking_definition
+            if cluster_ids:
+                to_call = self._mapping.marking_cluster_handling(
+                    misp_layer.__class__.__name__
+                )
+                getattr(self, to_call)(misp_layer, *cluster_ids)
 
     def _parse_acs_access_privilege(
             self, tags: list, privilege: dict,
