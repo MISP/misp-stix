@@ -945,7 +945,9 @@ class ExternalSTIX2Mapping(STIX2Mapping):
 
     @classmethod
     def file_hashes_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.file_hashes().get(field)
+        return cls.file_hashes().get(
+            field, cls.file_hashes().get(field.upper())
+        )
 
     @classmethod
     def galaxy_name_mapping(cls, field) -> Union[dict, None]:
