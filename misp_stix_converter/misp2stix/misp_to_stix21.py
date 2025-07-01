@@ -23,8 +23,8 @@ from stix2.v21.observables import (
     WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import (
     AttackPattern, Campaign, CourseOfAction, CustomObject, Grouping, Identity,
-    Indicator, IntrusionSet, Location, Malware, Note, ObservedData, Opinion,
-    Report, ThreatActor, Tool, Vulnerability)
+    Indicator, IntrusionSet, Location, Malware, MalwareAnalysis, Note,
+    ObservedData, Opinion, Report, ThreatActor, Tool, Vulnerability)
 from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
@@ -1176,6 +1176,22 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, self._create_file_object(file_args))
         self._handle_object_observable(misp_object, objects)
 
+    def _parse_malware_analysis_object(self, misp_object: MISPObject | dict):
+        attributes = self._extract_object_attributes_escaped(
+            misp_object['Attribute']
+        )
+        mapping = self._mapping.malware_analysis_object_mapping
+        analysis_args = {
+            feature: attributes.pop(key)
+            for key, feature in mapping().items()
+            if key in attributes
+        }
+        if attributes:
+            analysis_args.update(self._handle_observable_properties(attributes))
+        self._handle_non_indicator_object(
+            misp_object, analysis_args, 'malware-analysis'
+        )
+
     def _parse_mutex_object_observable(
             self, misp_object: MISPObject | dict):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
@@ -1743,6 +1759,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_location(location_args: dict) -> Location:
         return Location(**location_args)
+
+    @staticmethod
+    def _create_malware_analysis(analysis_args: dict) -> MalwareAnalysis:
+        return MalwareAnalysis(**analysis_args)
 
     @staticmethod
     def _create_malware(malware_args: dict) -> Malware:

@@ -101,14 +101,17 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     )
 
     # STIX 2.1 specific MISP OBJECTS MAPPING
-    __objects_mapping = {
-        'annotation': '_populate_objects_to_parse',
-        'geolocation': '_parse_geolocation_object',
-        'sigma': '_parse_sigma_object',
-        'suricata': '_parse_suricata_object',
-        'yara': '_parse_yara_object',
-        **MISPtoSTIX2Mapping.objects_mapping()
-    }
+    __objects_mapping = Mapping(
+        **{
+            'annotation': '_populate_objects_to_parse',
+            'geolocation': '_parse_geolocation_object',
+            'malware-analysis': '_parse_malware_analysis_object',
+            'sigma': '_parse_sigma_object',
+            'suricata': '_parse_suricata_object',
+            'yara': '_parse_yara_object',
+            **MISPtoSTIX2Mapping.objects_mapping()
+        }
+    )
     __annotation_data_fields = (
         'attachment',
     )
@@ -201,6 +204,19 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         'fullpath',
         'malware-sample',
         'path'
+    )
+    __malware_analysis_object_mapping = Mapping(
+        analysis_definition_version='analysis_definition_version',
+        analysis_engine_version='analysis_engine_version',
+        configuration_version='configuration_version',
+        end_time='analysis_ended',
+        module='module',
+        product='product',
+        result='result',
+        result_name='result_name',
+        start_time='analysis_started',
+        submitted_time='submitted',
+        version='version'
     )
     __malware_object_mapping = Mapping(
         alias='aliases',
@@ -428,6 +444,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def location_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__location_meta_mapping.get(field)
+
+    @classmethod
+    def malware_analysis_object_mapping(cls) -> dict:
+        return cls.__malware_analysis_object_mapping
 
     @classmethod
     def malware_object_mapping(cls) -> dict:
