@@ -157,7 +157,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             object_args['object_marking_refs'] = marking_ids
 
     def _handle_note_data(self, stix_object: _STIX_OBJECT_TYPING,
-                          note: Union[MISPNote, dict]):
+                          note: MISPNote | dict):
         note_args = {
             'content': note['note'], 'id': f"note--{note['uuid']}",
             'labels': ['misp:context-layer="Analyst Note"'],
@@ -175,7 +175,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
 
     def _handle_opinion_data(self, stix_object: _STIX_OBJECT_TYPING,
-                             opinion: Union[MISPOpinion, dict]):
+                             opinion: MISPOpinion | dict):
         opinion_value = int(opinion['opinion'])
         opinion_args = {
             'allow_custom': True, 'id': f"opinion--{opinion['uuid']}",
@@ -243,7 +243,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ############################################################################
 
     def _parse_attachment_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         artifact_id = f"artifact--{attribute['uuid']}"
         data = attribute['data']
         if not isinstance(data, str):
@@ -258,7 +258,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, objects)
 
     def _parse_autonomous_system_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         AS_object = AutonomousSystem(
             id=f"autonomous-system--{attribute['uuid']}",
             number=self._parse_AS_value(attribute['value'])
@@ -266,14 +266,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [AS_object])
 
     def _parse_domain_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         domain_object = DomainName(
             id=f"domain-name--{attribute['uuid']}", value=attribute['value']
         )
         self._handle_attribute_observable(attribute, [domain_object])
 
     def _parse_domain_ip_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 domain, ip = attribute['value'].split(separator)
@@ -295,7 +295,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._parse_custom_attribute(attribute)
 
     def _parse_email_attachment_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         file_id = f"file--{attribute['uuid']}"
         value = attribute['value']
         objects = [
@@ -313,14 +313,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         address_object = self._create_email_address(
             f"email-addr--{attribute['uuid']}", attribute['value']
         )
         self._handle_attribute_observable(attribute, [address_object])
 
     def _parse_email_body_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         message_object = EmailMessage(
             id=f"email-message--{attribute['uuid']}",
             is_multipart=False, body=attribute['value']
@@ -328,7 +328,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_destination_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         address_id = f"email-addr--{attribute['uuid']}"
         objects = [
             EmailMessage(
@@ -340,7 +340,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_header_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         message_object = EmailMessage(
             id=f"email-message--{attribute['uuid']}",
             is_multipart=False, received_lines=[attribute['value']]
@@ -348,7 +348,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_message_id_attribute(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
             pattern = f"[email-message:message_id = '{value}']"
@@ -361,7 +361,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_reply_to_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         message_object = EmailMessage(
             id=f"email-message--{attribute['uuid']}", is_multipart=False,
             additional_header_fields={"Reply-To": attribute['value']}
@@ -369,7 +369,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_source_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         address_id = f"email-addr--{attribute['uuid']}"
         objects = [
             EmailMessage(
@@ -381,7 +381,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_subject_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         message_object = EmailMessage(
             id=f"email-message--{attribute['uuid']}",
             is_multipart=False, subject=attribute['value']
@@ -389,7 +389,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_x_mailer_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         message_object = EmailMessage(
             id=f"email-message--{attribute['uuid']}", is_multipart=False,
             additional_header_fields={"X-Mailer": attribute['value']}
@@ -397,14 +397,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_filename_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         file_object = self._create_file(
             f"file--{attribute['uuid']}", attribute['value']
         )
         self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_github_username_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         account_object = UserAccount(
             id=f"user-account--{attribute['uuid']}",
             account_type='github', account_login=attribute['value']
@@ -412,11 +412,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [account_object])
 
     def _parse_hash_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         hash_type = self._define_hash_type(attribute['type'])
         if not self._check_hash_value(hash_type, attribute['value']):
             raise InvalidHashValueError()
-        file_args: dict[str, Union[bool, dict, str]] = {
+        file_args = {
             'id': f"file--{attribute['uuid']}",
             'hashes': {hash_type: attribute['value']}
         }
@@ -426,7 +426,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hash_composite_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict],
+            self, attribute: MISPAttribute | dict,
             hash_type: Optional[str] = None):
         file_args = {
             'id': f"file--{attribute['uuid']}"
@@ -454,7 +454,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hostname_port_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 hostname, port = attribute['value'].split(separator)
@@ -475,7 +475,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._parse_custom_attribute(attribute)
 
     def _parse_ip_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         address_type = self._get_address_type(attribute['value'])
         address_id = f"{address_type._type}--{attribute['uuid']}"
         ip_type = attribute['type'].split('-')[1]
@@ -490,7 +490,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, objects)
 
     def _parse_ip_port_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 ip_value, port_value = attribute['value'].split(separator)
@@ -516,7 +516,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._parse_custom_attribute(attribute)
 
     def _parse_mac_address_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         mac_address_object = MACAddress(
             id=f"mac-addr--{attribute['uuid']}",
             value=attribute['value'].lower()
@@ -524,7 +524,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [mac_address_object])
 
     def _parse_malware_sample_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         artifact_id = f"artifact--{attribute['uuid']}"
         file_args = {
             'id': f"file--{attribute['uuid']}",
@@ -554,21 +554,21 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, objects)
 
     def _parse_mutex_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         mutex_object = Mutex(
             id=f"mutex--{attribute['uuid']}", name=attribute['value']
         )
         self._handle_attribute_observable(attribute, [mutex_object])
 
     def _parse_patterning_language_attribute(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         self._handle_attribute_indicator(
             attribute, f"[{attribute['value']}]",
             pattern_type=attribute['type']
         )
 
     def _parse_regkey_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         regkey_object = WindowsRegistryKey(
             id=f"windows-registry-key--{attribute['uuid']}",
             key=attribute['value'].strip()
@@ -576,7 +576,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [regkey_object])
 
     def _parse_regkey_value_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         registry_key_args = {
             'id': f"windows-registry-key--{attribute['uuid']}"
         }
@@ -599,14 +599,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [regkey_object])
 
     def _parse_url_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         url_object = URL(
             id=f"url--{attribute['uuid']}", value=attribute['value']
         )
         self._handle_attribute_observable(attribute, [url_object])
 
     def _parse_x509_fingerprint_attribute_observable(
-            self, attribute: Union[MISPAttribute, dict]):
+            self, attribute: MISPAttribute | dict):
         hash_type = self._define_hash_type(attribute['type'].split('-')[-1])
         if not self._check_hash_value(hash_type, attribute['value']):
             raise InvalidHashValueError()
@@ -668,7 +668,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, self._create_file_object(args))
 
     def _parse_account_object_observable(
-            self, misp_object: Union[MISPObject, dict], account_type: str):
+            self, misp_object: MISPObject | dict, account_type: str):
         account_args = self._parse_account_args(
             misp_object['Attribute'], account_type
         )
@@ -679,7 +679,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [account_object])
 
     def _parse_account_object_with_attachment_observable(
-            self, misp_object: Union[MISPObject, dict], account_type: str):
+            self, misp_object: MISPObject | dict, account_type: str):
         account_args = self._parse_account_with_attachment_args(
             misp_object['Attribute'], account_type
         )
@@ -690,7 +690,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [account_object])
 
     def _parse_android_app_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         software_args = self._parse_android_app_args(misp_object['Attribute'])
         software_args['id'] = self._parse_stix_object_id(
             'object', 'software', misp_object
@@ -699,7 +699,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [software_object])
 
     def _parse_annotation_object(
-            self, to_ids: bool, misp_object: Union[MISPObject, dict]):
+            self, to_ids: bool, misp_object: MISPObject | dict):
         object_refs = []
         for reference in misp_object['ObjectReference']:
             for object_ref in self.object_refs:
@@ -744,7 +744,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_analyst_data(note, misp_object)
 
     def _parse_asn_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         as_args = self._parse_AS_args(misp_object['Attribute'])
         as_args['id'] = self._parse_stix_object_id(
             'object', 'autonomous-system', misp_object
@@ -753,7 +753,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [AS_object])
 
     def _parse_cpe_asset_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         software_args = self._parse_cpe_asset_args(misp_object['Attribute'])
         software_args['id'] = self._parse_stix_object_id(
             'object', 'software', misp_object
@@ -762,7 +762,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [software_object])
 
     def _parse_credential_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         credential_args = self._parse_credential_args(misp_object['Attribute'])
         credential_args['id'] = self._parse_stix_object_id(
             'object', 'user-account', misp_object
@@ -799,7 +799,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, observables)
 
     def _parse_domain_ip_object_standard(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],
             force_single=self._mapping.domain_ip_single_fields(),
@@ -839,7 +839,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return observable_objects, resolves_to_refs
 
     def _parse_email_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],
             with_uuid=self._mapping.email_uuid_fields(),
@@ -914,7 +914,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, objects)
 
     def _parse_file_observable_object(
-            self, misp_object: Union[MISPObject, dict]) -> tuple:
+            self, misp_object: MISPObject | dict) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],
             force_single=self._mapping.file_single_fields(),
@@ -972,7 +972,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         return file_args, objects
 
-    def _parse_geolocation_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_geolocation_object(self, misp_object: MISPObject | dict):
         location_id = self._parse_stix_object_id(
             'object', 'location', misp_object
         )
@@ -1011,7 +1011,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_analyst_data(location, misp_object)
 
     def _parse_http_request_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],
             force_single=self._mapping.http_request_single_fields(),
@@ -1046,7 +1046,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 
-    def _parse_identity_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_identity_object(self, misp_object: MISPObject | dict):
         identity_args = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.identity_single_fields()
@@ -1056,7 +1056,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
 
     def _parse_image_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],
             with_uuid=self._mapping.image_uuid_fields(),
@@ -1082,7 +1082,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._handle_object_observable(misp_object, [File(**file_args)])
 
     def _parse_ip_port_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],
             force_single=self._mapping.ip_port_single_fields(),
@@ -1127,7 +1127,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, objects)
 
     def _parse_lnk_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],
             force_single=self._mapping.lnk_single_fields(),
@@ -1135,7 +1135,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             with_data=self._mapping.lnk_data_fields()
         )
         objects: list = []
-        file_args: dict[str, Union[bool, datetime, str]] = {
+        file_args = {
             'id': f"file--{misp_object['uuid']}"
         }
         if attributes.get('path'):
@@ -1177,7 +1177,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, objects)
 
     def _parse_mutex_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
         mutex_args['id'] = self._parse_stix_object_id(
             'object', 'mutex', misp_object
@@ -1185,7 +1185,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [Mutex(**mutex_args)])
 
     def _parse_netflow_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_object_attributes_with_uuid(
             misp_object['Attribute'],
             with_uuid=self._mapping.netflow_uuid_fields()
@@ -1227,7 +1227,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, objects)
 
     def _parse_network_connection_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         attributes = self._extract_object_attributes_with_uuid(
             misp_object['Attribute'],
             with_uuid=self._mapping.network_traffic_uuid_fields()
@@ -1267,7 +1267,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return network_traffic_args, objects
 
     def _parse_network_socket_object(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_network_socket_object_pattern(
                 misp_object['Attribute']
@@ -1292,7 +1292,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             objects.insert(0, NetworkTraffic(**network_traffic_args))
             self._handle_object_observable(misp_object, objects)
 
-    def _parse_process_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_process_object(self, misp_object: MISPObject | dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_process_object_pattern(
                 misp_object['Attribute']
@@ -1355,7 +1355,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._handle_object_observable(misp_object, objects)
 
     def _parse_registry_key_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         registry_key_args = self._parse_registry_key_args(
             misp_object['Attribute']
         )
@@ -1392,7 +1392,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             pattern.append(f"{prefix}:modified_time = '{modified}'")
         return pattern
 
-    def _parse_sigma_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_sigma_object(self, misp_object: MISPObject | dict):
         indicator_args = {}
         custom_fields = defaultdict(list)
         for attribute in misp_object['Attribute']:
@@ -1421,7 +1421,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
-    def _parse_suricata_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_suricata_object(self, misp_object: MISPObject | dict):
         indicator_args = {}
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
@@ -1443,7 +1443,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     def _parse_url_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         url_args = self._parse_url_args(misp_object['Attribute'])
         url_args['id'] = self._parse_stix_object_id(
             'object', 'url', misp_object
@@ -1451,7 +1451,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [URL(**url_args)])
 
     def _parse_user_account_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         user_account_args = self._parse_user_account_args(
             misp_object['Attribute']
         )
@@ -1462,7 +1462,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [user_account])
 
     def _parse_x509_object_observable(
-            self, misp_object: Union[MISPObject, dict]):
+            self, misp_object: MISPObject | dict):
         x509_args = self._parse_x509_args(misp_object)
         x509_args['id'] = self._parse_stix_object_id(
             'object', 'x509-certificate', misp_object
@@ -1470,7 +1470,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         x509_certificate = X509Certificate(**x509_args)
         self._handle_object_observable(misp_object, [x509_certificate])
 
-    def _parse_yara_object(self, misp_object: Union[MISPObject, dict]):
+    def _parse_yara_object(self, misp_object: MISPObject | dict):
         indicator_args = {}
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
@@ -1651,7 +1651,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self, artifact_id: str, content: str,
             filename: Optional[str] = None,
             malware_sample: Optional[bool] = False) -> Artifact:
-        args: dict[str, Union[bool, str]] = {
+        args = {
             'id': artifact_id, 'payload_bin': content
         }
         if filename is not None:
