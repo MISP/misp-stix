@@ -202,6 +202,17 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         'malware-sample',
         'path'
     )
+    __malware_object_mapping = Mapping(
+        alias='aliases',
+        architecture_execution_env='architecture_execution_envs',
+        capability='capabilities',
+        first_seen='first_seen',
+        implementation_language='implementation_languages',
+        is_family='is_family',
+        last_seen='last_seen',
+        malware_type='malware_types',
+        **MISPtoSTIX2Mapping.malware_object_mapping()
+    )
     __netflow_uuid_fields = (
         'dst-as',
         'ip-dst',
@@ -417,6 +428,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def location_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__location_meta_mapping.get(field)
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
 
     @classmethod
     def malware_sample_additional_observable_values(cls) -> dict:

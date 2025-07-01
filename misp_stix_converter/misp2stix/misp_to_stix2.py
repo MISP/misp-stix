@@ -2054,6 +2054,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_lnk_object_observable(misp_object)
 
+    def _parse_malware_object(self, misp_object: MISPObject | dict):
+        attributes = self._extract_multiple_object_attributes_escaped(
+            misp_object['Attribute'],
+            force_single=self._mapping.malware_single_fields()
+        )
+        malware_args = {
+            feature: attributes.pop(key)
+            for key, feature in self._mapping.malware_object_mapping().items()
+            if key in attributes
+        }
+        if attributes:
+            malware_args.update(
+                self._handle_observable_properties(attributes)
+            )
+        self._handle_non_indicator_object(
+            misp_object, malware_args, 'malware', killchain=True
+        )
+
     def _parse_malware_sample_object_attribute(
             self, malware_sample: Union[str, tuple]) -> str:
         pattern = []

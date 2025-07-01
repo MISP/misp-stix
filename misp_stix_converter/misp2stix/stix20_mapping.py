@@ -94,6 +94,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
             'lnk-modification-time': 'modified'
         }
     )
+    __malware_object_mapping = Mapping(
+        malware_type='labels',
+        **MISPtoSTIX2Mapping.malware_object_mapping()
+    )
     __network_socket_mapping = Mapping(
         features={
             'dst-port': 'dst_port',
@@ -227,6 +231,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def lnk_time_fields(cls) -> dict:
         return cls.__lnk_time_fields
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
 
     @classmethod
     def malware_sample_additional_observable_values(cls) -> dict:

@@ -341,6 +341,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'ip|port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
             'lnk': '_parse_lnk_object',
+            'malware': '_parse_malware_object',
             'mutex': '_parse_mutex_object',
             'netflow': '_parse_netflow_object',
             'network-connection': '_parse_network_connection_object',
@@ -675,6 +676,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'malware-sample',
         'size-in-bytes',
         *__lnk_hash_types
+    )
+    __malware_object_mapping = Mapping(
+        description='description',
+        name='name'
+    )
+    __malware_single_fields = (
+        'description', 'first_seen', 'is_family', 'last_seen', 'name'
     )
     __netflow_object_mapping = Mapping(
         features={
@@ -1183,6 +1191,14 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def malware_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__malware_meta_mapping.get(field)
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
+
+    @classmethod
+    def malware_single_fields(cls) -> tuple:
+        return cls.__malware_single_fields
 
     @classmethod
     def misp_identity_args(cls) -> dict:
