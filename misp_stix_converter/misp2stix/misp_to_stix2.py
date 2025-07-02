@@ -1175,8 +1175,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_markings(object_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'], object_id,
-                object_args['modified']
+                misp_object['ObjectReference'], object_args
             )
         feature = f"_create_{object_type.replace('-', '_')}"
         stix_object = getattr(self, feature)(object_args)
@@ -1207,8 +1206,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_markings(indicator_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'], indicator_id,
-                indicator_args['modified']
+                misp_object['ObjectReference'], indicator_args
             )
         indicator = self._create_indicator(indicator_args)
         getattr(self, self._results_handling_function)(indicator)
@@ -1233,8 +1231,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_markings(observable_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'], observable_id,
-                observable_args['modified']
+                misp_object['ObjectReference'], observable_args
             )
         observed_data = self._create_observed_data(observable_args, observable)
         self._handle_object_analyst_data(observed_data, misp_object)
@@ -1557,7 +1554,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_markings(custom_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'], custom_id, timestamp
+                misp_object['ObjectReference'], custom_args
             )
         custom_object = self._create_custom_object(custom_args)
         getattr(self, self._results_handling_function)(custom_object)
@@ -1703,8 +1700,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'], identity_args['id'],
-                    identity_args['modified']
+                    misp_object['ObjectReference'], identity_args
                 )
         identity = self._create_identity(identity_args)
         getattr(self, self._results_handling_function)(identity)
@@ -1973,8 +1969,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'], identity_args['id'],
-                    identity_args['modified']
+                    misp_object['ObjectReference'], identity_args
                 )
         identity = self._create_identity(identity_args)
         getattr(self, self._results_handling_function)(identity)
@@ -2270,8 +2265,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                    misp_object['ObjectReference'], identity_args['id'],
-                    identity_args['modified']
+                    misp_object['ObjectReference'], identity_args
                 )
         identity = self._create_identity(identity_args)
         getattr(self, self._results_handling_function)(identity)
@@ -2308,8 +2302,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'], identity_args['id'],
-                identity_args['modified']
+                misp_object['ObjectReference'], identity_args
             )
         identity = self._create_identity(identity_args)
         getattr(self, self._results_handling_function)(identity)
@@ -2336,8 +2329,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'], identity_args['id'],
-                identity_args['modified']
+                misp_object['ObjectReference'], identity_args
             )
         identity = self._create_identity(identity_args)
         getattr(self, self._results_handling_function)(identity)
@@ -4391,8 +4383,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_markings(indicator_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
-                misp_object['ObjectReference'], indicator_id,
-                indicator_args['modified']
+                misp_object['ObjectReference'], indicator_args
             )
         indicator = self._create_indicator(indicator_args)
         getattr(self, self._results_handling_function)(indicator)
@@ -4463,6 +4454,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     continue
                 uuids.append(referenced_uuid)
         return uuids
+
+    def _find_object_name(self, uuid: str) -> Optional[str]:
+        for misp_object in self._misp_event['Object']:
+            if misp_object['uuid'] == uuid:
+                return misp_object['name']
 
     def _find_target_uuid(self, reference: str) -> Union[str, None]:
         for object_ref in self.object_refs:
@@ -4609,42 +4605,67 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             }
         )
 
+    def _parse_object_relationship(self, reference: str, object_args: dict):
+        referenced = reference['referenced_uuid']
+        reference_to_parse = any(
+            referenced in objects for objects
+            in self._objects_to_parse.values()
+        )
+        if reference_to_parse:
+            return
+        relationship = {
+            'source_ref': object_args['id'],
+            'undefined_target_ref': referenced,
+            'relationship_type': reference['relationship_type'],
+            'allow_custom': True, 'interoperability': True
+        }
+        if reference.get('timestamp'):
+            reference_timestamp = self._datetime_from_timestamp(
+                reference['timestamp']
+            )
+            relationship.update(
+                {
+                    'created': reference_timestamp,
+                    'modified': reference_timestamp
+                }
+            )
+        else:
+            relationship.update(
+                {
+                    'created': object_args['modified'],
+                    'modified': object_args['modified']
+                }
+            )
+        self.relationships.append(relationship)
+
+    def _parse_object_relationships(self, references: list, object_args: dict):
+        mapping = self._mapping.known_relationships(object_args['type'])
+        if mapping is None:
+            for reference in references:
+                self._parse_object_relationship(reference, object_args)
+            return
+        reference_fields = defaultdict(list)
+        for reference in references:
+            if (key := mapping.get(reference['relationship_type'])) is not None:
+                field, multiple = key
+                referenced = reference['referenced_uuid']
+                object_type = self._find_object_name(referenced)
+                if object_type is not None:
+                    object_id = f'{object_type}--{referenced}'
+                    if multiple:
+                        reference_fields[field].append(object_id)
+                        continue
+                    reference_fields[field] = object_id
+                    continue
+            self._parse_object_relationship(reference, object_args)
+        if reference_fields:
+            object_args.update(reference_fields)
+
     def _parse_stix_object_id(self, feature: str, object_type: str,
                               misp_object: MISPObject | dict) -> str:
         return getattr(self, self._id_parsing_function[feature])(
             object_type, misp_object
         )
-
-    def _parse_object_relationships(
-            self, references: list, source_id: str, timestamp: datetime):
-        for reference in references:
-            referenced = reference['referenced_uuid']
-            reference_to_parse = any(
-                referenced in objects
-                for objects in self._objects_to_parse.values()
-            )
-            if reference_to_parse:
-                continue
-            relationship = {
-                'source_ref': source_id, 'undefined_target_ref': referenced,
-                'relationship_type': reference['relationship_type'],
-                'allow_custom': True, 'interoperability': True
-            }
-            if reference.get('timestamp'):
-                reference_timestamp = self._datetime_from_timestamp(
-                    reference['timestamp']
-                )
-                relationship.update(
-                    {
-                        'created': reference_timestamp,
-                        'modified': reference_timestamp
-                    }
-                )
-            else:
-                relationship.update(
-                    {'created': timestamp, 'modified': timestamp}
-                )
-            self.relationships.append(relationship)
 
     def _parse_timestamp_value(
             self, misp_data_layer: _MISP_DATA_LAYER) -> datetime:

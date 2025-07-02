@@ -117,6 +117,21 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             }
         }
     )
+    __known_relationships = Mapping(
+        **{
+            'malware': {
+                'executable-on': ('operating_system_refs', True),
+                'sample-of': ('sample_refs', True)
+            },
+            'malware-analysis': {
+                'analyses': ('sample_ref', False),
+                'captured': ('analysis_sco_refs', True),
+                'hosted-by': ('operating_system_ref', False),
+                'installs': ('installed_software_refs', True),
+                'vm-hosted-by': ('host_vm_ref', False)
+            }
+        }
+    )
 
     # ATTRIBUTES MAPPING
     __attribute_types_mapping = Mapping(
@@ -1151,6 +1166,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def ip_port_single_fields(cls) -> tuple:
         return cls.__ip_port_single_fields
+
+    @classmethod
+    def known_relationships(cls, field: str) -> Union[dict, None]:
+        return cls.__known_relationships.get(field)
 
     @classmethod
     def legal_entity_contact_info_fields(cls) -> tuple:
