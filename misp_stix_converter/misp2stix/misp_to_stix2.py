@@ -135,7 +135,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if not marking['used']:
                     self._append_SDO_without_refs(marking['marking'])
                     marking['used'] = True
-        if self.__relationships:
+        if self.relationships:
             self._handle_relationships()
 
     def parse_misp_event(self, misp_event: MISPEvent | dict):
@@ -326,6 +326,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return self.__object_refs
 
     @property
+    def relationships(self) -> list:
+        return self.__relationships
+
+    @property
     def stix_objects(self) -> list:
         """
         Simply returns the list of STIX objects.
@@ -362,7 +366,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         markings = self._handle_event_tags_and_galaxies()
         if markings:
             self._handle_markings(report_args, markings)
-        if self.__relationships:
+        if self.relationships:
             self._handle_relationships()
         if self._markings:
             for marking in self._markings.values():
@@ -451,7 +455,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_analyst_data(stix_object, attribute)
 
     def _handle_relationships(self):
-        for relationship in self.__relationships:
+        for relationship in self.relationships:
             if relationship.get('undefined_target_ref'):
                 target_ref = self._find_target_uuid(
                     relationship.pop('undefined_target_ref')
@@ -4596,7 +4600,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_galaxy_relationship(
             self, source_id: str, target_id: str, relationship_type: str,
             timestamp: datetime):
-        self.__relationships.append(
+        self.relationships.append(
             {
                 'source_ref': source_id, 'target_ref': target_id,
                 'relationship_type': relationship_type,
@@ -4640,7 +4644,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 relationship.update(
                     {'created': timestamp, 'modified': timestamp}
                 )
-            self.__relationships.append(relationship)
+            self.relationships.append(relationship)
 
     def _parse_timestamp_value(
             self, misp_data_layer: _MISP_DATA_LAYER) -> datetime:
