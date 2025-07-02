@@ -202,22 +202,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._resolve_objects()
             if self._objects_to_parse:
                 self._resolve_objects_to_parse()
-                if self._objects_to_parse.get('annotation'):
-                    objects_to_parse = self._objects_to_parse['annotation']
-                    for misp_object in objects_to_parse.values():
-                        to_ids, annotation_object = misp_object
-                        custom = (
-                            annotation_object.get('ObjectReference') is None or
-                            not self._annotates(
-                                annotation_object['ObjectReference']
-                            )
-                        )
-                        if custom:
-                            self._parse_custom_object(annotation_object)
-                        else:
-                            self._parse_annotation_object(
-                                to_ids, annotation_object
-                            )
 
     def _handle_default_identity(self):
         misp_identity_args = self._mapping.misp_identity_args()
@@ -2821,6 +2805,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             pe_section = self._objects_to_parse.pop('pe-section')
             for misp_object in pe_section.values():
                 self._parse_custom_object(misp_object[1])
+        if self._objects_to_parse.get('annotation'):
+            objects_to_parse = self._objects_to_parse['annotation']
+            for misp_object in objects_to_parse.values():
+                to_ids, annotation_object = misp_object
+                custom = (
+                    annotation_object.get('ObjectReference') is None or
+                    not self._annotates(
+                        annotation_object['ObjectReference']
+                    )
+                )
+                if custom:
+                    self._parse_custom_object(annotation_object)
+                else:
+                    self._parse_annotation_object(
+                        to_ids, annotation_object
+                    )
 
     def _resolve_pe_to_parse(self, pe_object: dict, pe_ids: bool):
         to_ids, section_uuids = self._handle_pe_object_references(
