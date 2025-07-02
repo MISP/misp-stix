@@ -2051,9 +2051,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             malware_args.update(
                 self._handle_observable_properties(attributes)
             )
-        self._handle_non_indicator_object(
-            misp_object, malware_args, 'malware', killchain=True
-        )
+        self._handle_non_indicator_object(misp_object, malware_args, 'malware')
 
     def _parse_malware_sample_object_attribute(
             self, malware_sample: str | tuple) -> str:
