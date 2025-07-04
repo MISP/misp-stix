@@ -140,6 +140,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._identifier = bundle.id
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
         self._load_stix_bundle(bundle)
+        self._set_indicator_references()
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
@@ -209,6 +210,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return self.event_title
         message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         return f'{message} and converted with the MISP-STIX import feature.'
+
+    @property
+    def indicator_references(self) -> dict:
+        return getattr(self, '_indicator_references', {})
 
     @property
     def stix_version(self) -> str:

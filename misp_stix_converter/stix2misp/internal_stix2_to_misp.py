@@ -343,3 +343,22 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             for reference in self._analyst_data[stix_object_id]:
                 self._add_analyst_data(event_report, reference)
         self.misp_event.add_event_report(**event_report)
+
+    ############################################################################
+    #       METHODS TO LINK INDICATORS AND OBSERVABLES WITH SIMILAR DATA       #
+    ############################################################################
+
+    def _set_indicator_references(self):
+        if not getattr(self, '_indicator', []) or not getattr(self, '_observed_data', []):
+            return
+        indicator_references = {
+            self._extract_uuid(indicator_id)
+            for indicator_id in self._indicator.keys()
+        }
+        observable_references = {
+            self._extract_uuid(observable_id)
+            for observable_id in self._observed_data.keys()
+        }
+        self._indicator_references = tuple(
+            indicator_references & observable_references
+        )
