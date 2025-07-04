@@ -39,6 +39,8 @@ _SINGLE_ATTRIBUTE_OBSERVABLE_TYPING = Union[
 
 
 class STIX2SampleObervableParser(metaclass=ABCMeta):
+    def _fetch_observable(self, object_ref: str) -> dict:
+        return self.main_parser._observable[object_ref]
 
     def _parse_artifact_observable_object(
             self, artifact_ref: str, *args) -> MISPObject:

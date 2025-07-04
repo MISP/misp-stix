@@ -1,3 +1,4 @@
+from .converters import ExternalSTIX2Mapping  # noqa
 from .external_stix1_to_misp import ExternalSTIX1toMISPParser # noqa
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping # noqa
 from .external_stix2_to_misp import ExternalSTIX2toMISPParser # noqa

@@ -19,13 +19,37 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     __attribute_types_mapping = MISPtoSTIX2Mapping.attribute_types_mapping()
 
     # STIX 2.0 specific GALAXIES MAPPING
-    __cluster_to_stix_object = dict(MISPtoSTIX2Mapping.cluster_to_stix_object())
-    __galaxy_types_mapping = dict(MISPtoSTIX2Mapping.galaxy_types_mapping())
+    __cluster_to_stix_object = {
+        'stix-2.0-acs-marking': 'marking-definition',
+        'stix-2.1-acs-marking': 'marking-definition',
+        **MISPtoSTIX2Mapping.cluster_to_stix_object()
+    }
+    __galaxy_types_mapping = {
+        'stix-2.0-acs-marking': '_parse_acs_marking_{}_galaxy',
+        'stix-2.1-acs-marking': '_parse_acs_marking_{}_galaxy',
+        **MISPtoSTIX2Mapping.galaxy_types_mapping()
+    }
     for galaxy_type in MISPtoSTIX2Mapping.generic_galaxy_types():
-        key = f'stix-2.0-{galaxy_type}'
-        __cluster_to_stix_object[key] = galaxy_type
-        feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
-        __galaxy_types_mapping[key] = feature
+        for version in ('2.0', '2.1'):
+            key = f'stix-{version}-{galaxy_type}'
+            __cluster_to_stix_object[key] = galaxy_type
+            feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
+            __galaxy_types_mapping[key] = feature
+    __cluster_to_stix_object = Mapping(**__cluster_to_stix_object)
+    __galaxy_types_mapping = Mapping(**__galaxy_types_mapping)
+    __attack_pattern_meta_mapping = Mapping(
+        kill_chain='_parse_kill_chain'
+    )
+    __generic_meta_mapping = Mapping(
+        **{
+            'threat-actor': {
+                'goals': False, 'personal_motivations': False, 'roles': False,
+                'primary_motivation': True, 'resource_level': True,
+                'secondary_motivations': False, 'sophistication': True
+            },
+            **MISPtoSTIX2Mapping.generic_meta_mapping()
+        }
+    )
     __malware_sample_additional_observable_values = {
         "mime_type": "application/zip"
     }
@@ -69,6 +93,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
             'lnk-creation-time': 'created',
             'lnk-modification-time': 'modified'
         }
+    )
+    __malware_object_mapping = Mapping(
+        malware_type='labels',
+        **MISPtoSTIX2Mapping.malware_object_mapping()
     )
     __network_socket_mapping = Mapping(
         features={
@@ -161,6 +189,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     )
 
     @classmethod
+    def attack_pattern_meta_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__attack_pattern_meta_mapping.get(field)
+
+    @classmethod
     def attribute_types_mapping(cls, field: str) -> Union[str, None]:
         return cls.__attribute_types_mapping.get(field)
 
@@ -193,8 +225,16 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         return cls.__galaxy_types_mapping.get(field)
 
     @classmethod
+    def generic_meta_mapping(cls, object_type: str) -> dict:
+        return cls.__generic_meta_mapping.get(object_type, {})
+
+    @classmethod
     def lnk_time_fields(cls) -> dict:
         return cls.__lnk_time_fields
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
 
     @classmethod
     def malware_sample_additional_observable_values(cls) -> dict:

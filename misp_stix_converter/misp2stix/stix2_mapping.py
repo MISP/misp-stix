@@ -51,7 +51,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'reference_from_CAPEC'
     )
     __generic_galaxy_types = (
-        'attack-pattern', 'campaign', 'course-of-actiion', 'intrusion-set',
+        'attack-pattern', 'campaign', 'course-of-action', 'intrusion-set',
         'malware', 'threat-actor', 'tool', 'vulnerability'
     )
     __misp_identity_args = Mapping(
@@ -234,36 +234,86 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'Technique ID': '_parse_external_id'
         }
     )
-    __attack_pattern_meta_mapping = Mapping(
-        kill_chain='_parse_kill_chain'
+    __acs_marking_meta_mapping = Mapping(
+        authority_reference=False,
+        caveat=False,
+        classification=True,
+        classification_reason=True,
+        classified_by=True,
+        classified_on=True,
+        compilation_reason=True,
+        create_date_time=True,
+        declass_date=True,
+        declass_event=True,
+        declass_exemption=True,
+        declass_period=True,
+        derived_from=True,
+        disposition_date=True,
+        disposition_process=True,
+        entity=False,
+        formal_determination=False,
+        identifier=True,
+        logical_authority_category=False,
+        name=True,
+        permitted_nationalities=False,
+        permitted_organizations=False,
+        policy_reference=True,
+        privilege_action=True,
+        released_by=True,
+        released_on=True,
+        responsible_entity_custodian=True,
+        responsible_entity_originator=True,
+        rule_effect=True,
+        sci_controls=False,
+        sensitivity=False,
+        shareability=False,
+        sharing_scope=False
+    )
+    __campaign_meta_mapping = Mapping(
+        synonyms='_parse_synonyms_meta_field'
+    )
+    __generic_meta_mapping = Mapping(
+        **{
+            'campaign': {'objective': True},
+            'intrusion-set': {
+                'goals': False, 'primary_motivation': True,
+                'resource_level': True, 'secondary_motivations': False
+            },
+            'tool': {'tool_version': True}
+        }
     )
     __intrusion_set_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
     )
     __malware_meta_mapping = Mapping(
         **{
+            'is_family': '_parse_malware_is_family_field',
             'kill_chain': '_parse_kill_chain',
+            'labels': '_parse_malware_types',
+            'malware_types': '_parse_malware_types',
             'synonyms': '_parse_synonyms_21_meta_field',
             'type': '_parse_malware_types'
         }
     )
     __threat_actor_meta_mapping = Mapping(
         **{
+            'labels': '_parse_threat_actor_types',
             'synonyms': '_parse_synonyms_meta_field',
+            'threat_actor_types': '_parse_threat_actor_types',
             'type': '_parse_threat_actor_types'
         }
     )
     __tool_meta_mapping = Mapping(
         **{
             'kill_chain': '_parse_kill_chain',
+            'labels': '_parse_tool_types',
             'synonyms': '_parse_synonyms_21_meta_field',
+            'tool_types': '_parse_tool_types',
             'type': '_parse_tool_types'
         }
     )
     __vulnerability_meta_mapping = Mapping(
-        **{
-            'aliases': '_parse_external_references'
-        }
+        aliases='_parse_external_references'
     )
 
     # MISP OBJECTS MAPPING
@@ -291,6 +341,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'ip|port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
             'lnk': '_parse_lnk_object',
+            'malware': '_parse_malware_object',
             'mutex': '_parse_mutex_object',
             'netflow': '_parse_netflow_object',
             'network-connection': '_parse_network_connection_object',
@@ -626,6 +677,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'size-in-bytes',
         *__lnk_hash_types
     )
+    __malware_object_mapping = Mapping(
+        description='description',
+        name='name'
+    )
+    __malware_single_fields = (
+        'description', 'first_seen', 'is_family', 'last_seen', 'name'
+    )
     __netflow_object_mapping = Mapping(
         features={
             'src-port': 'src_port',
@@ -883,6 +941,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
 
     @classmethod
+    def acs_marking_meta_mapping(cls, field: str) -> bool:
+        return cls.__acs_marking_meta_mapping.get(field, True)
+
+    @classmethod
     def address_family_enum_list(cls) -> tuple:
         return cls.__address_family_enum_list
 
@@ -899,10 +961,6 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         return cls.__as_single_fields
 
     @classmethod
-    def attack_pattern_meta_mapping(cls, field: str) -> Union[str, None]:
-        return cls.__attack_pattern_meta_mapping.get(field)
-
-    @classmethod
     def attack_pattern_object_mapping(cls) -> dict:
         return cls.__attack_pattern_object_mapping
 
@@ -917,6 +975,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def attribute_types_mapping(cls) -> dict:
         return cls.__attribute_types_mapping
+
+    @classmethod
+    def campaign_meta_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__campaign_meta_mapping.get(field)
 
     @classmethod
     def cluster_to_stix_object(cls) -> dict:
@@ -1017,6 +1079,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def generic_galaxy_types(cls) -> tuple:
         return cls.__generic_galaxy_types
+
+    @classmethod
+    def generic_meta_mapping(cls) -> dict:
+        return cls.__generic_meta_mapping
 
     @classmethod
     def github_user_data_fields(cls) -> tuple:
@@ -1125,6 +1191,14 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def malware_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__malware_meta_mapping.get(field)
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
+
+    @classmethod
+    def malware_single_fields(cls) -> tuple:
+        return cls.__malware_single_fields
 
     @classmethod
     def misp_identity_args(cls) -> dict:

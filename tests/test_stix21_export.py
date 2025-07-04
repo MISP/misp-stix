@@ -5804,9 +5804,54 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
+    def _check_attack_pattern_meta_fields(self, stix_object, meta):
+        super()._check_attack_pattern_meta_fields(stix_object, meta)
+        if meta.get('synonyms') is not None:
+            self.assertEqual(stix_object.aliases, meta['synonyms'])
+
     def _check_location_meta_fields(self, stix_object, meta):
-        for key, values in meta.items():
-            self.assertEqual(getattr(stix_object, f'x_misp_{key}'), values)
+        for key, value in meta.items():
+            self.assertEqual(getattr(stix_object, key), value)
+
+    def _check_malware_meta_fields(self, stix_object, meta):
+        super()._check_malware_meta_fields(stix_object, meta)
+        # Custom Malware Galaxy Cluster fields
+        if meta.get('architecture_execution_env') is not None:
+            self.assertEqual(
+                stix_object.architecture_execution_env,
+                meta['architecture_execution_env']
+            )
+        if meta.get('capabilities') is not None:
+            self.assertEqual(
+                stix_object.capabilities, meta['capabilities']
+            )
+        if meta.get('implementation_languages') is not None:
+            self.assertEqual(
+                stix_object.implementation_languages,
+                meta['implementation_languages']
+            )
+        if meta.get('is_family') is not None:
+            self.assertEqual(stix_object.is_family, meta['is_family'])
+        if meta.get('malware_types') is not None:
+            self.assertEqual(stix_object.malware_types, meta['malware_types'])
+        elif meta.get('labels') is not None:
+            self.assertEqual(stix_object.malware_types, meta['labels'])
+
+    def _check_threat_actor_meta_fields(self, stix_object, meta):
+        super()._check_threat_actor_meta_fields(stix_object, meta)
+        if meta.get('threat_actor_types') is not None:
+            self.assertEqual(
+                stix_object.threat_actor_types, meta['threat_actor_types']
+            )
+        elif meta.get('labels') is not None:
+            self.assertEqual(stix_object.threat_actor_types, meta['labels'])
+
+    def _check_tool_meta_fields(self, stix_object, meta):
+        super()._check_tool_meta_fields(stix_object, meta)
+        if meta.get('tool_types') is not None:
+            self.assertEqual(stix_object.tool_types, meta['tool_types'])
+        elif meta.get('labels') is not None:
+            self.assertEqual(stix_object.tool_types, meta['labels'])
 
     def _run_galaxy_tests(self, event, timestamp):
         orgc = event['Orgc']
@@ -5827,6 +5872,15 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         attack_pattern = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self._check_galaxy_features(attack_pattern, galaxy, timestamp)
+
+    def _test_event_with_campaign_galaxy(self, event):
+        galaxy = event['Galaxy'][0]
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        campaign = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(campaign.type, 'campaign')
+        self._check_galaxy_features(campaign, galaxy, timestamp)
 
     def _test_event_with_course_of_action_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -5886,7 +5940,8 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         )
         self.assertEqual(location1.labels[0], f'misp:galaxy-name="{country["name"]}"')
         self.assertEqual(location1.labels[1], f'misp:galaxy-type="{country["type"]}"')
-        self._check_location_meta_fields(location1, cluster['meta'])
+        for key, values in cluster['meta'].items():
+            self.assertEqual(getattr(location1, f'x_misp_{key}'), values)
         cluster = region['GalaxyCluster'][0]
         self.assertEqual(location2.id, f"{location2.type}--{cluster['uuid']}")
         self.assertEqual(location2.created, timestamp)
@@ -5898,8 +5953,18 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         )
         self.assertEqual(location2.labels[0], f'misp:galaxy-name="{region["name"]}"')
         self.assertEqual(location2.labels[1], f'misp:galaxy-type="{region["type"]}"')
-        self._check_location_meta_fields(location2, cluster['meta'])
+        for key, values in cluster['meta'].items():
+            self.assertEqual(getattr(location2, f'x_misp_{key}'), values)
         self.assertEqual(location2.region, region_value.lower().replace(' ', '-'))
+
+    def _test_event_with_location_galaxy(self, event):
+        galaxy = event['Galaxy'][0]
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        location = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(location.type, 'location')
+        self._check_galaxy_features(location, galaxy, timestamp)
 
     def _test_event_with_malware_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -5982,9 +6047,145 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             )
         )
 
+    def test_event_with_custom_attack_pattern_20_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.0')
+        self._test_event_with_attack_pattern_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            attack_pattern = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_attack_pattern_21_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.1')
+        self._test_event_with_attack_pattern_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            attack_pattern = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_campaign_20_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.0')
+        self._test_event_with_campaign_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            campaign = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_campaign_21_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.1')
+        self._test_event_with_campaign_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            campaign = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_course_of_action_20_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.0')
+        self._test_event_with_course_of_action_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            course_of_action = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_course_of_action_21_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.1')
+        self._test_event_with_course_of_action_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            course_of_action = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()
         self._test_event_with_custom_galaxy(event['Event'])
+
+    def test_event_with_custom_intrusion_set_20_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.0')
+        self._test_event_with_intrusion_set_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            intrusion_set = self.parser.stix_objects[-1],
+        )
+
+    def test_event_with_custom_intrusion_set_21_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.1')
+        self._test_event_with_intrusion_set_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            intrusion_set = self.parser.stix_objects[-1],
+        )
+
+    def test_event_with_custom_location_galaxy(self):
+        event = get_event_with_custom_location_galaxy()
+        self._test_event_with_location_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            location = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_malware_20_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.0')
+        self._test_event_with_malware_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            malware = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_malware_21_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.1')
+        self._test_event_with_malware_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            malware = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_threat_actor_20_galaxy(self):
+        event = get_event_with_custom_threat_actor_galaxy('2.0')
+        self._test_event_with_threat_actor_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            threat_actor = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_threat_actor_21_galaxy(self):
+        event = get_event_with_custom_threat_actor_galaxy('2.1')
+        self._test_event_with_threat_actor_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            threat_actor = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_tool_20_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.0')
+        self._test_event_with_tool_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            tool = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_tool_21_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.1')
+        self._test_event_with_tool_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            tool = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_vulnerability_20_galaxy(self):
+        event = get_event_with_custom_vulnerability_galaxy('2.0')
+        self._test_event_with_vulnerability_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            vulnerability = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_custom_vulnerability_21_galaxy(self):
+        event = get_event_with_custom_vulnerability_galaxy('2.1')
+        self._test_event_with_vulnerability_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            vulnerability = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
@@ -6070,11 +6271,113 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event.from_dict(**event)
         self._test_event_with_course_of_action_galaxy(misp_event)
 
+    def test_event_with_custom_attack_pattern_20_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_attack_pattern_galaxy(misp_event)
+
+    def test_event_with_custom_attack_pattern_21_galaxy(self):
+        event = get_event_with_custom_attack_pattern_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_attack_pattern_galaxy(misp_event)
+
+    def test_event_with_custom_campaign_20_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_campaign_galaxy(misp_event)
+
+    def test_event_with_custom_campaign_21_galaxy(self):
+        event = get_event_with_custom_campaign_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_campaign_galaxy(misp_event)
+
+    def test_event_with_custom_course_of_action_20_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_course_of_action_galaxy(misp_event)
+
+    def test_event_with_custom_course_of_action_21_galaxy(self):
+        event = get_event_with_custom_course_of_action_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_course_of_action_galaxy(misp_event)
+
     def test_event_with_custom_galaxy(self):
         event = get_event_with_custom_galaxy()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_galaxy(misp_event)
+
+    def test_event_with_custom_intrusion_set_20_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_intrusion_set_galaxy(misp_event)
+
+    def test_event_with_custom_intrusion_set_21_galaxy(self):
+        event = get_event_with_custom_intrusion_set_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_intrusion_set_galaxy(misp_event)
+
+    def test_event_with_custom_location_galaxy(self):
+        event = get_event_with_custom_location_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_location_galaxy(misp_event)
+
+    def test_event_with_custom_malware_20_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_malware_galaxy(misp_event)
+
+    def test_event_with_custom_malware_21_galaxy(self):
+        event = get_event_with_custom_malware_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_malware_galaxy(misp_event)
+
+    def test_event_with_custom_threat_actor_20_galaxy(self):
+        event = get_event_with_custom_threat_actor_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_threat_actor_galaxy(misp_event)
+
+    def test_event_with_custom_threat_actor_21_galaxy(self):
+        event = get_event_with_custom_threat_actor_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_threat_actor_galaxy(misp_event)
+
+    def test_event_with_custom_tool_20_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_tool_galaxy(misp_event)
+
+    def test_event_with_custom_tool_21_galaxy(self):
+        event = get_event_with_custom_tool_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_tool_galaxy(misp_event)
+
+    def test_event_with_custom_vulnerability_20_galaxy(self):
+        event = get_event_with_custom_vulnerability_galaxy('2.0')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_vulnerability_galaxy(misp_event)
+
+    def test_event_with_custom_vulnerability_21_galaxy(self):
+        event = get_event_with_custom_vulnerability_galaxy('2.1')
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_vulnerability_galaxy(misp_event)
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()

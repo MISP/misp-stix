@@ -1,3 +1,4 @@
+from .stix2mapping import ExternalSTIX2Mapping  # noqa
 from .stix2_attack_pattern_converter import (  # noqa
     ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter)
 from .stix2_campaign_converter import (  # noqa

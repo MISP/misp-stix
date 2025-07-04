@@ -337,6 +337,16 @@ class STIX2Mapping:
         name_enc=__file_encoding_attribute,
         size=__size_in_bytes_attribute
     )
+    __network_connection_object_mapping = Mapping(
+        src_port=__src_port_attribute,
+        dst_port=__dst_port_attribute,
+        start=__first_packet_seen_attribute,
+        end=__last_packet_seen_attribute,
+        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-bytes-count'},
+        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-bytes-count'},
+        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
+        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'}
+    )
     __network_socket_extension_mapping = Mapping(
         address_family=__address_family_attribute,
         protocol_family=__domain_family_attribute,
@@ -629,6 +639,10 @@ class STIX2Mapping:
         return cls.__name_attribute
 
     @classmethod
+    def network_connection_object_mapping(cls) -> dict:
+        return cls.__network_connection_object_mapping
+
+    @classmethod
     def network_socket_extension_mapping(cls) -> dict:
         return cls.__network_socket_extension_mapping
 
@@ -855,10 +869,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
                 "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set.",
                 "icon": "user-secret"
             },
-            "country": {
-                "name": "Country",
-                "description": "Country meta information based on the database provided by geonames.org."
-            },
             "course-of-action": {
                 "name": "Course of Action",
                 "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes.",
@@ -869,14 +879,15 @@ class ExternalSTIX2Mapping(STIX2Mapping):
                 "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor.",
                 "icon": "user-secret"
             },
+            "location": {
+                "name": "Location",
+                "description": "A Location represents a geographic location. The location may be described as any, some or all of the following: region (e.g., North America), civic address (e.g. New York, US), latitude and longitude.",
+                "icon": "globe"
+            },
             "malware": {
                 "name": "Malware",
                 "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim.",
                 "icon": "optin-monster"
-            },
-            "region": {
-                "name": "Regions UN M49",
-                "description": "Regions based on UN M49."
             },
             "sector": {
                 "name": "Sector",
@@ -934,7 +945,9 @@ class ExternalSTIX2Mapping(STIX2Mapping):
 
     @classmethod
     def file_hashes_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.file_hashes().get(field)
+        return cls.file_hashes().get(
+            field, cls.file_hashes().get(field.upper())
+        )
 
     @classmethod
     def galaxy_name_mapping(cls, field) -> Union[dict, None]:
@@ -1381,14 +1394,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_ip_version={'type': 'counter', 'object_relation': 'ip_version'}
     )
     __network_connection_object_mapping = Mapping(
-        src_port=STIX2Mapping.src_port_attribute(),
-        dst_port=STIX2Mapping.dst_port_attribute(),
-        start=STIX2Mapping.first_packet_seen_attribute(),
-        end=STIX2Mapping.last_packet_seen_attribute(),
-        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-bytes-count'},
-        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-bytes-count'},
-        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
-        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'},
+        **STIX2Mapping.network_connection_object_mapping(),
         x_misp_community_id=__community_id_attribute,
         x_misp_hostname_dst=STIX2Mapping.hostname_dst_attribute(),
         x_misp_hostname_src=STIX2Mapping.hostname_src_attribute()

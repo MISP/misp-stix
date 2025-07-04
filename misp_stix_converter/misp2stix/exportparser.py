@@ -264,6 +264,12 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
             f'should have a composite value: {value}.'
         )
 
+    def _country_code_warning(self, country: str):
+        self.__warnings[self._identifier].add(
+            f'Location `country` warning for "{country}": '
+            'this value should be a valid ISO 3166-1 ALPHA-2 Code.'
+        )
+
     def _invalid_attribute_hash_value_error(
             self, attribute: Union[MISPAttribute, dict]):
         self.__errors[self._identifier].append(

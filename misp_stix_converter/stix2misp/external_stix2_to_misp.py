@@ -12,7 +12,7 @@ from .converters import (
     ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, STIX2ObservableObjectConverter)
 from .importparser import ExternalSTIXtoMISPParser
-from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
+from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.observables import (
@@ -53,15 +53,53 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         self._tool_parser: ExternalSTIX2ToolConverter
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
-    def parse_stix_bundle(self, cluster_distribution: Optional[int] = 0,
-                          cluster_sharing_group_id: Optional[int] = None,
-                          organisation_uuid: Optional[str] = None, **kwargs):
+    def parse_stix_bundle(
+            self, cluster_distribution: Optional[int] = 0,
+            cluster_sharing_group_id: Optional[int] = None,
+            organisation_uuid: Optional[str] = None, **kwargs):
         self._set_parameters(**kwargs)
         self._set_cluster_distribution(
             cluster_distribution, cluster_sharing_group_id
         )
         self._set_organisation_uuid(organisation_uuid)
         self._parse_stix_bundle()
+
+    def _extract_object_refs(self, stix_object) -> Iterator[str]:
+        for field, value in stix_object.items():
+            if field.endswith('_ref') or field.endswith('_refs'):
+                if isinstance(value, list):
+                    yield from value
+                    continue
+                yield value
+                continue
+            if field == 'extensions':
+                for extension in value.values():
+                    yield from self._extract_object_refs(extension)
+
+    def _load_stix_bundle(self, bundle: _BUNDLE_TYPING):
+        stix_objects, object_refs = self._partition_stix_objects(bundle.objects)
+        standalone_objects = set()
+        for stix_object in stix_objects:
+            if stix_object['id'] not in object_refs:
+                standalone_objects.add(stix_object['id'])
+            self._load_stix_object(stix_object)
+        if standalone_objects:
+            self.__standalone_object_refs = tuple(standalone_objects)
+
+    def _partition_stix_objects(self, stix_objects: list) -> tuple[list]:
+        partitioned = []
+        object_refs = set()
+        for stix_object in stix_objects:
+            if stix_object['type'] in ('grouping', 'report'):
+                self._load_stix_object(stix_object)
+                object_refs.update(stix_object.object_refs)
+                if hasattr(stix_object, 'object_marking_refs'):
+                    object_refs.update(stix_object.object_marking_refs)
+                continue
+            partitioned.append(stix_object)
+            if stix_object['type'] not in ('relationship', 'sighting'):
+                object_refs.update(self._extract_object_refs(stix_object))
+        return partitioned, object_refs
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -134,6 +172,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         return self._observed_data_parser
 
     @property
+    def standalone_object_refs(self) -> tuple:
+        return self.__standalone_object_refs
+
+    @property
     def threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
         if not hasattr(self, '_threat_actor_parser'):
             self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
@@ -200,7 +242,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             attribute_uuid = self.replacement_uuids[attribute_uuid]
         if attribute_uuid in self._sighting:
             for sighting in self._sighting[attribute_uuid]:
-                attribute.add_sighting(self._parse_sighting(sighting))
+                misp_sighting = self._parse_sighting(sighting)
+                if misp_sighting is not None:
+                    attribute.add_sighting(misp_sighting)
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
@@ -212,6 +256,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     observable = self._observable[object_ref]
                     if self.misp_event.uuid not in observable['used']:
                         observable['used'][self.misp_event.uuid] = False
+                continue
+            if object_type == 'marking-definition':
+                if object_ref in self._clusters:
+                    cluster = self._clusters[object_ref]
+                    if cluster['used'].get(self.misp_event.uuid) is None:
+                        cluster['used'][self.misp_event.uuid] = False
                 continue
             try:
                 self._handle_object(object_type, object_ref)
@@ -227,10 +277,35 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         if object_uuid in self._sighting:
             for sighting in self._sighting[object_uuid]:
                 misp_sighting = self._parse_sighting(sighting)
-                for attribute in misp_object.attributes:
-                    attribute.add_sighting(misp_sighting)
+                if misp_sighting is not None:
+                    for attribute in misp_object.attributes:
+                        attribute.add_sighting(misp_sighting)
 
     def _handle_unparsed_content(self):
+        if hasattr(self, 'standalone_object_refs'):
+            for object_ref in self.standalone_object_refs:
+                object_type = object_ref.split('--')[0]
+                if object_type in ('relationship', 'sighting'):
+                    continue
+                if object_type in self._mapping.observable_object_types():
+                    observable = self._observable[object_ref]
+                    if observable['used'].get(self.misp_event.uuid) is None:
+                        observable['used'][self.misp_event.uuid] = False
+                    continue
+                if object_type == 'marking-definition':
+                    markings = self._marking_definition.get(object_ref)
+                    if isinstance(markings, str):
+                        self.misp_event.add_tag(markings)
+                        continue
+                    for marking in markings:
+                        self.misp_event.add_tag(marking)
+                        continue
+                    if object_ref in self._clusters:
+                        cluster = self._clusters[object_ref]
+                        if cluster['used'].get(self.misp_event.uuid) is None:
+                            cluster['used'][self.misp_event.uuid] = False
+                    continue
+                self._handle_object(object_type, object_ref)
         if not hasattr(self, '_observable'):
             return super()._handle_unparsed_content()
         unparsed_content = defaultdict(list)
@@ -250,9 +325,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 continue
             to_call = f'_parse_{feature}_observable_object'
             for object_id in unparsed_content[observable_type]:
-                if self._observable[object_id]['used'][self.misp_event.uuid]:
-                    # if object_id.split('--')[0] not in _force_observables_list:
-                    continue
+                if self.misp_event.uuid in self._observable[object_id]['used']:
+                    if self._observable[object_id]['used'][self.misp_event.uuid]:
+                        continue
                 try:
                     getattr(self.observable_object_parser, to_call)(object_id)
                 except Exception as exception:

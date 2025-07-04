@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ..exceptions import (
-    ObjectRefLoadingError, ObjectTypeLoadingError, UndefinedSTIXObjectError)
+from ..exceptions import UndefinedSTIXObjectError
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -20,6 +19,7 @@ if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
+_DATETIME_REGEX = '%Y-%m-%dT%H:%M:%S'
 
 _GALAXY_OBJECTS_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21,
@@ -218,7 +218,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
             description: Optional[str] = None,
             cluster_value: Optional[str] = None) -> dict:
-        value = cluster_value or stix_object.name
+        value = cluster_value or getattr(stix_object, 'name', stix_object.id)
         cluster_args = {
             'value': value, **self.main_parser.cluster_distribution,
             'uuid': self.main_parser._create_v5_uuid(
@@ -258,7 +258,8 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         mapping = self._mapping.galaxy_name_mapping(galaxy_type)
         name = mapping['name']
         galaxy_args = {
-            'description': mapping['description'], 'namespace': 'stix'
+            'description': mapping['description'], 'namespace': 'stix',
+            **self.main_parser.cluster_distribution
         }
         if galaxy_type not in ('country', 'region', 'sector'):
             version = getattr(stix_object, 'spec_version', '2.0')
@@ -274,9 +275,19 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         galaxy_args.update({'type': galaxy_type, 'name': name})
         self.main_parser._galaxies[galaxy_type] = galaxy_args
 
+    @staticmethod
+    def _handle_datetime_meta_fields(stix_object: _GALAXY_OBJECTS_TYPING):
+        for field in ('created', 'modified', 'first_seen', 'last_seen'):
+            if stix_object.get(field) is not None:
+                dt_value = stix_object[field]
+                yield field, dt_value.strftime(
+                    f'{_DATETIME_REGEX}.%fZ' if dt_value.microsecond != 0
+                    else f'{_DATETIME_REGEX}Z'
+                )
+
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
-        meta = {}
+        meta = dict(self._handle_datetime_meta_fields(stix_object))
         if hasattr(self._mapping, mapping):
             for feature, field in getattr(self._mapping, mapping)().items():
                 if hasattr(stix_object, feature):
@@ -299,10 +310,22 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         galaxy_type = object_type or stix_object.type
         if galaxy_type not in self.main_parser._galaxies:
             self._create_galaxy_args(stix_object, galaxy_type)
+        galaxy_cluster = self._create_cluster(
+            stix_object, galaxy_type=object_type
+        )
+        if hasattr(stix_object, 'object_marking_refs'):
+            for marking_ref in stix_object.object_marking_refs:
+                if marking_ref not in self.main_parser._clusters:
+                    continue
+                cluster = self.main_parser._clusters[marking_ref]
+                if cluster['used'].get(self.event_uuid) is None:
+                    cluster['used'][self.event_uuid] = False
+                for misp_cluster in cluster['cluster']:
+                    galaxy_cluster.add_cluster_relation(
+                        misp_cluster.uuid, 'marked-with'
+                    )
         return {
-            'cluster': self._create_cluster(
-                stix_object, galaxy_type=object_type
-            ),
+            'cluster': galaxy_cluster,
             'used': {self.event_uuid: False}
         }
 

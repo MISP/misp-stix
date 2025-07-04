@@ -9,6 +9,110 @@ from stix2.parsing import dict_to_stix2
 
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
+_ACS_MARKING_DEFINITION_OBJECTS = [
+    {
+        "type": "marking-definition",
+        "spec_version": "2.1",
+        "created": "2020-06-18T00:00:00Z",
+        "extensions": {
+            "extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce": {
+                "access_privilege": [
+                    {
+                        "privilege_action": "INTEL",
+                        "privilege_scope": {
+                            "entity": [
+                                "ALL"
+                            ],
+                            "permitted_nationalities": [
+                                "ALL"
+                            ],
+                            "permitted_organizations": [
+                                "ALL"
+                            ],
+                            "shareability": [
+                                "ALL"
+                            ]
+                        },
+                        "rule_effect": "permit"
+                    },
+                    {
+                        "privilege_action": "DSPLY",
+                        "privilege_scope": {
+                            "entity": [
+                                "ALL"
+                            ],
+                            "permitted_nationalities": [
+                                "ALL"
+                            ],
+                            "permitted_organizations": [
+                                "ALL"
+                            ],
+                            "shareability": [
+                                "ALL"
+                            ]
+                        },
+                        "rule_effect": "permit"
+                    },
+                    {
+                        "privilege_action": "REQUEST",
+                        "privilege_scope": {
+                            "entity": [
+                                "ALL"
+                            ],
+                            "permitted_nationalities": [
+                                "ALL"
+                            ],
+                            "permitted_organizations": [
+                                "ALL"
+                            ],
+                            "shareability": [
+                                "ALL"
+                            ]
+                        },
+                        "rule_effect": "permit"
+                    }
+                ],
+                "control_set": {
+                    "classification": "U",
+                    "formal_determination": [
+                        "FOUO"
+                    ]
+                },
+                "create_date_time": "2018-05-27T14:10:26.723Z",
+                "extension_type": "property-extension",
+                "identifier": "isa:guide.19001.ACS3-76342cc9-1440-4031-84a3-d498c404cab3",
+                "name": "Use Case 2: Access Privilege",
+                "policy_reference": "urn:isa:policy:acs:ns:v3.0?privdefault=deny&sharedefault=permit",
+                "responsible_entity_custodian": "USA.DOJ.FBI"
+            }
+        },
+        "id": "marking-definition--6010b3f4-a603-4d3b-9098-8708cdbe151b"
+    },
+    {
+        "type": "marking-definition",
+        "spec_version": "2.1",
+        "id": "marking-definition--20864905-06a0-47be-a04c-2164af17d635",
+        "created": "2020-06-18T00:00:00Z",
+        "extensions": {
+            "extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce": {
+                "control_set": {
+                    "classification": "TS",
+                    "entity": [
+                        "GOV",
+                        "CTR",
+                        "MIL"
+                    ]
+                },
+                "create_date_time": "2018-05-27T14:10:26.723Z",
+                "extension_type": "property-extension",
+                "identifier": "isa:guide.19001.ACS3-3bda2f6e-cedc-4c0f-a756-c03d6b586917",
+                "name": "Use Case 1: Access Granted to Cybersecurity Data",
+                "policy_reference": "urn:isa:policy:acs:ns:v3.0?privdefault=deny&sharedefault=deny",
+                "responsible_entity_custodian": "USA.NSA"
+            }
+        }
+    }
+]
 _ANALYST_DATA_SAMPLES = [
     {
         "type": "indicator",
@@ -285,6 +389,9 @@ _ATTACK_PATTERN_OBJECTS = [
         ],
         "name": "Spear Phishing Attack Pattern used by admin@338",
         "description": "The preferred attack vector used by admin@338 is spear-phishing emails. Using content that is relevant to the target, these emails are designed to entice the target to open an attachment that contains the malicious PIVY server code.",
+        "aliases": [
+            "Spear Phishing"
+        ],
         "kill_chain_phases": [
             {
                 "kill_chain_name": "mandiant-attack-lifecycle-model",
@@ -317,7 +424,11 @@ _CAMPAIGN_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "admin@338",
+        "name": "RRN",
+        "aliases": [
+            "Doppelganger"
+        ],
+        "objective": "manipulation",
         "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors.",
         "first_seen": "2020-10-25T16:22:00.000Z"
     },
@@ -892,6 +1003,9 @@ _INTRUSION_SET_OBJECTS = [
         "name": "APT1",
         "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006.",
         "first_seen": "2020-10-25T16:22:00.000Z",
+        "goals": [
+            "Gather information on victims"
+        ],
         "resource_level": "government",
         "primary_motivation": "organizational-gain",
         "aliases": [
@@ -978,17 +1092,18 @@ _LOCATION_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "sweden",
         "description": "Sweden",
-        "country": "SE"
+        "country": "SE",
+        "region": "northern-europe"
     },
     {
-        "type": "location",
+        "administrative_area": "US-DC",
+        "country": "US",
+        "created": "2021-03-13T20:09:21.286293Z",
+        "id": "location--78a7f0f3-ea60-4ca2-894e-9e825b94b592",
+        "modified": "2021-12-01T16:19:51.601791Z",
+        "name": "District of Columbia",
         "spec_version": "2.1",
-        "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Northern Europe",
-        "description": "Nothern Europe",
-        "region": "northern-europe"
+        "type": "location"
     }
 ]
 _MAC_ADDRESS_ATTRIBUTES = [
@@ -1050,12 +1165,26 @@ _MALWARE_OBJECTS = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "MANITSME",
+        "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files.",
+        "aliases": [
+            "ManItsMe"
+        ],
+        "architecture_execution_envs": [
+            "x86-64"
+        ],
+        "capabilities": [
+            "accesses-remote-machines",
+            "communicates-with-c2"
+        ],
+        "first_seen": "2020-10-25T16:22:00.000Z",
+        "implementation_languages": [
+            "c++"
+        ],
         "malware_types": [
             "backdoor",
             "dropper",
             "remote-access-trojan"
-        ],
-        "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files."
+        ]
     },
     {
         "type": "malware",
@@ -1599,6 +1728,7 @@ _TOOL_OBJECTS = [
         "tool_types": [
             "credential-exploitation"
         ],
+        "tool_version": "2.1.0",
         "description": "Windows password hash dumper",
         "kill_chain_phases": [
             {
@@ -1961,8 +2091,15 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     ############################################################################
 
     @classmethod
+    def get_bundle_with_acs_marking(cls):
+        ip_address = deepcopy(_IP_ADDRESS_ATTRIBUTES[2])
+        acs_marking_definitions = deepcopy(_ACS_MARKING_DEFINITION_OBJECTS)
+        ip_address['object_marking_refs'] = [acs_marking_definitions[0]['id']]
+        return cls.__assemble_bundle(ip_address, *acs_marking_definitions)
+
+    @classmethod
     def get_bundle_with_analyst_data(cls):
-        return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
+        return cls.__assemble_bundle(*deepcopy(_ANALYST_DATA_SAMPLES))
 
     @classmethod
     def get_bundle_with_grouping_description(cls):
@@ -1972,7 +2109,36 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
             deepcopy(cls.__grouping), indicator['id']
         )
         bundle['objects'] = [deepcopy(cls.__identity), grouping, indicator]
-        return dict_to_stix2(bundle, allow_custom=True)
+        return dict_to_stix2(bundle)
+
+    @classmethod
+    def get_bundle_with_unreferenced_objects(cls):
+        bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        indicator = deepcopy(cls.__indicator)
+        malwares = deepcopy(_MALWARE_OBJECTS)
+        marking_definitions = deepcopy(_ACS_MARKING_DEFINITION_OBJECTS)
+        indicator['id'] = indicator['id'].replace('6', '8')
+        indicator['pattern'] = indicator['pattern'].replace('6', '8')
+        indicator['object_marking_refs'] = [marking_definitions[0]['id']]
+        relationship = {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--7cede760-b866-490e-ad5b-1df34bc14f8d",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "indicates",
+            "source_ref": indicator['id'],
+            "target_ref": malwares[1]['id']
+        }
+        grouping['object_refs'] = [indicator['id'], malwares[0]['id']]
+        ip_addresses = deepcopy(_IP_ADDRESS_ATTRIBUTES[-3:])
+        bundle['objects'] = [
+            deepcopy(cls.__identity), deepcopy(cls.__indicator), grouping,
+            indicator, *ip_addresses, *malwares, *marking_definitions,
+            relationship
+        ]
+        return dict_to_stix2(bundle)
 
     @classmethod
     def get_bundle_without_grouping(cls):
@@ -1980,7 +2146,7 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         bundle['objects'] = [
             deepcopy(cls.__identity), *_IP_ADDRESS_ATTRIBUTES
         ]
-        return dict_to_stix2(bundle, allow_custom=True)
+        return dict_to_stix2(bundle)
 
     ############################################################################
     #                             GALAXIES SAMPLES                             #

@@ -93,7 +93,6 @@ _OBSERVABLE_TYPING = Union[
     WindowsPESection_v20, WindowsPESection_v21,
     WindowsRegistryValue_v20, WindowsRegistryValue_v21
 ]
-]
 _PROCESS_TYPING = Union[
     Process_v20, Process_v21
 ]
@@ -144,6 +143,18 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'mac-address_src': {'type': 'mac-address', 'object_relation': 'src_mac'}
         }
     )
+    __http_request_extension_mapping = Mapping(
+        request_method=STIX2Mapping.method_attribute(),
+        request_value=STIX2Mapping.uri_attribute()
+    )
+    __http_request_header_mapping = Mapping(
+        **{
+            'Content-Type': STIX2Mapping.content_type_attribute(),
+            'Cookie': STIX2Mapping.cookie_attribute(),
+            'Referer': STIX2Mapping.referer_attribute(),
+            'User-Agent': STIX2Mapping.user_agent_attribute()
+        }
+    )
     __network_traffic_reference_mapping = Mapping(
         **{
             'domain-name_dst': STIX2Mapping.hostname_dst_attribute(),
@@ -179,6 +190,18 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
     @classmethod
     def email_additional_header_fields_mapping(cls) -> dict:
         return cls.__email_additional_header_fields_mapping
+
+    @classmethod
+    def http_request_extension_mapping(cls) -> dict:
+        return cls.__http_request_extension_mapping
+
+    @classmethod
+    def http_request_header_mapping(cls) -> dict:
+        return cls.__http_request_header_mapping
+
+    @classmethod
+    def http_request_reference_mapping(cls, field: str) -> dict:
+        return cls.network_traffic_references().get(field)
 
     @classmethod
     def network_traffic_reference_mapping(cls, field: str) -> dict:
@@ -379,7 +402,7 @@ class STIX2ObservableConverter(STIX2Converter):
                 )
     
     def _parse_generic_observable(
-            self, observable: _GENERIC_OBSERVABLE_TYPING,
+            self, observable: _OBSERVABLE_TYPING,
             name: str, object_id: Optional[str] = None,
             indicator_ref: str | tuple = '') -> Iterator[dict]:
         if isinstance(indicator_ref, tuple):
@@ -392,6 +415,23 @@ class STIX2ObservableConverter(STIX2Converter):
                 yield from self._handle_object_attributes(
                     observable, mapping, indicator_ref, field, object_id
                 )
+
+    def _parse_http_request_observable(
+            self, extension: _HTTP_REQUEST_EXTENSION_TYPING,
+            object_id: str) -> Iterator[dict]:
+        mapping = self._mapping.http_request_extension_mapping
+        for field, attribute in mapping().items():
+            if hasattr(extension, field):
+                yield from self._populate_object_attributes(
+                    attribute, getattr(extension, field), object_id
+                )
+        if hasattr(extension, 'request_header'):
+            mapping = self._mapping.http_request_header_mapping
+            for field, attribute in mapping().items():
+                if extension.request_header.get(field):
+                    yield from self._populate_object_attributes(
+                        attribute, extension.request_header[field], object_id
+                    )
 
     def _parse_network_socket_observable(
             self, observable: _NETWORK_TRAFFIC_TYPING,
@@ -793,8 +833,11 @@ class ExternalSTIX2ObservableConverter(
     @staticmethod
     def _parse_network_traffic_observable_fields(
             observable: NetworkTraffic_v21) -> str:
-        if getattr(observable, 'extensions', {}).get('socket-ext'):
-            return 'network-socket'
+        if getattr(observable, 'extensions', {}):
+            if observable.extensions.get('http-request-ext'):
+                return 'http-request'
+            if observable.extensions.get('socket-ext'):
+                return 'network-socket'
         return 'network-traffic'
 
     def _parse_url_observable(
@@ -904,18 +947,6 @@ class InternalSTIX2ObservableMapping(
     __malware_sample_attribute = Mapping(
         **{'type': 'malware-sample', 'object_relation': 'malware-sample'}
     )
-    __http_request_extension_mapping = Mapping(
-        request_method=STIX2Mapping.method_attribute(),
-        request_value=STIX2Mapping.uri_attribute()
-    )
-    __http_request_header_mapping = Mapping(
-        **{
-            'Content-Type': STIX2Mapping.content_type_attribute(),
-            'Cookie': STIX2Mapping.cookie_attribute(),
-            'Referer': STIX2Mapping.referer_attribute(),
-            'User-Agent': STIX2Mapping.user_agent_attribute()
-        }
-    )
     __parent_process_object_mapping = Mapping(
         command_line=InternalSTIX2Mapping.parent_command_line_attribute(),
         name=InternalSTIX2Mapping.parent_process_name_attribute(),
@@ -928,18 +959,6 @@ class InternalSTIX2ObservableMapping(
     @classmethod
     def attributes_mapping(cls, field: str) -> Union[str, None]:
         return cls.__attributes_mapping.get(field)
-
-    @classmethod
-    def http_request_extension_mapping(cls) -> dict:
-        return cls.__http_request_extension_mapping
-
-    @classmethod
-    def http_request_header_mapping(cls) -> dict:
-        return cls.__http_request_header_mapping
-
-    @classmethod
-    def http_request_reference_mapping(cls, field: str) -> dict:
-        return cls.network_traffic_references().get(field)
 
     @classmethod
     def malware_sample_attribute(cls) -> dict:
@@ -1054,23 +1073,6 @@ class InternalSTIX2ObservableConverter(
                 yield from self._populate_object_attributes_with_data(
                     mapping, getattr(observable, feature), object_id
                 )
-
-    def _parse_http_request_extension_observable(
-            self, extension: _HTTP_REQUEST_EXTENSION_TYPING,
-            object_id: str) -> Iterator[dict]:
-        mapping = self._mapping.http_request_extension_mapping
-        for field, attribute in mapping().items():
-            if hasattr(extension, field):
-                yield from self._populate_object_attributes(
-                    attribute, getattr(extension, field), object_id
-                )
-        if hasattr(extension, 'request_header'):
-            mapping = self._mapping.http_request_header_mapping
-            for field, attribute in mapping().items():
-                if extension.request_header.get(field):
-                    yield from self._populate_object_attributes(
-                        attribute, extension.request_header[field], object_id
-                    )
 
     def _parse_image_attachment_observable(
             self, observable: _ARTIFACT_TYPING,

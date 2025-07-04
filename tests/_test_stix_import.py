@@ -4,12 +4,14 @@
 import json
 from base64 import b64encode
 from collections import defaultdict
+from datetime import datetime
 from misp_stix_converter import (
-    ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
-    InternalSTIX2toMISPParser, MISP_org_uuid)
+    ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
+    MISP_org_uuid)
 from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
-from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
+from .update_documentation import (
+    AttributesDocumentationUpdater, ObjectsDocumentationUpdater)
 
 
 class TestSTIX2Bundles:
@@ -86,6 +88,13 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(
             category_label,
             f'misp:meta-category="{getattr(misp_object, "meta-category")}"'
+        )
+
+    @staticmethod
+    def _datetime_to_str(dt_value: datetime) -> str:
+        return dt_value.strftime(
+            '%Y-%m-%dT%H:%M:%S.%fZ' if dt_value.microsecond != 0
+            else '%Y-%m-%dT%H:%M:%SZ'
         )
 
     @staticmethod
@@ -379,7 +388,7 @@ class TestSTIX21Import(TestSTIX2Import):
 
 
 class TestExternalSTIX2Import(TestSTIX2Import):
-    _galaxy_name_mapping = ExternalSTIX2toMISPMapping().galaxy_name_mapping
+    _galaxy_name_mapping = ExternalSTIX2Mapping().galaxy_name_mapping
 
     def setUp(self):
         self.parser = ExternalSTIX2toMISPParser()
@@ -417,7 +426,14 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(cluster.value, stix_object.name)
         if hasattr(stix_object, 'description'):
             self.assertEqual(cluster.description, stix_object.description)
-        return cluster.meta
+        meta = cluster.meta
+        for field in ('created', 'modified', 'first_seen', 'last_seen'):
+            if hasattr(stix_object, field):
+                self.assertEqual(
+                    meta[field],
+                    self._datetime_to_str(getattr(stix_object, field))
+                )
+        return meta
 
     ############################################################################
     #                  OBSERVED DATA OBJECTS CHECKING METHODS                  #
@@ -1966,7 +1982,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_tool_galaxy(self, galaxy, tool):
         meta = self._check_galaxy_fields_with_external_id(
-            galaxy, tool, 'mitre-tool', 'Tool'
+            galaxy, tool, 'mitre-tool', 'mitre-tool'
         )
         if hasattr(tool, 'aliases'):
             self.assertEqual(meta['synonyms'], tool.aliases)

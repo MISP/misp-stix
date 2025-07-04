@@ -7,12 +7,66 @@ from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
 from datetime import datetime
 from uuid import uuid5
 
+_ACS_EXTENSION_ID = 'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce'
+
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
 
     ############################################################################
     #                         MISP EVENT IMPORT TESTS.                         #
     ############################################################################
+
+    def _check_acs_marking_features(self, meta, definition):
+        for key, value in definition.items():
+            if key == 'extension_type':
+                continue
+            if key == 'access_privilege':
+                access_privileges = []
+                for privilege in value:
+                    action = privilege['privilege_action']
+                    access_privileges.append(action)
+                    feature = f'access_privilege.{action}'
+                    self.assertEqual(
+                        meta[f'{feature}.rule_effect'], privilege['rule_effect']
+                    )
+                    for scope, scopes in privilege['privilege_scope'].items():
+                        self.assertEqual(
+                            meta[f'{feature}.privilege_scope.{scope}'], scopes
+                        )
+                self.assertEqual(
+                    meta['access_privilege.privilege_action'],
+                    access_privileges
+                )
+                continue
+            if key == 'control_set':
+                for feature, control in value.items():
+                    self.assertEqual(meta[f'control_set.{feature}'], control)
+                continue
+            self.assertEqual(meta[key], value)
+
+    def test_stix21_bundle_with_acs_marking(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_acs_marking()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, ip_address, marking1, marking2 = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(event.galaxies), 1)
+        event_galaxy = event.galaxies[0]
+        self.assertEqual(event_galaxy.name, 'STIX 2.1 ACS Marking')
+        self.assertEqual(len(event_galaxy.clusters), 2)
+        cluster1, cluster2 = event_galaxy.clusters
+        definition1 = marking1.extensions[_ACS_EXTENSION_ID]
+        self.assertEqual(cluster1.value, definition1['name'])
+        self._check_acs_marking_features(cluster1.meta, definition1)
+        definition2 = marking2.extensions[_ACS_EXTENSION_ID]
+        self.assertEqual(cluster2.value, definition2['name'])
+        self._check_acs_marking_features(cluster2.meta, definition2)
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.type, 'ip-dst')
+        self.assertEqual(attribute.uuid, ip_address.id.split('--')[1])
+        self.assertEqual(attribute.value, ip_address.value)
 
     def test_stix21_bundle_with_analyst_data(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_analyst_data()
@@ -64,31 +118,66 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(event_report.name, 'STIX 2.1 grouping description')
         self.assertEqual(event_report.timestamp, grouping.modified)
 
+    def test_stix21_bundle_with_unreferenced_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_unreferenced_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        (_, indicator1, grouping, indicator2, ip1, ip2, ip3, malware1,
+         malware2, marking1, marking2, _) = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(event.attributes), 5)
+        attribute1, attribute2, *attributes = event.attributes
+        self._assert_multiple_equal(attribute1.type, attribute2.type, 'ip-dst')
+        self.assertEqual(attribute1.uuid, indicator2.id.split('--')[1])
+        self.assertEqual(attribute1.value, indicator2.pattern.split(' = ')[1].strip("']"))
+        self.assertEqual(len(attribute1.galaxies), 2)
+        extension_definition = marking1.extensions[_ACS_EXTENSION_ID]
+        names = ('ACS Marking', 'Malware')
+        for galaxy, name, stix_object in zip(attribute1.galaxies, names, (extension_definition, malware2)):
+            self.assertEqual(galaxy.name, f'STIX 2.1 {name}')
+            self.assertEqual(galaxy.clusters[0].value, stix_object['name'])
+        self.assertEqual(len(attribute1.tags), 5)
+        attribute_tags = tuple(tag.name for tag in attribute1.tags)
+        for access_privilege in extension_definition['access_privilege']:
+            tag = f'acs-marking:privilege_action="{access_privilege["privilege_action"]}"'
+            self.assertIn(tag, attribute_tags)
+        control_set = extension_definition['control_set']
+        self.assertIn(
+            f'acs-marking:classification="{control_set["classification"]}"',
+            attribute_tags
+        )
+        self.assertIn(
+            f'acs-marking:formal_determination="{control_set["formal_determination"][0]}"',
+            attribute_tags
+        )
+        for attribute, indicator in zip((attribute1, attribute2), (indicator2, indicator1)):
+            self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+            self.assertEqual(attribute.value, indicator.pattern.split(' = ')[1].strip("']"))
+        for attribute, observable in zip(attributes, (ip1, ip3, ip2)):
+            self.assertEqual(attribute.type, 'ip-dst')
+            self.assertEqual(attribute.uuid, observable.id.split('--')[1])
+            self.assertEqual(attribute.value, observable.value)
+        extension_definition = marking2.extensions[_ACS_EXTENSION_ID]
+        for galaxy, name, stix_object in zip(event.galaxies, names, (extension_definition, malware1)):
+            self.assertEqual(galaxy.name, f'STIX 2.1 {name}')
+            self.assertEqual(galaxy.clusters[0].value, stix_object['name'])
+        event_tags = tuple(
+            tag.name for tag in event.tags
+            if tag.name != 'misp-galaxy:producer="MISP-Project"'
+        )
+        self.assertEqual(len(event_tags), 4)
+        control_set = extension_definition['control_set']
+        self.assertIn(
+            f'acs-marking:classification="{control_set["classification"]}"',
+            event_tags
+        )
+        for entity in control_set['entity']:
+            self.assertIn(f'acs-marking:entity="{entity}"', event_tags)
+
     ############################################################################
     #                        MISP GALAXIES IMPORT TESTS                        #
     ############################################################################
-
-    def _check_location_galaxy_features(
-            self, galaxies, stix_object, galaxy_type, cluster_value=None):
-        self.assertEqual(len(galaxies), 1)
-        galaxy = galaxies[0]
-        self.assertEqual(len(galaxy.clusters), 1)
-        cluster = galaxy.clusters[0]
-        self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
-        self.assertEqual(
-            galaxy.name, self._galaxy_name_mapping(galaxy_type)['name']
-        )
-        self.assertEqual(
-            galaxy.description,
-            self._galaxy_name_mapping(galaxy_type)['description']
-        )
-        if cluster_value is None:
-            self.assertEqual(cluster.value, stix_object.name)
-        else:
-            self.assertEqual(cluster.value, cluster_value)
-        if hasattr(stix_object, 'description'):
-            self.assertEqual(cluster.description, stix_object.description)
-        return cluster.meta
 
     def test_stix21_bundle_with_attack_pattern_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
@@ -107,10 +196,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             meta['external_id'],
             event_ap.external_references[0].external_id
         )
+        self.assertEqual(meta['synonyms'], event_ap.aliases)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        self._check_galaxy_features(attribute.galaxies, attribute_ap)
+        meta = self._check_galaxy_features(attribute.galaxies, attribute_ap)
         killchain = attribute_ap.kill_chain_phases[0]
         self.assertEqual(
             meta['kill_chain'],
@@ -125,12 +215,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, event_campaign, indicator, attribute_campaign, _ = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_campaign)
-        self.assertEqual(meta, {})
+        self.assertEqual(meta['synonyms'], event_campaign.aliases)
+        self.assertEqual(meta['objective'], event_campaign.objective)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        self._check_galaxy_features(attribute.galaxies, attribute_campaign),
-        self.assertEqual(meta, {})
+        self._check_galaxy_features(attribute.galaxies, attribute_campaign)
 
     def test_stix21_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_course_of_action_galaxy()
@@ -161,6 +251,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_is)
         self.assertEqual(meta['synonyms'], event_is.aliases)
+        self.assertEqual(meta['goals'], event_is.goals)
         self.assertEqual(meta['resource_level'], event_is.resource_level)
         self.assertEqual(meta['primary_motivation'], event_is.primary_motivation)
         self.assertEqual(len(event.attributes), 1)
@@ -178,18 +269,22 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, event_location, indicator, attribute_location, _ = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        country_meta = self._check_location_galaxy_features(
-            event.galaxies, event_location, 'country'
+        country_meta = self._check_galaxy_features(
+            event.galaxies, event_location
         )
-        self.assertEqual(country_meta, {})
+        self.assertEqual(country_meta['country'], event_location.country)
+        self.assertEqual(country_meta['region'], event_location.region)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        region_meta = self._check_location_galaxy_features(
-            attribute.galaxies, attribute_location, 'region',
-            cluster_value='154 - Northern Europe'
+        region_meta = self._check_galaxy_features(
+            attribute.galaxies, attribute_location
         )
-        self.assertEqual(region_meta, {})
+        self.assertEqual(
+            region_meta['administrative_area'],
+            attribute_location.administrative_area
+        )
+        self.assertEqual(region_meta['country'], attribute_location.country)
 
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_malware_galaxy()
@@ -199,6 +294,17 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, event_malware, indicator, attribute_malware, _ = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
         meta = self._check_galaxy_features(event.galaxies, event_malware)
+        self.assertEqual(meta['synonyms'], event_malware.aliases)
+        self.assertEqual(
+            meta['architecture_execution_envs'],
+            event_malware.architecture_execution_envs
+        )
+        self.assertEqual(meta['capabilities'], event_malware.capabilities)
+        self.assertEqual(
+            meta['implementation_languages'],
+            event_malware.implementation_languages
+        )
+        self.assertEqual(meta['is_family'], event_malware.is_family)
         self.assertEqual(meta['malware_types'], event_malware.malware_types)
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
@@ -256,6 +362,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             [f'{killchain.kill_chain_name}:{killchain.phase_name}']
         )
         self.assertEqual(meta['tool_types'], attribute_tool.tool_types)
+        self.assertEqual(meta['tool_version'], attribute_tool.tool_version)
 
     def test_stix21_bundle_with_vulnerability_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_vulnerability_galaxy()
