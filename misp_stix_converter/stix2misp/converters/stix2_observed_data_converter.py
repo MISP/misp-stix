@@ -39,9 +39,6 @@ _GENERIC_OBSERVABLE_OBJECT_TYPING = Union[
     Artifact, Directory, File_v21, Process, Software, UserAccount,
     WindowsRegistryKey, X509Certificate
 ]
-_GENERIC_OBSERVABLE_TYPING = Union[
-    DomainName, IPv4Address, IPv6Address, MACAddress, Mutex, URL
-]
 _OBSERVABLE_OBJECTS_TYPING = Union[
     Artifact, AutonomousSystem, Directory, File_v21, Process, Software,
     UserAccount, WindowsRegistryKey, X509Certificate
@@ -3940,10 +3937,6 @@ class InternalSTIX2ObservedDataConverter(
                 continue
             if any(hasattr(observable, feature) for feature in ref_features):
                 return observable
-
-    def _fetch_observables(self, object_refs: Union[tuple, str]) -> Generator:
-        for object_ref in object_refs:
-            yield self._fetch_observable(object_ref)
 
     @staticmethod
     def _fetch_observables_v20(observed_data: ObservedData_v20):

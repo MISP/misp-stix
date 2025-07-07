@@ -402,7 +402,7 @@ class STIX2ObservableConverter(STIX2Converter):
                 )
     
     def _parse_generic_observable(
-            self, observable: _GENERIC_OBSERVABLE_TYPING,
+            self, observable: _OBSERVABLE_TYPING,
             name: str, object_id: Optional[str] = None,
             indicator_ref: str | tuple = '') -> Iterator[dict]:
         if isinstance(indicator_ref, tuple):
