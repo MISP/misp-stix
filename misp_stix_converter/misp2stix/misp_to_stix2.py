@@ -4637,7 +4637,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self.relationships.append(relationship)
 
     def _parse_object_relationships(self, references: list, object_args: dict):
-        mapping = self._mapping.known_relationships(object_args['type'])
+        mapping = self._mapping.known_relationships(object_args.get('type'))
         if mapping is None:
             for reference in references:
                 self._parse_object_relationship(reference, object_args)
