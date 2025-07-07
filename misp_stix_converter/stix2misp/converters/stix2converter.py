@@ -7,11 +7,15 @@ from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxyCluster, MISPObject
 from stix2.v20.sdo import (
-    AttackPattern as AttackPattern_v20, Malware as Malware_v20,
-    ObservedData as ObservedData_v20)
+    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
+    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, ThreatActor as ThreatActor_v20,
+    Tool as Tool_v20, Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (
-    AttackPattern as AttackPattern_v21, Malware as Malware_v21,
-    ObservedData as ObservedData_v21)
+    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
+    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
+    ObservedData as ObservedData_v21, ThreatActor as ThreatActor_v21,
+    Tool as Tool_v21, Vulnerability as Vulnerability_v21)
 from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
@@ -23,7 +27,12 @@ _DATETIME_REGEX = '%Y-%m-%dT%H:%M:%S'
 
 _GALAXY_OBJECTS_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21,
-    Malware_v20, Malware_v21
+    CourseOfAction_v20, CourseOfAction_v21,
+    IntrusionSet_v20, IntrusionSet_v21,
+    Malware_v20, Malware_v21,
+    ThreatActor_v20, ThreatActor_v21,
+    Tool_v20, Tool_v21,
+    Vulnerability_v20, Vulnerability_v21
 ]
 _MAIN_PARSER_TYPING = Union[
     'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
