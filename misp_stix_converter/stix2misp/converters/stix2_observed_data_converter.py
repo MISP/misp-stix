@@ -660,7 +660,7 @@ class ExternalSTIX2ObservedDataConverter(
                     observable['misp_object'], observed_data
                 )
                 continue
-            misp_object = self._handle_observable_object_refs_parsing(
+            misp_object = self._handle_observable_object_ref_parsing(
                 observable, observed_data, 'directory',
                 indicator_ref=indicator_refs.get(object_ref, '')
             )
@@ -1361,7 +1361,7 @@ class ExternalSTIX2ObservedDataConverter(
                         observed_data.id, parent_ref
                     )
                 else:
-                    parent_object = self._handle_observable_object_refs_parsing(
+                    parent_object = self._handle_observable_object_ref_parsing(
                         parent, observed_data, 'directory',
                         indicator_ref=indicator_refs.get(parent_ref, '')
                     )
@@ -1383,7 +1383,7 @@ class ExternalSTIX2ObservedDataConverter(
                         observed_data.id, content_ref
                     )
                 else:
-                    artifact = self._handle_observable_object_refs_parsing(
+                    artifact = self._handle_observable_object_ref_parsing(
                         content, observed_data, 'artifact', False,
                         indicator_ref=indicator_refs.get(content_ref, '')
                     )
@@ -1453,7 +1453,7 @@ class ExternalSTIX2ObservedDataConverter(
                     observed_data.id, object_ref
                 )
                 continue
-            misp_object = self._handle_observable_object_refs_parsing(
+            misp_object = self._handle_observable_object_ref_parsing(
                 observable, observed_data, object_type,
                 (object_type == 'directory'),
                 indicator_ref=indicator_refs.get(object_ref, '')
@@ -2006,7 +2006,7 @@ class ExternalSTIX2ObservedDataConverter(
                     observed_data.id, object_ref
                 )
                 continue
-            misp_object = self._handle_observable_object_refs_parsing(
+            misp_object = self._handle_observable_object_ref_parsing(
                 observable, observed_data, object_type, False,
                 indicator_ref=indicator_refs.get(object_ref, '')
             )
