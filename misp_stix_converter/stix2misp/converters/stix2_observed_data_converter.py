@@ -95,9 +95,8 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
                 'uuid': self.main_parser._create_v5_uuid(object_id), **attribute
             }
         return {
-            'type': attribute_type, 'value': value,
-            'uuid': self.main_parser._sanitise_attribute_uuid(object_id),
-            **attribute
+            'type': attribute_type, 'value': value, **attribute,
+            **self.main_parser._sanitise_attribute_uuid(object_id)
         }
 
     # Errors handling
