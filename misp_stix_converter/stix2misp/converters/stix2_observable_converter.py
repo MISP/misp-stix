@@ -868,7 +868,7 @@ class ExternalSTIX2ObservableConverter(
             for field, attribute in mapping().items():
                 if hasattr(extension, field):
                     yield from self._handle_object_attributes(
-                        observable, attribute, indicator_ref, field, object_id
+                        extension, attribute, indicator_ref, field, object_id
                     )
 
 
