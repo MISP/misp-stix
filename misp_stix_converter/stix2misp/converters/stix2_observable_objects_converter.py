@@ -237,24 +237,20 @@ class STIX2ObservableObjectConverter(
 
     def _create_misp_attribute(
             self, observable: _SINGLE_ATTRIBUTE_OBSERVABLE_TYPING,
-            attribute_type: str, feature: Optional[str] = 'value',
-            comment: Optional[str] = None, indicator_ref: Optional[str] = '',
-            **kwargs: dict[str, str | bool]) -> dict:
-        value = getattr(observable, feature)
-        if kwargs.get('to_ids', False):
-            attribute = {'type': attribute_type, **kwargs}
+            attribute_type: str, indicator_ref: str, to_ids: bool,
+            comment: Optional[str] = None) -> dict:
+        value = getattr(observable, 'value')
+        attribute = {'type': attribute_type, 'value': value, 'to_ids': to_ids}
+        if to_ids:
             if comment is not None:
                 attribute['comment'] = comment
-            return {
-                'value': value, **attribute,
-                'uuid': self.main_parser._create_v5_uuid(
-                    f'{indicator_ref} - {observable.id} - '
-                    f'{attribute_type} - {value}'
-                )
-            }
+            attribute['uuid'] = self.main_parser._create_v5_uuid(
+                f'{indicator_ref} - {observable.id} - '
+                f'{attribute_type} - {value}'
+            )
+            return attribute
         return {
-            'value': value, 'type': attribute_type, **kwargs,
-            **self.main_parser._sanitise_attribute_uuid(
+            **attribute, **self.main_parser._sanitise_attribute_uuid(
                 observable.id, comment=comment
             )
         }
@@ -304,10 +300,7 @@ class STIX2ObservableObjectConverter(
             indicator_ref, f'number - {autonomous_system.number}'
         )
         value = self._parse_AS_value(autonomous_system.number)
-        attribute = {
-            'type': 'AS', 'to_ids': to_ids,
-            'value': f'AS{autonomous_system.number}'
-        }
+        attribute = {'type': 'AS', 'to_ids': to_ids, 'value': value}
         if to_ids:
             attribute['uuid'] = self.main_parser._create_v5_uuid(
                 f'{indicator_ref} - {autonomous_system.id} - AS - {value}'
@@ -372,9 +365,8 @@ class STIX2ObservableObjectConverter(
                             indicator_ref, f'value - {mac_address.value}'
                         )
                         attribute = self._create_misp_attribute(
-                            'mac-address', mac_address, to_ids=to_ids,
-                            comment=f'Resolved by {ip_address.value}',
-                            indicator_ref=indicator_ref
+                            mac_address, 'mac-address', indicator_ref, to_ids,
+                            comment=f'Resolved by {ip_address.value}'
                         )
                         resolved_mac['used'][self.event_uuid] = True
                         misp_attribute = self.main_parser._add_misp_attribute(
@@ -390,7 +382,7 @@ class STIX2ObservableObjectConverter(
             indicator_ref, f'value - {domain_name.value}'
         )
         attribute = self._create_misp_attribute(
-            'domain', domain_name, to_ids=to_ids, indicator_ref=indicator_ref
+            domain_name, 'domain', indicator_ref, to_ids
         )
         misp_attribute = self.main_parser._add_misp_attribute(
             attribute, domain_name
@@ -429,7 +421,7 @@ class STIX2ObservableObjectConverter(
             observable['used'][self.event_uuid] = True
             return user_account_object
         attribute = self._create_misp_attribute(
-            'email', email_address, to_ids=to_ids, indicator_ref=indicator_ref
+            email_address, 'email', indicator_ref, to_ids
         )
         misp_attribute = self.main_parser._add_misp_attribute(
             attribute, email_address
@@ -507,7 +499,7 @@ class STIX2ObservableObjectConverter(
             indicator_ref, f'value - {ip_address.value}'
         )
         attribute = self._create_misp_attribute(
-            'ip-dst', ip_address, to_ids=to_ids, indicator_ref=indicator_ref
+            ip_address,  'ip-dst', indicator_ref, to_ids
         )
         misp_attribute = self.main_parser._add_misp_attribute(
             attribute, ip_address
@@ -527,8 +519,7 @@ class STIX2ObservableObjectConverter(
             indicator_ref, f'value - {mac_address.value}'
         )
         attribute = self._create_misp_attribute(
-            'mac-address', mac_address, to_ids=to_ids,
-            indicator_ref=indicator_ref
+            mac_address, 'mac-address', indicator_ref, to_ids
         )
         misp_attribute = self.main_parser._add_misp_attribute(
             attribute, mac_address
@@ -547,7 +538,7 @@ class STIX2ObservableObjectConverter(
             indicator_ref, f'value - {mutex.value}'
         )
         attribute = self._create_misp_attribute(
-            'mutex', mutex, to_ids=to_ids, indicator_ref=indicator_ref
+            mutex, 'mutex', indicator_ref, to_ids
         )
         misp_attribute = self.main_parser._add_misp_attribute(attribute, mutex)
         observable['used'][self.event_uuid] = True
@@ -693,7 +684,7 @@ class STIX2ObservableObjectConverter(
             indicator_ref, f'value - {url.value}'
         )
         attribute = self._create_misp_attribute(
-            'url', url, to_ids=to_ids, indicator_ref=indicator_ref
+            url, 'url', indicator_ref, to_ids
         )
         misp_attribute = self.main_parser._add_misp_attribute(attribute, url)
         observable['used'][self.event_uuid] = True
