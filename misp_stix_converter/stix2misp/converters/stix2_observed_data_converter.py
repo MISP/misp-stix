@@ -20,9 +20,8 @@ from stix2.v20.observables import (
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, Directory, DomainName, File as File_v21,
-    IPv4Address, IPv6Address, MACAddress, Mutex, Process, Software, URL,
-    UserAccount, WindowsRegistryKey, X509Certificate,
+    Artifact, AutonomousSystem, Directory, File as File_v21, Process,
+    Software, UserAccount, WindowsRegistryKey, X509Certificate,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
     WindowsRegistryValueType as WindowsRegistryValueType_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21

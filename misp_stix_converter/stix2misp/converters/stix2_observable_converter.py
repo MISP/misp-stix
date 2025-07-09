@@ -225,9 +225,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class STIX2ObservableConverter(STIX2Converter):
-    def _check_indicator_reference(self, reference: str, field: str) ->bool:
-        return field in self.main_parser.indicator_references.get(reference, [])
-
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable[object_ref]
 
@@ -249,21 +246,6 @@ class STIX2ObservableConverter(STIX2Converter):
         # multiple hits at this point means it's a weird document
         return indicator_ids[0]
 
-    def _handle_hash_attribute(
-            self, indicator_ref: str, hash_type: str, value: str,
-            object_id: str, mapping: Optional[str] = 'file') -> dict:
-        mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
-        if mapping is not None:
-            to_ids = self._check_indicator_reference(
-                indicator_ref, f'{hash_type} - {value}'
-            )
-            attribute = {'to_ids': to_ids, **mapping}
-            return self._populate_object_attribute(
-                attribute, value,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
-            )
-        self._hash_type_error(hash_type)
-
     def _handle_misp_object_storage(
             self, observable: dict, misp_object: MISPObject):
         observable['used'][self.event_uuid] = True
@@ -274,51 +256,27 @@ class STIX2ObservableConverter(STIX2Converter):
         else:
             observable['misp_object'] = [observable['misp_object'], misp_object]
 
-    def _handle_object_attributes(
-            self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
-        values = observable[field]
-        if isinstance(values, list):
-            for value in values:
-                to_ids = self._check_indicator_reference(
-                    indicator_ref, f'{field} - {value}'
-                )
-                yield self._populate_object_attribute(
-                    {'to_ids': to_ids, **mapping}, value,
-                    f'{indicator_ref} - {object_id}' if to_ids else object_id
-                )
-        else:
-            to_ids = self._check_indicator_reference(
-                indicator_ref, f'{field} - {values}'
+    def _parse_email_address_observable(
+            self, observable: _EMAIL_ADDRESS_TYPING, to_ids: bool, field: str,
+            object_id: str, indicator_ref: str | tuple) -> dict:
+        attribute = {
+            'value': observable.value, 'to_ids': to_ids,
+            **getattr(self._mapping, f'{field}_attribute')()
+        }
+        feature = f'{object_id} - {field} - {observable.value}'
+        if to_ids:
+            attribute['uuid'] = self.main_parser._create_v5_uuid(
+                f'{indicator_ref} - {feature}'
             )
-            yield self._populate_object_attribute(
-                {'to_ids': to_ids, **mapping}, values,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            return attribute
+        if hasattr(observable, 'id'):
+            attribute.update(
+                self.main_parser._sanitise_attribute_uuid(object_id)
             )
-
-    def _handle_object_attributes_with_data(
-            self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
-        values = observable[field]
-        if isinstance(values, list):
-            for value in values:
-                to_ids = self._check_indicator_reference(
-                    indicator_ref,
-                    f"{field} - {value['value'] if isinstance(value, dict) else value}"
-                )
-                yield self._populate_object_attribute_with_data(
-                    {'to_ids': to_ids, **mapping}, value,
-                    f'{indicator_ref} - {object_id}' if to_ids else object_id
-                )
-        else:
-            to_ids = self._check_indicator_reference(
-                indicator_ref,
-                f"{field} - {values['value'] if isinstance(values, dict) else values}"
-            )
-            yield self._populate_object_attribute_with_data(
-                {'to_ids': to_ids, **mapping}, values,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
-            )
+            return attribute
+        return {
+            'uuid': self.main_parser._create_v5_uuid(feature), **attribute
+        }
 
     def _parse_email_observable(
             self, observable: _EMAIL_MESSAGE_TYPING,
@@ -350,38 +308,20 @@ class STIX2ObservableConverter(STIX2Converter):
             indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
-        mapping = getattr(self._mapping, f'{feature}_attribute')()
         if hasattr(observable, 'display_name'):
             yield from self._handle_object_attributes(
-                observable, mapping, indicator_ref, 'value', object_id
-            )
-            mapping = getattr(
-                self._mapping, f"{feature}_display_name_attribute"
+                observable, getattr(self._mapping, f'{feature}_attribute')(),
+                indicator_ref, 'value', object_id
             )
             yield from self._handle_object_attributes(
-                observable, mapping(), indicator_ref, 'display_name', object_id
+                observable,
+                getattr(self._mapping, f'{feature}_display_name_attribute')(),
+                indicator_ref, 'display_name', object_id
             )
         else:
-            to_ids = self._check_indicator_reference(
-                indicator_ref, f'value - {observable.value}'
+            yield self._parse_email_address_observable(
+                observable, feature, object_id, indicator_ref
             )
-            attribute = {
-                'value': observable.value, 'to_ids': to_ids, **mapping
-            }
-            if to_ids:
-                attribute['uuid'] = self.main_parser._create_v5_uuid(
-                    f'{indicator_ref} - {object_id} - '
-                    f'{feature} - {observable.value}'
-                )
-            elif hasattr(observable, 'id'):
-                attribute.update(
-                    self.main_parser._sanitise_attribute_uuid(object_id)
-                )
-            else:
-                attribute['uuid'] = self.main_parser._create_v5_uuid(
-                    f'{object_id} - {feature} - {observable.value}'
-                )
-            yield attribute
 
     def _parse_file_observable(
             self, observable: _FILE_TYPING, object_id: Optional[str] = None,
@@ -705,6 +645,70 @@ class ExternalSTIX2ObservableMapping(
 
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
+    def _check_indicator_reference(self, reference: str, field: str) ->bool:
+        return field in self.main_parser.indicator_references.get(reference, [])
+
+    def _handle_hash_attribute(
+            self, indicator_ref: str, hash_type: str, value: str,
+            object_id: str, mapping: Optional[str] = 'file') -> dict:
+        mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
+        if mapping is not None:
+            to_ids = self._check_indicator_reference(
+                indicator_ref, f'{hash_type} - {value}'
+            )
+            attribute = {'to_ids': to_ids, **mapping}
+            return self._populate_object_attribute(
+                attribute, value,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+        self._hash_type_error(hash_type)
+
+    def _handle_object_attributes(
+            self, observable: _OBSERVABLE_TYPING, mapping: dict,
+            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+        values = observable[field]
+        if isinstance(values, list):
+            for value in values:
+                to_ids = self._check_indicator_reference(
+                    indicator_ref, f'{field} - {value}'
+                )
+                yield self._populate_object_attribute(
+                    {'to_ids': to_ids, **mapping}, value,
+                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                )
+        else:
+            to_ids = self._check_indicator_reference(
+                indicator_ref, f'{field} - {values}'
+            )
+            yield self._populate_object_attribute(
+                {'to_ids': to_ids, **mapping}, values,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+
+    def _handle_object_attributes_with_data(
+            self, observable: _OBSERVABLE_TYPING, mapping: dict,
+            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+        values = observable[field]
+        if isinstance(values, list):
+            for value in values:
+                to_ids = self._check_indicator_reference(
+                    indicator_ref,
+                    f"{field} - {value['value'] if isinstance(value, dict) else value}"
+                )
+                yield self._populate_object_attribute_with_data(
+                    {'to_ids': to_ids, **mapping}, value,
+                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                )
+        else:
+            to_ids = self._check_indicator_reference(
+                indicator_ref,
+                f"{field} - {values['value'] if isinstance(values, dict) else values}"
+            )
+            yield self._populate_object_attribute_with_data(
+                {'to_ids': to_ids, **mapping}, values,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+
     def _parse_artifact_observable(
             self, observable: _ARTIFACT_TYPING, object_id: Optional[str] = None,
             indicator_ref: str | tuple = '') -> Iterator[dict]:
@@ -780,6 +784,16 @@ class ExternalSTIX2ObservableConverter(
             f'{object_id} - domain - {observable.value}'
         )
         return attribute
+
+    def _parse_email_address_observable(
+            self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
+            object_id: str, indicator_ref: str | tuple) -> dict:
+        to_ids = self._check_indicator_reference(
+            indicator_ref, f'value - {observable.value}'
+        )
+        return super()._parse_email_address_observable(
+            observable, to_ids, feature, object_id, indicator_ref
+        )
 
     def _parse_ip_belonging_to_AS_observable(
             self, observable: _IP_OBSERVABLE_TYPING,
@@ -975,6 +989,58 @@ class InternalSTIX2ObservableMapping(
 
 class InternalSTIX2ObservableConverter(
         STIX2ObservableConverter, InternalSTIX2Converter):
+    def _check_indicator_reference(self, reference: str) ->bool:
+        return reference in self.main_parser.indicator_references
+
+    def _handle_hash_attribute(
+            self, indicator_ref: str, hash_type: str, value: str,
+            object_id: str, mapping: Optional[str] = 'file') -> dict:
+        mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
+        if mapping is not None:
+            to_ids = self._check_indicator_reference(indicator_ref)
+            attribute = {'to_ids': to_ids, **mapping}
+            return self._populate_object_attribute(
+                attribute, value,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+        self._hash_type_error(hash_type)
+
+    def _handle_object_attributes(
+            self, observable: _OBSERVABLE_TYPING, mapping: dict,
+            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+        values = observable[field]
+        if isinstance(values, list):
+            for value in values:
+                to_ids = self._check_indicator_reference(indicator_ref)
+                yield self._populate_object_attribute(
+                    {'to_ids': to_ids, **mapping}, value,
+                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                )
+        else:
+            to_ids = self._check_indicator_reference(indicator_ref)
+            yield self._populate_object_attribute(
+                {'to_ids': to_ids, **mapping}, values,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+
+    def _handle_object_attributes_with_data(
+            self, observable: _OBSERVABLE_TYPING, mapping: dict,
+            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+        values = observable[field]
+        if isinstance(values, list):
+            for value in values:
+                to_ids = self._check_indicator_reference(indicator_ref)
+                yield self._populate_object_attribute_with_data(
+                    {'to_ids': to_ids, **mapping}, value,
+                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                )
+        else:
+            to_ids = self._check_indicator_reference(indicator_ref)
+            yield self._populate_object_attribute_with_data(
+                {'to_ids': to_ids, **mapping}, values,
+                f'{indicator_ref} - {object_id}' if to_ids else object_id
+            )
+
     def _has_domain_custom_fields(self, observable: DomainName_v21) -> bool:
         for feature in self._mapping.domain_ip_object_mapping():
             if feature == 'value':
@@ -1010,6 +1076,14 @@ class InternalSTIX2ObservableConverter(
                 **self._mapping.domain_attribute(),
                 **self.main_parser._sanitise_attribute_uuid(observable.id)
             }
+
+    def _parse_email_address_observable(
+            self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
+            object_id: str, indicator_ref: str | tuple) -> dict:
+        to_ids = self._check_indicator_reference(indicator_ref)
+        return super()._parse_email_address_observable(
+            observable, to_ids, feature, object_id, indicator_ref
+        )
 
     def _parse_email_body_observable(
             self, observable: _EMAIL_ATTACHMENT_TYPING, feature: str,
