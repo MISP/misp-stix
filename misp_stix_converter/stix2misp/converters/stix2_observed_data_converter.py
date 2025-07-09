@@ -580,9 +580,12 @@ class ExternalSTIX2ObservedDataConverter(
             indicator_ref, f'number - {autonomous_system.number}'
         )
         misp_object.add_attribute(
-            {'to_ids': to_ids, **self._mapping.asn_attribute()}, AS_value,
-            f'{indicator_ref} - {autonomous_system.id}'
-            if to_ids else autonomous_system.id
+            **self._populate_object_attribute(
+                {'to_ids': to_ids, **self._mapping.asn_attribute()},
+                self._parse_AS_value(autonomous_system.number),
+                f'{indicator_ref} - {autonomous_system.id}'
+                if to_ids else autonomous_system.id
+            )
         )
         description = autonomous_system.name
         misp_object.add_attribute(
@@ -976,16 +979,16 @@ class ExternalSTIX2ObservedDataConverter(
             self, email_address: _EMAIL_ADDRESS_TYPING,
             observed_data: _OBSERVED_DATA_TYPING,
             indicator_ref: str | tuple = '') -> Generator:
-        attribute = {
-            'comment': f'Observed Data ID: {observed_data.id}',
-            **self._parse_timeline(observed_data)
-        }
+        attribute = self._parse_timeline(observed_data)
         address = email_address.value
+        comment = f'Observed Data ID: {observed_data.id}'
         to_ids = self._check_indicator_reference(
             indicator_ref, f'value - {address}'
         )
         if hasattr(email_address, 'display_name'):
-            attribute['comment'] += f'Observable object ID: {email_address.id}'
+            attribute['comment'] = (
+                f'{comment} - Observable object ID: {email_address.id}'
+            )
             yield self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
                     'email-dst', address, indicator_ref, email_address.id,
@@ -1004,7 +1007,7 @@ class ExternalSTIX2ObservedDataConverter(
             yield self.main_parser._add_misp_attribute(
                 self._create_single_misp_attribute(
                     'email-dst', address, indicator_ref, email_address.id,
-                    to_ids=to_ids, **attribute
+                    to_ids=to_ids, **attribute, comment=comment
                 ),
                 observed_data
             )
@@ -1168,8 +1171,8 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body, to_ids=to_ids,
                             uuid=self.main_parser._create_v5_uuid(
-                                f'{object_id} - body_multipart - '
-                                f'{index} - body - {multipart.body}'
+                                f'{object_id} - body_multipart - {index} - '
+                                f'email-body - {multipart.body}'
                             )
                         )
                         continue
@@ -1234,8 +1237,8 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body, to_ids=to_ids,
                             uuid=self.main_parser._create_v5_uuid(
-                                f'{object_id} - body_multipart - '
-                                f'{index} - body - {multipart.body}'
+                                f'{object_id} - body_multipart - {index} - '
+                                f'email-body - {multipart.body}'
                             )
                         )
                         continue
@@ -1285,8 +1288,8 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body,
                             uuid=self.main_parser._create_v5_uuid(
-                                f'{object_id} - body_multipart - '
-                                f'{index} - body - {multipart.body}'
+                                f'{object_id} - body_multipart - {index} - '
+                                f'email-body - {multipart.body}'
                             )
                         )
                         continue
@@ -1606,7 +1609,7 @@ class ExternalSTIX2ObservedDataConverter(
         if single:
             if to_ids:
                 attribute['comment'] = comment
-            return self._main_parser._add_misp_attribute(
+            return self.main_parser._add_misp_attribute(
                 self._create_single_misp_attribute(
                     attribute_type, value or strict_value, indicator_ref,
                     observed_data.id, to_ids=to_ids, **attribute
