@@ -304,6 +304,8 @@ class ExternalSTIX2IndicatorConverter(
 
     def parse(self, indicator_ref: str):
         indicator = self.main_parser._get_stix_object(indicator_ref)
+        if indicator.get('observable_ref') is not None:
+            return
         feature = self._handle_pattern_mapping(indicator)
         try:
             parser = getattr(self, feature)
