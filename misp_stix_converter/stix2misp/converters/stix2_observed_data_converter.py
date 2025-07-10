@@ -445,9 +445,9 @@ class ExternalSTIX2ObservedDataConverter(
             return self._parse_autonomous_system_observable_object_ref(
                 autonomous_system, observed_data, indicator_ref=indicator_ref
             )
-        object_id = f'{observed_data.id} - {object_id}'
         AS_value = self._parse_AS_value(autonomous_system.number)
         if hasattr(autonomous_system, 'name'):
+            object_id = f'{observed_data.id} - {object_id}'
             misp_object = self._create_misp_object_from_observable_object(
                 'asn', observed_data, object_id
             )
@@ -574,7 +574,6 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object_from_observable_object_ref(
             'asn', autonomous_system, observed_data
         )
-        AS_value = self._parse_AS_value(autonomous_system.number)
         to_ids = self._check_indicator_reference(
             indicator_ref, f'number - {autonomous_system.number}'
         )
@@ -926,10 +925,15 @@ class ExternalSTIX2ObservedDataConverter(
                 observable.update({'misp_attribute': attribute, 'used': True})
             return
         if len(observed_data.objects) == 1:
+            if indicator_refs:
+                return self._parse_generic_observable_object_as_attribute(
+                    observed_data, next(iter(observed_data.objects.keys())),
+                    'domain', single=True,
+                    indicator_ref=next(iter(indicator_refs.values()))
+                )
             return self._parse_generic_observable_object_as_attribute(
                 observed_data, next(iter(observed_data.objects.keys())),
-                'domain', single=True,
-                indicator_ref=next(iter(indicator_refs.values()))
+                'domain', single=True
             )
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
@@ -1280,7 +1284,8 @@ class ExternalSTIX2ObservedDataConverter(
                     if hasattr(multipart, 'body'):
                         object_id = f'{observed_data.id} - {identifier}'
                         to_ids = self._check_indicator_reference(
-                            indicator_ref, f'body - {multipart.body}'
+                            indicator_refs.get(identifier, ''),
+                            f'body - {multipart.body}'
                         )
                         if to_ids:
                             object_id = f'{indicator_ref} - {object_id}'
@@ -1314,7 +1319,7 @@ class ExternalSTIX2ObservedDataConverter(
                     self._parse_file_observable_object_references(
                         file_object, observable, observed_data,
                         observable_objects, body_ref,
-                        indicator_ref=indicator_refs
+                        indicator_refs=indicator_refs
                     )
 
     def _parse_file_observable_object_ref_references(
@@ -1769,7 +1774,7 @@ class ExternalSTIX2ObservedDataConverter(
                     continue
                 attribute = self._parse_generic_observable_object_as_attribute(
                     observed_data, object_id, 'mac-address',
-                    indiiator_ref=indicator_refs.get(object_id, '')
+                    indicator_ref=indicator_refs.get(object_id, '')
                 )
                 observable.update({'misp_attribute': attribute, 'used': True})
             return
@@ -1782,7 +1787,7 @@ class ExternalSTIX2ObservedDataConverter(
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
                 observed_data, identifier, 'mac-address',
-                indiiator_ref=indicator_refs.get(identifier, '')
+                indicator_ref=indicator_refs.get(identifier, '')
             )
 
     def _parse_mutex_observable_object_refs(
