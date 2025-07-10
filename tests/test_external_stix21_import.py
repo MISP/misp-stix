@@ -428,14 +428,14 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_object_fields(
             address, observed_data,
             f'{email_address.id} - email-dst - {email_address.value}',
-            multiple=True
+            email_address.id, multiple=True
         )
         self.assertEqual(address.type, 'email-dst')
         self.assertEqual(address.value, email_address.value)
         self._check_misp_object_fields(
             display_name, observed_data,
             f'{email_address.id} - email-dst-display-name - {email_address.display_name}',
-            multiple=True
+            email_address.id, multiple=True
         )
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
@@ -513,10 +513,15 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.uuid, uuid5(self._UUIDv4, object_id))
         else:
             self.assertEqual(misp_object.uuid, object_id.split('--')[1])
-        pattern = 'Observed Data ID: '
+        comments = (
+            f'Observed Data ID: {additional_id}'
+            if additional_id.startswith('observed-data--') else
+            f'Observable object ID: {additional_id}'
+            for additional_id in additional_ids
+        )
         self.assertEqual(
             misp_object.comment,
-            f"{pattern}{f' - {pattern}'.join((observed_data.id, *additional_ids))}"
+            f"Observed Data ID: {f' - '.join((observed_data.id, *comments))}"
         )
         if not (observed_data.modified == observed_data.first_observed == observed_data.last_observed):
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)

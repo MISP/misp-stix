@@ -233,8 +233,14 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
 
     def _check_as_attribute(self, attribute, observed_data, identifier=None):
-        self._check_misp_object_fields(attribute, observed_data, identifier)
         autonomous_system = observed_data.objects[identifier or '0']
+        if identifier is None:
+            self._check_misp_object_fields(attribute, observed_data)
+        else:
+            self._check_misp_object_fields(
+                attribute, observed_data,
+                f'{identifier} - AS - AS{autonomous_system.number}'
+            )
         self.assertEqual(attribute.type, 'AS')
         self.assertEqual(attribute.value, f'AS{autonomous_system.number}')
 
@@ -408,6 +414,18 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_misp_object_fields(attribute, observed_data, identifier)
         self.assertEqual(attribute.type, attribute_type)
         self.assertEqual(attribute.value, getattr(observable_object, feature))
+
+    def _check_generic_multiple_attribute(
+            self, observed_data, attribute, attribute_type,
+            identifier, feature='value'):
+        observable_object = observed_data.objects[identifier]
+        value = getattr(observable_object, feature)
+        self._check_misp_object_fields(
+            attribute, observed_data,
+            f'{identifier} - {attribute_type} - {value}'
+        )
+        self.assertEqual(attribute.type, attribute_type)
+        self.assertEqual(attribute.value, value)
 
     def _check_misp_object_fields(self, misp_object, observed_data, identifier=None):
         if identifier is None:
@@ -660,10 +678,10 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attributes = self._check_misp_event_features(event, report)
         self.assertEqual(len(attributes), 3)
         m_domain1, m_domain2, s_domain = attributes
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_domain1, 'domain', '0'
         )
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_domain2, 'domain', '1'
         )
         self._check_generic_attribute(
@@ -781,10 +799,10 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attributes = self._check_misp_event_features(event, report)
         self.assertEqual(len(attributes), 3)
         m_ip1, m_ip2, s_ip = attributes
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_ip1, 'ip-dst', '0'
         )
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_ip2, 'ip-dst', '1'
         )
         self._check_generic_attribute(
@@ -800,10 +818,10 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attributes = self._check_misp_event_features(event, report)
         self.assertEqual(len(attributes), 3)
         m_mac1, m_mac2, s_mac = attributes
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_mac1, 'mac-address', '0'
         )
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_mac2, 'mac-address', '1'
         )
         self._check_generic_attribute(
@@ -819,10 +837,10 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attributes = self._check_misp_event_features(event, report)
         self.assertEqual(len(attributes), 3)
         m_mutex1, m_mutex2, s_mutex = attributes
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_mutex1, 'mutex', '0', 'name'
         )
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_mutex2, 'mutex', '1', 'name'
         )
         self._check_generic_attribute(
@@ -978,10 +996,10 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attributes = self._check_misp_event_features(event, report)
         self.assertEqual(len(attributes), 3)
         m_url1, m_url2, s_url = attributes
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_url1, 'url', '0'
         )
-        self._check_generic_attribute(
+        self._check_generic_multiple_attribute(
             observed_data1, m_url2, 'url', '1'
         )
         self._check_generic_attribute(
