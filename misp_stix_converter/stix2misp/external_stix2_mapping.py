@@ -58,7 +58,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'email-message',
                     'email-message_file'
                 ),
-                'email'
+                'email_message'
             ),
             **dict.fromkeys(
                 (
