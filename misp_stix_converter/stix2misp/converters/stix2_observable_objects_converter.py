@@ -421,6 +421,35 @@ class STIX2ObservableObjectConverter(
             observable['misp_object'] = user_account_object
             observable['used'][self.event_uuid] = True
             return user_account_object
+        if hasattr(email_address, 'display_name'):
+            comment = f'Observable object ID: {email_address.id}'
+            object_id = email_address.id
+            if to_ids:
+                comment = f'Indicator ID: {indicator_ref} - {comment}'
+                object_id = f'{indicator_ref} - {object_id}'
+            misp_attribute = self.main_parser._add_misp_attribute(
+                {
+                    'type': (attribute_type := 'email'),
+                    'value': (value := email_address.value),
+                    'to_ids': to_ids, 'comment': comment,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{object_id} - {attribute_type} - {value}'
+                    )
+                }
+            )
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': (attribute_type := 'email-dst-display-name'),
+                    'value': (value := email_address.display_name),
+                    'comment': comment,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{email_address.id} - {attribute_type} - {value}'
+                    )
+                }
+            )
+            observable['used'][self.event_uuid] = True
+            observable['misp_attribute'] = misp_attribute
+            return misp_attribute
         attribute = self._create_misp_attribute(
             email_address, 'email', indicator_ref, to_ids
         )
