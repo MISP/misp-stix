@@ -469,8 +469,9 @@ class STIX2ObservableObjectConverter(
         email_object = self._create_misp_object_from_observable(
             'email', email_message
         )
+        indicator_ref = observable.get('indicator_ref', '')
         attributes = self._parse_email_observable(
-            email_message, indicator_ref=observable.get('indicator_ref', '')
+            email_message, indicator_ref=indicator_ref
         )
         for attribute in attributes:
             email_object.add_attribute(**attribute)
@@ -481,19 +482,29 @@ class STIX2ObservableObjectConverter(
         observable['misp_object'] = misp_object
         if hasattr(email_message, 'from_ref'):
             from_address = self._fetch_observable(email_message.from_ref)
-            attributes = self._parse_email_reference_observable(
-                from_address['observable'], 'from',
-                indicator_ref=from_address.get('indicator_ref', '')
-            )
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
-            from_address['misp_object'] = misp_object
-            from_address['used'][self.event_uuid] = True
+            if from_address is None:
+                self._missing_observable_object_error(
+                    email_message.id, email_message.from_ref
+                )
+            else:
+                attributes = self._parse_email_reference_observable(
+                    from_address['observable'], 'from',
+                    indicator_ref=from_address.get('indicator_ref', '')
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
+                from_address['misp_object'] = misp_object
+                from_address['used'][self.event_uuid] = True
         for feature in ('to', 'bcc', 'cc'):
             field = f'{feature}_refs'
             if hasattr(email_message, field):
                 for reference in getattr(email_message, field):
                     email_address = self._fetch_observable(reference)
+                    if email_address is None:
+                        self._missing_observable_object_error(
+                            email_message.id, reference
+                        )
+                        continue
                     attributes = self._parse_email_reference_observable(
                         email_address['observable'], feature,
                         indicator_ref=email_address.get('indicator_ref', '')
@@ -502,6 +513,41 @@ class STIX2ObservableObjectConverter(
                         misp_object.add_attribute(**attribute)
                     email_address['misp_object'] = misp_object
                     email_address['used'][self.event_uuid] = True
+        if hasattr(email_message, 'body_multipart'):
+            for index, multipart in enumerate(email_message.body_multipart):
+                if hasattr(multipart, 'body'):
+                    object_id = email_message.id
+                    to_ids = self._check_indicator_reference(
+                        indicator_ref, f'body - {multipart.body}'
+                    )
+                    if to_ids:
+                        object_id = f'{indicator_ref} - {object_id}'
+                    misp_object.add_attribute(
+                        'email-body', multipart.body, to_ids=to_ids,
+                        uuid=self.main_parser._create_v5_uuid(
+                            f'{object_id} - body_multipart - {index} - '
+                            f'email-body - {multipart.body}'
+                        )
+                    )
+                    continue
+                body_raw_ref = multipart.body_raw_ref
+                if body_raw_ref not in self.main_parser._observable:
+                    self._missing_observable_object_error(
+                        email_message.id, body_raw_ref
+                    )
+                    continue
+                if body_raw_ref.startswith('artifact--'):
+                    artifact = self._parse_artifact_observable_object(
+                        body_raw_ref
+                    )
+                    misp_object.add_reference(artifact.uuid, 'contains')
+                    continue
+                if body_raw_ref.startswith('file--'):
+                    file_object = self._parse_file_observable_object(
+                        body_raw_ref
+                    )
+                    misp_object.add_reference(file_object.uuid, 'contains')
+                self._unknown_body_raw_ref_error(email_message.id, body_raw_ref)
         return misp_object
 
     def _parse_ip_addresses_belonging_to_AS(
@@ -759,6 +805,22 @@ class STIX2ObservableObjectConverter(
         misp_object = self.main_parser._add_misp_object(x509_object, x509)
         observable['misp_object'] = misp_object
         return misp_object
+
+    # Errors handling
+    def _missing_observable_object_error(
+            self, observable_object_id: str, observable_ref: str):
+        self.main_parser._add_error(
+            f'Missing Observable object with id {observable_ref} '
+            'mentioned as object reference in Observable object '
+            f'with id {observable_object_id}.'
+        )
+
+    def _unknown_body_raw_ref_error(
+            self, observable_object_id: str, body_raw_ref: str):
+        self.main_parser._add_error(
+            f'Unknown body_raw_ref {body_raw_ref} in Observable object '
+            f'with id {observable_object_id}.'
+        )
 
 
 class STIX2SampleObservableConverter(STIX2SampleObervableParser):
