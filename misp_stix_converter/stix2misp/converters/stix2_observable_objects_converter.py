@@ -57,7 +57,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         for attribute in attributes:
             artifact_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
-        misp_object = self._main_parser._add_misp_object(
+        misp_object = self.main_parser._add_misp_object(
             artifact_object, artifact
         )
         observable['misp_object'] = misp_object
@@ -280,12 +280,12 @@ class STIX2ObservableObjectConverter(
             )
         )
         observable['used'][self.event_uuid] = True
-        if ip_attributes or hasattr(observable, 'name'):
+        if ip_attributes or hasattr(autonomous_system, 'name'):
             AS_object = self._create_misp_object_from_observable(
                 'asn', autonomous_system
             )
             attributes = self._parse_asn_observable(
-                observable, indicator_ref=indicator_ref
+                autonomous_system, indicator_ref=indicator_ref
             )
             for attribute in attributes:
                 AS_object.add_attribute(**attribute)

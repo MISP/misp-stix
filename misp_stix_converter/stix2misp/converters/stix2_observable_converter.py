@@ -752,7 +752,7 @@ class ExternalSTIX2ObservableConverter(
         )
         yield self._populate_object_attribute(
             {'to_ids': to_ids, **self._mapping.asn_attribute()},
-            self._parser_AS_value(observable.number),
+            self._parse_AS_value(observable.number),
             f'{indicator_ref} - {object_id}' if to_ids else object_id
         )
         if hasattr(observable, 'name'):
