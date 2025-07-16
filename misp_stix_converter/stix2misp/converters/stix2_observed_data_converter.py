@@ -2385,7 +2385,7 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object_from_observable_object(
             'registry-key-value', observed_data, object_id
         )
-        mapping = self._mapping.registry_key_values_mapping
+        mapping = self._mapping.registry_key_values_object_mapping
         for field, attribute in mapping().items():
             if hasattr(registry_value, field):
                 to_ids = self._check_indicator_reference(

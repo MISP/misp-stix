@@ -509,7 +509,7 @@ class STIX2ObservableConverter(STIX2Converter):
                 )
         if len(observable.get('values', [])) == 1:
             key_value = observable['values'][0]
-            values_mapping = self._mapping.registry_key_values_mapping
+            values_mapping = self._mapping.registry_key_values_object_mapping
             for field, attribute in values_mapping().items():
                 if hasattr(key_value, field):
                     yield from self._handle_object_attributes(

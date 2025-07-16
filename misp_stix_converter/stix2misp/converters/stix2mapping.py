@@ -389,7 +389,7 @@ class STIX2Mapping:
         modified=__last_modified_attribute,
         modified_time=__last_modified_attribute
     )
-    __registry_key_values_mapping = Mapping(
+    __registry_key_values_object_mapping = Mapping(
         data=__data_attribute,
         data_type=__data_type_attribute,
         name=__name_attribute
@@ -699,8 +699,8 @@ class STIX2Mapping:
         return cls.__registry_key_object_mapping
 
     @classmethod
-    def registry_key_values_mapping(cls) -> dict:
-        return cls.__registry_key_values_mapping
+    def registry_key_values_object_mapping(cls) -> dict:
+        return cls.__registry_key_values_object_mapping
 
     @classmethod
     def reply_to_attribute(cls) -> dict:
