@@ -176,7 +176,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         misp_object = self.main_parser._add_misp_object(pe_object, observable)
         if hasattr(extension, 'sections'):
             for index, section in enumerate(extension.sections):
-                section_id = f'{object_id} - section #{index}'
+                section_id = f'{object_id} - sections - {index}'
                 section_object = self._create_misp_object('pe-section')
                 section_object.from_dict(
                     uuid=self.main_parser._create_v5_uuid(section_id)

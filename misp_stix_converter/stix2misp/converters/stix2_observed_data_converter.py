@@ -1562,7 +1562,7 @@ class ExternalSTIX2ObservedDataConverter(
         )
         if hasattr(pe_extension, 'sections'):
             for section_id, section in enumerate(pe_extension.sections):
-                section_reference = f'{object_id} - section #{section_id}'
+                section_reference = f'{object_id} - sections - {section_id}'
                 section_object = self._create_misp_object_from_observable_object(
                     'pe-section', observed_data, section_reference
                 )
@@ -3257,12 +3257,12 @@ class InternalSTIX2ObservedDataConverter(
                 section_object = self._create_misp_object('pe-section')
                 section_object.from_dict(
                     uuid=self.main_parser._create_v5_uuid(
-                        f'{observed_data.id} - section #{index}'
+                        f'{observed_data.id} - sections - {index}'
                     ),
                     **self._parse_timeline(observed_data)
                 )
                 attributes = self._parse_pe_section_observable(
-                    section, f'{object_id} - section #{index}'
+                    section, f'{object_id} - sections - {index}'
                 )
                 for attribute in attributes:
                     section_object.add_attribute(**attribute)
