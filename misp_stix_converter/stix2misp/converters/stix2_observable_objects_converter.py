@@ -68,57 +68,37 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
             child: Optional[str] = None) -> _MISP_CONTENT_TYPING:
         observable = self._fetch_observable(directory_ref)
         if observable['used'].get(self.event_uuid, False):
-            return observable.get('misp_object', observable['misp_attribute'])
+            return observable['misp_object']
         directory = observable['observable']
-        attributes = tuple(
-            self._parse_generic_observable(
-                directory, 'directory',
-                indicator_ref=observable.get('indicator_ref', '')
-            )
+        attributes = self._parse_generic_observable(
+            directory, 'directory',
+            indicator_ref=observable.get('indicator_ref', '')
         )
         observable['used'][self.event_uuid] = True
-        force_object = (
-            len(attributes) > 1 or any(
-                ref != child for ref in getattr(directory, 'contains_refs', [])
-            )
+        directory_object = self._create_misp_object_from_observable(
+            'directory', directory, *args
         )
-        if force_object:
-            directory_object = self._create_misp_object_from_observable(
-                'directory', directory, *args
-            )
-            for attribute in attributes:
-                directory_object.add_attribute(**attribute)
-            misp_object = self.main_parser._add_misp_object(
-                directory_object, directory
-            )
-            observable['misp_object'] = misp_object
-            if hasattr(directory, 'contains_refs'):
-                for ref in directory.contains_refs:
-                    feature = f"_parse_{ref.split('--')[0]}_observable_object"
-                    referenced_object = (
-                        self._fetch_observable(child)['misp_object']
-                        if child == ref else getattr(self, feature)(ref)
+        for attribute in attributes:
+            directory_object.add_attribute(**attribute)
+        misp_object = self.main_parser._add_misp_object(
+            directory_object, directory
+        )
+        observable['misp_object'] = misp_object
+        if hasattr(directory, 'contains_refs'):
+            for ref in directory.contains_refs:
+                if ref not in self.main_parser._observable:
+                    self._missing_observable_object_error(
+                        directory.id, ref, child=child
                     )
-                    misp_object.add_reference(
-                        referenced_object.uuid, 'contains'
-                    )
-            return misp_object
-        if child is None:
-            attribute = attributes[0]
-            misp_attribute = self.main_parser._add_misp_attribute(
-                {
-                    'type': attribute['type'],
-                    'value': attribute['value'],
-                    'to_ids': attribute['to_ids'],
-                    **self.main_parser._sanitise_attribute_uuid(directory.id)
-                },
-                directory
-            )
-            observable['misp_attribute'] = misp_attribute
-            return misp_attribute
-        file_object = self._fetch_observable(child)['misp_object']
-        file_object.add_attribute(**attributes[0])
-        observable['misp_object'] = file_object
+                    continue
+                feature = f"_parse_{ref.split('--')[0]}_observable_object"
+                referenced_object = (
+                    self._fetch_observable(child)['misp_object']
+                    if child == ref else getattr(self, feature)(ref)
+                )
+                misp_object.add_reference(
+                    referenced_object.uuid, 'contains'
+                )
         return misp_object
 
     def _parse_file_observable_object(self, file_ref: str, *args) -> MISPObject:
