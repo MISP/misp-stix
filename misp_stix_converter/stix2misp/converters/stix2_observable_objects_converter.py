@@ -222,8 +222,9 @@ class STIX2ObservableObjectConverter(
     def _create_misp_attribute(
             self, observable: _SINGLE_ATTRIBUTE_OBSERVABLE_TYPING,
             attribute_type: str, indicator_ref: str, to_ids: bool,
-            comment: Optional[str] = None) -> dict:
-        value = getattr(observable, 'value')
+            comment: Optional[str] = None,
+            feature: Optional[str] = 'value') -> dict:
+        value = getattr(observable, feature)
         attribute = {'type': attribute_type, 'value': value, 'to_ids': to_ids}
         if to_ids:
             if comment is not None:
@@ -595,10 +596,10 @@ class STIX2ObservableObjectConverter(
         mutex = observable['observable']
         indicator_ref = observable.get('indicator_ref', '')
         to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {mutex.value}'
+            indicator_ref, f'value - {mutex.name}'
         )
         attribute = self._create_misp_attribute(
-            mutex, 'mutex', indicator_ref, to_ids
+            mutex, 'mutex', indicator_ref, to_ids, feature='name'
         )
         misp_attribute = self.main_parser._add_misp_attribute(attribute, mutex)
         observable['used'][self.event_uuid] = True
