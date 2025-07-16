@@ -2020,6 +2020,28 @@ class ExternalSTIX2ObservedDataConverter(
             if object_type == 'file':
                 continue
             process = observable['observable']
+            if hasattr(process, 'opened_connection_refs'):
+                for reference in process.opened_connection_refs:
+                    self._parse_process_reference_observable_object_ref(
+                        observed_data, misp_object, reference,
+                        'opened-connection', name='network-traffic',
+                        indicator_ref=indicator_refs.get(reference, '')
+                    )
+            if hasattr(process, 'creator_user_ref'):
+                self._parse_process_reference_observable_object_ref(
+                    observed_data, misp_object, process.creator_user_ref,
+                    'created-by', name='user-account',
+                    indicator_ref=indicator_refs.get(
+                        process.creator_user_ref, ''
+                    )
+                )
+            if hasattr(process, 'image_ref'):
+                self._parse_process_reference_observable_object_ref(
+                    observed_data, misp_object, process.image_ref, 'executes',
+                    name='file', indicator_ref=indicator_refs.get(
+                        process.image_ref, ''
+                    )
+                )
             if hasattr(process, 'parent_ref'):
                 self._parse_process_reference_observable_object_ref(
                     observed_data, misp_object, process.parent_ref, 'child-of',
@@ -2031,13 +2053,6 @@ class ExternalSTIX2ObservedDataConverter(
                         observed_data, misp_object, child_ref, 'parent-of',
                         indicator_ref=indicator_refs.get(child_ref, '')
                     )
-            if hasattr(process, 'image_ref'):
-                self._parse_process_reference_observable_object_ref(
-                    observed_data, misp_object, process.image_ref, 'executes',
-                    name='file', indicator_ref=indicator_refs.get(
-                        process.image_ref, ''
-                    )
-                )
 
     def _parse_process_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
@@ -2071,22 +2086,22 @@ class ExternalSTIX2ObservedDataConverter(
                 observable_objects, object_id, observed_data, 'process', False,
                 indicator_ref=indicator_refs.get(object_id, '')
             )
-            if hasattr(observable_object, 'parent_ref'):
-                self._parse_process_reference_observable_object(
-                    observed_data, misp_object,
-                    observable_objects[observable_object.parent_ref],
-                    observable_object.parent_ref, 'child-of',
-                    indicator_ref=indicator_refs.get(
-                        observable_object.parent_ref, ''
-                    )
-                )
-            if hasattr(observable_object, 'child_refs'):
-                for child_ref in observable_object.child_refs:
-                    self._parse_process_reference_observable_object(
+            if hasattr(observable_object, 'opened_connection_refs'):
+                for reference in observable_object.opened_connection_refs:
+                    self._parse_process_reference_observable_object_ref(
                         observed_data, misp_object,
-                        observable_objects[child_ref], child_ref, 'parent-of',
-                        indicator_ref=indicator_refs.get(child_ref, '')
+                        observable_objects[reference], reference,
+                        'opened-connection', name='network-traffic',
+                        indicator_ref=indicator_refs.get(reference, '')
                     )
+            if hasattr(observable_object, 'creator_user_ref'):
+                creator_ref = observable_object.creator_user_ref
+                self._parse_process_reference_observable_object_ref(
+                    observed_data, misp_object,
+                    observable_objects[creator_ref], creator_ref, 'created-by',
+                    name='user-account',
+                    indicator_ref=indicator_refs.get(creator_ref, '')
+                )
             for feature in ('binary', 'image'):
                 if hasattr(observable_object, f'{feature}_ref'):
                     reference = getattr(observable_object, f'{feature}_ref')
@@ -2095,6 +2110,20 @@ class ExternalSTIX2ObservedDataConverter(
                         observable_objects[reference],
                         reference, 'executes', name='file',
                         indicator_ref=indicator_refs.get(reference, '')
+                    )
+            if hasattr(observable_object, 'parent_ref'):
+                parent_ref = observable_object.parent_ref
+                self._parse_process_reference_observable_object(
+                    observed_data, misp_object,
+                    observable_objects[parent_ref], parent_ref, 'child-of',
+                    indicator_ref=indicator_refs.get(parent_ref, '')
+                )
+            if hasattr(observable_object, 'child_refs'):
+                for child_ref in observable_object.child_refs:
+                    self._parse_process_reference_observable_object(
+                        observed_data, misp_object,
+                        observable_objects[child_ref], child_ref, 'parent-of',
+                        indicator_ref=indicator_refs.get(child_ref, '')
                     )
 
     def _parse_process_reference_observable_object(

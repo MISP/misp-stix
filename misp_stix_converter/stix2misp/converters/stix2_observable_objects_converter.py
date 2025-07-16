@@ -672,6 +672,9 @@ class STIX2ObservableObjectConverter(
         observable['misp_object'] = misp_object
         if hasattr(process, 'opened_connection_refs'):
             for reference in process.opened_connection_refs:
+                if reference not in self.main_parser._observable:
+                    self._missing_observable_object_error(process.id, reference)
+                    continue
                 network_object = self._parse_network_traffic_observable_object(
                     reference
                 )
@@ -679,22 +682,39 @@ class STIX2ObservableObjectConverter(
                     network_object.uuid, 'opens-connection'
                 )
         if hasattr(process, 'creator_user_ref'):
-            user_object = self._parse_user_account_observable_object(
-                process.creator_user_ref
-            )
-            user_object.add_reference(misp_object.uuid, 'creates')
+            creator_ref = process.creator_user_ref
+            if creator_ref not in self.main_parser._observable:
+                self._missing_observable_object_error(process.id, creator_ref)
+            else:
+                user_object = self._parse_user_account_observable_object(
+                    creator_ref
+                )
+                misp_object.add_reference(user_object.uuid, 'created-by')
         if hasattr(process, 'image_ref'):
-            file_object = self._parse_file_observable_object(process.image_ref)
-            misp_object.add_reference(file_object.uuid, 'executes')
+            image_ref = process.image_ref
+            if image_ref not in self.main_parser._observable:
+                self._missing_observable_object_error(process.id, image_ref)
+            else:
+                file_object = self._parse_file_observable_object(
+                    image_ref
+                )
+                misp_object.add_reference(file_object.uuid, 'executes')
         if hasattr(process, 'parent_ref'):
-            parent_object = self._parse_process_observable_object(
-                process.parent_ref
-            )
-            parent_object.add_reference(misp_object.uuid, 'parent-of')
+            parent_ref = process.parent_ref
+            if parent_ref not in self.main_parser._observable:
+                self._missing_observable_object_error(process.id, parent_ref)
+            else:
+                parent_object = self._parse_process_observable_object(
+                    parent_ref
+                )
+                misp_object.add_reference(parent_object.uuid, 'child-of')
         if hasattr(process, 'child_refs'):
             for reference in process.child_refs:
+                if reference not in self.main_parser._observable:
+                    self._missing_observable_object_error(process.id, reference)
+                    continue
                 child_object = self._parse_process_observable_object(reference)
-                child_object.add_reference(misp_object.uuid, 'child-of')
+                misp_object.add_reference(child_object.uuid, 'parent-of')
         return misp_object
 
     def _parse_registry_key_observable_object(self, registry_key_ref: str):
