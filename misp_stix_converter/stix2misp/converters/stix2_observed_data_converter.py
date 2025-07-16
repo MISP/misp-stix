@@ -1496,12 +1496,12 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data, 'file', False, indicator_ref=indicator_ref
             )
             observable = observed_data.objects['0']
-            if getattr(observable, 'extensions', {}).get(
-                    'windows-pebinary-ext'):
+            pe_extension = 'windows-pebinary-ext'
+            if getattr(observable, 'extensions', {}).get(pe_extension):
                 object_id = getattr(observable, 'id', observed_data.id)
                 pe_object_uuid = self._parse_file_pe_extension_observable(
-                    observable.extensions['windows-pebinary-ext'],
-                    observed_data, f'{object_id} - windows-pebinary-ext',
+                    observable.extensions[pe_extension],
+                    observed_data, f'{object_id} - {pe_extension}',
                     indicator_ref=indicator_ref
                 )
                 misp_object.add_reference(pe_object_uuid, 'includes')
@@ -1562,7 +1562,7 @@ class ExternalSTIX2ObservedDataConverter(
         )
         if hasattr(pe_extension, 'sections'):
             for section_id, section in enumerate(pe_extension.sections):
-                section_reference = f'{object_id} - section - {section_id}'
+                section_reference = f'{object_id} - section #{section_id}'
                 section_object = self._create_misp_object_from_observable_object(
                     'pe-section', observed_data, section_reference
                 )

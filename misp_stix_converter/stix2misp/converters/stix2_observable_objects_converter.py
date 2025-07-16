@@ -118,15 +118,6 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(file_object, _file)
         observable['misp_object'] = misp_object
-        if hasattr(_file, 'content_ref'):
-            artifact_object = self._parse_artifact_observable_object(
-                _file.content_ref
-            )
-            artifact_object.add_reference(misp_object.uuid, 'content-of')
-        if hasattr(_file, 'parent_directory_ref'):
-            self._parse_directory_observable_object(
-                _file.parent_directory_ref, child=_file.id
-            )
         if hasattr(_file, 'extensions'):
             extensions = _file.extensions
             if extensions.get('archive-ext'):
@@ -139,46 +130,59 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
                 for contains_ref in archive_ext.contains_refs:
                     object_type = contains_ref.split('--')[0]
                     contained_object = getattr(
-                        self,
-                        f'_parse_{object_type}_observable_object'
-                    )(
-                        contains_ref
+                        self, f'_parse_{object_type}_observable_object'
                     )
-                    misp_object.add_reference(contained_object.uuid, 'contains')
+                    misp_object.add_reference(
+                        contained_object(contains_ref).uuid, 'contains'
+                    )
             if extensions.get('windows-pebinary-ext'):
                 pe_object = self._parse_file_pe_extension_observable_object(
                     _file, indicator_ref
                 )
                 misp_object.add_reference(pe_object.uuid, 'includes')
+        if hasattr(_file, 'parent_directory_ref'):
+            if _file.parent_directory_ref not in self.main_parser._observable:
+                self._missing_observable_object_error(
+                    _file.id, _file.parent_directory_ref
+                )
+            else:
+                parent_object = self._parse_directory_observable_object(
+                    _file.parent_directory_ref, child=_file.id
+                )
+                misp_object.add_reference(parent_object.uuid, 'contained-in')
+        if hasattr(_file, 'content_ref'):
+            if _file.content_ref not in self.main_parser._observable:
+                self._missing_observable_object_error(
+                    _file.id, _file.content_ref
+                )
+            else:
+                artifact_object = self._parse_artifact_observable_object(
+                    _file.content_ref
+                )
+                artifact_object.add_reference(misp_object.uuid, 'content-of')
         return misp_object
 
     def _parse_file_pe_extension_observable_object(
             self, observable: File, indicator_ref: str | tuple) -> MISPObject:
         extension = observable.extensions['windows-pebinary-ext']
         pe_object = self._create_misp_object('pe')
-        pe_object.from_dict(
-            uuid=self.main_parser._create_v5_uuid(
-                f'{observable.id} - windows-pebinary-ext'
-            )
-        )
+        object_id = f'{observable.id} - windows-pebinary-ext'
+        pe_object.from_dict(uuid=self.main_parser._create_v5_uuid(object_id))
         attributes = self._parse_pe_extension_observable(
-            extension, f'{observable.id} - windows-pebinary-ext',
-            indicator_ref=indicator_ref
+            extension, object_id, indicator_ref=indicator_ref
         )
         for attribute in attributes:
             pe_object.add_attribute(**attribute)
         misp_object = self.main_parser._add_misp_object(pe_object, observable)
         if hasattr(extension, 'sections'):
             for index, section in enumerate(extension.sections):
+                section_id = f'{object_id} - section #{index}'
                 section_object = self._create_misp_object('pe-section')
                 section_object.from_dict(
-                    uuid=self.main_parser._create_v5_uuid(
-                        f'{observable.id} - section #{index}'
-                    )
+                    uuid=self.main_parser._create_v5_uuid(section_id)
                 )
                 attributes = self._parse_pe_section_observable(
-                    section, f'{observable.id} - section #{index}',
-                    indicator_ref=indicator_ref
+                    section, section_id, indicator_ref=indicator_ref
                 )
                 for attribute in attributes:
                     section_object.add_attribute(**attribute)
