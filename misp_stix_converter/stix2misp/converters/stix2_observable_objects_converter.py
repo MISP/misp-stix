@@ -753,6 +753,17 @@ class STIX2ObservableObjectConverter(
                     value_object.add_attribute(**attribute)
                 misp_object.add_reference(value_object.uuid, 'contains')
                 self.main_parser._add_misp_object(value_object, registry_key)
+        if hasattr(registry_key, 'creator_user_ref'):
+            creator_ref = registry_key.creator_user_ref
+            if creator_ref not in self.main_parser._observable:
+                self._missing_observable_object_error(
+                    registry_key.id, creator_ref
+                )
+            else:
+                user_object = self._parse_user_account_observable_object(
+                    creator_ref
+                )
+                user_object.add_reference(misp_object.uuid, 'creates')
         return misp_object
 
     def _parse_url_observable_object(self, url_ref: str) -> MISPAttribute:
