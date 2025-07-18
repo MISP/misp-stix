@@ -220,6 +220,22 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
     #                    OBSERVED DATA OBJECTS IMPORT TESTS                    #
     ############################################################################
 
+    def _check_archive_file_object(self, misp_object, observed_data):
+        self.assertEqual(misp_object.name, 'file')
+        self.assertEqual(
+            misp_object.uuid, uuid5(self._UUIDv4, f'{observed_data.id} - 0')
+        )
+        self.assertEqual(misp_object.timestamp, observed_data.modified)
+        observable_object = observed_data.objects['0']
+        comment = observable_object.extensions['archive-ext'].comment
+        self.assertEqual(
+            misp_object.comment,
+            f'{comment} - Observed Data ID: {observed_data.id}'
+        )
+        self._check_archive_file_fields(
+            misp_object, observable_object, f'{observed_data.id} - 0'
+        )
+
     def _check_artifact_object(self, misp_object, observed_data, identifier=None):
         self.assertEqual(misp_object.name, 'artifact')
         self._check_misp_object_fields(misp_object, observed_data, identifier)
@@ -287,7 +303,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self, observed_data, address, identifier=None):
         email_address = observed_data.objects[identifier or '0']
         self._check_misp_object_fields(address, observed_data, identifier)
-        self.assertEqual(address.type, 'email-dst')
+        self.assertEqual(address.type, 'email')
         self.assertEqual(address.value, email_address.value)
 
     def _check_email_address_attribute_with_display_name(
@@ -295,7 +311,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         if identifier is None:
             email_address = observed_data.objects['0']
             self._check_misp_object_fields(
-                address, observed_data, f'email-dst - {email_address.value}'
+                address, observed_data, f'email - {email_address.value}'
             )
             self._check_misp_object_fields(
                 display_name, observed_data,
@@ -305,13 +321,13 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             email_address = observed_data.objects[identifier]
             self._check_misp_object_fields(
                 address, observed_data,
-                f'{identifier} - email-dst - {email_address.value}'
+                f'{identifier} - email - {email_address.value}'
             )
             self._check_misp_object_fields(
                 display_name, observed_data,
                 f'{identifier} - email-dst-display-name - {email_address.display_name}'
             )
-        self.assertEqual(address.type, 'email-dst')
+        self.assertEqual(address.type, 'email')
         self.assertEqual(address.value, email_address.value)
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
@@ -371,7 +387,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(reference.relationship_type, 'includes')
         for index, section in enumerate(sections):
             self.assertEqual(section.name, 'pe-section')
-            section_id = f'windows-pebinary-ext - section - {index}'
+            section_id = f'windows-pebinary-ext - sections - {index}'
             self._check_misp_object_fields(section, observed_data, section_id)
             self._check_pe_section_fields(
                 section, extension.sections[index],
@@ -757,26 +773,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_file_object(file1, observed_data1, '0')
         self._check_file_directory_object(directory1, observed_data1, '1')
         self._check_content_ref_object(artifact1, observed_data1, '2')
-        self.assertEqual(len(file1.references), 1)
-        file_reference = file1.references[0]
-        self.assertEqual(file_reference.referenced_uuid, directory1.uuid)
-        self.assertEqual(file_reference.relationship_type, 'contained-in')
-        self.assertEqual(len(artifact1.references), 1)
-        artifact_reference = artifact1.references[0]
-        self.assertEqual(artifact_reference.referenced_uuid, file1.uuid)
-        self.assertEqual(artifact_reference.relationship_type, 'content-of')
-        self._check_archive_file_object(
-            zip_file, observed_data2, observed_data2.objects['0'],
-            f'{observed_data2.id} - 0'
-        )
-        self.assertEqual(len(zip_file.references), 2)
-        directory_reference, file_reference = zip_file.references
-        self.assertEqual(
-            directory_reference.referenced_uuid, file2.uuid
-        )
-        self.assertEqual(directory_reference.relationship_type, 'contains')
-        self.assertEqual(file_reference.referenced_uuid, directory2.uuid)
-        self.assertEqual(file_reference.relationship_type, 'contains')
+        self._check_file_object_references(file1, directory1, artifact1)
+        self._check_archive_file_object(zip_file, observed_data2)
+        self._check_archive_object_references(zip_file, file2, directory2)
         self._check_file_object(file2, observed_data2, '1')
         self._check_file_directory_object(directory2, observed_data2, '2')
         self._check_content_ref_object(artifact2, observed_data2, '3')
@@ -899,7 +898,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data1, observed_data2 = bundle.objects
         misp_objects = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_objects), 6)
-        multiple, parent, child, image1, image2, single = misp_objects
+        multiple, image1, parent, child, image2, single = misp_objects
         self._assert_multiple_equal(
             multiple.name, parent.name, child.name, single.name, 'process'
         )
@@ -909,23 +908,16 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_process_multiple_fields(
             multiple, observed_data1.objects['0'], f'{observed_data1.id} - 0'
         )
-        self.assertEqual(len(multiple.references), 3)
-        child_ref, parent_ref, binary_ref = multiple.references
-        self.assertEqual(child_ref.referenced_uuid, parent.uuid)
-        self.assertEqual(child_ref.relationship_type, 'child-of')
-        self.assertEqual(parent_ref.referenced_uuid, child.uuid)
-        self.assertEqual(parent_ref.relationship_type, 'parent-of')
-        self.assertEqual(binary_ref.referenced_uuid, image1.uuid)
-        self.assertEqual(binary_ref.relationship_type, 'executes')
+
+        self._check_misp_object_fields(image1, observed_data1, '4')
+        self._check_process_image_reference_fields(
+            image1, observed_data1.objects['4'], f'{observed_data1.id} - 4'
+        )
 
         self._check_misp_object_fields(parent, observed_data1, '1')
         self._check_process_parent_fields(
             parent, observed_data1.objects['1'], f'{observed_data1.id} - 1'
         )
-        self.assertEqual(len(parent.references), 1)
-        reference = parent.references[0]
-        self.assertEqual(reference.referenced_uuid, image2.uuid)
-        self.assertEqual(reference.relationship_type, 'executes')
 
         self._check_misp_object_fields(child, observed_data1, '3')
         self._check_process_child_fields(
@@ -937,14 +929,13 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             image2, observed_data1.objects['2'], f'{observed_data1.id} - 2'
         )
 
-        self._check_misp_object_fields(image1, observed_data1, '4')
-        self._check_process_image_reference_fields(
-            image1, observed_data1.objects['4'], f'{observed_data1.id} - 4'
-        )
-
         self._check_misp_object_fields(single, observed_data2)
         self._check_process_single_fields(
             single, observed_data2.objects['0'], observed_data2.id
+        )
+
+        self._check_process_object_references(
+            multiple, parent, child, image1, image2
         )
 
     def test_stix20_bundle_with_registry_key_objects(self):
@@ -960,6 +951,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_registry_key_object(
             multiple2, observed_data1, value1, value2, identifier='1'
         )
+        self._check_registry_key_object(single, observed_data2)
         self._check_misp_object_fields(creator_user, observed_data1, '2')
         self._check_creator_user_fields(
             creator_user, observed_data1.objects['2'],

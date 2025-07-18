@@ -2197,28 +2197,56 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_ARTIFACT_OBJECTS)
 
     @classmethod
+    def get_bundle_with_artifact_observables(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS[-2:])
+
+    @classmethod
     def get_bundle_with_as_objects(cls):
         return cls.__assemble_bundle(*_AS_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_as_observables(cls):
+        return cls.__assemble_bundle(*_AS_OBJECTS[-2:])
 
     @classmethod
     def get_bundle_with_directory_objects(cls):
         return cls.__assemble_bundle(*_DIRECTORY_OBJECTS)
 
     @classmethod
+    def get_bundle_with_directory_observables(cls):
+        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS[-2:])
+
+    @classmethod
     def get_bundle_with_domain_attributes(cls):
         return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_domain_observable(cls):
+        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES[-1:])
 
     @classmethod
     def get_bundle_with_domain_ip_objects(cls):
         return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS)
 
     @classmethod
+    def get_bundle_with_domain_ip_observables(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[-4:])
+
+    @classmethod
     def get_bundle_with_email_address_attributes(cls):
         return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
 
     @classmethod
+    def get_bundle_with_email_address_observables(cls):
+        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES[-2:])
+
+    @classmethod
     def get_bundle_with_email_message_objects(cls):
         return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_email_message_observables(cls):
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS[1:])
 
     @classmethod
     def get_bundle_with_file_objects(cls):
@@ -2228,16 +2256,35 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*observables)
 
     @classmethod
+    def get_bundle_with_file_observables(cls):
+        observables = deepcopy(_FILE_OBJECTS[3:])
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observables[2]['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(*observables)
+
+    @classmethod
     def get_bundle_with_ip_address_attributes(cls):
         return cls.__assemble_bundle(*_IP_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_address_observables(cls):
+        return cls.__assemble_bundle(*_IP_ADDRESS_ATTRIBUTES[-3:-1])
 
     @classmethod
     def get_bundle_with_mac_address_attributes(cls):
         return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES)
 
     @classmethod
+    def get_bundle_with_mac_address_observable(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES[-1:])
+
+    @classmethod
     def get_bundle_with_mutex_attributes(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_mutex_observable(cls):
+        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[-1:])
 
     @classmethod
     def get_bundle_with_network_traffic_objects(cls):
@@ -2248,21 +2295,45 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_PROCESS_OBJECTS)
 
     @classmethod
+    def get_bundle_with_process_observables(cls):
+        return cls.__assemble_bundle(*_PROCESS_OBJECTS[2:-1])
+
+    @classmethod
     def get_bundle_with_registry_key_objects(cls):
         return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_registry_key_observables(cls):
+        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS[2:])
 
     @classmethod
     def get_bundle_with_software_objects(cls):
         return cls.__assemble_bundle(*_SOFTWARE_OBJECTS)
 
     @classmethod
+    def get_bundle_with_software_observables(cls):
+        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS[-2:])
+
+    @classmethod
     def get_bundle_with_url_attributes(cls):
         return cls.__assemble_bundle(*_URL_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_url_observable(cls):
+        return cls.__assemble_bundle(*_URL_ATTRIBUTES[-1:])
 
     @classmethod
     def get_bundle_with_user_account_objects(cls):
         return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS)
 
     @classmethod
+    def get_bundle_with_user_account_observables(cls):
+        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS[-3:])
+
+    @classmethod
     def get_bundle_with_x509_objects(cls):
         return cls.__assemble_bundle(*_X509_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_x509_observable(cls):
+        return cls.__assemble_bundle(*_X509_OBJECTS[-1:])

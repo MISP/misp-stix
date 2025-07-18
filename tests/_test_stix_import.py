@@ -439,22 +439,10 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     #                  OBSERVED DATA OBJECTS CHECKING METHODS                  #
     ############################################################################
 
-    def _check_archive_file_object(self, misp_object, observed_data,
-                                   observable_object, object_id = None):
-        self.assertEqual(misp_object.name, 'file')
+    def _check_archive_file_fields(
+            self, misp_object, observable_object, object_id = None):
         if object_id is None:
-            self.assertEqual(
-                misp_object.uuid, observable_object.id.split('--')[1]
-            )
             object_id = observable_object.id
-        else:
-            self.assertEqual(misp_object.uuid, uuid5(self._UUIDv4, object_id))
-        self.assertEqual(
-            misp_object.comment,
-            f"{observable_object.extensions['archive-ext'].comment} - "
-            f'Observed Data ID: {observed_data.id}'
-        )
-        self.assertEqual(misp_object.timestamp, observed_data.modified)
         self.assertEqual(len(misp_object.attributes), 3)
         sha256, mime_type, filename = misp_object.attributes
         self._assert_multiple_equal(
@@ -481,7 +469,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
         )
 
-    def _check_artifact_fields(self, misp_object, artifact, object_id):
+    def _check_archive_object_references(self, archive_object, file_object, directory_object):
+        self.assertEqual(len(archive_object.references), 2)
+        directory_reference, file_reference = archive_object.references
+        self.assertEqual(
+            directory_reference.referenced_uuid, file_object.uuid
+        )
+        self.assertEqual(directory_reference.relationship_type, 'contains')
+        self.assertEqual(file_reference.referenced_uuid, directory_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contains')
+
+    def _check_artifact_fields(self, misp_object, artifact, object_id = None):
+        if object_id is None:
+            object_id = artifact.id
         self.assertEqual(len(misp_object.attributes), 6)
         payload_bin, md5, sha1, sha256, decryption, mime_type = misp_object.attributes
         self.assertEqual(payload_bin.type, 'attachment')
@@ -539,7 +539,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             )
         )
 
-    def _check_artifact_with_url_fields(self, misp_object, artifact, object_id):
+    def _check_artifact_with_url_fields(self, misp_object, artifact, object_id = None):
+        if object_id is None:
+            object_id = artifact.id
         self.assertEqual(misp_object.name, 'artifact')
         self.assertEqual(len(misp_object.attributes), 3)
         hashes = artifact.hashes
@@ -564,7 +566,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             url.uuid, uuid5(self._UUIDv4, f'{object_id} - url - {url.value}')
         )
 
-    def _check_as_fields(self, misp_object, autonomous_system, object_id):
+    def _check_as_fields(self, misp_object, autonomous_system, object_id = None):
+        if object_id is None:
+            object_id = autonomous_system.id
         self.assertEqual(len(misp_object.attributes), 2)
         asn, name = misp_object.attributes
         self.assertEqual(asn.type, 'AS')
@@ -576,7 +580,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.value, autonomous_system.name)
         self.assertEqual(name.uuid, uuid5(self._UUIDv4, f'{object_id} - description - {name.value}'))
 
-    def _check_content_ref_fields(self, misp_object, artifact, object_id):
+    def _check_content_ref_fields(self, misp_object, artifact, object_id = None):
+        if object_id is None:
+            object_id = artifact.id
         self.assertEqual(len(misp_object.attributes), 4)
         payload_bin, md5, decryption_key, mime_type = misp_object.attributes
         self.assertEqual(payload_bin.type, 'attachment')
@@ -652,7 +658,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
         )
 
-    def _check_directory_fields(self, misp_object, directory, object_id):
+    def _check_directory_fields(self, misp_object, directory, object_id = None):
+        if object_id is None:
+            object_id = directory.id
         self.assertEqual(len(misp_object.attributes), 5)
         accessed, created, modified, path, path_enc = misp_object.attributes
         self._assert_multiple_equal(
@@ -687,7 +695,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def _check_domain_ip_fields(self, misp_object, domain, ipv4, ipv6, *object_ids):
         self.assertEqual(len(misp_object.attributes), 3)
         domain_attribute, ipv4_attribute, ipv6_attribute = misp_object.attributes
-        domain_id, ipv4_id, ipv6_id = object_ids
+        domain_id, ipv4_id, ipv6_id = object_ids if object_ids else (
+            domain.id, ipv4.id, ipv6.id
+        )
         self._assert_multiple_equal(
             domain_attribute.type, domain_attribute.object_relation, 'domain'
         )
@@ -716,7 +726,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{ipv6_id} - ip - {ipv6_attribute.value}')
         )
 
-    def _check_email_artifact_object_fields(self, misp_object, artifact, artifact_id):
+    def _check_email_artifact_object_fields(self, misp_object, artifact, artifact_id = None):
+        if artifact_id is None:
+            artifact_id = artifact.id
         self.assertEqual(len(misp_object.attributes), 3)
         payload_bin, sha256, mime_type = misp_object.attributes
         self.assertEqual(payload_bin.type, 'attachment')
@@ -752,7 +764,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             )
         )
 
-    def _check_email_file_object_fields(self, misp_object, _file, file_id):
+    def _check_email_file_object_fields(self, misp_object, _file, file_id = None):
+        if file_id is None:
+            file_id = _file.id
         self.assertEqual(len(misp_object.attributes), 2)
         sha256, filename = misp_object.attributes
         self._assert_multiple_equal(
@@ -773,8 +787,11 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
 
     def _check_email_object_fields(
-            self, misp_object, email_message, from_address, to_address, cc_address,
-            email_message_id, from_address_id, to_address_id, cc_address_id):
+            self, misp_object, email_message, from_address,
+            to_address, cc_address, *object_ids):
+        message_id, from_id, to_id, cc_id = object_ids if object_ids else (
+            email_message.id, from_address.id, to_address.id, cc_address.id
+        )
         self.assertEqual(len(misp_object.attributes), 12)
         send_date, header, subject, x_mailer, received_ip, *addresses, body = misp_object.attributes
         self.assertEqual(send_date.type, 'datetime')
@@ -792,7 +809,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(header.value, email_message.received_lines[0])
         self.assertEqual(
             header.uuid,
-            uuid5(self._UUIDv4, f'{email_message_id} - header - {header.value}')
+            uuid5(self._UUIDv4, f'{message_id} - header - {header.value}')
         )
         self.assertEqual(subject.type, 'email-subject')
         self.assertEqual(subject.object_relation, 'subject')
@@ -800,7 +817,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             subject.uuid,
             uuid5(
-                self._UUIDv4, f'{email_message_id} - subject - {subject.value}'
+                self._UUIDv4, f'{message_id} - subject - {subject.value}'
             )
         )
         additional_header_fields = email_message.additional_header_fields
@@ -811,7 +828,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             x_mailer.uuid,
             uuid5(
                 self._UUIDv4,
-                f'{email_message_id} - x-mailer - {x_mailer.value}'
+                f'{message_id} - x-mailer - {x_mailer.value}'
             )
         )
         self.assertEqual(received_ip.type, 'ip-src')
@@ -823,7 +840,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             received_ip.uuid,
             uuid5(
                 self._UUIDv4,
-                f'{email_message_id} - received-header-ip - {received_ip.value}'
+                f'{message_id} - received-header-ip - {received_ip.value}'
             )
         )
         _from, from_name, _to, to_name, _cc, cc_name = addresses
@@ -832,7 +849,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(_from.value, from_address.value)
         self.assertEqual(
             _from.uuid,
-            uuid5(self._UUIDv4, f'{from_address_id} - from - {_from.value}')
+            uuid5(self._UUIDv4, f'{from_id} - from - {_from.value}')
         )
         self.assertEqual(from_name.type, 'email-src-display-name')
         self.assertEqual(from_name.object_relation, 'from-display-name')
@@ -841,7 +858,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             from_name.uuid,
             uuid5(
                 self._UUIDv4,
-                f'{from_address_id} - from-display-name - {from_name.value}'
+                f'{from_id} - from-display-name - {from_name.value}'
             )
         )
         self._assert_multiple_equal(_to.type, _cc.type, 'email-dst')
@@ -849,7 +866,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(_to.value, to_address.value)
         self.assertEqual(
             _to.uuid,
-            uuid5(self._UUIDv4, f'{to_address_id} - to - {_to.value}')
+            uuid5(self._UUIDv4, f'{to_id} - to - {_to.value}')
         )
         self._assert_multiple_equal(
             to_name.type, cc_name.type, 'email-dst-display-name'
@@ -860,13 +877,13 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             to_name.uuid,
             uuid5(
                 self._UUIDv4,
-                f'{to_address_id} - to-display-name - {to_name.value}'
+                f'{to_id} - to-display-name - {to_name.value}'
             )
         )
         self.assertEqual(_cc.object_relation, 'cc')
         self.assertEqual(_cc.value, cc_address.value)
         self.assertEqual(
-            _cc.uuid, uuid5(self._UUIDv4, f'{cc_address_id} - cc - {_cc.value}')
+            _cc.uuid, uuid5(self._UUIDv4, f'{cc_id} - cc - {_cc.value}')
         )
         self.assertEqual(cc_name.object_relation, 'cc-display-name')
         self.assertEqual(cc_name.value, cc_address.display_name)
@@ -874,7 +891,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             cc_name.uuid,
             uuid5(
                 self._UUIDv4,
-                f'{cc_address_id} - cc-display-name - {cc_name.value}'
+                f'{cc_id} - cc-display-name - {cc_name.value}'
             )
         )
         self._assert_multiple_equal(
@@ -885,12 +902,14 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             body.uuid,
             uuid5(
                 self._UUIDv4,
-                f'{email_message_id} - body_multipart - 0 - '
+                f'{message_id} - body_multipart - 0 - '
                 f'email-body - {body.value}'
             )
         )
 
-    def _check_file_fields(self, misp_object, observable_object, object_id):
+    def _check_file_fields(self, misp_object, observable_object, object_id=None):
+        if object_id is None:
+            object_id = observable_object.id
         self.assertEqual(len(misp_object.attributes), 6)
         md5, sha1, sha256, filename, encoding, size = misp_object.attributes
         hashes = observable_object.hashes
@@ -942,7 +961,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             )
         )
 
-    def _check_file_with_pe_fields(self, misp_object, file_object, object_id):
+    def _check_file_object_references(self, file_object, directory_object, artifact_object):
+        self.assertEqual(len(file_object.references), 1)
+        file_reference = file_object.references[0]
+        self.assertEqual(file_reference.referenced_uuid, directory_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contained-in')
+        self.assertEqual(len(artifact_object.references), 1)
+        artifact_reference = artifact_object.references[0]
+        self.assertEqual(artifact_reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(artifact_reference.relationship_type, 'content-of')
+
+    def _check_file_with_pe_fields(self, misp_object, file_object, object_id = None):
+        if object_id is None:
+            object_id = file_object.id
         self.assertEqual(len(misp_object.attributes), 7)
         md5, sha1, sha256, sha512, ssdeep, filename, size = misp_object.attributes
         hashes = file_object.hashes
@@ -1047,7 +1078,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
 
-    def _check_process_child_fields(self, misp_object, process, object_id):
+    def _check_process_child_fields(self, misp_object, process, object_id = None):
+        if object_id is None:
+            object_id = process.id
         self.assertEqual(len(misp_object.attributes), 2)
         name, pid = misp_object.attributes
         self._assert_multiple_equal(name.type, pid.type, 'text')
@@ -1062,7 +1095,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             pid.uuid, uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
         )
 
-    def _check_process_image_reference_fields(self, misp_object, file_object, object_id):
+    def _check_process_image_reference_fields(self, misp_object, file_object, object_id = None):
+        if object_id is None:
+            object_id = file_object.id
         self.assertEqual(len(misp_object.attributes), 4)
         mimetype, filename, encoding, size = misp_object.attributes
         self.assertEqual(mimetype.type, 'mime-type')
@@ -1098,7 +1133,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
         )
 
-    def _check_process_multiple_fields(self, misp_object, process, object_id):
+    def _check_process_multiple_fields(self, misp_object, process, object_id = None):
+        if object_id is None:
+            object_id = process.id
         self.assertEqual(len(misp_object.attributes), 3)
         hidden, name, pid = misp_object.attributes
         self.assertEqual(hidden.type, 'boolean')
@@ -1123,7 +1160,23 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
         )
 
-    def _check_process_parent_fields(self, misp_object, process, object_id):
+    def _check_process_object_references(self, process, parent, child, image1, image2):
+        self.assertEqual(len(process.references), 3)
+        binary_ref, child_ref, parent_ref = process.references
+        self.assertEqual(binary_ref.referenced_uuid, image1.uuid)
+        self.assertEqual(binary_ref.relationship_type, 'executes')
+        self.assertEqual(child_ref.referenced_uuid, parent.uuid)
+        self.assertEqual(child_ref.relationship_type, 'child-of')
+        self.assertEqual(parent_ref.referenced_uuid, child.uuid)
+        self.assertEqual(parent_ref.relationship_type, 'parent-of')
+        self.assertEqual(len(parent.references), 1)
+        reference = parent.references[0]
+        self.assertEqual(reference.referenced_uuid, image2.uuid)
+        self.assertEqual(reference.relationship_type, 'executes')
+
+    def _check_process_parent_fields(self, misp_object, process, object_id = None):
+        if object_id is None:
+            object_id = process.id
         self.assertEqual(len(misp_object.attributes), 6)
         command_line, creation_time, directory, name, pid, variables = misp_object.attributes
         self._assert_multiple_equal(
@@ -1187,7 +1240,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             )
         )
 
-    def _check_process_single_fields(self, misp_object, process, object_id):
+    def _check_process_single_fields(self, misp_object, process, object_id = None):
+        if object_id is None:
+            object_id = process.id
         self.assertEqual(len(misp_object.attributes), 3)
         command_line, name, pid = misp_object.attributes
         self._assert_multiple_equal(command_line.type, name.type, pid.type, 'text')
@@ -1213,7 +1268,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
         )
 
-    def _check_registry_key_fields(self, misp_object, registry_key, object_id):
+    def _check_registry_key_fields(self, misp_object, registry_key, object_id = None):
+        if object_id is None:
+            object_id = registry_key.id
         self.assertEqual(len(misp_object.attributes), 2)
         key, modified = misp_object.attributes
         self.assertEqual(key.type, 'regkey')
@@ -1255,7 +1312,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
         )
 
-    def _check_registry_key_with_values_fields(self, misp_object, registry_key, object_id):
+    def _check_registry_key_with_values_fields(self, misp_object, registry_key, object_id = None):
+        if object_id is None:
+            object_id = registry_key.id
         self.assertEqual(len(misp_object.attributes), 5)
         key, modified, data, data_type, name = misp_object.attributes
         self.assertEqual(key.type, 'regkey')
@@ -1294,7 +1353,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         return modified
 
-    def _check_software_fields(self, misp_object, software, object_id):
+    def _check_software_fields(self, misp_object, software, object_id = None):
+        if object_id is None:
+            object_id = software.id
         self.assertEqual(len(misp_object.attributes), 4)
         language, name, vendor, version = misp_object.attributes
         self.assertEqual(language.type, 'text')
@@ -1326,7 +1387,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
         )
 
-    def _check_software_with_swid_fields(self, misp_object, software, object_id):
+    def _check_software_with_swid_fields(self, misp_object, software, object_id = None):
+        if object_id is None:
+            object_id = software.id
         self.assertEqual(misp_object.name, 'software')
         self.assertEqual(len(misp_object.attributes), 8)
         cpe, lang1, lang2, lang3, name, swid, vendor, version = misp_object.attributes
@@ -1415,7 +1478,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - shell - {shell.value}')
         )
 
-    def _check_user_account_fields(self, attributes, user_account, object_id):
+    def _check_user_account_fields(self, attributes, user_account, object_id = None):
+        if object_id is None:
+            object_id = user_account.id
         username, account_type, escalate, display_name, privileged, service, user_id = attributes
         self._assert_multiple_equal(
             username.type, account_type.type, display_name.type, user_id.type, 'text'
@@ -1481,7 +1546,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
         )
 
-    def _check_user_account_timeline_fields(self, attributes, user_account, object_id):
+    def _check_user_account_timeline_fields(self, attributes, user_account, object_id = None):
+        if object_id is None:
+            object_id = user_account.id
         created, first_login, last_login = attributes
         self._assert_multiple_equal(
             created.type, first_login.type, last_login.type, 'datetime'
@@ -1511,7 +1578,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             )
         )
 
-    def _check_user_account_twitter_fields(self, misp_object, user_account, object_id):
+    def _check_user_account_twitter_fields(self, misp_object, user_account, object_id = None):
+        if object_id is None:
+            object_id = user_account.id
         self.assertEqual(len(misp_object.attributes), 4)
         username, account_type, display_name, user_id = misp_object.attributes
         self._assert_multiple_equal(
@@ -1549,7 +1618,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
         )
 
-    def _check_x509_fields(self, misp_object, x509, object_id):
+    def _check_x509_fields(self, misp_object, x509, object_id = None):
+        if object_id is None:
+            object_id = x509.id
         self.assertEqual(len(misp_object.attributes), 14)
         (md5, sha1, sha256, signed, issuer, serial_number, signature,
          subject, key_algo, key_exponent, key_modulus, not_after,
