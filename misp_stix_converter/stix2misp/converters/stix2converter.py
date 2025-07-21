@@ -45,6 +45,12 @@ _SDO_TYPING = Union[
 
 
 class STIX2Converter(metaclass=ABCMeta):
+    __network_assets = {'src': 'source', 'dst': 'destination'}
+
+    @property
+    def network_assets(self) -> dict:
+        return self.__network_assets
+
     def _set_main_parser(self, main: _MAIN_PARSER_TYPING):
         self.__main_parser = main
 

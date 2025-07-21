@@ -627,7 +627,7 @@ class STIX2ObservableObjectConverter(
             network_object, network_traffic
         )
         observable['misp_object'] = misp_object
-        for asset in ('src', 'dst'):
+        for asset, field in self.network_assets.items():
             if hasattr(network_traffic, f'{asset}_ref'):
                 referenced = self._fetch_observable(
                     getattr(network_traffic, f'{asset}_ref')
@@ -641,17 +641,37 @@ class STIX2ObservableObjectConverter(
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
                 self._handle_misp_object_storage(referenced, misp_object)
+            if hasattr(network_traffic, f'{asset}_payload_ref'):
+                reference = getattr(network_traffic, f'{asset}_payload_ref')
+                if reference not in self.main_parser._observable:
+                    self._missing_observable_object_error(
+                        network_traffic.id, reference
+                    )
+                    continue
+                payload = self._parse_artifact_observable_object(reference)
+                misp_object.add_reference(payload.uuid, f'{field}-sent')
         if hasattr(network_traffic, 'encapsulates_refs'):
             for reference in network_traffic.encapsulates_refs:
+                if reference not in self.main_parser._observable:
+                    self._missing_observable_object_error(
+                        network_traffic.id, reference
+                    )
+                    continue
                 referenced = self._parse_network_traffic_observable_object(
                     reference
                 )
                 misp_object.add_reference(referenced.uuid, 'encapsulates')
         if hasattr(network_traffic, 'encapsulated_by_ref'):
-            referenced = self._parse_network_traffic_observable_object(
-                network_traffic.encapsulated_by_ref
-            )
-            misp_object.add_reference(referenced.uuid, 'encapsulated-by')
+            reference = network_traffic.encapsulated_by_ref
+            if reference not in self.main_parser._observable:
+                self._missing_observable_object_error(
+                    network_traffic.id, reference
+                )
+            else:
+                referenced = self._parse_network_traffic_observable_object(
+                    reference
+                )
+                misp_object.add_reference(referenced.uuid, 'encapsulated-by')
         return misp_object
 
     def _parse_process_observable_object(self, process_ref: str) -> MISPObject:

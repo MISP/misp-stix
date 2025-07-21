@@ -385,6 +385,22 @@ class ExternalSTIX2ObservedDataConverter(
         observable.update({'misp_object': misp_object, 'used': True})
         return misp_object
 
+    def _parse_artifact_observable_object_ref(
+            self, observable: dict, observed_data: ObservedData_v21,
+            indicator_ref: str | tuple = '') -> MISPObject:
+        if observable['used'].get(self.event_uuid, False):
+            misp_object = observable['misp_object']
+            self._handle_misp_object_fields(misp_object, observed_data)
+            return misp_object
+        artifact = observable['observable']
+        misp_object = self._parse_generic_observable_object_ref(
+            artifact, observed_data, 'artifact', generic=False,
+            indicator_ref=indicator_ref
+        )
+        observable['misp_object'] = misp_object
+        observable['used'][self.event_uuid] = True
+        return misp_object
+
     def _parse_artifact_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple,
             indicator_refs: Optional[dict] = {}):
@@ -395,18 +411,10 @@ class ExternalSTIX2ObservedDataConverter(
                     observed_data.id, object_ref
                 )
                 continue
-            if observable['used'].get(self.event_uuid, False):
-                self._handle_misp_object_fields(
-                    observable['misp_object'], observed_data
-                )
-                continue
-            artifact = observable['observable']
-            misp_object = self._parse_generic_observable_object_ref(
-                artifact, observed_data, 'artifact', generic=False,
+            self._parse_artifact_observable_object_ref(
+                observable, observed_data,
                 indicator_ref=indicator_refs.get(object_ref, '')
             )
-            observable['misp_object'] = misp_object
-            observable['used'][self.event_uuid] = True
 
     def _parse_artifact_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
@@ -1900,7 +1908,7 @@ class ExternalSTIX2ObservedDataConverter(
                 indicator_ref=indicator_refs.get(object_ref, '')
             )
             feature = f"_parse_{name.replace('-', '_')}_reference_observable"
-            for asset in ('src', 'dst'):
+            for asset, field in self.network_assets.items():
                 if hasattr(network_traffic, f'{asset}_ref'):
                     reference = getattr(network_traffic, f'{asset}_ref')
                     referenced = self._fetch_observable(reference)
@@ -1918,6 +1926,19 @@ class ExternalSTIX2ObservedDataConverter(
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
                     self._handle_misp_object_storage(referenced, misp_object)
+                if hasattr(network_traffic, f'{asset}_payload_ref'):
+                    reference = getattr(network_traffic, f'{asset}_payload_ref')
+                    payload = self._fetch_observable(reference)
+                    if payload is None:
+                        self._missing_observable_object_error(
+                            observed_data.id, reference
+                        )
+                        continue
+                    artifact = self._parse_artifact_observable_object_ref(
+                        payload, observed_data,
+                        indicator_ref=indicator_refs.get(reference, '')
+                    )
+                    misp_object.add_reference(artifact.uuid, f'{field}-sent')
             if hasattr(network_traffic, 'encapsulates_refs'):
                 for reference in network_traffic.encapsulates_refs:
                     encapsulated_observable = self._fetch_observable(reference)
@@ -1969,7 +1990,7 @@ class ExternalSTIX2ObservedDataConverter(
                 observable_objects, object_id, observed_data, name,
                 indicator_ref=indicator_refs.get(object_id, '')
             )
-            for asset in ('src', 'dst'):
+            for asset, field in self.network_assets.items():
                 if hasattr(network_traffic, f'{asset}_ref'):
                     referenced_id = getattr(network_traffic, f'{asset}_ref')
                     referenced = observed_data.objects[referenced_id]
@@ -1980,6 +2001,21 @@ class ExternalSTIX2ObservedDataConverter(
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
+                if hasattr(network_traffic, f'{asset}_payload_ref'):
+                    reference = getattr(network_traffic, f'{asset}_payload_ref')
+                    if observable_objects[reference]['used']:
+                        artifact = observable_objects[reference]['misp_object']
+                        misp_object.add_reference(
+                            artifact.uuid, f'{field}-sent'
+                        )
+                        continue
+                    artifact = self._parse_generic_observable_object(
+                        observed_data, reference, 'artifact', generic=False,
+                        indicator_ref=indicator_refs.get(reference, '')
+                    )
+                    observable_objects[reference].update(
+                        {'misp_object': misp_object, 'used': True}
+                    )
             if hasattr(network_traffic, 'encapsulates_refs'):
                 for reference in network_traffic.encapsulates_refs:
                     observable = observed_data.objects[reference]
