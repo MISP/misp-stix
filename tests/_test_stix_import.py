@@ -801,7 +801,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             send_date.uuid,
             uuid5(
                 self._UUIDv4,
-                f'{email_message_id} - send-date - {send_date.value}'
+                f'{message_id} - send-date - {send_date.value}'
             )
         )
         self.assertEqual(header.type, 'email-header')
