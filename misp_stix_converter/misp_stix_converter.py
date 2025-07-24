@@ -269,7 +269,7 @@ def misp_attribute_collection_to_stix1(
             filename = input_files[0]
             if isinstance(filename, str):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             name = _check_filename(
                 filename.parent, f'{filename.name}.out', output_dir, output_name
             )
@@ -290,7 +290,7 @@ def misp_attribute_collection_to_stix1(
         if in_memory:
             for filename in input_files:
                 try:
-                    parser.parse_json_content(filename)
+                    parser.parse_json_file(filename)
                     current = parser.stix_package
                     for campaign in current.campaigns:
                         stix_package.add_campaign(campaign)
@@ -319,7 +319,7 @@ def misp_attribute_collection_to_stix1(
         tmp_path = name.parent
         for filename in input_files:
             try:
-                parser.parse_json_content(filename)
+                parser.parse_json_file(filename)
                 package = parser.stix_package
                 for feature in _STIX1_features:
                     values = getattr(package, feature)
@@ -364,7 +364,7 @@ def misp_attribute_collection_to_stix1(
         try:
             if isinstance(filename, str):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             name = _check_output(
                 filename.parent, f'{filename.name}.out', output_dir
             )
@@ -400,7 +400,7 @@ def misp_event_collection_to_stix1(
         try:
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             name = _check_filename(
                 filename.parent, f'{filename.name}.out', output_dir, output_name
             )
@@ -421,7 +421,7 @@ def misp_event_collection_to_stix1(
                 try:
                     if not isinstance(filename, Path):
                         filename = Path(filename).resolve()
-                    parser.parse_json_content(filename)
+                    parser.parse_json_file(filename)
                     if parser.stix_package.related_packages is not None:
                         for related_package in parser.stix_package.related_packages:
                             stix_package.add_related_package(related_package)
@@ -440,7 +440,7 @@ def misp_event_collection_to_stix1(
         try:
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             content = _get_events(parser.stix_package, return_format)
             with open(name, 'wt', encoding='utf-8') as f:
                 f.write(f'{header}{content}')
@@ -450,7 +450,7 @@ def misp_event_collection_to_stix1(
             try:
                 if not isinstance(filename, Path):
                     filename = Path(filename).resolve()
-                parser.parse_json_content(filename)
+                parser.parse_json_file(filename)
                 content = _get_events(parser.stix_package, return_format)
                 with open(name, 'at', encoding='utf-8') as f:
                     f.write(f'{separator}{content}')
@@ -465,7 +465,7 @@ def misp_event_collection_to_stix1(
         try:
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             name = _check_output(
                 filename.parent, f'{filename.name}.out', output_dir
             )
@@ -493,7 +493,7 @@ def misp_collection_to_stix2(
         try:
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             name = _check_filename(
                 filename.parent, f'{filename.name}.out', output_dir, output_name
             )
@@ -509,7 +509,7 @@ def misp_collection_to_stix2(
                 try:
                     if not isinstance(filename, Path):
                         filename = Path(filename).resolve()
-                    parser.parse_json_content(filename)
+                    parser.parse_json_file(filename)
                 except Exception as exception:
                     traceback['fails'].append(f'{filename} - {exception.__str__()}')
             if any(filename not in traceback.get('fails', []) for filename in input_files):
@@ -537,7 +537,7 @@ def misp_collection_to_stix2(
             filename = input_files[0]
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             stix_objects = json.dumps(
                 [parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4
             )
@@ -550,7 +550,7 @@ def misp_collection_to_stix2(
             try:
                 if not isinstance(filename, Path):
                     filename = Path(filename).resolve()
-                parser.parse_json_content(filename)
+                parser.parse_json_file(filename)
                 stix_objects = json.dumps(
                     [parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4
                 )
@@ -572,7 +572,7 @@ def misp_collection_to_stix2(
         try:
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
-            parser.parse_json_content(filename)
+            parser.parse_json_file(filename)
             name = _check_output(
                 filename.parent, f'{filename.name}.out', output_dir
             )
@@ -602,7 +602,7 @@ def misp_to_stix1(
     try:
         if not isinstance(filename, Path):
             filename = Path(filename).resolve()
-        parser.parse_json_content(filename)
+        parser.parse_json_file(filename)
         name = _check_filename(
             filename.parent, f'{filename.name}.out', output_dir, output_name
         )

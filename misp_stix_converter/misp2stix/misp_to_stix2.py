@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import io
 import json
 import os
 import re
@@ -10,7 +9,7 @@ from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
-from dateutil import parser
+from io import BytesIO
 from pathlib import Path
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
@@ -83,31 +82,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         self._markings = {}
 
-    def parse_json_content(self, filename: Union[Path, str]):
-        self._results_handling_function = '_append_SDO'
-        with open(filename, 'rt', encoding='utf-8') as f:
-            json_content = json.loads(f.read())
-        if 'response' in json_content:
-            json_content = json_content['response']
-            if isinstance(json_content, list):
-                if not self.__initiated:
-                    self._initiate_events_parsing()
-                for event in json_content:
-                    self._parse_misp_event(event)
-                    self.__index = len(self.__objects)
-            else:
-                self.parse_misp_attributes(json_content)
-        else:
-            if isinstance(json_content, list):
-                for content in json_content:
-                    if 'Attribute' in content:
-                        self.parse_misp_attribute(content)
-            else:
-                if 'Event' in json_content or 'info' in json_content:
-                    self.parse_misp_event(json_content)
-                else:
-                    self.parse_misp_attributes(json_content)
-
     def parse_misp_attribute(self, attribute: Union[MISPAttribute, dict]):
         self._results_handling_function = '_append_SDO_without_refs'
         self._identifier = 'attribute feed'
@@ -143,7 +117,30 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._initiate_events_parsing()
         self._parse_misp_event(misp_event)
 
-    def _parse_misp_event(self, misp_event: Union[MISPEvent, dict]):
+    def _parse_json_content(self, json_content: dict | list):
+        self._results_handling_function = '_append_SDO'
+        if 'response' in json_content:
+            json_content = json_content['response']
+            if isinstance(json_content, list):
+                if not self.__initiated:
+                    self._initiate_events_parsing()
+                for event in json_content:
+                    self._parse_misp_event(event)
+                    self.__index = len(self.__objects)
+            else:
+                self.parse_misp_attributes(json_content)
+        else:
+            if isinstance(json_content, list):
+                for content in json_content:
+                    if 'Attribute' in content:
+                        self.parse_misp_attribute(content)
+            else:
+                if 'Event' in json_content or 'info' in json_content:
+                    self.parse_misp_event(json_content)
+                else:
+                    self.parse_misp_attributes(json_content)
+
+    def _parse_misp_event(self, misp_event: MISPEvent | dict):
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
@@ -173,18 +170,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self.__objects.insert(self.__index, report)
 
     def _define_stix_object_id(
-            self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
+            self, feature: str, misp_object: MISPObject | dict) -> str:
         return f"{feature}--{misp_object['uuid']}"
 
     def _define_stix_object_id_from_attribute(
-            self, feature: str, attribute: Union[MISPAttribute, dict]) -> str:
+            self, feature: str, attribute: MISPAttribute | dict) -> str:
         attribute_uuid = attribute['uuid']
         stix_id = f'{feature}--{attribute_uuid}'
         self._event_report_matching[attribute_uuid].append(stix_id)
         return stix_id
 
     def _define_stix_object_id_from_object(
-            self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
+            self, feature: str, misp_object: MISPObject | dict) -> str:
         object_uuid = misp_object['uuid']
         stix_id = f'{feature}--{object_uuid}'
         self._event_report_matching[object_uuid].append(stix_id)
@@ -3870,7 +3867,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return file_args
 
     def _parse_malware_sample_additional_fields(
-            self, data: Union[io.BytesIO, str]) -> dict:
+            self, data: BytesIO | str) -> dict:
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         return {
@@ -3879,7 +3876,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
 
     def _parse_malware_sample_args(
-            self, value: str, data: Union[io.BytesIO, str]) -> dict:
+            self, value: str, data: BytesIO | str) -> dict:
         args = {'allow_custom': True}
         for separator in self.composite_separators:
             if separator in value:
@@ -3897,7 +3894,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return args
 
     def _parse_malware_sample_custom_args(
-            self, value: str, data: Union[io.BytesIO, str]) -> dict:
+            self, value: str, data: BytesIO | str) -> dict:
         args = {'allow_custom': True, 'x_misp_malware_sample': value}
         args.update(self._parse_malware_sample_additional_fields(data))
         return args
