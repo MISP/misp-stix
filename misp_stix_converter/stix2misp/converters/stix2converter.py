@@ -109,7 +109,7 @@ class STIX2Converter(metaclass=ABCMeta):
         return {
             'value': value, **mapping,
             'uuid': self.main_parser._create_v5_uuid(
-                f'{object_id} - {mapping['object_relation']} - {value}'
+                f"{object_id} - {mapping['object_relation']} - {value}"
             )
         }
 
