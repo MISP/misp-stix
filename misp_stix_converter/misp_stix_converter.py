@@ -609,9 +609,9 @@ def misp_to_stix1(
         _write_raw_stix(
             parser.stix_package, name, namespace, org, return_format
         )
-        return _generate_traceback(debug, parser, name)
     except Exception as exception:
         return {'fails': [f'{filename} - {exception.__str__()}']}
+    return _generate_traceback(debug, parser, name)
 
 
 def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
@@ -630,9 +630,9 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
         )
         with open(name, 'wt', encoding='utf-8') as f:
             f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
-        return _generate_traceback(debug, parser, name)
     except Exception as exception:
         return {'fails': [f'{filename} - {exception.__str__()}']}
+    return _generate_traceback(debug, parser, name)
 
 
 ################################################################################
