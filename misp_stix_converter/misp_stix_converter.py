@@ -624,7 +624,7 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
     try:
         if not isinstance(filename, Path):
             filename = Path(filename).resolve()
-        parser.parse_json_content(filename)
+        parser.parse_json_file(filename)
         name = _check_filename(
             filename.parent, f'{filename.name}.out', output_dir, output_name
         )
