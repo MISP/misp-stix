@@ -621,18 +621,18 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
     if version not in _STIX2_valid_versions:
         version = _STIX2_default_version
     parser = MISPtoSTIX21Parser() if version == '2.1' else MISPtoSTIX20Parser()
-    # try:
-    if not isinstance(filename, Path):
-        filename = Path(filename).resolve()
-    parser.parse_json_file(filename)
-    name = _check_filename(
-        filename.parent, f'{filename.name}.out', output_dir, output_name
-    )
-    with open(name, 'wt', encoding='utf-8') as f:
-        f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
-    return _generate_traceback(debug, parser, name)
-    # except Exception as exception:
-    #    return {'fails': [f'{filename} - {exception.__str__()}']}
+    try:
+        if not isinstance(filename, Path):
+            filename = Path(filename).resolve()
+        parser.parse_json_content(filename)
+        name = _check_filename(
+            filename.parent, f'{filename.name}.out', output_dir, output_name
+        )
+        with open(name, 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
+        return _generate_traceback(debug, parser, name)
+    except Exception as exception:
+        return {'fails': [f'{filename} - {exception.__str__()}']}
 
 
 ################################################################################
