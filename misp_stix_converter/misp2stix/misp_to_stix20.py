@@ -1200,8 +1200,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
             if attributes:
                 network_args.update(self._parse_network_socket_args(attributes))
-            import json
-            print(json.dumps(network_args, indent=4))
             observable_object['0'] = NetworkTraffic(**network_args)
             self._handle_object_observable(misp_object, observable_object)
 
