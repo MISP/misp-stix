@@ -37,13 +37,13 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     )
     __observable_object_types = (
         # Some observable types that should be handled first
-        'network-traffic', 'email-message', 'file',
+        'network-traffic', 'email-message', 'process', 'file',
+        'windows-registry-key',
         # The other observable types, referenced by the first ones
         # or that we can handle with no specific order
         'artifact', 'autonomous-system', 'directory', 'domain-name',
         'email-addr', 'ipv4-addr', 'ipv6-addr', 'mac-addr', 'mutex',
-        'process', 'software', 'url', 'user-account',
-        'windows-registry-key', 'x509-certificate'
+        'software', 'url', 'user-account', 'x509-certificate'
     )
     __stix_object_loading_mapping = Mapping(
         **{

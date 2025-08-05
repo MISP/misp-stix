@@ -21,6 +21,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
     __observable_mapping = Mapping(
         **{
+            'artifact': 'artifact',
             'autonomous-system': 'as',
             'directory': 'directory',
             'domain-name': 'domain',
@@ -99,8 +100,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             ),
             **dict.fromkeys(
                 (
+                    'file_network-traffic_process',
+                    'file_network-traffic_process_user-account',
                     'file_process',
-                    'process'
+                    'file_process_user-account',
+                    'network-traffic_process',
+                    'network-traffic_process_user-account',
+                    'process',
+                    'process_user-account'
                 ),
                 'process'
             )
