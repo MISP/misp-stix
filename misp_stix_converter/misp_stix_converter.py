@@ -1188,7 +1188,7 @@ def _misp_to_stix(stix_args):
         'output_name': stix_args.output_name, 'version': stix_args.version
     }
     if len(stix_args.file) == 1:
-        return misp_to_stix2(stix_args.file[0])
+        return misp_to_stix2(stix_args.file[0], **stix2_args)
     return misp_collection_to_stix2(
         *stix_args.file, **collection_args, **stix2_args
     )
