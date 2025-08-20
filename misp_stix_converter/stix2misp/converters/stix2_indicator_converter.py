@@ -778,6 +778,8 @@ class ExternalSTIX2IndicatorConverter(
             values: Union[str, tuple], indicator_id: str, name: str):
         field = keys[0]
         if any(field == f'{feature}_ref' for feature in ('src', 'dst')):
+            if keys [-1] == 'type':
+                return
             if isinstance(values, tuple):
                 for value in values:
                     misp_object.add_attribute(
