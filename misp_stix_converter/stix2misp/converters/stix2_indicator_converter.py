@@ -375,6 +375,20 @@ class ExternalSTIX2IndicatorConverter(
     #                        INDICATORS PARSING METHODS                        #
     ############################################################################
 
+    @staticmethod
+    def _network_traffic_pattern_as_single_attribute(pattern: PatternData) -> bool:
+        if len(pattern.comparisons) > 1:
+            return False
+        comparisons = pattern.comparisons['network-traffic']
+        if len(comparisons) > 2:
+            return False
+        for keys, _, _ in comparisons:
+            if keys[0] == 'extensions':
+                return False
+            if keys[0] not in ('src_ref', 'dst_ref'):
+                return False
+        return True
+
     def _parse_asn_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
@@ -806,7 +820,18 @@ class ExternalSTIX2IndicatorConverter(
 
     def _parse_network_traffic_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
-        if 'socket-ext' in indicator.pattern:
+        if self._network_traffic_pattern_as_single_attribute(pattern):
+            for keys, assertion, value in pattern.comparisons['network-traffic']:
+                if assertion not in self._mapping.valid_pattern_assertions():
+                    continue
+                if 'type' in keys:
+                    continue
+                attribute = {
+                    'type': f"ip-{keys[0].split('_')[0]}", 'value': value,
+                    **self._create_attribute_dict(indicator)
+                }
+                self.main_parser._add_misp_attribute(attribute, indicator)
+        elif 'socket-ext' in indicator.pattern:
             self._parse_network_socket_pattern(pattern, indicator)
         else:
             self._parse_network_connection_pattern(pattern, indicator)
