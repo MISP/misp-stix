@@ -9,6 +9,7 @@ from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
+from dateutil import parser
 from io import BytesIO
 from pathlib import Path
 from pymisp import (
