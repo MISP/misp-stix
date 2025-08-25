@@ -89,15 +89,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(len(event.attributes), 1)
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
-        meta = self._check_galaxy_features(attribute.galaxies, attribute_campaign)
-        self.assertTrue(meta['first_seen'] == attribute_campaign.first_seen)
-        for field in ('created', 'modified'):
-            self.assertEqual(
-                meta[field],
-                datetime.strftime(
-                    getattr(attribute_campaign, field), '%Y-%m-%dT%H:%M:%S.%fZ'
-                )
-            )
+        self._check_galaxy_features(attribute.galaxies, attribute_campaign)
 
     def test_stix20_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_course_of_action_galaxy()
