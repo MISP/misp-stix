@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
+import json
 import traceback
 from .stix1_mapping import MISPtoSTIX1Mapping
 from .stix20_mapping import MISPtoSTIX20Mapping
@@ -8,8 +9,10 @@ from .stix21_mapping import MISPtoSTIX21Mapping
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime, timezone
+from io import BufferedIOBase, TextIOBase
+from pathlib import Path
 from pymisp import MISPAttribute, MISPObject
-from typing import Optional, Union
+from typing import IO, Optional, Union
 
 
 class MISPtoSTIXParser(metaclass=ABCMeta):
@@ -41,6 +44,18 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
             identifier: list(warnings)
             for identifier, warnings in self.__warnings.items()
         }
+
+    def parse_json_file(self, filename: Path | str):
+        with open(filename, 'rt', encoding='utf-8') as f:
+            json_content = json.loads(f.read())
+        self._parse_json_content(json_content)
+
+    def parse_json_content(self, json_content: IO | str | bytes | dict | list):
+        if isinstance(json_content, (BufferedIOBase, TextIOBase)):
+            json_content = json_content.read()
+        if isinstance(json_content, (str, bytes)):
+            json_content = json.loads(json_content)
+        self._parse_json_content(json_content)
 
     ############################################################################
     #                         COMMON PARSING FUNCTIONS                         #

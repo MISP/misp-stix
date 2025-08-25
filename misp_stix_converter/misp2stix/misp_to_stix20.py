@@ -270,8 +270,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             note_args['x_misp_name'] = event_report['name']
         references = set(self._parse_event_report_references(event_report))
         note_args['object_refs'] = (
-            list(references) if references else
-            [f"report--{self._misp_event['uuid']}"]
+            list(references) if references
+            else [f"report--{self._misp_event['uuid']}"]
         )
         return CustomEventReport(**note_args)
 
@@ -1215,8 +1215,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
             if attributes:
                 network_args.update(self._parse_network_socket_args(attributes))
-            import json
-            print(json.dumps(network_args, indent=4))
             observable_object['0'] = NetworkTraffic(**network_args)
             self._handle_object_observable(misp_object, observable_object)
 

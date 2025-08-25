@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import io
 import json
 import os
 import re
@@ -10,7 +9,7 @@ from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
-from dateutil import parser
+from io import BytesIO
 from pathlib import Path
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
@@ -84,31 +83,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         self._markings = {}
 
-    def parse_json_content(self, filename: Path | str):
-        self._results_handling_function = '_append_SDO'
-        with open(filename, 'rt', encoding='utf-8') as f:
-            json_content = json.loads(f.read())
-        if 'response' in json_content:
-            json_content = json_content['response']
-            if isinstance(json_content, list):
-                if not self.__initiated:
-                    self._initiate_events_parsing()
-                for event in json_content:
-                    self._parse_misp_event(event)
-                    self.__index = len(self.__objects)
-            else:
-                self.parse_misp_attributes(json_content)
-        else:
-            if isinstance(json_content, list):
-                for content in json_content:
-                    if 'Attribute' in content:
-                        self.parse_misp_attribute(content)
-            else:
-                if 'Event' in json_content or 'info' in json_content:
-                    self.parse_misp_event(json_content)
-                else:
-                    self.parse_misp_attributes(json_content)
-
     def parse_misp_attribute(self, attribute: MISPAttribute | dict):
         self._results_handling_function = '_append_SDO_without_refs'
         self._identifier = 'attribute feed'
@@ -143,6 +117,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if not self.__initiated:
             self._initiate_events_parsing()
         self._parse_misp_event(misp_event)
+
+    def _parse_json_content(self, json_content: dict | list):
+        self._results_handling_function = '_append_SDO'
+        if 'response' in json_content:
+            json_content = json_content['response']
+            if isinstance(json_content, list):
+                if not self.__initiated:
+                    self._initiate_events_parsing()
+                for event in json_content:
+                    self._parse_misp_event(event)
+                    self.__index = len(self.__objects)
+            else:
+                self.parse_misp_attributes(json_content)
+        else:
+            if isinstance(json_content, list):
+                for content in json_content:
+                    if 'Attribute' in content:
+                        self.parse_misp_attribute(content)
+            else:
+                if 'Event' in json_content or 'info' in json_content:
+                    self.parse_misp_event(json_content)
+                else:
+                    self.parse_misp_attributes(json_content)
 
     def _parse_misp_event(self, misp_event: MISPEvent | dict):
         if 'Event' in misp_event:
@@ -4055,7 +4052,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return file_args
 
     def _parse_malware_sample_additional_fields(
-            self, data: io.BytesIO | str) -> dict:
+            self, data: BytesIO | str) -> dict:
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         return {
@@ -4064,7 +4061,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
 
     def _parse_malware_sample_args(
-            self, value: str, data: io.BytesIO | str) -> dict:
+            self, value: str, data: BytesIO | str) -> dict:
         args = {'allow_custom': True}
         for separator in self.composite_separators:
             if separator in value:
@@ -4082,7 +4079,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return args
 
     def _parse_malware_sample_custom_args(
-            self, value: str, data: io.BytesIO | str) -> dict:
+            self, value: str, data: BytesIO | str) -> dict:
         args = {'allow_custom': True, 'x_misp_malware_sample': value}
         args.update(self._parse_malware_sample_additional_fields(data))
         return args
@@ -4664,6 +4661,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return getattr(self, self._id_parsing_function[feature])(
             object_type, misp_object
         )
+
+    def _parse_timestamp_value(
+            self, misp_data_layer: _MISP_DATA_LAYER) -> datetime:
+        if misp_data_layer.get('timestamp') is not None:
+            return self._datetime_from_timestamp(misp_data_layer['timestamp'])
+        return datetime.now(UTC)
 
     def _parse_timestamp_value(
             self, misp_data_layer: _MISP_DATA_LAYER) -> datetime:

@@ -1102,11 +1102,9 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         self._identifier = 'attributes collection'
         self._ids = set()
 
-    def parse_json_content(self, filename):
-        with open(filename, 'rt', encoding='utf-8') as f:
-            attributes = json.loads(f.read())
-            if attributes.get('response') is not None:
-                attributes = attributes['response']
+    def _parse_json_content(self, attributes: dict | list):
+        if attributes.get('response') is not None:
+            attributes = attributes['response']
         self._stix_package = STIXPackage()
         if 'Attribute' in attributes:
             attributes = attributes['Attribute']
@@ -1152,9 +1150,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def __init__(self, orgname: str, version: str):
         super().__init__(orgname, version)
 
-    def parse_json_content(self, filename):
-        with open(filename, 'rt', encoding='utf-8') as f:
-            json_content = json.loads(f.read())
+    def _parse_json_content(self, json_content: dict):
         if json_content.get('response'):
             package = _stix_package(self._orgname, self._version, header=False)
             for event in json_content['response']:
