@@ -4669,12 +4669,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return self._datetime_from_timestamp(misp_data_layer['timestamp'])
         return datetime.now(UTC)
 
-    def _parse_timestamp_value(
-            self, misp_data_layer: _MISP_DATA_LAYER) -> datetime:
-        if misp_data_layer.get('timestamp') is not None:
-            return self._datetime_from_timestamp(misp_data_layer['timestamp'])
-        return datetime.now(UTC)
-
     @staticmethod
     def _sanitise_meta_field(key: str, strict: Optional[bool] = False) -> str:
         for special_character in _special_characters:
