@@ -251,18 +251,19 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _fetch_multiple_observable_ids(
             self, observed_data: _OBSERVED_DATA_TYPING,
-            object_id: str) -> Generator:
-        yield object_id
+            identifiers: set, object_id: str) -> Generator:
+        identifiers.add(object_id)
         for key, value in observed_data.objects[object_id].items():
-            if key.endswith('_ref'):
-                yield from self._fetch_multiple_observable_ids(
-                    observed_data, value
+            if key.endswith('_ref') and value not in identifiers:
+                self._fetch_multiple_observable_ids(
+                    observed_data, identifiers, value
                 )
             if key.endswith('_refs'):
                 for reference in value:
-                    yield from self._fetch_multiple_observable_ids(
-                        observed_data, reference
-                    )
+                    if reference not in identifiers:
+                        self._fetch_multiple_observable_ids(
+                            observed_data, identifiers, reference
+                        )
 
     def _parse_multiple_observable_object_refs(
             self, observed_data: ObservedData_v21,
@@ -304,13 +305,12 @@ class ExternalSTIX2ObservedDataConverter(
         for object_id in observable_objects.keys():
             if observable_objects[object_id]['used']:
                 continue
+            self._fetch_multiple_observable_ids(
+                observed_data, identifiers := set(), object_id
+            )
             observables = {
                 identifier: observable_objects[identifier]
-                for identifier in set(
-                    self._fetch_multiple_observable_ids(
-                        observed_data, object_id
-                    )
-                )
+                for identifier in identifiers
             }
             if object_id in referenced_ids:
                 for reference in referenced_ids[object_id]:
