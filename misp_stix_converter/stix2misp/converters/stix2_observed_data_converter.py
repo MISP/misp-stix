@@ -25,7 +25,7 @@ from stix2.v21.observables import (
     WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
     WindowsRegistryValueType as WindowsRegistryValueType_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
-from typing import Optional, TYPE_CHECKING, Union
+from typing import Iterator, Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -128,6 +128,17 @@ class ExternalSTIX2ObservedDataConverter(
         if not hasattr(self, '_observable_relationships'):
             self._observable_relationships = defaultdict(set)
         return self._observable_relationships
+
+    @property
+    def observable_object_types(self) -> dict[str, int]:
+        try:
+            return self.__observable_object_types
+        except AttributeError:
+            self.__observable_object_types = {
+                observable_type: index for index, observable_type in
+                enumerate(self.main_parser._mapping.observable_object_types())
+            }
+            return self.__observable_object_types
 
     @property
     def referenced_ids(self):
@@ -268,7 +279,7 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_multiple_observable_object_refs(
             self, observed_data: ObservedData_v21,
             indicator_refs: Optional[dict] = {}):
-        for object_ref in observed_data.object_refs:
+        for object_ref in self._reorder_object_refs(observed_data.object_refs):
             observable = self._fetch_observable(object_ref)
             if observable is None:
                 self._missing_observable_object_error(
@@ -352,6 +363,15 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data, observable_objects,
                 indicator_refs=indicator_refs
             )
+
+    def _reorder_object_refs(self, object_refs: list) -> Iterator[str]:
+        buckets = [[] for _ in range(len(self.observable_object_types) + 1)]
+        for object_ref in object_refs:
+            object_type = object_ref.split('--')[0]
+            buckets[self.observable_object_types.get(object_type, -1)].append(
+                object_ref
+            )
+        return (ref for bucket in buckets for ref in bucket)
 
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
