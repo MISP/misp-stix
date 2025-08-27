@@ -286,11 +286,6 @@ class ExternalSTIX2ObservedDataConverter(
                     observed_data.id, object_ref
                 )
                 continue
-            if observable['used'].get(self.event_uuid, False):
-                self._handle_misp_object_fields(
-                    observable['misp_object'], observed_data
-                )
-                continue
             object_type = object_ref.split('--')[0]
             mapping = self._mapping.observable_mapping(object_type)
             if mapping is None:
@@ -310,10 +305,7 @@ class ExternalSTIX2ObservedDataConverter(
         observable_objects = {
             object_id: {'used': False} for object_id in observed_data.objects
         }
-        referenced_ids = self._extract_referenced_ids_from_observable_objects(
-            **observed_data.objects
-        )
-        for object_id in observable_objects.keys():
+        for object_id in self._reorder_objects(observed_data.objects):
             if observable_objects[object_id]['used']:
                 continue
             self._fetch_multiple_observable_ids(
@@ -323,9 +315,6 @@ class ExternalSTIX2ObservedDataConverter(
                 identifier: observable_objects[identifier]
                 for identifier in identifiers
             }
-            if object_id in referenced_ids:
-                for reference in referenced_ids[object_id]:
-                    observables[reference] = observable_objects[reference]
             observable_types = set(
                 observed_data.objects[identifier].type
                 for identifier in observables
@@ -359,10 +348,8 @@ class ExternalSTIX2ObservedDataConverter(
             except AttributeError:
                 self.main_parser._unknown_parsing_function_error(feature)
                 continue
-            parser(
-                observed_data, observable_objects,
-                indicator_refs=indicator_refs
-            )
+            parser(observed_data, observables, indicator_refs=indicator_refs)
+            observable_objects.update(observables)
 
     def _reorder_object_refs(self, object_refs: list) -> Iterator[str]:
         buckets = [[] for _ in range(len(self.observable_object_types) + 1)]
@@ -370,6 +357,15 @@ class ExternalSTIX2ObservedDataConverter(
             object_type = object_ref.split('--')[0]
             buckets[self.observable_object_types.get(object_type, -1)].append(
                 object_ref
+            )
+        return (ref for bucket in buckets for ref in bucket)
+
+    def _reorder_objects(self, observable_objects: dict) -> Iterator[str]:
+        buckets = [[] for _ in range(len(self.observable_object_types) + 1)]
+        for object_id, observable_object in observable_objects.items():
+            object_type = observable_object['type']
+            buckets[self.observable_object_types.get(object_type, -1)].append(
+                object_id
             )
         return (ref for bucket in buckets for ref in bucket)
 
