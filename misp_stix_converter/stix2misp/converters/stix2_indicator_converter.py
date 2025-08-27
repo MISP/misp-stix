@@ -1415,7 +1415,7 @@ class InternalSTIX2IndicatorMapping(
     @classmethod
     def registry_key_values_pattern_mapping(
             cls, field: str) -> Union[dict, None]:
-        return cls.registry_key_values_mapping().get(field)
+        return cls.registry_key_values_object_mapping().get(field)
 
     @classmethod
     def sigma_object_mapping(cls) -> dict:
