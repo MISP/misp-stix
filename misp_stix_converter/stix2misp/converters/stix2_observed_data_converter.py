@@ -2694,8 +2694,12 @@ class ExternalSTIX2ObservedDataConverter(
         return misp_object
 
     def _handle_misp_object_fields(
-            self, misp_object: Union[MISPAttribute, MISPObject],
+            self, misp_object: list | MISPAttribute | MISPObject,
             observed_data: ObservedData_v21):
+        if isinstance(misp_object, list):
+            for obj in misp_object:
+                self._handle_misp_object_fields(obj, observed_data)
+            return
         time_fields = self._parse_timeline(observed_data)
         for field in ('timestamp', 'last_seen'):
             if time_fields.get(field) is None:
