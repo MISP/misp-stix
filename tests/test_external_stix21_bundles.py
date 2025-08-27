@@ -1285,7 +1285,8 @@ _NETWORK_TRAFFIC_OBJECTS = [
             "ipv4-addr--f2d3c796-6c1a-5c4f-8516-d4db54727f89",
             "ipv4-addr--bb884ffe-f2e4-56bb-a0c3-21f6711cb649",
             "network-traffic--b4a8c150-e214-57a3-9017-e85dfa345f46",
-            "network-traffic--65a6016d-a91c-5781-baad-178cd55f01d4"
+            "network-traffic--65a6016d-a91c-5781-baad-178cd55f01d4",
+            "artifact--5e384ae7-672c-4250-9cda-3b4da964451a"
         ]
     },
     {
@@ -1368,6 +1369,7 @@ _NETWORK_TRAFFIC_OBJECTS = [
         ],
         "src_byte_count": 35779,
         "dst_byte_count": 935750,
+        "src_payload_ref": "artifact--5e384ae7-672c-4250-9cda-3b4da964451a",
         "encapsulates_refs": [
             "network-traffic--65a6016d-a91c-5781-baad-178cd55f01d4"
         ]
@@ -1388,7 +1390,18 @@ _NETWORK_TRAFFIC_OBJECTS = [
         ],
         "src_packets": 14356,
         "dst_packets": 14356,
+        "dst_payload_ref": "artifact--5e384ae7-672c-4250-9cda-3b4da964451a",
         "encapsulated_by_ref": "network-traffic--b4a8c150-e214-57a3-9017-e85dfa345f46"
+    },
+    {
+        "type": "artifact",
+        "spec_version": "2.1",
+        "id": "artifact--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "url": "https://files.pythonhosted.org/packages/1a/62/29f55ef42483c30281fab9d3282ac467f215501826f3251678d8ec2da2e1/misp_stix-2.4.183.tar.gz",
+        "hashes": {
+            "MD5": "b3982699c1b9a25346cc8498f483b150",
+            "SHA-256": "836f395a4f86e9d1b2f528756c248e76665c02c5d0fc89f9b26136db5ac7f7ae"
+        }
     }
 ]
 _PROCESS_OBJECTS = [

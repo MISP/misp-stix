@@ -854,8 +854,8 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, observed_data1, observed_data2 = bundle.objects
         misp_objects = self._check_misp_event_features(event, report)
-        self.assertEqual(len(misp_objects), 4)
-        nt1, nt2, nt3, nt4 = misp_objects
+        self.assertEqual(len(misp_objects), 5)
+        nt1, nt2, nt3, artifact, nt4 = misp_objects
         self._check_network_traffic_object_with_packet_sizes(
             nt1, observed_data1, '3', '0', '1', 8
         )
@@ -871,14 +871,45 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_network_traffic_object_with_packet_sizes(
             nt3, observed_data2, '3', '0', '1', 9
         )
-        self.assertEqual(len(nt3.references), 1)
-        encapsulates2 = nt3.references[0]
+        self.assertEqual(len(nt3.references), 2)
+        payload_ref, encapsulates2 = nt3.references
         self.assertEqual(encapsulates2.referenced_uuid, nt4.uuid)
+        self.assertEqual(payload_ref.referenced_uuid, artifact.uuid)
+        self.assertEqual(payload_ref.relationship_type, 'source-sent')
+        self.assertEqual(artifact.name, 'artifact')
+        self._check_misp_object_fields(artifact, observed_data2, '5')
+        self.assertEqual(len(artifact.attributes), 3)
+        md5, sha256, url = artifact.attributes
+        observable = observed_data2.objects['5']
+        hashes = observable.hashes
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid,
+            uuid5(self._UUIDv4, f'{observed_data2.id} - 5 - md5 - {md5.value}')
+        )
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{observed_data2.id} - 5 - sha256 - {sha256.value}'
+            )
+        )
+        self._assert_multiple_equal(url.type, url.object_relation, 'url')
+        self.assertEqual(url.value, observable.url)
+        self.assertEqual(
+            url.uuid,
+            uuid5(self._UUIDv4, f'{observed_data2.id} - 5 - url - {url.value}')
+        )
         self._check_network_traffic_object_with_packet_counts(
             nt4, observed_data2, '4', '1', '2', 10
         )
-        self.assertEqual(len(nt4.references), 1)
-        encapsulated2 = nt4.references[0]
+        self.assertEqual(len(nt4.references), 2)
+        payload_ref, encapsulated2 = nt4.references
         self.assertEqual(encapsulated2.referenced_uuid, nt3.uuid)
         self._assert_multiple_equal(
             encapsulates1.relationship_type,

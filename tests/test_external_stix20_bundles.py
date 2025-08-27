@@ -920,6 +920,7 @@ _NETWORK_TRAFFIC_OBJECTS = [
                 ],
                 "src_byte_count": 35779,
                 "dst_byte_count": 935750,
+                "src_payload_ref": "5",
                 "encapsulates_refs": [
                     "4"
                 ]
@@ -938,7 +939,16 @@ _NETWORK_TRAFFIC_OBJECTS = [
                 ],
                 "src_packets": 14356,
                 "dst_packets": 14356,
+                "dst_payload_ref": "5",
                 "encapsulated_by_ref": "3"
+            },
+            "5": {
+                "type": "artifact",
+                "url": "https://files.pythonhosted.org/packages/1a/62/29f55ef42483c30281fab9d3282ac467f215501826f3251678d8ec2da2e1/misp_stix-2.4.183.tar.gz",
+                "hashes": {
+                    "MD5": "b3982699c1b9a25346cc8498f483b150",
+                    "SHA-256": "836f395a4f86e9d1b2f528756c248e76665c02c5d0fc89f9b26136db5ac7f7ae"
+                }
             }
         }
     }
