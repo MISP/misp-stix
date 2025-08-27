@@ -1729,9 +1729,11 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             if observable['used'].get(self.event_uuid, False):
-                self._handle_misp_object_fields(
-                    observable['misp_attribute'], observed_data
+                misp_content = observable.get(
+                    'misp_attribute', observable.get('misp_object', {})
                 )
+                if misp_content:
+                    self._handle_misp_object_fields(misp_content, observed_data)
                 continue
             attribute = self._parse_generic_observable_object_ref_as_attribute(
                 observable['observable'], observed_data, 'ip-dst',
@@ -1991,14 +1993,18 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_network_traffic_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
+            observable_objects: Optional[dict] = None,
             indicator_refs: Optional[dict] = {}):
-        observable_objects = {
-            object_id: {'used': False}
-            for object_id, observable in observed_data.objects.items()
-            if observable.type == 'network-traffic'
-        }
+        if observable_objects is None:
+            observable_objects = {
+                object_id: {'used': False}
+                for object_id, observable in observed_data.objects.items()
+                if observable.type in ('artifact', 'network-traffic')
+            }
         for object_id, observable in observable_objects.items():
             network_traffic = observed_data.objects[object_id]
+            if network_traffic.type != 'network-traffic':
+                continue
             name = self._parse_network_traffic_observable_fields(
                 network_traffic
             )
@@ -2017,6 +2023,12 @@ class ExternalSTIX2ObservedDataConverter(
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
+                    if referenced_id in observable_objects:
+                        observable = observable_objects[referenced_id]
+                        if not observable['used']:
+                            observable.update(
+                                {'misp_object': misp_object, 'used': True}
+                            )
                 if hasattr(network_traffic, f'{asset}_payload_ref'):
                     reference = getattr(network_traffic, f'{asset}_payload_ref')
                     if observable_objects[reference]['used']:
@@ -2029,6 +2041,7 @@ class ExternalSTIX2ObservedDataConverter(
                         observed_data, reference, 'artifact', generic=False,
                         indicator_ref=indicator_refs.get(reference, '')
                     )
+                    misp_object.add_reference(artifact.uuid, f'{field}-sent')
                     observable_objects[reference].update(
                         {'misp_object': misp_object, 'used': True}
                     )
