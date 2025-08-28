@@ -1018,6 +1018,34 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
         )
 
+    def _check_payload_object_fields(self, misp_object, artifact, object_id=None):
+        if object_id is None:
+            object_id = artifact.id
+        self.assertEqual(misp_object.name, 'artifact')
+        self.assertEqual(len(misp_object.attributes), 3)
+        md5, sha256, url = misp_object.attributes
+        hashes = artifact.hashes
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - sha256 - {sha256.value}'
+            )
+        )
+        self._assert_multiple_equal(url.type, url.object_relation, 'url')
+        self.assertEqual(url.value, artifact.url)
+        self.assertEqual(
+            url.uuid, uuid5(self._UUIDv4, f'{object_id} - url - {url.value}')
+        )
+
     def _check_pe_fields(self, misp_object, pe_extension, object_id):
         self.assertEqual(len(misp_object.attributes), 3)
         compilation_timestamp, number_of_sections, pe_type = misp_object.attributes

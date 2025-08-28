@@ -594,7 +594,26 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self, misp_object, obbserved_data, network_traffic,
             src_ip, dst_ip, attributes_count):
         self.assertEqual(misp_object.name, 'network-traffic')
-        self._check_misp_object_fields(misp_object, obbserved_data, network_traffic.id)
+        self._check_misp_object_fields(
+            misp_object, obbserved_data, network_traffic.id
+        )
+        self._check_network_traffic_packet_counts(
+            misp_object, network_traffic, src_ip, dst_ip, attributes_count
+        )
+
+    def _check_network_traffic_object_with_packet_sizes(
+            self, misp_object, observed_data, network_traffic,
+            src_ip, dst_ip, attributes_count):
+        self.assertEqual(misp_object.name, 'network-traffic')
+        self._check_misp_object_fields(
+            misp_object, observed_data, network_traffic.id
+        )
+        self._check_network_traffic_packet_sizes(
+            misp_object, network_traffic, src_ip, dst_ip, attributes_count
+        )
+
+    def _check_network_traffic_packet_counts(self, misp_object, network_traffic,
+                                             src_ip, dst_ip, attributes_count):
         attributes = misp_object.attributes
         self.assertEqual(len(attributes), attributes_count)
         src_packets, dst_packets = self._check_network_traffic_fields(
@@ -621,13 +640,8 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
         )
 
-    def _check_network_traffic_object_with_packet_sizes(
-            self, misp_object, observed_data, network_traffic,
-            src_ip, dst_ip, attributes_count):
-        self.assertEqual(misp_object.name, 'network-traffic')
-        self._check_misp_object_fields(
-            misp_object, observed_data, network_traffic.id
-        )
+    def _check_network_traffic_packet_sizes(self, misp_object, network_traffic,
+                                            src_ip, dst_ip, attributes_count):
         attributes = misp_object.attributes
         self.assertEqual(len(attributes), attributes_count)
         src_bytes, dst_bytes = self._check_network_traffic_fields(
@@ -1232,18 +1246,21 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
         self.assertEqual(len(misp_objects), 5)
         nt_object1, nt_object2, nt_object3, artifact_object, nt_object4 = misp_objects
+
         self._check_network_traffic_object_with_packet_sizes(
             nt_object1, od1, nt1, ip1, ip2, 8
         )
         self.assertEqual(len(nt_object1.references), 1)
         encapsulates1 = nt_object1.references[0]
         self.assertEqual(encapsulates1.referenced_uuid, nt_object2.uuid)
+
         self._check_network_traffic_object_with_packet_counts(
             nt_object2, od1, nt2, ip1, ip3, 9
         )
         self.assertEqual(len(nt_object2.references), 1)
         encapsulated1 = nt_object2.references[0]
         self.assertEqual(encapsulated1.referenced_uuid, nt_object1.uuid)
+
         self._check_network_traffic_object_with_packet_sizes(
             nt_object3, od2, nt3, ip2, ip4, 9
         )
@@ -1252,31 +1269,10 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(encapsulates2.referenced_uuid, nt_object4.uuid)
         self.assertEqual(payload_ref.referenced_uuid, artifact_object.uuid)
         self.assertEqual(payload_ref.relationship_type, 'source-sent')
-        self.assertEqual(artifact_object.name, 'artifact')
+
         self._check_misp_object_fields(artifact_object, od2, artifact.id)
-        self.assertEqual(len(artifact_object.attributes), 3)
-        md5, sha256, url = artifact_object.attributes
-        hashes = artifact.hashes
-        self.assertEqual(md5.type, 'md5')
-        self.assertEqual(md5.object_relation, 'md5')
-        self.assertEqual(md5.value, hashes['MD5'])
-        self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{artifact.id} - md5 - {md5.value}')
-        )
-        self.assertEqual(sha256.type, 'sha256')
-        self.assertEqual(sha256.object_relation, 'sha256')
-        self.assertEqual(sha256.value, hashes['SHA-256'])
-        self.assertEqual(
-            sha256.uuid,
-            uuid5(
-                self._UUIDv4, f'{artifact.id} - sha256 - {sha256.value}'
-            )
-        )
-        self._assert_multiple_equal(url.type, url.object_relation, 'url')
-        self.assertEqual(url.value, artifact.url)
-        self.assertEqual(
-            url.uuid, uuid5(self._UUIDv4, f'{artifact.id} - url - {url.value}')
-        )
+        self._check_payload_object_fields(artifact_object, artifact)
+
         self._check_network_traffic_object_with_packet_counts(
             nt_object4, od2, nt4, ip4, ip5, 10
         )
@@ -1285,6 +1281,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(encapsulated2.referenced_uuid, nt_object3.uuid)
         self.assertEqual(payload_ref.referenced_uuid, artifact_object.uuid)
         self.assertEqual(payload_ref.relationship_type, 'destination-sent')
+
         self._assert_multiple_equal(
             encapsulates1.relationship_type,
             encapsulates2.relationship_type,
@@ -1295,6 +1292,41 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             encapsulated2.relationship_type,
             'encapsulated-by'
         )
+
+    def test_stix21_bundle_with_network_traffic_observables(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_observables()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, ip1, ip2, ip3, nt1, nt2, artifact = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        nt_object1, artifact_object, nt_object2 = misp_objects
+        self._assert_multiple_equal(nt_object1.name, nt_object2.name, 'network-traffic')
+
+        self.assertEqual(nt_object1.uuid, nt1.id.split('--')[1])
+        self._check_network_traffic_packet_sizes(
+            nt_object1, nt1, ip1, ip2, 9
+        )
+        self.assertEqual(len(nt_object1.references), 2)
+        payload_ref, encapsulates2 = nt_object1.references
+        self.assertEqual(encapsulates2.referenced_uuid, nt_object2.uuid)
+        self.assertEqual(encapsulates2.relationship_type, 'encapsulates')
+        self.assertEqual(payload_ref.referenced_uuid, artifact_object.uuid)
+        self.assertEqual(payload_ref.relationship_type, 'source-sent')
+
+        self.assertEqual(artifact_object.uuid, artifact.id.split('--')[1])
+        self._check_payload_object_fields(artifact_object, artifact)
+
+        self._check_network_traffic_packet_counts(
+            nt_object2, nt2, ip2, ip3, 10
+        )
+        self.assertEqual(len(nt_object2.references), 2)
+        payload_ref, encapsulated2 = nt_object2.references
+        self.assertEqual(encapsulated2.referenced_uuid, nt_object1.uuid)
+        self.assertEqual(encapsulated2.relationship_type, 'encapsulated-by')
+        self.assertEqual(payload_ref.referenced_uuid, artifact_object.uuid)
+        self.assertEqual(payload_ref.relationship_type, 'destination-sent')
 
     def test_stix21_bundle_with_process_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_process_objects()

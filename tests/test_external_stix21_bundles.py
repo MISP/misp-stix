@@ -2304,6 +2304,11 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS)
 
     @classmethod
+    def get_bundle_with_network_traffic_observables(cls):
+        _, _, _, ip, _, _, _, *observables = deepcopy(_NETWORK_TRAFFIC_OBJECTS)
+        return cls.__assemble_bundle(ip, *observables)
+
+    @classmethod
     def get_bundle_with_process_objects(cls):
         return cls.__assemble_bundle(*_PROCESS_OBJECTS)
 
