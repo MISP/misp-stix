@@ -10,7 +10,7 @@ from .misp2stix import stix1_attributes_framing, stix1_framing # noqa
 from .misp2stix import stix20_framing, stix21_framing # noqa
 # Helpers
 from .misp_stix_converter import ( # noqa
-    _is_stix1_from_misp, _is_stix2_from_misp,
+    _get_stix2_parser, _is_stix1_from_misp, _is_stix2_from_misp,
     misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
     stix_1_to_misp, stix_2_to_misp, stix2_to_misp_instance)
