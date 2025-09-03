@@ -1050,8 +1050,11 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             if observable['used'].get(self.event_uuid, False):
-                for attribute in observable['misp_attribute']:
-                    self._handle_misp_object_fields(attribute, observed_data)
+                misp_content = observable.get(
+                    'misp_attribute', observable.get('misp_object', {})
+                )
+                if misp_content:
+                    self._handle_misp_object_fields(misp_content, observed_data)
                 continue
             email_address = observable['observable']
             observable['misp_attribute'] = tuple(
