@@ -13,8 +13,18 @@ from ._test_stix import TestSTIX
 from .update_documentation import (
     AttributesDocumentationUpdater, ObjectsDocumentationUpdater)
 
+PATTERNS = ('_ATTRIBUTES', '_OBJECTS')
+UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 class TestSTIX2Bundles:
+    @staticmethod
+    def _get_variable_names(names):
+        for name in names:
+            if not name.startswith('_'):
+                continue
+            if any(name.endswith(pattern) for pattern in PATTERNS):
+                yield name
+
     @staticmethod
     def _handle_report_with_description(report, indicator_id):
         report['name'] = 'HTRAN - Persistent threat'
@@ -404,10 +414,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         cluster = galaxy.clusters[0]
         self.assertEqual(
             cluster.uuid,
-            uuid5(
-                self._UUIDv4,
-                f"{stix_object.id.split('--')[1]} - {MISP_org_uuid}"
-            )
+            uuid5(UUIDv4, f"{stix_object.id.split('--')[1]} - {MISP_org_uuid}")
         )
         version = getattr(stix_object, 'spec_version', '2.0')
         self._assert_multiple_equal(
@@ -419,7 +426,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         mapping = self._galaxy_name_mapping(stix_object.type)
         self._assert_multiple_equal(
             galaxy.uuid, cluster.collection_uuid,
-            uuid5(self._UUIDv4, galaxy.name)
+            uuid5(UUIDv4, galaxy.name)
         )
         self.assertEqual(galaxy.name, f"STIX {version} {mapping['name']}")
         self.assertEqual(galaxy.description, mapping['description'])
@@ -451,14 +458,14 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(sha256.value, observable_object.hashes['SHA-256'])
         self.assertEqual(
             sha256.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+            uuid5(UUIDv4, f'{object_id} - sha256 - {sha256.value}')
         )
         self.assertEqual(mime_type.type, 'mime-type')
         self.assertEqual(mime_type.object_relation, 'mimetype')
         self.assertEqual(mime_type.value, observable_object.mime_type)
         self.assertEqual(
             mime_type.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - mimetype - {mime_type.value}')
+            uuid5(UUIDv4, f'{object_id} - mimetype - {mime_type.value}')
         )
         self._assert_multiple_equal(
             filename.type, filename.object_relation, 'filename'
@@ -466,7 +473,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(filename.value, observable_object.name)
         self.assertEqual(
             filename.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+            uuid5(UUIDv4, f'{object_id} - filename - {filename.value}')
         )
 
     def _check_archive_object_references(self, archive_object, file_object, directory_object):
@@ -493,50 +500,41 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
         self.assertEqual(
             payload_bin.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}')
         )
         hashes = artifact.hashes
         self.assertEqual(md5.type, 'md5')
         self.assertEqual(md5.object_relation, 'md5')
         self.assertEqual(md5.value, hashes['MD5'])
         self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+            md5.uuid, uuid5(UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
         self.assertEqual(sha1.type, 'sha1')
         self.assertEqual(sha1.object_relation, 'sha1')
         self.assertEqual(sha1.value, hashes['SHA-1'])
         self.assertEqual(
-            sha1.uuid, uuid5(self._UUIDv4, f'{object_id} - sha1 - {sha1.value}')
+            sha1.uuid, uuid5(UUIDv4, f'{object_id} - sha1 - {sha1.value}')
         )
         self.assertEqual(sha256.type, 'sha256')
         self.assertEqual(sha256.object_relation, 'sha256')
         self.assertEqual(sha256.value, hashes['SHA-256'])
         self.assertEqual(
             sha256.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - sha256 - {sha256.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - sha256 - {sha256.value}')
         )
         self.assertEqual(decryption.type, 'text')
         self.assertEqual(decryption.object_relation, 'decryption_key')
         self.assertEqual(decryption.value, artifact.decryption_key)
         self.assertEqual(
             decryption.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - decryption_key - {decryption.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - decryption_key - {decryption.value}')
         )
         self.assertEqual(mime_type.type, 'mime-type')
         self.assertEqual(mime_type.object_relation, 'mime_type')
         self.assertEqual(mime_type.value, artifact.mime_type)
         self.assertEqual(
             mime_type.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - mime_type - {mime_type.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - mime_type - {mime_type.value}')
         )
 
     def _check_artifact_with_url_fields(self, misp_object, artifact, object_id = None):
@@ -550,20 +548,20 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(md5.object_relation, 'md5')
         self.assertEqual(md5.value, hashes['MD5'])
         self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+            md5.uuid, uuid5(UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
         self.assertEqual(sha256.type, 'sha256')
         self.assertEqual(sha256.object_relation, 'sha256')
         self.assertEqual(sha256.value, hashes['SHA-256'])
         self.assertEqual(
             sha256.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+            uuid5(UUIDv4, f'{object_id} - sha256 - {sha256.value}')
         )
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, artifact.url)
         self.assertEqual(
-            url.uuid, uuid5(self._UUIDv4, f'{object_id} - url - {url.value}')
+            url.uuid, uuid5(UUIDv4, f'{object_id} - url - {url.value}')
         )
 
     def _check_as_fields(self, misp_object, autonomous_system, object_id = None):
@@ -574,11 +572,16 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(asn.type, 'AS')
         self.assertEqual(asn.object_relation, 'asn')
         self.assertEqual(asn.value, f'AS{autonomous_system.number}')
-        self.assertEqual(asn.uuid, uuid5(self._UUIDv4, f'{object_id} - asn - {asn.value}'))
+        self.assertEqual(
+            asn.uuid, uuid5(UUIDv4, f'{object_id} - asn - {asn.value}')
+        )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'description')
         self.assertEqual(name.value, autonomous_system.name)
-        self.assertEqual(name.uuid, uuid5(self._UUIDv4, f'{object_id} - description - {name.value}'))
+        self.assertEqual(
+            name.uuid,
+            uuid5(UUIDv4, f'{object_id} - description - {name.value}')
+        )
 
     def _check_content_ref_fields(self, misp_object, artifact, object_id = None):
         if object_id is None:
@@ -594,14 +597,12 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
         self.assertEqual(
             payload_bin.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}')
         )
         self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
         self.assertEqual(md5.value, artifact.hashes['MD5'])
         self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+            md5.uuid, uuid5(UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
         self.assertEqual(decryption_key.type, 'text')
         self.assertEqual(decryption_key.object_relation, 'decryption_key')
@@ -609,7 +610,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             decryption_key.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - decryption_key - {decryption_key.value}'
             )
         )
@@ -618,7 +619,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(mime_type.value, artifact.mime_type)
         self.assertEqual(
             mime_type.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - mime_type - {mime_type.value}')
+            uuid5(UUIDv4, f'{object_id} - mime_type - {mime_type.value}')
         )
 
     def _check_creator_user_fields(self, misp_object, user_account, object_id):
@@ -629,33 +630,28 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(username.value, user_account.account_login)
         self.assertEqual(
             username.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+            uuid5(UUIDv4, f'{object_id} - username - {username.value}')
         )
         self.assertEqual(account_type.type, 'text')
         self.assertEqual(account_type.object_relation, 'account-type')
         self.assertEqual(account_type.value, user_account.account_type)
         self.assertEqual(
             account_type.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - account-type - {account_type.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - account-type - {account_type.value}')
         )
         self.assertEqual(privileged.type, 'boolean')
         self.assertEqual(privileged.object_relation, 'privileged')
         self.assertEqual(privileged.value, user_account.is_privileged)
         self.assertEqual(
             privileged.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - privileged - {privileged.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - privileged - {privileged.value}')
         )
         self.assertEqual(user_id.type, 'text')
         self.assertEqual(user_id.object_relation, 'user-id')
         self.assertEqual(user_id.value, user_account.user_id)
         self.assertEqual(
             user_id.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+            uuid5(UUIDv4, f'{object_id} - user-id - {user_id.value}')
         )
 
     def _check_directory_fields(self, misp_object, directory, object_id = None):
@@ -668,27 +664,31 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         self.assertEqual(accessed.object_relation, 'access-time')
         self.assertEqual(
-            accessed.uuid, uuid5(self._UUIDv4, f'{object_id} - access-time - {accessed.value}')
+            accessed.uuid,
+            uuid5(UUIDv4, f'{object_id} - access-time - {accessed.value}')
         )
         self.assertEqual(created.object_relation, 'creation-time')
         self.assertEqual(
-            created.uuid, uuid5(self._UUIDv4, f'{object_id} - creation-time - {created.value}')
+            created.uuid,
+            uuid5(UUIDv4, f'{object_id} - creation-time - {created.value}')
         )
         self.assertEqual(modified.object_relation, 'modification-time')
         self.assertEqual(
-            modified.uuid, uuid5(self._UUIDv4, f'{object_id} - modification-time - {modified.value}')
+            modified.uuid,
+            uuid5(UUIDv4, f'{object_id} - modification-time - {modified.value}')
         )
         self.assertEqual(path.type, 'text')
         self.assertEqual(path.object_relation, 'path')
         self.assertEqual(path.value, directory.path)
         self.assertEqual(
-            path.uuid, uuid5(self._UUIDv4, f'{object_id} - path - {path.value}')
+            path.uuid, uuid5(UUIDv4, f'{object_id} - path - {path.value}')
         )
         self.assertEqual(path_enc.type, 'text')
         self.assertEqual(path_enc.object_relation, 'path-encoding')
         self.assertEqual(path_enc.value, directory.path_enc)
         self.assertEqual(
-            path_enc.uuid, uuid5(self._UUIDv4, f'{object_id} - path-encoding - {path_enc.value}')
+            path_enc.uuid,
+            uuid5(UUIDv4, f'{object_id} - path-encoding - {path_enc.value}')
         )
         return accessed.value, created.value, modified.value
 
@@ -704,10 +704,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(domain_attribute.value, domain.value)
         self.assertEqual(
             domain_attribute.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{domain_id} - domain - {domain_attribute.value}'
-            )
+            uuid5(UUIDv4, f'{domain_id} - domain - {domain_attribute.value}')
         )
         self._assert_multiple_equal(
             ipv4_attribute.type, ipv6_attribute.type, 'ip-dst'
@@ -718,12 +715,12 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ipv4_attribute.value, ipv4.value)
         self.assertEqual(
             ipv4_attribute.uuid,
-            uuid5(self._UUIDv4, f'{ipv4_id} - ip - {ipv4_attribute.value}')
+            uuid5(UUIDv4, f'{ipv4_id} - ip - {ipv4_attribute.value}')
         )
         self.assertEqual(ipv6_attribute.value, ipv6.value)
         self.assertEqual(
             ipv6_attribute.uuid,
-            uuid5(self._UUIDv4, f'{ipv6_id} - ip - {ipv6_attribute.value}')
+            uuid5(UUIDv4, f'{ipv6_id} - ip - {ipv6_attribute.value}')
         )
 
     def _check_email_artifact_object_fields(self, misp_object, artifact, artifact_id = None):
@@ -741,10 +738,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         self.assertEqual(
             payload_bin.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{artifact_id} - payload_bin - {payload_bin.value}'
-            )
+            uuid5(UUIDv4, f'{artifact_id} - payload_bin - {payload_bin.value}')
         )
         self._assert_multiple_equal(
             sha256.type, sha256.object_relation, 'sha256'
@@ -752,16 +746,14 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(sha256.value, artifact.hashes['SHA-256'])
         self.assertEqual(
             sha256.uuid,
-            uuid5(self._UUIDv4, f'{artifact_id} - sha256 - {sha256.value}')
+            uuid5(UUIDv4, f'{artifact_id} - sha256 - {sha256.value}')
         )
         self.assertEqual(mime_type.type, 'mime-type')
         self.assertEqual(mime_type.object_relation, 'mime_type')
         self.assertEqual(mime_type.value, artifact.mime_type)
         self.assertEqual(
             mime_type.uuid,
-            uuid5(
-                self._UUIDv4, f'{artifact_id} - mime_type - {mime_type.value}'
-            )
+            uuid5(UUIDv4, f'{artifact_id} - mime_type - {mime_type.value}')
         )
 
     def _check_email_file_object_fields(self, misp_object, _file, file_id = None):
@@ -774,8 +766,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         self.assertEqual(sha256.value, _file.hashes['SHA-256'])
         self.assertEqual(
-            sha256.uuid,
-            uuid5(self._UUIDv4, f'{file_id} - sha256 - {sha256.value}')
+            sha256.uuid, uuid5(UUIDv4, f'{file_id} - sha256 - {sha256.value}')
         )
         self._assert_multiple_equal(
             filename.type, filename.object_relation, 'filename'
@@ -783,7 +774,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(filename.value, _file.name)
         self.assertEqual(
             filename.uuid,
-            uuid5(self._UUIDv4, f'{file_id} - filename - {filename.value}')
+            uuid5(UUIDv4, f'{file_id} - filename - {filename.value}')
         )
 
     def _check_email_object_fields(
@@ -799,26 +790,21 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(send_date.value, email_message.date)
         self.assertEqual(
             send_date.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{message_id} - send-date - {send_date.value}'
-            )
+            uuid5(UUIDv4, f'{message_id} - send-date - {send_date.value}')
         )
         self.assertEqual(header.type, 'email-header')
         self.assertEqual(header.object_relation, 'header')
         self.assertEqual(header.value, email_message.received_lines[0])
         self.assertEqual(
             header.uuid,
-            uuid5(self._UUIDv4, f'{message_id} - header - {header.value}')
+            uuid5(UUIDv4, f'{message_id} - header - {header.value}')
         )
         self.assertEqual(subject.type, 'email-subject')
         self.assertEqual(subject.object_relation, 'subject')
         self.assertEqual(subject.value, email_message.subject)
         self.assertEqual(
             subject.uuid,
-            uuid5(
-                self._UUIDv4, f'{message_id} - subject - {subject.value}'
-            )
+            uuid5(UUIDv4, f'{message_id} - subject - {subject.value}')
         )
         additional_header_fields = email_message.additional_header_fields
         self.assertEqual(x_mailer.type, 'email-x-mailer')
@@ -826,10 +812,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(x_mailer.value, additional_header_fields.get('X-Mailer'))
         self.assertEqual(
             x_mailer.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{message_id} - x-mailer - {x_mailer.value}'
-            )
+            uuid5(UUIDv4,f'{message_id} - x-mailer - {x_mailer.value}')
         )
         self.assertEqual(received_ip.type, 'ip-src')
         self.assertEqual(received_ip.object_relation, 'received-header-ip')
@@ -839,7 +822,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             received_ip.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{message_id} - received-header-ip - {received_ip.value}'
             )
         )
@@ -848,26 +831,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(_from.object_relation, 'from')
         self.assertEqual(_from.value, from_address.value)
         self.assertEqual(
-            _from.uuid,
-            uuid5(self._UUIDv4, f'{from_id} - from - {_from.value}')
+            _from.uuid, uuid5(UUIDv4, f'{from_id} - from - {_from.value}')
         )
         self.assertEqual(from_name.type, 'email-src-display-name')
         self.assertEqual(from_name.object_relation, 'from-display-name')
         self.assertEqual(from_name.value, from_address.display_name)
         self.assertEqual(
             from_name.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{from_id} - from-display-name - {from_name.value}'
-            )
+            uuid5(UUIDv4, f'{from_id} - from-display-name - {from_name.value}')
         )
         self._assert_multiple_equal(_to.type, _cc.type, 'email-dst')
         self.assertEqual(_to.object_relation, 'to')
         self.assertEqual(_to.value, to_address.value)
-        self.assertEqual(
-            _to.uuid,
-            uuid5(self._UUIDv4, f'{to_id} - to - {_to.value}')
-        )
+        self.assertEqual(_to.uuid, uuid5(UUIDv4, f'{to_id} - to - {_to.value}'))
         self._assert_multiple_equal(
             to_name.type, cc_name.type, 'email-dst-display-name'
         )
@@ -875,24 +851,16 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(to_name.value, to_address.display_name)
         self.assertEqual(
             to_name.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{to_id} - to-display-name - {to_name.value}'
-            )
+            uuid5(UUIDv4, f'{to_id} - to-display-name - {to_name.value}')
         )
         self.assertEqual(_cc.object_relation, 'cc')
         self.assertEqual(_cc.value, cc_address.value)
-        self.assertEqual(
-            _cc.uuid, uuid5(self._UUIDv4, f'{cc_id} - cc - {_cc.value}')
-        )
+        self.assertEqual(_cc.uuid, uuid5(UUIDv4, f'{cc_id} - cc - {_cc.value}'))
         self.assertEqual(cc_name.object_relation, 'cc-display-name')
         self.assertEqual(cc_name.value, cc_address.display_name)
         self.assertEqual(
             cc_name.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{cc_id} - cc-display-name - {cc_name.value}'
-            )
+            uuid5(UUIDv4, f'{cc_id} - cc-display-name - {cc_name.value}')
         )
         self._assert_multiple_equal(
             body.type, body.object_relation, 'email-body'
@@ -901,7 +869,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             body.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{message_id} - body_multipart - 0 - '
                 f'email-body - {body.value}'
             )
@@ -916,21 +884,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
         self.assertEqual(md5.value, hashes['MD5'])
         self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+            md5.uuid, uuid5(UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
         self._assert_multiple_equal(sha1.type, sha1.object_relation, 'sha1')
         self.assertEqual(sha1.value, hashes['SHA-1'])
         self.assertEqual(
-            sha1.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - sha1 - {sha1.value}')
+            sha1.uuid, uuid5(UUIDv4, f'{object_id} - sha1 - {sha1.value}')
         )
         self._assert_multiple_equal(
             sha256.type, sha256.object_relation, 'sha256'
         )
         self.assertEqual(sha256.value, hashes['SHA-256'])
         self.assertEqual(
-            sha256.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+            sha256.uuid, uuid5(UUIDv4, f'{object_id} - sha256 - {sha256.value}')
         )
         self._assert_multiple_equal(
             filename.type, filename.object_relation, 'filename'
@@ -938,17 +904,14 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(filename.value, observable_object.name)
         self.assertEqual(
             filename.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+            uuid5(UUIDv4, f'{object_id} - filename - {filename.value}')
         )
         self.assertEqual(encoding.type, 'text')
         self.assertEqual(encoding.object_relation, 'file-encoding')
         self.assertEqual(encoding.value, observable_object.name_enc)
         self.assertEqual(
             encoding.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - file-encoding - {encoding.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - file-encoding - {encoding.value}')
         )
         self._assert_multiple_equal(
             size.type, size.object_relation, 'size-in-bytes'
@@ -956,9 +919,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(size.value, observable_object.size)
         self.assertEqual(
             size.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
         )
 
     def _check_file_object_references(self, file_object, directory_object, artifact_object):
@@ -980,42 +941,39 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
         self.assertEqual(md5.value, hashes['MD5'])
         self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+            md5.uuid, uuid5(UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
         self._assert_multiple_equal(sha1.type, sha1.object_relation, 'sha1')
         self.assertEqual(sha1.value, hashes['SHA-1'])
         self.assertEqual(
-            sha1.uuid, uuid5(self._UUIDv4, f'{object_id} - sha1 - {sha1.value}')
+            sha1.uuid, uuid5(UUIDv4, f'{object_id} - sha1 - {sha1.value}')
         )
         self._assert_multiple_equal(sha256.type, sha256.object_relation, 'sha256')
         self.assertEqual(sha256.value, hashes['SHA-256'])
         self.assertEqual(
-            sha256.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+            sha256.uuid, uuid5(UUIDv4, f'{object_id} - sha256 - {sha256.value}')
         )
         self._assert_multiple_equal(sha512.type, sha512.object_relation, 'sha512')
         self.assertEqual(sha512.value, hashes['SHA-512'])
         self.assertEqual(
-            sha512.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - sha512 - {sha512.value}')
+            sha512.uuid, uuid5(UUIDv4, f'{object_id} - sha512 - {sha512.value}')
         )
         self._assert_multiple_equal(ssdeep.type, ssdeep.object_relation, 'ssdeep')
         self.assertEqual(ssdeep.value, hashes.get('SSDEEP') or hashes.get('ssdeep'))
         self.assertEqual(
-            ssdeep.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - ssdeep - {ssdeep.value}')
+            ssdeep.uuid, uuid5(UUIDv4, f'{object_id} - ssdeep - {ssdeep.value}')
         )
         self._assert_multiple_equal(filename.type, filename.object_relation, 'filename')
         self.assertEqual(filename.value, file_object.name)
         self.assertEqual(
             filename.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+            uuid5(UUIDv4, f'{object_id} - filename - {filename.value}')
         )
         self._assert_multiple_equal(size.type, size.object_relation, 'size-in-bytes')
         self.assertEqual(size.value, file_object.size)
         self.assertEqual(
             size.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
+            uuid5(UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
         )
 
     def _check_payload_object_fields(self, misp_object, artifact, object_id=None):
@@ -1029,21 +987,18 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(md5.object_relation, 'md5')
         self.assertEqual(md5.value, hashes['MD5'])
         self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+            md5.uuid, uuid5(UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
         self.assertEqual(sha256.type, 'sha256')
         self.assertEqual(sha256.object_relation, 'sha256')
         self.assertEqual(sha256.value, hashes['SHA-256'])
         self.assertEqual(
-            sha256.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - sha256 - {sha256.value}'
-            )
+            sha256.uuid, uuid5(UUIDv4, f'{object_id} - sha256 - {sha256.value}')
         )
         self._assert_multiple_equal(url.type, url.object_relation, 'url')
         self.assertEqual(url.value, artifact.url)
         self.assertEqual(
-            url.uuid, uuid5(self._UUIDv4, f'{object_id} - url - {url.value}')
+            url.uuid, uuid5(UUIDv4, f'{object_id} - url - {url.value}')
         )
 
     def _check_pe_fields(self, misp_object, pe_extension, object_id):
@@ -1055,7 +1010,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             compilation_timestamp.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - compilation-timestamp'
                 f' - {compilation_timestamp.value}'
             )
@@ -1066,7 +1021,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             number_of_sections.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - number-sections - {number_of_sections.value}'
             )
         )
@@ -1074,8 +1029,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(pe_type.object_relation, 'type')
         self.assertEqual(pe_type.value, pe_extension.pe_type)
         self.assertEqual(
-            pe_type.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - type - {pe_type.value}')
+            pe_type.uuid, uuid5(UUIDv4, f'{object_id} - type - {pe_type.value}')
         )
 
     def _check_pe_section_fields(self, misp_object, pe_section, object_id):
@@ -1086,24 +1040,24 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(entropy.value, pe_section.entropy)
         self.assertEqual(
             entropy.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - entropy - {entropy.value}')
+            uuid5(UUIDv4, f'{object_id} - entropy - {entropy.value}')
         )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, pe_section.name)
         self.assertEqual(
-            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         self._assert_multiple_equal(size.type, size.object_relation, 'size-in-bytes')
         self.assertEqual(size.value, pe_section.size)
         self.assertEqual(
             size.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
+            uuid5(UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
         )
         self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
         self.assertEqual(md5.value, pe_section.hashes['MD5'])
         self.assertEqual(
-            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+            md5.uuid, uuid5(UUIDv4, f'{object_id} - md5 - {md5.value}')
         )
 
     def _check_process_child_fields(self, misp_object, process, object_id = None):
@@ -1115,12 +1069,12 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, process.name)
         self.assertEqual(
-            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         self.assertEqual(pid.object_relation, 'pid')
         self.assertEqual(pid.value, process.pid)
         self.assertEqual(
-            pid.uuid, uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+            pid.uuid, uuid5(UUIDv4, f'{object_id} - pid - {pid.value}')
         )
 
     def _check_process_image_reference_fields(self, misp_object, file_object, object_id = None):
@@ -1133,7 +1087,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(mimetype.value, file_object.mime_type)
         self.assertEqual(
             mimetype.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - mimetype - {mimetype.value}')
+            uuid5(UUIDv4, f'{object_id} - mimetype - {mimetype.value}')
         )
         self._assert_multiple_equal(
             filename.type, filename.object_relation, 'filename'
@@ -1141,16 +1095,14 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(filename.value, file_object.name)
         self.assertEqual(
             filename.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+            uuid5(UUIDv4, f'{object_id} - filename - {filename.value}')
         )
         self.assertEqual(encoding.type, 'text')
         self.assertEqual(encoding.object_relation, 'file-encoding')
         self.assertEqual(encoding.value, file_object.name_enc)
         self.assertEqual(
             encoding.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - file-encoding - {encoding.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - file-encoding - {encoding.value}')
         )
         self._assert_multiple_equal(
             size.type, size.object_relation, 'size-in-bytes'
@@ -1158,7 +1110,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(size.value, file_object.size)
         self.assertEqual(
             size.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
+            uuid5(UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
         )
 
     def _check_process_multiple_fields(self, misp_object, process, object_id = None):
@@ -1170,22 +1122,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(hidden.object_relation, 'hidden')
         self.assertEqual(hidden.value, process.is_hidden)
         self.assertEqual(
-            hidden.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - hidden - {hidden.value}')
+            hidden.uuid, uuid5(UUIDv4, f'{object_id} - hidden - {hidden.value}')
         )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, process.name)
         self.assertEqual(
-            name.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         self.assertEqual(pid.type, 'text')
         self.assertEqual(pid.object_relation, 'pid')
         self.assertEqual(pid.value, process.pid)
         self.assertEqual(
-            pid.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+            pid.uuid, uuid5(UUIDv4, f'{object_id} - pid - {pid.value}')
         )
 
     def _check_process_object_references(self, process, parent, child, image1, image2):
@@ -1215,10 +1164,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(command_line.value, process.command_line)
         self.assertEqual(
             command_line.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - command-line - {command_line.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - command-line - {command_line.value}')
         )
         self.assertEqual(creation_time.type, 'datetime')
         self.assertEqual(creation_time.object_relation, 'creation-time')
@@ -1229,8 +1175,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             creation_time.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - creation-time - {creation_time.value}'
+                UUIDv4, f'{object_id} - creation-time - {creation_time.value}'
             )
         )
         self.assertEqual(directory.object_relation, 'current-directory')
@@ -1238,19 +1183,18 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             directory.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - current-directory - {directory.value}'
+                UUIDv4, f'{object_id} - current-directory - {directory.value}'
             )
         )
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, process.name)
         self.assertEqual(
-            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         self.assertEqual(pid.object_relation, 'pid')
         self.assertEqual(pid.value, process.pid)
         self.assertEqual(
-            pid.uuid, uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+            pid.uuid, uuid5(UUIDv4, f'{object_id} - pid - {pid.value}')
         )
         self.assertEqual(variables.object_relation, 'environment-variables')
         self.assertEqual(
@@ -1263,7 +1207,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             variables.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - environment-variables - {variables.value}'
             )
         )
@@ -1278,22 +1222,17 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(command_line.value, process.command_line)
         self.assertEqual(
             command_line.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - command-line - {command_line.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - command-line - {command_line.value}')
         )
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, process.name)
         self.assertEqual(
-            name.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         self.assertEqual(pid.object_relation, 'pid')
         self.assertEqual(pid.value, process.pid)
         self.assertEqual(
-            pid.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+            pid.uuid, uuid5(UUIDv4, f'{object_id} - pid - {pid.value}')
         )
 
     def _check_registry_key_fields(self, misp_object, registry_key, object_id = None):
@@ -1305,15 +1244,13 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(key.object_relation, 'key')
         self.assertEqual(key.value, registry_key.key)
         self.assertEqual(
-            key.uuid, uuid5(self._UUIDv4, f'{object_id} - key - {key.value}')
+            key.uuid, uuid5(UUIDv4, f'{object_id} - key - {key.value}')
         )
         self.assertEqual(modified.type, 'datetime')
         self.assertEqual(modified.object_relation, 'last-modified')
         self.assertEqual(
             modified.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - last-modified - {modified.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - last-modified - {modified.value}')
         )
         return modified
 
@@ -1324,20 +1261,20 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(data.object_relation, 'data')
         self.assertEqual(data.value, registry_value.data)
         self.assertEqual(
-            data.uuid, uuid5(self._UUIDv4, f'{object_id} - data - {data.value}')
+            data.uuid, uuid5(UUIDv4, f'{object_id} - data - {data.value}')
         )
         self.assertEqual(data_type.type, 'text')
         self.assertEqual(data_type.object_relation, 'data-type')
         self.assertEqual(data_type.value, registry_value.data_type)
         self.assertEqual(
             data_type.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - data-type - {data_type.value}')
+            uuid5(UUIDv4, f'{object_id} - data-type - {data_type.value}')
         )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, registry_value.name)
         self.assertEqual(
-            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
 
     def _check_registry_key_with_values_fields(self, misp_object, registry_key, object_id = None):
@@ -1349,35 +1286,33 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(key.object_relation, 'key')
         self.assertEqual(key.value, registry_key.key)
         self.assertEqual(
-            key.uuid, uuid5(self._UUIDv4, f'{object_id} - key - {key.value}')
+            key.uuid, uuid5(UUIDv4, f'{object_id} - key - {key.value}')
         )
         self.assertEqual(modified.type, 'datetime')
         self.assertEqual(modified.object_relation, 'last-modified')
         self.assertEqual(
             modified.uuid,
-            uuid5(
-                self._UUIDv4, f'{object_id} - last-modified - {modified.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - last-modified - {modified.value}')
         )
         registry_value = registry_key['values'][0]
         self.assertEqual(data.type, 'text')
         self.assertEqual(data.object_relation, 'data')
         self.assertEqual(data.value, registry_value.data)
         self.assertEqual(
-            data.uuid, uuid5(self._UUIDv4, f'{object_id} - data - {data.value}')
+            data.uuid, uuid5(UUIDv4, f'{object_id} - data - {data.value}')
         )
         self.assertEqual(data_type.type, 'text')
         self.assertEqual(data_type.object_relation, 'data-type')
         self.assertEqual(data_type.value, registry_value.data_type)
         self.assertEqual(
             data_type.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - data-type - {data_type.value}')
+            uuid5(UUIDv4, f'{object_id} - data-type - {data_type.value}')
         )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, registry_value.name)
         self.assertEqual(
-            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         return modified
 
@@ -1391,28 +1326,26 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(language.value, software.languages[0])
         self.assertEqual(
             language.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - language - {language.value}')
+            uuid5(UUIDv4, f'{object_id} - language - {language.value}')
         )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, software.name)
         self.assertEqual(
-            name.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         self.assertEqual(vendor.type, 'text')
         self.assertEqual(vendor.object_relation, 'vendor')
         self.assertEqual(vendor.value, software.vendor)
         self.assertEqual(
-            vendor.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - vendor - {vendor.value}')
+            vendor.uuid, uuid5(UUIDv4, f'{object_id} - vendor - {vendor.value}')
         )
         self.assertEqual(version.type, 'text')
         self.assertEqual(version.object_relation, 'version')
         self.assertEqual(version.value, software.version)
         self.assertEqual(
             version.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+            uuid5(UUIDv4, f'{object_id} - version - {version.value}')
         )
 
     def _check_software_with_swid_fields(self, misp_object, software, object_id = None):
@@ -1424,7 +1357,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self._assert_multiple_equal(cpe.type, cpe.object_relation, 'cpe')
         self.assertEqual(cpe.value, software.cpe)
         self.assertEqual(
-            cpe.uuid, uuid5(self._UUIDv4, f'{object_id} - cpe - {cpe.value}')
+            cpe.uuid, uuid5(UUIDv4, f'{object_id} - cpe - {cpe.value}')
         )
         language1, language2, language3 = software.languages
         self._assert_multiple_equal(lang1.type, lang2.type, lang3.type, 'text')
@@ -1434,46 +1367,40 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         self.assertEqual(lang1.value, language1)
         self.assertEqual(
-            lang1.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - language - {lang1.value}')
+            lang1.uuid, uuid5(UUIDv4, f'{object_id} - language - {lang1.value}')
         )
         self.assertEqual(lang2.value, language2)
         self.assertEqual(
-            lang2.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - language - {lang2.value}')
+            lang2.uuid, uuid5(UUIDv4, f'{object_id} - language - {lang2.value}')
         )
         self.assertEqual(lang3.value, language3)
         self.assertEqual(
-            lang3.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - language - {lang3.value}')
+            lang3.uuid, uuid5(UUIDv4, f'{object_id} - language - {lang3.value}')
         )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, software.name)
         self.assertEqual(
-            name.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
         )
         self.assertEqual(swid.type, 'text')
         self.assertEqual(swid.object_relation, 'swid')
         self.assertEqual(swid.value, software.swid)
         self.assertEqual(
-            swid.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - swid - {swid.value}')
+            swid.uuid, uuid5(UUIDv4, f'{object_id} - swid - {swid.value}')
         )
         self.assertEqual(vendor.type, 'text')
         self.assertEqual(vendor.object_relation, 'vendor')
         self.assertEqual(vendor.value, software.vendor)
         self.assertEqual(
-            vendor.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - vendor - {vendor.value}')
+            vendor.uuid, uuid5(UUIDv4, f'{object_id} - vendor - {vendor.value}')
         )
         self.assertEqual(version.type, 'text')
         self.assertEqual(version.object_relation, 'version')
         self.assertEqual(version.value, software.version)
         self.assertEqual(
             version.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+            uuid5(UUIDv4, f'{object_id} - version - {version.value}')
         )
 
     def _check_user_account_extension_fields(self, attributes, extension, object_id):
@@ -1485,25 +1412,23 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(group_id.value, extension.gid)
         self.assertEqual(
             group_id.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - group-id - {group_id.value}')
+            uuid5(UUIDv4, f'{object_id} - group-id - {group_id.value}')
         )
         self.assertEqual(group.object_relation, 'group')
         self.assertEqual(group.value, extension.groups[0])
         self.assertEqual(
-            group.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - group - {group.value}')
+            group.uuid, uuid5(UUIDv4, f'{object_id} - group - {group.value}')
         )
         self.assertEqual(home_dir.object_relation, 'home_dir')
         self.assertEqual(home_dir.value, extension.home_dir)
         self.assertEqual(
             home_dir.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - home_dir - {home_dir.value}')
+            uuid5(UUIDv4, f'{object_id} - home_dir - {home_dir.value}')
         )
         self.assertEqual(shell.object_relation, 'shell')
         self.assertEqual(shell.value, extension.shell)
         self.assertEqual(
-            shell.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - shell - {shell.value}')
+            shell.uuid, uuid5(UUIDv4, f'{object_id} - shell - {shell.value}')
         )
 
     def _check_user_account_fields(self, attributes, user_account, object_id = None):
@@ -1520,58 +1445,45 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(username.value, user_account.account_login)
         self.assertEqual(
             username.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+            uuid5(UUIDv4, f'{object_id} - username - {username.value}')
         )
         self.assertEqual(account_type.object_relation, 'account-type')
         self.assertEqual(account_type.value, user_account.account_type)
         self.assertEqual(
             account_type.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - account-type - {account_type.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - account-type - {account_type.value}')
         )
         self.assertEqual(escalate.object_relation, 'can_escalate_privs')
         self.assertEqual(escalate.value, user_account.can_escalate_privs)
         self.assertEqual(
             escalate.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - can_escalate_privs - {escalate.value}'
+                UUIDv4, f'{object_id} - can_escalate_privs - {escalate.value}'
             )
         )
         self.assertEqual(display_name.object_relation, 'display-name')
         self.assertEqual(display_name.value, user_account.display_name)
         self.assertEqual(
             display_name.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - display-name - {display_name.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - display-name - {display_name.value}')
         )
         self.assertEqual(privileged.object_relation, 'privileged')
         self.assertEqual(privileged.value, user_account.is_privileged)
         self.assertEqual(
             privileged.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - privileged - {privileged.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - privileged - {privileged.value}')
         )
         self.assertEqual(service.object_relation, 'is_service_account')
         self.assertEqual(service.value, user_account.is_service_account)
         self.assertEqual(
             service.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - is_service_account - {service.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - is_service_account - {service.value}')
         )
         self.assertEqual(user_id.object_relation, 'user-id')
         self.assertEqual(user_id.value, user_account.user_id)
         self.assertEqual(
             user_id.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+            uuid5(UUIDv4, f'{object_id} - user-id - {user_id.value}')
         )
 
     def _check_user_account_timeline_fields(self, attributes, user_account, object_id = None):
@@ -1585,25 +1497,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(created.value, user_account.account_created)
         self.assertEqual(
             created.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - created - {created.value}')
+            uuid5(UUIDv4, f'{object_id} - created - {created.value}')
         )
         self.assertEqual(first_login.object_relation, 'first_login')
         self.assertEqual(first_login.value, user_account.account_first_login)
         self.assertEqual(
             first_login.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - first_login - {first_login.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - first_login - {first_login.value}')
         )
         self.assertEqual(last_login.object_relation, 'last_login')
         self.assertEqual(last_login.value, user_account.account_last_login)
         self.assertEqual(
             last_login.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - last_login - {last_login.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - last_login - {last_login.value}')
         )
 
     def _check_user_account_twitter_fields(self, misp_object, user_account, object_id = None):
@@ -1619,31 +1525,25 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(username.value, user_account.account_login)
         self.assertEqual(
             username.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+            uuid5(UUIDv4, f'{object_id} - username - {username.value}')
         )
         self.assertEqual(account_type.object_relation, 'account-type')
         self.assertEqual(account_type.value, user_account.account_type)
         self.assertEqual(
             account_type.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - account-type - {account_type.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - account-type - {account_type.value}')
         )
         self.assertEqual(display_name.object_relation, 'display-name')
         self.assertEqual(display_name.value, user_account.display_name)
         self.assertEqual(
             display_name.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - display-name - {display_name.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - display-name - {display_name.value}')
         )
         self.assertEqual(user_id.object_relation, 'user-id')
         self.assertEqual(user_id.value, user_account.user_id)
         self.assertEqual(
             user_id.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+            uuid5(UUIDv4, f'{object_id} - user-id - {user_id.value}')
         )
 
     def _check_x509_fields(self, misp_object, x509, object_id = None):
@@ -1660,10 +1560,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(md5.value, hashes['MD5'])
         self.assertEqual(
             md5.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - x509-fingerprint-md5 - {md5.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - x509-fingerprint-md5 - {md5.value}')
         )
         self._assert_multiple_equal(
             sha1.type, sha1.object_relation, 'x509-fingerprint-sha1'
@@ -1671,10 +1568,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(sha1.value, hashes['SHA-1'])
         self.assertEqual(
             sha1.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - x509-fingerprint-sha1 - {sha1.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - x509-fingerprint-sha1 - {sha1.value}')
         )
         self._assert_multiple_equal(
             sha256.type, sha256.object_relation, 'x509-fingerprint-sha256'
@@ -1683,7 +1577,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             sha256.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - x509-fingerprint-sha256 - {sha256.value}'
             )
         )
@@ -1692,14 +1586,13 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(signed.value, x509.is_self_signed)
         self.assertEqual(
             signed.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - self_signed - {signed.value}')
+            uuid5(UUIDv4, f'{object_id} - self_signed - {signed.value}')
         )
         self.assertEqual(issuer.type, 'text')
         self.assertEqual(issuer.object_relation, 'issuer')
         self.assertEqual(issuer.value, x509.issuer)
         self.assertEqual(
-            issuer.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - issuer - {issuer.value}')
+            issuer.uuid, uuid5(UUIDv4, f'{object_id} - issuer - {issuer.value}')
         )
         self.assertEqual(serial_number.type, 'text')
         self.assertEqual(serial_number.object_relation, 'serial-number')
@@ -1707,8 +1600,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             serial_number.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - serial-number - {serial_number.value}'
+                UUIDv4, f'{object_id} - serial-number - {serial_number.value}'
             )
         )
         self.assertEqual(signature.type, 'text')
@@ -1717,8 +1609,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             signature.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - signature_algorithm - {signature.value}'
+                UUIDv4, f'{object_id} - signature_algorithm - {signature.value}'
             )
         )
         self.assertEqual(subject.type, 'text')
@@ -1726,7 +1617,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(subject.value, x509.subject)
         self.assertEqual(
             subject.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - subject - {subject.value}')
+            uuid5(UUIDv4, f'{object_id} - subject - {subject.value}')
         )
         self.assertEqual(key_algo.type, 'text')
         self.assertEqual(key_algo.object_relation, 'pubkey-info-algorithm')
@@ -1734,7 +1625,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             key_algo.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - pubkey-info-algorithm - {key_algo.value}'
             )
         )
@@ -1744,7 +1635,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             key_exponent.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - pubkey-info-exponent - {key_exponent.value}'
             )
         )
@@ -1754,7 +1645,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             key_modulus.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - pubkey-info-modulus - {key_modulus.value}'
             )
         )
@@ -1764,7 +1655,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             not_before.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - validity-not-before - {not_before.value}'
             )
         )
@@ -1774,8 +1665,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             not_after.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - validity-not-after - {not_after.value}'
+                UUIDv4, f'{object_id} - validity-not-after - {not_after.value}'
             )
         )
         self.assertEqual(version.type, 'text')
@@ -1783,7 +1673,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(version.value, x509.version)
         self.assertEqual(
             version.uuid,
-            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+            uuid5(UUIDv4, f'{object_id} - version - {version.value}')
         )
 
 
@@ -2801,21 +2691,21 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ip_src.value, address1.value)
         self.assertEqual(
             ip_src.uuid,
-            uuid5(self._UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
+            uuid5(UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
         )
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
         self.assertEqual(ip_dst.value, address2.value)
         self.assertEqual(
             ip_dst.uuid,
-            uuid5(self._UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
+            uuid5(UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
         )
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, network_traffic.x_misp_url)
         self.assertEqual(
             url.uuid,
-            uuid5(self._UUIDv4, f'{network_traffic_id} - url - {url.value}')
+            uuid5(UUIDv4, f'{network_traffic_id} - url - {url.value}')
         )
         extension = network_traffic.extensions['http-request-ext']
         self.assertEqual(method.type, 'http-method')
@@ -2823,16 +2713,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(method.value, extension.request_method)
         self.assertEqual(
             method.uuid,
-            uuid5(
-                self._UUIDv4, f'{network_traffic_id} - method - {method.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic_id} - method - {method.value}')
         )
         self.assertEqual(uri.type, 'uri')
         self.assertEqual(uri.object_relation, 'uri')
         self.assertEqual(uri.value, extension.request_value)
         self.assertEqual(
             uri.uuid,
-            uuid5(self._UUIDv4, f'{network_traffic_id} - uri - {uri.value}')
+            uuid5(UUIDv4, f'{network_traffic_id} - uri - {uri.value}')
         )
         self.assertEqual(content_type.type, 'other')
         self.assertEqual(content_type.object_relation, 'content-type')
@@ -2840,7 +2728,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             content_type.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - content-type - {content_type.value}'
             )
         )
@@ -2850,7 +2738,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             user_agent.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - user-agent - {user_agent.value}'
             )
         )
@@ -2858,7 +2746,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(host.object_relation, 'host')
         self.assertEqual(host.value, domain_name.value)
         self.assertEqual(
-            host.uuid, uuid5(self._UUIDv4, f'{domain_id} - host - {host.value}')
+            host.uuid, uuid5(UUIDv4, f'{domain_id} - host - {host.value}')
         )
 
     def _check_identity_object(self, misp_object, identity):
@@ -3236,34 +3124,28 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ip_src.value, address1.value)
         self.assertEqual(
             ip_src.uuid,
-            uuid5(self._UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
+            uuid5(UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
         )
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
         self.assertEqual(ip_dst.value, address2.value)
         self.assertEqual(
             ip_dst.uuid,
-            uuid5(self._UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
+            uuid5(UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
         )
         self.assertEqual(dst_port.type, 'port')
         self.assertEqual(dst_port.object_relation, 'dst-port')
         self.assertEqual(dst_port.value, network_traffic.dst_port)
         self.assertEqual(
             dst_port.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic_id} - dst-port - {dst_port.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic_id} - dst-port - {dst_port.value}')
         )
         self.assertEqual(src_port.type, 'port')
         self.assertEqual(src_port.object_relation, 'src-port')
         self.assertEqual(src_port.value, network_traffic.src_port)
         self.assertEqual(
             src_port.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic_id} - src-port - {src_port.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic_id} - src-port - {src_port.value}')
         )
         self.assertEqual(hostname.type, 'hostname')
         self.assertEqual(hostname.object_relation, 'hostname-dst')
@@ -3271,7 +3153,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             hostname.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - hostname-dst - {hostname.value}'
             )
         )
@@ -3281,7 +3163,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             layer3.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - layer3-protocol - {layer3.value}'
             )
         )
@@ -3291,7 +3173,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             layer4.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - layer4-protocol - {layer4.value}'
             )
         )
@@ -3301,7 +3183,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             layer7.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - layer7-protocol - {layer7.value}'
             )
         )
@@ -3356,34 +3238,28 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ip_src.value, address1.value)
         self.assertEqual(
             ip_src.uuid,
-            uuid5(self._UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
+            uuid5(UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
         )
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
         self.assertEqual(ip_dst.value, address2.value)
         self.assertEqual(
             ip_dst.uuid,
-            uuid5(self._UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
+            uuid5(UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
         )
         self.assertEqual(port_dst.type, 'port')
         self.assertEqual(port_dst.object_relation, 'dst-port')
         self.assertEqual(port_dst.value, network_traffic.dst_port)
         self.assertEqual(
             port_dst.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic_id} - dst-port - {port_dst.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic_id} - dst-port - {port_dst.value}')
         )
         self.assertEqual(port_src.type, 'port')
         self.assertEqual(port_src.object_relation, 'src-port')
         self.assertEqual(port_src.value, network_traffic.src_port)
         self.assertEqual(
             port_src.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic_id} - src-port - {port_src.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic_id} - src-port - {port_src.value}')
         )
         self.assertEqual(hostname.type, 'hostname')
         self.assertEqual(hostname.object_relation, 'hostname-dst')
@@ -3391,7 +3267,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             hostname.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - hostname-dst - {hostname.value}'
             )
         )
@@ -3400,10 +3276,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(protocol.value, network_traffic.protocols[0].upper())
         self.assertEqual(
             protocol.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic_id} - protocol - {protocol.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic_id} - protocol - {protocol.value}')
         )
         socket_ext = network_traffic.extensions['socket-ext']
         self.assertEqual(address_family.type, 'text')
@@ -3412,7 +3285,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             address_family.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - address-family - {address_family.value}'
             )
         )
@@ -3422,7 +3295,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             socket_type.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic_id} - socket-type - {socket_type.value}'
             )
         )
@@ -3431,10 +3304,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(listening.value, 'listening')
         self.assertEqual(
             listening.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic_id} - state - {listening.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic_id} - state - {listening.value}')
         )
 
     def _check_news_agency_object(self, misp_object, identity):

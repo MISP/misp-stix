@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ._test_stix_import import TestSTIX2Bundles
+from ._test_stix_import import TestSTIX2Bundles, UUIDv4
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
 from stix2.parsing import dict_to_stix2
+from uuid import uuid5
 
+SDOs = (
+    'attack-pattern', 'campaign', 'course-of-action', 'intrusion-set',
+    'location', 'malware', 'malware-analysis', 'marking-definition',
+    'observed-data', 'threat-actor', 'tool', 'vulnerability'
+)
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
 _ACS_MARKING_DEFINITION_OBJECTS = [
@@ -2099,6 +2105,60 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         ]
         return dict_to_stix2(bundle, allow_custom=True)
 
+    @classmethod
+    def __assemble_stix_object(cls, stix_object):
+        for key, values in stix_object.items():
+            if key.endswith('_ref'):
+                yield key, f"{values.split('--')[0]}--{uuid5(UUIDv4, values)}"
+                continue
+            if key.endswith('_refs'):
+                yield key, [
+                    f"{ref.split('--')[0]}--{uuid5(UUIDv4, ref)}"
+                    for ref in values
+                ]
+                continue
+            if isinstance(values, list):
+                yield key, [
+                    dict(cls.__assemble_stix_object(value))
+                    if isinstance(value, dict) else value
+                    for value in values
+                ]
+                continue
+            if isinstance(values, dict):
+                yield key, dict(cls.__assemble_stix_object(values))
+                continue
+            yield key, values
+
+    @classmethod
+    def __get_wrapped_objects(cls):
+        object_refs = []
+        for name in cls._get_variable_names(globals().keys()):
+            values = deepcopy(globals()[name])
+            for stix_object in values:
+                if stix_object['type'] in SDOs:
+                    continue
+                if stix_object['type'] == 'artifact':
+                    if not any(feature in stix_object for feature in ('payload_bin', 'url')):
+                        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+                            stix_object['payload_bin'] = b64encode(f.read()).decode()
+                object_uuid = uuid5(UUIDv4, stix_object['id'])
+                object_id = f"{stix_object['type']}--{object_uuid}"
+                stix_object['id'] = object_id
+                object_refs.append(object_id)
+                yield dict(cls.__assemble_stix_object(stix_object))
+        yield {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-11-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-11-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": object_refs
+        }
+
     ############################################################################
     #                              EVENTS SAMPLES                              #
     ############################################################################
@@ -2347,6 +2407,10 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_user_account_observables(cls):
         return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS[-3:])
+
+    @classmethod
+    def get_bundle_with_wrapped_objects(cls):
+        return cls.__assemble_bundle(*cls.__get_wrapped_objects())
 
     @classmethod
     def get_bundle_with_x509_objects(cls):

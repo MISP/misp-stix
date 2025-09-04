@@ -3,7 +3,7 @@
 
 from .test_external_stix21_bundles import TestExternalSTIX21Bundles
 from ._test_stix import TestSTIX21
-from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
+from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import, UUIDv4
 from datetime import datetime
 from uuid import uuid5
 
@@ -111,8 +111,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(event.attributes[0].uuid, indicator.id.split('--')[1])
         event_report = event.event_reports[0]
         self.assertEqual(
-            event_report.uuid,
-            uuid5(self._UUIDv4, f'description - {grouping.id}')
+            event_report.uuid, uuid5(UUIDv4, f'description - {grouping.id}')
         )
         self.assertEqual(event_report.content, grouping.description)
         self.assertEqual(event_report.name, 'STIX 2.1 grouping description')
@@ -516,7 +515,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     def _check_misp_object_fields(self, misp_object, observed_data, object_id,
                                   *additional_ids, multiple=False):
         if multiple:
-            self.assertEqual(misp_object.uuid, uuid5(self._UUIDv4, object_id))
+            self.assertEqual(misp_object.uuid, uuid5(UUIDv4, object_id))
         else:
             self.assertEqual(misp_object.uuid, object_id.split('--')[1])
         comments = (
@@ -541,20 +540,14 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(src_port.value, network_traffic.src_port)
         self.assertEqual(
             src_port.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic.id} - src_port - {src_port.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic.id} - src_port - {src_port.value}')
         )
         self.assertEqual(dst_port.type, 'port')
         self.assertEqual(dst_port.object_relation, 'dst_port')
         self.assertEqual(dst_port.value, network_traffic.dst_port)
         self.assertEqual(
             dst_port.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{network_traffic.id} - dst_port - {dst_port.value}'
-            )
+            uuid5(UUIDv4, f'{network_traffic.id} - dst_port - {dst_port.value}')
         )
         for index, protocol in enumerate(protocols):
             protocol_value = network_traffic.protocols[index].upper()
@@ -564,7 +557,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(
                 protocol.uuid,
                 uuid5(
-                    self._UUIDv4,
+                    UUIDv4,
                     f'{network_traffic.id} - protocol - {protocol_value}'
                 )
             )
@@ -574,7 +567,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             ip_src.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic.id} - {src_ip.id} - src_ip - {src_ip.value}'
             )
         )
@@ -584,7 +577,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             ip_dst.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic.id} - {dst_ip.id} - dst_ip - {dst_ip.value}'
             )
         )
@@ -625,7 +618,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             src_packets.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic.id} - src_packets - {src_packets.value}'
             )
         )
@@ -635,7 +628,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             dst_packets.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic.id} - dst_packets - {dst_packets.value}'
             )
         )
@@ -653,7 +646,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             src_bytes.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic.id} - src_byte_count - {src_bytes.value}'
             )
         )
@@ -663,7 +656,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             dst_bytes.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{network_traffic.id} - dst_byte_count - {dst_bytes.value}'
             )
         )
@@ -728,7 +721,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             password_last_changed.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{user_account.id} - password_last_changed'
                 f' - {password_last_changed.value}'
             )
@@ -906,7 +899,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(domain_attribute.value, domain2.value)
         self.assertEqual(
             domain_attribute.uuid,
-            uuid5(self._UUIDv4, f'{domain2.id} - domain - {domain2.value}')
+            uuid5(UUIDv4, f'{domain2.id} - domain - {domain2.value}')
         )
 
         self.assertEqual(len(domain_object.references), 1)
@@ -948,7 +941,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(domain_attribute.value, domain2.value)
         self.assertEqual(
             domain_attribute.uuid,
-            uuid5(self._UUIDv4, f'{domain2.id} - domain - {domain2.value}')
+            uuid5(UUIDv4, f'{domain2.id} - domain - {domain2.value}')
         )
 
         self.assertEqual(len(domain_object.references), 1)
@@ -990,7 +983,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self.assertEqual(
             email_address1.uuid, uuid5(
-                self._UUIDv4, f'{address1.id} - email - {address1.value}'
+                UUIDv4, f'{address1.id} - email - {address1.value}'
             )
         )
         self.assertEqual(email_address1.value, address1.value)
@@ -998,7 +991,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(
             display_name.uuid, uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{address1.id} - {display_name.type} - {address1.display_name}'
             )
         )
@@ -1079,9 +1072,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(path_attribute.value, directory.path)
         self.assertEqual(
             path_attribute.uuid,
-            uuid5(
-                self._UUIDv4, f'{directory.id} - path - {path_attribute.value}'
-            )
+            uuid5(UUIDv4, f'{directory.id} - path - {path_attribute.value}')
         )
 
         self._check_content_ref_object(artifact_object, od1, artifact)
@@ -1117,9 +1108,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(path_attribute.value, directory.path)
         self.assertEqual(
             path_attribute.uuid,
-            uuid5(
-                self._UUIDv4, f'{directory.id} - path - {path_attribute.value}'
-            )
+            uuid5(UUIDv4, f'{directory.id} - path - {path_attribute.value}')
         )
 
         self.assertEqual(artifact_object.name, 'artifact')
@@ -1140,7 +1129,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self.assertEqual(pe_object.name, 'pe')
         object_id = f'{file3.id} - windows-pebinary-ext'
-        self.assertEqual(pe_object.uuid, uuid5(self._UUIDv4, object_id))
+        self.assertEqual(pe_object.uuid, uuid5(UUIDv4, object_id))
         extension = file3.extensions['windows-pebinary-ext']
         self._check_pe_fields(pe_object, extension, object_id)
 
@@ -1151,7 +1140,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         for index, section in enumerate(sections):
             self.assertEqual(section.name, 'pe-section')
             section_id = f'{object_id} - sections - {index}'
-            self.assertEqual(section.uuid, uuid5(self._UUIDv4, section_id))
+            self.assertEqual(section.uuid, uuid5(UUIDv4, section_id))
             self._check_pe_section_fields(
                 section, extension.sections[index], section_id
             )
@@ -1448,11 +1437,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(modified.value, key2.modified_time)
 
         value1_id = f'{key2.id} - values - 0'
-        self.assertEqual(value1.uuid, uuid5(self._UUIDv4, value1_id))
+        self.assertEqual(value1.uuid, uuid5(UUIDv4, value1_id))
         self._check_registry_key_value_fields(value1, key2['values'][0], value1_id)
 
         value2_id = f'{key2.id} - values - 1'
-        self.assertEqual(value2.uuid, uuid5(self._UUIDv4, value2_id))
+        self.assertEqual(value2.uuid, uuid5(UUIDv4, value2_id))
         self._check_registry_key_value_fields(value2, key2['values'][1], value2_id)
 
         self.assertEqual(creator_user.uuid, user.id.split('--')[1])

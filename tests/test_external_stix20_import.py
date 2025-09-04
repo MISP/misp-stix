@@ -3,8 +3,7 @@
 
 from .test_external_stix20_bundles import TestExternalSTIX20Bundles
 from ._test_stix import TestSTIX20
-from ._test_stix_import import TestExternalSTIX2Import, TestSTIX20Import
-from datetime import datetime
+from ._test_stix_import import TestExternalSTIX2Import, TestSTIX20Import, UUIDv4
 from uuid import uuid5
 
 
@@ -38,8 +37,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(event.attributes[0].uuid, indicator.id.split('--')[1])
         event_report = event.event_reports[0]
         self.assertEqual(
-            event_report.uuid,
-            uuid5(self._UUIDv4, f'description - {report.id}')
+            event_report.uuid, uuid5(UUIDv4, f'description - {report.id}')
         )
         self.assertEqual(event_report.content, report.description)
         self.assertEqual(event_report.name, 'STIX 2.0 report description')
@@ -224,7 +222,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
     def _check_archive_file_object(self, misp_object, observed_data):
         self.assertEqual(misp_object.name, 'file')
         self.assertEqual(
-            misp_object.uuid, uuid5(self._UUIDv4, f'{observed_data.id} - 0')
+            misp_object.uuid, uuid5(UUIDv4, f'{observed_data.id} - 0')
         )
         self.assertEqual(misp_object.timestamp, observed_data.modified)
         observable_object = observed_data.objects['0']
@@ -407,7 +405,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(
             path_attribute.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{observed_data.id} - {object_id} - path - {path_attribute.value}'
             )
         )
@@ -450,7 +448,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         else:
             self.assertEqual(
                 misp_object.uuid,
-                uuid5(self._UUIDv4, f'{observed_data.id} - {identifier}')
+                uuid5(UUIDv4, f'{observed_data.id} - {identifier}')
             )
             self.assertEqual(
                 misp_object.comment, f'Observed Data ID: {observed_data.id}'
@@ -469,20 +467,14 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(src_port.value, network_traffic.src_port)
         self.assertEqual(
             src_port.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - src_port - {src_port.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - src_port - {src_port.value}')
         )
         self.assertEqual(dst_port.type, 'port')
         self.assertEqual(dst_port.object_relation, 'dst_port')
         self.assertEqual(dst_port.value, network_traffic.dst_port)
         self.assertEqual(
             dst_port.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - dst_port - {dst_port.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - dst_port - {dst_port.value}')
         )
         for index, protocol in enumerate(protocols):
             protocol_value = network_traffic.protocols[index].upper()
@@ -491,10 +483,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(protocol.value, protocol_value)
             self.assertEqual(
                 protocol.uuid,
-                uuid5(
-                    self._UUIDv4,
-                    f'{object_id} - protocol - {protocol_value}'
-                )
+                uuid5(UUIDv4, f'{object_id} - protocol - {protocol_value}')
             )
         self.assertEqual(ip_src.type, 'ip-src')
         self.assertEqual(ip_src.object_relation, 'src_ip')
@@ -502,8 +491,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(
             ip_src.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - {src_ip_id} - src_ip - {src_ip.value}'
+                UUIDv4, f'{object_id} - {src_ip_id} - src_ip - {src_ip.value}'
             )
         )
         self.assertEqual(ip_dst.type, 'ip-dst')
@@ -512,8 +500,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(
             ip_dst.uuid,
             uuid5(
-                self._UUIDv4,
-                f'{object_id} - {dst_ip_id} - dst_ip - {dst_ip.value}'
+                UUIDv4, f'{object_id} - {dst_ip_id} - dst_ip - {dst_ip.value}'
             )
         )
         return src_return, dst_return
@@ -536,20 +523,14 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(src_packets.value, network_traffic.src_packets)
         self.assertEqual(
             src_packets.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - src_packets - {src_packets.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - src_packets - {src_packets.value}')
         )
         self.assertEqual(dst_packets.type, 'counter')
         self.assertEqual(dst_packets.object_relation, 'dst_packets')
         self.assertEqual(dst_packets.value, network_traffic.dst_packets)
         self.assertEqual(
             dst_packets.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - dst_packets - {dst_packets.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - dst_packets - {dst_packets.value}')
         )
 
     def _check_network_traffic_object_with_packet_sizes(
@@ -570,20 +551,14 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(src_bytes.value, network_traffic.src_byte_count)
         self.assertEqual(
             src_bytes.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - src_byte_count - {src_bytes.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - src_byte_count - {src_bytes.value}')
         )
         self.assertEqual(dst_bytes.type, 'size-in-bytes')
         self.assertEqual(dst_bytes.object_relation, 'dst_byte_count')
         self.assertEqual(dst_bytes.value, network_traffic.dst_byte_count)
         self.assertEqual(
             dst_bytes.uuid,
-            uuid5(
-                self._UUIDv4,
-                f'{object_id} - dst_byte_count - {dst_bytes.value}'
-            )
+            uuid5(UUIDv4, f'{object_id} - dst_byte_count - {dst_bytes.value}')
         )
 
     def _check_registry_key_object(
@@ -682,7 +657,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._assert_multiple_equal(
             reference.referenced_uuid,
             referenced_directory.uuid,
-            uuid5(self._UUIDv4, f'{observed_data2.id} - 1')
+            uuid5(UUIDv4, f'{observed_data2.id} - 1')
         )
         self.assertEqual(reference.relationship_type, 'contains')
 
@@ -1037,7 +1012,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(
             password_last_changed.uuid,
             uuid5(
-                self._UUIDv4,
+                UUIDv4,
                 f'{object_id} - password_last_changed'
                 f' - {password_last_changed.value}'
             )

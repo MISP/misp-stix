@@ -1556,6 +1556,51 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
         ]
         return dict_to_stix2(bundle, allow_custom=True)
 
+    @classmethod
+    def __assemble_stix_object(cls, observable_object, initial_index):
+        for key, values in observable_object.items():
+            if key.endswith('_ref'):
+                yield key, str(initial_index + int(values))
+                continue
+            if key.endswith('_refs'):
+                yield key, [str(initial_index + int(ref)) for ref in values]
+                continue
+            if isinstance(values, list):
+                yield key, [
+                    dict(cls.__assemble_stix_object(value, initial_index))
+                    if isinstance(value, dict) else value
+                    for value in values
+                ]
+                continue
+            if isinstance(values, dict):
+                yield key, dict(
+                    cls.__assemble_stix_object(values, initial_index)
+                )
+                continue
+            yield key, values
+
+    @classmethod
+    def __get_wrapped_observable_objects(cls):
+        index = 0
+        for name in cls._get_variable_names(globals().keys()):
+            values = deepcopy(globals()[name])
+            for stix_object in values:
+                if stix_object['type'] != 'observed-data':
+                    continue
+                initial_index = index
+                for observable in stix_object['objects'].values():
+                    observable_object = deepcopy(observable)
+                    if observable_object['type'] == 'artifact':
+                        if not any(feature in observable_object for feature in ('payload_bin', 'url')):
+                            with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+                                observable_object['payload_bin'] = b64encode(f.read()).decode()
+                    yield str(index), dict(
+                        cls.__assemble_stix_object(
+                            observable_object, initial_index
+                        )
+                    )
+                    index += 1
+
     ############################################################################
     #                              EVENTS SAMPLES                              #
     ############################################################################
@@ -1691,6 +1736,21 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_user_account_objects(cls):
         return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_wrapped_observable_objects(cls):
+        observed_data = {
+            "type": "observed-data",
+            "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-11-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-11-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": dict(cls.__get_wrapped_observable_objects())
+        }
+        return cls.__assemble_bundle(observed_data)
 
     @classmethod
     def get_bundle_with_x509_objects(cls):

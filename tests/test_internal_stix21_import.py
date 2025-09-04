@@ -5,7 +5,7 @@ import json
 from uuid import uuid5
 from .test_internal_stix21_bundles import TestInternalSTIX21Bundles
 from ._test_stix import TestSTIX21
-from ._test_stix_import import TestInternalSTIX2Import, TestSTIX21Import
+from ._test_stix_import import TestInternalSTIX2Import, TestSTIX21Import, UUIDv4
 
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
@@ -1375,8 +1375,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.parse_stix_bundle()
         grouping_uuid = self._extract_uuid(grouping.id)
         self.assertEqual(
-            self.parser.misp_event.uuid,
-            uuid5(self._UUIDv4, grouping_uuid)
+            self.parser.misp_event.uuid, uuid5(UUIDv4, grouping_uuid)
         )
         self.assertIn(
             f'Original UUID was: {grouping_uuid}',
@@ -1384,30 +1383,27 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         attribute = self.parser.misp_event.attributes[0]
         indicator1_uuid = self._extract_uuid(indicator1.id)
-        self.assertEqual(attribute.uuid, uuid5(self._UUIDv4, indicator1_uuid))
+        self.assertEqual(attribute.uuid, uuid5(UUIDv4, indicator1_uuid))
         self.assertIn(f'Original UUID was: {indicator1_uuid}', attribute.comment)
         for tag, stix_object in zip(attribute.tags, (ap1, coa1)):
             self.assertIn(stix_object.name, tag.name)
         ap, ip_port1, btc, coa, ip_port2, vulnerability = self.parser.misp_event.objects
         ap_uuid = self._extract_uuid(ap2.id)
-        self.assertEqual(ap.uuid, uuid5(self._UUIDv4, ap_uuid))
+        self.assertEqual(ap.uuid, uuid5(UUIDv4, ap_uuid))
         self.assertIn(f'Original UUID was: {ap_uuid}', ap.comment)
         ip_port1_uuid = self._extract_uuid(od.id)
-        self.assertEqual(ip_port1.uuid, uuid5(self._UUIDv4, ip_port1_uuid))
+        self.assertEqual(ip_port1.uuid, uuid5(UUIDv4, ip_port1_uuid))
         self.assertIn(f'Original UUID was: {ip_port1_uuid}', ip_port1.comment)
         ip_dst = ip_port1.attributes[0]
         ip_dst_uuid = self._extract_uuid(ip_addr.id)
-        self.assertEqual(ip_dst.uuid, uuid5(self._UUIDv4, ip_dst_uuid))
+        self.assertEqual(ip_dst.uuid, uuid5(UUIDv4, ip_dst_uuid))
         self.assertIn(f'Original UUID was: {ip_dst_uuid}', ip_dst.comment)
         btc_uuid = self._extract_uuid(custom.id)
-        self.assertEqual(btc.uuid, uuid5(self._UUIDv4, btc_uuid))
+        self.assertEqual(btc.uuid, uuid5(UUIDv4, btc_uuid))
         self.assertIn(f'Original UUID was: {btc_uuid}', btc.comment)
         for misp_attribute, custom_attribute in zip(btc.attributes, custom.x_misp_attributes):
             attribute_uuid = custom_attribute['uuid']
-            self.assertEqual(
-                misp_attribute.uuid,
-                uuid5(self._UUIDv4, attribute_uuid)
-            )
+            self.assertEqual(misp_attribute.uuid, uuid5(UUIDv4, attribute_uuid))
             self.assertIn(
                 f'Original UUID was: {attribute_uuid}',
                 misp_attribute.comment
@@ -1415,14 +1411,14 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         coa_uuid = self._extract_uuid(coa2.id)
         self.assertEqual(
             coa.uuid,
-            uuid5(self._UUIDv4, coa_uuid),
+            uuid5(UUIDv4, coa_uuid),
             ip_port2.references[0].referenced_uuid
         )
         self.assertIn(f'Original UUID was: {coa_uuid}', coa.comment)
         indicator2_uuid = self._extract_uuid(indicator2.id)
         self._assert_multiple_equal(
             ip_port2.uuid,
-            uuid5(self._UUIDv4, indicator2_uuid),
+            uuid5(UUIDv4, indicator2_uuid),
             ap.references[0].referenced_uuid,
             ip_port1.references[0].referenced_uuid,
             btc.references[0].referenced_uuid,
@@ -1432,7 +1428,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         vulnerability_uuid = self._extract_uuid(vuln.id)
         self.assertEqual(
             vulnerability.uuid,
-            uuid5(self._UUIDv4, vulnerability_uuid),
+            uuid5(UUIDv4, vulnerability_uuid),
             coa.references[0].referenced_uuid
         )
         self.assertIn(f'Original UUID was: {vulnerability_uuid}', vulnerability.comment)
