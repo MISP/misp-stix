@@ -48,7 +48,7 @@ cybox = "^2.1.0"
 mixbox = "^1.0.3"
 maec = "^4.1.0"
 stix-edh = "1.0.3"
-misp-lib-stix2 = "^3.0.1"
+stix2 = "^3.0.1"
 setuptools = "*"
 pycountry = "^24.6.1"
 

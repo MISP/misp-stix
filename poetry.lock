@@ -389,28 +389,6 @@ files = [
 ]
 
 [[package]]
-name = "misp-lib-stix2"
-version = "3.0.1.2"
-description = "Produce and consume STIX 2 JSON content"
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-files = [
-    {file = "misp_lib_stix2-3.0.1.2-py2.py3-none-any.whl", hash = "sha256:6172a1b540e78129ff0b845a43bd3483e0c5f928a8d1ba370cb552eaab721841"},
-    {file = "misp_lib_stix2-3.0.1.2.tar.gz", hash = "sha256:9da014b096fae6c2d9d96dcaac1672658fe7bca963ade04c3c9bde5684a5266f"},
-]
-
-[package.dependencies]
-pytz = "*"
-requests = "*"
-simplejson = "*"
-stix2-patterns = ">=1.2.0"
-
-[package.extras]
-semantic = ["haversine", "rapidfuzz"]
-taxii = ["taxii2-client (>=2.3.0)"]
-
-[[package]]
 name = "mixbox"
 version = "1.0.5"
 description = "Utility library for cybox, maec, and stix packages"
@@ -473,14 +451,14 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "publicsuffixlist"
-version = "1.0.2.20250828"
+version = "1.0.2.20250911"
 description = "publicsuffixlist implement"
 optional = false
 python-versions = ">=3.5"
 groups = ["main"]
 files = [
-    {file = "publicsuffixlist-1.0.2.20250828-py2.py3-none-any.whl", hash = "sha256:59b8fa648a9617cde280e9b11bcf477ed2ce328f4fb2a397f7610219f41a35f0"},
-    {file = "publicsuffixlist-1.0.2.20250828.tar.gz", hash = "sha256:03ac530209f4db124567cf68cb02e14526fa683180d397a8ecd2eaa9dd90585c"},
+    {file = "publicsuffixlist-1.0.2.20250911-py2.py3-none-any.whl", hash = "sha256:e39cb581a2beed662645db9b2ce0be88ee146609fc0ad11fc2211da91b524cbc"},
+    {file = "publicsuffixlist-1.0.2.20250911.tar.gz", hash = "sha256:d50d69dece74c428c3bbfe8f1e90c81444160fecdb54ada51d4738b5e8fbc81b"},
 ]
 
 [package.extras]
@@ -810,6 +788,28 @@ mixbox = ">=1.0.5"
 stix = ">=1.1.1.8,<1.2.1.0"
 
 [[package]]
+name = "stix2"
+version = "3.0.1"
+description = "Produce and consume STIX 2 JSON content"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "stix2-3.0.1-py2.py3-none-any.whl", hash = "sha256:827acf0b5b319c1b857c9db0d54907bb438b2b32312d236c891a305ad49b0ba2"},
+    {file = "stix2-3.0.1.tar.gz", hash = "sha256:2a2718dc3451c84c709990b2ca220cc39c75ed23e0864d7e8d8190a9365b0cbf"},
+]
+
+[package.dependencies]
+pytz = "*"
+requests = "*"
+simplejson = "*"
+stix2-patterns = ">=1.2.0"
+
+[package.extras]
+semantic = ["haversine", "rapidfuzz"]
+taxii = ["taxii2-client (>=2.3.0)"]
+
+[[package]]
 name = "stix2-patterns"
 version = "2.0.0"
 description = "Validate STIX 2 Patterns."
@@ -1009,4 +1009,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "3d3bf129563e05e10c9674d24347114126a08e439b4d6d1b044de419b37fc2b2"
+content-hash = "666ecfe9d7fb1741e2acda50f0126ef5a78e570f21e281241fdfe6c4cff3b651"
