@@ -2046,7 +2046,7 @@ class ExternalSTIX2ObservedDataConverter(
                     )
                     misp_object.add_reference(artifact.uuid, f'{field}-sent')
                     observable_objects[reference].update(
-                        {'misp_object': misp_object, 'used': True}
+                        {'misp_object': artifact, 'used': True}
                     )
             if hasattr(network_traffic, 'encapsulates_refs'):
                 for reference in network_traffic.encapsulates_refs:
