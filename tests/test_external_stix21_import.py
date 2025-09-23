@@ -463,9 +463,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     def _check_email_object(self, misp_object, observed_data, email_message,
                             from_address, to_address, cc_address):
         self.assertEqual(misp_object.name, 'email')
-        self._check_misp_object_fields(misp_object, observed_data, email_message.id)
+        message_id = email_message.id
+        self._check_misp_object_fields(misp_object, observed_data, message_id)
         self._check_email_object_fields(
-            misp_object, email_message, from_address, to_address, cc_address
+            misp_object, email_message, from_address, to_address, cc_address,
+            message_id, f'{message_id} - {from_address.id}',
+            f'{message_id} - {to_address.id}', f'{message_id} - {cc_address.id}'
         )
 
     def _check_file_and_pe_objects(self, observed_data, observable_object,
@@ -1033,8 +1036,13 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         email_object, artifact_object, file_object = misp_objects
 
         self.assertEqual(email_object.name, 'email')
-        self.assertEqual(email_object.uuid, message.id.split('--')[1])
-        self._check_email_object_fields(email_object, message, ea1, ea2, ea3)
+        message_id = message.id
+        self.assertEqual(email_object.uuid, message_id.split('--')[1])
+        self._check_email_object_fields(
+            email_object, message, ea1, ea2, ea3, message_id,
+            f'{message_id} - {ea1.id}', f'{message_id} - {ea2.id}',
+            f'{message_id} - {ea3.id}'
+        )
         email_references = email_object.references
         self.assertEqual(len(email_references), 2)
         artifact_reference, file_reference = email_references

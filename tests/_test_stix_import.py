@@ -779,10 +779,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
 
     def _check_email_object_fields(
             self, misp_object, email_message, from_address,
-            to_address, cc_address, *object_ids):
-        message_id, from_id, to_id, cc_id = object_ids if object_ids else (
-            email_message.id, from_address.id, to_address.id, cc_address.id
-        )
+            to_address, cc_address, message_id, from_id, to_id, cc_id ):
         self.assertEqual(len(misp_object.attributes), 12)
         send_date, header, subject, x_mailer, received_ip, *addresses, body = misp_object.attributes
         self.assertEqual(send_date.type, 'datetime')
