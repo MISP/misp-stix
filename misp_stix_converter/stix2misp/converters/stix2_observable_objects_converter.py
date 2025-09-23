@@ -466,14 +466,16 @@ class STIX2ObservableObjectConverter(
         )
         observable['misp_object'] = misp_object
         if hasattr(email_message, 'from_ref'):
-            from_address = self._fetch_observable(email_message.from_ref)
+            from_ref = email_message.from_ref
+            from_address = self._fetch_observable(from_ref)
             if from_address is None:
                 self._missing_observable_object_error(
-                    email_message.id, email_message.from_ref
+                    email_message.id, from_ref
                 )
             else:
                 attributes = self._parse_email_reference_observable(
                     from_address['observable'], 'from',
+                    object_id=f'{email_message.id} - {from_ref}',
                     indicator_ref=from_address.get('indicator_ref', '')
                 )
                 for attribute in attributes:
@@ -492,6 +494,7 @@ class STIX2ObservableObjectConverter(
                         continue
                     attributes = self._parse_email_reference_observable(
                         email_address['observable'], feature,
+                        object_id=f'{email_message.id} - {reference}',
                         indicator_ref=email_address.get('indicator_ref', '')
                     )
                     for attribute in attributes:

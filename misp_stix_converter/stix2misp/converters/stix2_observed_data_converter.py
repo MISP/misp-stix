@@ -1165,6 +1165,7 @@ class ExternalSTIX2ObservedDataConverter(
                 else:
                     attributes = self._parse_email_reference_observable(
                         observable['observable'], 'from',
+                        object_id=f'{object_ref} - {from_ref}',
                         indicator_ref=indicator_refs.get(from_ref, '')
                     )
                     for attribute in attributes:
@@ -1182,6 +1183,7 @@ class ExternalSTIX2ObservedDataConverter(
                             continue
                         attributes = self._parse_email_reference_observable(
                             observable['observable'], feature,
+                            object_id=f'{object_ref} - {reference}',
                             indicator_ref=indicator_refs.get(reference, '')
                         )
                         for attribute in attributes:
