@@ -262,19 +262,47 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _fetch_multiple_observable_ids(
             self, observed_data: _OBSERVED_DATA_TYPING,
-            identifiers: set, object_id: str) -> Generator:
+            identifiers: set, object_id: str):
         identifiers.add(object_id)
-        for key, value in observed_data.objects[object_id].items():
-            if key.endswith('_ref') and value not in identifiers:
-                self._fetch_multiple_observable_ids(
-                    observed_data, identifiers, value
-                )
-            if key.endswith('_refs'):
-                for reference in value:
-                    if reference not in identifiers:
-                        self._fetch_multiple_observable_ids(
-                            observed_data, identifiers, reference
-                        )
+        for key, values in observed_data.objects[object_id].items():
+            self._fetch_observable_object_ids(
+                observed_data, identifiers, key, values
+            )
+
+    def _fetch_multiple_observable_object_ids(
+            self, observed_data: _OBSERVED_DATA_TYPING,
+            identifiers: set, observable_object: dict):
+        for key, values in observable_object.items():
+            self._fetch_observable_object_ids(
+                observed_data, identifiers, key, values
+            )
+
+    def _fetch_observable_object_ids(
+            self, observed_data: _OBSERVED_DATA_TYPING,
+            identifiers: set, key: str, values: str | list | dict):
+        if key.endswith('_ref') and values not in identifiers:
+            self._fetch_multiple_observable_ids(
+                observed_data, identifiers, values
+            )
+            return
+        if key.endswith('_refs'):
+            for reference in values:
+                if reference not in identifiers:
+                    self._fetch_multiple_observable_ids(
+                        observed_data, identifiers, reference
+                    )
+            return
+        if isinstance(values, (dict, ArchiveExt)):
+            self._fetch_multiple_observable_object_ids(
+                observed_data, identifiers, values
+            )
+            return
+        if isinstance(values, list):
+            for value in values:
+                if isinstance(value, (dict, EmailMIMEComponent)):
+                    self._fetch_multiple_observable_object_ids(
+                        observed_data, identifiers, value
+                    )
 
     def _parse_multiple_observable_object_refs(
             self, observed_data: ObservedData_v21,
