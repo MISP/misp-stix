@@ -252,8 +252,8 @@ _ARTIFACT_OBJECTS = [
         "last_observed": "2020-11-25T16:22:00Z",
         "number_observed": 1,
         "object_refs": [
-            "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "artifact--5e384ae7-672c-4250-9cda-3b4da964451a"
+            "artifact--5a5ca3bd-1cf2-4568-bbde-dd694a24a4b2",
+            "artifact--1e3fc162-0c47-4626-9e91-02ae76e03ad6"
         ]
     },
     {
@@ -267,13 +267,13 @@ _ARTIFACT_OBJECTS = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "object_refs": [
-            "artifact--f93cb275-0366-4ecc-abf0-a17928d1e177"
+            "artifact--8f49b9de-b47d-43fd-b3f8-4976f0d42feb"
         ]
     },
     {
         "type": "artifact",
         "spec_version": "2.1",
-        "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "id": "artifact--5a5ca3bd-1cf2-4568-bbde-dd694a24a4b2",
         "mime_type": "application/zip",
         "payload_bin": "UEsDBAoACQAAAKBINlgCq9FEEAAAAAQAAAADABwAb3VpVVQJAAOrIa5lrSGuZXV4CwABBPUBAAAEFAAAAOLQGBmrTcdmURq/qqA1qFFQSwcIAqvRRBAAAAAEAAAAUEsBAh4DCgAJAAAAoEg2WAKr0UQQAAAABAAAAAMAGAAAAAAAAQAAAKSBAAAAAG91aVVUBQADqyGuZXV4CwABBPUBAAAEFAAAAFBLBQYAAAAAAQABAEkAAABdAAAAAAA=",
         "hashes": {
@@ -286,7 +286,7 @@ _ARTIFACT_OBJECTS = [
     {
         "type": "artifact",
         "spec_version": "2.1",
-        "id": "artifact--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "id": "artifact--1e3fc162-0c47-4626-9e91-02ae76e03ad6",
         "url": "https://files.pythonhosted.org/packages/1a/62/29f55ef42483c30281fab9d3282ac467f215501826f3251678d8ec2da2e1/misp_stix-2.4.183.tar.gz",
         "hashes": {
             "MD5": "b3982699c1b9a25346cc8498f483b150",
@@ -296,7 +296,7 @@ _ARTIFACT_OBJECTS = [
     {
         "type": "artifact",
         "spec_version": "2.1",
-        "id": "artifact--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "id": "artifact--8f49b9de-b47d-43fd-b3f8-4976f0d42feb",
         "mime_type": "application/zip",
         "payload_bin": "UEsDBAoACQAAANVUNlgGfJ2iEAAAAAQAAAADABwAbm9uVVQJAAOhN65lozeuZXV4CwABBPUBAAAEFAAAAE7nhRTz5ElBwvqrXUHYVMlQSwcIBnydohAAAAAEAAAAUEsBAh4DCgAJAAAA1VQ2WAZ8naIQAAAABAAAAAMAGAAAAAAAAQAAAKSBAAAAAG5vblVUBQADoTeuZXV4CwABBPUBAAAEFAAAAFBLBQYAAAAAAQABAEkAAABdAAAAAAA=",
         "hashes": {
