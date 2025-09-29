@@ -1373,6 +1373,9 @@ class ExternalSTIX2ObservedDataConverter(
                             indicator_ref=indicator_refs.get(body_ref, '')
                         )
                         misp_object.add_reference(artifact.uuid, 'contains')
+                        observable_objects[body_ref].update(
+                            {'used': True, 'misp_object': artifact}
+                        )
                         continue
                     file_object = self._parse_generic_observable_object(
                         observed_data, body_ref, 'file', False,
@@ -1383,6 +1386,9 @@ class ExternalSTIX2ObservedDataConverter(
                         file_object, observable, observed_data,
                         observable_objects, body_ref,
                         indicator_refs=indicator_refs
+                    )
+                    observable_objects[body_ref].update(
+                        {'used': True, 'misp_object': file_object}
                     )
 
     def _parse_file_observable_object_ref_references(
