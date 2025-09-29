@@ -16,7 +16,8 @@ from collections.abc import Generator
 from datetime import datetime
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.observables import (
-    File as File_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
+    ArchiveExt, EmailMIMEComponent, File as File_v20,
+    WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
@@ -339,6 +340,9 @@ class ExternalSTIX2ObservedDataConverter(
             self._fetch_multiple_observable_ids(
                 observed_data, identifiers := set(), object_id
             )
+            if not any(hasattr(observed_data.objects[identifier], 'id') for
+                       identifier in identifiers):
+                identifiers = sorted(identifiers)
             observables = {
                 identifier: observable_objects[identifier]
                 for identifier in identifiers
