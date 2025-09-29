@@ -1280,6 +1280,7 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_email_message_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
+            observable_objects: Optional[dict] = None,
             indicator_refs: Optional[dict] = {}):
         if len(observed_data.objects) == 1:
             indicator_ref = (
@@ -1307,11 +1308,12 @@ class ExternalSTIX2ObservedDataConverter(
                         )
                         continue
             return misp_object
-        observable_objects = {
-            object_id: {'used': False}
-            for object_id, observable in observed_data.objects.items()
-            if observable.type in ('file', 'artifact')
-        }
+        if observable_objects is None:
+            observable_objects = {
+                object_id: {'used': False}
+                for object_id, observable in observed_data.objects.items()
+                if observable.type in ('file', 'artifact')
+            }
         for identifier, observable in observed_data.objects.items():
             if observable.type != 'email-message':
                 continue
