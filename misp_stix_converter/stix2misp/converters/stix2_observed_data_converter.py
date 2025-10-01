@@ -819,7 +819,7 @@ class ExternalSTIX2ObservedDataConverter(
                                 else resolved['misp_attribute']
                             )
                             misp_object.add_reference(
-                                resolved_object.uuid, 'resolves-to'
+                                resolved_object.uuid, 'alias-of'
                             )
                         continue
                     value = resolved_observable.value
@@ -849,7 +849,7 @@ class ExternalSTIX2ObservedDataConverter(
                             continue
                         if referencing['used'].get(self.event_uuid, False):
                             referencing['misp_object'].add_reference(
-                                misp_object.uuid, 'resolves-to'
+                                misp_object.uuid, 'alias-of'
                             )
                 continue
             if observable['used'].get(self.event_uuid, False):
