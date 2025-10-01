@@ -891,9 +891,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             domain_object.name, domain_ip_object.name, 'domain-ip'
         )
 
-        self._check_misp_object_fields(
-            domain_object, od1, domain2.id, multiple=True
-        )
+        self._check_misp_object_fields(domain_object, od1, domain2.id)
         self.assertEqual(len(domain_object.attributes), 1)
         domain_attribute = domain_object.attributes[0]
         self._assert_multiple_equal(
@@ -908,12 +906,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(len(domain_object.references), 1)
         reference = domain_object.references[0]
         self.assertEqual(reference.referenced_uuid, domain_ip_object.uuid)
-        self.assertEqual(reference.relationship_type, 'resolves-to')
+        self.assertEqual(reference.relationship_type, 'alias-of')
 
-        self._check_misp_object_fields(
-            domain_ip_object, od2, f'{domain1.id} - {ipv4.id} - {ipv6.id}',
-            multiple=True
-        )
+        self._check_misp_object_fields(domain_ip_object, od2, domain1.id)
         self._check_domain_ip_fields(
             domain_ip_object, domain1, ipv4, ipv6,
             domain1.id, f'{domain1.id} - {ipv4.id}', f'{domain1.id} - {ipv6.id}'
