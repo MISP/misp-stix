@@ -1543,6 +1543,80 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(UUIDv4, f'{object_id} - user-id - {user_id.value}')
         )
 
+    def _check_wrapped_attribute(self, attribute_uuid, object_id, relation, value):
+        self.assertEqual(
+            attribute_uuid,
+            uuid5(UUIDv4, f'{object_id} - {relation} - {value}')
+        )
+
+    def _check_wrapped_attributes(self, object_id, *attributes):
+        for attribute in attributes:
+            self._check_wrapped_attribute(
+                attribute.uuid, object_id,
+                attribute.object_relation, attribute.value
+            )
+
+    def _check_wrapped_email_object(self, misp_object, object_id, from_id, to_id, cc_id, artifact_id, file_id):
+        *attributes, from_addr, from_dn, to_addr, to_dn, cc_addr, cc_dn, body = misp_object.attributes
+        self._check_wrapped_attributes(object_id, *attributes)
+        self.assertEqual(
+            from_addr.uuid,
+            uuid5(UUIDv4, f'{object_id} - {from_id} - from - {from_addr.value}')
+        )
+        self.assertEqual(
+            from_dn.uuid,
+            uuid5(UUIDv4, f'{object_id} - {from_id} - from-display-name - {from_dn.value}')
+        )
+        self.assertEqual(
+            to_addr.uuid,
+            uuid5(UUIDv4, f'{object_id} - {to_id} - to - {to_addr.value}')
+        )
+        self.assertEqual(
+            to_dn.uuid,
+            uuid5(UUIDv4, f'{object_id} - {to_id} - to-display-name - {to_dn.value}')
+        )
+        self.assertEqual(
+            cc_addr.uuid,
+            uuid5(UUIDv4, f'{object_id} - {cc_id} - cc - {cc_addr.value}')
+        )
+        self.assertEqual(
+            cc_dn.uuid,
+            uuid5(UUIDv4, f'{object_id} - {cc_id} - cc-display-name - {cc_dn.value}')
+        )
+        self._check_wrapped_attribute(
+            body.uuid, f'{object_id} - body_multipart - 0',
+            body.object_relation, body.value
+        )
+        self.assertEqual(len(misp_object.references), 2)
+        artifact_ref, file_ref = misp_object.references
+        self.assertEqual(artifact_ref.referenced_uuid, artifact_id)
+        self.assertEqual(file_ref.referenced_uuid, file_id)
+        self._assert_multiple_equal(
+            artifact_ref.relationship_type,
+            file_ref.relationship_type,
+            'contains'
+        )
+
+    def _check_wrapped_network_traffic_object(self, misp_object, object_id, src_id, dst_id, *references):
+        *attributes, src_ip, dst_ip = misp_object.attributes
+        for attribute in attributes:
+            self.assertEqual(
+                attribute.uuid,
+                uuid5(UUIDv4, f'{object_id} - {attribute.object_relation} - {attribute.value}')
+            )
+        self.assertEqual(
+            src_ip.uuid,
+            uuid5(UUIDv4, f'{object_id} - {src_id} - src_ip - {src_ip.value}')
+        )
+        self.assertEqual(
+            dst_ip.uuid,
+            uuid5(UUIDv4, f'{object_id} - {dst_id} - dst_ip - {dst_ip.value}')
+        )
+        self.assertEqual(len(misp_object.references), len(references))
+        for reference, (ref_id, relation) in zip(misp_object.references, references):
+            self.assertEqual(reference.referenced_uuid, ref_id)
+            self.assertEqual(reference.relationship_type, relation)
+
     def _check_x509_fields(self, misp_object, x509, object_id = None):
         if object_id is None:
             object_id = x509.id
