@@ -783,26 +783,8 @@ class ExternalSTIX2ObservedDataConverter(
                         observable['misp_object'], observed_data
                     )
                     continue
-                domain_object = self._create_misp_object('domain-ip')
-                domain_object.from_dict(
-                    comment=f'Observed Data ID: {observed_data.id}',
-                    **self._parse_timeline(observed_data)
-                )
-                self.main_parser._check_sighting_replacements(
-                    self.main_parser._sanitise_uuid(observed_data.id),
-                    domain_object.uuid
-                )
-                domain_object.uuid = self.main_parser._create_v5_uuid(
-                    ' - '.join(
-                        (
-                            domain.id,
-                            *(
-                                resolved_id for resolved_id
-                                in domain.resolves_to_refs
-                                if not resolved_id.startswith('domain-name--')
-                            )
-                        )
-                    )
+                domain_object = self._create_misp_object_from_observable_object_ref(
+                    'domain-ip', domain, observed_data
                 )
                 indicator_ref = indicator_refs.get(object_ref, '')
                 to_ids = self._check_indicator_reference(
