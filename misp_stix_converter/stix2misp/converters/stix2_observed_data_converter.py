@@ -16,7 +16,7 @@ from collections.abc import Generator
 from datetime import datetime
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.observables import (
-    ArchiveExt, EmailMIMEComponent, File as File_v20,
+    ArchiveExt, DomainName, EmailMIMEComponent, File as File_v20,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
@@ -866,25 +866,32 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_domain_ip_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
+            observable_objects: Optional[dict] = None,
             indicator_refs: Optional[dict] = {}):
+        if observable_objects is None:
+            observable_objects = {
+                object_id: {'used': False}
+                for object_id in observed_data.objects
+            }
         referenced_ids = self._extract_referenced_ids_from_observable_objects(
             **observed_data.objects
         )
-        for identifier, observable_object in observed_data.objects.items():
-            if identifier in referenced_ids:
+        for identifier, observable in observable_objects.items():
+            if observable['used']:
+                continue
+            observable_object = observed_data.objects[identifier]
+            if not isinstance(observable_object, DomainName):
                 continue
             if hasattr(observable_object, 'resolves_to_refs'):
                 object_id = f'{observed_data.id} - {identifier}'
-                misp_object = self._create_misp_object_from_observable_object(
-                    'domain-ip', observed_data, ' - '.join(
-                        (object_id, *observable_object.resolves_to_refs)
-                    )
+                domain_object = self._create_misp_object_from_observable_object(
+                    'domain-ip', observed_data, object_id
                 )
                 indicator_ref = indicator_refs.get(identifier, '')
                 to_ids = self._check_indicator_reference(
                     indicator_ref, f'value - {observable_object.value}'
                 )
-                misp_object.add_attribute(
+                domain_object.add_attribute(
                     **self._populate_object_attribute(
                         {'to_ids': to_ids, **self._mapping.domain_attribute()},
                         observable_object.value,
@@ -892,33 +899,70 @@ class ExternalSTIX2ObservedDataConverter(
                         if to_ids else object_id
                     )
                 )
+                misp_object = self.main_parser._add_misp_object(
+                    domain_object, observed_data
+                )
+                observable.update({'used': True, 'misp_object': misp_object})
                 for resolved_ref in observable_object.resolves_to_refs:
-                    resolved_object = observed_data.objects[resolved_ref]
-                    object_relation = (
-                        'domain' if resolved_object.type == 'domain-name'
-                        else 'ip'
-                    )
-                    attribute = getattr(
-                        self._mapping, f'{object_relation}_attribute'
-                    )
+                    resolved = observed_data.objects.get(resolved_ref)
+                    if resolved is None:
+                        self._missing_observable_object_error(
+                            observed_data.id, resolved_ref
+                        )
+                        continue
+                    if isinstance(resolved, DomainName):
+                        resolved_observable = observable_objects[resolved_ref]
+                        if resolved_observable['used']:
+                            resolved_object = (
+                                resolved_observable['misp_object']
+                                if resolved_observable.get('misp_object')
+                                is not None else resolved_observable['misp_attribute']
+                            )
+                            misp_object.add_reference(
+                                resolved_object.uuid, 'alias-of'
+                            )
+                        continue
+                    value = resolved.value
                     indicator_ref = indicator_refs.get(resolved_ref, '')
                     to_ids = self._check_indicator_reference(
-                        indicator_ref, f'value - {resolved_object.value}'
+                        indicator_ref, f'value - {value}'
                     )
                     misp_object.add_attribute(
                         **self._populate_object_attribute(
-                            {'to_ids': to_ids, **attribute()},
-                            resolved_object.value,
+                            {'to_ids': to_ids, **self._mapping.ip_attribute()},
+                            value,
                             f'{indicator_ref} - {object_id} - {resolved_ref}'
                             if to_ids else f'{object_id} - {resolved_ref}'
                         )
                     )
-                self.main_parser._add_misp_object(misp_object, observed_data)
+                    if resolved_ref not in observable_objects:
+                        observable_objects[resolved_ref] = {
+                            'used': True, 'misp_object': misp_object
+                        }
+                        continue
+                    observable_objects[resolved_ref].update(
+                        {'used': True, 'misp_object': misp_object}
+                    )
+                if identifier in referenced_ids:
+                    for referencing_id in referenced_ids[identifier]:
+                        referencing = observed_data.objects.get(referencing_id)
+                        if referencing is None:
+                            self._missing_observable_object_error(
+                                observed_data.id, referencing_id
+                            )
+                            continue
+                        if not isinstance(referencing, DomainName):
+                            continue
+                        if observable_objects.get(referencing_id, {}).get('used', False):
+                            observable_objects[referencing_id]['misp_object'].add_reference(
+                                misp_object.uuid, 'alias-of'
+                            )
                 continue
-            self._parse_generic_observable_object_as_attribute(
+            attribute = self._parse_generic_observable_object_as_attribute(
                 observed_data, identifier, 'domain',
                 indicator_ref=indicator_refs.get(identifier, '')
             )
+            observable.update({'misp_attribute': attribute, 'used': True})
 
     def _parse_domain_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple,
