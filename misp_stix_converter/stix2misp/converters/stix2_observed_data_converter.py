@@ -1718,8 +1718,8 @@ class ExternalSTIX2ObservedDataConverter(
         object_id = f'{observed_data.id} - {identifier}'
         return self.main_parser._add_misp_attribute(
             self._create_misp_attribute(
-                attribute_type, value or strict_value, indicator_ref,
-                object_id, to_ids=to_ids, comment=comment, **attribute
+                attribute_type, value or strict_value, indicator_ref, object_id,
+                single=True, to_ids=to_ids, comment=comment, **attribute
             ),
             observed_data
         )
