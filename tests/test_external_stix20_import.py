@@ -1006,6 +1006,513 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data2.id
         )
 
+    def test_stix20_bundle_with_wrapped_observable_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_wrapped_observable_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        (artifact1, artifact2, artifact3,
+         AS1, AS2, AS3, AS4,
+         directory1, directory2, directory3,
+         domain1, domain2, domain3,
+         domain4, ipv4_1, ipv6_1, domain5,
+         email_addr1, email_addr2, email_addr3, email_addr4,
+         email_message, email_addr5, email_addr6, email_addr7, artifact4, file1,
+         file2, directory4, artifact5, file3, file4, directory5, artifact6, file5,
+         ipv4_2, ipv6_2, ipv4_3,
+         mac1, mac2, mac3,
+         mutex1, mutex2, mutex3,
+         ipv4_4, ipv4_5, ipv4_6, nt1, nt2, ipv4_7, ipv4_8, ipv4_9, nt3, nt4, artifact7,
+         process1, process2, file6, process3, file7, process4,
+         regkey1, regkey2, user1, regkey3,
+         software1, software2, software3,
+         url1, url2, url3,
+         user_account2, user_account3, user_account4,
+         x509_cert1, x509_cert2, x509_cert3) = observed_data.objects.keys()
+        (ntObj1, ntObj2, ntObj3, artifactObj1, ntObj4,
+         emailObj, artifactObj2, fileObj1,
+         procObj1, fileObj2, procObj2, procObj3, fileObj3, procObj4,
+         fileObj4, dirObj1, artObj3, fileObj5, fileObj6, dirObj2, artObj4, fileObj7, *PEs,
+         regkeyObj1, regkeyObj2, valueObj1, valueObj2, userObj1, regkeyObj3,
+         artifactObj5, artifactObj6, artifactObj7,
+         asnObj1, asnObj2,
+         directoryObj3, directoryObj4, directoryObj5,
+         domainIpObj1, domainIpObj2,
+         softwareObj1, softwareObj2, softwareObj3,
+         userObj2, userObj3, userObj4,
+         x509Obj1, x509Obj2, x509Obj3,
+         asAttr1, asAttr2,
+         domainAttr1, domainAttr2, domainAttr3,
+         emailAttr1, dnAttr1, emailAttr2, emailAttr3, dnAttr2, emailAttr4,
+         ipAttr1, ipAttr2, ipAttr3,
+         macAttr1, macAttr2, macAttr3,
+         mutexAttr1, mutexAttr2, mutexAttr3,
+         urlAttr1, urlAttr2, urlAttr3) = misp_content
+        od_id = observed_data.id
+
+        ########################################################################
+        #                       NETWORK TRAFFIC OBJECTS.                       #
+        ########################################################################
+        self._assert_multiple_equal(
+            ntObj1.name, ntObj2.name, ntObj3.name, ntObj4.name,
+            'network-traffic'
+        )
+        nt1_id = f'{od_id} - {nt1}'
+        self.assertEqual(ntObj1.uuid, uuid5(UUIDv4, nt1_id))
+        self._check_wrapped_network_traffic_object(
+            ntObj1, nt1_id, ipv4_4, ipv4_5, (ntObj2.uuid, 'encapsulates')
+        )
+        nt2_id = f'{od_id} - {nt2}'
+        self.assertEqual(ntObj2.uuid, uuid5(UUIDv4, nt2_id))
+        self._check_wrapped_network_traffic_object(
+            ntObj2, nt2_id, ipv4_4, ipv4_6, (ntObj1.uuid, 'encapsulated-by')
+        )
+        nt3_id = f'{od_id} - {nt3}'
+        self.assertEqual(ntObj3.uuid, uuid5(UUIDv4, nt3_id))
+        self._check_wrapped_network_traffic_object(
+            ntObj3, nt3_id, ipv4_7, ipv4_8,
+            (artifactObj1.uuid, 'source-sent'), (ntObj4.uuid, 'encapsulates')
+        )
+        nt4_id = f'{od_id} - {nt4}'
+        self.assertEqual(ntObj4.uuid, uuid5(UUIDv4, nt4_id))
+        self._check_wrapped_network_traffic_object(
+            ntObj4, nt4_id, ipv4_8, ipv4_9,
+            (artifactObj1.uuid, 'destination-sent'),
+            (ntObj3.uuid, 'encapsulated-by')
+        )
+        artifact1_id = f'{od_id} - {artifact7}'
+        self.assertEqual(artifactObj1.name, 'artifact')
+        self.assertEqual(artifactObj1.uuid, uuid5(UUIDv4, artifact1_id))
+        self._check_wrapped_attributes(artifact1_id, *artifactObj1.attributes)
+
+        ########################################################################
+        #                         EMAIL MESSAGE OBJECT                         #
+        ########################################################################
+        email_id = f'{od_id} - {email_message}'
+        self.assertEqual(emailObj.name, 'email')
+        self.assertEqual(emailObj.uuid, uuid5(UUIDv4, email_id))
+        self._check_wrapped_email_object(
+            emailObj, email_id, email_addr5, email_addr6,
+            email_addr7, artifactObj2.uuid, fileObj1.uuid
+        )
+        self.assertEqual(artifactObj2.name, 'artifact')
+        artifact2_id = f'{od_id} - {artifact4}'
+        self.assertEqual(artifactObj2.uuid, uuid5(UUIDv4, artifact2_id))
+        self._check_wrapped_attributes(artifact2_id, *artifactObj2.attributes)
+        self.assertEqual(fileObj1.name, 'file')
+        file1_id = f'{od_id} - {file1}'
+        self.assertEqual(fileObj1.uuid, uuid5(UUIDv4, file1_id))
+        self._check_wrapped_attributes(file1_id, *fileObj1.attributes)
+
+        ########################################################################
+        #                           PROCESS OBJECTS                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            procObj1.name, procObj2.name, procObj3.name,
+            procObj4.name, 'process'
+        )
+        self._assert_multiple_equal(fileObj2.name, fileObj3.name, 'file')
+        process1_id = f'{od_id} - {process1}'
+        self.assertEqual(procObj1.uuid, uuid5(UUIDv4, process1_id))
+        self._check_wrapped_attributes(process1_id, *procObj1.attributes)
+        self.assertEqual(len(procObj1.references), 3)
+        file_ref, parent_ref, child_ref = procObj1.references
+        file_ref.relationship_type = 'executes'
+        parent_ref.relationship_type = 'child-of'
+        child_ref.relationship_type = 'parent-of'
+        process2_id = f'{od_id} - {process2}'
+        self._assert_multiple_equal(
+            parent_ref.referenced_uuid, procObj2.uuid,
+            uuid5(UUIDv4, process2_id)
+        )
+        self._check_wrapped_attributes(process2_id, *procObj2.attributes)
+        self.assertEqual(len(procObj2.references), 1)
+        binary_ref = procObj2.references[0]
+        binary_ref.relationship_type = 'executes'
+        file2_id = f'{od_id} - {file7}'
+        self._assert_multiple_equal(
+            file_ref.referenced_uuid, fileObj2.uuid, uuid5(UUIDv4, file2_id)
+        )
+        self._check_wrapped_attributes(file2_id, *fileObj2.attributes)
+        process3_id = f'{od_id} - {process3}'
+        self._assert_multiple_equal(
+            child_ref.referenced_uuid, procObj3.uuid,
+            uuid5(UUIDv4, process3_id)
+        )
+        self._check_wrapped_attributes(process3_id, *procObj3.attributes)
+        file3_id = f'{od_id} - {file6}'
+        self._assert_multiple_equal(
+            binary_ref.referenced_uuid, fileObj3.uuid, uuid5(UUIDv4, file3_id)
+        )
+        self._check_wrapped_attributes(file3_id, *fileObj3.attributes)
+        process4_id = f'{od_id} - {process4}'
+        self.assertEqual(procObj4.uuid, uuid5(UUIDv4, process4_id))
+        self._check_wrapped_attributes(process4_id, *procObj4.attributes)
+
+        ########################################################################
+        #                           FILE OBJECTS                               #
+        ########################################################################
+        self._assert_multiple_equal(
+            fileObj4.name, fileObj5.name, fileObj6.name, fileObj7.name, 'file'
+        )
+        self._assert_multiple_equal(dirObj1.name, dirObj2.name, 'directory')
+        self._assert_multiple_equal(artObj3.name, artObj4.name, 'artifact')
+        file4_id = f'{od_id} - {file2}'
+        self._check_wrapped_attributes(file4_id, *fileObj4.attributes)
+        self.assertEqual(len(fileObj4.references), 1)
+        parent_ref = fileObj4.references[0]
+        self.assertEqual(parent_ref.relationship_type, 'contained-in')
+        directory1_id = f'{od_id} - {directory4}'
+        self._assert_multiple_equal(
+            parent_ref.referenced_uuid, dirObj1.uuid,
+            uuid5(UUIDv4, directory1_id)
+        )
+        self._check_wrapped_attributes(directory1_id, *dirObj1.attributes)
+        artifact3_id = f'{od_id} - {artifact5}'
+        self.assertEqual(artObj3.uuid, uuid5(UUIDv4, artifact3_id))
+        self._check_wrapped_attributes(artifact3_id, *artObj3.attributes)
+        self.assertEqual(len(artObj3.references), 1)
+        content_ref = artObj3.references[0]
+        self.assertEqual(content_ref.relationship_type, 'content-of')
+        self._assert_multiple_equal(
+            content_ref.referenced_uuid, fileObj4.uuid, uuid5(UUIDv4, file4_id)
+        )
+        file5_id = f'{od_id} - {file3}'
+        self.assertEqual(fileObj5.uuid, uuid5(UUIDv4, file5_id))
+        self._check_wrapped_attributes(file5_id, *fileObj5.attributes)
+        self.assertEqual(len(fileObj5.references), 2)
+        contains_file_ref, contains_directory_ref = fileObj5.references
+        self._assert_multiple_equal(
+            contains_file_ref.relationship_type,
+            contains_directory_ref.relationship_type,
+            'contains'
+        )
+        file6_id = f'{od_id} - {file4}'
+        self._check_wrapped_attributes(file6_id, *fileObj6.attributes)
+        self.assertEqual(len(fileObj6.references), 1)
+        parent_ref = fileObj6.references[0]
+        self.assertEqual(parent_ref.relationship_type, 'contained-in')
+        directory2_id = f'{od_id} - {directory5}'
+        self._assert_multiple_equal(
+            contains_directory_ref.referenced_uuid, parent_ref.referenced_uuid,
+            dirObj2.uuid, uuid5(UUIDv4, directory2_id)
+        )
+        self._check_wrapped_attributes(directory2_id, *dirObj2.attributes)
+        artifact4_id = f'{od_id} - {artifact6}'
+        self.assertEqual(artObj4.uuid, uuid5(UUIDv4, artifact4_id))
+        self._check_wrapped_attributes(artifact4_id, *artObj4.attributes)
+        self.assertEqual(len(artObj4.references), 1)
+        content_ref = artObj4.references[0]
+        self.assertEqual(content_ref.relationship_type, 'content-of')
+        self._assert_multiple_equal(
+            contains_file_ref.referenced_uuid, content_ref.referenced_uuid,
+            fileObj6.uuid, uuid5(UUIDv4, file6_id)
+        )
+        file7_id = f'{od_id} - {file5}'
+        self.assertEqual(fileObj7.uuid, uuid5(UUIDv4, file7_id))
+        self._check_wrapped_attributes(file7_id, *fileObj7.attributes)
+        self.assertEqual(len(fileObj7.references), 1)
+        pe_reference = fileObj7.references[0]
+        self.assertEqual(pe_reference.relationship_type, 'includes')
+        peObj, *sections = PEs
+        pe_id = f'{file7_id} - windows-pebinary-ext'
+        self.assertEqual(peObj.name, 'pe')
+        self._assert_multiple_equal(
+            pe_reference.referenced_uuid, peObj.uuid, uuid5(UUIDv4, pe_id)
+        )
+        self._check_wrapped_attributes(pe_id, *peObj.attributes)
+        self.assertEqual(len(peObj.references), len(sections))
+        for section_ref, section in zip(peObj.references, enumerate(sections)):
+            index, section_object = section
+            self.assertEqual(section_ref.relationship_type, 'includes')
+            self._assert_multiple_equal(
+                section_ref.referenced_uuid, section_object.uuid,
+                uuid5(UUIDv4, f'{pe_id} - sections - {index}')
+            )
+            self.assertEqual(section_object.name, 'pe-section')
+            self._check_wrapped_attributes(
+                f'{pe_id} - sections - {index}', *section_object.attributes
+            )
+
+        ########################################################################
+        #                         REGISTRY KEY OBJECTS                         #
+        ########################################################################
+        self._assert_multiple_equal(
+            regkeyObj1.name, regkeyObj2.name, regkeyObj3.name, 'registry-key'
+        )
+        self._assert_multiple_equal(
+            valueObj1.name, valueObj2.name, 'registry-key-value'
+        )
+        regkey1_id = f'{od_id} - {regkey1}'
+        self.assertEqual(regkeyObj1.uuid, uuid5(UUIDv4, regkey1_id))
+        self._check_wrapped_attributes(regkey1_id, *regkeyObj1.attributes)
+        regkey2_id = f'{od_id} - {regkey2}'
+        self._check_wrapped_attributes(regkey2_id, *regkeyObj2.attributes)
+        self.assertEqual(len(regkeyObj2.references), 2)
+        for value_ref, value in zip(regkeyObj2.references, enumerate((valueObj1, valueObj2))):
+            self.assertEqual(value_ref.relationship_type, 'contains')
+            index, value_object = value
+            value_id = f'{regkey2_id} - values - {index}'
+            self._assert_multiple_equal(
+                value_ref.referenced_uuid, value_object.uuid,
+                uuid5(UUIDv4, value_id)
+            )
+            self._check_wrapped_attributes(value_id, *value_object.attributes)
+        self.assertEqual(userObj1.name, 'user-account')
+        user1_id = f'{od_id} - {user1}'
+        self.assertEqual(userObj1.uuid, uuid5(UUIDv4, user1_id))
+        self._check_wrapped_attributes(user1_id, *userObj1.attributes)
+        self.assertEqual(len(userObj1.references), 1)
+        creates_ref = userObj1.references[0]
+        self.assertEqual(creates_ref.relationship_type, 'creates')
+        self._assert_multiple_equal(
+            creates_ref.referenced_uuid, regkeyObj2.uuid,
+            uuid5(UUIDv4, regkey2_id)
+        )
+        regkey3_id = f'{od_id} - {regkey3}'
+        self.assertEqual(regkeyObj3.uuid, uuid5(UUIDv4, regkey3_id))
+        self._check_wrapped_attributes(regkey3_id, *regkeyObj3.attributes)
+
+        ########################################################################
+        #                           ARTIFACT OBJECTS                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            artifactObj5.name, artifactObj6.name, artifactObj7.name, 'artifact'
+        )
+        artifact5_id = f'{od_id} - {artifact1}'
+        self.assertEqual(artifactObj5.uuid, uuid5(UUIDv4, artifact5_id))
+        self._check_wrapped_attributes(artifact5_id, *artifactObj5.attributes)
+        artifact6_id = f'{od_id} - {artifact2}'
+        self.assertEqual(artifactObj6.uuid, uuid5(UUIDv4, artifact6_id))
+        self._check_wrapped_attributes(artifact6_id, *artifactObj6.attributes)
+        artifact7_id = f'{od_id} - {artifact3}'
+        self.assertEqual(artifactObj7.uuid, uuid5(UUIDv4, artifact7_id))
+        self._check_wrapped_attributes(artifact7_id, *artifactObj7.attributes)
+
+        ########################################################################
+        #                      AUTONOMOUS SYSTEM OBJECTS.                      #
+        ########################################################################
+        self._assert_multiple_equal(asnObj1.name, asnObj2.name, 'asn')
+        as1_id = f'{od_id} - {AS1}'
+        self.assertEqual(asnObj1.uuid, uuid5(UUIDv4, as1_id))
+        self._check_wrapped_attributes(as1_id, *asnObj1.attributes)
+        as2_id = f'{od_id} - {AS3}'
+        self.assertEqual(asnObj2.uuid, uuid5(UUIDv4, as2_id))
+        self._check_wrapped_attributes(as2_id, *asnObj2.attributes)
+
+        ########################################################################
+        #                        DIRECTORY OBJECTS.                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            directoryObj3.name, directoryObj4.name,
+            directoryObj5.name, 'directory'
+        )
+        directory3_id = f'{od_id} - {directory1}'
+        self.assertEqual(directoryObj3.uuid, uuid5(UUIDv4, directory3_id))
+        self._check_wrapped_attributes(directory3_id, *directoryObj3.attributes)
+        directory4_id = f'{od_id} - {directory2}'
+        self.assertEqual(directoryObj4.uuid, uuid5(UUIDv4, directory4_id))
+        self._check_wrapped_attributes(directory4_id, *directoryObj4.attributes)
+        directory5_id = f'{od_id} - {directory3}'
+        self.assertEqual(directoryObj5.uuid, uuid5(UUIDv4, directory5_id))
+        self._check_wrapped_attributes(directory5_id, *directoryObj5.attributes)
+
+        ########################################################################
+        #                           DOMAIN-IP OBJECT                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            domainIpObj1.name, domainIpObj2.name, 'domain-ip'
+        )
+        domainIp1_id = f'{od_id} - {domain4}'
+        self.assertEqual(domainIpObj1.uuid, uuid5(UUIDv4, domainIp1_id))
+        domainAttribute1, ipAttribute1, ipAttribute2 = domainIpObj1.attributes
+        self.assertEqual(
+            domainAttribute1.uuid,
+            uuid5(UUIDv4, f'{domainIp1_id} - domain - {domainAttribute1.value}')
+        )
+        self.assertEqual(
+            ipAttribute1.uuid,
+            uuid5(
+                UUIDv4,
+                f'{domainIp1_id} - {ipv4_1} - ip - {ipAttribute1.value}'
+            )
+        )
+        self.assertEqual(
+            ipAttribute2.uuid,
+            uuid5(
+                UUIDv4,
+                f'{domainIp1_id} - {ipv6_1} - ip - {ipAttribute2.value}'
+            )
+        )
+        domainIp2_id = f'{od_id} - {domain5}'
+        self.assertEqual(domainIpObj2.uuid, uuid5(UUIDv4, domainIp2_id))
+        self.assertEqual(len(domainIpObj2.attributes), 1)
+        domainAttribute2 = domainIpObj2.attributes[0]
+        self.assertEqual(
+            domainAttribute2.uuid,
+            uuid5(UUIDv4, f'{domainIp2_id} - domain - {domainAttribute2.value}')
+        )
+        self.assertEqual(len(domainIpObj2.references), 1)
+        alias_ref = domainIpObj2.references[0]
+        self.assertEqual(alias_ref.relationship_type, 'alias-of')
+        self._assert_multiple_equal(
+            alias_ref.referenced_uuid, domainIpObj1.uuid
+        )
+
+        ########################################################################
+        #                           SOFTWARE OBJECTS                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            softwareObj1.name, softwareObj2.name, softwareObj3.name, 'software'
+        )
+        software1_id = f'{od_id} - {software1}'
+        self.assertEqual(softwareObj1.uuid, uuid5(UUIDv4, software1_id))
+        self._check_wrapped_attributes(software1_id, *softwareObj1.attributes)
+        software2_id = f'{od_id} - {software2}'
+        self.assertEqual(softwareObj2.uuid, uuid5(UUIDv4, software2_id))
+        self._check_wrapped_attributes(software2_id, *softwareObj2.attributes)
+        software3_id = f'{od_id} - {software3}'
+        self.assertEqual(softwareObj3.uuid, uuid5(UUIDv4, software3_id))
+        self._check_wrapped_attributes(software3_id, *softwareObj3.attributes)
+
+        ########################################################################
+        #                         USER-ACCOUNT OBJECTS                         #
+        ########################################################################
+        self._assert_multiple_equal(
+            userObj2.name, userObj3.name, userObj4.name, 'user-account'
+        )
+        user_account2_id = f'{od_id} - {user_account2}'
+        self.assertEqual(userObj2.uuid, uuid5(UUIDv4, user_account2_id))
+        self._check_wrapped_attributes(user_account2_id, *userObj2.attributes)
+        user_account3_id = f'{od_id} - {user_account3}'
+        self.assertEqual(userObj3.uuid, uuid5(UUIDv4, user_account3_id))
+        self._check_wrapped_attributes(user_account3_id, *userObj3.attributes)
+        user_account4_id = f'{od_id} - {user_account4}'
+        self.assertEqual(userObj4.uuid, uuid5(UUIDv4, user_account4_id))
+        self._check_wrapped_attributes(user_account4_id, *userObj4.attributes)
+
+        ########################################################################
+        #                             X509 OBJECTS                             #
+        ########################################################################
+        self._assert_multiple_equal(
+            x509Obj1.name, x509Obj2.name, x509Obj3.name, 'x509'
+        )
+        x509_1_id = f'{od_id} - {x509_cert1}'
+        self.assertEqual(x509Obj1.uuid, uuid5(UUIDv4, x509_1_id))
+        self._check_wrapped_attributes(x509_1_id, *x509Obj1.attributes)
+        x509_2_id = f'{od_id} - {x509_cert2}'
+        self.assertEqual(x509Obj2.uuid, uuid5(UUIDv4, x509_2_id))
+        self._check_wrapped_attributes(x509_2_id, *x509Obj2.attributes)
+        x509_3_id = f'{od_id} - {x509_cert3}'
+        self.assertEqual(x509Obj3.uuid, uuid5(UUIDv4, x509_3_id))
+        self._check_wrapped_attributes(x509_3_id, *x509Obj3.attributes)
+
+        ########################################################################
+        #                     AUTONOMOUS SYSTEM ATTRIBUTES                     #
+        ########################################################################
+        self._assert_multiple_equal(asAttr1.type, asAttr2.type, 'AS')
+        self.assertEqual(asAttr1.uuid, uuid5(UUIDv4, f'{od_id} - {AS2}'))
+        self.assertEqual(asAttr2.uuid, uuid5(UUIDv4, f'{od_id} - {AS4}'))
+
+        ########################################################################
+        #                          DOMAIN ATTRIBUTES.                          #
+        ########################################################################
+        self._assert_multiple_equal(
+            domainAttr1.type, domainAttr2.type, domainAttr3.type, 'domain'
+        )
+        self.assertEqual(
+            domainAttr1.uuid, uuid5(UUIDv4, f'{od_id} - {domain1}')
+        )
+        self.assertEqual(
+            domainAttr2.uuid, uuid5(UUIDv4, f'{od_id} - {domain2}')
+        )
+        self.assertEqual(
+            domainAttr3.uuid, uuid5(UUIDv4, f'{od_id} - {domain3}')
+        )
+
+        ########################################################################
+        #                           EMAIL ATTRIBUTES                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            emailAttr1.type, emailAttr2.type, emailAttr3.type,
+            emailAttr4.type, 'email'
+        )
+        self._assert_multiple_equal(
+            dnAttr1.type, dnAttr2.type, 'email-dst-display-name'
+        )
+        email1_id = f'{od_id} - {email_addr1}'
+        self.assertEqual(
+            emailAttr1.uuid,
+            uuid5(UUIDv4, f'{email1_id} - email - {emailAttr1.value}')
+        )
+        self.assertEqual(
+            dnAttr1.uuid,
+            uuid5(
+                UUIDv4,
+                f'{email1_id} - email-dst-display-name - {dnAttr1.value}'
+            )
+        )
+        self.assertEqual(
+            emailAttr2.uuid, uuid5(UUIDv4, f'{od_id} - {email_addr2}')
+        )
+        email3_id = f'{od_id} - {email_addr3}'
+        self.assertEqual(
+            emailAttr3.uuid,
+            uuid5(UUIDv4, f'{email3_id} - email - {emailAttr3.value}')
+        )
+        self.assertEqual(
+            dnAttr2.uuid,
+            uuid5(
+                UUIDv4,
+                f'{email3_id} - email-dst-display-name - {dnAttr2.value}'
+            )
+        )
+        self.assertEqual(
+            emailAttr4.uuid, uuid5(UUIDv4, f'{od_id} - {email_addr4}')
+        )
+
+        ########################################################################
+        #                            IP ATTRIBUTES.                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            ipAttr1.type, ipAttr2.type, ipAttr3.type, 'ip-dst'
+        )
+        self.assertEqual(ipAttr1.uuid, uuid5(UUIDv4, f'{od_id} - {ipv4_2}'))
+        self.assertEqual(ipAttr2.uuid, uuid5(UUIDv4, f'{od_id} - {ipv4_3}'))
+        self.assertEqual(ipAttr3.uuid, uuid5(UUIDv4, f'{od_id} - {ipv6_2}'))
+
+        ########################################################################
+        #                            MAC ATTRIBUTES                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            macAttr1.type, macAttr2.type, macAttr3.type, 'mac-address'
+        )
+        self.assertEqual(macAttr1.uuid, uuid5(UUIDv4, f'{od_id} - {mac1}'))
+        self.assertEqual(macAttr2.uuid, uuid5(UUIDv4, f'{od_id} - {mac2}'))
+        self.assertEqual(macAttr3.uuid, uuid5(UUIDv4, f'{od_id} - {mac3}'))
+
+        ########################################################################
+        #                           MUTEX ATTRIBUTES                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            mutexAttr1.type, mutexAttr2.type, mutexAttr3.type, 'mutex'
+        )
+        self.assertEqual(mutexAttr1.uuid, uuid5(UUIDv4, f'{od_id} - {mutex1}'))
+        self.assertEqual(mutexAttr2.uuid, uuid5(UUIDv4, f'{od_id} - {mutex2}'))
+        self.assertEqual(mutexAttr3.uuid, uuid5(UUIDv4, f'{od_id} - {mutex3}'))
+
+        ########################################################################
+        #                            URL ATTRIBUTES                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            urlAttr1.type, urlAttr2.type, urlAttr3.type, 'url'
+        )
+        self.assertEqual(urlAttr1.uuid, uuid5(UUIDv4, f'{od_id} - {url1}'))
+        self.assertEqual(urlAttr2.uuid, uuid5(UUIDv4, f'{od_id} - {url2}'))
+        self.assertEqual(urlAttr3.uuid, uuid5(UUIDv4, f'{od_id} - {url3}'))
+
     def test_stix20_bundle_with_x509_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_x509_objects()
         self.parser.load_stix_bundle(bundle)
