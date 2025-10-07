@@ -1337,8 +1337,7 @@ class ExternalSTIX2ObservedDataConverter(
         if observable_objects is None:
             observable_objects = {
                 object_id: {'used': False}
-                for object_id, observable in observed_data.objects.items()
-                if observable.type in ('file', 'artifact')
+                for object_id in observed_data.objects.keys()
             }
         for identifier, observable in observed_data.objects.items():
             if observable.type != 'email-message':
@@ -1357,6 +1356,9 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
+                observable_objects[from_ref].update(
+                    {'used': True, 'misp_object': misp_object}
+                )
             for feature in ('to', 'cc', 'bcc'):
                 field = f'{feature}_refs'
                 if hasattr(observable, field):
@@ -1368,6 +1370,9 @@ class ExternalSTIX2ObservedDataConverter(
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
+                        observable_objects[reference].update(
+                            {'used': True, 'misp_object': misp_object}
+                        )
             if hasattr(observable, 'body_multipart'):
                 for index, multipart in enumerate(observable.body_multipart):
                     if hasattr(multipart, 'body'):
