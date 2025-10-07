@@ -345,6 +345,13 @@ _DOMAIN_IP_OBJECTS = [
             "2": {
                 "type": "ipv6-addr",
                 "value": "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+            },
+            "3": {
+                "type": "domain-name",
+                "value": "blog.example.com",
+                "resolves_to_refs": [
+                    "0"
+                ]
             }
         }
     }

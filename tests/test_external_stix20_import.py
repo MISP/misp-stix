@@ -662,18 +662,30 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, report, observed_data = bundle.objects
-        misp_object = self._check_misp_event_features(event, report)
-        self.assertEqual(len(misp_object), 1)
-        domain_ip_object = misp_object[0]
-        self.assertEqual(domain_ip_object.name, 'domain-ip')
-        self._check_misp_object_fields(
-            domain_ip_object, observed_data, '0 - 1 - 2'
-        )
+        misp_objects = self._check_misp_event_features(event, report)
+        domain_ip_object, domain_object = misp_objects
+        self._assert_multiple_equal(
+            domain_ip_object.name, domain_object.name, 'domain-ip')
+        self._check_misp_object_fields(domain_ip_object, observed_data, '0')
         object_id = f'{observed_data.id} - 0'
         self._check_domain_ip_fields(
-            domain_ip_object, *observed_data.objects.values(),
+            domain_ip_object, *list(observed_data.objects.values())[:-1],
             object_id, f'{object_id} - 1', f'{object_id} - 2'
         )
+        self._check_misp_object_fields(domain_object, observed_data, '3')
+        object_id = f'{observed_data.id} - 3'
+        self.assertEqual(len(domain_object.attributes), 1)
+        domain = observed_data.objects['3']
+        domain_attribute = domain_object.attributes[0]
+        self._assert_multiple_equal(
+            domain_attribute.type, domain_attribute.object_relation, 'domain'
+        )
+        self.assertEqual(domain_attribute.value, domain.value)
+        self.assertEqual(domain_attribute.uuid, uuid5(UUIDv4, f'{object_id} - domain - {domain.value}'))
+        self.assertEqual(len(domain_object.references), 1)
+        resolving_reference = domain_object.references[0]
+        self.assertEqual(resolving_reference.referenced_uuid, domain_ip_object.uuid)
+        self.assertEqual(resolving_reference.relationship_type, 'alias-of')
 
     def test_stix20_bundle_with_email_address_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_email_address_attributes()
