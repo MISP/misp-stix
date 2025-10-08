@@ -329,14 +329,14 @@ class STIX2ObservableObjectConverter(
                         reference
                     )
                     misp_object.add_reference(
-                        referenced_domain.uuid, 'resolves-to'
+                        referenced_domain.uuid, 'alias-of'
                     )
                     continue
                 resolved_ip = self._fetch_observable(reference)
                 ip_address = resolved_ip['observable']
                 misp_object.add_attribute(
                     **self._parse_ip_observable(
-                        ip_address,
+                        ip_address, f'{domain_name.id} - {reference}',
                         indicator_ref=resolved_ip.get('indicator_ref', '')
                     )
                 )
@@ -702,7 +702,7 @@ class STIX2ObservableObjectConverter(
                     reference
                 )
                 misp_object.add_reference(
-                    network_object.uuid, 'opens-connection'
+                    network_object.uuid, 'opened-connection'
                 )
         if hasattr(process, 'creator_user_ref'):
             creator_ref = process.creator_user_ref
