@@ -159,7 +159,7 @@ class ExternalSTIX2ObservedDataConverter(
                         observed_data_object, observed_data['indicator_refs']
                     )
                 else:
-                    self._parse_observed_data_objects(
+                    self._parse_observable_objects(
                         observed_data_object, observed_data['indicator_refs']
                     )
             except UnknownObservableMappingError as observable_types:
@@ -2014,7 +2014,7 @@ class ExternalSTIX2ObservedDataConverter(
                     referenced_observable = referenced['observable']
                     attributes = getattr(self, feature)(
                         asset, referenced_observable,
-                        f'{network_traffic.id} - {referenced_observable.id}',
+                        f'{network_traffic.id} - {reference}',
                         indicator_ref=indicator_refs.get(reference, '')
                     )
                     for attribute in attributes:
@@ -2287,8 +2287,8 @@ class ExternalSTIX2ObservedDataConverter(
         observable.update({'used': True, 'misp_object': referenced_object})
 
     def _parse_process_reference_observable_object_ref(
-            self, observed_data: _OBSERVED_DATA_TYPING, misp_object: MISPObject,
-            reference: str, relationship_type: str,
+            self, observed_data: _OBSERVED_DATA_TYPING,
+            misp_object: MISPObject, reference: str, relationship_type: str,
             name: Optional[str] = 'process', indicator_ref: str | tuple = ''):
         observable = self._fetch_observable(reference)
         if observable is None:
