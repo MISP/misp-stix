@@ -349,24 +349,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     ############################################################################
 
     def _fetch_indicator_reference(
-            self, observable: _OBSERVABLE_TYPING) -> str | None:
+            self, observable: _OBSERVABLE_TYPING) -> Iterator[str]:
         observable_references = tuple(
             self._fetch_observable_references(observable)
         )
-        indicator_references = set()
         for indicator_id, patterns in self._indicator_references.items():
             if not any(ref in patterns for ref in observable_references):
                 continue
-            indicator_references.add(indicator_id)
-        if not indicator_references:
-            return
-        if len(indicator_references) == 1:
-            return next(iter(indicator_references))
-        # in case multiple indicators describe values from a single observable
-        self._add_warning(
-            f'Multiple indicators matching observable: {observable.id}'
-        )
-        return tuple(indicator_references)
+            yield indicator_id
 
     def _fetch_observable_references(
             self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
@@ -403,34 +393,36 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         }
         if score in (3, 7):
             for observable_id, observable in self._observable.items():
-                indicator_reference = self._fetch_indicator_reference(
-                    observable['observable']
+                indicator_references = set(
+                    self._fetch_indicator_reference(observable['observable'])
                 )
-                if indicator_reference is None:
+                if not indicator_references:
                     continue
-                indicator = self._indicator[indicator_reference]
-                self._indicator[indicator_reference] = {
-                    'indicator': indicator,
-                    'observable_ref': observable_id
-                }
-                observable['indicator_ref'] = indicator_reference
+                for indicator_reference in indicator_references:
+                    indicator = self._indicator[indicator_reference]
+                    self._indicator[indicator_reference] = {
+                        'indicator': indicator,
+                        'observable_ref': observable_id
+                    }
+                    observable['indicator_ref'] = indicator_reference
         if score >= 5:
             for observed_id, observed_data in self._observed_data.items():
                 if not hasattr(observed_data, 'objects'):
                     continue
                 indicator_refs = {}
                 for observable_id, observable in observed_data.objects.items():
-                    indicator_reference = self._fetch_indicator_reference(
-                        observable['observable']
+                    indicator_references = set(
+                        self._fetch_indicator_reference(observable)
                     )
-                    if indicator_reference is None:
+                    if not indicator_references:
                         continue
-                    indicator = self._indicator[indicator_reference]
-                    self._indicator[indicator_reference] = {
-                        'indicator': indicator,
-                        'observable_ref': observed_id
-                    }
-                    indicator_refs[observable_id] = indicator_reference
+                    for indicator_reference in indicator_references:
+                        indicator = self._indicator[indicator_reference]
+                        self._indicator[indicator_reference] = {
+                            'indicator': indicator,
+                            'observable_ref': observed_id
+                        }
+                        indicator_refs[observable_id] = indicator_reference
                 if indicator_refs:
                     self._observed_data[observed_id] = {
                         'indicator_refs': indicator_refs,
