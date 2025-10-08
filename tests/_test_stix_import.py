@@ -695,9 +695,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def _check_domain_ip_fields(self, misp_object, domain, ipv4, ipv6, *object_ids):
         self.assertEqual(len(misp_object.attributes), 3)
         domain_attribute, ipv4_attribute, ipv6_attribute = misp_object.attributes
-        domain_id, ipv4_id, ipv6_id = object_ids if object_ids else (
-            domain.id, ipv4.id, ipv6.id
-        )
+        domain_id, ipv4_id, ipv6_id = object_ids
         self._assert_multiple_equal(
             domain_attribute.type, domain_attribute.object_relation, 'domain'
         )

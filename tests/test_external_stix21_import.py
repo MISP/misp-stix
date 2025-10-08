@@ -730,6 +730,451 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
         )
 
+    def _check_wrapped_observable_objects(self, observable_objects, misp_content):
+        (artifact1, artifact2, artifact3,
+         AS1, AS2, AS3, AS4,
+         directory1, directory2, directory3,
+         domain1, domain2, domain3,
+         domain4, ipv4_1, ipv6_1, domain5,
+         email_addr1, email_addr2, email_addr3, email_addr4,
+         email_message, email_addr5, email_addr6, email_addr7, artifact4, file1,
+         file2, directory4, artifact5, file3, file4,
+         ipv4_2, ipv6_2, ipv4_3,
+         mac1, mac2, mac3,
+         mutex1, mutex2, mutex3,
+         ipv4_4, ipv4_5, ipv4_6, nt1, nt2, ipv4_7, ipv4_8, nt3, nt4, artifact6,
+         process1, process2, file5, process3, file6, process4,
+         regkey1, regkey2, regkey3, user1,
+         software1, software2, software3,
+         url1, url2, url3,
+         user_account2, user_account3, user_account4,
+         x509_cert1, x509_cert2, x509_cert3) = observable_objects
+        (ntObj1, ntObj2, ntObj3, artifactObj1, ntObj4,
+         emailObj, artifactObj2, fileObj1,
+         processObj1, fileObj2, processObj2, procOrFile1, procOrFile2, processObj4,
+         fileObj4, directoryObj1, artifactObj3, fileObj5, fileObj6, *PEs,
+         regkeyObj1, regkeyObj2, valueObj1, valueObj2, userObj1, regkeyObj3,
+         artifactObj4, artifactObj5, artifactObj6,
+         asn1, asn2,
+         directoryObj2, directoryObj3, directoryObj4,
+         domainIpObj1, domainIpObj2,
+         softwareObj1, softwareObj2, softwareObj3,
+         userObj2, userObj3, userObj4,
+         x509Obj1, x509Obj2, x509Obj3,
+         asAttr1, asAttr2,
+         domainAttr1, domainAttr2, domainAttr3,
+         emailAttr1, dnAttr1, emailAttr2, emailAttr3, dnAttr2, emailAttr4,
+         ipAttr1, ipAttr2, ipAttr3,
+         macAttr1, macAttr2, macAttr3,
+         mutexAttr1, mutexAttr2, mutexAttr3,
+         urlAttr1, urlAttr2, urlAttr3) = misp_content
+
+        ########################################################################
+        #                       NETWORK TRAFFIC OBJECTS.                       #
+        ########################################################################
+        self._assert_multiple_equal(
+            ntObj1.name, ntObj2.name, ntObj3.name, ntObj4.name,
+            'network-traffic'
+        )
+        self.assertEqual(ntObj1.uuid, nt1.id.split('--')[1])
+        self._check_wrapped_network_traffic_object(
+            ntObj1, nt1.id, ipv4_4.id, ipv4_5.id,
+            (ntObj2.uuid, 'encapsulates')
+        )
+        self.assertEqual(ntObj2.uuid, nt2.id.split('--')[1])
+        self._check_wrapped_network_traffic_object(
+            ntObj2, nt2.id, ipv4_4.id, ipv4_6.id,
+            (ntObj1.uuid, 'encapsulated-by')
+        )
+        self.assertEqual(ntObj3.uuid, nt3.id.split('--')[1])
+        self._check_wrapped_network_traffic_object(
+            ntObj3, nt3.id, ipv4_5.id, ipv4_7.id,
+            (artifactObj1.uuid, 'source-sent'),
+            (ntObj4.uuid, 'encapsulates')
+        )
+        self.assertEqual(ntObj4.uuid, nt4.id.split('--')[1])
+        self._check_wrapped_network_traffic_object(
+            ntObj4, nt4.id, ipv4_7.id, ipv4_8.id,
+            (artifactObj1.uuid, 'destination-sent'),
+            (ntObj3.uuid, 'encapsulated-by')
+        )
+        self.assertEqual(artifactObj1.name, 'artifact')
+        self.assertEqual(artifactObj1.uuid, artifact6.id.split('--')[1])
+        self._check_wrapped_attributes(artifact6.id, *artifactObj1.attributes)
+
+        ########################################################################
+        #                          EMAIL MESSAGE OBJECT.                       #
+        ########################################################################
+        self.assertEqual(emailObj.name, 'email')
+        self.assertEqual(emailObj.uuid, email_message.id.split('--')[1])
+        self._check_wrapped_email_object(
+            emailObj, email_message.id, email_addr5.id, email_addr6.id,
+            email_addr7.id, artifactObj2.uuid, fileObj1.uuid
+        )
+        self.assertEqual(artifactObj2.name, 'artifact')
+        self.assertEqual(artifactObj2.uuid, artifact4.id.split('--')[1])
+        self._check_wrapped_attributes(artifact4.id, *artifactObj2.attributes)
+        self.assertEqual(fileObj1.name, 'file')
+        self.assertEqual(fileObj1.uuid, file1.id.split('--')[1])
+        self._check_wrapped_attributes(file1.id, *fileObj1.attributes)
+
+        ########################################################################
+        #                            PROCESS OBJECTS.                          #
+        ########################################################################
+        self._assert_multiple_equal(
+            processObj1.name, processObj2.name, processObj4.name, 'process'
+        )
+        self.assertEqual(fileObj2.name, 'file')
+        self.assertEqual(processObj1.uuid, process1.id.split('--')[1])
+        self._check_wrapped_attributes(process1.id, *processObj1.attributes)
+        self.assertEqual(len(processObj1.references), 3)
+        file_ref, parent_ref, child_ref = processObj1.references
+        self.assertEqual(file_ref.relationship_type, 'executes')
+        self.assertEqual(parent_ref.relationship_type, 'child-of')
+        self.assertEqual(child_ref.relationship_type, 'parent-of')
+        self.assertEqual(child_ref.referenced_uuid, process3.id.split('--')[1])
+        self._assert_multiple_equal(
+            file_ref.referenced_uuid, fileObj2.uuid, file6.id.split('--')[1]
+        )
+        self._check_wrapped_attributes(file6.id, *fileObj2.attributes)
+        self._assert_multiple_equal(
+            parent_ref.referenced_uuid, processObj2.uuid,
+            process2.id.split('--')[1]
+        )
+        self._check_wrapped_attributes(process2.id, *processObj2.attributes)
+        self.assertEqual(len(processObj2.references), 1)
+        binary_ref = processObj2.references[0]
+        self.assertEqual(binary_ref.relationship_type, 'executes')
+        file5_id = file5.id.split('--')[1]
+        self.assertEqual(binary_ref.referenced_uuid, file5_id)
+        process3_id = process3.id.split('--')[1]
+        for misp_object in (procOrFile1, procOrFile2):
+            if misp_object.uuid == file5_id:
+                self._check_wrapped_attributes(
+                    file5.id, *misp_object.attributes
+                )
+                continue
+            if misp_object.uuid == process3_id:
+                self._check_wrapped_attributes(
+                    process3.id, *misp_object.attributes
+                )
+                continue
+            self.fail(f'Unexpected process of file MISP Object with id {misp_object.uuid}')
+        self.assertEqual(processObj4.uuid, process4.id.split('--')[1])
+        self._check_wrapped_attributes(process4.id, *processObj4.attributes)
+
+        ########################################################################
+        #                             FILE OBJECTS                             #
+        ########################################################################
+        self._assert_multiple_equal(
+            fileObj4.name, fileObj5.name, fileObj6.name, 'file'
+        )
+        self._check_wrapped_attributes(file2.id, *fileObj4.attributes)
+        self.assertEqual(len(fileObj4.references), 1)
+        parent_ref = fileObj4.references[0]
+        self.assertEqual(parent_ref.relationship_type, 'contained-in')
+        self.assertEqual(directoryObj1.name, 'directory')
+        self._check_wrapped_attributes(directory4.id, *directoryObj1.attributes)
+        self.assertEqual(artifactObj3.name, 'artifact')
+        self.assertEqual(artifactObj3.uuid, artifact5.id.split('--')[1])
+        self._check_wrapped_attributes(artifact5.id, *artifactObj3.attributes)
+        self.assertEqual(len(artifactObj3.references), 1)
+        content_ref = artifactObj3.references[0]
+        self.assertEqual(content_ref.relationship_type, 'content-of')
+        self.assertEqual(fileObj5.uuid, file3.id.split('--')[1])
+        self._check_wrapped_attributes(file3.id, *fileObj5.attributes)
+        self.assertEqual(len(fileObj5.references), 2)
+        contains_file_ref, contains_directory_ref = fileObj5.references
+        self._assert_multiple_equal(
+            contains_file_ref.relationship_type,
+            contains_directory_ref.relationship_type,
+            'contains'
+        )
+        self._assert_multiple_equal(
+            content_ref.referenced_uuid, contains_file_ref.referenced_uuid,
+            fileObj4.uuid, file2.id.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            parent_ref.referenced_uuid, contains_directory_ref.referenced_uuid,
+            directoryObj1.uuid, directory4.id.split('--')[1]
+        )
+        self.assertEqual(fileObj6.uuid, file4.id.split('--')[1])
+        self._check_wrapped_attributes(file4.id, *fileObj6.attributes)
+        self.assertEqual(len(fileObj6.references), 1)
+        pe_ref = fileObj6.references[0]
+        self.assertEqual(pe_ref.relationship_type, 'includes')
+        pe_object, *section_objects = PEs
+        self.assertEqual(pe_object.name, 'pe')
+        pe_id = f'{file4.id} - windows-pebinary-ext'
+        self._assert_multiple_equal(
+            pe_ref.referenced_uuid, pe_object.uuid, uuid5(UUIDv4, pe_id)
+        )
+        self._check_wrapped_attributes(pe_id, *pe_object.attributes)
+        self.assertEqual(len(pe_object.references), len(section_objects))
+        for section_ref, section in zip(pe_object.references, enumerate(section_objects)):
+            index, section_object = section
+            self.assertEqual(section_ref.relationship_type, 'includes')
+            self._assert_multiple_equal(
+                section_ref.referenced_uuid, section_object.uuid,
+                uuid5(UUIDv4, f'{pe_id} - sections - {index}')
+            )
+            self.assertEqual(section_object.name, 'pe-section')
+            self._check_wrapped_attributes(
+                f'{pe_id} - sections - {index}', *section_object.attributes
+            )
+
+        ########################################################################
+        #                         REGISTRY KEY OBJECTS                         #
+        ########################################################################
+        self._assert_multiple_equal(
+            regkeyObj1.name, regkeyObj2.name, regkeyObj3.name, 'registry-key'
+        )
+        self._assert_multiple_equal(
+            valueObj1.name, valueObj2.name, 'registry-key-value'
+        )
+        self.assertEqual(regkeyObj1.uuid, regkey1.id.split('--')[1])
+        self._check_wrapped_attributes(regkey1.id, *regkeyObj1.attributes)
+        self._check_wrapped_attributes(regkey2.id, *regkeyObj2.attributes)
+        self.assertEqual(len(regkeyObj2.references), 2)
+        for value_ref, value in zip(regkeyObj2.references, enumerate((valueObj1, valueObj2))):
+            self.assertEqual(value_ref.relationship_type, 'contains')
+            index, value_object = value
+            value_id = f'{regkey2.id} - values - {index}'
+            self._assert_multiple_equal(
+                value_ref.referenced_uuid, value_object.uuid,
+                uuid5(UUIDv4, value_id)
+            )
+            self._check_wrapped_attributes(value_id, *value_object.attributes)
+        self.assertEqual(userObj1.name, 'user-account')
+        self.assertEqual(userObj1.uuid, user1.id.split('--')[1])
+        self._check_wrapped_attributes(user1.id, *userObj1.attributes)
+        self.assertEqual(len(userObj1.references), 2)
+        creates1_ref, creates2_ref = userObj1.references
+        self._assert_multiple_equal(
+            creates1_ref.relationship_type,
+            creates2_ref.relationship_type,
+            'creates'
+        )
+        self._assert_multiple_equal(
+            creates1_ref.referenced_uuid, regkeyObj2.uuid,
+            regkey2.id.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            creates2_ref.referenced_uuid, regkeyObj3.uuid,
+            regkey3.id.split('--')[1]
+        )
+        self._check_wrapped_attributes(regkey3.id, *regkeyObj3.attributes)
+
+        ########################################################################
+        #                           ARTIFACT OBJECTS                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            artifactObj4.name, artifactObj5.name, artifactObj6.name, 'artifact'
+        )
+        self.assertEqual(artifactObj4.uuid, artifact1.id.split('--')[1])
+        self._check_wrapped_attributes(artifact1.id, *artifactObj4.attributes)
+        self.assertEqual(artifactObj5.uuid, artifact2.id.split('--')[1])
+        self._check_wrapped_attributes(artifact2.id, *artifactObj5.attributes)
+        self.assertEqual(artifactObj6.uuid, artifact3.id.split('--')[1])
+        self._check_wrapped_attributes(artifact3.id, *artifactObj6.attributes)
+
+        ########################################################################
+        #                      AUTONOMOUS SYSTEM OBJECTS.                      #
+        ########################################################################
+        self._assert_multiple_equal(asn1.name, asn2.name, 'asn')
+        self.assertEqual(asn1.uuid, AS1.id.split('--')[1])
+        self._check_wrapped_attributes(AS1.id, *asn1.attributes)
+        self.assertEqual(asn2.uuid, AS3.id.split('--')[1])
+        self._check_wrapped_attributes(AS3.id, *asn2.attributes)
+
+        ########################################################################
+        #                          DIRECTORY OBJECTS.                          #
+        ########################################################################
+        self._assert_multiple_equal(
+            directoryObj2.name, directoryObj3.name,
+            directoryObj4.name, 'directory'
+        )
+        self.assertEqual(directoryObj2.uuid, directory1.id.split('--')[1])
+        self._check_wrapped_attributes(directory1.id, *directoryObj2.attributes)
+        self.assertEqual(directoryObj3.uuid, directory2.id.split('--')[1])
+        self._check_wrapped_attributes(directory2.id, *directoryObj3.attributes)
+        self.assertEqual(directoryObj4.uuid, directory3.id.split('--')[1])
+        self._check_wrapped_attributes(directory3.id, *directoryObj4.attributes)
+
+        ########################################################################
+        #                          DOMAIN-IP OBJECTS.                          #
+        ########################################################################
+        self._assert_multiple_equal(
+            domainIpObj1.name, domainIpObj2.name, 'domain-ip'
+        )
+        self.assertEqual(domainIpObj1.uuid, domain4.id.split('--')[1])
+        domainAttribute1, ipAttribute1, ipAttribute2 = domainIpObj1.attributes
+        self.assertEqual(
+            domainAttribute1.uuid,
+            uuid5(UUIDv4, f'{domain4.id} - domain - {domain4.value}')
+        )
+        self.assertEqual(
+            ipAttribute1.uuid,
+            uuid5(UUIDv4, f'{domain4.id} - {ipv4_1.id} - ip - {ipv4_1.value}')
+        )
+        self.assertEqual(
+            ipAttribute2.uuid,
+            uuid5(UUIDv4, f'{domain4.id} - {ipv6_1.id} - ip - {ipv6_1.value}')
+        )
+        self.assertEqual(domainIpObj1.references, [])
+        self.assertEqual(domainIpObj2.uuid, domain5.id.split('--')[1])
+        self.assertEqual(len(domainIpObj2.attributes), 1)
+        domainAttribute2 = domainIpObj2.attributes[0]
+        self.assertEqual(
+            domainAttribute2.uuid,
+            uuid5(UUIDv4, f'{domain5.id} - domain - {domain5.value}')
+        )
+        self.assertEqual(len(domainIpObj2.references), 1)
+        alias_ref = domainIpObj2.references[0]
+        self.assertEqual(alias_ref.relationship_type, 'alias-of')
+        self._assert_multiple_equal(
+            alias_ref.referenced_uuid, domainIpObj1.uuid
+        )
+
+        ########################################################################
+        #                           SOFTWARE OBJECTS                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            softwareObj1.name, softwareObj2.name, softwareObj3.name, 'software'
+        )
+        self.assertEqual(softwareObj1.uuid, software1.id.split('--')[1])
+        self._check_wrapped_attributes(software1.id, *softwareObj1.attributes)
+        self.assertEqual(softwareObj2.uuid, software2.id.split('--')[1])
+        self._check_wrapped_attributes(software2.id, *softwareObj2.attributes)
+        self.assertEqual(softwareObj3.uuid, software3.id.split('--')[1])
+        self._check_wrapped_attributes(software3.id, *softwareObj3.attributes)
+
+        ########################################################################
+        #                         USER-ACCOUNT OBJECTS                         #
+        ########################################################################
+        self._assert_multiple_equal(
+            userObj2.name, userObj3.name, userObj4.name, 'user-account'
+        )
+        self.assertEqual(userObj2.uuid, user_account2.id.split('--')[1])
+        self._check_wrapped_attributes(user_account2.id, *userObj2.attributes)
+        self.assertEqual(userObj3.uuid, user_account3.id.split('--')[1])
+        self._check_wrapped_attributes(user_account3.id, *userObj3.attributes)
+        self.assertEqual(userObj4.uuid, user_account4.id.split('--')[1])
+        self._check_wrapped_attributes(user_account4.id, *userObj4.attributes)
+
+        ########################################################################
+        #                             X509 OBJECTS                             #
+        ########################################################################
+        self._assert_multiple_equal(
+            x509Obj1.name, x509Obj2.name, x509Obj3.name, 'x509'
+        )
+        self.assertEqual(x509Obj1.uuid, x509_cert1.id.split('--')[1])
+        self._check_wrapped_attributes(x509_cert1.id, *x509Obj1.attributes)
+        self.assertEqual(x509Obj2.uuid, x509_cert2.id.split('--')[1])
+        self._check_wrapped_attributes(x509_cert2.id, *x509Obj2.attributes)
+        self.assertEqual(x509Obj3.uuid, x509_cert3.id.split('--')[1])
+        self._check_wrapped_attributes(x509_cert3.id, *x509Obj3.attributes)
+
+        ########################################################################
+        #                     AUTONOMOUS SYSTEM ATTRIBUTES                     #
+        ########################################################################
+        self._assert_multiple_equal(asAttr1.type, asAttr2.type, 'AS')
+        self.assertEqual(asAttr1.uuid, AS2.id.split('--')[1])
+        self.assertEqual(asAttr2.uuid, AS4.id.split('--')[1])
+
+        ########################################################################
+        #                          DOMAIN ATTRIBUTES.                          #
+        ########################################################################
+        self._assert_multiple_equal(
+            domainAttr1.type, domainAttr2.type, domainAttr3.type, 'domain'
+        )
+        self.assertEqual(domainAttr1.uuid, domain1.id.split('--')[1])
+        self.assertEqual(domainAttr2.uuid, domain2.id.split('--')[1])
+        self.assertEqual(domainAttr3.uuid, domain3.id.split('--')[1])
+
+        ########################################################################
+        #                           EMAIL ATTRIBUTES                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            emailAttr1.type, emailAttr2.type, emailAttr3.type,
+            emailAttr4.type, 'email'
+        )
+        self._assert_multiple_equal(
+            dnAttr1.type, dnAttr2.type, 'email-dst-display-name'
+        )
+        self.assertEqual(
+            emailAttr1.uuid,
+            uuid5(UUIDv4, f'{email_addr1.id} - email - {email_addr1.value}')
+        )
+        self.assertEqual(
+            dnAttr1.uuid,
+            uuid5(
+                UUIDv4, ' - '.join(
+                    (
+                        email_addr1.id, 'email-dst-display-name',
+                        email_addr1.display_name
+                    )
+                )
+            )
+        )
+        self.assertEqual(emailAttr2.uuid, email_addr2.id.split('--')[1])
+        self.assertEqual(
+            emailAttr3.uuid,
+            uuid5(UUIDv4, f'{email_addr3.id} - email - {email_addr3.value}')
+        )
+        self.assertEqual(
+            dnAttr2.uuid,
+            uuid5(
+                UUIDv4, ' - '.join(
+                    (
+                        email_addr3.id, 'email-dst-display-name',
+                        email_addr3.display_name
+                    )
+                )
+            )
+        )
+        self.assertEqual(emailAttr4.uuid, email_addr4.id.split('--')[1])
+
+        ########################################################################
+        #                            IP ATTRIBUTES.                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            ipAttr1.type, ipAttr2.type, ipAttr3.type, 'ip-dst'
+        )
+        self.assertEqual(ipAttr1.uuid, ipv4_2.id.split('--')[1])
+        self.assertEqual(ipAttr2.uuid, ipv4_3.id.split('--')[1])
+        self.assertEqual(ipAttr3.uuid, ipv6_2.id.split('--')[1])
+
+        ########################################################################
+        #                            MAC ATTRIBUTES                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            macAttr1.type, macAttr2.type, macAttr3.type, 'mac-address'
+        )
+        self.assertEqual(macAttr1.uuid, mac1.id.split('--')[1])
+        self.assertEqual(macAttr2.uuid, mac2.id.split('--')[1])
+        self.assertEqual(macAttr3.uuid, mac3.id.split('--')[1])
+
+        ########################################################################
+        #                           MUTEX ATTRIBUTES                           #
+        ########################################################################
+        self._assert_multiple_equal(
+            mutexAttr1.type, mutexAttr2.type, mutexAttr3.type, 'mutex'
+        )
+        self.assertEqual(mutexAttr1.uuid, mutex1.id.split('--')[1])
+        self.assertEqual(mutexAttr2.uuid, mutex2.id.split('--')[1])
+        self.assertEqual(mutexAttr3.uuid, mutex3.id.split('--')[1])
+
+        ########################################################################
+        #                            URL ATTRIBUTES                            #
+        ########################################################################
+        self._assert_multiple_equal(
+            urlAttr1.type, urlAttr2.type, urlAttr3.type, 'url'
+        )
+        self.assertEqual(urlAttr1.uuid, url1.id.split('--')[1])
+        self.assertEqual(urlAttr2.uuid, url2.id.split('--')[1])
+        self.assertEqual(urlAttr3.uuid, url3.id.split('--')[1])
+
     def _check_x509_object(self, misp_object, observed_data, x509):
         self.assertEqual(misp_object.name, 'x509')
         self._check_misp_object_fields(misp_object, observed_data, x509.id)
@@ -928,7 +1373,10 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
         self.assertEqual(domain_ip_object.uuid, domain1.id.split('--')[1])
-        self._check_domain_ip_fields(domain_ip_object, domain1, ipv4, ipv6)
+        self._check_domain_ip_fields(
+            domain_ip_object, domain1, ipv4, ipv6,
+            domain1.id, f'{domain1.id} - {ipv4.id}', f'{domain1.id} - {ipv6.id}'
+        )
 
         self.assertEqual(domain_object.uuid, domain2.id.split('--')[1])
         self.assertEqual(len(domain_object.attributes), 1)
@@ -945,7 +1393,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(len(domain_object.references), 1)
         reference = domain_object.references[0]
         self.assertEqual(reference.referenced_uuid, domain_ip_object.uuid)
-        self.assertEqual(reference.relationship_type, 'resolves-to')
+        self.assertEqual(reference.relationship_type, 'alias-of')
 
     def test_stix21_bundle_with_email_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_attributes()
@@ -1589,6 +2037,28 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_x509_object(multiple2, od1, cert2)
         self._check_x509_object(single, od2, cert3)
 
+    def test_stix21_bundle_with_wrapped_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_wrapped_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *observable_objects, observed_data = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(event, grouping)
+        for misp_object in misp_content:
+            self.assertEqual(misp_object.timestamp, observed_data.modified)
+            self.assertEqual(misp_object.first_seen, observed_data.first_observed)
+            self.assertEqual(misp_object.last_seen, observed_data.last_observed)
+        self._check_wrapped_observable_objects(observable_objects, misp_content)
+
+    def test_stix21_bundle_with_wrapped_observables(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_wrapped_observables()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *observable_objects = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(event, grouping)
+        self._check_wrapped_observable_objects(observable_objects, misp_content)
+
     def test_stix21_bundle_with_x509_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_observable()
         self.parser.load_stix_bundle(bundle)
@@ -1601,449 +2071,3 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(x509_object.name, 'x509')
         self.assertEqual(x509_object.uuid, certificate.id.split('--')[1])
         self._check_x509_fields(x509_object, certificate)
-
-    def test_stix21_bundle_with_wrapped_objects(self):
-        bundle = TestExternalSTIX21Bundles.get_bundle_with_wrapped_objects()
-        self.parser.load_stix_bundle(bundle)
-        self.parser.parse_stix_bundle()
-        event = self.parser.misp_event
-        _, grouping, *observable_objects, observed_data = bundle.objects
-        misp_content = self._check_misp_event_features_from_grouping(event, grouping)
-        (artifact1, artifact2, artifact3,
-         AS1, AS2, AS3, AS4,
-         directory1, directory2, directory3,
-         domain1, domain2, domain3,
-         domain4, ipv4_1, ipv6_1, domain5,
-         email_addr1, email_addr2, email_addr3, email_addr4,
-         email_message, email_addr5, email_addr6, email_addr7, artifact4, file1,
-         file2, directory4, artifact5, file3, file4,
-         ipv4_2, ipv6_2, ipv4_3,
-         mac1, mac2, mac3,
-         mutex1, mutex2, mutex3,
-         ipv4_4, ipv4_5, ipv4_6, nt1, nt2, ipv4_7, ipv4_8, nt3, nt4, artifact6,
-         process1, process2, file5, process3, file6, process4,
-         regkey1, regkey2, regkey3, user1,
-         software1, software2, software3,
-         url1, url2, url3,
-         user_account2, user_account3, user_account4,
-         x509_cert1, x509_cert2, x509_cert3) = observable_objects
-        (ntObj1, ntObj2, ntObj3, artifactObj1, ntObj4,
-         emailObj, artifactObj2, fileObj1,
-         processObj1, fileObj2, processObj2, processObj3, fileObj3, processObj4,
-         fileObj4, directoryObj1, artifactObj3, fileObj5, fileObj6, *PEs,
-         regkeyObj1, regkeyObj2, valueObj1, valueObj2, userObj1, regkeyObj3,
-         artifactObj4, artifactObj5, artifactObj6,
-         asn1, asn2,
-         directoryObj2, directoryObj3, directoryObj4,
-         domainIpObj1, domainIpObj2,
-         softwareObj1, softwareObj2, softwareObj3,
-         userObj2, userObj3, userObj4,
-         x509Obj1, x509Obj2, x509Obj3,
-         asAttr1, asAttr2,
-         domainAttr1, domainAttr2, domainAttr3,
-         emailAttr1, DNAttr1, emailAttr2, emailAttr3, DNAttr2, emailAttr4,
-         ipAttr1, ipAttr2, ipAttr3,
-         macAttr1, macAttr2, macAttr3,
-         mutexAttr1, mutexAttr2, mutexAttr3,
-         urlAttr1, urlAttr2, urlAttr3) = misp_content
-
-        ########################################################################
-        #                       NETWORK TRAFFIC OBJECTS.                       #
-        ########################################################################
-        self._assert_multiple_equal(
-            ntObj1.name, ntObj2.name, ntObj3.name, ntObj4.name,
-            'network-traffic'
-        )
-        self.assertEqual(ntObj1.uuid, nt1.id.split('--')[1])
-        self._check_wrapped_network_traffic_object(
-            ntObj1, nt1.id, ipv4_4.id, ipv4_5.id,
-            (ntObj2.uuid, 'encapsulates')
-        )
-        self.assertEqual(ntObj2.uuid, nt2.id.split('--')[1])
-        self._check_wrapped_network_traffic_object(
-            ntObj2, nt2.id, ipv4_4.id, ipv4_6.id,
-            (ntObj1.uuid, 'encapsulated-by')
-        )
-        self.assertEqual(ntObj3.uuid, nt3.id.split('--')[1])
-        self._check_wrapped_network_traffic_object(
-            ntObj3, nt3.id, ipv4_5.id, ipv4_7.id,
-            (artifactObj1.uuid, 'source-sent'),
-            (ntObj4.uuid, 'encapsulates')
-        )
-        self.assertEqual(ntObj4.uuid, nt4.id.split('--')[1])
-        self._check_wrapped_network_traffic_object(
-            ntObj4, nt4.id, ipv4_7.id, ipv4_8.id,
-            (artifactObj1.uuid, 'destination-sent'),
-            (ntObj3.uuid, 'encapsulated-by')
-        )
-        self.assertEqual(artifactObj1.name, 'artifact')
-        self.assertEqual(artifactObj1.uuid, artifact6.id.split('--')[1])
-        self._check_wrapped_attributes(artifact6.id, *artifactObj1.attributes)
-
-        ########################################################################
-        #                          EMAIL MESSAGE OBJECT.                       #
-        ########################################################################
-        self.assertEqual(emailObj.name, 'email')
-        self.assertEqual(emailObj.uuid, email_message.id.split('--')[1])
-        self._check_wrapped_email_object(
-            emailObj, email_message.id, email_addr5.id, email_addr6.id,
-            email_addr7.id, artifactObj2.uuid, fileObj1.uuid
-        )
-        self.assertEqual(artifactObj2.name, 'artifact')
-        self.assertEqual(artifactObj2.uuid, artifact4.id.split('--')[1])
-        self._check_wrapped_attributes(artifact4.id, *artifactObj2.attributes)
-        self.assertEqual(fileObj1.name, 'file')
-        self.assertEqual(fileObj1.uuid, file1.id.split('--')[1])
-        self._check_wrapped_attributes(file1.id, *fileObj1.attributes)
-
-        ########################################################################
-        #                            PROCESS OBJECTS.                          #
-        ########################################################################
-        self._assert_multiple_equal(
-            processObj1.name, processObj2.name,
-            processObj3.name, processObj4.name,
-            'process'
-        )
-        self._assert_multiple_equal(fileObj2.name, fileObj3.name, 'file')
-        self.assertEqual(processObj1.uuid, process1.id.split('--')[1])
-        self._check_wrapped_attributes(process1.id, *processObj1.attributes)
-        self.assertEqual(len(processObj1.references), 3)
-        file_ref, parent_ref, child_ref = processObj1.references
-        file_ref.relationship_type = 'executes'
-        parent_ref.relationship_type = 'child-of'
-        child_ref.relationship_type = 'parent-of'
-        self._assert_multiple_equal(
-            file_ref.referenced_uuid, fileObj2.uuid, file6.id.split('--')[1]
-        )
-        self._check_wrapped_attributes(file6.id, *fileObj2.attributes)
-        self._assert_multiple_equal(
-            parent_ref.referenced_uuid, processObj2.uuid,
-            process2.id.split('--')[1]
-        )
-        self._check_wrapped_attributes(process2.id, *processObj2.attributes)
-        self.assertEqual(len(processObj2.references), 1)
-        binary_ref = processObj2.references[0]
-        binary_ref.relationship_type = 'executes'
-        self._assert_multiple_equal(
-            binary_ref.referenced_uuid, fileObj3.uuid, file5.id.split('--')[1]
-        )
-        self._check_wrapped_attributes(file5.id, *fileObj3.attributes)
-        self._assert_multiple_equal(
-            child_ref.referenced_uuid, processObj3.uuid,
-            process3.id.split('--')[1]
-        )
-        self._check_wrapped_attributes(process3.id, *processObj3.attributes)
-        self.assertEqual(processObj4.uuid, process4.id.split('--')[1])
-        self._check_wrapped_attributes(process4.id, *processObj4.attributes)
-
-        ########################################################################
-        #                             FILE OBJECTS                             #
-        ########################################################################
-        self._assert_multiple_equal(
-            fileObj4.name, fileObj5.name, fileObj6.name, 'file'
-        )
-        self._check_wrapped_attributes(file2.id, *fileObj4.attributes)
-        self.assertEqual(len(fileObj4.references), 1)
-        parent_ref = fileObj4.references[0]
-        self.assertEqual(parent_ref.relationship_type, 'contained-in')
-        self.assertEqual(directoryObj1.name, 'directory')
-        self._check_wrapped_attributes(directory4.id, *directoryObj1.attributes)
-        self.assertEqual(artifactObj3.name, 'artifact')
-        self.assertEqual(artifactObj3.uuid, artifact5.id.split('--')[1])
-        self._check_wrapped_attributes(artifact5.id, *artifactObj3.attributes)
-        self.assertEqual(len(artifactObj3.references), 1)
-        content_ref = artifactObj3.references[0]
-        self.assertEqual(content_ref.relationship_type, 'content-of')
-        self.assertEqual(fileObj5.uuid, file3.id.split('--')[1])
-        self._check_wrapped_attributes(file3.id, *fileObj5.attributes)
-        self.assertEqual(len(fileObj5.references), 2)
-        contains_file_ref, contains_directory_ref = fileObj5.references
-        self._assert_multiple_equal(
-            contains_file_ref.relationship_type,
-            contains_directory_ref.relationship_type,
-            'contains'
-        )
-        self._assert_multiple_equal(
-            content_ref.referenced_uuid, contains_file_ref.referenced_uuid,
-            fileObj4.uuid, file2.id.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            parent_ref.referenced_uuid, contains_directory_ref.referenced_uuid,
-            directoryObj1.uuid, directory4.id.split('--')[1]
-        )
-        self.assertEqual(fileObj6.uuid, file4.id.split('--')[1])
-        self._check_wrapped_attributes(file4.id, *fileObj6.attributes)
-        self.assertEqual(len(fileObj6.references), 1)
-        pe_ref = fileObj6.references[0]
-        self.assertEqual(pe_ref.relationship_type, 'includes')
-        pe_object, *section_objects = PEs
-        self.assertEqual(pe_object.name, 'pe')
-        pe_id = f'{file4.id} - windows-pebinary-ext'
-        self._assert_multiple_equal(
-            pe_ref.referenced_uuid, pe_object.uuid, uuid5(UUIDv4, pe_id)
-        )
-        self._check_wrapped_attributes(pe_id, *pe_object.attributes)
-        self.assertEqual(len(pe_object.references), len(section_objects))
-        for section_ref, section in zip(pe_object.references, enumerate(section_objects)):
-            index, section_object = section
-            self.assertEqual(section_ref.relationship_type, 'includes')
-            self._assert_multiple_equal(
-                section_ref.referenced_uuid, section_object.uuid,
-                uuid5(UUIDv4, f'{pe_id} - sections - {index}')
-            )
-            self.assertEqual(section_object.name, 'pe-section')
-            self._check_wrapped_attributes(
-                f'{pe_id} - sections - {index}', *section_object.attributes
-            )
-
-        ########################################################################
-        #                         REGISTRY KEY OBJECTS                         #
-        ########################################################################
-        self._assert_multiple_equal(
-            regkeyObj1.name, regkeyObj2.name, regkeyObj3.name, 'registry-key'
-        )
-        self._assert_multiple_equal(
-            valueObj1.name, valueObj2.name, 'registry-key-value'
-        )
-        self.assertEqual(regkeyObj1.uuid, regkey1.id.split('--')[1])
-        self._check_wrapped_attributes(regkey1.id, *regkeyObj1.attributes)
-        self._check_wrapped_attributes(regkey2.id, *regkeyObj2.attributes)
-        self.assertEqual(len(regkeyObj2.references), 2)
-        for value_ref, value in zip(regkeyObj2.references, enumerate((valueObj1, valueObj2))):
-            self.assertEqual(value_ref.relationship_type, 'contains')
-            index, value_object = value
-            value_id = f'{regkey2.id} - values - {index}'
-            self._assert_multiple_equal(
-                value_ref.referenced_uuid, value_object.uuid,
-                uuid5(UUIDv4, value_id)
-            )
-            self._check_wrapped_attributes(value_id, *value_object.attributes)
-        self.assertEqual(userObj1.name, 'user-account')
-        self.assertEqual(userObj1.uuid, user1.id.split('--')[1])
-        self._check_wrapped_attributes(user1.id, *userObj1.attributes)
-        self.assertEqual(len(userObj1.references), 2)
-        creates1_ref, creates2_ref = userObj1.references
-        self._assert_multiple_equal(
-            creates1_ref.relationship_type,
-            creates2_ref.relationship_type,
-            'creates'
-        )
-        self._assert_multiple_equal(
-            creates1_ref.referenced_uuid, regkeyObj2.uuid,
-            regkey2.id.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            creates2_ref.referenced_uuid, regkeyObj3.uuid,
-            regkey3.id.split('--')[1]
-        )
-        self._check_wrapped_attributes(regkey3.id, *regkeyObj3.attributes)
-
-        ########################################################################
-        #                           ARTIFACT OBJECTS                           #
-        ########################################################################
-        self._assert_multiple_equal(
-            artifactObj4.name, artifactObj5.name, artifactObj6.name, 'artifact'
-        )
-        self.assertEqual(artifactObj4.uuid, artifact1.id.split('--')[1])
-        self._check_wrapped_attributes(artifact1.id, *artifactObj4.attributes)
-        self.assertEqual(artifactObj5.uuid, artifact2.id.split('--')[1])
-        self._check_wrapped_attributes(artifact2.id, *artifactObj5.attributes)
-        self.assertEqual(artifactObj6.uuid, artifact3.id.split('--')[1])
-        self._check_wrapped_attributes(artifact3.id, *artifactObj6.attributes)
-
-        ########################################################################
-        #                      AUTONOMOUS SYSTEM OBJECTS.                      #
-        ########################################################################
-        self._assert_multiple_equal(asn1.name, asn2.name, 'asn')
-        self.assertEqual(asn1.uuid, AS1.id.split('--')[1])
-        self._check_wrapped_attributes(AS1.id, *asn1.attributes)
-        self.assertEqual(asn2.uuid, AS3.id.split('--')[1])
-        self._check_wrapped_attributes(AS3.id, *asn2.attributes)
-
-        ########################################################################
-        #                          DIRECTORY OBJECTS.                          #
-        ########################################################################
-        self._assert_multiple_equal(
-            directoryObj2.name, directoryObj3.name,
-            directoryObj4.name, 'directory'
-        )
-        self.assertEqual(directoryObj2.uuid, directory1.id.split('--')[1])
-        self._check_wrapped_attributes(directory1.id, *directoryObj2.attributes)
-        self.assertEqual(directoryObj3.uuid, directory2.id.split('--')[1])
-        self._check_wrapped_attributes(directory2.id, *directoryObj3.attributes)
-        self.assertEqual(directoryObj4.uuid, directory3.id.split('--')[1])
-        self._check_wrapped_attributes(directory3.id, *directoryObj4.attributes)
-
-        ########################################################################
-        #                          DOMAIN-IP OBJECTS.                          #
-        ########################################################################
-        self._assert_multiple_equal(
-            domainIpObj1.name, domainIpObj2.name, 'domain-ip'
-        )
-        self.assertEqual(domainIpObj1.uuid, domain4.id.split('--')[1])
-        domainAttribute1, ipAttribute1, ipAttribute2 = domainIpObj1.attributes
-        self.assertEqual(
-            domainAttribute1.uuid,
-            uuid5(UUIDv4, f'{domain4.id} - domain - {domain4.value}')
-        )
-        self.assertEqual(
-            ipAttribute1.uuid,
-            uuid5(UUIDv4, f'{domain4.id} - {ipv4_1.id} - ip - {ipv4_1.value}')
-        )
-        self.assertEqual(
-            ipAttribute2.uuid,
-            uuid5(UUIDv4, f'{domain4.id} - {ipv6_1.id} - ip - {ipv6_1.value}')
-        )
-        self.assertEqual(domainIpObj1.references, [])
-        self.assertEqual(domainIpObj2.uuid, domain5.id.split('--')[1])
-        self.assertEqual(len(domainIpObj2.attributes), 1)
-        domainAttribute2 = domainIpObj2.attributes[0]
-        self.assertEqual(
-            domainAttribute2.uuid,
-            uuid5(UUIDv4, f'{domain5.id} - domain - {domain5.value}')
-        )
-        self.assertEqual(len(domainIpObj2.references), 1)
-        alias_ref = domainIpObj2.references[0]
-        self.assertEqual(alias_ref.relationship_type, 'alias-of')
-        self._assert_multiple_equal(
-            alias_ref.referenced_uuid, domainIpObj1.uuid
-        )
-
-        ########################################################################
-        #                           SOFTWARE OBJECTS                           #
-        ########################################################################
-        self._assert_multiple_equal(
-            softwareObj1.name, softwareObj2.name, softwareObj3.name, 'software'
-        )
-        self.assertEqual(softwareObj1.uuid, software1.id.split('--')[1])
-        self._check_wrapped_attributes(software1.id, *softwareObj1.attributes)
-        self.assertEqual(softwareObj2.uuid, software2.id.split('--')[1])
-        self._check_wrapped_attributes(software2.id, *softwareObj2.attributes)
-        self.assertEqual(softwareObj3.uuid, software3.id.split('--')[1])
-        self._check_wrapped_attributes(software3.id, *softwareObj3.attributes)
-
-        ########################################################################
-        #                         USER-ACCOUNT OBJECTS                         #
-        ########################################################################
-        self._assert_multiple_equal(
-            userObj2.name, userObj3.name, userObj4.name, 'user-account'
-        )
-        self.assertEqual(userObj2.uuid, user_account2.id.split('--')[1])
-        self._check_wrapped_attributes(user_account2.id, *userObj2.attributes)
-        self.assertEqual(userObj3.uuid, user_account3.id.split('--')[1])
-        self._check_wrapped_attributes(user_account3.id, *userObj3.attributes)
-        self.assertEqual(userObj4.uuid, user_account4.id.split('--')[1])
-        self._check_wrapped_attributes(user_account4.id, *userObj4.attributes)
-
-        ########################################################################
-        #                             X509 OBJECTS                             #
-        ########################################################################
-        self._assert_multiple_equal(
-            x509Obj1.name, x509Obj2.name, x509Obj3.name, 'x509'
-        )
-        self.assertEqual(x509Obj1.uuid, x509_cert1.id.split('--')[1])
-        self._check_wrapped_attributes(x509_cert1.id, *x509Obj1.attributes)
-        self.assertEqual(x509Obj2.uuid, x509_cert2.id.split('--')[1])
-        self._check_wrapped_attributes(x509_cert2.id, *x509Obj2.attributes)
-        self.assertEqual(x509Obj3.uuid, x509_cert3.id.split('--')[1])
-        self._check_wrapped_attributes(x509_cert3.id, *x509Obj3.attributes)
-
-        ########################################################################
-        #                     AUTONOMOUS SYSTEM ATTRIBUTES                     #
-        ########################################################################
-        self._assert_multiple_equal(asAttr1.type, asAttr2.type, 'AS')
-        self.assertEqual(asAttr1.uuid, AS2.id.split('--')[1])
-        self.assertEqual(asAttr2.uuid, AS4.id.split('--')[1])
-
-        ########################################################################
-        #                          DOMAIN ATTRIBUTES.                          #
-        ########################################################################
-        self._assert_multiple_equal(
-            domainAttr1.type, domainAttr2.type, domainAttr3.type, 'domain'
-        )
-        self.assertEqual(domainAttr1.uuid, domain1.id.split('--')[1])
-        self.assertEqual(domainAttr2.uuid, domain2.id.split('--')[1])
-        self.assertEqual(domainAttr3.uuid, domain3.id.split('--')[1])
-
-        ########################################################################
-        #                           EMAIL ATTRIBUTES                           #
-        ########################################################################
-        self._assert_multiple_equal(
-            emailAttr1.type, emailAttr2.type, emailAttr3.type,
-            emailAttr4.type, 'email'
-        )
-        self._assert_multiple_equal(
-            DNAttr1.type, DNAttr2.type, 'email-dst-display-name'
-        )
-        self.assertEqual(
-            emailAttr1.uuid,
-            uuid5(UUIDv4, f'{email_addr1.id} - email - {email_addr1.value}')
-        )
-        self.assertEqual(
-            DNAttr1.uuid,
-            uuid5(
-                UUIDv4, ' - '.join(
-                    (
-                        email_addr1.id, 'email-dst-display-name',
-                        email_addr1.display_name
-                    )
-                )
-            )
-        )
-        self.assertEqual(emailAttr2.uuid, email_addr2.id.split('--')[1])
-        self.assertEqual(
-            emailAttr3.uuid,
-            uuid5(UUIDv4, f'{email_addr3.id} - email - {email_addr3.value}')
-        )
-        self.assertEqual(
-            DNAttr2.uuid,
-            uuid5(
-                UUIDv4, ' - '.join(
-                    (
-                        email_addr3.id, 'email-dst-display-name',
-                        email_addr3.display_name
-                    )
-                )
-            )
-        )
-        self.assertEqual(emailAttr4.uuid, email_addr4.id.split('--')[1])
-
-        ########################################################################
-        #                            IP ATTRIBUTES                             #
-        ########################################################################
-        self._assert_multiple_equal(
-            ipAttr1.type, ipAttr2.type, ipAttr3.type, 'ip-dst'
-        )
-        self.assertEqual(ipAttr1.uuid, ipv4_2.id.split('--')[1])
-        self.assertEqual(ipAttr2.uuid, ipv4_3.id.split('--')[1])
-        self.assertEqual(ipAttr3.uuid, ipv6_2.id.split('--')[1])
-
-        ########################################################################
-        #                           MAC ATTRIBUTES                             #
-        ########################################################################
-        self._assert_multiple_equal(
-            macAttr1.type, macAttr2.type, macAttr3.type, 'mac-address'
-        )
-        self.assertEqual(macAttr1.uuid, mac1.id.split('--')[1])
-        self.assertEqual(macAttr2.uuid, mac2.id.split('--')[1])
-        self.assertEqual(macAttr3.uuid, mac3.id.split('--')[1])
-
-        ########################################################################
-        #                          MUTEX ATTRIBUTES                            #
-        ########################################################################
-        self._assert_multiple_equal(
-            mutexAttr1.type, mutexAttr2.type, mutexAttr3.type, 'mutex'
-        )
-        self.assertEqual(mutexAttr1.uuid, mutex1.id.split('--')[1])
-        self.assertEqual(mutexAttr2.uuid, mutex2.id.split('--')[1])
-        self.assertEqual(mutexAttr3.uuid, mutex3.id.split('--')[1])
-
-        ########################################################################
-        #                           URL ATTRIBUTES                             #
-        ########################################################################
-        self._assert_multiple_equal(
-            urlAttr1.type, urlAttr2.type, urlAttr3.type, 'url'
-        )
-        self.assertEqual(urlAttr1.uuid, url1.id.split('--')[1])
-        self.assertEqual(urlAttr2.uuid, url2.id.split('--')[1])
-        self.assertEqual(urlAttr3.uuid, url3.id.split('--')[1])

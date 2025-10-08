@@ -2132,20 +2132,10 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def __get_wrapped_objects(cls):
         object_refs = []
-        for name in cls._get_variable_names(globals().keys()):
-            values = deepcopy(globals()[name])
-            for stix_object in values:
-                if stix_object['type'] in SDOs:
-                    continue
-                if stix_object['type'] == 'artifact':
-                    if not any(feature in stix_object for feature in ('payload_bin', 'url')):
-                        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
-                            stix_object['payload_bin'] = b64encode(f.read()).decode()
-                object_uuid = uuid5(UUIDv4, stix_object['id'])
-                object_id = f"{stix_object['type']}--{object_uuid}"
-                stix_object['id'] = object_id
-                object_refs.append(object_id)
-                yield dict(cls.__assemble_stix_object(stix_object))
+        for stix_object in cls.__get_wrapped_observables():
+            object_id = stix_object['id']
+            object_refs.append(object_id)
+            yield stix_object
         yield {
             "type": "observed-data",
             "spec_version": "2.1",
@@ -2158,6 +2148,21 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
             "number_observed": 1,
             "object_refs": object_refs
         }
+
+    @classmethod
+    def __get_wrapped_observables(cls):
+        for name in cls._get_variable_names(globals().keys()):
+            values = deepcopy(globals()[name])
+            for stix_object in values:
+                if stix_object['type'] in SDOs:
+                    continue
+                if stix_object['type'] == 'artifact':
+                    if not any(feature in stix_object for feature in ('payload_bin', 'url')):
+                        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+                            stix_object['payload_bin'] = b64encode(f.read()).decode()
+                object_uuid = uuid5(UUIDv4, stix_object['id'])
+                stix_object['id'] = f"{stix_object['type']}--{object_uuid}"
+                yield dict(cls.__assemble_stix_object(stix_object))
 
     ############################################################################
     #                              EVENTS SAMPLES                              #
@@ -2411,6 +2416,10 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_wrapped_objects(cls):
         return cls.__assemble_bundle(*cls.__get_wrapped_objects())
+
+    @classmethod
+    def get_bundle_with_wrapped_observables(cls):
+        return cls.__assemble_bundle(*cls.__get_wrapped_observables())
 
     @classmethod
     def get_bundle_with_x509_objects(cls):
