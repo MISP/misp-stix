@@ -315,10 +315,15 @@ class STIX2Mapping:
     __file_hashes = Mapping(
         **{
             'MD5': __md5_attribute,
+            'SHA1': __sha1_attribute,
             'SHA-1': __sha1_attribute,
+            'SHA256': __sha256_attribute,
             'SHA-256': __sha256_attribute,
+            'SHA512': __sha512_attribute,
             'SHA-512': __sha512_attribute,
+            'SHA3256': __sha3_256_attribute,
             'SHA3-256': __sha3_256_attribute,
+            'SHA3512': __sha3_512_attribute,
             'SHA3-512': __sha3_512_attribute,
             'SSDEEP': __ssdeep_attribute,
             'ssdeep': __ssdeep_attribute,
@@ -1260,13 +1265,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         **STIX2Mapping.file_hashes(),
         AUTHENTIHASH=__authentihash_attribute,
         IMPHASH=STIX2Mapping.imphash_attribute(),
-        SHA1=STIX2Mapping.sha1_attribute(),
         SHA224=__sha224_attribute,
-        SHA256=STIX2Mapping.sha256_attribute(),
         SHA3224=__sha3_224_attribute,
         SHA3384=__sha3_384_attribute,
         SHA384=__sha384_attribute,
-        SHA512=STIX2Mapping.sha512_attribute(),
         TELFHASH=__telfhash_attribute,
         VHASH=__vhash_attribute
     )
