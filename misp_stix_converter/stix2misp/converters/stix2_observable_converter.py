@@ -225,6 +225,10 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class STIX2ObservableConverter(STIX2Converter):
+    @property
+    def indicator_references(self) -> dict:
+        return self.main_parser.indicator_references
+
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable.get(object_ref)
 

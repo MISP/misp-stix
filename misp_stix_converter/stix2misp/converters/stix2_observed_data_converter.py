@@ -58,9 +58,16 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
-    def _get_observed_data(
-            self, object_id: str) -> dict | _OBSERVED_DATA_TYPING:
-        return self.main_parser._observed_data[object_id]
+    def _get_observed_data(self, object_id: str) -> _OBSERVED_DATA_TYPING:
+        observed_data = self.main_parser._observed_data[object_id]
+        if isinstance(observed_data, (ObservedData_v20, ObservedData_v21)):
+            return observed_data
+        return observed_data['observed_data']
+
+    def _get_observed_data_indicator_refs(
+            self, observed_data_id: str, object_id: str) -> Union[set, None]:
+        observed_data = self.main_parser._observed_data[observed_data_id]
+        return observed_data.get('indicator_refs', {}).get(object_id)
 
     @property
     def observables(self) -> dict:
@@ -151,31 +158,15 @@ class ExternalSTIX2ObservedDataConverter(
 
     def parse(self, observed_data_ref: str):
         observed_data = self._get_observed_data(observed_data_ref)
-        if observed_data.get('indicator_refs') is not None:
-            observed_data_object = observed_data['observed_data']
-            try:
-                if hasattr(observed_data_object, 'object_refs'):
-                    self._parse_observable_object_refs(
-                        observed_data_object, observed_data['indicator_refs']
-                    )
-                else:
-                    self._parse_observable_objects(
-                        observed_data_object, observed_data['indicator_refs']
-                    )
-            except UnknownObservableMappingError as observable_types:
-                self._observable_mapping_error(
-                    observed_data_object.id, observable_types
-                )
-        else:
-            try:
-                if hasattr(observed_data, 'object_refs'):
-                    self._parse_observable_object_refs(observed_data)
-                else:
-                    self._parse_observable_objects(observed_data)
-            except UnknownObservableMappingError as observable_types:
-                self._observable_mapping_error(
-                    observed_data.id, observable_types
-                )
+        try:
+            if hasattr(observed_data, 'object_refs'):
+                self._parse_observable_object_refs(observed_data)
+            else:
+                self._parse_observable_objects(observed_data)
+        except UnknownObservableMappingError as observable_types:
+            self._observable_mapping_error(
+                observed_data.id, observable_types
+            )
 
     def parse_relationships(self):
         for misp_object in self.main_parser.misp_event.objects:

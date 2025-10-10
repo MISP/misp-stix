@@ -25,11 +25,11 @@ from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Iterator, Optional, Union
 
 _EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
-_INDICATOR_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
 _OBSERVABLE_FIELDS_TO_SKIP = (
     'defanged', 'granular_markings', 'id', 'object_marking_refs',
     'spec_version', 'type'
 )
+_SDO_STORAGE_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
 _SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
 
 
@@ -371,23 +371,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     if isinstance(value, _EXTENSION_TYPES):
                         yield from self._fetch_observable_references(value)
                         continue
-                    yield f'{key} - {value}'
+                    yield value
                 continue
             if isinstance(values, _EXTENSION_TYPES):
                 yield from self._fetch_observable_references(values)
                 continue
-            yield f'{key} - {values}'
+            yield values
 
     def _set_indicator_references(self):
         score = 0
-        for feature, count in _INDICATOR_FIELDS.items():
+        for feature, count in _SDO_STORAGE_FIELDS.items():
             if getattr(self, feature, []):
                 score += count
         if score in (0, 1, 2, 4, 6):
             return
         pattern_parser = self.indicator_parser._compile_stix_pattern
         self._indicator_references = {
-            indicator_id: tuple(f'{val[0][-1]} - {val[-1]}' for val in pattern)
+            indicator_id: tuple(val[-1] for val in pattern)
             for indicator_id, indicator in self._indicator.items()
             for pattern in pattern_parser(indicator).comparisons.values()
         }
@@ -400,16 +400,22 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     continue
                 for indicator_reference in indicator_references:
                     indicator = self._indicator[indicator_reference]
-                    self._indicator[indicator_reference] = {
-                        'indicator': indicator,
-                        'observable_ref': observable_id
-                    }
-                    observable['indicator_ref'] = indicator_reference
+                    if not isinstance(indicator, dict):
+                        self._indicator[indicator_reference] = {
+                            'indicator': indicator,
+                            'observable_ref': set()
+                        }
+                        indicator = self._indicator[indicator_reference]
+                    indicator['observable_ref'].add(observable_id)
+                    if 'indicator_ref' not in observable:
+                        observable['indicator_ref'] = {indicator_reference}
+                        continue
+                    observable['indicator_ref'].add(indicator_reference)
         if score >= 5:
             for observed_id, observed_data in self._observed_data.items():
                 if not hasattr(observed_data, 'objects'):
                     continue
-                indicator_refs = {}
+                indicator_refs = defaultdict(set)
                 for observable_id, observable in observed_data.objects.items():
                     indicator_references = set(
                         self._fetch_indicator_reference(observable)
@@ -417,14 +423,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     if not indicator_references:
                         continue
                     for indicator_reference in indicator_references:
+                        indicator_refs[observable_id].add(indicator_reference)
                         indicator = self._indicator[indicator_reference]
-                        self._indicator[indicator_reference] = {
-                            'indicator': indicator,
-                            'observable_ref': observed_id
-                        }
-                        indicator_refs[observable_id] = indicator_reference
+                        if not isinstance(indicator, dict):
+                            self._indicator[indicator_reference] = {
+                                'indicator': indicator,
+                                'observable_ref': {observed_id}
+                            }
+                            continue
+                        indicator['observable_ref'].add(observed_id)
                 if indicator_refs:
-                    self._observed_data[observed_id] = {
-                        'indicator_refs': indicator_refs,
-                        'observed_data': observed_data
-                    }
+                    if not isinstance(observed_data, dict):
+                        self._observed_data[observed_id] = {
+                            'indicator_refs': indicator_refs,
+                            'observed_data': observed_data
+                        }
+                        continue
+                    for observable_id, refs in indicator_refs.items():
+                        observed_data['indicator_refs'][observable_id].update(refs)
