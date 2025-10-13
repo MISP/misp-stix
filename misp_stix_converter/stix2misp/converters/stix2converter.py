@@ -105,25 +105,14 @@ class STIX2Converter(metaclass=ABCMeta):
                 )
 
     def _populate_object_attribute(
-            self, mapping: dict, value: str, object_id: str) -> dict:
-        return {
-            'value': value, **mapping,
-            'uuid': self.main_parser._create_v5_uuid(
-                f"{object_id} - {mapping['object_relation']} - {value}"
-            )
-        }
+            self, value: str, mapping: dict, attribute: dict) -> dict:
+        return {'value': value, **mapping, **attribute}
 
     def _populate_object_attribute_with_data(
-            self, mapping: dict, value: dict | str, object_id: str) -> dict:
+            self, value: dict | str, mapping: dict, attribute: dict) -> dict:
         if isinstance(value, dict):
-            return {
-                **value, **mapping,
-                'uuid': self.main_parser._create_v5_uuid(
-                    f"{object_id} - {mapping['object_relation']}"
-                    f" - {value['value']}"
-                )
-            }
-        return self._populate_object_attribute(mapping, value, object_id)
+            return {**value, **mapping, **attribute}
+        return self._populate_object_attribute(value, mapping, attribute)
 
     def _populate_object_attributes(
             self, mapping: dict, values: Union[list, str],

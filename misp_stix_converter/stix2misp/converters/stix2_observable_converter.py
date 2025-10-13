@@ -261,8 +261,9 @@ class STIX2ObservableConverter(STIX2Converter):
             observable['misp_object'] = [observable['misp_object'], misp_object]
 
     def _parse_email_address_observable(
-            self, observable: _EMAIL_ADDRESS_TYPING, to_ids: bool, field: str,
-            object_id: str, indicator_ref: str | tuple) -> dict:
+            self, observable: _EMAIL_ADDRESS_TYPING, field: str,
+            object_id: str, indicator_id: tuple | None) -> dict:
+        to_ids = bool(indicator_id)
         attribute = {
             'value': observable.value, 'to_ids': to_ids,
             **getattr(self._mapping, f'{field}_attribute')()
@@ -270,7 +271,7 @@ class STIX2ObservableConverter(STIX2Converter):
         feature = f'{object_id} - {field} - {observable.value}'
         if to_ids:
             attribute['uuid'] = self.main_parser._create_v5_uuid(
-                f'{indicator_ref} - {feature}'
+                f"{' - '.join(indicator_id)} - {feature}"
             )
             return attribute
         if hasattr(observable, 'id'):
@@ -416,9 +417,15 @@ class STIX2ObservableConverter(STIX2Converter):
                 yield from self._handle_object_attributes(
                     observable, attribute, indicator_ref, field, object_id
                 )
+        protocol_attribute = self._mapping.protocol_attribute()
         for protocol in observable.protocols:
             yield self._populate_object_attribute(
-                self._mapping.protocol_attribute(), protocol.upper(), object_id
+                protocol.upper(), protocol_attribute,
+                self._handle_object_id(
+                    indicator_ref, protocol.upper(),
+                    f"{object_id} - {protocol_attribute['object_relation']}",
+                    protocol
+                )
             )
 
     def _parse_network_traffic_reference_observable(
@@ -665,21 +672,26 @@ class ExternalSTIX2ObservableMapping(
 
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
-    def _check_indicator_reference(self, reference: str, field: str) ->bool:
-        return field in self.main_parser.indicator_references.get(reference, [])
+    def _check_indicator_reference(
+            self, references: set | None, field: str) -> tuple | None:
+        if references is None:
+            return None
+        return tuple(
+            reference for reference in sorted(references)
+            if field in self.indicator_references.get(reference, [])
+        )
 
     def _handle_hash_attribute(
             self, indicator_ref: str, hash_type: str, value: str,
             object_id: str, mapping: Optional[str] = 'file') -> dict:
-        mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
-        if mapping is not None:
-            to_ids = self._check_indicator_reference(
-                indicator_ref, f'{hash_type} - {value}'
-            )
-            attribute = {'to_ids': to_ids, **mapping}
+        attribute = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
+        if attribute is not None:
             return self._populate_object_attribute(
-                attribute, value,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+                value, attribute,
+                self._handle_object_id(
+                    indicator_ref, value,
+                    f"{object_id} - {attribute['object_relation']}"
+                )
             )
         self._hash_type_error(hash_type)
 
@@ -689,20 +701,18 @@ class ExternalSTIX2ObservableConverter(
         values = observable[field]
         if isinstance(values, list):
             for value in values:
-                to_ids = self._check_indicator_reference(
-                    indicator_ref, f'{field} - {value}'
-                )
                 yield self._populate_object_attribute(
-                    {'to_ids': to_ids, **mapping}, value,
-                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                    value, mapping, self._handle_object_id(
+                        indicator_ref, value,
+                        f"{object_id} - {mapping['object_relation']}"
+                    )
                 )
         else:
-            to_ids = self._check_indicator_reference(
-                indicator_ref, f'{field} - {values}'
-            )
             yield self._populate_object_attribute(
-                {'to_ids': to_ids, **mapping}, values,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+                values, mapping, self._handle_object_id(
+                    indicator_ref, values,
+                    f"{object_id} - {mapping['object_relation']}"
+                )
             )
 
     def _handle_object_attributes_with_data(
@@ -711,42 +721,64 @@ class ExternalSTIX2ObservableConverter(
         values = observable[field]
         if isinstance(values, list):
             for value in values:
-                to_ids = self._check_indicator_reference(
-                    indicator_ref,
-                    f"{field} - {value['value'] if isinstance(value, dict) else value}"
-                )
                 yield self._populate_object_attribute_with_data(
-                    {'to_ids': to_ids, **mapping}, value,
-                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                    value, mapping,
+                    self._handle_object_id(
+                        indicator_ref,
+                        value['data'] if isinstance(value, dict) else value,
+                        f"{object_id} - {mapping['object_relation']}"
+                    )
                 )
         else:
-            to_ids = self._check_indicator_reference(
-                indicator_ref,
-                f"{field} - {values['value'] if isinstance(values, dict) else values}"
-            )
             yield self._populate_object_attribute_with_data(
-                {'to_ids': to_ids, **mapping}, values,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+                values, mapping,
+                self._handle_object_id(
+                    indicator_ref,
+                    values['data'] if isinstance(values, dict) else values,
+                    f"{object_id} - {mapping['object_relation']}"
+                )
             )
+
+    def _handle_object_id(
+            self, indicator_ref: set | None, value: str,
+            object_id: str, value_to_check: Optional[str] = None,
+            **attribute: dict[str, str | bool]) -> dict:
+        indicator_id = self._check_indicator_reference(
+            indicator_ref, value_to_check or value
+        )
+        if bool(indicator_id):
+            id_comment = 'ID' if len(indicator_id) == 1 else 'IDs'
+            comment = f"Indicator {id_comment}: {', '.join(indicator_id)}"
+            if attribute.get('comment'):
+                comment = f"{comment} - {attribute.pop('comment')}"
+            return {
+                'to_ids': True, 'comment': comment, **attribute,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f"{' - '.join(indicator_id)} - {object_id} - {value}"
+                )
+            }
+        return {
+            'to_ids': False, **attribute,
+            'uuid': self.main_parser._create_v5_uuid(
+                f'{object_id} - {value}'
+            )
+        }
 
     def _parse_artifact_observable(
             self, observable: _ARTIFACT_TYPING, object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         object_relation = 'payload_bin'
         if hasattr(observable, object_relation):
             data = observable.payload_bin
-            to_ids = self._check_indicator_reference(
-                indicator_ref, f'{object_relation} - {data}'
-            )
             value = getattr(observable, 'id', object_id.split(' - ')[0])
-            attribute = {'object_relation': object_relation, 'to_ids': to_ids}
             yield self._populate_object_attribute_with_data(
-                attribute, {'data': data, 'value': value.split('--')[1]},
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+                {'data': data, 'value': value.split('--')[1]},
+                {'object_relation': object_relation},
+                self._handle_object_id(
+                    indicator_ref, data, f'{object_id} - {object_relation}'
+                )
             )
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
@@ -767,22 +799,22 @@ class ExternalSTIX2ObservableConverter(
             indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
-        to_ids = self._check_indicator_reference(
-            indicator_ref,  f'number - {observable.number}'
-        )
+        asn_attribute = self._mapping.asn_attribute()
         yield self._populate_object_attribute(
-            {'to_ids': to_ids, **self._mapping.asn_attribute()},
-            self._parse_AS_value(observable.number),
-            f'{indicator_ref} - {object_id}' if to_ids else object_id
+            self._parse_AS_value(observable.number), asn_attribute,
+            self._handle_object_id(
+                indicator_ref, observable.number,
+                f"{object_id} - {asn_attribute['object_relation']}"
+            )
         )
         if hasattr(observable, 'name'):
-            name_ids = self._check_indicator_reference(
-                indicator_ref, f'name - {observable.name}'
-            )
+            description_attribute = self._mapping.description_attribute()
             yield self._populate_object_attribute(
-                {'to_ids': name_ids, **self._mapping.description_attribute()},
-                observable.name,
-                f'{indicator_ref} - {object_id}' if name_ids else object_id
+                observable.name, description_attribute,
+                self._handl_object_id(
+                    indicator_ref, observable.name,
+                    f"{object_id} - {description_attribute['object_relation']}"
+                )
             )
 
     def _parse_domain_observable(
@@ -808,37 +840,11 @@ class ExternalSTIX2ObservableConverter(
     def _parse_email_address_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
             object_id: str, indicator_ref: str | tuple) -> dict:
-        to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {observable.value}'
-        )
         return super()._parse_email_address_observable(
-            observable, to_ids, feature, object_id, indicator_ref
-        )
-
-    def _parse_ip_belonging_to_AS_observable(
-            self, observable: _IP_OBSERVABLE_TYPING,
-            object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> dict:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
-        if object_id is None:
-            object_id = observable.id
-        to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {observable.value}'
-        )
-        attribute = {
-            'value': observable.value, 'to_ids': to_ids,
-            **self._mapping.subnet_announced_attribute()
-        }
-        if object_id is None:
-            attribute.update(
-                self.main_parser._sanitise_attribute_uuid(observable.id)
+            observable, feature, object_id, self._check_indicator_reference(
+                indicator_ref, observable.value
             )
-            return attribute
-        attribute['uuid'] = self.main_parser._create_v5_uuid(
-            f'{object_id} - subnet-announced - {observable.value}'
         )
-        return attribute
 
     def _parse_ip_observable(self, observable: _IP_OBSERVABLE_TYPING,
                              object_id: Optional[str] = None,
@@ -847,9 +853,10 @@ class ExternalSTIX2ObservableConverter(
             indicator_ref = self._get_indicator_reference(indicator_ref)
         if object_id is None:
             object_id = observable.id
-        to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {observable.value}'
+        indicator_id = self._check_indicator_reference(
+            indicator_ref, observable.value
         )
+        to_ids = bool(indicator_id)
         attribute = {
             'value': observable.value, 'to_ids': to_ids,
             **self._mapping.ip_attribute()
@@ -859,6 +866,9 @@ class ExternalSTIX2ObservableConverter(
                 self.main_parser._sanitise_attribute_uuid(observable.id)
             )
             return attribute
+        if to_ids:
+            indicator_id = ' - '.join(indicator_id)
+            object_id = f'{indicator_id} - {object_id}'
         attribute['uuid'] = self.main_parser._create_v5_uuid(
             f'{object_id} - ip - {observable.value}'
         )
@@ -1049,16 +1059,20 @@ class InternalSTIX2ObservableConverter(
         values = observable[field]
         if isinstance(values, list):
             for value in values:
-                to_ids = self._check_indicator_reference(indicator_ref)
                 yield self._populate_object_attribute_with_data(
-                    {'to_ids': to_ids, **mapping}, value,
-                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                    value, mapping, self._handle_object_id(
+                        indicator_ref,
+                        value['value'] if isinstance(value, dict) else value,
+                        f"{object_id} - {mapping['object_relation']}"
+                    )
                 )
         else:
-            to_ids = self._check_indicator_reference(indicator_ref)
             yield self._populate_object_attribute_with_data(
-                {'to_ids': to_ids, **mapping}, values,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+                values, mapping, self._handle_object_id(
+                    indicator_ref,
+                    values['value'] if isinstance(values, dict) else values,
+                    f"{object_id} - {mapping['object_relation']}"
+                )
             )
 
     def _has_domain_custom_fields(self, observable: DomainName_v21) -> bool:
