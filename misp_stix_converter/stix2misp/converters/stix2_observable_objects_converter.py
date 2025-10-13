@@ -227,8 +227,11 @@ class STIX2ObservableObjectConverter(
         value = getattr(observable, feature)
         attribute = {'type': attribute_type, 'value': value, 'to_ids': to_ids}
         if to_ids:
-            if comment is not None:
-                attribute['comment'] = comment
+            indicator_comment = f'Indicator ID: {indicator_ref}'
+            attribute['comment'] = (
+                f'{indicator_comment} - {comment}'
+                if comment is not None else indicator_comment
+            )
             attribute['uuid'] = self.main_parser._create_v5_uuid(
                 f'{indicator_ref} - {observable.id} - '
                 f'{attribute_type} - {value}'
@@ -282,7 +285,7 @@ class STIX2ObservableObjectConverter(
             observable['misp_object'] = misp_object
             return misp_object
         to_ids = self._check_indicator_reference(
-            indicator_ref, f'number - {autonomous_system.number}'
+            indicator_ref, autonomous_system.number
         )
         value = self._parse_AS_value(autonomous_system.number)
         attribute = {'type': 'AS', 'to_ids': to_ids, 'value': value}
@@ -348,7 +351,7 @@ class STIX2ObservableObjectConverter(
                         mac_address = resolved_mac['observable']
                         indicator_ref = resolved_mac.get('indicator_ref', '')
                         to_ids = self._check_indicator_reference(
-                            indicator_ref, f'value - {mac_address.value}'
+                            indicator_ref, mac_address.value
                         )
                         attribute = self._create_misp_attribute(
                             mac_address, 'mac-address', indicator_ref, to_ids,
@@ -365,7 +368,7 @@ class STIX2ObservableObjectConverter(
             return misp_object
         indicator_ref = observable.get('indicator_ref', '')
         to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {domain_name.value}'
+            indicator_ref, domain_name.value
         )
         attribute = self._create_misp_attribute(
             domain_name, 'domain', indicator_ref, to_ids
@@ -387,7 +390,7 @@ class STIX2ObservableObjectConverter(
         email_address = observable['observable']
         indicator_ref = observable.get('indicator_ref', '')
         to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {email_address.value}'
+            indicator_ref, email_address.value
         )
         if hasattr(email_address, 'belongs_to_ref'):
             user_account_object = self._parse_user_account_observable_object(
@@ -506,7 +509,7 @@ class STIX2ObservableObjectConverter(
                 if hasattr(multipart, 'body'):
                     object_id = email_message.id
                     to_ids = self._check_indicator_reference(
-                        indicator_ref, f'body - {multipart.body}'
+                        indicator_ref, multipart.body
                     )
                     if to_ids:
                         object_id = f'{indicator_ref} - {object_id}'
@@ -545,10 +548,20 @@ class STIX2ObservableObjectConverter(
             if observable.type not in ('ipv4-addr', 'ipv6-addr'):
                 continue
             if AS_id in getattr(observable, 'belongs_to_refs', []):
-                content['used'][self.event_uuid] = True
-                yield self._parse_ip_belonging_to_AS_observable(
-                    observable, indicator_ref=indicator_ref
+                indicator_id = self._check_indicator_reference(
+                    indicator_ref, observable.value
                 )
+                to_ids = bool(indicator_id)
+                attribute = {
+                    'value': observable.value, 'to_ids': to_ids,
+                    **self._mapping.subnet_announced_attribute()
+                }
+                if to_ids:
+                    object_id = f"{' - '.join(indicator_id)} - {object_id}"
+                attribute['uuid'] = self.main_parser._create_v5_uuid(
+                    f'{object_id} - subnet-announced - {observable.value}'
+                )
+                yield attribute
 
     def _parse_ip_address_observable_object(
             self, ip_address_ref: str) -> _MISP_CONTENT_TYPING:
@@ -560,7 +573,7 @@ class STIX2ObservableObjectConverter(
         ip_address = observable['observable']
         indicator_ref = observable.get('indicator_ref', '')
         to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {ip_address.value}'
+            indicator_ref, ip_address.value
         )
         attribute = self._create_misp_attribute(
             ip_address,  'ip-dst', indicator_ref, to_ids
@@ -580,7 +593,7 @@ class STIX2ObservableObjectConverter(
         mac_address = observable['observable']
         indicator_ref = observable.get('indicator_ref', '')
         to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {mac_address.value}'
+            indicator_ref, mac_address.value
         )
         attribute = self._create_misp_attribute(
             mac_address, 'mac-address', indicator_ref, to_ids
@@ -598,9 +611,7 @@ class STIX2ObservableObjectConverter(
             return observable['misp_attribute']
         mutex = observable['observable']
         indicator_ref = observable.get('indicator_ref', '')
-        to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {mutex.name}'
-        )
+        to_ids = self._check_indicator_reference(indicator_ref, mutex.name)
         attribute = self._create_misp_attribute(
             mutex, 'mutex', indicator_ref, to_ids, feature='name'
         )
@@ -795,9 +806,7 @@ class STIX2ObservableObjectConverter(
             return observable['misp_attribute']
         url = observable['observable']
         indicator_ref = observable.get('indicator_ref', '')
-        to_ids = self._check_indicator_reference(
-            indicator_ref, f'value - {url.value}'
-        )
+        to_ids = self._check_indicator_reference(indicator_ref, url.value)
         attribute = self._create_misp_attribute(
             url, 'url', indicator_ref, to_ids
         )
