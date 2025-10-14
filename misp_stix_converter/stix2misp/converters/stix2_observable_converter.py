@@ -822,8 +822,7 @@ class ExternalSTIX2ObservableConverter(
             )
             return attribute
         if to_ids:
-            indicator_id = ' - '.join(indicator_id)
-            object_id = f'{indicator_id} - {object_id}'
+            object_id = f"{' - '.join(indicator_id)} - {object_id}"
         attribute['uuid'] = self.main_parser._create_v5_uuid(
             f'{object_id} - ip - {observable.value}'
         )
