@@ -7,7 +7,6 @@ from .stix2converter import (
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
-from collections import defaultdict
 from pymisp import MISPObject
 from stix2.v20.observables import (
     Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
@@ -232,24 +231,6 @@ class STIX2ObservableConverter(STIX2Converter):
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable.get(object_ref)
 
-    def _get_indicator_reference(self, observable: _OBSERVABLE_TYPING,
-                                 indicator_references: tuple) -> str | tuple:
-        count = defaultdict(int)
-        observable_references = tuple(
-            self.main_parser._fetch_observable_references(observable)
-        )
-        for indicator_id in indicator_references:
-            patterns = self.indicator_references[indicator_id]
-            for pattern in patterns:
-                if pattern in observable_references:
-                    count[indicator_id] += 1
-        max_count = max(count.values())
-        indicator_ids = [
-            key for key, value in count.items() if value == max_count
-        ]
-        # multiple hits at this point means it's a weird document
-        return indicator_ids[0]
-
     def _handle_misp_object_storage(
             self, observable: dict, misp_object: MISPObject):
         observable['used'][self.event_uuid] = True
@@ -262,7 +243,7 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_email_address_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, field: str,
-            object_id: str, indicator_id: tuple | None) -> dict:
+            object_id: str, indicator_id: set | None) -> dict:
         to_ids = bool(indicator_id)
         attribute = {
             'value': observable.value, 'to_ids': to_ids,
@@ -286,9 +267,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_email_observable(
             self, observable: _EMAIL_MESSAGE_TYPING,
             object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         for field, mapping in self._mapping.email_object_mapping().items():
@@ -308,9 +287,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_email_reference_observable(
             self, observable: _EMAIL_ADDRESS_TYPING,
             feature: str, object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         if hasattr(observable, 'display_name'):
@@ -330,9 +307,7 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_file_observable(
             self, observable: _FILE_TYPING, object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         if hasattr(observable, 'hashes'):
@@ -349,9 +324,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_generic_observable(
             self, observable: _OBSERVABLE_TYPING,
             name: str, object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         feature = f'{name}_object_mapping'
@@ -381,9 +354,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_network_socket_observable(
             self, observable: _NETWORK_TRAFFIC_TYPING,
             object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         for protocol in observable.protocols:
@@ -406,9 +377,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_network_traffic_observable(
             self, observable: _NETWORK_TRAFFIC_TYPING,
             object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         mapping = self._mapping.network_traffic_object_mapping()
@@ -431,9 +400,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_network_traffic_reference_observable(
             self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING,
             object_id: str, name: Optional[str] = 'network_traffic',
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         attribute = getattr(self._mapping, f'{name}_reference_mapping')(
             f'{observable.type}_{asset}'
         )
@@ -444,7 +411,7 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_pe_extension_observable(
             self, extension: _EXTENSION_TYPING, reference: str,
-            indicator_ref: Optional[str] = '') -> Iterator[dict]:
+            indicator_ref: set | None) -> Iterator[dict]:
         if hasattr(extension, 'optional_header'):
             if hasattr(extension.optional_header, 'address_of_entry_point'):
                 yield from self._handle_object_attributes(
@@ -460,7 +427,7 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_pe_section_observable(
             self, section: _SECTION_TYPING, reference: str,
-            indicator_ref: Optional[str] = '') -> Iterator[dict]:
+            indicator_ref: set | None) -> Iterator[dict]:
         for field, mapping in self._mapping.pe_section_object_mapping().items():
             if hasattr(section, field):
                 yield from self._handle_object_attributes(
@@ -474,9 +441,7 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_process_observable(
             self, observable: _PROCESS_TYPING, object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         for field, mapping in self._mapping.process_object_mapping().items():
@@ -507,9 +472,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_registry_key_observable(
             self, observable: _REGISTRY_KEY_TYPING,
             object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         mapping = self._mapping.registry_key_object_mapping
@@ -530,9 +493,7 @@ class STIX2ObservableConverter(STIX2Converter):
     def _parse_x509_observable(
             self, observable: _X509_CERTIFICATE_TYPING,
             object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         if hasattr(observable, 'hashes'):
@@ -682,7 +643,7 @@ class ExternalSTIX2ObservableConverter(
         )
 
     def _handle_hash_attribute(
-            self, indicator_ref: str, hash_type: str, value: str,
+            self, indicator_ref: set | None, hash_type: str, value: str,
             object_id: str, mapping: Optional[str] = 'file') -> dict:
         attribute = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
         if attribute is not None:
@@ -697,7 +658,7 @@ class ExternalSTIX2ObservableConverter(
 
     def _handle_object_attributes(
             self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+            indicator_ref: set | None, field: str, object_id: str) -> Iterator[dict]:
         values = observable[field]
         if isinstance(values, list):
             for value in values:
@@ -717,7 +678,7 @@ class ExternalSTIX2ObservableConverter(
 
     def _handle_object_attributes_with_data(
             self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+            indicator_ref: set | None, field: str, object_id: str) -> Iterator[dict]:
         values = observable[field]
         if isinstance(values, list):
             for value in values:
@@ -794,9 +755,7 @@ class ExternalSTIX2ObservableConverter(
     def _parse_asn_observable(
             self, observable: _AUTONOMOUS_SYSTEM_TYPING,
             object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         asn_attribute = self._mapping.asn_attribute()
@@ -819,9 +778,7 @@ class ExternalSTIX2ObservableConverter(
 
     def _parse_domain_observable(
             self, observable: _DOMAIN_TYPING, object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> dict:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+            indicator_ref: set | None = None) -> dict:
         if object_id is None:
             object_id = observable.id
         attribute = {
@@ -839,7 +796,7 @@ class ExternalSTIX2ObservableConverter(
 
     def _parse_email_address_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
-            object_id: str, indicator_ref: str | tuple) -> dict:
+            object_id: str, indicator_ref: set | None | tuple) -> dict:
         return super()._parse_email_address_observable(
             observable, feature, object_id, self._check_indicator_reference(
                 indicator_ref, observable.value
@@ -848,9 +805,7 @@ class ExternalSTIX2ObservableConverter(
 
     def _parse_ip_observable(self, observable: _IP_OBSERVABLE_TYPING,
                              object_id: Optional[str] = None,
-                             indicator_ref: str | tuple = '') -> dict:
-        if isinstance(indicator_ref, tuple):
-            indicator_ref = self._get_indicator_reference(indicator_ref)
+                             indicator_ref: set | None = None) -> dict:
         if object_id is None:
             object_id = observable.id
         indicator_id = self._check_indicator_reference(
@@ -886,7 +841,7 @@ class ExternalSTIX2ObservableConverter(
 
     def _parse_url_observable(
             self, observable: _URL_TYPING,  observed_data_id: str,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
+            indicator_ref: set | None = None) -> Iterator[dict]:
         object_id = getattr(observable, 'id', observed_data_id)
         for field, mapping in self._mapping.url_object_mapping().items():
             if hasattr(observable, field):
@@ -897,7 +852,7 @@ class ExternalSTIX2ObservableConverter(
     def _parse_user_account_observable(
             self, observable: _USER_ACCOUNT_TYPING,
             object_id: Optional[str] = None,
-            indicator_ref: str | tuple = '') -> Iterator[dict]:
+            indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         user_account_mapping = self._mapping.user_account_object_mapping
@@ -1023,7 +978,7 @@ class InternalSTIX2ObservableConverter(
         return reference in self.main_parser.indicator_references
 
     def _handle_hash_attribute(
-            self, indicator_ref: str, hash_type: str, value: str,
+            self, indicator_ref: set | None, hash_type: str, value: str,
             object_id: str, mapping: Optional[str] = 'file') -> dict:
         mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
         if mapping is not None:
@@ -1037,7 +992,7 @@ class InternalSTIX2ObservableConverter(
 
     def _handle_object_attributes(
             self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+            indicator_ref: set | None, field: str, object_id: str) -> Iterator[dict]:
         values = observable[field]
         if isinstance(values, list):
             for value in values:
@@ -1055,7 +1010,7 @@ class InternalSTIX2ObservableConverter(
 
     def _handle_object_attributes_with_data(
             self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: str, field: str, object_id: str) -> Iterator[dict]:
+            indicator_ref: set | None, field: str, object_id: str) -> Iterator[dict]:
         values = observable[field]
         if isinstance(values, list):
             for value in values:
@@ -1113,7 +1068,7 @@ class InternalSTIX2ObservableConverter(
 
     def _parse_email_address_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
-            object_id: str, indicator_ref: str | tuple) -> dict:
+            object_id: str, indicator_ref: set | None) -> dict:
         to_ids = self._check_indicator_reference(indicator_ref)
         return super()._parse_email_address_observable(
             observable, to_ids, feature, object_id, indicator_ref
