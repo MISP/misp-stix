@@ -353,54 +353,6 @@ class ExternalSTIX2ObservedDataConverter(
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
     ############################################################################
 
-    def _create_misp_attribute(
-            self, indicator_ref: set | None, object_id: str,
-            single: Optional[bool] = False, strict_value: Optional[str] = None,
-            **attribute: dict[str, str]) -> dict:
-        value = strict_value or attribute['value']
-        if not single:
-            object_id = f"{object_id} - {attribute['type']} - {value}"
-        indicator_id = self._check_indicator_reference(indicator_ref, value)
-        to_ids = bool(indicator_id)
-        if to_ids:
-            id_comment = 'ID' if len(indicator_id) == 1 else 'IDs'
-            comment = f"Indicator {id_comment}: {', '.join(indicator_id)}"
-            if attribute.get('comment'):
-                comment = f"{comment} - {attribute.pop('comment')}"
-            attribute['comment'] = comment
-            object_id = f"{' - '.join(indicator_id)} - {object_id}"
-        return {
-            'to_ids': to_ids, **attribute,
-            'uuid': self.main_parser._create_v5_uuid(object_id)
-        }
-
-    def _create_single_misp_attribute(
-            self, indicator_ref: set | None, object_id: str,
-            value_to_check: Optional[str] = None,
-            **attribute: dict[str, str]) -> dict:
-        indicator_id = self._check_indicator_reference(
-            indicator_ref, value_to_check or attribute['value']
-        )
-        to_ids = bool(indicator_id)
-        if to_ids:
-            id_comment = 'ID' if len(indicator_id) == 1 else 'IDs'
-            comment = f"Indicator {id_comment}: {', '.join(indicator_id)}"
-            if attribute.get('comment'):
-                comment = f"{comment} - {attribute.pop('comment')}"
-            attribute['comment'] = comment
-            return {
-                'to_ids': to_ids, **attribute,
-                'uuid': self.main_parser._create_v5_uuid(
-                    f"{' - '.join(indicator_id)} - {object_id}"
-                )
-            }
-        comment = attribute.pop('comment', None)
-        return {
-            **attribute, **self.main_parser._sanitise_attribute_uuid(
-                object_id, comment=comment
-            )
-        }
-
     def _handle_observable_object_ref_parsing(
             self, observable: dict, observed_data: ObservedData_v21,
             *args: tuple) -> MISPObject:
