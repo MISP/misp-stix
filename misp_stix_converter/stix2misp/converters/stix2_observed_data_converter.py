@@ -610,7 +610,7 @@ class ExternalSTIX2ObservedDataConverter(
             'asn', autonomous_system, observed_data
         )
         indicator_ref = self._get_indicator_refs(
-            observed_data.id, autonomous_system.id
+            autonomous_system.id, observed_data.id
         )
         misp_object.add_attribute(
             **self._populate_object_attribute(
@@ -753,14 +753,12 @@ class ExternalSTIX2ObservedDataConverter(
                 domain_object = self._create_misp_object_from_observable_object_ref(
                     'domain-ip', domain, observed_data
                 )
-                indicator_ref = self._get_indicator_refs(
-                    observed_data.id, object_ref
-                )
                 domain_object.add_attribute(
                     **self._populate_object_attribute(
                         domain.value, self._mapping.domain_attribute(),
                         self._handle_object_id(
-                            indicator_ref, domain.value, domain.id
+                            observable.get('indicator_ref'),
+                            domain.value, domain.id
                         )
                     )
                 )
@@ -789,12 +787,11 @@ class ExternalSTIX2ObservedDataConverter(
                             )
                         continue
                     value = resolved_observable.value
-                    indicator_ref = self._get_indicator_refs(resolved_ref)
                     misp_object.add_attribute(
                         **self._populate_object_attribute(
                             value, self._mapping.ip_attribute(),
                             self._handle_object_id(
-                                indicator_ref, value,
+                                resolved.get('indicator_ref'), value,
                                 f'{domain.id} - {resolved_ref}'
                             )
                         )
@@ -1024,7 +1021,9 @@ class ExternalSTIX2ObservedDataConverter(
         address = email_address.value
         attribute = self._parse_timeline(observed_data)
         comment = f'Observed Data ID: {observed_data.id}'
-        indicator_ref = self._get_indicator_ref(email_address.id)
+        indicator_ref = self._get_indicator_refs(
+            email_address.id, observed_data.id
+        )
         if hasattr(email_address, 'display_name'):
             attribute['comment'] = (
                 f'{comment} - Observable object ID: {email_address.id}'
@@ -1173,7 +1172,7 @@ class ExternalSTIX2ObservedDataConverter(
                     attributes = self._parse_email_reference_observable(
                         observable['observable'], 'from',
                         object_id=f'{object_ref} - {from_ref}',
-                        indicator_ref=self._get_indicator_refs(from_ref)
+                        indicator_ref=observable.get(from_ref)
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
@@ -1191,7 +1190,7 @@ class ExternalSTIX2ObservedDataConverter(
                         attributes = self._parse_email_reference_observable(
                             observable['observable'], feature,
                             object_id=f'{object_ref} - {reference}',
-                            indicator_ref=self._get_indicator_refs(reference)
+                            indicator_ref=observable.get(reference)
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
@@ -1201,13 +1200,11 @@ class ExternalSTIX2ObservedDataConverter(
             if hasattr(email_message, 'body_multipart'):
                 for index, multipart in enumerate(email_message.body_multipart):
                     if hasattr(multipart, 'body'):
-                        object_id = email_message.id
-                        indicator_ref = self._get_indicator_refs(object_id)
                         misp_object.add_attribute(
                             'email-body', multipart.body,
                             **self._handle_object_id(
-                                indicator_ref, multipart.body,
-                                f'{object_id} - body_multipart - '
+                                observable.get(object_ref), multipart.body,
+                                f'{object_ref} - body_multipart - '
                                 f'{index} - email-body'
                             )
                         )
@@ -1384,7 +1381,7 @@ class ExternalSTIX2ObservedDataConverter(
                 pe_object_uuid = self._parse_file_pe_extension_observable(
                     windows_pe_ext, observed_data,
                     f'{observable_id} - windows-pebinary-ext',
-                    self._get_indicator_refs(observable_id)
+                    self._get_indicator_refs(observable_id, observed_data.id)
                 )
                 misp_object.add_reference(pe_object_uuid, 'includes')
         if hasattr(observable_object, 'parent_directory_ref'):
@@ -1670,7 +1667,9 @@ class ExternalSTIX2ObservedDataConverter(
         )
         if mapping_name is None:
             mapping_name = name.replace('-', '_')
-        indicator_ref = self._get_indicator_refs(observable_object.id)
+        indicator_ref = self._get_indicator_refs(
+            observable_object.id, observed_data.id
+        )
         attributes = (
             self._parse_generic_observable(
                 observable_object, mapping_name, indicator_ref=indicator_ref
@@ -1692,7 +1691,9 @@ class ExternalSTIX2ObservedDataConverter(
         attribute = self._parse_timeline(observed_data)
         comment = f'Observed Data ID: {observed_data.id}'
         strict_value = getattr(observable_object, feature)
-        indicator_ref = self._get_indicator_refs(observable_object.id)
+        indicator_ref = self._get_indicator_refs(
+            observable_object.id, observed_data.id
+        )
         return self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
                 indicator_ref, observable_object.id,
@@ -1893,9 +1894,7 @@ class ExternalSTIX2ObservedDataConverter(
         feature = f"_parse_{name.replace('-', '_')}_observable"
         observable_object = observable['observable']
         attributes = getattr(self, feature)(
-            observable_object, indicator_ref=self._get_indicator_refs(
-                observable_object.id
-            )
+            observable_object, indicator_ref=observable.get('indicator_ref')
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -1934,7 +1933,8 @@ class ExternalSTIX2ObservedDataConverter(
                     referenced_observable = referenced['observable']
                     attributes = getattr(self, feature)(
                         asset, referenced_observable,
-                        f'{network_traffic.id} - {reference}'
+                        f'{network_traffic.id} - {reference}',
+                        indicator_ref=referenced.get('indicator_ref')
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
@@ -2251,7 +2251,9 @@ class ExternalSTIX2ObservedDataConverter(
         regkey_object = self._create_misp_object_from_observable_object_ref(
             'registry-key', registry_key, observed_data,
         )
-        indicator_ref = self._get_indicator_refs(registry_key.id)
+        indicator_ref = self._get_indicator_refs(
+            registry_key.id, observed_data.id
+        )
         attributes = self._parse_registry_key_observable(
             registry_key, indicator_ref=indicator_ref
         )
