@@ -506,7 +506,7 @@ class STIX2ObservableObjectConverter(
 
     def _parse_ip_addresses_belonging_to_AS(
             self, AS_id: str, indicator_ref: str | tuple) -> Iterator[dict]:
-        for content in self.main_parser._observable.values():
+        for observable_id, content in self.main_parser._observable.items():
             observable = content['observable']
             if observable.type not in ('ipv4-addr', 'ipv6-addr'):
                 continue
@@ -520,9 +520,14 @@ class STIX2ObservableObjectConverter(
                     **self._mapping.subnet_announced_attribute()
                 }
                 if to_ids:
-                    object_id = f"{' - '.join(indicator_id)} - {object_id}"
+                    object_id = f"{' - '.join(indicator_id)} - {observable_id}"
+                    attribute['uuid'] = self.main_parser._create_v5_uuid(
+                        f'{object_id} - subnet-announced - {observable.value}'
+                    )
+                    yield attribute
+                    continue
                 attribute['uuid'] = self.main_parser._create_v5_uuid(
-                    f'{object_id} - subnet-announced - {observable.value}'
+                    f'{observable_id} - subnet-announced - {observable.value}'
                 )
                 yield attribute
 
