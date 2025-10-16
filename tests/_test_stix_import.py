@@ -574,7 +574,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(asn.object_relation, 'asn')
         self.assertEqual(asn.value, f'AS{autonomous_system.number}')
         self.assertEqual(
-            asn.uuid, uuid5(UUIDv4, f'{object_id} - asn - {asn.value}')
+            asn.uuid, uuid5(
+                UUIDv4, f'{object_id} - asn - {autonomous_system.number}'
+            )
         )
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'description')

@@ -1008,9 +1008,25 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         ########################################################################
         self._assert_multiple_equal(asn1.name, asn2.name, 'asn')
         self.assertEqual(asn1.uuid, AS1.id.split('--')[1])
-        self._check_wrapped_attributes(AS1.id, *asn1.attributes)
+        asAttribute1, asNameAttribute1 = asn1.attributes
+        self._check_wrapped_attribute(
+            asAttribute1.uuid, AS1.id,
+            asAttribute1.object_relation, asAttribute1.value.lstrip('AS')
+        )
+        self._check_wrapped_attribute(
+            asNameAttribute1.uuid, AS1.id,
+            asNameAttribute1.object_relation, asNameAttribute1.value
+        )
         self.assertEqual(asn2.uuid, AS3.id.split('--')[1])
-        self._check_wrapped_attributes(AS3.id, *asn2.attributes)
+        asAttribute2, asNameAttribute2 = asn2.attributes
+        self._check_wrapped_attribute(
+            asAttribute2.uuid, AS3.id,
+            asAttribute2.object_relation, asAttribute2.value.lstrip('AS')
+        )
+        self._check_wrapped_attribute(
+            asNameAttribute2.uuid, AS3.id,
+            asNameAttribute2.object_relation, asNameAttribute2.value
+        )
 
         ########################################################################
         #                          DIRECTORY OBJECTS.                          #

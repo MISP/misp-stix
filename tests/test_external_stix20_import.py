@@ -1327,10 +1327,26 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._assert_multiple_equal(asnObj1.name, asnObj2.name, 'asn')
         as1_id = f'{od_id} - {AS1}'
         self.assertEqual(asnObj1.uuid, uuid5(UUIDv4, as1_id))
-        self._check_wrapped_attributes(as1_id, *asnObj1.attributes)
+        asAttribute1, asNameAttribute1 = asnObj1.attributes
+        self._check_wrapped_attribute(
+            asAttribute1.uuid, as1_id,
+            asAttribute1.object_relation, asAttribute1.value.lstrip('AS')
+        )
+        self._check_wrapped_attribute(
+            asNameAttribute1.uuid, as1_id,
+            asNameAttribute1.object_relation, asNameAttribute1.value
+        )
         as2_id = f'{od_id} - {AS3}'
         self.assertEqual(asnObj2.uuid, uuid5(UUIDv4, as2_id))
-        self._check_wrapped_attributes(as2_id, *asnObj2.attributes)
+        asAttribute2, asNameAttribute2 = asnObj2.attributes
+        self._check_wrapped_attribute(
+            asAttribute2.uuid, as2_id,
+            asAttribute2.object_relation, asAttribute2.value.lstrip('AS')
+        )
+        self._check_wrapped_attribute(
+            asNameAttribute2.uuid, as2_id,
+            asNameAttribute2.object_relation, asNameAttribute2.value
+        )
 
         ########################################################################
         #                        DIRECTORY OBJECTS.                            #
