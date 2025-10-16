@@ -531,8 +531,7 @@ class ExternalSTIX2ObservedDataConverter(
                 asn_attribute = self._mapping.asn_attribute()
                 misp_object.add_attribute(
                     **self._populate_object_attribute(
-                        AS_value, asn_attribute,
-                        self._handle_object_id(
+                        AS_value, asn_attribute, self._handle_object_id(
                             indicator_ref, autonomous_system.number,
                             f"{object_id} - {asn_attribute['object_relation']}"
                         )
@@ -564,13 +563,13 @@ class ExternalSTIX2ObservedDataConverter(
         indicator_ref = self._get_indicator_refs(
             autonomous_system.id, observed_data.id
         )
+        asn_attribute = self._mapping.asn_attribute()
         misp_object.add_attribute(
             **self._populate_object_attribute(
-                self._parse_AS_value(autonomous_system.number),
-                self._mapping.asn_attribute(),
+                self._parse_AS_value(autonomous_system.number), asn_attribute,
                 self._handle_object_id(
                     indicator_ref, autonomous_system.number,
-                    autonomous_system.id
+                    f"{autonomous_system.id} - {asn_attribute['object_relation']}"
                 )
             )
         )
@@ -705,12 +704,12 @@ class ExternalSTIX2ObservedDataConverter(
                 domain_object = self._create_misp_object_from_observable_object_ref(
                     'domain-ip', domain, observed_data
                 )
+                domain_attribute = self._mapping.domain_attribute()
                 domain_object.add_attribute(
                     **self._populate_object_attribute(
-                        domain.value, self._mapping.domain_attribute(),
-                        self._handle_object_id(
-                            observable.get('indicator_ref'),
-                            domain.value, domain.id
+                        domain.value, domain_attribute, self._handle_object_id(
+                            observable.get('indicator_ref'), domain.value,
+                            f"{domain.id} - {domain_attribute['object_relation']}"
                         )
                     )
                 )
@@ -719,6 +718,7 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 observable['used'][self.event_uuid] = True
                 observable['misp_object'] = misp_object
+                ip_attribute = self._mapping.ip_attribute()
                 for resolved_ref in domain.resolves_to_refs:
                     resolved = self._fetch_observable(resolved_ref)
                     if resolved is None:
@@ -741,10 +741,10 @@ class ExternalSTIX2ObservedDataConverter(
                     value = resolved_observable.value
                     misp_object.add_attribute(
                         **self._populate_object_attribute(
-                            value, self._mapping.ip_attribute(),
-                            self._handle_object_id(
+                            value, ip_attribute, self._handle_object_id(
                                 resolved.get('indicator_ref'), value,
                                 f'{domain.id} - {resolved_ref}'
+                                f" - {ip_attribute['object_relation']}"
                             )
                         )
                     )
