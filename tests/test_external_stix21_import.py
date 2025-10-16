@@ -813,7 +813,13 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(artifactObj2.name, 'artifact')
         self.assertEqual(artifactObj2.uuid, artifact4.id.split('--')[1])
-        self._check_wrapped_attributes(artifact4.id, *artifactObj2.attributes)
+        payload_bin, *artifactObj2_attributes = artifactObj2.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact4.id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact4.id, *artifactObj2_attributes)
         self.assertEqual(fileObj1.name, 'file')
         self.assertEqual(fileObj1.uuid, file1.id.split('--')[1])
         self._check_wrapped_attributes(file1.id, *fileObj1.attributes)
@@ -877,7 +883,13 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_wrapped_attributes(directory4.id, *directoryObj1.attributes)
         self.assertEqual(artifactObj3.name, 'artifact')
         self.assertEqual(artifactObj3.uuid, artifact5.id.split('--')[1])
-        self._check_wrapped_attributes(artifact5.id, *artifactObj3.attributes)
+        payload_bin, *artifactObj3_attributes = artifactObj3.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact5.id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact5.id, *artifactObj3_attributes)
         self.assertEqual(len(artifactObj3.references), 1)
         content_ref = artifactObj3.references[0]
         self.assertEqual(content_ref.relationship_type, 'content-of')
@@ -972,11 +984,24 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             artifactObj4.name, artifactObj5.name, artifactObj6.name, 'artifact'
         )
         self.assertEqual(artifactObj4.uuid, artifact1.id.split('--')[1])
-        self._check_wrapped_attributes(artifact1.id, *artifactObj4.attributes)
+        payload_bin, *artifactObj4_attributes = artifactObj4.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact1.id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact1.id, *artifactObj4_attributes)
         self.assertEqual(artifactObj5.uuid, artifact2.id.split('--')[1])
         self._check_wrapped_attributes(artifact2.id, *artifactObj5.attributes)
         self.assertEqual(artifactObj6.uuid, artifact3.id.split('--')[1])
-        self._check_wrapped_attributes(artifact3.id, *artifactObj6.attributes)
+        payload_bin, *artifactObj6_attributes = artifactObj6.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact3.id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact3.id, md5, *artifactObj6_attributes)
+
 
         ########################################################################
         #                      AUTONOMOUS SYSTEM OBJECTS.                      #

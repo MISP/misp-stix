@@ -1100,7 +1100,13 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(artifactObj2.name, 'artifact')
         artifact2_id = f'{od_id} - {artifact4}'
         self.assertEqual(artifactObj2.uuid, uuid5(UUIDv4, artifact2_id))
-        self._check_wrapped_attributes(artifact2_id, *artifactObj2.attributes)
+        payload_bin, *artifactObj2_attributes = artifactObj2.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact2_id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact2_id, *artifactObj2_attributes)
         self.assertEqual(fileObj1.name, 'file')
         file1_id = f'{od_id} - {file1}'
         self.assertEqual(fileObj1.uuid, uuid5(UUIDv4, file1_id))
@@ -1172,7 +1178,13 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_wrapped_attributes(directory1_id, *dirObj1.attributes)
         artifact3_id = f'{od_id} - {artifact5}'
         self.assertEqual(artObj3.uuid, uuid5(UUIDv4, artifact3_id))
-        self._check_wrapped_attributes(artifact3_id, *artObj3.attributes)
+        payload_bin, *artObj3_attributes = artObj3.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact3_id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact3_id, *artObj3_attributes)
         self.assertEqual(len(artObj3.references), 1)
         content_ref = artObj3.references[0]
         self.assertEqual(content_ref.relationship_type, 'content-of')
@@ -1202,7 +1214,13 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_wrapped_attributes(directory2_id, *dirObj2.attributes)
         artifact4_id = f'{od_id} - {artifact6}'
         self.assertEqual(artObj4.uuid, uuid5(UUIDv4, artifact4_id))
-        self._check_wrapped_attributes(artifact4_id, *artObj4.attributes)
+        payload_bin, *artObj4_attributes = artObj4.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact4_id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact4_id, *artObj4_attributes)
         self.assertEqual(len(artObj4.references), 1)
         content_ref = artObj4.references[0]
         self.assertEqual(content_ref.relationship_type, 'content-of')
@@ -1283,13 +1301,25 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         artifact5_id = f'{od_id} - {artifact1}'
         self.assertEqual(artifactObj5.uuid, uuid5(UUIDv4, artifact5_id))
-        self._check_wrapped_attributes(artifact5_id, *artifactObj5.attributes)
+        payload_bin, *artifactObj5_attributes = artifactObj5.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact5_id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact5_id, *artifactObj5_attributes)
         artifact6_id = f'{od_id} - {artifact2}'
         self.assertEqual(artifactObj6.uuid, uuid5(UUIDv4, artifact6_id))
         self._check_wrapped_attributes(artifact6_id, *artifactObj6.attributes)
         artifact7_id = f'{od_id} - {artifact3}'
         self.assertEqual(artifactObj7.uuid, uuid5(UUIDv4, artifact7_id))
-        self._check_wrapped_attributes(artifact7_id, *artifactObj7.attributes)
+        payload_bin, *artifactObj7_attributes = artifactObj7.attributes
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(UUIDv4, f'{artifact7_id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attributes(artifact7_id, md5, *artifactObj7_attributes)
 
         ########################################################################
         #                      AUTONOMOUS SYSTEM OBJECTS.                      #

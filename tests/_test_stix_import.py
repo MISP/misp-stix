@@ -497,10 +497,11 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             payload_bin.value,
             getattr(artifact, 'id', object_id.split(' - ')[0]).split('--')[1]
         )
-        self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(payload_data, artifact.payload_bin)
         self.assertEqual(
             payload_bin.uuid,
-            uuid5(UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}')
+            uuid5(UUIDv4, f'{object_id} - payload_bin - {payload_data}')
         )
         hashes = artifact.hashes
         self.assertEqual(md5.type, 'md5')
@@ -594,10 +595,11 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             payload_bin.value,
             getattr(artifact, 'id', object_id.split(' - ')[0]).split('--')[1]
         )
-        self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(payload_data, artifact.payload_bin)
         self.assertEqual(
             payload_bin.uuid,
-            uuid5(UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}')
+            uuid5(UUIDv4, f'{object_id} - payload_bin - {payload_data}')
         )
         self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
         self.assertEqual(md5.value, artifact.hashes['MD5'])
@@ -731,12 +733,11 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(
             payload_bin.value, artifact_id.split('--')[1].split(' - ')[0]
         )
-        self.assertEqual(
-            self._get_data_value(payload_bin.data), artifact.payload_bin
-        )
+        payload_data = self._get_data_value(payload_bin.data)
+        self.assertEqual(payload_data,artifact.payload_bin)
         self.assertEqual(
             payload_bin.uuid,
-            uuid5(UUIDv4, f'{artifact_id} - payload_bin - {payload_bin.value}')
+            uuid5(UUIDv4, f'{artifact_id} - payload_bin - {payload_data}')
         )
         self._assert_multiple_equal(
             sha256.type, sha256.object_relation, 'sha256'
