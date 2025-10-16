@@ -998,6 +998,140 @@ _FILE_OBJECTS = [
         }
     }
 ]
+_INDICATOR_OBJECTS = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--64d04217-9347-4168-94b6-652997baab75",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'bc590af5f7b16b890860248dc0d4c68f']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--b1e58d08-85c7-43c6-9e15-05f4e960489c",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'b3982699c1b9a25346cc8498f483b150' AND file:hashes.SHA256 = '836f395a4f86e9d1b2f528756c248e76665c02c5d0fc89f9b26136db5ac7f7ae']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--21518750-4e1f-4b8f-995c-3e0fe401a600",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.SHA1 = '5ec1405887e5a74bf2cb97a8d64481194dc13fdc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--c3a82b2b-001c-4028-92bf-ba41c2e601b1",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.SHA256 = '367e474683cb1f61aae1f963aa9a17446afb5f71a8a03dae7203ac84765a5efa']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--5750cac6-2474-4060-89d7-19000bf932a5",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[ipv4-addr:value = '198.51.100.3']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--52756007-42fc-41d2-aa7f-73d13abdc342",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[email-addr:value = 'john@doe.org']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--d60420c1-330b-4406-a442-a84bccf04d61",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.SHA256 = 'fe90a7e910cb3a4739bed9180e807e93fa70c90f25a8915476f5e4bfbac681db']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--8df8b78d-73b6-4394-9f16-3cedca8dfcad",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'b1de37bf229890ac181bdef1ad8ee0c2' OR file:hashes.SHA1 = 'ffdb3cc7ab5b01d276d23ac930eb21ffe3202d11' OR file:hashes.SHA256 = '99b80c5ac352081a64129772ed5e1543d94cad708ba2adc46dc4ab7a0bd563f1']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--21541ca6-8e08-4aa3-9e68-b84814316060",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'd41d8cd98f00b204e9800998ecf8427e']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--dee398cd-c8da-4922-b2fa-afe00050de14",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[ipv4-addr:value = '198.51.100.34']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--29e97917-9ffa-48d3-90e6-34f3ece9cfbf",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[ipv4-addr:value = '198.51.100.54']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cd649265-01c8-48af-b681-dc66caa0ce92",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[process:command_line = 'grep -nrG iglocska ${HOME}/friends.txt']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
+    }
+]
 _INTRUSION_SET_OBJECTS = [
     {
         "type": "intrusion-set",
@@ -2133,8 +2267,8 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     def __get_wrapped_objects(cls):
         object_refs = []
         for stix_object in cls.__get_wrapped_observables():
-            object_id = stix_object['id']
-            object_refs.append(object_id)
+            if stix_object['type'] != 'indicator':
+                object_refs.append(stix_object['id'])
             yield stix_object
         yield {
             "type": "observed-data",

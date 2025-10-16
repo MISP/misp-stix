@@ -653,6 +653,140 @@ _FILE_OBJECTS = [
         }
     }
 ]
+_INDICATOR_OBJECTS = [
+    {
+        "type": "indicator",
+        "id": "indicator--e0be56d8-79c9-4339-8a13-48d3dd9a3a1e",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'bc590af5f7b16b890860248dc0d4c68f']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--77e405fd-a969-4dd0-bde1-1f9abbd4b1f1",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'b3982699c1b9a25346cc8498f483b150' AND file:hashes.'SHA-256' = '836f395a4f86e9d1b2f528756c248e76665c02c5d0fc89f9b26136db5ac7f7ae']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--3431081b-d419-443c-9fb4-d5d6b8aff13a",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.SHA1 = '5ec1405887e5a74bf2cb97a8d64481194dc13fdc']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--0f1a9385-ffd0-4b36-846a-9a1674f10f81",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.SHA256 = '367e474683cb1f61aae1f963aa9a17446afb5f71a8a03dae7203ac84765a5efa']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--9a24995f-3a1f-4d58-a6de-033d3781d874",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[ipv4-addr:value = '198.51.100.3']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--b4e41e1f-8d22-4921-a6fd-ab951e16216e",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[email-addr:value = 'john@doe.org']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--bf6d7217-151c-479a-a774-de54b81fb7a1",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.SHA256 = 'fe90a7e910cb3a4739bed9180e807e93fa70c90f25a8915476f5e4bfbac681db']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--aa1dea92-56a6-4280-ae2d-9fc01c5781ed",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'b1de37bf229890ac181bdef1ad8ee0c2' OR file:hashes.SHA1 = 'ffdb3cc7ab5b01d276d23ac930eb21ffe3202d11' OR file:hashes.SHA256 = '99b80c5ac352081a64129772ed5e1543d94cad708ba2adc46dc4ab7a0bd563f1']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--e11f5c77-bea2-4c27-98f6-7e8942525619",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'd41d8cd98f00b204e9800998ecf8427e']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--36cf442b-f75e-440d-982b-bcd0d4c87a02",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[ipv4-addr:value = '198.51.100.34']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--070488cd-ab13-41c3-8975-bb1c5a80c955",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[ipv4-addr:value = '198.51.100.54']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--40effa51-3d64-46d7-abb4-3ba3e7119859",
+        "created": "2024-10-25T15:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "pattern": "[process:command_line = 'grep -nrG iglocska ${HOME}/friends.txt']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "Indicating Observable object"
+        ]
+    }
+]
 _INTRUSION_SET_OBJECTS = [
     {
         "type": "intrusion-set",
@@ -1589,9 +1723,14 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def __get_wrapped_observable_objects(cls):
         index = 0
+        observable_objects = {}
+        indicators = []
         for name in cls._get_variable_names(globals().keys()):
             values = deepcopy(globals()[name])
             for stix_object in values:
+                if stix_object['type'] == 'indicator':
+                    indicators.append(stix_object)
+                    continue
                 if stix_object['type'] != 'observed-data':
                     continue
                 initial_index = index
@@ -1601,12 +1740,13 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
                         if not any(feature in observable_object for feature in ('payload_bin', 'url')):
                             with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
                                 observable_object['payload_bin'] = b64encode(f.read()).decode()
-                    yield str(index), dict(
+                    observable_objects[str(index)] = dict(
                         cls.__assemble_stix_object(
                             observable_object, initial_index
                         )
                     )
                     index += 1
+        return observable_objects, indicators
 
     ############################################################################
     #                              EVENTS SAMPLES                              #
@@ -1746,6 +1886,7 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_wrapped_observable_objects(cls):
+        observable_objects, indicators = cls.__get_wrapped_observable_objects()
         observed_data = {
             "type": "observed-data",
             "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
@@ -1755,9 +1896,9 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
             "first_observed": "2020-10-25T16:22:00Z",
             "last_observed": "2020-11-25T16:22:00Z",
             "number_observed": 1,
-            "objects": dict(cls.__get_wrapped_observable_objects())
+            "objects": observable_objects
         }
-        return cls.__assemble_bundle(observed_data)
+        return cls.__assemble_bundle(observed_data, *indicators)
 
     @classmethod
     def get_bundle_with_x509_objects(cls):

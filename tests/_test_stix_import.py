@@ -1557,9 +1557,20 @@ class TestExternalSTIX2Import(TestSTIX2Import):
                 attribute.object_relation, attribute.value
             )
 
-    def _check_wrapped_email_object(self, misp_object, object_id, from_id, to_id, cc_id, artifact_id, file_id):
-        *attributes, from_addr, from_dn, to_addr, to_dn, cc_addr, cc_dn, body = misp_object.attributes
+    def _check_wrapped_email_object(
+            self, misp_object, object_id, indicator_id,
+            from_id, to_id, cc_id, artifact_id, file_id):
+        (*attributes, received_header_ip, from_addr, from_dn, to_addr, to_dn,
+         cc_addr, cc_dn, body) = misp_object.attributes
         self._check_wrapped_attributes(object_id, *attributes)
+        self.assertEqual(
+            received_header_ip.uuid,
+            uuid5(
+                UUIDv4,
+                f'{indicator_id} - {object_id} - received'
+                f'-header-ip - {received_header_ip.value}'
+            )
+        )
         self.assertEqual(
             from_addr.uuid,
             uuid5(UUIDv4, f'{object_id} - {from_id} - from - {from_addr.value}')
@@ -1598,21 +1609,49 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             'contains'
         )
 
-    def _check_wrapped_network_traffic_object(self, misp_object, object_id, src_id, dst_id, *references):
+    def _check_wrapped_network_traffic_object(
+            self, misp_object, object_id, src_id, dst_id, *references,
+            src_indicator_id = None, dst_indicator_id = None):
         *attributes, src_ip, dst_ip = misp_object.attributes
         for attribute in attributes:
             self.assertEqual(
                 attribute.uuid,
                 uuid5(UUIDv4, f'{object_id} - {attribute.object_relation} - {attribute.value}')
             )
-        self.assertEqual(
-            src_ip.uuid,
-            uuid5(UUIDv4, f'{object_id} - {src_id} - src_ip - {src_ip.value}')
-        )
-        self.assertEqual(
-            dst_ip.uuid,
-            uuid5(UUIDv4, f'{object_id} - {dst_id} - dst_ip - {dst_ip.value}')
-        )
+        if src_indicator_id is None:
+            self.assertEqual(
+                src_ip.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{object_id} - {src_id} - src_ip - {src_ip.value}'
+                )
+            )
+        else:
+            self.assertEqual(
+                src_ip.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{src_indicator_id} - {object_id} - '
+                    f'{src_id} - src_ip - {src_ip.value}'
+                )
+            )
+        if dst_indicator_id is None:
+            self.assertEqual(
+                dst_ip.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{object_id} - {dst_id} - dst_ip - {dst_ip.value}'
+                )
+            )
+        else:
+            self.assertEqual(
+                dst_ip.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{dst_indicator_id} - {object_id} - '
+                    f'{dst_id} - dst_ip - {dst_ip.value}'
+                )
+            )
         self.assertEqual(len(misp_object.references), len(references))
         for reference, (ref_id, relation) in zip(misp_object.references, references):
             self.assertEqual(reference.referenced_uuid, ref_id)

@@ -730,7 +730,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
         )
 
-    def _check_wrapped_observable_objects(self, observable_objects, misp_content):
+    def _check_wrapped_observable_objects(self, stix_objects, misp_content):
         (artifact1, artifact2, artifact3,
          AS1, AS2, AS3, AS4,
          directory1, directory2, directory3,
@@ -739,6 +739,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
          email_addr1, email_addr2, email_addr3, email_addr4,
          email_message, email_addr5, email_addr6, email_addr7, artifact4, file1,
          file2, directory4, artifact5, file3, file4,
+         md5Indicator1, fileIndicator1, sha1Indicator, artifactIndicator,
+         ipIndicator1, emailAddrIndicator, sha256Indicator, fileIndicator2,
+         md5Indicator2, ipIndicator2, ipIndicator3, processIndicator,
          ipv4_2, ipv6_2, ipv4_3,
          mac1, mac2, mac3,
          mutex1, mutex2, mutex3,
@@ -748,7 +751,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
          software1, software2, software3,
          url1, url2, url3,
          user_account2, user_account3, user_account4,
-         x509_cert1, x509_cert2, x509_cert3) = observable_objects
+         x509_cert1, x509_cert2, x509_cert3) = stix_objects
         (ntObj1, ntObj2, ntObj3, artifactObj1, ntObj4,
          emailObj, artifactObj2, fileObj1,
          processObj1, fileObj2, processObj2, procOrFile1, procOrFile2, processObj4,
@@ -789,18 +792,30 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(ntObj3.uuid, nt3.id.split('--')[1])
         self._check_wrapped_network_traffic_object(
             ntObj3, nt3.id, ipv4_5.id, ipv4_7.id,
-            (artifactObj1.uuid, 'source-sent'),
-            (ntObj4.uuid, 'encapsulates')
+            (artifactObj1.uuid, 'source-sent'), (ntObj4.uuid, 'encapsulates'),
+            dst_indicator_id=ipIndicator2.id
         )
         self.assertEqual(ntObj4.uuid, nt4.id.split('--')[1])
         self._check_wrapped_network_traffic_object(
             ntObj4, nt4.id, ipv4_7.id, ipv4_8.id,
             (artifactObj1.uuid, 'destination-sent'),
-            (ntObj3.uuid, 'encapsulated-by')
+            (ntObj3.uuid, 'encapsulated-by'),
+            src_indicator_id=ipIndicator2.id, dst_indicator_id=ipIndicator3.id
         )
         self.assertEqual(artifactObj1.name, 'artifact')
         self.assertEqual(artifactObj1.uuid, artifact6.id.split('--')[1])
-        self._check_wrapped_attributes(artifact6.id, *artifactObj1.attributes)
+        md5, sha256, url = artifactObj1.attributes
+        self._check_wrapped_attribute(
+            md5.uuid, f'{fileIndicator1.id} - {artifact6.id}',
+            md5.object_relation, md5.value
+        )
+        self._check_wrapped_attribute(
+            sha256.uuid, f'{fileIndicator1.id} - {artifact6.id}',
+            sha256.object_relation, sha256.value
+        )
+        self._check_wrapped_attribute(
+            url.uuid, artifact6.id, url.object_relation, url.value
+        )
 
         ########################################################################
         #                          EMAIL MESSAGE OBJECT.                       #
@@ -808,8 +823,8 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(emailObj.name, 'email')
         self.assertEqual(emailObj.uuid, email_message.id.split('--')[1])
         self._check_wrapped_email_object(
-            emailObj, email_message.id, email_addr5.id, email_addr6.id,
-            email_addr7.id, artifactObj2.uuid, fileObj1.uuid
+            emailObj, email_message.id, ipIndicator1.id, email_addr5.id,
+            email_addr6.id, email_addr7.id, artifactObj2.uuid, fileObj1.uuid
         )
         self.assertEqual(artifactObj2.name, 'artifact')
         self.assertEqual(artifactObj2.uuid, artifact4.id.split('--')[1])
@@ -822,7 +837,14 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_wrapped_attributes(artifact4.id, *artifactObj2_attributes)
         self.assertEqual(fileObj1.name, 'file')
         self.assertEqual(fileObj1.uuid, file1.id.split('--')[1])
-        self._check_wrapped_attributes(file1.id, *fileObj1.attributes)
+        sha256, filename = fileObj1.attributes
+        self._check_wrapped_attribute(
+            sha256.uuid, f'{sha256Indicator.id} - {file1.id}',
+            sha256.object_relation, sha256.value
+        )
+        self._check_wrapped_attribute(
+            filename.uuid, file1.id, filename.object_relation, filename.value
+        )
 
         ########################################################################
         #                            PROCESS OBJECTS.                          #
@@ -847,7 +869,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             parent_ref.referenced_uuid, processObj2.uuid,
             process2.id.split('--')[1]
         )
-        self._check_wrapped_attributes(process2.id, *processObj2.attributes)
+        command_line, *procObj2_attributes = processObj2.attributes
+        self._check_wrapped_attribute(
+            command_line.uuid, f'{processIndicator.id} - {process2.id}',
+            command_line.object_relation, command_line.value
+        )
+        self._check_wrapped_attributes(process2.id, *procObj2_attributes)
         self.assertEqual(len(processObj2.references), 1)
         binary_ref = processObj2.references[0]
         self.assertEqual(binary_ref.relationship_type, 'executes')
@@ -911,7 +938,20 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             directoryObj1.uuid, directory4.id.split('--')[1]
         )
         self.assertEqual(fileObj6.uuid, file4.id.split('--')[1])
-        self._check_wrapped_attributes(file4.id, *fileObj6.attributes)
+        md5, sha1, sha256, *fileObj6_attributes = fileObj6.attributes
+        self._check_wrapped_attribute(
+            md5.uuid, f'{fileIndicator2.id} - {file4.id}',
+            md5.object_relation, md5.value
+        )
+        self._check_wrapped_attribute(
+            sha1.uuid, f'{fileIndicator2.id} - {file4.id}',
+            sha1.object_relation, sha1.value
+        )
+        self._check_wrapped_attribute(
+            sha256.uuid, f'{fileIndicator2.id} - {file4.id}',
+            sha256.object_relation, sha256.value
+        )
+        self._check_wrapped_attributes(file4.id, *fileObj6_attributes)
         self.assertEqual(len(fileObj6.references), 1)
         pe_ref = fileObj6.references[0]
         self.assertEqual(pe_ref.relationship_type, 'includes')
@@ -925,15 +965,24 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(len(pe_object.references), len(section_objects))
         for section_ref, section in zip(pe_object.references, enumerate(section_objects)):
             index, section_object = section
+            object_id = f'{pe_id} - sections - {index}'
             self.assertEqual(section_ref.relationship_type, 'includes')
             self._assert_multiple_equal(
                 section_ref.referenced_uuid, section_object.uuid,
                 uuid5(UUIDv4, f'{pe_id} - sections - {index}')
             )
             self.assertEqual(section_object.name, 'pe-section')
-            self._check_wrapped_attributes(
-                f'{pe_id} - sections - {index}', *section_object.attributes
-            )
+            if index == 1:
+                *section_attributes, md5 = section_object.attributes
+                self._check_wrapped_attributes(object_id, *section_attributes)
+                self._check_wrapped_attribute(
+                    md5.uuid, f'{md5Indicator2.id} - {object_id}',
+                    md5.object_relation, md5.value
+                )
+            else:
+                self._check_wrapped_attributes(
+                    f'{pe_id} - sections - {index}', *section_object.attributes
+                )
 
         ########################################################################
         #                         REGISTRY KEY OBJECTS                         #
@@ -984,21 +1033,44 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             artifactObj4.name, artifactObj5.name, artifactObj6.name, 'artifact'
         )
         self.assertEqual(artifactObj4.uuid, artifact1.id.split('--')[1])
-        payload_bin, *artifactObj4_attributes = artifactObj4.attributes
+        payload_bin, md5, *artifactObj4_attributes = artifactObj4.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
             payload_bin.uuid,
             uuid5(UUIDv4, f'{artifact1.id} - payload_bin - {payload_data}')
         )
+        self._check_wrapped_attribute(
+            md5.uuid, f'{md5Indicator1.id} - {artifact1.id}',
+            md5.object_relation, md5.value
+        )
         self._check_wrapped_attributes(artifact1.id, *artifactObj4_attributes)
         self.assertEqual(artifactObj5.uuid, artifact2.id.split('--')[1])
-        self._check_wrapped_attributes(artifact2.id, *artifactObj5.attributes)
+        md5, sha256, url = artifactObj5.attributes
+        self._check_wrapped_attribute(
+            md5.uuid, f'{fileIndicator1.id} - {artifact2.id}',
+            md5.object_relation, md5.value
+        )
+        self._check_wrapped_attribute(
+            sha256.uuid, f'{fileIndicator1.id} - {artifact2.id}',
+            sha256.object_relation, sha256.value
+        )
+        self._check_wrapped_attribute(
+            url.uuid, artifact2.id, url.object_relation, url.value
+        )
         self.assertEqual(artifactObj6.uuid, artifact3.id.split('--')[1])
-        payload_bin, *artifactObj6_attributes = artifactObj6.attributes
+        payload_bin, md5, sha1, sha256, *artifactObj6_attributes = artifactObj6.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
             payload_bin.uuid,
             uuid5(UUIDv4, f'{artifact3.id} - payload_bin - {payload_data}')
+        )
+        self._check_wrapped_attribute(
+            sha1.uuid, f'{sha1Indicator.id} - {artifact3.id}',
+            sha1.object_relation, sha1.value
+        )
+        self._check_wrapped_attribute(
+            sha256.uuid, f'{artifactIndicator.id} - {artifact3.id}',
+            sha256.object_relation, sha256.value
         )
         self._check_wrapped_attributes(artifact3.id, md5, *artifactObj6_attributes)
 
@@ -1056,7 +1128,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(
             ipAttribute1.uuid,
-            uuid5(UUIDv4, f'{domain4.id} - {ipv4_1.id} - ip - {ipv4_1.value}')
+            uuid5(
+                UUIDv4,
+                f'{ipIndicator1.id} - {domain4.id} - '
+                f'{ipv4_1.id} - ip - {ipv4_1.value}'
+            )
         )
         self.assertEqual(
             ipAttribute2.uuid,
@@ -1158,7 +1234,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 )
             )
         )
-        self.assertEqual(emailAttr2.uuid, email_addr2.id.split('--')[1])
+        self.assertEqual(
+            emailAttr2.uuid, uuid5(
+                UUIDv4, f'{emailAddrIndicator.id} - {email_addr2.id}'
+            )
+        )
         self.assertEqual(
             emailAttr3.uuid,
             uuid5(UUIDv4, f'{email_addr3.id} - email - {email_addr3.value}')
@@ -2083,22 +2163,22 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, *observable_objects, observed_data = bundle.objects
+        _, grouping, *stix_objects, observed_data = bundle.objects
         misp_content = self._check_misp_event_features_from_grouping(event, grouping)
         for misp_object in misp_content:
             self.assertEqual(misp_object.timestamp, observed_data.modified)
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
-        self._check_wrapped_observable_objects(observable_objects, misp_content)
+        self._check_wrapped_observable_objects(stix_objects, misp_content)
 
     def test_stix21_bundle_with_wrapped_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_wrapped_observables()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, *observable_objects = bundle.objects
+        _, grouping, *stix_objects = bundle.objects
         misp_content = self._check_misp_event_features_from_grouping(event, grouping)
-        self._check_wrapped_observable_objects(observable_objects, misp_content)
+        self._check_wrapped_observable_objects(stix_objects, misp_content)
 
     def test_stix21_bundle_with_x509_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_observable()
