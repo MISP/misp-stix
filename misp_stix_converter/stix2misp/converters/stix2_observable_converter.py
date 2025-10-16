@@ -235,7 +235,7 @@ class STIX2ObservableConverter(STIX2Converter):
                             observed_data_id: Optional[str] = None) -> set | None:
         try:
             return self._fetch_observable(observable_object_id).get(
-                'indicator_refs'
+                'indicator_ref'
             )
         except AttributeError:
             if observed_data_id is not None:
