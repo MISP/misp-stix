@@ -1065,24 +1065,24 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         nt1_id = f'{od_id} - {nt1}'
         self.assertEqual(ntObj1.uuid, uuid5(UUIDv4, nt1_id))
         self._check_wrapped_network_traffic_object(
-            ntObj1, nt1_id, ipv4_4, ipv4_5, (ntObj2.uuid, 'encapsulates')
+            ntObj1, nt1_id, ipv4_4, ipv4_5, 8, (ntObj2.uuid, 'encapsulates')
         )
         nt2_id = f'{od_id} - {nt2}'
         self.assertEqual(ntObj2.uuid, uuid5(UUIDv4, nt2_id))
         self._check_wrapped_network_traffic_object(
-            ntObj2, nt2_id, ipv4_4, ipv4_6, (ntObj1.uuid, 'encapsulated-by')
+            ntObj2, nt2_id, ipv4_4, ipv4_6, 9, (ntObj1.uuid, 'encapsulated-by')
         )
         nt3_id = f'{od_id} - {nt3}'
         self.assertEqual(ntObj3.uuid, uuid5(UUIDv4, nt3_id))
         self._check_wrapped_network_traffic_object(
-            ntObj3, nt3_id, ipv4_7, ipv4_8,
+            ntObj3, nt3_id, ipv4_7, ipv4_8, 9,
             (artifactObj1.uuid, 'source-sent'), (ntObj4.uuid, 'encapsulates'),
             dst_indicator_id=ipIndicator2.id
         )
         nt4_id = f'{od_id} - {nt4}'
         self.assertEqual(ntObj4.uuid, uuid5(UUIDv4, nt4_id))
         self._check_wrapped_network_traffic_object(
-            ntObj4, nt4_id, ipv4_8, ipv4_9,
+            ntObj4, nt4_id, ipv4_8, ipv4_9, 10,
             (artifactObj1.uuid, 'destination-sent'),
             (ntObj3.uuid, 'encapsulated-by'),
             src_indicator_id=ipIndicator2.id, dst_indicator_id=ipIndicator3.id
@@ -1116,6 +1116,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(artifactObj2.name, 'artifact')
         artifact2_id = f'{od_id} - {artifact4}'
         self.assertEqual(artifactObj2.uuid, uuid5(UUIDv4, artifact2_id))
+        self.assertEqual(len(artifactObj2.attributes), 3)
         payload_bin, *artifactObj2_attributes = artifactObj2.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -1145,6 +1146,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._assert_multiple_equal(fileObj2.name, fileObj3.name, 'file')
         process1_id = f'{od_id} - {process1}'
         self.assertEqual(procObj1.uuid, uuid5(UUIDv4, process1_id))
+        self.assertEqual(len(procObj1.attributes), 3)
         self._check_wrapped_attributes(process1_id, *procObj1.attributes)
         self.assertEqual(len(procObj1.references), 3)
         file_ref, parent_ref, child_ref = procObj1.references
@@ -1156,6 +1158,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             parent_ref.referenced_uuid, procObj2.uuid,
             uuid5(UUIDv4, process2_id)
         )
+        self.assertEqual(len(procObj2.attributes), 6)
         command_line, *procObj2_attributes = procObj2.attributes
         self._check_wrapped_attribute(
             command_line.uuid, f'{processIndicator.id} - {process2_id}',
@@ -1169,20 +1172,24 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._assert_multiple_equal(
             file_ref.referenced_uuid, fileObj2.uuid, uuid5(UUIDv4, file2_id)
         )
+        self.assertEqual(len(fileObj2.attributes), 4)
         self._check_wrapped_attributes(file2_id, *fileObj2.attributes)
         process3_id = f'{od_id} - {process3}'
         self._assert_multiple_equal(
             child_ref.referenced_uuid, procObj3.uuid,
             uuid5(UUIDv4, process3_id)
         )
+        self.assertEqual(len(procObj3.attributes), 2)
         self._check_wrapped_attributes(process3_id, *procObj3.attributes)
         file3_id = f'{od_id} - {file6}'
         self._assert_multiple_equal(
             binary_ref.referenced_uuid, fileObj3.uuid, uuid5(UUIDv4, file3_id)
         )
+        self.assertEqual(len(fileObj3.attributes), 4)
         self._check_wrapped_attributes(file3_id, *fileObj3.attributes)
         process4_id = f'{od_id} - {process4}'
         self.assertEqual(procObj4.uuid, uuid5(UUIDv4, process4_id))
+        self.assertEqual(len(procObj4.attributes), 3)
         self._check_wrapped_attributes(process4_id, *procObj4.attributes)
 
         ########################################################################
@@ -1194,6 +1201,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._assert_multiple_equal(dirObj1.name, dirObj2.name, 'directory')
         self._assert_multiple_equal(artObj3.name, artObj4.name, 'artifact')
         file4_id = f'{od_id} - {file2}'
+        self.assertEqual(len(fileObj4.attributes), 6)
         self._check_wrapped_attributes(file4_id, *fileObj4.attributes)
         self.assertEqual(len(fileObj4.references), 1)
         parent_ref = fileObj4.references[0]
@@ -1203,9 +1211,11 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             parent_ref.referenced_uuid, dirObj1.uuid,
             uuid5(UUIDv4, directory1_id)
         )
+        self.assertEqual(len(dirObj1.attributes), 1)
         self._check_wrapped_attributes(directory1_id, *dirObj1.attributes)
         artifact3_id = f'{od_id} - {artifact5}'
         self.assertEqual(artObj3.uuid, uuid5(UUIDv4, artifact3_id))
+        self.assertEqual(len(artObj3.attributes), 4)
         payload_bin, *artObj3_attributes = artObj3.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -1221,6 +1231,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         file5_id = f'{od_id} - {file3}'
         self.assertEqual(fileObj5.uuid, uuid5(UUIDv4, file5_id))
+        self.assertEqual(len(fileObj5.attributes), 3)
         self._check_wrapped_attributes(file5_id, *fileObj5.attributes)
         self.assertEqual(len(fileObj5.references), 2)
         contains_file_ref, contains_directory_ref = fileObj5.references
@@ -1230,6 +1241,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             'contains'
         )
         file6_id = f'{od_id} - {file4}'
+        self.assertEqual(len(fileObj6.attributes), 6)
         self._check_wrapped_attributes(file6_id, *fileObj6.attributes)
         self.assertEqual(len(fileObj6.references), 1)
         parent_ref = fileObj6.references[0]
@@ -1239,9 +1251,11 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             contains_directory_ref.referenced_uuid, parent_ref.referenced_uuid,
             dirObj2.uuid, uuid5(UUIDv4, directory2_id)
         )
+        self.assertEqual(len(dirObj2.attributes), 1)
         self._check_wrapped_attributes(directory2_id, *dirObj2.attributes)
         artifact4_id = f'{od_id} - {artifact6}'
         self.assertEqual(artObj4.uuid, uuid5(UUIDv4, artifact4_id))
+        self.assertEqual(len(artObj4.attributes), 4)
         payload_bin, *artObj4_attributes = artObj4.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -1258,6 +1272,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         file7_id = f'{od_id} - {file5}'
         self.assertEqual(fileObj7.uuid, uuid5(UUIDv4, file7_id))
+        self.assertEqual(len(fileObj7.attributes), 7)
         md5, sha1, sha256, *fileObj7_attributes = fileObj7.attributes
         self._assert_multiple_equal(md5.to_ids, sha1.to_ids, sha256.to_ids, True)
         self._check_wrapped_attribute(
@@ -1282,6 +1297,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._assert_multiple_equal(
             pe_reference.referenced_uuid, peObj.uuid, uuid5(UUIDv4, pe_id)
         )
+        self.assertEqual(len(peObj.attributes), 3)
         self._check_wrapped_attributes(pe_id, *peObj.attributes)
         self.assertEqual(len(peObj.references), len(sections))
         for section_ref, section in zip(peObj.references, enumerate(sections)):
@@ -1293,6 +1309,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 uuid5(UUIDv4, object_id)
             )
             self.assertEqual(section_object.name, 'pe-section')
+            self.assertEqual(len(section_object.attributes), 4)
             if index == 1:
                 *section_attributes, md5 = section_object.attributes
                 self._check_wrapped_attributes(object_id, *section_attributes)
@@ -1316,8 +1333,10 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         regkey1_id = f'{od_id} - {regkey1}'
         self.assertEqual(regkeyObj1.uuid, uuid5(UUIDv4, regkey1_id))
+        self.assertEqual(len(regkeyObj1.attributes), 5)
         self._check_wrapped_attributes(regkey1_id, *regkeyObj1.attributes)
         regkey2_id = f'{od_id} - {regkey2}'
+        self.assertEqual(len(regkeyObj2.attributes), 2)
         self._check_wrapped_attributes(regkey2_id, *regkeyObj2.attributes)
         self.assertEqual(len(regkeyObj2.references), 2)
         for value_ref, value in zip(regkeyObj2.references, enumerate((valueObj1, valueObj2))):
@@ -1328,10 +1347,12 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 value_ref.referenced_uuid, value_object.uuid,
                 uuid5(UUIDv4, value_id)
             )
+            self.assertEqual(len(value_object.attributes), 3)
             self._check_wrapped_attributes(value_id, *value_object.attributes)
         self.assertEqual(userObj1.name, 'user-account')
         user1_id = f'{od_id} - {user1}'
         self.assertEqual(userObj1.uuid, uuid5(UUIDv4, user1_id))
+        self.assertEqual(len(userObj1.attributes), 4)
         self._check_wrapped_attributes(user1_id, *userObj1.attributes)
         self.assertEqual(len(userObj1.references), 1)
         creates_ref = userObj1.references[0]
@@ -1342,6 +1363,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         regkey3_id = f'{od_id} - {regkey3}'
         self.assertEqual(regkeyObj3.uuid, uuid5(UUIDv4, regkey3_id))
+        self.assertEqual(len(regkeyObj3.attributes), 5)
         self._check_wrapped_attributes(regkey3_id, *regkeyObj3.attributes)
 
         ########################################################################
@@ -1352,6 +1374,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         artifact5_id = f'{od_id} - {artifact1}'
         self.assertEqual(artifactObj5.uuid, uuid5(UUIDv4, artifact5_id))
+        self.assertEqual(len(artifactObj5.attributes), 6)
         payload_bin, md5, *artifactObj5_attributes = artifactObj5.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -1379,6 +1402,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         artifact7_id = f'{od_id} - {artifact3}'
         self.assertEqual(artifactObj7.uuid, uuid5(UUIDv4, artifact7_id))
+        self.assertEqual(len(artifactObj7.attributes), 6)
         payload_bin, md5, sha1, sha256, *artifactObj7_attributes = artifactObj7.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -1431,12 +1455,15 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         directory3_id = f'{od_id} - {directory1}'
         self.assertEqual(directoryObj3.uuid, uuid5(UUIDv4, directory3_id))
+        self.assertEqual(len(directoryObj3.attributes), 5)
         self._check_wrapped_attributes(directory3_id, *directoryObj3.attributes)
         directory4_id = f'{od_id} - {directory2}'
         self.assertEqual(directoryObj4.uuid, uuid5(UUIDv4, directory4_id))
+        self.assertEqual(len(directoryObj4.attributes), 5)
         self._check_wrapped_attributes(directory4_id, *directoryObj4.attributes)
         directory5_id = f'{od_id} - {directory3}'
         self.assertEqual(directoryObj5.uuid, uuid5(UUIDv4, directory5_id))
+        self.assertEqual(len(directoryObj5.attributes), 5)
         self._check_wrapped_attributes(directory5_id, *directoryObj5.attributes)
 
         ########################################################################
@@ -1489,12 +1516,15 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         software1_id = f'{od_id} - {software1}'
         self.assertEqual(softwareObj1.uuid, uuid5(UUIDv4, software1_id))
+        self.assertEqual(len(softwareObj1.attributes), 4)
         self._check_wrapped_attributes(software1_id, *softwareObj1.attributes)
         software2_id = f'{od_id} - {software2}'
         self.assertEqual(softwareObj2.uuid, uuid5(UUIDv4, software2_id))
+        self.assertEqual(len(softwareObj2.attributes), 4)
         self._check_wrapped_attributes(software2_id, *softwareObj2.attributes)
         software3_id = f'{od_id} - {software3}'
         self.assertEqual(softwareObj3.uuid, uuid5(UUIDv4, software3_id))
+        self.assertEqual(len(softwareObj3.attributes), 8)
         self._check_wrapped_attributes(software3_id, *softwareObj3.attributes)
 
         ########################################################################
@@ -1505,12 +1535,15 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         user_account2_id = f'{od_id} - {user_account2}'
         self.assertEqual(userObj2.uuid, uuid5(UUIDv4, user_account2_id))
+        self.assertEqual(len(userObj2.attributes), 11)
         self._check_wrapped_attributes(user_account2_id, *userObj2.attributes)
         user_account3_id = f'{od_id} - {user_account3}'
         self.assertEqual(userObj3.uuid, uuid5(UUIDv4, user_account3_id))
+        self.assertEqual(len(userObj3.attributes), 4)
         self._check_wrapped_attributes(user_account3_id, *userObj3.attributes)
         user_account4_id = f'{od_id} - {user_account4}'
         self.assertEqual(userObj4.uuid, uuid5(UUIDv4, user_account4_id))
+        self.assertEqual(len(userObj4.attributes), 11)
         self._check_wrapped_attributes(user_account4_id, *userObj4.attributes)
 
         ########################################################################
@@ -1521,12 +1554,15 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         x509_1_id = f'{od_id} - {x509_cert1}'
         self.assertEqual(x509Obj1.uuid, uuid5(UUIDv4, x509_1_id))
+        self.assertEqual(len(x509Obj1.attributes), 14)
         self._check_wrapped_attributes(x509_1_id, *x509Obj1.attributes)
         x509_2_id = f'{od_id} - {x509_cert2}'
         self.assertEqual(x509Obj2.uuid, uuid5(UUIDv4, x509_2_id))
+        self.assertEqual(len(x509Obj2.attributes), 14)
         self._check_wrapped_attributes(x509_2_id, *x509Obj2.attributes)
         x509_3_id = f'{od_id} - {x509_cert3}'
         self.assertEqual(x509Obj3.uuid, uuid5(UUIDv4, x509_3_id))
+        self.assertEqual(len(x509Obj3.attributes), 14)
         self._check_wrapped_attributes(x509_3_id, *x509Obj3.attributes)
 
         ########################################################################

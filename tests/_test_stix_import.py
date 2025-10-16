@@ -1560,6 +1560,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def _check_wrapped_email_object(
             self, misp_object, object_id, indicator_id,
             from_id, to_id, cc_id, artifact_id, file_id):
+        self.assertEqual(len(misp_object.attributes), 12)
         (*attributes, received_header_ip, from_addr, from_dn, to_addr, to_dn,
          cc_addr, cc_dn, body) = misp_object.attributes
         self._check_wrapped_attributes(object_id, *attributes)
@@ -1610,8 +1611,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
 
     def _check_wrapped_network_traffic_object(
-            self, misp_object, object_id, src_id, dst_id, *references,
-            src_indicator_id = None, dst_indicator_id = None):
+            self, misp_object, object_id, src_id, dst_id, n_attributes,
+            *references, src_indicator_id = None, dst_indicator_id = None):
+        self.assertEqual(len(misp_object.attributes), n_attributes)
         *attributes, src_ip, dst_ip = misp_object.attributes
         for attribute in attributes:
             self.assertEqual(
