@@ -405,7 +405,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         return self._handle_attribute_observable(attribute, [file_object])
 
-    def _parse_github_username_attribute_observable(
+    def _parse_github_username_attribute(
             self, attribute: MISPAttribute | dict) -> ObservedData:
         account_object = UserAccount(
             id=f"user-account--{attribute['uuid']}",
