@@ -919,16 +919,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_http_method_attribute(
             self, attribute: MISPAttribute | dict):
-        observed_data = self._parse_custom_attribute(attribute)
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            indicatotr = self._handle_attribute_indicator(
+            self._handle_attribute_indicator(
                 attribute,
                 f"[network-traffic:extensions.'http-request-ext'.request_method = '{value}']"
             )
-            self._parse_indicator_relationship(
-                indicatotr.id, observed_data.id, indicatotr.modified
-            )
+        else:
+            self._parse_custom_attribute(attribute)
 
     def _parse_ip_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_ip_attribute_observable(attribute)
