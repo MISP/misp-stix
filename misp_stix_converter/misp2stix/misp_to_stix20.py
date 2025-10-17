@@ -26,13 +26,13 @@ from stix2.v20.sro import Relationship, Sighting
 from stix2.v20.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
-_ANALYST_DATA_REFERENCE_TYPES = [
+_ANALYST_DATA_REFERENCE_TYPES = (
     'attack-pattern', 'campaign', 'course-of-action', 'identity', 'indicator',
     'intrusion-set', 'malware', 'observed-data', 'report', 'threat-actor',
     'tool', 'vulnerability', 'x-misp-analyst-note', 'x-misp-analyst-opinion',
     'x-misp-attribute', 'x-misp-event-note', 'x-misp-event-report',
     'x-misp-galaxy-cluster', 'x-misp-object'
-]
+)
 _STIX_OBJECT_TYPING = Union[
     AttackPattern, Campaign, CourseOfAction, CustomObject, Identity, Indicator,
     IntrusionSet, Malware, ObservedData, Tool, Vulnerability, dict
@@ -51,7 +51,8 @@ _STIX_OBJECT_TYPING = Union[
         (
             'object_ref',
             ReferenceProperty(
-                valid_types=_ANALYST_DATA_REFERENCE_TYPES, spec_version='2.0'
+                valid_types=list(_ANALYST_DATA_REFERENCE_TYPES),
+                spec_version='2.0'
             )
         )
     ]
@@ -72,7 +73,8 @@ class CustomAnalystNote:
         (
             'object_ref',
             ReferenceProperty(
-                valid_types=_ANALYST_DATA_REFERENCE_TYPES, spec_version='2.0'
+                valid_types=list(_ANALYST_DATA_REFERENCE_TYPES),
+                spec_version='2.0'
             )
         )
     ]
@@ -124,7 +126,7 @@ class CustomAttribute:
             'object_refs',
             ListProperty(
                 ReferenceProperty(
-                    valid_types=_ANALYST_DATA_REFERENCE_TYPES,
+                    valid_types=list(_ANALYST_DATA_REFERENCE_TYPES),
                     spec_version='2.0'
                 ),
                 required=True
@@ -319,7 +321,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             note_args['x_misp_language'] = note['language']
         if stix_object['id'].startswith('x-misp-'):
             note_args['allow_custom'] = True
-        getattr(self, self._results_handling_function)(
+        getattr(self, self._results_handling_method)(
             CustomAnalystNote(**note_args)
         )
 
@@ -337,7 +339,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             opinion_args['x_misp_comment'] = opinion['comment']
         if stix_object['id'].startswith('x-misp-'):
             opinion_args['allow_custom'] = True
-        getattr(self, self._results_handling_function)(
+        getattr(self, self._results_handling_method)(
             CustomAnalystOpinion(**opinion_args)
         )
 
@@ -367,7 +369,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
         if sighting.get('source', ''):
             opinion_args['x_misp_source'] = sighting['source']
-        getattr(self, self._results_handling_function)(
+        getattr(self, self._results_handling_method)(
             CustomOpinion(**opinion_args)
         )
 
@@ -391,7 +393,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ############################################################################
 
     def _parse_attachment_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         data = attribute['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
@@ -402,26 +404,26 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             ),
             '1': self._create_artifact(data)
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_autonomous_system_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': AutonomousSystem(
                 number=self._parse_AS_value(attribute['value'])
             )
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_domain_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': DomainName(value=attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_domain_ip_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 domain, ip = attribute['value'].split(separator)
@@ -433,16 +435,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     ),
                     '1': address_object
                 }
-                self._handle_attribute_observable(attribute, observable_object)
-                break
-        else:
-            self._composite_attribute_value_warning(
-                attribute['type'], attribute['value']
-            )
-            self._parse_custom_attribute(attribute)
+                return self._handle_attribute_observable(
+                    attribute, observable_object
+                )
 
     def _parse_email_attachment_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(
                 is_multipart=True,
@@ -457,24 +455,24 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             ),
             '1': self._create_file(attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': self._create_email_address(attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_body_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(is_multipart=False, body=attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_destination_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(
                 is_multipart=False, to_refs=['1'],
@@ -482,19 +480,19 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             ),
             '1': self._create_email_address(attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_header_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(
                 is_multipart=False, received_lines=[attribute['value']]
             )
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_reply_to_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(
                 is_multipart=False, additional_header_fields={
@@ -502,10 +500,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_source_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(
                 is_multipart=False, from_ref='1',
@@ -513,17 +511,17 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             ),
             '1': self._create_email_address(attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_subject_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(is_multipart=False, subject=attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_x_mailer_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': EmailMessage(
                 is_multipart=False, additional_header_fields={
@@ -531,21 +529,24 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_filename_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': self._create_file(attribute['value'])
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
-    def _parse_github_username_attribute_observable(
+    def _parse_github_username_attribute(
             self, attribute: MISPAttribute | dict):
-        self._parse_custom_attribute(attribute)
+        if attribute.get('to_ids', False):
+            self._parse_github_username_attribute_indicator(attribute)
+        else:
+            self._parse_custom_attribute(attribute)
 
     def _parse_hash_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         hash_type = self._define_hash_type(attribute['type'])
         if not self._check_hash_value(hash_type, attribute['value']):
             raise InvalidHashValueError()
@@ -557,11 +558,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {
             '0': File(**file_args)
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hash_composite_attribute_observable(
             self, attribute: MISPAttribute | dict,
-            hash_type: Optional[str] = None):
+            hash_type: Optional[str] = None) -> ObservedData:
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 if hash_type is None:
@@ -576,17 +577,17 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 if hash_type not in HASHING_ALGORITHM:
                     file_args['allow_custom'] = True
                 observable_object = {'0': File(**file_args)}
-                self._handle_attribute_observable(attribute, observable_object)
-                break
-        else:
-            self._composite_attribute_value_warning(
-                attribute['type'], attribute['value']
-            )
-            observable_object = {'0': File(**{'name': attribute['value']})}
-            self._handle_attribute_observable(attribute, observable_object)
+                return self._handle_attribute_observable(
+                    attribute, observable_object
+                )
+        self._composite_attribute_value_warning(
+            attribute['type'], attribute['value']
+        )
+        observable_object = {'0': File(**{'name': attribute['value']})}
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hostname_port_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 hostname, port = attribute['value'].split(separator)
@@ -597,16 +598,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                         _valid_refs={'0': 'domain-name'}
                     )
                 }
-                self._handle_attribute_observable(attribute, observable_object)
-                break
-        else:
-            self._composite_attribute_value_warning(
-                attribute['type'], attribute['value']
-            )
-            self._parse_custom_attribute(attribute)
+                return self._handle_attribute_observable(
+                    attribute, observable_object
+                )
 
     def _parse_ip_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         address_object = self._get_address_type(attribute['value'])(
             value=attribute['value']
         )
@@ -618,10 +615,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {
             '0': NetworkTraffic(**network_traffic_args), '1': address_object
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_ip_port_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 ip_value, port_value = attribute['value'].split(separator)
@@ -638,23 +635,19 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     '0': NetworkTraffic(**network_traffic_args),
                     '1': address_object
                 }
-                self._handle_attribute_observable(attribute, observable_object)
-                break
-        else:
-            self._composite_attribute_value_warning(
-                attribute['type'], attribute['value']
-            )
-            self._parse_custom_attribute(attribute)
+                return self._handle_attribute_observable(
+                    attribute, observable_object
+                )
 
     def _parse_mac_address_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': MACAddress(value=attribute['value'].lower())
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_malware_sample_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         file_args = {'content_ref': '1', '_valid_refs': {'1': 'artifact'}}
         for separator in self.composite_separators:
             if separator in attribute['value']:
@@ -677,22 +670,22 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             '0': File(**file_args),
             '1': self._create_artifact(data, malware_sample=True)
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_mutex_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {'0': Mutex(name=attribute['value'])}
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_regkey_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {
             '0': WindowsRegistryKey(key=attribute['value'].strip())
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_regkey_value_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 key, value = attribute['value'].split(separator)
@@ -706,31 +699,31 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                         ]
                     )
                 }
-                self._handle_attribute_observable(attribute, observable_object)
-                break
-        else:
-            self._composite_attribute_value_warning(
-                attribute['type'], attribute['value']
-            )
-            observable_object = {
-                '0': WindowsRegistryKey(key=attribute['value'].strip())
-            }
-            self._handle_attribute_observable(attribute, observable_object)
+                return self._handle_attribute_observable(
+                    attribute, observable_object
+                )
+        self._composite_attribute_value_warning(
+            attribute['type'], attribute['value']
+        )
+        observable_object = {
+            '0': WindowsRegistryKey(key=attribute['value'].strip())
+        }
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_url_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         observable_object = {'0': URL(value=attribute['value'])}
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_x509_fingerprint_attribute_observable(
-            self, attribute: MISPAttribute | dict):
+            self, attribute: MISPAttribute | dict) -> ObservedData:
         hash_type = self._define_hash_type(attribute['type'].split('-')[-1])
         if not self._check_hash_value(hash_type, attribute['value']):
             raise InvalidHashValueError()
         observable_object = {
             '0': X509Certificate(hashes={hash_type: attribute['value']})
         }
-        self._handle_attribute_observable(attribute, observable_object)
+        return self._handle_attribute_observable(attribute, observable_object)
 
     ############################################################################
     #                      MISP OBJECTS PARSING FUNCTIONS                      #
@@ -1452,7 +1445,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self, args: dict, observable: dict) -> ObservedData:
         args['objects'] = observable
         observed_data = ObservedData(**args)
-        getattr(self, self._results_handling_function)(observed_data)
+        getattr(self, self._results_handling_method)(observed_data)
         return observed_data
 
     @staticmethod
