@@ -1095,9 +1095,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             indicator = self._handle_attribute_indicator(
                 attribute, f"[url:value = '{value}']"
             )
-            indicator = self._parse_indicator_relationship(
-                indicator.id, observed_data.id, indicator.modified
-            )
             self._parse_indicator_relationship(
                 indicator.id, observed_data.id, indicator.modified
             )
