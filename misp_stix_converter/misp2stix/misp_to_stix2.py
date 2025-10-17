@@ -128,7 +128,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     self._initiate_events_parsing()
                 for event in json_content:
                     self._parse_misp_event(event)
-                    self.__index = len(self.__objects)
+                    self.__index = len(self.stix_objects)
             else:
                 self.parse_misp_attributes(json_content)
         else:
@@ -169,7 +169,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             }
             self._handle_attributes_and_objects()
         report = self._generate_report_from_event()
-        self.__objects.insert(self.__index, report)
+        self.stix_objects.insert(self.__index, report)
 
     def _define_stix_object_id(
             self, feature: str, misp_object: MISPObject | dict) -> str:
@@ -315,8 +315,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def stix_objects(self) -> list:
         """
         Simply returns the list of STIX objects.
-        All variables containing the IDs, STIX objects, references and so on remain
-        the same and are not re-initialised.
+        All variables containing the IDs, STIX objects, references and so on
+        remain the same and are not re-initialised.
         """
         return self.__objects
 
@@ -329,11 +329,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     ############################################################################
 
     def _append_SDO(self, stix_object):
-        self.__objects.append(stix_object)
+        self.stix_objects.append(stix_object)
         self.object_refs.append(stix_object.id)
 
     def _append_SDO_without_refs(self, stix_object):
-        self.__objects.append(stix_object)
+        self.stix_objects.append(stix_object)
 
     def _generate_report_from_event(self):
         report_args = {
@@ -2964,7 +2964,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         identity_id = stix_object['created_by_ref']
         if identity_id not in self.unique_ids:
             identity = self._create_identity(self._identities[identity_id])
-            self.__objects.insert(0, identity)
+            self.stix_objects.insert(0, identity)
             self.__index += 1
             self.unique_ids[identity_id] = identity_id
         stix_object['allow_custom'] = True
@@ -3774,7 +3774,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'id': identity_id, 'name': name, 'identity_class': 'organization'
         }
         identity = self._create_identity(identity_args)
-        self.__objects.insert(self.__index, identity)
+        self.stix_objects.insert(self.__index, identity)
         self.__index += 1
         self.unique_ids[identity_id] = identity_id
 
