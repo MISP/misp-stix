@@ -1027,15 +1027,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
 
     def _parse_port_attribute(self, attribute: MISPAttribute | dict):
-        observed_data = self._parse_custom_attribute(attribute)
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            indicator = self._handle_attribute_indicator(
+            self._handle_attribute_indicator(
                 attribute, f"[network-traffic:dst_port = '{value}']"
             )
-            self._parse_indicator_relationship(
-                indicator.id, observed_data.id, indicator.modified
-            )
+        else:
+            self._parse_custom_attribute(attribute)
 
     def _parse_regkey_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_regkey_attribute_observable(attribute)
@@ -1076,15 +1074,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_size_in_bytes_attribute(
             self, attribute: MISPAttribute | dict):
-        observed_data = self._parse_custom_attribute(attribute)
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
-            indicator = self._handle_attribute_indicator(
+            self._handle_attribute_indicator(
                 attribute, f"[file:size = '{value}']"
             )
-            self._parse_indicator_relationship(
-                indicator.id, observed_data.id, indicator.modified
-            )
+        else:
+            self._parse_custom_attribute(attribute)
 
     def _parse_url_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_url_attribute_observable(attribute)
