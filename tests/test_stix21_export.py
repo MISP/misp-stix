@@ -636,33 +636,67 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         self.parser.parse_misp_event(event)
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
-        identity, grouping, indicator = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
-        identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self._check_pattern_features(indicator)
-        return attribute['value'], indicator.pattern
+        try:
+            identity, grouping, observed_data, *observables, indicator, relationship = stix_objects
+            identity_id = self._check_identity_features(identity, orgc, timestamp)
+            object_refs = self._check_grouping_features(grouping, event, identity_id)
+            od_ref, *observable_refs, indicator_ref, relationship_ref = object_refs
+            self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
+            self._check_pattern_features(indicator)
+            self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
+            return attribute['value'], indicator.pattern
+        except ValueError:
+            identity, grouping, indicator = stix_objects
+            identity_id = self._check_identity_features(identity, orgc, timestamp)
+            object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+            self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+            self._check_pattern_features(indicator)
+            return attribute['value'], indicator.pattern
 
     def _run_indicators_tests(self, event):
         self._add_attribute_ids_flag(event)
         orgc = event['Orgc']
         attributes = event['Attribute']
+        n_attributes = len(attributes)
+        self.assertTrue(n_attributes > 0)
         self.parser.parse_misp_event(event)
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
-        identity, grouping, *indicators = stix_objects
+        identity, grouping, *SDOs = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_grouping_features(grouping, event, identity_id)
-        for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
-            self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        if all(SDO.type == 'indicator' for SDO in SDOs):
+            for attribute, indicator, object_ref in zip(attributes, SDOs, object_refs):
+                self._check_attribute_indicator_features(
+                    indicator, attribute, identity_id, object_ref
+                )
+            return attributes, SDOs
+        relationships = SDOs[-n_attributes:]
+        brol = SDOs[:-n_attributes]
+        object_chunks = []
+        ref_chunks = []
+        indicator_indexes = (i for i, obj in enumerate(brol) if obj['type'] == 'indicator')
+        index = 0
+        for indicator_index in indicator_indexes:
+            object_chunks.append(brol[index:indicator_index + 1])
+            ref_chunks.append(object_refs[index:indicator_index + 1])
+            index = indicator_index + 1
+        for attribute, chunk, object_ref, relationship in zip(attributes, object_chunks, ref_chunks, relationships):
+            observed_data, *_, indicator = chunk
+            od_ref, *_, indicator_ref = object_ref
+            self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
             self._check_pattern_features(indicator)
-        return attributes, indicators
+            self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
+            self.assertEqual(relationship.relationship_type, 'indicates')
+            self.assertEqual(relationship.source_ref, indicator_ref)
+            self.assertEqual(relationship.target_ref, od_ref)
+        return attributes, object_chunks, ref_chunks, relationships
 
     def _run_observable_tests(self, event):
         self._remove_attribute_ids_flag(event)
@@ -1760,10 +1794,19 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
 
     def test_event_with_hash_composite_indicator_attributes(self):
         event = get_event_with_hash_composite_attributes()
-        attributes, indicators = self._run_indicators_tests(event['Event'])
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(event['Event'])
+        for attribute, objects, object_refs, relationship in zip(*stix_objects):
+            observed_data, observable, indicator = objects
+            _, observable_ref, _ = object_refs
             self._check_hash_composite_indicator_attribute(attribute, indicator)
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._check_hash_composite_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
+            self._populate_documentation(
+                attribute=attribute, indicator=indicator,
+                observed_data=[observed_data, observable],
+                relationship=relationship
+            )
 
     def test_event_with_hash_composite_observable_attributes(self):
         event = get_event_with_hash_composite_attributes()
@@ -1774,10 +1817,19 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
 
     def test_event_with_hash_indicator_attributes(self):
         event = get_event_with_hash_attributes()
-        attributes, indicators = self._run_indicators_tests(event['Event'])
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(event['Event'])
+        for attribute, objects, object_refs, relationship in zip(*stix_objects):
+            observed_data, observable, indicator = objects
+            _, observable_ref, _ = object_refs
             self._check_hash_indicator_attribute(attribute, indicator)
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._check_hash_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
+            self._populate_documentation(
+                attribute=attribute, indicator=indicator,
+                observed_data=[observed_data, observable],
+                relationship=relationship
+            )
 
     def test_event_with_hash_observable_attributes(self):
         event = get_event_with_hash_attributes()
@@ -1830,10 +1882,19 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
 
     def test_event_with_ip_indicator_attributes(self):
         event = get_event_with_ip_attributes()
-        attributes, indicators = self._run_indicators_tests(event['Event'])
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(event['Event'])
+        for attribute, objects, object_refs, relationship in zip(*stix_objects):
+            observed_data, *observables, indicator = objects
+            _, *observable_refs, _ = object_refs
             self._check_ip_indicator_attribute(attribute, indicator)
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._check_ip_observable_attribute(
+                attribute, observable_refs, observed_data, observables
+            )
+            self._populate_documentation(
+                attribute=attribute, indicator=indicator,
+                observed_data=[observed_data, *observables],
+                relationship=relationship
+            )
 
     def test_event_with_ip_observable_attributes(self):
         event = get_event_with_ip_attributes()
@@ -1844,10 +1905,19 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
 
     def test_event_with_ip_port_indicator_attributes(self):
         event = get_event_with_ip_port_attributes()
-        attributes, indicators = self._run_indicators_tests(event['Event'])
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(event['Event'])
+        for attribute, objects, object_refs, relationship in zip(*stix_objects):
+            observed_data, *observables, indicator = objects
+            _, *observable_refs, _ = object_refs
             self._check_ip_port_indicator_attribute(attribute, indicator)
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._check_ip_port_observable_attribute(
+                attribute, observable_refs, observed_data, observables
+            )
+            self._populate_documentation(
+                attribute=attribute, indicator=indicator,
+                observed_data=[observed_data, *observables],
+                relationship=relationship
+            )
 
     def test_event_with_ip_port_observable_attributes(self):
         event = get_event_with_ip_port_attributes()
@@ -1972,10 +2042,19 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
 
     def test_event_with_url_indicator_attributes(self):
         event = get_event_with_url_attributes()
-        attributes, indicators = self._run_indicators_tests(event['Event'])
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(event['Event'])
+        for attribute, objects, object_refs, relationship in zip(*stix_objects):
+            observed_data, observable, indicator = objects
+            _, observable_ref, _ = object_refs
+            self._check_url_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
             self.assertEqual(indicator.pattern, f"[url:value = '{attribute['value']}']")
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._populate_documentation(
+                attribute=attribute, indicator=indicator,
+                observed_data=[observed_data, observable],
+                relationship=relationship
+            )
 
     def test_event_with_url_observable_attributes(self):
         event = get_event_with_url_attributes()
@@ -1994,14 +2073,23 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
-        attributes, indicators = self._run_indicators_tests(event['Event'])
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(event['Event'])
+        for attribute, objects, object_refs, relationship in zip(*stix_objects):
+            observed_data, observable, indicator = objects
+            _, observable_ref, _ = object_refs
+            self._check_x509_fingerprint_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
             hash_type = attribute['type'].split('-')[-1].upper()
             self.assertEqual(
                 indicator.pattern,
                 f"[x509-certificate:hashes.{hash_type} = '{attribute['value']}']"
             )
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._populate_documentation(
+                attribute=attribute, indicator=indicator,
+                observed_data=[observed_data, observable],
+                relationship=relationship
+            )
 
     def test_event_with_x509_fingerprint_observable_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
@@ -2238,9 +2326,14 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_hash_composite_attributes()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attributes, indicators = self._run_indicators_tests(misp_event)
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(misp_event)
+        for attribute, stix_objects, object_refs, _ in zip(*stix_objects):
+            observed_data, observable, indicator = stix_objects
+            _, observable_ref, _ = object_refs
             self._check_hash_composite_indicator_attribute(attribute, indicator)
+            self._check_hash_composite_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
 
     def test_event_with_hash_composite_observable_attributes(self):
         event = get_event_with_hash_composite_attributes()
@@ -2254,9 +2347,14 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_hash_attributes()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attributes, indicators = self._run_indicators_tests(misp_event)
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(misp_event)
+        for attribute, objects, object_refs, _ in zip(*stix_objects):
+            observed_data, observable, indicator = objects
+            _, observable_ref, _ = object_refs
             self._check_hash_indicator_attribute(attribute, indicator)
+            self._check_hash_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
 
     def test_event_with_hash_observable_attributes(self):
         event = get_event_with_hash_attributes()
@@ -2293,9 +2391,14 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_ip_attributes()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attributes, indicators = self._run_indicators_tests(misp_event)
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(misp_event)
+        for attribute, objects, object_refs, _ in zip(*stix_objects):
+            observed_data, *observables, indicator = objects
+            _, *observable_refs, _ = object_refs
             self._check_ip_indicator_attribute(attribute, indicator)
+            self._check_ip_observable_attribute(
+                attribute, observable_refs, observed_data, observables
+            )
 
     def test_event_with_ip_observable_attributes(self):
         event = get_event_with_ip_attributes()
@@ -2309,9 +2412,14 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_ip_port_attributes()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attributes, indicators = self._run_indicators_tests(misp_event)
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(misp_event)
+        for attribute, objects, object_refs, _ in zip(*stix_objects):
+            observed_data, *observables, indicator = objects
+            _, *observable_refs, _ = object_refs
             self._check_ip_port_indicator_attribute(attribute, indicator)
+            self._check_ip_port_observable_attribute(
+                attribute, observable_refs, observed_data, observables
+            )
 
     def test_event_with_ip_port_observable_attributes(self):
         event = get_event_with_ip_port_attributes()
@@ -2410,8 +2518,13 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_url_attributes()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attributes, indicators = self._run_indicators_tests(misp_event)
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(misp_event)
+        for attribute, objects, object_refs, _ in zip(*stix_objects):
+            observed_data, observable, indicator = objects
+            _, observable_ref, _ = object_refs
+            self._check_url_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
             self.assertEqual(indicator.pattern, f"[url:value = '{attribute['value']}']")
 
     def test_event_with_url_observable_attributes(self):
@@ -2432,8 +2545,13 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_x509_fingerprint_attributes()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attributes, indicators = self._run_indicators_tests(misp_event)
-        for attribute, indicator in zip(attributes, indicators):
+        stix_objects = self._run_indicators_tests(misp_event)
+        for attribute, objects, object_refs, _ in zip(*stix_objects):
+            observed_data, observable, indicator = objects
+            _, observable_ref, _ = object_refs
+            self._check_x509_fingerprint_observable_attribute(
+                observable_ref, observed_data, observable, attribute
+            )
             hash_type = attribute['type'].split('-')[-1].upper()
             self.assertEqual(
                 indicator.pattern,
@@ -3014,12 +3132,14 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.parser.parse_misp_event(event)
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
-        identity, grouping, indicator, note = stix_objects
+        print([s['id'] for s in stix_objects])
+        (identity, grouping, observed_data, network_traffic, ip_address,
+         indicator, note, relationship) = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        indicator_ref, note_ref = self._check_grouping_features(grouping, event, identity_id)
+        od_ref, nt_ref, ip_ref, indicator_ref, note_ref, relationship_ref = self._check_grouping_features(grouping, event, identity_id)
         self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
         self._check_pattern_features(indicator)
         type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
@@ -3041,7 +3161,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(note.labels[1], f'misp:meta-category="{misp_object["meta-category"]}"')
         self.assertEqual(note.labels[2], f'misp:to_ids="False"')
         self.assertEqual(note.content, text)
-        self.assertEqual(note.object_refs, [indicator.id])
+        self.assertEqual(set(note.object_refs), {indicator.id, observed_data.id})
         self.assertEqual(note.x_misp_type, annotation_type)
         self.assertEqual(note.x_misp_attachment['value'], attachment)
         data = misp_object['Attribute'][-1]['data']
@@ -6649,13 +6769,13 @@ class TestFeedSTIX21JSONExport(TestFeedSTIX21Export):
         for attribute in attributes[:2]:
             self.parser.parse_misp_attribute(attribute)
         bundle = self.parser.bundle
-        self.assertEqual(len(bundle.objects), 3)
-        identity1, indicator1, indicator2 = bundle.objects
+        (identity1, od1, nt1, ip1, indicator1, relationship1,
+         od2, nt2, ip2, indicator2, relationship2) = bundle.objects
         for attribute in attributes[2:]:
             self.parser.parse_misp_attribute(attribute)
         bundle = self.parser.bundle
-        self.assertEqual(len(bundle.objects), 3)
-        identity2, indicator3, indicator4 = bundle.objects
+        (identity2, od3, nt3, ip3, indicator3, relationship3,
+         od4, nt4, ip4, indicator4, relationship4) = bundle.objects
         self._assert_multiple_equal(
             f"identity--{attributes[2]['Event']['Orgc']['uuid']}",
             identity1.id,
@@ -6667,8 +6787,27 @@ class TestFeedSTIX21JSONExport(TestFeedSTIX21Export):
             identity2.name
         )
         indicators = (indicator1, indicator2, indicator3, indicator4)
-        for attribute, indicator in zip(attributes, indicators):
-            self.assertEqual(indicator.id, f"indicator--{attribute['Attribute']['uuid']}")
+        observed_data_objects = (od1, od2, od3, od4)
+        relationships = (relationship1, relationship2, relationship3, relationship4)
+        network_traffic_observables = (nt1, nt2, nt3, nt4)
+        ip_address_observables = (ip1, ip2, ip3, ip4)
+        for index, attribute in enumerate(attributes):
+            attribute_uuid = attribute['Attribute']['uuid']
+            indicator = indicators[index]
+            observed_data = observed_data_objects[index]
+            relationship = relationships[index]
+            network_traffic = network_traffic_observables[index]
+            ip_address = ip_address_observables[index]
+            self._assert_multiple_equal(
+                indicator.id, relationship.source_ref,
+                f'indicator--{attribute_uuid}'
+            )
+            self._assert_multiple_equal(
+                observed_data.id, relationship.target_ref,
+                f'observed-data--{attribute_uuid}'
+            )
+            self.assertEqual(network_traffic.id, f'network-traffic--{attribute_uuid}')
+            self.assertEqual(ip_address.id, f'ipv4-addr--{attribute_uuid}')
 
 
 class TestFeedSTIX21MISPExport(TestFeedSTIX21Export):
@@ -6679,15 +6818,15 @@ class TestFeedSTIX21MISPExport(TestFeedSTIX21Export):
             misp_attribute.from_dict(**attribute)
             self.parser.parse_misp_attribute(misp_attribute)
         bundle = self.parser.bundle
-        self.assertEqual(len(bundle.objects), 3)
-        identity1, indicator1, indicator2 = bundle.objects
+        (identity1, od1, nt1, ip1, indicator1, relationship1,
+         od2, nt2, ip2, indicator2, relationship2) = bundle.objects
         for attribute in attributes[2:]:
             misp_attribute = MISPAttribute()
             misp_attribute.from_dict(**attribute)
             self.parser.parse_misp_attribute(misp_attribute)
         bundle = self.parser.bundle
-        self.assertEqual(len(bundle.objects), 3)
-        identity2, indicator3, indicator4 = bundle.objects
+        (identity2, od3, nt3, ip3, indicator3, relationship3,
+         od4, nt4, ip4, indicator4, relationship4) = bundle.objects
         self._assert_multiple_equal(
             self.parser._mapping.misp_identity_args()['id'],
             identity1.id,
@@ -6699,5 +6838,24 @@ class TestFeedSTIX21MISPExport(TestFeedSTIX21Export):
             identity2.name
         )
         indicators = (indicator1, indicator2, indicator3, indicator4)
-        for attribute, indicator in zip(attributes, indicators):
-            self.assertEqual(indicator.id, f"indicator--{attribute['Attribute']['uuid']}")
+        observed_data_objects = (od1, od2, od3, od4)
+        relationships = (relationship1, relationship2, relationship3, relationship4)
+        network_traffic_observables = (nt1, nt2, nt3, nt4)
+        ip_address_observables = (ip1, ip2, ip3, ip4)
+        for index, attribute in enumerate(attributes):
+            attribute_uuid = attribute['Attribute']['uuid']
+            indicator = indicators[index]
+            observed_data = observed_data_objects[index]
+            relationship = relationships[index]
+            network_traffic = network_traffic_observables[index]
+            ip_address = ip_address_observables[index]
+            self._assert_multiple_equal(
+                indicator.id, relationship.source_ref,
+                f'indicator--{attribute_uuid}'
+            )
+            self._assert_multiple_equal(
+                observed_data.id, relationship.target_ref,
+                f'observed-data--{attribute_uuid}'
+            )
+            self.assertEqual(network_traffic.id, f'network-traffic--{attribute_uuid}')
+            self.assertEqual(ip_address.id, f'ipv4-addr--{attribute_uuid}')
