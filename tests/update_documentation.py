@@ -203,7 +203,8 @@ class DocumentationUpdater:
 
     @staticmethod
     def _replace_export_file_data(mapping, data, short_data):
-        mapping['Indicator']['pattern'] = mapping['Indicator']['pattern'].replace(data, short_data)
+        if mapping.get('Indicator', {}).get('pattern') is not None:
+            mapping['Indicator']['pattern'] = mapping['Indicator']['pattern'].replace(data, short_data)
         if isinstance(mapping['Observed Data'], list):
             for observable in mapping['Observed Data'][1:]:
                 if observable['type'] == 'artifact':

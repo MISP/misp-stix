@@ -832,13 +832,13 @@ class TestSTIX21Export(TestSTIX2Export):
         feature = attribute['type']
         if 'MISP' not in self._attributes_v21[feature]:
             self._attributes_v21[feature]['MISP'] = self._sanitize_documentation(attribute)
-        if 'observed_data' in kwargs:
-            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self._attributes_v21[feature]['STIX']['Observed Data'] = documented
-        else:
-            for object_type, stix_object in kwargs.items():
-                documented = json.loads(stix_object.serialize())
-                self._attributes_v21[feature]['STIX'][object_type.capitalize()] = documented
+        for object_type, stix_object in kwargs.items():
+            if object_type == 'observed_data':
+                documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
+                self._attributes_v21[feature]['STIX']['Observed Data'] = documented
+                continue
+            documented = json.loads(stix_object.serialize())
+            self._attributes_v21[feature]['STIX'][object_type.capitalize()] = documented
 
     def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
         if name is None:
