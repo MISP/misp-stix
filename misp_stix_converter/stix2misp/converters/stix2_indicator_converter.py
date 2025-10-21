@@ -926,19 +926,8 @@ class ExternalSTIX2IndicatorConverter(
                 )
             else:
                 misp_object = self._create_misp_object('sigma', indicator)
-                if hasattr(indicator, 'object_marking_refs'):
-                    tags = tuple(
-                        self.main_parser._handle_tags_from_stix_fields(
-                            indicator
-                        )
-                    )
-                    for attribute in attributes:
-                        misp_attribute = misp_object.add_attribute(**attribute)
-                        for tag in tags:
-                            misp_attribute.add_tag(tag)
-                else:
-                    for attribute in attributes:
-                        misp_object.add_attribute(**attribute)
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 self.main_parser._add_misp_object(misp_object, indicator)
         else:
             self.main_parser._add_misp_attribute(
