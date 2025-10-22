@@ -1,180 +1,305 @@
 {
-    "id": "bundle--7db0bffe-ac9d-42bf-8d0c-deabdd458ec0",
     "type": "bundle",
+    "id": "bundle--dc2c3e95-0332-41c7-963e-f4a43e0bb123",
     "objects": [
         {
             "type": "identity",
+            "spec_version": "2.1",
             "id": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "MISP-Project",
-            "identity_class": "organization",
-            "spec_version": "2.1"
+            "identity_class": "organization"
         },
         {
-            "name": "MISP-STIX-Converter test event with AS attribute",
+            "type": "grouping",
+            "spec_version": "2.1",
+            "id": "grouping--e2e6a6ea-f69b-4d93-8564-f51d67cafe51",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "labels": [
-                "Threat-Report",
-                "misp:tool=\"MISP-STIX-Converter\""
-            ],
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "id": "grouping--e2e6a6ea-f69b-4d93-8564-f51d67cafe51",
-            "type": "grouping",
+            "name": "MISP-STIX-Converter test event with AS attribute",
             "context": "suspicious-activity",
             "object_refs": [
                 "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
                 "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
             ],
-            "spec_version": "2.1"
+            "labels": [
+                "Threat-Report",
+                "misp:tool=\"MISP-STIX-Converter\""
+            ]
         },
         {
-            "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
             "type": "observed-data",
-            "labels": [
-                "misp:type=\"AS\"",
-                "misp:category=\"Network activity\""
-            ],
-            "number_observed": 1,
+            "spec_version": "2.1",
+            "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "first_observed": "2020-10-25T16:22:00Z",
             "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
             "object_refs": [
                 "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
             ],
-            "spec_version": "2.1"
+            "labels": [
+                "misp:type=\"AS\"",
+                "misp:category=\"Network activity\""
+            ]
         },
         {
-            "id": "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
-            "number": 174,
             "type": "autonomous-system",
-            "spec_version": "2.1"
+            "spec_version": "2.1",
+            "id": "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "number": 174
         },
         {
-            "name": "MISP-STIX-Converter test event with domain attribute",
+            "type": "grouping",
+            "spec_version": "2.1",
+            "id": "grouping--d402185f-c129-4f65-8678-43edb2cee1cf",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
+            "name": "MISP-STIX-Converter test event with domain attribute",
+            "context": "suspicious-activity",
+            "object_refs": [
+                "observed-data--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+                "domain-name--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+                "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+                "relationship--2a8a80e3-da64-41d8-be31-2077fbc22804"
+            ],
             "labels": [
                 "Threat-Report",
                 "misp:tool=\"MISP-STIX-Converter\""
-            ],
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "id": "grouping--d402185f-c129-4f65-8678-43edb2cee1cf",
-            "type": "grouping",
-            "context": "suspicious-activity",
-            "object_refs": [
-                "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
-            ],
-            "spec_version": "2.1"
+            ]
         },
         {
-            "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
-            "type": "indicator",
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
+            ],
             "labels": [
                 "misp:type=\"domain\"",
                 "misp:category=\"Network activity\"",
                 "misp:to_ids=\"True\""
-            ],
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "value": "circl.lu"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Domain test attribute",
+            "pattern": "[domain-name:value = 'circl.lu']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
                     "kill_chain_name": "misp-category",
                     "phase_name": "Network activity"
                 }
             ],
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "pattern": "[domain-name:value = 'circl.lu']",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "valid_from": "2020-10-25T16:22:00Z",
-            "description": "Domain test attribute",
-            "spec_version": "2.1",
-            "pattern_type": "stix",
-            "pattern_version": "2.1"
+            "labels": [
+                "misp:type=\"domain\"",
+                "misp:category=\"Network activity\"",
+                "misp:to_ids=\"True\""
+            ]
         },
         {
-            "name": "MISP-STIX-Converter test event with domain|ip attribute",
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--2a8a80e3-da64-41d8-be31-2077fbc22804",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "indicates",
+            "source_ref": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "target_ref": "observed-data--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
+        },
+        {
+            "type": "grouping",
+            "spec_version": "2.1",
+            "id": "grouping--50bf87fc-d134-499f-9e26-806cbe89ed37",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "MISP-STIX-Converter test event with domain|ip attribute",
+            "context": "suspicious-activity",
+            "object_refs": [
+                "observed-data--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                "domain-name--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                "ipv4-addr--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                "relationship--b7ceed29-39a8-4aaa-b3f9-688ca5bf3949"
+            ],
             "labels": [
                 "Threat-Report",
                 "misp:tool=\"MISP-STIX-Converter\""
-            ],
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "id": "grouping--50bf87fc-d134-499f-9e26-806cbe89ed37",
-            "type": "grouping",
-            "context": "suspicious-activity",
-            "object_refs": [
-                "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5"
-            ],
-            "spec_version": "2.1"
+            ]
         },
         {
-            "id": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
-            "type": "indicator",
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                "ipv4-addr--726f90e2-2ad6-44a2-b345-c05e55e850e5"
+            ],
             "labels": [
                 "misp:type=\"domain|ip\"",
                 "misp:category=\"Network activity\"",
                 "misp:to_ids=\"True\""
-            ],
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "value": "circl.lu",
+            "resolves_to_refs": [
+                "ipv4-addr--726f90e2-2ad6-44a2-b345-c05e55e850e5"
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "value": "149.13.33.14"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Domain|ip test attribute",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
                     "kill_chain_name": "misp-category",
                     "phase_name": "Network activity"
                 }
             ],
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "valid_from": "2020-10-25T16:22:00Z",
-            "description": "Domain|ip test attribute",
-            "spec_version": "2.1",
-            "pattern_type": "stix",
-            "pattern_version": "2.1"
+            "labels": [
+                "misp:type=\"domain|ip\"",
+                "misp:category=\"Network activity\"",
+                "misp:to_ids=\"True\""
+            ]
         },
         {
-            "name": "MISP-STIX-Converter test event with filename attribute",
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--b7ceed29-39a8-4aaa-b3f9-688ca5bf3949",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "indicates",
+            "source_ref": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "target_ref": "observed-data--726f90e2-2ad6-44a2-b345-c05e55e850e5"
+        },
+        {
+            "type": "grouping",
+            "spec_version": "2.1",
+            "id": "grouping--71356f2b-eefe-48db-a93a-4aa2233e3a59",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "MISP-STIX-Converter test event with filename attribute",
+            "context": "suspicious-activity",
+            "object_refs": [
+                "observed-data--02de0847-dccf-481a-a96a-6a7654328658",
+                "file--02de0847-dccf-481a-a96a-6a7654328658",
+                "indicator--02de0847-dccf-481a-a96a-6a7654328658",
+                "relationship--9d0fa6f4-08ae-4fe6-959e-3366532b8a1a"
+            ],
             "labels": [
                 "Threat-Report",
                 "misp:tool=\"MISP-STIX-Converter\""
-            ],
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "id": "grouping--71356f2b-eefe-48db-a93a-4aa2233e3a59",
-            "type": "grouping",
-            "context": "suspicious-activity",
-            "object_refs": [
-                "indicator--02de0847-dccf-481a-a96a-6a7654328658"
-            ],
-            "spec_version": "2.1"
+            ]
         },
         {
-            "id": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
-            "type": "indicator",
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--02de0847-dccf-481a-a96a-6a7654328658",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--02de0847-dccf-481a-a96a-6a7654328658"
+            ],
             "labels": [
                 "misp:type=\"filename\"",
                 "misp:category=\"Payload delivery\"",
                 "misp:to_ids=\"True\""
-            ],
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--02de0847-dccf-481a-a96a-6a7654328658",
+            "name": "test_file_name"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename test attribute",
+            "pattern": "[file:name = 'test_file_name']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
                     "kill_chain_name": "misp-category",
                     "phase_name": "Payload delivery"
                 }
             ],
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "pattern": "[file:name = 'test_file_name']",
+            "labels": [
+                "misp:type=\"filename\"",
+                "misp:category=\"Payload delivery\"",
+                "misp:to_ids=\"True\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--9d0fa6f4-08ae-4fe6-959e-3366532b8a1a",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "valid_from": "2020-10-25T16:22:00Z",
-            "description": "Filename test attribute",
-            "spec_version": "2.1",
-            "pattern_type": "stix",
-            "pattern_version": "2.1"
+            "relationship_type": "indicates",
+            "source_ref": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
+            "target_ref": "observed-data--02de0847-dccf-481a-a96a-6a7654328658"
         }
     ]
 }
