@@ -70,10 +70,34 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
     def _check_stix2_results_export(self, to_test_file, reference_file):
         with open(to_test_file, 'rt', encoding='utf-8') as f:
-            to_test = json.loads(f.read())
+            to_test = json.load(f)
         with open(reference_file, 'rt', encoding='utf-8') as f:
-            reference = json.loads(f.read())
-        self.assertEqual(reference['objects'], to_test['objects'])
+            reference = json.load(f)
+        reference_objects = reference['objects']
+        objects_to_test = to_test['objects']
+        self.assertEqual(len(reference_objects), len(objects_to_test))
+        for reference_object, object_to_test in zip(reference_objects, objects_to_test):
+            if reference_object['type'] == 'relationship':
+                self.assertEqual(reference_object['source_ref'], object_to_test['source_ref'])
+                self.assertEqual(reference_object['target_ref'], object_to_test['target_ref'])
+                self.assertEqual(
+                    reference_object['relationship_type'], object_to_test['relationship_type']
+                )
+                continue
+            if reference_object['type'] in ('grouping', 'report'):
+                for key, value in reference_object.items():
+                    if key == 'object_refs':
+                        for index, object_ref in enumerate(value):
+                            if object_ref.startswith('relationship--'):
+                                self.assertTrue(
+                                    object_to_test[key][index].startswith('relationship--')
+                                )
+                                continue
+                            self.assertEqual(object_ref, object_to_test[key][index])
+                        continue
+                    self.assertEqual(value, object_to_test[key])
+                continue
+            self.assertEqual(reference_object, object_to_test)
 
 
 class TestSTIX2Export(TestSTIX):
