@@ -105,6 +105,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._identifier = 'attributes collection'
         if not self.__initiated:
             self._initiate_attributes_parsing()
+        else:
+            self.__relationships = []
         if 'Attribute' in attributes:
             if 'Galaxy' in attributes:
                 self._parse_event_galaxies(attributes['Galaxy'])
