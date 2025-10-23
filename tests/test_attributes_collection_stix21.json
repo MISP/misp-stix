@@ -1,33 +1,33 @@
 {
     "type": "bundle",
-    "id": "bundle--04794a41-1528-4803-9e78-ac6e503b944a",
+    "id": "bundle--a31158d6-4ac2-485d-8bd2-e05f2f0aa1a1",
     "objects": [
         {
-            "id": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "type": "identity",
-            "identity_class": "organization",
-            "name": "MISP",
+            "spec_version": "2.1",
+            "id": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2015-09-14T15:40:21.000Z",
             "modified": "2015-09-14T15:40:21.000Z",
-            "spec_version": "2.1"
+            "name": "MISP",
+            "identity_class": "organization"
         },
         {
-            "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
             "type": "observed-data",
-            "labels": [
-                "misp:type=\"AS\"",
-                "misp:category=\"Network activity\""
-            ],
-            "number_observed": 1,
+            "spec_version": "2.1",
+            "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
             "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "first_observed": "2020-10-25T16:22:00Z",
             "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
             "object_refs": [
                 "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
             ],
-            "spec_version": "2.1"
+            "labels": [
+                "misp:type=\"AS\"",
+                "misp:category=\"Network activity\""
+            ]
         },
         {
             "type": "autonomous-system",
@@ -36,76 +36,191 @@
             "number": 174
         },
         {
-            "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
-            "type": "indicator",
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
+            ],
             "labels": [
                 "misp:type=\"domain\"",
                 "misp:category=\"Network activity\"",
                 "misp:to_ids=\"True\""
-            ],
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "value": "circl.lu"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Domain test attribute",
+            "pattern": "[domain-name:value = 'circl.lu']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
                     "kill_chain_name": "misp-category",
                     "phase_name": "Network activity"
                 }
             ],
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
-            "pattern": "[domain-name:value = 'circl.lu']",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "valid_from": "2020-10-25T16:22:00Z",
-            "description": "Domain test attribute",
-            "spec_version": "2.1",
-            "pattern_type": "stix",
-            "pattern_version": "2.1"
+            "labels": [
+                "misp:type=\"domain\"",
+                "misp:category=\"Network activity\"",
+                "misp:to_ids=\"True\""
+            ]
         },
         {
-            "id": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
-            "type": "indicator",
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--9b16f6ec-4d1a-4fe3-a597-086964059870",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "indicates",
+            "source_ref": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "target_ref": "observed-data--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
+        },
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                "ipv4-addr--726f90e2-2ad6-44a2-b345-c05e55e850e5"
+            ],
             "labels": [
                 "misp:type=\"domain|ip\"",
                 "misp:category=\"Network activity\"",
                 "misp:to_ids=\"True\""
-            ],
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "value": "circl.lu",
+            "resolves_to_refs": [
+                "ipv4-addr--726f90e2-2ad6-44a2-b345-c05e55e850e5"
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "value": "149.13.33.14"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Domain|ip test attribute",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
                     "kill_chain_name": "misp-category",
                     "phase_name": "Network activity"
                 }
             ],
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
-            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "valid_from": "2020-10-25T16:22:00Z",
-            "description": "Domain|ip test attribute",
-            "spec_version": "2.1",
-            "pattern_type": "stix",
-            "pattern_version": "2.1"
+            "labels": [
+                "misp:type=\"domain|ip\"",
+                "misp:category=\"Network activity\"",
+                "misp:to_ids=\"True\""
+            ]
         },
         {
-            "id": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
-            "type": "indicator",
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--02de0847-dccf-481a-a96a-6a7654328658",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--02de0847-dccf-481a-a96a-6a7654328658"
+            ],
             "labels": [
                 "misp:type=\"filename\"",
                 "misp:category=\"Payload delivery\"",
                 "misp:to_ids=\"True\""
-            ],
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--02de0847-dccf-481a-a96a-6a7654328658",
+            "name": "test_file_name"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename test attribute",
+            "pattern": "[file:name = 'test_file_name']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
                     "kill_chain_name": "misp-category",
                     "phase_name": "Payload delivery"
                 }
             ],
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
-            "pattern": "[file:name = 'test_file_name']",
+            "labels": [
+                "misp:type=\"filename\"",
+                "misp:category=\"Payload delivery\"",
+                "misp:to_ids=\"True\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--d4dea603-6774-4e43-b71a-21dd1ff78257",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "valid_from": "2020-10-25T16:22:00Z",
-            "description": "Filename test attribute",
+            "relationship_type": "indicates",
+            "source_ref": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "target_ref": "observed-data--726f90e2-2ad6-44a2-b345-c05e55e850e5"
+        },
+        {
+            "type": "relationship",
             "spec_version": "2.1",
-            "pattern_type": "stix",
-            "pattern_version": "2.1"
+            "id": "relationship--57da284d-4bd8-4a45-ab50-bff5f08a9fde",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "indicates",
+            "source_ref": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
+            "target_ref": "observed-data--02de0847-dccf-481a-a96a-6a7654328658"
         }
     ]
 }
