@@ -119,9 +119,19 @@ class STIX2Converter(metaclass=ABCMeta):
             object_id: str) -> Iterator[dict]:
         if isinstance(values, list):
             for value in values:
-                yield self._populate_object_attribute(mapping, value, object_id)
+                uuid = self.main_parser._create_v5_uuid(
+                    f"{object_id} - {mapping['object_relation']} - {value}"
+                )
+                yield self._populate_object_attribute(
+                    value, mapping, {'uuid': uuid}
+                )
         else:
-            yield self._populate_object_attribute(mapping, values, object_id)
+            uuid = self.main_parser._create_v5_uuid(
+                f"{object_id} - {mapping['object_relation']} - {values}"
+            )
+            yield self._populate_object_attribute(
+                values, mapping, {'uuid': uuid}
+            )
 
     def _populate_object_attributes_with_data(
             self, mapping: dict, values: Union[dict, list, str],
@@ -129,11 +139,15 @@ class STIX2Converter(metaclass=ABCMeta):
         if isinstance(values, list):
             for value in values:
                 yield self._populate_object_attribute_with_data(
-                    mapping, value, object_id
+                    value, mapping, self.mains_parser._create_v5_uuid(
+                        f"{object_id} - {mapping['object_relation']} - {value}"
+                    )
                 )
         else:
             yield self._populate_object_attribute_with_data(
-                mapping, values, object_id
+                values, mapping, self.main_parser._create_v5_uuid(
+                    f"{object_id} - {mapping['object_relation']} - {values}"
+                )
             )
 
     ############################################################################
