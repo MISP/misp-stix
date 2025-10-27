@@ -197,30 +197,33 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         tlp_tag, *confidence_tags = event['Tag']
         domain, campaign_name, vulnerability_attribute, AS = event['Attribute']
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(8)
+        stix_objects = self._check_bundle_features(11)
         self._check_spec_versions(stix_objects)
-        _, grouping, indicator, campaign, vulnerability, observed_data, _, marking = stix_objects
+        (_, grouping, observed_data1, _, indicator, campaign, vulnerability,
+         observed_data2, _, relationship, marking) = stix_objects
         self.assertEqual(
             grouping.confidence,
             self.parser._mapping.confidence_tags(confidence_tags[1]['name'])
         )
         self.assertEqual(grouping.labels[-2:], [tag['name'] for tag in confidence_tags])
         self._assert_multiple_equal(
-            [marking.id],
-            grouping.object_marking_refs,
-            indicator.object_marking_refs,
-            campaign.object_marking_refs,
-            vulnerability.object_marking_refs,
-            observed_data.object_marking_refs
+            [marking.id], grouping.object_marking_refs,
+            observed_data1.object_marking_refs, indicator.object_marking_refs,
+            campaign.object_marking_refs, vulnerability.object_marking_refs,
+            observed_data2.object_marking_refs
         )
         self.assertEqual(
             f'{marking.definition_type}:{marking.definition[marking.definition_type]}',
             tlp_tag['name']
         )
+        self._check_attribute_confidence_tags(observed_data1, domain)
         self._check_attribute_confidence_tags(indicator, domain)
         self._check_attribute_confidence_tags(campaign, campaign_name)
         self._check_attribute_confidence_tags(vulnerability, vulnerability_attribute)
-        self._check_attribute_confidence_tags(observed_data, AS)
+        self._check_attribute_confidence_tags(observed_data2, AS)
+        self.assertEqual(relationship.relationship_type, 'indicates')
+        self.assertEqual(relationship.source_ref, indicator.id)
+        self.assertEqual(relationship.target_ref, observed_data1.id)
 
     def _test_event_with_escaped_characters(self, event):
         attributes = deepcopy(event['Attribute'])
@@ -302,7 +305,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         sightings1 = attribute1['Sighting']
         sightings2 = attribute2['Sighting']
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(17)
+        stix_objects = self._check_bundle_features(24)
         self._check_spec_versions(stix_objects)
         identity, identity1, identity2, identity3, identity4, grouping, *stix_objects = stix_objects
         identities = (identity1, identity2, identity3, identity4)
@@ -318,50 +321,44 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1),
             tuple(sighting['Organisation']['name'] for sighting in sightings2)
         )
-        observed_data, _, sighting1, sighting2, opinion1, opinion2, indicator, sighting3, opinion3, sighting4, opinion4 = stix_objects
+        (observed_data1, _, sighting1, sighting2, opinion1, opinion2,
+         observed_data2, _, sighting3, opinion3, sighting4, opinion4,
+         indicator, sighting5, opinion5, sighting6, opinion6, _) = stix_objects
         self._check_sighting_features(
-            sighting1,
-            sightings1[0],
-            observed_data.id,
-            identity1.id
-        )
-        self._check_sighting_features(
-            sighting2,
-            sightings1[1],
-            observed_data.id,
-            identity2.id
-        )
-        self._check_opinion_features(
-            opinion1,
-            sightings1[2],
-            observed_data.id
-        )
-        self._check_opinion_features(
-            opinion2,
-            sightings1[3],
-            observed_data.id
+            sighting1, sightings1[0], observed_data1.id, identity1.id
         )
         self._check_sighting_features(
-            sighting3,
-            sightings2[0],
-            indicator.id,
-            identity1.id
+            sighting2, sightings1[1], observed_data1.id, identity2.id
         )
         self._check_opinion_features(
-            opinion3,
-            sightings2[1],
-            indicator.id
+            opinion1, sightings1[2], observed_data1.id
+        )
+        self._check_opinion_features(
+            opinion2, sightings1[3], observed_data1.id
         )
         self._check_sighting_features(
-            sighting4,
-            sightings2[2],
-            indicator.id,
-            identity3.id
+            sighting3, sightings2[0], observed_data2.id, identity1.id
         )
         self._check_opinion_features(
-            opinion4,
-            sightings2[3],
-            indicator.id
+            opinion3, sightings2[1], observed_data2.id
+        )
+        self._check_sighting_features(
+            sighting4, sightings2[2], observed_data2.id, identity3.id
+        )
+        self._check_opinion_features(
+            opinion4, sightings2[3], observed_data2.id
+        )
+        self._check_sighting_features(
+            sighting5, sightings2[0], indicator.id, identity1.id
+        )
+        self._check_opinion_features(
+            opinion5, sightings2[1], indicator.id
+        )
+        self._check_sighting_features(
+            sighting6, sightings2[2], indicator.id, identity3.id
+        )
+        self._check_opinion_features(
+            opinion6, sightings2[3], indicator.id
         )
 
     def _test_event_with_tags(self, event):
@@ -768,51 +765,71 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         attribute = deepcopy(event['Attribute'][0])
         event_galaxy = deepcopy(event['Galaxy'][0])
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(10)
+        stix_objects = self._check_bundle_features(16)
         self._check_spec_versions(stix_objects)
-        identity, grouping, attack_pattern, course_of_action, custom, indicator, malware, *relationships = stix_objects
+        (identity, grouping, attack_pattern, course_of_action, custom,
+         observed_data, domain, indicator, malware, *relationships) = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_grouping_features(grouping, event, identity_id)
-        ap_ref, coa_ref, custom_ref, indicator_ref, malware_ref, apr_ref, coar_ref, customr_ref = object_refs
-        ap_relationship, coa_relationship, custom_relationship = relationships
+        (ap_ref, coa_ref, custom_ref, od_ref, domain_ref, indicator_ref,
+         malware_ref, *relationship_refs) = object_refs
         ap_galaxy, coa_galaxy, custom_galaxy = attribute['Galaxy']
         self._assert_multiple_equal(
-            attack_pattern.id,
-            ap_ref,
+            attack_pattern.id, ap_ref,
             f"attack-pattern--{ap_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            course_of_action.id,
-            coa_ref,
+            course_of_action.id, coa_ref,
             f"course-of-action--{coa_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            custom.id,
-            custom_ref,
+            custom.id, custom_ref,
             f"x-misp-galaxy-cluster--{custom_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            indicator.id,
-            indicator_ref,
-            f"indicator--{attribute['uuid']}"
+            observed_data.id, od_ref, f"observed-data--{attribute['uuid']}"
         )
         self._assert_multiple_equal(
-            malware.id,
-            malware_ref,
+            domain.id, domain_ref, f"domain-name--{attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            indicator.id, indicator_ref, f"indicator--{attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            malware.id, malware_ref,
             f"malware--{event_galaxy['GalaxyCluster'][0]['uuid']}"
         )
-        self.assertEqual(ap_relationship.id, apr_ref)
-        self.assertEqual(coa_relationship.id, coar_ref)
-        self.assertEqual(custom_relationship.id, customr_ref)
+        for relationship, relationship_ref in zip(relationships, relationship_refs):
+            self.assertEqual(relationship.id, relationship_ref)
         timestamp = attribute['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        self._check_relationship_features(ap_relationship, indicator_ref, ap_ref, 'indicates', timestamp)
-        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'related-to', timestamp)
-        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'related-to', timestamp)
+        (od_ap_rel, od_coa_rel, od_custom_rel, ind_ap_rel, ind_coa_rel,
+         ind_custom_rel, ind_od_rel) = relationships
+        self._check_relationship_features(
+            od_ap_rel, od_ref, ap_ref, 'related-to', timestamp,
+        )
+        self._check_relationship_features(
+            od_coa_rel, od_ref, coa_ref, 'related-to', timestamp
+        )
+        self._check_relationship_features(
+            od_custom_rel, od_ref, custom_ref, 'related-to', timestamp
+        )
+        self._check_relationship_features(
+            ind_ap_rel, indicator_ref, ap_ref, 'indicates', timestamp
+        )
+        self._check_relationship_features(
+            ind_coa_rel, indicator_ref, coa_ref, 'related-to', timestamp
+        )
+        self._check_relationship_features(
+            ind_custom_rel, indicator_ref, custom_ref, 'related-to', timestamp
+        )
+        self._check_relationship_features(
+            ind_od_rel, indicator_ref, od_ref, 'indicates', timestamp
+        )
 
     def _test_embedded_non_indicator_attribute_galaxy(self, event):
         orgc = event['Orgc']
@@ -3132,7 +3149,6 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.parser.parse_misp_event(event)
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
-        print([s['id'] for s in stix_objects])
         (identity, grouping, observed_data, network_traffic, ip_address,
          indicator, note, relationship) = stix_objects
         timestamp = event['timestamp']
