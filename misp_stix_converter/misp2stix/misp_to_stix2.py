@@ -47,12 +47,9 @@ _labelled_object_types = ('malware', 'threat-actor', 'tool')
 _misp_time_fields = ('first_seen', 'last_seen')
 _object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
+_observed_data_time_fields = ('first_observed', 'last_observed')
 _sdo_time_fields = ('created', 'modified', *_misp_time_fields)
 _special_characters = (' ', '.')
-_stix_time_fields = {
-    'indicator': ('valid_from', 'valid_until'),
-    'observed-data': ('first_observed', 'last_observed')
-}
 
 _MISP_DATA_LAYER = Union[
     dict, MISPAttribute, MISPEventReport, MISPObject
@@ -4433,12 +4430,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 'id': indicator_id, 'type': 'indicator', 'allow_custom': True,
                 'labels': self._create_object_labels(misp_object, to_ids=True),
                 'created_by_ref': self.identity_id, 'interoperability': True,
+                **self._handle_indicator_time_fields(misp_object),
                 'kill_chain_phases': self._create_killchain(
                     misp_object['meta-category']
                 )
             }
         )
-        indicator_args.update(self._handle_indicator_time_fields(misp_object))
         markings = self._handle_object_tags_and_galaxies(
             misp_object, indicator_args
         )
@@ -4585,29 +4582,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _handle_indicator_time_fields(
             self, data_layer: MISPAttribute | MISPObject | dict) -> dict:
         timestamp = self._parse_timestamp_value(data_layer)
-        time_fields = {
-            'created': timestamp, 'modified': timestamp, 'valid_from': timestamp
-        }
-        stix_fields = _stix_time_fields['indicator']
-        for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
-            if data_layer.get(misp_field):
-                time_fields[stix_field] = self._datetime_from_str(
-                    data_layer[misp_field]
-                )
-        invalid_time = (
-            time_fields.get('valid_until') and
-            time_fields['valid_from'] >= time_fields['valid_until']
-        )
-        if invalid_time:
-            del time_fields['valid_until']
-        return time_fields
+        return dict.fromkeys(('created', 'modified', 'valid_from'), timestamp)
 
     def _handle_observable_time_fields(
             self, data_layer: MISPAttribute | MISPObject | dict) -> dict:
         timestamp = self._parse_timestamp_value(data_layer)
         time_fields = {'created': timestamp, 'modified': timestamp}
-        stix_fields = _stix_time_fields['observed-data']
-        for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
+        for misp_field, stix_field in zip(_misp_time_fields, _observed_data_time_fields):
             time_fields[stix_field] = (
                 self._datetime_from_str(data_layer[misp_field])
                 if data_layer.get(misp_field) else timestamp
