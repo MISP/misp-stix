@@ -1115,7 +1115,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, {'0': Mutex(**mutex_args)})
 
     def _parse_netflow_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_object_attributes_escaped(
             misp_object['Attribute']
         )
@@ -1150,7 +1150,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 index += 1
         network_args.update(self._parse_netflow_args(attributes))
         observable_object['0'] = NetworkTraffic(**network_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
 
     def _parse_network_connection_object_observable(

@@ -81,8 +81,8 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
 
     @staticmethod
     def _extract_multiple_object_attributes_with_data(
-            attributes: list, force_single: tuple = (),
-            with_data: tuple = ()) -> dict:
+            attributes: list, force_single: Optional[tuple] = (),
+            with_data: Optional[tuple] = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
@@ -91,8 +91,8 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
                 value = (value, attribute['data'])
             if relation in force_single:
                 attributes_dict[relation] = value
-            else:
-                attributes_dict[relation].append(value)
+                continue
+            attributes_dict[relation].append(value)
         return attributes_dict
 
     @staticmethod
