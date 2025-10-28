@@ -3537,11 +3537,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
             malware_id = f"malware--{cluster['uuid']}"
-            print(f'\n\n{timestamp}')
             malware_args = self._create_galaxy_args(
                 cluster, galaxy['name'], malware_id, timestamp
             )
-            print(malware_args.get('first_seen', 'No first seen'), '\n\n')
             malware = self._create_malware(malware_args)
             self._append_SDO_without_refs(malware)
             object_refs.append(malware_id)
