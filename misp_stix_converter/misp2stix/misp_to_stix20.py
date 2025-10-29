@@ -1193,91 +1193,96 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_network_socket_object(
             self, misp_object: MISPObject | dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.network_socket_single_fields()
+        )
+        network_args, observable_object = self._parse_network_references(
+            attributes
+        )
+        if attributes:
+            network_args.update(self._parse_network_socket_args(attributes))
+        observable_object['0'] = NetworkTraffic(**network_args)
+        observed_data = self._handle_object_observable(misp_object, observable_object)
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_network_socket_object_pattern(
                 misp_object['Attribute']
             )
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            attributes = self._extract_multiple_object_attributes(
-                misp_object['Attribute'],
-                force_single=self._mapping.network_socket_single_fields()
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
             )
-            network_args, observable_object = self._parse_network_references(
-                attributes
-            )
-            if attributes:
-                network_args.update(self._parse_network_socket_args(attributes))
-            observable_object['0'] = NetworkTraffic(**network_args)
-            self._handle_object_observable(misp_object, observable_object)
 
     def _parse_process_object(self, misp_object: MISPObject | dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.process_single_fields()
+        )
+        observable_object = {}
+        parent_attributes = self._extract_parent_process_attributes(
+            attributes
+        )
+        process_args: defaultdict = defaultdict(dict)
+        index = 1
+        if parent_attributes:
+            str_index = str(index)
+            parent_args = {}
+            if parent_attributes.get('parent-image'):
+                index += 1
+                str_index2 = str(index)
+                observable_object[str_index2] = File(
+                    name=parent_attributes.pop('parent-image')
+                )
+                parent_args['binary_ref'] = str_index2
+                parent_args['_valid_refs'] = {str_index2: 'file'}
+            parent_mapping = self._mapping.process_object_mapping('parent')
+            for key, feature in parent_mapping.items():
+                if parent_attributes.get(key):
+                    parent_args[feature] = parent_attributes.pop(key)
+            if parent_attributes:
+                parent_args.update(
+                    self._handle_parent_process_properties(
+                        parent_attributes
+                    )
+                )
+            observable_object[str_index] = Process(**parent_args)
+            process_args['parent_ref'] = str_index
+            process_args['_valid_refs'][str_index] = 'process'
+            index += 1
+        if attributes.get('child-pid'):
+            child_refs = []
+            for child_pid in attributes.pop('child-pid'):
+                str_index = str(index)
+                observable_object[str_index] = Process(pid=child_pid)
+                child_refs.append(str_index)
+                process_args['_valid_refs'][str_index] = 'process'
+                index += 1
+            process_args['child_refs'] = child_refs
+        if attributes.get('image'):
+            str_index = str(index)
+            observable_object[str_index] = File(
+                name=attributes.pop('image')
+            )
+            process_args['binary_ref'] = str_index
+            process_args['_valid_refs'][str_index] = 'file'
+        process_args.update(
+            self._parse_process_args(attributes, 'features')
+        )
+        observable_object['0'] = Process(**process_args)
+        observed_data = self._handle_object_observable(
+            misp_object, observable_object
+        )
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_process_object_pattern(
                 misp_object['Attribute']
             )
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            attributes = self._extract_multiple_object_attributes(
-                misp_object['Attribute'],
-                force_single=self._mapping.process_single_fields()
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
             )
-            observable_object = {}
-            parent_attributes = self._extract_parent_process_attributes(
-                attributes
-            )
-            process_args: defaultdict = defaultdict(dict)
-            index = 1
-            if parent_attributes:
-                str_index = str(index)
-                parent_args = {}
-                if parent_attributes.get('parent-image'):
-                    index += 1
-                    str_index2 = str(index)
-                    observable_object[str_index2] = File(
-                        name=parent_attributes.pop('parent-image')
-                    )
-                    parent_args['binary_ref'] = str_index2
-                    parent_args['_valid_refs'] = {str_index2: 'file'}
-                parent_mapping = self._mapping.process_object_mapping('parent')
-                for key, feature in parent_mapping.items():
-                    if parent_attributes.get(key):
-                        parent_args[feature] = parent_attributes.pop(key)
-                if parent_attributes:
-                    parent_args.update(
-                        self._handle_parent_process_properties(
-                            parent_attributes
-                        )
-                    )
-                observable_object[str_index] = Process(**parent_args)
-                process_args['parent_ref'] = str_index
-                process_args['_valid_refs'][str_index] = 'process'
-                index += 1
-            if attributes.get('child-pid'):
-                child_refs = []
-                for child_pid in attributes.pop('child-pid'):
-                    str_index = str(index)
-                    observable_object[str_index] = Process(pid=child_pid)
-                    child_refs.append(str_index)
-                    process_args['_valid_refs'][str_index] = 'process'
-                    index += 1
-                process_args['child_refs'] = child_refs
-            if attributes.get('image'):
-                str_index = str(index)
-                observable_object[str_index] = File(
-                    name=attributes.pop('image')
-                )
-                process_args['binary_ref'] = str_index
-                process_args['_valid_refs'][str_index] = 'file'
-            process_args.update(
-                self._parse_process_args(attributes, 'features')
-            )
-            observable_object['0'] = Process(**process_args)
-            self._handle_object_observable(misp_object, observable_object)
 
     def _parse_registry_key_object_observable(
-            self, misp_object: MISPObject | dict
-        ):
+            self, misp_object: MISPObject | dict):
         registry_key_args = self._parse_registry_key_args(
             misp_object['Attribute']
         )

@@ -1283,91 +1283,95 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_network_socket_object(
             self, misp_object: MISPObject | dict):
+        attributes = self._extract_object_attributes_with_multiple_and_uuid(
+            misp_object['Attribute'],
+            force_single=self._mapping.network_socket_single_fields(),
+            with_uuid=self._mapping.network_traffic_uuid_fields()
+        )
+        network_traffic_args, objects = self._parse_network_references(
+            attributes
+        )
+        if attributes:
+            network_traffic_args.update(
+                self._parse_network_socket_args(attributes)
+            )
+        network_traffic_args['id'] = self._parse_stix_object_id(
+            'object', 'network-traffic', misp_object
+        )
+        objects.insert(0, NetworkTraffic(**network_traffic_args))
+        observed_data = self._handle_object_observable(misp_object, objects)
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_network_socket_object_pattern(
                 misp_object['Attribute']
             )
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            attributes = self._extract_object_attributes_with_multiple_and_uuid(
-                misp_object['Attribute'],
-                force_single=self._mapping.network_socket_single_fields(),
-                with_uuid=self._mapping.network_traffic_uuid_fields()
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
             )
-            network_traffic_args, objects = self._parse_network_references(
-                attributes
-            )
-            if attributes:
-                network_traffic_args.update(
-                    self._parse_network_socket_args(attributes)
-                )
-            network_traffic_args['id'] = self._parse_stix_object_id(
-                'object', 'network-traffic', misp_object
-            )
-            objects.insert(0, NetworkTraffic(**network_traffic_args))
-            self._handle_object_observable(misp_object, objects)
 
     def _parse_process_object(self, misp_object: MISPObject | dict):
+        attributes = self._extract_object_attributes_with_multiple_and_uuid(
+            misp_object['Attribute'],
+            force_single=self._mapping.process_single_fields(),
+            with_uuid=self._mapping.process_uuid_fields()
+        )
+        objects = []
+        parent_attributes = self._extract_parent_process_attributes(
+            attributes
+        )
+        process_args = defaultdict(list)
+        if parent_attributes:
+            parent_args = {}
+            if parent_attributes.get('parent-image'):
+                filename, uuid = parent_attributes.pop('parent-image')
+                image_uuid = f'file--{uuid}'
+                objects.append(File(id=image_uuid, name=filename))
+                parent_args['image_ref'] = image_uuid
+            for feature in self._mapping.parent_process_fields():
+                if parent_attributes.get(feature):
+                    parent_args['id'] = (
+                        f"process--{parent_attributes[feature][1]}"
+                    )
+                    break
+            parent_mapping = self._mapping.process_object_mapping('parent')
+            for key, feature in parent_mapping.items():
+                if parent_attributes.get(key):
+                    parent_args[feature] = parent_attributes.pop(key)[0]
+            if parent_attributes:
+                parent_args.update(
+                    self._handle_parent_process_properties(
+                        parent_attributes
+                    )
+                )
+            process = Process(**parent_args)
+            objects.append(process)
+            process_args['parent_ref'] = process.id
+        if attributes.get('child-pid'):
+            for value, uuid in attributes.pop('child-pid'):
+                process_id = f"process--{uuid}"
+                objects.append(Process(id=process_id, pid=value))
+                process_args['child_refs'].append(process_id)
+        if attributes.get('image'):
+            filename, uuid = attributes.pop('image')
+            image_uuid = f'file--{uuid}'
+            objects.append(File(id=image_uuid, name=filename))
+            process_args['image_ref'] = image_uuid
+        process_args.update(
+            self._parse_process_args(attributes, 'features')
+        )
+        process_args['id'] = self._parse_stix_object_id(
+            'object', 'process', misp_object
+        )
+        objects.insert(0, Process(**process_args))
+        observed_data = self._handle_object_observable(misp_object, objects)
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_process_object_pattern(
                 misp_object['Attribute']
             )
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            attributes = self._extract_object_attributes_with_multiple_and_uuid(
-                misp_object['Attribute'],
-                force_single=self._mapping.process_single_fields(),
-                with_uuid=self._mapping.process_uuid_fields()
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
             )
-            objects = []
-            parent_attributes = self._extract_parent_process_attributes(
-                attributes
-            )
-            process_args = defaultdict(list)
-            if parent_attributes:
-                parent_args = {}
-                if parent_attributes.get('parent-image'):
-                    filename, uuid = parent_attributes.pop('parent-image')
-                    image_uuid = f'file--{uuid}'
-                    objects.append(File(id=image_uuid, name=filename))
-                    parent_args['image_ref'] = image_uuid
-                for feature in self._mapping.parent_process_fields():
-                    if parent_attributes.get(feature):
-                        parent_args['id'] = (
-                            f"process--{parent_attributes[feature][1]}"
-                        )
-                        break
-                parent_mapping = self._mapping.process_object_mapping('parent')
-                for key, feature in parent_mapping.items():
-                    if parent_attributes.get(key):
-                        parent_args[feature] = parent_attributes.pop(key)[0]
-                if parent_attributes:
-                    parent_args.update(
-                        self._handle_parent_process_properties(
-                            parent_attributes
-                        )
-                    )
-                process = Process(**parent_args)
-                objects.append(process)
-                process_args['parent_ref'] = process.id
-            if attributes.get('child-pid'):
-                for value, uuid in attributes.pop('child-pid'):
-                    process_id = f"process--{uuid}"
-                    objects.append(Process(id=process_id, pid=value))
-                    process_args['child_refs'].append(process_id)
-            if attributes.get('image'):
-                filename, uuid = attributes.pop('image')
-                image_uuid = f'file--{uuid}'
-                objects.append(File(id=image_uuid, name=filename))
-                process_args['image_ref'] = image_uuid
-            process_args.update(
-                self._parse_process_args(attributes, 'features')
-            )
-            process_args['id'] = self._parse_stix_object_id(
-                'object', 'process', misp_object
-            )
-            objects.insert(0, Process(**process_args))
-            self._handle_object_observable(misp_object, objects)
 
     def _parse_registry_key_object_observable(
             self, misp_object: MISPObject | dict):
