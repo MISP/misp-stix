@@ -737,47 +737,49 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = self._create_file_object(args)
 
     def _parse_account_object_observable(
-            self, misp_object: MISPObject | dict, account_type: str):
+            self, misp_object: MISPObject | dict,
+            account_type: str) -> ObservedData:
         account_args = self._parse_account_args(
             misp_object['Attribute'], account_type
         )
         observable_object = {'0': UserAccount(**account_args)}
-        self._handle_object_observable(misp_object, observable_object)
-
-    def _parse_android_app_object_observable(
-            self, misp_object: MISPObject | dict):
-        software_args = self._parse_android_app_args(misp_object['Attribute'])
-        observable_object = {'0': Software(**software_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_account_object_with_attachment_observable(
-            self, misp_object: MISPObject | dict, account_type: str):
+            self, misp_object: MISPObject | dict,
+            account_type: str) -> ObservedData:
         account_args = self._parse_account_with_attachment_args(
             misp_object['Attribute'], account_type
         )
         observable_object = {'0': UserAccount(**account_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_android_app_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        software_args = self._parse_android_app_args(misp_object['Attribute'])
+        observable_object = {'0': Software(**software_args)}
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_asn_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         as_args = self._parse_AS_args(misp_object['Attribute'])
         observable_object = {'0': AutonomousSystem(**as_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_cpe_asset_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         software_args = self._parse_cpe_asset_args(misp_object['Attribute'])
         observable_object = {'0': Software(**software_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_credential_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         credential_args = self._parse_credential_args(misp_object['Attribute'])
         observable_object = {'0': UserAccount(**credential_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_domain_ip_object_custom(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.domain_ip_single_fields()
@@ -788,10 +790,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         )
         domain_args.update(self._parse_domain_args(attributes))
         observable['0'] = DomainName(**domain_args)
-        self._handle_object_observable(misp_object, observable)
+        return self._handle_object_observable(misp_object, observable)
 
     def _parse_domain_ip_object_standard(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.domain_ip_single_fields()
@@ -809,7 +811,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 args = {'value': domain, **domain_args}
                 observable[str(index)] = DomainName(**args)
                 index += 1
-        self._handle_object_observable(misp_object, observable)
+        return self._handle_object_observable(misp_object, observable)
 
     def _parse_domainip_ip_attributes(
             self, attributes: MISPObject | dict, index: int) -> tuple:
@@ -830,7 +832,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return domain_args, observable_object, index
 
     def _parse_email_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
             with_data=self._mapping.email_data_fields()
@@ -892,7 +894,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if attributes:
             email_message_args.update(self._parse_email_args(attributes))
         observable['0'] = EmailMessage(**email_message_args)
-        self._handle_object_observable(misp_object, observable)
+        return self._handle_object_observable(misp_object, observable)
 
     def _parse_email_object_reference(
             self, address: str, display_names: dict, email_args: dict,
@@ -950,7 +952,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return file_args, observable_object
 
     def _parse_http_request_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.http_request_single_fields()
@@ -989,7 +991,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             observable_object[str_index] = DomainName(**domain_args)
         network_args.update(self._parse_http_request_args(attributes))
         observable_object['0'] = NetworkTraffic(**network_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_identity_object(self, misp_object: MISPObject | dict):
         identity_args = self._extract_multiple_object_attributes(
@@ -1009,7 +1011,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         )
 
     def _parse_image_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
             force_single=self._mapping.image_single_fields(),
@@ -1029,14 +1031,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             observable_object = {
                 '0': File(**file_args), '1': Artifact(**artifact_args)
             }
-            self._handle_object_observable(misp_object, observable_object)
-        else:
-            self._handle_object_observable(
-                misp_object, {'0': File(**file_args)}
+            return self._handle_object_observable(
+                misp_object, observable_object
             )
+        return self._handle_object_observable(
+            misp_object, {'0': File(**file_args)}
+        )
 
     def _parse_ip_port_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.ip_port_single_fields()
@@ -1067,10 +1070,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 list(protocols) if protocols else ['tcp']
             )
         observable_object['0'] = NetworkTraffic(**network_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_lnk_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
             force_single=self._mapping.lnk_single_fields(),
@@ -1107,12 +1110,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
         )
         observable_object['0'] = self._create_file_object(file_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_mutex_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
-        self._handle_object_observable(misp_object, {'0': Mutex(**mutex_args)})
+        return self._handle_object_observable(
+            misp_object, {'0': Mutex(**mutex_args)}
+        )
 
     def _parse_netflow_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
@@ -1152,9 +1157,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = NetworkTraffic(**network_args)
         return self._handle_object_observable(misp_object, observable_object)
 
-
     def _parse_network_connection_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         network_args, observable_object = self._parse_network_references(
             attributes
@@ -1162,7 +1166,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if attributes:
             network_args.update(self._parse_network_connection_args(attributes))
         observable_object['0'] = NetworkTraffic(**network_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_network_references(
             self, attributes: MISPObject | dict) -> tuple:
@@ -1282,12 +1286,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
 
     def _parse_registry_key_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         registry_key_args = self._parse_registry_key_args(
             misp_object['Attribute']
         )
         observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     @staticmethod
     def _parse_regkey_key_values_observable(attributes: dict) -> dict:
@@ -1317,26 +1321,24 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return pattern
 
     def _parse_url_object_observable(
-            self, misp_object: MISPObject | dict
-        ):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         url_args = self._parse_url_args(misp_object['Attribute'])
         observable_object = {'0': URL(**url_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_user_account_object_observable(
-            self, misp_object: MISPObject | dict
-        ):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         user_account_args = self._parse_user_account_args(
             misp_object['Attribute']
         )
         observable_object = {'0': UserAccount(**user_account_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_x509_object_observable(
-            self, misp_object: MISPObject | dict):
+            self, misp_object: MISPObject | dict) -> ObservedData:
         x509_args = self._parse_x509_args(misp_object)
         observable_object = {'0': X509Certificate(**x509_args)}
-        self._handle_object_observable(misp_object, observable_object)
+        return self._handle_object_observable(misp_object, observable_object)
 
     ############################################################################
     #                        GALAXIES PARSING FUNCTIONS                        #
