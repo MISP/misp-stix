@@ -4737,7 +4737,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self.relationships.append(
             {
                 'source_ref': source_id, 'target_ref': target_id,
-                'relationship_type': 'indicates',
+                'relationship_type': 'based-on',
                 'created': timestamp, 'modified': timestamp,
                 'allow_custom': True, 'interoperability': True
             }
