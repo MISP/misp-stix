@@ -868,7 +868,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         grouped_list.append(tmp)
         return grouped_list
 
-    def _run_indicator_tests(self, event):
+    def _run_indicator_tests(self, event, indicator_only=False):
         self._add_attribute_ids_flag(event)
         orgc = event['Orgc']
         attribute = event['Attribute'][0]
@@ -878,29 +878,28 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
-        try:
-            identity, grouping, observed_data, *observables, indicator, relationship = stix_objects
-            identity_id = self._check_identity_features(identity, orgc, timestamp)
-            object_refs = self._check_grouping_features(grouping, event, identity_id)
-            od_ref, *observable_refs, indicator_ref, relationship_ref = object_refs
-            self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
-            self.assertEqual(observable_refs, observed_data.object_refs)
-            self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
-            self._check_pattern_features(indicator)
-            self.assertEqual(relationship.id, relationship_ref)
-            self.assertEqual(relationship.relationship_type, 'based-on')
-            self.assertEqual(relationship.source_ref, indicator_ref)
-            self.assertEqual(relationship.target_ref, od_ref)
-            return attribute, observables, observable_refs, indicator.pattern
-        except ValueError:
+        if indicator_only:
             identity, grouping, indicator = stix_objects
             identity_id = self._check_identity_features(identity, orgc, timestamp)
             object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
             self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
             self._check_pattern_features(indicator)
             return attribute['value'], indicator.pattern
+        identity, grouping, observed_data, *observables, indicator, relationship = stix_objects
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        od_ref, *observable_refs, indicator_ref, relationship_ref = object_refs
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
+        self.assertEqual(observable_refs, observed_data.object_refs)
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
+        self._check_pattern_features(indicator)
+        self.assertEqual(relationship.id, relationship_ref)
+        self.assertEqual(relationship.relationship_type, 'based-on')
+        self.assertEqual(relationship.source_ref, indicator_ref)
+        self.assertEqual(relationship.target_ref, od_ref)
+        return attribute, observables, observable_refs, indicator.pattern
 
-    def _run_indicators_tests(self, event):
+    def _run_indicators_tests(self, event, indicator_only=False):
         self._add_attribute_ids_flag(event)
         orgc = event['Orgc']
         attributes = event['Attribute']
@@ -915,7 +914,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_grouping_features(grouping, event, identity_id)
-        if all(SDO.type == 'indicator' for SDO in SDOs):
+        if indicator_only:
             for attribute, indicator, object_ref in zip(attributes, SDOs, object_refs):
                 self._check_attribute_indicator_features(
                     indicator, attribute, identity_id, object_ref
@@ -1451,7 +1450,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         self._check_mutex_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_port_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute_value, pattern = self._run_indicator_tests(event, indicator_only=True)
         self.assertEqual(pattern, f"[network-traffic:dst_port = '{attribute_value}']")
 
     def _test_event_with_regkey_indicator_attribute(self, event):
@@ -1483,7 +1482,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         self._check_regkey_value_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_size_in_bytes_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute_value, pattern = self._run_indicator_tests(event, indicator_only=True)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
 
     def _test_event_with_vulnerability_attribute(self, event):
@@ -1883,7 +1882,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
 
     def test_event_with_http_indicator_attributes(self):
         event = get_event_with_http_attributes()
-        attributes, indicators = self._run_indicators_tests(event['Event'])
+        attributes, indicators = self._run_indicators_tests(event['Event'], indicator_only=True)
         for attribute, indicator, feature in zip(attributes, indicators, self._http_features):
             self.assertEqual(
                 indicator.pattern,
@@ -2391,7 +2390,7 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_http_attributes()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attributes, indicators = self._run_indicators_tests(misp_event)
+        attributes, indicators = self._run_indicators_tests(misp_event, indicator_only=True)
         for attribute, indicator, feature in zip(attributes, indicators, self._http_features):
             self.assertEqual(
                 indicator.pattern,
