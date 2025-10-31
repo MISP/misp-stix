@@ -221,7 +221,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self._check_attribute_confidence_tags(campaign, campaign_name)
         self._check_attribute_confidence_tags(vulnerability, vulnerability_attribute)
         self._check_attribute_confidence_tags(observed_data2, AS)
-        self.assertEqual(relationship.relationship_type, 'indicates')
+        self.assertEqual(relationship.relationship_type, 'based-on')
         self.assertEqual(relationship.source_ref, indicator.id)
         self.assertEqual(relationship.target_ref, observed_data1.id)
 
@@ -249,7 +249,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         event_report = event['EventReport'][0]
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(8)
+        stix_objects = self._check_bundle_features(12)
         self._check_spec_versions(stix_objects)
         identity, grouping, *stix_objects = stix_objects
         timestamp = event['timestamp']
@@ -259,7 +259,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         object_refs = self._check_grouping_features(grouping, event, identity_id)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        ip_src, observed_data, _, _, domain_ip, note = stix_objects
+        observed_data1, _, _, indicator, observed_data2, _, _, domain_ip, note = stix_objects
         self.assertEqual(note.id, f"note--{event_report['uuid']}")
         self.assertEqual(note.abstract, event_report['name'])
         timestamp = event_report['timestamp']
@@ -484,6 +484,175 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
     _http_features = ('request_method', "request_header.'User-Agent'")
     _http_prefix = f"network-traffic:extensions.'http-request-ext'"
 
+    def _check_as_observable_attribute(self, attribute, autonomous_system, object_ref):
+        self._assert_multiple_equal(
+            autonomous_system.id, object_ref,
+            f"autonomous-system--{attribute['uuid']}"
+        )
+        self.assertEqual(autonomous_system.type, 'autonomous-system')
+        number = self._parse_AS_value(attribute['value'])
+        self.assertEqual(autonomous_system.number, number)
+
+    def _check_attachment_observable_attribute(self, attribute, observables, object_refs):
+        file_object, artifact_object = observables
+        file_ref, artifact_ref = object_refs
+        self._assert_multiple_equal(
+            file_object.id, file_ref, f"file--{attribute['uuid']}"
+        )
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, attribute['value'])
+        self._assert_multiple_equal(
+            file_object.content_ref, artifact_object.id,
+            artifact_ref, f"artifact--{attribute['uuid']}"
+        )
+        self.assertEqual(artifact_object.type, 'artifact')
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(artifact_object.payload_bin, data)
+
+    def _check_domain_observable_attribute(self, attribute, domain, object_ref):
+        self._assert_multiple_equal(
+            domain.id, object_ref, f"domain-name--{attribute['uuid']}"
+        )
+        self.assertEqual(domain.type, 'domain-name')
+        self.assertEqual(domain.value, attribute['value'])
+
+    def _check_domain_ip_observable_attribute(self, attribute, observables, object_refs):
+        domain_value, ip_value = attribute['value'].split('|')
+        domain, address = observables
+        domain_ref, address_ref = object_refs
+        self._assert_multiple_equal(
+            domain.id, domain_ref, f"domain-name--{attribute['uuid']}"
+        )
+        self.assertEqual(domain.type, 'domain-name')
+        self.assertEqual(domain.value, domain_value)
+        self._assert_multiple_equal(
+            domain.resolves_to_refs[0], address.id,
+            address_ref, f"ipv4-addr--{attribute['uuid']}"
+        )
+        self.assertEqual(address.type, 'ipv4-addr')
+        self.assertEqual(address.value, ip_value)
+
+    def _check_email_attachment_observable_attribute(self, attribute, observables, object_refs):
+        email_ref, file_ref = object_refs
+        email, _file = observables
+        self._assert_multiple_equal(
+            email.id, email_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(email.type, 'email-message')
+        self.assertEqual(email.is_multipart, True)
+        body = email.body_multipart[0]
+        self.assertEqual(
+            body.content_disposition,
+            f"attachment; filename='{attribute['value']}'"
+        )
+        self._assert_multiple_equal(
+            body.body_raw_ref, _file.id, file_ref, f"file--{attribute['uuid']}"
+        )
+        self.assertEqual(_file.name, attribute['value'])
+
+    def _check_email_body_observable_attribute(self, attribute, email_message, object_ref):
+        self._assert_multiple_equal(
+            email_message.id, object_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(email_message.type, 'email-message')
+        self.assertEqual(email_message.is_multipart, False)
+        self.assertEqual(email_message.body, attribute['value'])
+
+    def _check_email_destination_observable_attribute(self, attribute, observables, object_refs):
+        message, address = observables
+        message_ref, address_ref = object_refs
+        self._assert_multiple_equal(
+            message.id, message_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, False)
+        self._assert_multiple_equal(
+            message.to_refs[0], address.id, address_ref,
+            f"email-addr--{attribute['uuid']}"
+        )
+        self._check_email_address(address, attribute['value'])
+
+    def _check_email_header_observable_attribute(self, attribute, email_message, object_ref):
+        self._assert_multiple_equal(
+            email_message.id, object_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(email_message.type, 'email-message')
+        self.assertEqual(email_message.is_multipart, False)
+        self.assertEqual(email_message.received_lines, [attribute['value']])
+
+    def _check_email_message_id_observable_attribute(self, attribute, email_message, object_ref):
+        self._assert_multiple_equal(
+            email_message.id, object_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(email_message.type, 'email-message')
+        self.assertEqual(email_message.is_multipart, False)
+        self.assertEqual(email_message.message_id, attribute['value'])
+
+    def _check_email_observable_attribute(self, attribute, email_address, object_ref):
+        self._assert_multiple_equal(
+            email_address.id, object_ref, f"email-addr--{attribute['uuid']}"
+        )
+        self._check_email_address(email_address, attribute['value'])
+
+    def _check_email_reply_to_observable_attribute(self, attribute, email_message, object_ref):
+        self._assert_multiple_equal(
+            email_message.id, object_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(email_message.type, 'email-message')
+        self.assertEqual(email_message.is_multipart, False)
+        self.assertEqual(
+            email_message.additional_header_fields['Reply-To'], attribute['value']
+        )
+
+    def _check_email_source_observable_attribute(self, attribute, observables, object_refs):
+        message, address = observables
+        message_ref, address_ref = object_refs
+        self._assert_multiple_equal(
+            message.id, message_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, False)
+        self._assert_multiple_equal(
+            message.from_ref, address.id, address_ref,
+            f"email-addr--{attribute['uuid']}"
+        )
+        self._check_email_address(address, attribute['value'])
+
+    def _check_email_subject_observable_attribute(self, attribute, email_message, object_ref):
+        self._assert_multiple_equal(
+            email_message.id, object_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(email_message.type, 'email-message')
+        self.assertEqual(email_message.is_multipart, False)
+        self.assertEqual(email_message.subject, attribute['value'])
+
+    def _check_email_x_mailer_observable_attribute(self, attribute, email_message, object_ref):
+        self._assert_multiple_equal(
+            email_message.id, object_ref, f"email-message--{attribute['uuid']}"
+        )
+        self.assertEqual(email_message.type, 'email-message')
+        self.assertEqual(email_message.is_multipart, False)
+        self.assertEqual(
+            email_message.additional_header_fields['X-Mailer'], attribute['value']
+        )
+
+    def _check_filename_observable_attribute(self, attribute, file_object, object_ref):
+        self._assert_multiple_equal(
+            file_object.id, object_ref, f"file--{attribute['uuid']}"
+        )
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, attribute['value'])
+
+    def _check_github_username_observable_attribute(self, attribute, account, object_ref):
+        self._assert_multiple_equal(
+            account.id, object_ref, f"user-account--{attribute['uuid']}"
+        )
+        self.assertEqual(account.type, 'user-account')
+        self.assertEqual(account.account_type, 'github')
+        self.assertEqual(account.account_login, attribute['value'])
+
     def _check_hash_composite_indicator_attribute(self, attribute, indicator):
         filename, hash_value = attribute['value'].split('|')
         hash_type = attribute['type'].split('|')[1]
@@ -526,6 +695,30 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         hash_type = self.hash_types_mapping(attribute['type'])
         self.assertEqual(observable.hashes[hash_type], attribute['value'])
 
+    def _check_hostname_observable_attribute(self, attribute, domain, object_ref):
+        self._assert_multiple_equal(
+            domain.id, object_ref, f"domain-name--{attribute['uuid']}"
+        )
+        self.assertEqual(domain.type, 'domain-name')
+        self.assertEqual(domain.value, attribute['value'])
+
+    def _check_hostname_port_observable_attribute(self, attribute, observables, object_refs):
+        domain, network_traffic = observables
+        hostname_ref, network_traffic_ref = object_refs
+        self._assert_multiple_equal(
+            domain.id, hostname_ref, network_traffic.dst_ref,
+            f"domain-name--{attribute['uuid']}"
+        )
+        self.assertEqual(domain.type, 'domain-name')
+        hostname, port = attribute['value'].split('|')
+        self.assertEqual(domain.value, hostname)
+        self._assert_multiple_equal(
+            network_traffic.id, network_traffic_ref,
+            f"network-traffic--{attribute['uuid']}"
+        )
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self.assertEqual(network_traffic.dst_port, int(port))
+
     def _check_ip_indicator_attribute(self, attribute, indicator):
         feature = attribute['type'].split('-')[1]
         type_pattern = f"network-traffic:{feature}_ref.type = 'ipv4-addr'"
@@ -562,34 +755,83 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         port_pattern = f"network-traffic:{feature}_port = '{port_value}'"
         self.assertEqual(indicator.pattern, f"[{type_pattern} AND {value_pattern} AND {port_pattern}]")
 
-    def _check_ip_port_observable_attribute(self, attribute, grouping_ref, observed_data, observable):
+    def _check_ip_port_observable_attribute(
+            self, attribute, grouping_ref, observed_data, observable):
         network_id, address_id = grouping_ref
         network, address = observable
         network_ref, address_ref = observed_data['object_refs']
         ip_value, port_value = attribute['value'].split('|')
         feature = attribute['type'].split('|')[0].split('-')[1]
         self._assert_multiple_equal(
-            network.id,
-            network_id,
-            network_ref,
+            network.id, network_id, network_ref,
             f"network-traffic--{attribute['uuid']}"
         )
         self.assertEqual(network.type, 'network-traffic')
         self.assertEqual(getattr(network, f"{feature}_port"), int(port_value))
         self._assert_multiple_equal(
-            address.id,
-            address_id,
-            address_ref,
+            address.id, address_id, address_ref,
             getattr(network, f"{feature}_ref"),
             f"ipv4-addr--{attribute['uuid']}"
         )
         self.assertEqual(address.type, 'ipv4-addr')
         self.assertEqual(address.value, ip_value)
 
+    def _check_mac_address_observable_attribute(self, attribute, mac_address, object_ref):
+        self._assert_multiple_equal(
+            mac_address.id, object_ref, f"mac-addr--{attribute['uuid']}"
+        )
+        self.assertEqual(mac_address.type, 'mac-addr')
+        self.assertEqual(mac_address.value, attribute['value'].lower())
+
+    def _check_malware_sample_observable_attribute(self, attribute, observables, object_refs):
+        file_object, artifact_object = observables
+        file_ref, artifact_ref = object_refs
+        filename, hash_value = attribute['value'].split('|')
+        self._assert_multiple_equal(
+            file_object.id, file_ref, f"file--{attribute['uuid']}"
+        )
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, filename)
+        self.assertEqual(file_object.hashes['MD5'], hash_value)
+        self._assert_multiple_equal(
+            artifact_object.id, artifact_ref, file_object.content_ref,
+            f"artifact--{attribute['uuid']}"
+        )
+        self.assertEqual(artifact_object.type, 'artifact')
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(artifact_object.payload_bin, data)
+
+    def _check_mutex_observable_attribute(self, attribute, mutex, object_ref):
+        self._assert_multiple_equal(
+            mutex.id, object_ref, f"mutex--{attribute['uuid']}"
+        )
+        self.assertEqual(mutex.type, 'mutex')
+        self.assertEqual(mutex.name, attribute['value'])
+
     def _check_patterning_language_attribute(self, attribute, indicator, object_ref, identity_id):
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
         self.assertEqual(indicator.pattern_type, attribute['type'])
         self.assertEqual(indicator.pattern, f"[{attribute['value']}]")
+
+    def _check_regkey_observable_attribute(self, attribute, registry_key, object_ref):
+        self._assert_multiple_equal(
+            registry_key.id, object_ref,
+            f"windows-registry-key--{attribute['uuid']}"
+        )
+        self.assertEqual(registry_key.type, 'windows-registry-key')
+        self.assertEqual(registry_key.key, attribute['value'].strip())
+
+    def _check_regkey_value_observable_attribute(self, attribute, registry_key, object_ref):
+        key, value = attribute['value'].split('|')
+        self._assert_multiple_equal(
+            registry_key.id, object_ref,
+            f"windows-registry-key--{attribute['uuid']}"
+        )
+        self.assertEqual(registry_key.type, 'windows-registry-key')
+        self.assertEqual(registry_key.key, key.strip())
+        self.assertEqual(registry_key['values'][0].data, value.strip())
 
     def _check_url_observable_attribute(self, grouping_ref, observed_data, observable, attribute):
         self._assert_multiple_equal(
@@ -641,10 +883,15 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             identity_id = self._check_identity_features(identity, orgc, timestamp)
             object_refs = self._check_grouping_features(grouping, event, identity_id)
             od_ref, *observable_refs, indicator_ref, relationship_ref = object_refs
+            self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
+            self.assertEqual(observable_refs, observed_data.object_refs)
             self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
             self._check_pattern_features(indicator)
-            self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
-            return attribute['value'], indicator.pattern
+            self.assertEqual(relationship.id, relationship_ref)
+            self.assertEqual(relationship.relationship_type, 'based-on')
+            self.assertEqual(relationship.source_ref, indicator_ref)
+            self.assertEqual(relationship.target_ref, od_ref)
+            return attribute, observables, observable_refs, indicator.pattern
         except ValueError:
             identity, grouping, indicator = stix_objects
             identity_id = self._check_identity_features(identity, orgc, timestamp)
@@ -690,7 +937,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
             self._check_pattern_features(indicator)
             self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
-            self.assertEqual(relationship.relationship_type, 'indicates')
+            self.assertEqual(relationship.relationship_type, 'based-on')
             self.assertEqual(relationship.source_ref, indicator_ref)
             self.assertEqual(relationship.target_ref, od_ref)
         return attributes, object_chunks, ref_chunks, relationships
@@ -707,18 +954,14 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        observable_id, *ids = self._check_grouping_features(
-            grouping,
-            event,
-            identity_id
+        observed_data_id, *observable_refs = self._check_grouping_features(
+            grouping, event, identity_id
         )
         self._check_attribute_observable_features(
-            observed_data,
-            attribute,
-            identity_id,
-            observable_id
+            observed_data, attribute, identity_id, observed_data_id
         )
-        return attribute['value'], ids, observed_data['object_refs'], observable
+        self.assertEqual(observable_refs, observed_data.object_refs)
+        return attribute, observable, observable_refs
 
     def _run_observables_tests(self, event, index=2):
         self._remove_attribute_ids_flag(event)
@@ -828,7 +1071,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             ind_custom_rel, indicator_ref, custom_ref, 'related-to', timestamp
         )
         self._check_relationship_features(
-            ind_od_rel, indicator_ref, od_ref, 'indicates', timestamp
+            ind_od_rel, indicator_ref, od_ref, 'based-on', timestamp
         )
 
     def _test_embedded_non_indicator_attribute_galaxy(self, event):
@@ -919,60 +1162,30 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         )
 
     def _test_event_with_as_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        number = self._parse_AS_value(attribute_value)
+        attribute, observable, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observable), len(object_refs), 1)
+        self._check_as_observable_attribute(attribute, observable[0], object_refs[0])
+        number = self._parse_AS_value(attribute['value'])
         self.assertEqual(pattern, f"[autonomous-system:number = '{number}']")
 
     def _test_event_with_as_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
-        AS = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self._assert_multiple_equal(
-            AS.id,
-            object_ref,
-            f"autonomous-system--{attribute['uuid']}"
-        )
-        self.assertEqual(AS.type, 'autonomous-system')
-        number = self._parse_AS_value(attribute_value)
-        self.assertEqual(AS.number, number)
+        attribute, observable, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observable), len(object_refs), 1)
+        self._check_as_observable_attribute(attribute, observable[0], object_refs[0])
 
     def _test_event_with_attachment_indicator_attribute(self, event):
-        data = event['Attribute'][0]['data']
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._check_attachment_observable_attribute(attribute, observables, object_refs)
+        file_pattern = f"file:name = '{attribute['value']}'"
+        data = attribute['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        attribute_value, pattern = self._run_indicator_tests(event)
-        file_pattern = f"file:name = '{attribute_value}'"
         data_pattern = f"file:content_ref.payload_bin = '{data}'"
         self.assertEqual(pattern, f"[{file_pattern} AND {data_pattern}]")
 
     def _test_event_with_attachment_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        file_id, artifact_id = grouping_refs
-        file_ref, artifact_ref = object_refs
-        file_object, artifact_object = observable
-        self._assert_multiple_equal(
-            file_object.id,
-            file_ref,
-            file_id,
-            f"file--{attribute['uuid']}"
-        )
-        self.assertEqual(file_object.type, 'file')
-        self.assertEqual(file_object.name, attribute_value)
-        self._assert_multiple_equal(
-            file_object.content_ref,
-            artifact_object.id,
-            artifact_id,
-            artifact_ref,
-            f"artifact--{attribute['uuid']}"
-        )
-        self.assertEqual(artifact_object.type, 'artifact')
-        data = attribute['data']
-        if not isinstance(data, str):
-            data = b64encode(data.getvalue()).decode()
-        self.assertEqual(artifact_object.payload_bin, data)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._check_attachment_observable_attribute(attribute, observables, object_refs)
 
     def _test_event_with_campaign_name_attribute(self, event):
         self._remove_attribute_ids_flag(event)
@@ -1011,383 +1224,209 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             self._run_custom_attribute_tests(attribute, custom_object, object_ref, identity_id)
 
     def _test_event_with_domain_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
+        attribute, observable, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observable), len(object_refs), 1)
+        self._check_domain_observable_attribute(attribute, observable[0], object_refs[0])
+        self.assertEqual(pattern, f"[domain-name:value = '{attribute['value']}']")
 
     def _test_event_with_domain_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        domain = observable[0]
-        self._assert_multiple_equal(
-            domain.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"domain-name--{attribute['uuid']}"
-        )
-        self.assertEqual(domain.type, 'domain-name')
-        self.assertEqual(domain.value, attribute_value)
+        attribute, observable, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observable), len(object_refs), 1)
+        self._check_domain_observable_attribute(attribute, observable[0], object_refs[0])
 
     def _test_event_with_domain_ip_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        domain, ip = attribute_value.split('|')
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._check_domain_ip_observable_attribute(attribute, observables, object_refs)
+        domain, ip = attribute['value'].split('|')
         domain_pattern = f"domain-name:value = '{domain}'"
         ip_pattern = f"domain-name:resolves_to_refs[*].value = '{ip}'"
         self.assertEqual(pattern, f'[{domain_pattern} AND {ip_pattern}]')
 
     def _test_event_with_domain_ip_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        domain_value, ip_value = attribute_value.split('|')
-        domain_id, address_id = grouping_refs
-        domain_ref, address_ref = object_refs
-        domain, address = observable
-        self._assert_multiple_equal(
-            domain.id,
-            domain_id,
-            domain_ref,
-            f"domain-name--{attribute['uuid']}"
-        )
-        self.assertEqual(domain.type, 'domain-name')
-        self.assertEqual(domain.value, domain_value)
-        self._assert_multiple_equal(
-            domain.resolves_to_refs[0],
-            address.id,
-            address_id,
-            address_ref,
-            f"ipv4-addr--{attribute['uuid']}"
-        )
-        self.assertEqual(address.type, 'ipv4-addr')
-        self.assertEqual(address.value, ip_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._check_domain_ip_observable_attribute(attribute, observables, object_refs)
 
     def _test_event_with_email_attachment_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._check_email_attachment_observable_attribute(attribute, observables, object_refs)
         self.assertEqual(
             pattern,
-            f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute_value}']"
+            f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute['value']}']"
         )
 
     def _test_event_with_email_attachment_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        email_id, file_id = grouping_refs
-        email_ref, file_ref = object_refs
-        email, file = observable
-        self._assert_multiple_equal(
-            email.id,
-            email_id,
-            email_ref,
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(email.type, 'email-message')
-        self.assertEqual(email.is_multipart, True)
-        body = email.body_multipart[0]
-        self.assertEqual(body.content_disposition, f"attachment; filename='{attribute_value}'")
-        self._assert_multiple_equal(
-            body.body_raw_ref,
-            file.id,
-            file_id,
-            file_ref,
-            f"file--{attribute['uuid']}"
-        )
-        self.assertEqual(file.name, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._check_email_attachment_observable_attribute(attribute, observables, object_refs)
 
     def _test_event_with_email_body_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_body_observable_attribute(attribute, observables[0], object_refs[0])
         self.assertEqual(
-            pattern,
-            f"[email-message:body = '{attribute_value}']"
+            pattern, f"[email-message:body = '{attribute['value']}']"
         )
 
     def _test_event_with_email_body_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message = observable[0]
-        self._assert_multiple_equal(
-            message.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.body, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_body_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_email_destination_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[email-message:to_refs[*].value = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._check_email_destination_observable_attribute(attribute, observables, object_refs)
+        self.assertEqual(pattern, f"[email-message:to_refs[*].value = '{attribute['value']}']")
 
     def _test_event_with_email_destination_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message_id, address_id = grouping_refs
-        message_ref, address_ref = object_refs
-        message, address = observable
-        self._assert_multiple_equal(
-            message.id,
-            message_id,
-            message_ref,
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self._assert_multiple_equal(
-            message.to_refs[0],
-            address.id,
-            address_id,
-            address_ref,
-            f"email-addr--{attribute['uuid']}"
-        )
-        self._check_email_address(address, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._check_email_destination_observable_attribute(attribute, observables, object_refs)
 
     def _test_event_with_email_header_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[email-message:received_lines = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_header_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[email-message:received_lines = '{attribute['value']}']")
 
     def _test_event_with_email_header_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message = observable[0]
-        self._assert_multiple_equal(
-            message.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.received_lines, [attribute_value])
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_header_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_email_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[email-addr:value = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[email-addr:value = '{attribute['value']}']")
 
     def _test_event_with_email_message_id_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[email-message:message_id = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_message_id_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[email-message:message_id = '{attribute['value']}']")
 
     def _test_event_with_email_message_id_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message = observable[0]
-        self._assert_multiple_equal(
-            message.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.message_id, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_message_id_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_email_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        address = observable[0]
-        self._assert_multiple_equal(
-            address.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"email-addr--{attribute['uuid']}"
-        )
-        self._check_email_address(address, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_email_reply_to_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_reply_to_observable_attribute(attribute, observables[0], object_refs[0])
         self.assertEqual(
             pattern,
-            f"[email-message:additional_header_fields.reply_to = '{attribute_value}']"
+            f"[email-message:additional_header_fields.reply_to = '{attribute['value']}']"
         )
 
     def _test_event_with_email_reply_to_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message = observable[0]
-        self._assert_multiple_equal(
-            message.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.additional_header_fields['Reply-To'], attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_reply_to_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_email_source_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[email-message:from_ref.value = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._check_email_source_observable_attribute(attribute, observables, object_refs)
+        self.assertEqual(pattern, f"[email-message:from_ref.value = '{attribute['value']}']")
 
     def _test_event_with_email_source_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message_id, address_id = grouping_refs
-        message_ref, address_ref = object_refs
-        message, address = observable
-        self._assert_multiple_equal(
-            message.id,
-            message_id,
-            message_ref,
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self._assert_multiple_equal(
-            message.from_ref,
-            address.id,
-            address_id,
-            address_ref,
-            f"email-addr--{attribute['uuid']}"
-        )
-        self._check_email_address(address, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._check_email_source_observable_attribute(attribute, observables, object_refs)
 
     def _test_event_with_email_subject_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[email-message:subject = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_subject_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[email-message:subject = '{attribute['value']}']")
 
     def _test_event_with_email_subject_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message = observable[0]
-        self._assert_multiple_equal(
-            message.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.subject, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_subject_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_email_x_mailer_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_x_mailer_observable_attribute(attribute, observables[0], object_refs[0])
         self.assertEqual(
             pattern,
-            f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
+            f"[email-message:additional_header_fields.x_mailer = '{attribute['value']}']"
         )
 
     def _test_event_with_email_x_mailer_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        message = observable[0]
-        self._assert_multiple_equal(
-            message.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"email-message--{attribute['uuid']}"
-        )
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.additional_header_fields['X-Mailer'], attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_email_x_mailer_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_filename_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[file:name = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_filename_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[file:name = '{attribute['value']}']")
 
     def _test_event_with_filename_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        file = observable[0]
-        self._assert_multiple_equal(
-            file.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"file--{attribute['uuid']}"
-        )
-        self.assertEqual(file.type, 'file')
-        self.assertEqual(file.name, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_filename_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_github_username_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_github_username_observable_attribute(attribute, observables[0], object_refs[0])
         self.assertEqual(
             pattern,
-            f"[user-account:account_type = 'github' AND user-account:account_login = '{attribute_value}']"
+            f"[user-account:account_type = 'github' AND user-account:account_login = '{attribute['value']}']"
         )
 
     def _test_event_with_github_username_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        account = observable[0]
-        self._assert_multiple_equal(
-            account.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"user-account--{attribute['uuid']}"
-        )
-        self.assertEqual(account.type, 'user-account')
-        self.assertEqual(account.account_type, 'github')
-        self.assertEqual(account.account_login, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_github_username_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_hostname_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_hostname_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[domain-name:value = '{attribute['value']}']")
 
     def _test_event_with_hostname_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        domain = observable[0]
-        self._assert_multiple_equal(
-            domain.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"domain-name--{attribute['uuid']}"
-        )
-        self.assertEqual(domain.type, 'domain-name')
-        self.assertEqual(domain.value, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_hostname_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_hostname_port_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        hostname, port = attribute_value.split('|')
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._check_hostname_port_observable_attribute(attribute, observables, object_refs)
+        hostname, port = attribute['value'].split('|')
         hostname_pattern = f"domain-name:value = '{hostname}'"
         port_pattern = f"network-traffic:dst_port = '{port}'"
         self.assertEqual(pattern, f"[{hostname_pattern} AND {port_pattern}]")
 
     def _test_event_with_hostname_port_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        hostname, port = attribute_value.split('|')
-        hostname_id, network_traffic_id = grouping_refs
-        hostname_ref, network_traffic_ref = object_refs
-        domain, network_traffic = observable
-        self._assert_multiple_equal(
-            domain.id,
-            hostname_id,
-            hostname_ref,
-            network_traffic.dst_ref,
-            f"domain-name--{attribute['uuid']}"
-        )
-        self.assertEqual(domain.type, 'domain-name')
-        self.assertEqual(domain.value, hostname)
-        self._assert_multiple_equal(
-            network_traffic.id,
-            network_traffic_id,
-            network_traffic_ref,
-            f"network-traffic--{attribute['uuid']}"
-        )
-        self.assertEqual(network_traffic.type, 'network-traffic')
-        self.assertEqual(network_traffic.dst_port, int(port))
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._check_hostname_port_observable_attribute(attribute, observables, object_refs)
 
     def _test_event_with_mac_address_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[mac-addr:value = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_mac_address_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[mac-addr:value = '{attribute['value']}']")
 
     def _test_event_with_mac_address_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        mac_address = observable[0]
-        self._assert_multiple_equal(
-            mac_address.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"mac-addr--{attribute['uuid']}"
-        )
-        self.assertEqual(mac_address.type, 'mac-addr')
-        self.assertEqual(mac_address.value, attribute_value.lower())
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_mac_address_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_malware_sample_indicator_attribute(self, event):
-        data = event['Attribute'][0]['data']
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._check_malware_sample_observable_attribute(attribute, observables, object_refs)
+        data = attribute['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        attribute_value, pattern = self._run_indicator_tests(event)
-        filename, hash_value = attribute_value.split('|')
+        filename, hash_value = attribute['value'].split('|')
         data_pattern, file_pattern, hash_pattern, mime_type, encryption, decryption = pattern[1:-1].split(' AND ')
         self.assertEqual(data_pattern, f"file:content_ref.payload_bin = '{data}'")
         self.assertEqual(file_pattern, f"file:name = '{filename}'")
@@ -1397,96 +1436,51 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         self.assertEqual(decryption, f"file:content_ref.decryption_key = 'infected'")
 
     def _test_event_with_malware_sample_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        file_id, artifact_id = grouping_refs
-        file_ref, artifact_ref = object_refs
-        file_object, artifact_object = observable
-        filename, hash_value = attribute_value.split('|')
-        self._assert_multiple_equal(
-            file_object.id,
-            file_id,
-            file_ref,
-            f"file--{attribute['uuid']}"
-        )
-        self.assertEqual(file_object.type, 'file')
-        self.assertEqual(file_object.name, filename)
-        self.assertEqual(file_object.hashes['MD5'], hash_value)
-        self._assert_multiple_equal(
-            artifact_object.id,
-            artifact_id,
-            artifact_ref,
-            file_object.content_ref,
-            f"artifact--{attribute['uuid']}"
-        )
-        self.assertEqual(artifact_object.type, 'artifact')
-        data = attribute['data']
-        if not isinstance(data, str):
-            data = b64encode(data.getvalue()).decode()
-        self.assertEqual(artifact_object.payload_bin, data)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._check_malware_sample_observable_attribute(attribute, observables, object_refs)
 
     def _test_event_with_mutex_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[mutex:name = '{attribute_value}']")
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_mutex_observable_attribute(attribute, observables[0], object_refs[0])
+        self.assertEqual(pattern, f"[mutex:name = '{attribute['value']}']")
 
     def _test_event_with_mutex_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        mutex = observable[0]
-        self._assert_multiple_equal(
-            mutex.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"mutex--{attribute['uuid']}"
-        )
-        self.assertEqual(mutex.type, 'mutex')
-        self.assertEqual(mutex.name, attribute_value)
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_mutex_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_port_indicator_attribute(self, event):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[network-traffic:dst_port = '{attribute_value}']")
 
     def _test_event_with_regkey_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
+        attribute, observables, object_ref, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_ref), 1)
+        self._check_regkey_observable_attribute(attribute, observables[0], object_ref[0])
         self.assertEqual(
             pattern.replace('\\\\', '\\'),
-            f"[windows-registry-key:key = '{attribute_value.strip()}']"
+            f"[windows-registry-key:key = '{attribute['value'].strip()}']"
         )
 
     def _test_event_with_regkey_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        registry_key = observable[0]
-        self._assert_multiple_equal(
-            registry_key.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"windows-registry-key--{attribute['uuid']}"
-        )
-        self.assertEqual(registry_key.type, 'windows-registry-key')
-        self.assertEqual(registry_key.key, attribute_value.strip())
+        attribute, observables, object_ref = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_ref), 1)
+        self._check_regkey_observable_attribute(attribute, observables[0], object_ref[0])
 
     def _test_event_with_regkey_value_indicator_attribute(self, event):
-        attribute_value, pattern = self._run_indicator_tests(event)
-        key, value = attribute_value.split('|')
+        attribute, observables, object_refs, pattern = self._run_indicator_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_regkey_value_observable_attribute(attribute, observables[0], object_refs[0])
+        key, value = attribute['value'].split('|')
         key_pattern = f"windows-registry-key:key = '{self._sanitize_registry_key_value(key)}'"
         value_pattern = f"windows-registry-key:values.data = '{self._sanitize_registry_key_value(value)}'"
         self.assertEqual(pattern, f"[{key_pattern} AND {value_pattern}]")
 
     def _test_event_with_regkey_value_observable_attribute(self, event):
-        attribute = deepcopy(event['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        key, value = attribute_value.split('|')
-        registry_key = observable[0]
-        self._assert_multiple_equal(
-            registry_key.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"windows-registry-key--{attribute['uuid']}"
-        )
-        self.assertEqual(registry_key.type, 'windows-registry-key')
-        self.assertEqual(registry_key.key, key.strip())
-        self.assertEqual(registry_key['values'][0].data, value.strip())
+        attribute, observables, object_refs = self._run_observable_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_regkey_value_observable_attribute(attribute, observables[0], object_refs[0])
 
     def _test_event_with_size_in_bytes_indicator_attribute(self, event):
         attribute_value, pattern = self._run_indicator_tests(event)
