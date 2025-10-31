@@ -97,7 +97,7 @@
             "id": "relationship--f49962f9-8e91-4de2-bc0e-a4901460612f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "relationship_type": "indicates",
+            "relationship_type": "based-on",
             "source_ref": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
             "target_ref": "observed-data--726f90e2-2ad6-44a2-b345-c05e55e850e5"
         },
@@ -176,7 +176,7 @@
             "id": "relationship--cca36bfb-00fb-47c6-b95d-186967f82b4f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "relationship_type": "indicates",
+            "relationship_type": "based-on",
             "source_ref": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
             "target_ref": "observed-data--02de0847-dccf-481a-a96a-6a7654328658"
         }

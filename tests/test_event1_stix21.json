@@ -128,7 +128,7 @@
             "id": "relationship--f8f0c606-c741-472f-8479-ab3b76c65a32",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "relationship_type": "indicates",
+            "relationship_type": "based-on",
             "source_ref": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
             "target_ref": "observed-data--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
         }

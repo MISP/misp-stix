@@ -90,7 +90,7 @@
             "id": "relationship--9b16f6ec-4d1a-4fe3-a597-086964059870",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "relationship_type": "indicates",
+            "relationship_type": "based-on",
             "source_ref": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
             "target_ref": "observed-data--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
         },
@@ -208,7 +208,7 @@
             "id": "relationship--d4dea603-6774-4e43-b71a-21dd1ff78257",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "relationship_type": "indicates",
+            "relationship_type": "based-on",
             "source_ref": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
             "target_ref": "observed-data--726f90e2-2ad6-44a2-b345-c05e55e850e5"
         },
@@ -218,7 +218,7 @@
             "id": "relationship--57da284d-4bd8-4a45-ab50-bff5f08a9fde",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "relationship_type": "indicates",
+            "relationship_type": "based-on",
             "source_ref": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
             "target_ref": "observed-data--02de0847-dccf-481a-a96a-6a7654328658"
         }
