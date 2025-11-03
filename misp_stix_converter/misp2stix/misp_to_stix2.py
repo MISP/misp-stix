@@ -33,7 +33,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from typing import Generator, Optional, Tuple, Union
+from typing import Iterator, Optional, Tuple, Union
 
 try:
     from datetime import UTC
@@ -421,7 +421,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         break
 
     def _get_object_ids(
-            self, name: str, object_type: str) -> Generator[None, None, str]:
+            self, name: str, object_type: str) -> Iterator[str]:
         return (
             stix_object['id'] for stix_object
             in self._galaxies_catalog[name][object_type]
