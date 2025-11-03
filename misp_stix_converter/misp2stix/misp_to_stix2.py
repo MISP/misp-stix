@@ -2956,40 +2956,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     self._parse_custom_object(annotation_object)
                 else:
                     self._parse_annotation_object(
-                        to_ids, annotation_object
+                        misp_object['to_ids'], annotation_object
                     )
 
     def _resolve_pe_to_parse(self, pe_object: dict, pe_ids: bool):
         to_ids, section_uuids = self._handle_pe_object_references(
             pe_object, [pe_ids]
         )
+        extension_args, custom = self._parse_pe_extensions_observable(
+            pe_object, section_uuids
+        )
+        file_args = {
+            'extensions': {'windows-pebinary-ext': extension_args}
+        }
+        for feature in ('original', 'internal'):
+            if extension_args.get(f'x_misp_{feature}_filename'):
+                file_args['name'] = extension_args[
+                    f'x_misp_{feature}_filename'
+                ]
+                break
+        else:
+            file_args['name'] = ''
+        if custom:
+            file_args['allow_custom'] = custom
+        observable = self._handle_file_observable_object(file_args)
+        observed_data = self._handle_object_observable(pe_object, observable)
         if to_ids:
             pattern = self._parse_pe_extensions_pattern(
                 pe_object, section_uuids
             )
-            self._handle_object_indicator(pe_object, pattern)
-        else:
-            try:
-                extension_args, custom = self._parse_pe_extensions_observable(
-                    pe_object, section_uuids
-                )
-                file_args = {
-                    'extensions': {'windows-pebinary-ext': extension_args}
-                }
-                for feature in ('original', 'internal'):
-                    if extension_args.get(f'x_misp_{feature}_filename'):
-                        file_args['name'] = extension_args[
-                            f'x_misp_{feature}_filename'
-                        ]
-                        break
-                else:
-                    file_args['name'] = ''
-                if custom:
-                    file_args['allow_custom'] = custom
-                observable = self._handle_file_observable_object(file_args)
-                self._handle_object_observable(pe_object, observable)
-            except Exception as exception:
-                self._object_error(pe_object, exception)
+            indicator = self._handle_object_indicator(pe_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
 
     ############################################################################
     #                        GALAXIES PARSING FUNCTIONS                        #
