@@ -1400,7 +1400,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self, attributes: dict, prefix: str) -> list:
         pattern = []
         if attributes.get('key'):
-            value = self._sanitize_registry_key_value(
+            value = self._sanitise_registry_key_value(
                 attributes.pop('key').strip("'").strip('"')
             )
             pattern.append(f"{prefix}:key = '{value}'")

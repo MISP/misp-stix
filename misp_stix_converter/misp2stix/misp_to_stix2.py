@@ -2405,6 +2405,33 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         getattr(self, self._results_handling_method)(identity)
         self._handle_object_analyst_data(identity, misp_object)
 
+    def _parse_organization_object(self, misp_object: MISPObject | dict):
+        identity_args = self._parse_identity_args(misp_object, 'organization')
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.organization_single_fields()
+        )
+        for key, feature in self._mapping.organization_object_mapping().items():
+            if attributes.get(key):
+                identity_args[feature] = attributes.pop(key)
+        contact_info = self._parse_contact_information(
+            attributes,
+            misp_object['name'].replace('-', '_')
+        )
+        if contact_info:
+            identity_args['contact_information'] = ' / '.join(contact_info)
+        if attributes:
+            identity_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'], identity_args
+            )
+        identity = self._create_identity(identity_args)
+        getattr(self, self._results_handling_method)(identity)
+        self._handle_object_analyst_data(identity, misp_object)
+
     def _parse_person_object(self, misp_object: MISPObject | dict):
         identity_args = self._parse_identity_args(misp_object, 'individual')
         attributes = self._extract_multiple_object_attributes(
@@ -2430,33 +2457,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             identity_args['contact_information'] = ' / '.join(
                 contact_information
             )
-        if attributes:
-            identity_args.update(
-                self._handle_observable_multiple_properties(attributes)
-            )
-        if misp_object.get('ObjectReference'):
-            self._parse_object_relationships(
-                misp_object['ObjectReference'], identity_args
-            )
-        identity = self._create_identity(identity_args)
-        getattr(self, self._results_handling_method)(identity)
-        self._handle_object_analyst_data(identity, misp_object)
-
-    def _parse_organization_object(self, misp_object: MISPObject | dict):
-        identity_args = self._parse_identity_args(misp_object, 'organization')
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.organization_single_fields()
-        )
-        for key, feature in self._mapping.organization_object_mapping().items():
-            if attributes.get(key):
-                identity_args[feature] = attributes.pop(key)
-        contact_info = self._parse_contact_information(
-            attributes,
-            misp_object['name'].replace('-', '_')
-        )
-        if contact_info:
-            identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
             identity_args.update(
                 self._handle_observable_multiple_properties(attributes)
@@ -2640,7 +2640,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             values_prefix = f"{prefix}:values[0]"
             if attributes.get('data'):
-                data = self._sanitize_registry_key_value(
+                data = self._sanitise_registry_key_value(
                     attributes.pop('data').strip("'").strip('"')
                 )
                 pattern.append(f"{values_prefix}.data = '{data}'")
@@ -4687,7 +4687,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         # return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
         if not isinstance(attribute_value, str):
             return attribute_value
-        sanitized = self._sanitize_registry_key_value(attribute_value)
+        sanitized = self._sanitise_value(attribute_value)
         return sanitized.replace("'", "\\'").replace('"', '\\\\"')
 
     @staticmethod
@@ -4820,23 +4820,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return key.replace('-', '_')
         return key
 
-    def _sanitize_registry_key_value(self, value: str) -> str:
-        sanitized = self._sanitize_value(value.strip()).replace('\\', '\\\\')
+    def _sanitise_registry_key_value(self, value: str) -> str:
+        sanitized = self._sanitise_value(value.strip()).replace('\\', '\\\\')
         if '%' not in sanitized or '\\\\%' in sanitized:
             return sanitized
         if '\\%' in sanitized:
             return sanitized.replace('\\%', '\\\\%')
         return sanitized.replace('%', '\\\\%')
 
-    def _sanitize_value(self, value: str) -> str:
+    def _sanitise_value(self, value: str) -> str:
         for character in ('"', "'"):
             if value.startswith(character):
-                return self._sanitize_value(value[1:])
+                return self._sanitise_value(value[1:])
             if value.endswith(character):
-                return self._sanitize_value(value[:-1])
+                return self._sanitise_value(value[:-1])
         return value
-
-    def _select_pe_object(self, pe_uuid: str) -> dict:
-        to_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]
-        self._objects_to_parse['pe'][pe_uuid] = to_ids
-        return pe_object
