@@ -1293,10 +1293,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if markings:
             self._handle_markings(indicator_args, markings)
-        if misp_object.get('ObjectReference'):
-            self._parse_object_relationships(
-                misp_object['ObjectReference'], indicator_args
-            )
         indicator = self._create_indicator(indicator_args)
         getattr(self, self._results_handling_method)(indicator)
         self._handle_object_analyst_data(indicator, misp_object)
