@@ -2967,6 +2967,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             pe_object, section_uuids
         )
         file_args = {
+            'id': self._parse_stix_object_id('object', 'file', pe_object),
             'extensions': {'windows-pebinary-ext': extension_args}
         }
         for feature in ('original', 'internal'):
