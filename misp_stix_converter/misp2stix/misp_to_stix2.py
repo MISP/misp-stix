@@ -2632,7 +2632,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observed_data = self._parse_registry_key_object_observable(misp_object)
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'windows-registry-key'
-            attributes = self._extract_object_attributes(
+            attributes = self._extract_indicator_object_attributes(
                 misp_object['Attribute']
             )
             pattern = self._parse_regkey_key_values_pattern(
