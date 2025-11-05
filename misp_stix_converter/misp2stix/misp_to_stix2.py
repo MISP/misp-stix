@@ -1457,7 +1457,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'user-account'
-            attributes = self._extract_multiple_object_attributes_with_data(
+            attributes = self._extract_multiple_indicator_object_attributes_with_data(
                 misp_object['Attribute'],
                 force_single=getattr(self._mapping, f"{name}_single_fields")(),
                 with_data=getattr(self._mapping, f"{name}_data_fields")()
