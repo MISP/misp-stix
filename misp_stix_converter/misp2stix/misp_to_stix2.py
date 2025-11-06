@@ -527,6 +527,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _handle_attribute_indicator(
             self, attribute: MISPAttribute | dict, pattern: str,
+            standalone: Optional[bool] = False,
             **kwargs: Optional[dict]) -> _INDICATOR_TYPING:
         indicator_id = self._parse_stix_object_id(
             'attribute', 'indicator', attribute
@@ -540,11 +541,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         if attribute.get('comment'):
             indicator_arguments['description'] = attribute['comment']
-        markings = self._handle_attribute_tags_and_galaxies(
-            attribute, indicator_arguments
-        )
-        if markings:
-            self._handle_markings(indicator_arguments, markings)
+        if standalone:
+            markings = self._handle_attribute_tags_and_galaxies(
+                attribute, indicator_arguments
+            )
+            if markings:
+                self._handle_markings(indicator_arguments, markings)
         indicator = self._create_indicator(indicator_arguments)
         getattr(self, self._results_handling_method)(indicator)
         self._handle_analyst_data(indicator, attribute)
@@ -842,12 +844,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_github_username_attribute_indicator(
             self, attribute: MISPAttribute | dict) -> _INDICATOR_TYPING:
-        prefix = 'user-account'
+        prefix = 'user-account:account'
         value = self._handle_value_for_pattern(attribute['value'])
         return self._handle_attribute_indicator(
             attribute,
-            f"[{prefix}:account_type = 'github' AND "
-            f"{prefix}:account_login = '{value}']"
+            f"[{prefix}_type = 'github' AND {prefix}_login = '{value}']",
+            standalone=True
         )
 
     def _parse_hash_attribute(self, attribute: MISPAttribute | dict):
@@ -871,7 +873,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 attribute['type'], attribute['value']
             )
             return self._handle_attribute_indicator(
-                attribute, f"[{self._create_filename_pattern(value)}]"
+                attribute, f"[{self._create_filename_pattern(value)}]",
+                standalone=True
             )
         observed_data = self._parse_hash_composite_attribute_observable(
             attribute, hash_type=hash_type
@@ -919,10 +922,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_http_method_attribute(
             self, attribute: MISPAttribute | dict):
         if attribute.get('to_ids', False):
+            prefix = "network-traffic:extensions.'http-request-ext'"
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
-                attribute,
-                f"[network-traffic:extensions.'http-request-ext'.request_method = '{value}']"
+                attribute, f"[{prefix}.request_method = '{value}']",
+                standalone=True
             )
         else:
             self._parse_custom_attribute(attribute)
@@ -1029,7 +1033,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
-                attribute, f"[network-traffic:dst_port = '{value}']"
+                attribute, f"[network-traffic:dst_port = '{value}']",
+                standalone=True
             )
         else:
             self._parse_custom_attribute(attribute)
@@ -1052,7 +1057,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 attribute['type'], attribute['value']
             )
             return self._handle_attribute_indicator(
-                attribute, f"[{self._create_regkey_pattern(value)}]"
+                attribute, f"[{self._create_regkey_pattern(value)}]",
+                standalone=True
             )
         observed_data = self._parse_regkey_value_attribute_observable(attribute)
         if attribute.get('to_ids', False):
@@ -1076,7 +1082,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('to_ids', False):
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
-                attribute, f"[file:size = '{value}']"
+                attribute, f"[file:size = '{value}']", standalone=True
             )
         else:
             self._parse_custom_attribute(attribute)
@@ -1095,11 +1101,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_user_agent_attribute(
             self, attribute: MISPAttribute | dict):
         if attribute.get('to_ids', False):
+            prefix = "network-traffic:extensions.'http-request-ext'"
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
                 attribute,
-                "[network-traffic:extensions.'http-request-ext'."
-                f"request_header.'User-Agent' = '{value}']"
+                f"[{prefix}.request_header.'User-Agent' = '{value}']",
+                standalone=True
             )
         else:
             self._parse_custom_attribute(attribute)
@@ -1288,11 +1295,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         if misp_object.get('comment'):
             indicator_args['description'] = misp_object['comment']
-        markings = self._handle_object_tags_and_galaxies(
-            misp_object, indicator_args
-        )
-        if markings:
-            self._handle_markings(indicator_args, markings)
         indicator = self._create_indicator(indicator_args)
         getattr(self, self._results_handling_method)(indicator)
         self._handle_object_analyst_data(indicator, misp_object)

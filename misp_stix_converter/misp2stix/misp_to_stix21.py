@@ -558,7 +558,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_patterning_language_attribute(
             self, attribute: MISPAttribute | dict):
         self._handle_attribute_indicator(
-            attribute, f"[{attribute['value']}]",
+            attribute, f"[{attribute['value']}]", standalone=True,
             pattern_type=attribute['type']
         )
 
