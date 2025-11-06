@@ -1410,17 +1410,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _handle_pe_object_references(
             self, pe_object: dict, to_ids: list) -> Tuple[bool, list]:
-        section_uuids = self._fetch_included_reference_uuids(
-            pe_object['ObjectReference'],
-            'pe-section'
-        ) if pe_object.get('ObjectReference') else []
-        if section_uuids:
-            for section_uuid in section_uuids:
-                section_ids, _ = self._objects_to_parse['pe-section'][
-                    section_uuid
-                ]
-                to_ids.append(section_ids)
-        return any(to_ids), section_uuids
+        if pe_object.get('ObjectReference'):
+            section_uuids = self._fetch_included_reference_uuids(
+                pe_object['ObjectReference'], 'pe-section'
+            )
+            if section_uuids:
+                for section_uuid in section_uuids:
+                    pe_section = self._objects_to_parse['pe-section'][
+                        section_uuid
+                    ]
+                    to_ids.append(pe_section['to_ids'])
+                return any(to_ids), section_uuids
+        return any(to_ids), []
 
     def _parse_account_object(self, misp_object: MISPObject | dict):
         name = misp_object['name'].replace('-', '_')
@@ -1823,9 +1824,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if misp_object.get('ObjectReference'):
             for reference in misp_object['ObjectReference']:
                 if self._is_reference_included(reference, 'pe'):
-                    self._objects_to_parse['file'][misp_object['uuid']] = (
-                        to_ids, misp_object
-                    )
+                    self._objects_to_parse['file'][misp_object['uuid']] = {
+                        'misp_object': misp_object,
+                        'to_ids': to_ids, 'used': False
+                    }
                     return
         observed_data = self._parse_file_object_observable(misp_object)
         if to_ids:
@@ -2490,11 +2492,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if uuids is not None:
             for section_uuid in uuids:
                 section = defaultdict(dict)
-                pe_section = self._objects_to_parse['pe-section'].pop(
+                pe_section = self._objects_to_parse['pe-section'].get(
                     section_uuid
                 )
                 attributes = self._extract_object_attributes_escaped(
-                    pe_section[1]['Attribute']
+                    pe_section['misp_object']['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping().items():
                     if attributes.get(key):
@@ -2520,6 +2522,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 extension['sections'].append(
                     self._create_windowsPESection(section)
                 )
+                pe_section['used'] = True
         return self._create_PE_extension(extension), custom
 
     def _parse_pe_extensions_pattern(
@@ -2548,7 +2551,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if uuids is not None:
             for section_uuid in uuids:
                 section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
-                section_object = self._objects_to_parse['pe-section'].pop(section_uuid)[1]
+                section_object = self._objects_to_parse['pe-section'][section_uuid]['misp_object']
                 attributes = self._extract_indicator_object_attributes(
                     section_object['Attribute']
                 )
@@ -2862,9 +2865,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _populate_objects_to_parse(self, misp_object: MISPObject | dict):
         to_ids = self._fetch_ids_flag(misp_object['Attribute'])
-        self._objects_to_parse[misp_object['name']][misp_object['uuid']] = (
-            to_ids, misp_object
-        )
+        self._objects_to_parse[misp_object['name']][misp_object['uuid']] = {
+            'misp_object': misp_object, 'to_ids': to_ids, 'used': False
+        }
 
     def _resolve_file_to_parse(
             self, file_object: dict, file_uuid: str, file_ids: bool):
@@ -2885,22 +2888,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     indicator.id, observed_data.id, indicator.modified
                 )
             return
-        pe_ids, pe_object = self._objects_to_parse['pe'].pop(pe_uuid[0])
+        pe_object = self._objects_to_parse['pe'].get(pe_uuid[0])
         to_ids, section_uuids = self._handle_pe_object_references(
-            pe_object, [file_ids, pe_ids]
+            pe_object['misp_object'], [file_ids, pe_object['to_ids']]
         )
         file_args, observable = self._parse_file_observable_object(
             file_object
         )
         try:
             extension_args, custom = self._parse_pe_extensions_observable(
-                pe_object, section_uuids
+                pe_object['misp_object'], section_uuids
             )
             file_args['extensions'] = {
                 'windows-pebinary-ext': extension_args
             }
         except Exception as exception:
-            self._object_error(pe_object, exception)
+            self._object_error(pe_object['misp_object'], exception)
         if 'allow_custom' not in file_args and custom:
             file_args['allow_custom'] = custom
         self._handle_file_observable_objects(file_args, observable)
@@ -2908,40 +2911,49 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if to_ids:
             pattern = self._parse_file_object_pattern(file_object)
             pattern.extend(
-                self._parse_pe_extensions_pattern(pe_object, section_uuids)
+                self._parse_pe_extensions_pattern(
+                    pe_object['misp_object'], section_uuids
+                )
             )
             indicator = self._handle_object_indicator(file_object, pattern)
             self._parse_indicator_relationship(
                 indicator.id, observed_data.id, indicator.modified
             )
+        pe_object['used'] = True
 
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):
-            file_objects = self._objects_to_parse.pop('file')
+            file_objects = self._objects_to_parse['file']
             for file_uuid, misp_object in file_objects.items():
-                to_ids, file_object = misp_object
+                if misp_object['used']:
+                    continue
+                file_object = misp_object['misp_object']
                 try:
-                    self._resolve_file_to_parse(file_object, file_uuid, to_ids)
+                    self._resolve_file_to_parse(
+                        file_object, file_uuid, misp_object['to_ids']
+                    )
                 except Exception as exception:
                     self._object_error(file_object, exception)
+                misp_object['used'] = True
         if self._objects_to_parse.get('pe'):
-            for misp_object in self._objects_to_parse.pop('pe').values():
-                try:
-                    to_ids, pe_object = misp_object
-                except TypeError:
+            for misp_object in self._objects_to_parse['pe'].values():
+                if misp_object['used']:
                     continue
+                pe_object = misp_object['misp_object']
                 try:
-                    self._resolve_pe_to_parse(pe_object, to_ids)
+                    self._resolve_pe_to_parse(pe_object, misp_object['to_ids'])
                 except Exception as exception:
                     self._object_error(pe_object, exception)
+                misp_object['used'] = True
         if self._objects_to_parse.get('pe-section'):
-            pe_section = self._objects_to_parse.pop('pe-section')
-            for misp_object in pe_section.values():
-                self._parse_custom_object(misp_object[1])
+            for misp_object in self._objects_to_parse['pe-section'].values():
+                if misp_object['used']:
+                    continue
+                self._parse_custom_object(misp_object['misp_object'])
         if self._objects_to_parse.get('annotation'):
             objects_to_parse = self._objects_to_parse['annotation']
             for misp_object in objects_to_parse.values():
-                to_ids, annotation_object = misp_object
+                annotation_object = misp_object['misp_object']
                 custom = (
                     annotation_object.get('ObjectReference') is None or
                     not self._annotates(
