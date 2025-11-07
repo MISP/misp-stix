@@ -540,7 +540,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_github_username_attribute(
             self, attribute: MISPAttribute | dict):
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             self._parse_github_username_attribute_indicator(attribute)
         else:
             self._parse_custom_attribute(attribute)

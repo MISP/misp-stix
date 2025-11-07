@@ -3,6 +3,7 @@
 
 from .. import Mapping
 from .stix_mapping import MISPtoSTIXMapping
+from pymisp.abstract import describe_types
 from typing import Union
 
 
@@ -130,6 +131,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
                 'installs': ('installed_software_refs', True),
                 'vm-hosted-by': ('host_vm_ref', False)
             }
+        }
+    )
+    __to_ids_default_mapping = Mapping(
+        **{
+            attribute_type: bool(sane_default['to_ids'])
+            for attribute_type, sane_default
+            in describe_types['sane_defaults'].items()
         }
     )
 
@@ -1362,6 +1370,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def tool_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__tool_meta_mapping.get(field)
+
+    @classmethod
+    def to_ids_default_value(cls, attribute_type: str) -> bool:
+        return cls.__to_ids_default_mapping.get(attribute_type, False)
 
     @classmethod
     def twitter_account_data_fields(cls) -> tuple:

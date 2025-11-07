@@ -354,7 +354,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             is_multipart=False, message_id=attribute['value']
         )
         observed_data = self._handle_attribute_observable(attribute, [message_object])
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             pattern = f"[email-message:message_id = '{value}']"
             indicator = self._handle_attribute_indicator(attribute, pattern)
@@ -412,7 +413,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             account_type='github', account_login=attribute['value']
         )
         observed_data = self._handle_attribute_observable(attribute, [account_object])
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             indicator = self._parse_github_username_attribute_indicator(attribute)
             self._parse_indicator_relationship(
                 indicator.id, observed_data.id, indicator.modified

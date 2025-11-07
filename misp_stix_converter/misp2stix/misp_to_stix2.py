@@ -612,7 +612,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self, attribute: MISPAttribute | dict):
         if attribute.get('data'):
             observed_data = self._parse_attachment_attribute_observable(attribute)
-            if attribute.get('to_ids', False):
+            to_ids = self._mapping.to_ids_default_value(attribute['type'])
+            if attribute.get('to_ids', to_ids):
                 value = self._handle_value_for_pattern(attribute['value'])
                 file_pattern = self._create_filename_pattern(value)
                 data = attribute['data']
@@ -632,7 +633,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_autonomous_system_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_autonomous_system_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             pattern = f"[{self._create_AS_pattern(value)}]"
             indicator = self._handle_attribute_indicator(attribute, pattern)
@@ -692,7 +694,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_domain_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_domain_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             pattern = f"[{self._create_domain_pattern(value)}]"
             indicator = self._handle_attribute_indicator(attribute, pattern)
@@ -707,7 +710,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             return self._parse_custom_attribute(attribute)
         observed_data = self._parse_domain_ip_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
@@ -724,7 +728,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_attachment_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_attachment_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute,
@@ -736,7 +741,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_email_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[email-addr:value = '{value}']"
@@ -748,7 +754,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_body_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_body_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[email-message:body = '{value}']"
@@ -760,7 +767,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_destination_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_destination_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[email-message:to_refs[*].value = '{value}']"
@@ -772,7 +780,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_header_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_header_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[email-message:received_lines = '{value}']"
@@ -784,7 +793,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_reply_to_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_reply_to_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute,
@@ -797,7 +807,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_source_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_source_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[email-message:from_ref.value = '{value}']"
@@ -809,7 +820,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_subject_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_subject_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[email-message:subject = '{value}']"
@@ -821,7 +833,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_email_x_mailer_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_email_x_mailer_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute,
@@ -833,7 +846,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_filename_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_filename_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[{self._create_filename_pattern(value)}]"
@@ -854,7 +868,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_hash_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_hash_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             hash_value = self._create_hash_pattern(
                 attribute['type'], attribute['value']
             )
@@ -879,7 +894,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observed_data = self._parse_hash_composite_attribute_observable(
             attribute, hash_type=hash_type
         )
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
@@ -904,7 +920,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             return self._parse_custom_attribute(attribute)
         observed_data = self._parse_hostname_port_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
@@ -921,7 +938,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_http_method_attribute(
             self, attribute: MISPAttribute | dict):
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             prefix = "network-traffic:extensions.'http-request-ext'"
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
@@ -933,7 +951,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_ip_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_ip_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             ip_type = attribute['type'].split('-')[1]
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
@@ -950,7 +969,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             return self._parse_custom_attribute(attribute)
         observed_data = self._parse_ip_port_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
@@ -971,7 +991,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_mac_address_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_mac_address_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[mac-addr:value = '{value}']"
@@ -984,7 +1005,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self, attribute: MISPAttribute | dict):
         if attribute.get('data'):
             observed_data = self._parse_malware_sample_attribute_observable(attribute)
-            if attribute.get('to_ids', False):
+            to_ids = self._mapping.to_ids_default_value(attribute['type'])
+            if attribute.get('to_ids', to_ids):
                 value = self._handle_value_for_pattern(attribute['value'])
                 data = attribute['data']
                 if not isinstance(data, str):
@@ -1020,7 +1042,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_mutex_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_mutex_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[mutex:name = '{value}']"
@@ -1030,7 +1053,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
 
     def _parse_port_attribute(self, attribute: MISPAttribute | dict):
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
                 attribute, f"[network-traffic:dst_port = '{value}']",
@@ -1041,7 +1065,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_regkey_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_regkey_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[{self._create_regkey_pattern(value)}]"
@@ -1061,7 +1086,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 standalone=True
             )
         observed_data = self._parse_regkey_value_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
@@ -1079,7 +1105,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_size_in_bytes_attribute(
             self, attribute: MISPAttribute | dict):
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
                 attribute, f"[file:size = '{value}']", standalone=True
@@ -1089,7 +1116,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_url_attribute(self, attribute: MISPAttribute | dict):
         observed_data = self._parse_url_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             value = self._handle_value_for_pattern(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[url:value = '{value}']"
@@ -1100,7 +1128,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_user_agent_attribute(
             self, attribute: MISPAttribute | dict):
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             prefix = "network-traffic:extensions.'http-request-ext'"
             value = self._handle_value_for_pattern(attribute['value'])
             self._handle_attribute_indicator(
@@ -1140,7 +1169,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_x509_fingerprint_attribute(
             self, attribute: MISPAttribute | dict):
         observed_data = self._parse_x509_fingerprint_attribute_observable(attribute)
-        if attribute.get('to_ids', False):
+        to_ids = self._mapping.to_ids_default_value(attribute['type'])
+        if attribute.get('to_ids', to_ids):
             hash_type = attribute['type'].split('-')[-1].upper()
             value = ''.join(
                 character for character in attribute['value']
@@ -1175,7 +1205,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _extract_indicator_object_attributes(self, attributes: list) -> dict:
         return {
             attribute['object_relation']: self._handle_value_for_pattern(attribute['value'])
-            for attribute in attributes if attribute.get('to_ids', False)
+            for attribute in attributes if attribute.get(
+                'to_ids', self._mapping.to_ids_default_value(attribute['type'])
+            )
         }
 
     def _extract_multiple_indicator_object_attributes(
@@ -1184,7 +1216,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         attributes_dict = defaultdict(list)
         if force_single is not None:
             for attribute in attributes:
-                if not attribute.get('to_ids', False):
+                to_ids = self._mapping.to_ids_default_value(attribute['type'])
+                if not attribute.get('to_ids', to_ids):
                     continue
                 value = self._handle_value_for_pattern(attribute['value'])
                 relation = attribute['object_relation']
@@ -1194,7 +1227,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     attributes_dict[relation].append(value)
             return attributes_dict
         for attribute in attributes:
-            if not attribute.get('to_ids', False):
+            to_ids = self._mapping.to_ids_default_value(attribute['type'])
+            if not attribute.get('to_ids', to_ids):
                 continue
             value = self._handle_value_for_pattern(attribute['value'])
             attributes_dict[attribute['object_relation']].append(value)
@@ -1205,7 +1239,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             with_data: Optional[tuple] = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
-            if not attribute.get('to_ids', False):
+            to_ids = self._mapping.to_ids_default_value(attribute['type'])
+            if not attribute.get('to_ids', to_ids):
                 continue
             relation = attribute['object_relation']
             value = self._handle_value_for_pattern(attribute['value'])
