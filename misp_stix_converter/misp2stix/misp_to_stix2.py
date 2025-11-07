@@ -1067,7 +1067,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observed_data = self._parse_regkey_attribute_observable(attribute)
         to_ids = self._mapping.to_ids_default_value(attribute['type'])
         if attribute.get('to_ids', to_ids):
-            value = self._handle_value_for_pattern(attribute['value'])
+            value = self._sanitise_registry_key_value(attribute['value'])
             indicator = self._handle_attribute_indicator(
                 attribute, f"[{self._create_regkey_pattern(value)}]"
             )
@@ -1088,7 +1088,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observed_data = self._parse_regkey_value_attribute_observable(attribute)
         to_ids = self._mapping.to_ids_default_value(attribute['type'])
         if attribute.get('to_ids', to_ids):
-            value = self._handle_value_for_pattern(attribute['value'])
+            value = self._sanitise_registry_key_value(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
                     key, data = value.split(separator)
@@ -2681,7 +2681,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 )
                 pattern.append(f"{values_prefix}.data = '{data}'")
             attributes = {
-                key: self._handle_value_for_pattern(value)
+                key: self._sanitise_registry_key_value(value)
                 for key, value in attributes.items()
             }
             for key, feature in self._mapping.registry_key_mapping().items():
