@@ -4680,7 +4680,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_account_indicator_objects(self):
         event = get_event_with_account_objects()
         misp_objects, stix_objects, object_refs, relationships = self._run_indicators_from_objects_tests(event['Event'])
-        self._check_account_observable_objects(misp_object, stix_objects, object_refs)
+        self._check_account_observable_objects(misp_objects, stix_objects, object_refs)
         self._check_account_indicator_objects(
             misp_objects,
             (stix_object[-1].pattern for stix_object in stix_objects)
