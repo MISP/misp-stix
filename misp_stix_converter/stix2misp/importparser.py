@@ -12,7 +12,8 @@ from pathlib import Path
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from stix.core import STIXPackage
-from stix2.exceptions import InvalidValueError
+from stix2.exceptions import (
+    ExtraPropertiesError, InvalidValueError, TLPMarkingDefinitionError)
 from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
@@ -29,15 +30,31 @@ _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
+_BUNDLE_TYPING = Union[Bundle_v20, Bundle_v21]
 
-def _get_stix2_content_version(stix2_content: dict):
+
+def _get_stix2_content_version(stix2_content: dict) -> str:
     for stix_object in stix2_content['objects']:
         if stix_object.get('spec_version'):
             return '2.1'
     return '2.0'
 
 
-def _handle_stix2_loading_error(stix2_content: dict):
+def _handle_invalid_stix2_content(invalid_objects, *stix_objects):
+    for stix_object in stix_objects:
+        try:
+            valid_object = stix2_parser(
+                stix_object, allow_custom=True, interoperability=True
+            )
+        except (ExtraPropertiesError, TLPMarkingDefinitionError, ValueError):
+            invalid_objects[stix_object['id']] = stix_object
+            continue
+        yield valid_object
+
+
+def _handle_stix2_loading_error(
+        stix2_content: dict,
+        invalid_objects: Optional[dict] = {}) -> _BUNDLE_TYPING:
     version = _get_stix2_content_version(stix2_content)
     if isinstance(stix2_content, dict):
         if version == '2.1' and stix2_content.get('spec_version') == '2.0':
@@ -53,7 +70,10 @@ def _handle_stix2_loading_error(stix2_content: dict):
         bundle = Bundle_v21 if version == '2.1' else Bundle_v20
         if 'objects' in stix2_content:
             stix2_content = stix2_content['objects']
-    return bundle(*stix2_content, allow_custom=True, interoperability=True)
+    return bundle(
+        *_handle_invalid_stix2_content(invalid_objects, *stix2_content),
+        allow_custom=True, interoperability=True
+    )
 
 
 def _load_stix1_package(filename, tries=0):
@@ -76,18 +96,21 @@ def _load_stix1_package(filename, tries=0):
             sys.exit(f'Error while loading STIX1 package: {error.__str__()}')
 
 
-def _load_stix2_content(filename):
+def _load_stix2_content(
+        filename, invalid_objects: Optional[dict] = None) -> _BUNDLE_TYPING:
     with open(filename, 'rt', encoding='utf-8') as f:
         stix2_content = f.read()
     try:
         return stix2_parser(
             stix2_content, allow_custom=True, interoperability=True
         )
-    except (InvalidValueError, ParseError):
-        return _handle_stix2_loading_error(json.loads(stix2_content))
+    except (ExtraPropertiesError, InvalidValueError, ParseError, ValueError):
+        return _handle_stix2_loading_error(
+           json.loads(stix2_content), invalid_objects=invalid_objects
+        )
 
 
-def _load_json_file(path):
+def _load_json_file(path) -> dict:
     with open(path, 'rb') as f:
         return json.load(f)
 

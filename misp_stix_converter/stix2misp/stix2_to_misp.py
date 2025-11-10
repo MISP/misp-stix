@@ -75,7 +75,7 @@ _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
 ]
 _MARKING_DEFINITION_TYPING = Union[
-    MarkingDefinition_v20, MarkingDefinition_v21
+    MarkingDefinition_v20, MarkingDefinition_v21, dict
 ]
 _NOTE_TYPING = Union[
     MISPEventReport, Note, CustomObject_v20, dict
@@ -129,7 +129,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._tool: dict
         self._vulnerability: dict
 
-    def load_stix_bundle(self, bundle: Union[Bundle_v20, Bundle_v21]):
+    def load_stix_bundle(self, bundle: Bundle_v20 | Bundle_v21,
+                         invalid_objects: Optional[dict] = {}):
+        self.__invalid_objects = invalid_objects
         self._identifier = bundle.id
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
         n_report = 0
@@ -161,10 +163,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
-            bundle = _load_stix2_content(filename)
+            bundle = _load_stix2_content(filename, invalid_objects := {})
         except Exception as exception:
             sys.exit(exception)
-        self.load_stix_bundle(bundle)
+        self.load_stix_bundle(bundle, invalid_objects=invalid_objects)
         del bundle
         self.parse_stix_bundle(**kwargs)
 
@@ -201,6 +203,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return self.event_title
         message = f'STIX {self.stix_version} Bundle ({self._identifier})'
         return f'{message} and converted with the MISP-STIX import feature.'
+
+    @property
+    def invalid_objects(self) -> dict:
+        return self.__invalid_objects
 
     @property
     def stix_version(self) -> str:
@@ -677,8 +683,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         extension_definition['cluster'].append(galaxy_cluster)
 
     def _parse_marking_definition(
-            self, marking_definition: _MARKING_DEFINITION_TYPING
-            ) -> Union[dict, str]:
+            self, marking_definition: _MARKING_DEFINITION_TYPING) -> Union[dict, str]:
         if hasattr(marking_definition, 'definition_type'):
             definition_type = marking_definition.definition_type
             definition = marking_definition.definition[definition_type]

@@ -750,7 +750,7 @@ def stix_2_to_misp(filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = _load_stix2_content(filename)
+        bundle = _load_stix2_content(filename, invalid_objects := {})
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
@@ -759,7 +759,7 @@ def stix_2_to_misp(filename: _files_type,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
-    stix_parser.load_stix_bundle(bundle)
+    stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
     stix_parser.parse_stix_bundle(**args)
     if output_dir is None:
         output_dir = filename.parent
@@ -794,7 +794,7 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = _load_stix2_content(filename)
+        bundle = _load_stix2_content(filename, invalid_objects := {})
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
@@ -803,7 +803,7 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
-    stix_parser.load_stix_bundle(bundle)
+    stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
     stix_parser.parse_stix_bundle(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
