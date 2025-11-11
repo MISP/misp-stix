@@ -12,8 +12,7 @@ from pathlib import Path
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from stix.core import STIXPackage
-from stix2.exceptions import (
-    ExtraPropertiesError, InvalidValueError, TLPMarkingDefinitionError)
+from stix2.exceptions import InvalidValueError
 from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
@@ -46,7 +45,7 @@ def _handle_invalid_stix2_content(invalid_objects, *stix_objects):
             valid_object = stix2_parser(
                 stix_object, allow_custom=True, interoperability=True
             )
-        except (ExtraPropertiesError, TLPMarkingDefinitionError, ValueError):
+        except Exception:
             invalid_objects[stix_object['id']] = stix_object
             continue
         yield valid_object
@@ -57,22 +56,26 @@ def _handle_stix2_loading_error(
         invalid_objects: Optional[dict] = {}) -> _BUNDLE_TYPING:
     version = _get_stix2_content_version(stix2_content)
     if isinstance(stix2_content, dict):
-        if version == '2.1' and stix2_content.get('spec_version') == '2.0':
-            del stix2_content['spec_version']
-            return dict_to_stix2(
-                stix2_content, allow_custom=True, interoperability=True
-            )
-        if version == '2.0' and stix2_content.get('spec_version') == '2.1':
-            stix2_content['spec_version'] = '2.0'
-            return dict_to_stix2(
-                stix2_content, allow_custom=True, interoperability=True
-            )
-        bundle = Bundle_v21 if version == '2.1' else Bundle_v20
-        if 'objects' in stix2_content:
-            stix2_content = stix2_content['objects']
+        try:
+            if version == '2.1' and stix2_content.get('spec_version') == '2.0':
+                del stix2_content['spec_version']
+                return dict_to_stix2(
+                    stix2_content, allow_custom=True, interoperability=True
+                )
+            elif version == '2.0' and stix2_content.get('spec_version') == '2.1':
+                stix2_content['spec_version'] = '2.0'
+                return dict_to_stix2(
+                    stix2_content, allow_custom=True, interoperability=True
+                )
+        except Exception:
+            pass
+    bundle_id = stix2_content.get('id')
+    bundle = Bundle_v21 if version == '2.1' else Bundle_v20
+    if 'objects' in stix2_content:
+        stix2_content = stix2_content['objects']
     return bundle(
         *_handle_invalid_stix2_content(invalid_objects, *stix2_content),
-        allow_custom=True, interoperability=True
+        id=bundle_id, allow_custom=True, interoperability=True
     )
 
 
@@ -97,14 +100,14 @@ def _load_stix1_package(filename, tries=0):
 
 
 def _load_stix2_content(
-        filename, invalid_objects: Optional[dict] = None) -> _BUNDLE_TYPING:
+        filename, invalid_objects: Optional[dict] = {}) -> _BUNDLE_TYPING:
     with open(filename, 'rt', encoding='utf-8') as f:
         stix2_content = f.read()
     try:
         return stix2_parser(
             stix2_content, allow_custom=True, interoperability=True
         )
-    except (ExtraPropertiesError, InvalidValueError, ParseError, ValueError):
+    except (InvalidValueError, ParseError, ValueError):
         return _handle_stix2_loading_error(
            json.loads(stix2_content), invalid_objects=invalid_objects
         )
