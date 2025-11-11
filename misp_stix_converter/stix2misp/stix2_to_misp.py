@@ -14,6 +14,7 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _load_stix2_content
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from .invalid_stix_handling import InvalidMarkingDefinition
 from abc import ABCMeta
 from collections import defaultdict
 from pymisp import (
@@ -372,8 +373,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         try:
             return getattr(self, feature)[object_ref]
         except AttributeError:
+            if (invalid := self.invalid_objects.get(object_ref)) is not None:
+                if object_type == 'marking-definition':
+                    invalid = InvalidMarkingDefinition(invalid)
+                    getattr(self, f'_load{feature}')(invalid)
+                    return getattr(self, feature)[object_ref]
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
+            if (invalid := self.invalid_objects.get(object_ref)) is not None:
+                if object_type == 'marking-definition':
+                    invalid = InvalidMarkingDefinition(invalid)
+                    getattr(self, f'_load{feature}')(invalid)
+                    return getattr(self, feature)[object_ref]
             raise ObjectRefLoadingError(object_ref)
 
     def _handle_unparsed_content(self):
@@ -687,6 +698,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(marking_definition, 'definition_type'):
             definition_type = marking_definition.definition_type
             definition = marking_definition.definition[definition_type]
+            if definition.startswith(f'{definition_type}:'):
+                return definition
             return f"{definition_type}:{definition}"
         if hasattr(marking_definition, 'name'):
             # should be TLP 2.0 definition
