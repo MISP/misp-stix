@@ -13,14 +13,14 @@ files = [
 
 [[package]]
 name = "certifi"
-version = "2025.10.5"
+version = "2025.11.12"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "certifi-2025.10.5-py3-none-any.whl", hash = "sha256:0f212c2744a9bb6de0c56639a6f68afe01ecd92d91f14ae897c4fe7bbeeef0de"},
-    {file = "certifi-2025.10.5.tar.gz", hash = "sha256:47c09d31ccf2acf0be3f701ea53595ee7e0b8fa08801c6624be771df09ae7b43"},
+    {file = "certifi-2025.11.12-py3-none-any.whl", hash = "sha256:97de8790030bbd5c2d96b7ec782fc2f7820ef8dba6db909ccf95449f2d062d4b"},
+    {file = "certifi-2025.11.12.tar.gz", hash = "sha256:d8ab5478f2ecd78af242878415affce761ca6bc54a22a27e026d7c25357c3316"},
 ]
 
 [[package]]
@@ -531,14 +531,14 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "publicsuffixlist"
-version = "1.0.2.20251109"
+version = "1.0.2.20251112"
 description = "publicsuffixlist implement"
 optional = false
 python-versions = ">=3.5"
 groups = ["main"]
 files = [
-    {file = "publicsuffixlist-1.0.2.20251109-py2.py3-none-any.whl", hash = "sha256:9436fe219f3a5d7b9d15f1170b57fbca85c003fe8c41f86af66d5361c90ca98b"},
-    {file = "publicsuffixlist-1.0.2.20251109.tar.gz", hash = "sha256:b9e77ada96ffd5bb0b20063b6515b79e98ddddf772fef6692c89e37c5ae5417b"},
+    {file = "publicsuffixlist-1.0.2.20251112-py2.py3-none-any.whl", hash = "sha256:69963afcd9608b78aad89fe957c0a58cd6a9a0943f117335bb61d8c63bcf8cbd"},
+    {file = "publicsuffixlist-1.0.2.20251112.tar.gz", hash = "sha256:c8e66657960a13e9f44b271e604f9836b13360cc9418b2e9e5a3010020bba71d"},
 ]
 
 [package.extras]
