@@ -340,8 +340,8 @@ def misp_attribute_collection_to_stix1(
             except Exception as exception:
                 traceback['fails'].append(f'{filename} - {exception.__str__()}')
         if any(filename not in traceback.get('fails', []) for filename in input_files):
-            header, _, footer = _stix1_attributes_framing(
-                namespace, org, return_format, stix_package
+            header, _, footer = stix1_attributes_framing(
+                namespace, org, return_format, stix_package.version
             )
             with open(name, 'wt', encoding='utf-8') as result:
                 result.write(header)
@@ -433,8 +433,8 @@ def misp_event_collection_to_stix1(
                 _write_raw_stix(stix_package, name, *_write_args)
                 traceback.update(_generate_traceback(debug, parser, name))
             return traceback
-        header, separator, footer = _stix1_framing(
-            namespace, org, return_format, stix_package
+        header, separator, footer = stix1_framing(
+            namespace, org, return_format, stix_package.version
         )
         filename = input_files[0]
         try:
@@ -1217,6 +1217,7 @@ def _stix_to_misp(args):
         msg = f'Unable to connect to MISP instance ({error}) -'
     print(f'{msg} Saving MISP results into files instead.')
     return _process_stix_to_misp_files(args)
+
 
 def _process_stix_to_misp_files(args) -> dict:
     results = defaultdict(dict)
