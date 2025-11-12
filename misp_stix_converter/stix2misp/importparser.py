@@ -1,21 +1,14 @@
 #!/usr/bin/env python3
 
 import json
-import sys
 import traceback
 from .exceptions import UnavailableGalaxyResourcesError
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
-from mixbox.namespaces import NamespaceNotFoundError
 from pathlib import Path
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
-from stix.core import STIXPackage
-from stix2.exceptions import InvalidValueError
-from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
-from stix2.v20.bundle import Bundle as Bundle_v20
-from stix2.v21.bundle import Bundle as Bundle_v21
 from typing import Optional, Union
 from uuid import UUID, uuid5
 
@@ -30,80 +23,9 @@ _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 
-def _get_stix2_content_version(stix2_content: dict):
-    for stix_object in stix2_content['objects']:
-        if stix_object.get('spec_version'):
-            return '2.1'
-    return '2.0'
-
-
-def _handle_stix2_loading_error(stix2_content: dict):
-    version = _get_stix2_content_version(stix2_content)
-    if isinstance(stix2_content, dict):
-        if version == '2.1' and stix2_content.get('spec_version') == '2.0':
-            del stix2_content['spec_version']
-            return dict_to_stix2(
-                stix2_content, allow_custom=True, interoperability=True
-            )
-        if version == '2.0' and stix2_content.get('spec_version') == '2.1':
-            stix2_content['spec_version'] = '2.0'
-            return dict_to_stix2(
-                stix2_content, allow_custom=True, interoperability=True
-            )
-        bundle = Bundle_v21 if version == '2.1' else Bundle_v20
-        if 'objects' in stix2_content:
-            stix2_content = stix2_content['objects']
-    return bundle(*stix2_content, allow_custom=True, interoperability=True)
-
-
-def _load_stix1_package(filename, tries=0):
-    try:
-        return STIXPackage.from_xml(filename)
-    except NamespaceNotFoundError:
-        if tries > 0:
-            sys.exit('Cannot handle STIX namespace')
-        _update_namespaces()
-        return _load_stix1_package(filename, tries + 1)
-    except NotImplementedError:
-        sys.exit('Missing python library: stix_edh')
-    except Exception:
-        try:
-            import maec
-            return STIXPackage.from_xml(filename)
-        except ImportError:
-            sys.exit('Missing python library: maec')
-        except Exception as error:
-            sys.exit(f'Error while loading STIX1 package: {error.__str__()}')
-
-
-def _load_stix2_content(filename):
-    with open(filename, 'rt', encoding='utf-8') as f:
-        stix2_content = f.read()
-    try:
-        return stix2_parser(
-            stix2_content, allow_custom=True, interoperability=True
-        )
-    except (InvalidValueError, ParseError):
-        return _handle_stix2_loading_error(json.loads(stix2_content))
-
-
-def _load_json_file(path):
+def _load_json_file(path) -> dict:
     with open(path, 'rb') as f:
         return json.load(f)
-
-
-def _update_namespaces():
-    from mixbox.namespaces import Namespace, register_namespace
-    # LIST OF ADDITIONAL NAMESPACES
-    # can add additional ones whenever it is needed
-    ADDITIONAL_NAMESPACES = [
-        Namespace('http://us-cert.gov/ciscp', 'CISCP',
-                  'http://www.us-cert.gov/sites/default/files/STIX_Namespace/ciscp_vocab_v1.1.1.xsd'),
-        Namespace('http://taxii.mitre.org/messages/taxii_xml_binding-1.1', 'TAXII',
-                  'http://docs.oasis-open.org/cti/taxii/v1.1.1/cs01/schemas/TAXII-XMLMessageBinding-Schema.xsd')
-    ]
-    for namespace in ADDITIONAL_NAMESPACES:
-        register_namespace(namespace)
 
 
 class ExternalSTIXtoMISPParser(metaclass=ABCMeta):

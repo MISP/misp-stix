@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 import sys
+from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
     MarkingDefinitionLoadingError, ObjectRefLoadingError,
     ObjectTypeLoadingError, SynonymsResourceJSONError,
@@ -12,8 +13,9 @@ from .exceptions import (
     UnknownParsingFunctionError, UnknownPatternTypeError,
     UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
-from .importparser import STIXtoMISPParser, _load_stix2_content
+from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from .invalid_stix_handling import InvalidMarkingDefinition
 from abc import ABCMeta
 from collections import defaultdict
 from pymisp import (
@@ -78,7 +80,7 @@ _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
 ]
 _MARKING_DEFINITION_TYPING = Union[
-    MarkingDefinition_v20, MarkingDefinition_v21
+    MarkingDefinition_v20, MarkingDefinition_v21, dict
 ]
 _NOTE_TYPING = Union[
     MISPEventReport, Note, CustomObject_v20, dict
@@ -136,7 +138,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._tool: dict
         self._vulnerability: dict
 
-    def load_stix_bundle(self, bundle: _BUNDLE_TYPING):
+    def load_stix_bundle(self, bundle: Bundle_v20 | Bundle_v21,
+                         invalid_objects: Optional[dict] = {}):
+        self.__invalid_objects = invalid_objects
         self._identifier = bundle.id
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
         self._load_stix_bundle(bundle)
@@ -144,10 +148,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
-            bundle = _load_stix2_content(filename)
+            bundle = load_stix2_file(filename, invalid_objects := {})
         except Exception as exception:
             sys.exit(exception)
-        self.load_stix_bundle(bundle)
+        self.load_stix_bundle(bundle, invalid_objects=invalid_objects)
         del bundle
         self.parse_stix_bundle(**kwargs)
 
@@ -214,6 +218,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @property
     def indicator_references(self) -> dict:
         return getattr(self, '_indicator_references', {})
+
+    @property
+    def invalid_objects(self) -> dict:
+        return self.__invalid_objects
 
     @property
     def stix_version(self) -> str:
@@ -379,8 +387,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         try:
             return getattr(self, feature)[object_ref]
         except AttributeError:
+            if (invalid := self.invalid_objects.get(object_ref)) is not None:
+                if object_type == 'marking-definition':
+                    invalid = InvalidMarkingDefinition(invalid)
+                    getattr(self, f'_load{feature}')(invalid)
+                    return getattr(self, feature)[object_ref]
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
+            if (invalid := self.invalid_objects.get(object_ref)) is not None:
+                if object_type == 'marking-definition':
+                    invalid = InvalidMarkingDefinition(invalid)
+                    getattr(self, f'_load{feature}')(invalid)
+                    return getattr(self, feature)[object_ref]
             raise ObjectRefLoadingError(object_ref)
 
     def _handle_object(self, object_type: str, object_ref: str):
@@ -767,11 +785,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
 
     def _parse_marking_definition(
-            self, marking_definition: _MARKING_DEFINITION_TYPING
-            ) -> Union[dict, str]:
+            self, marking_definition: _MARKING_DEFINITION_TYPING) -> Union[dict, str]:
         if hasattr(marking_definition, 'definition_type'):
             definition_type = marking_definition.definition_type
             definition = marking_definition.definition[definition_type]
+            if definition.startswith(f'{definition_type}:'):
+                return definition
             return f"{definition_type}:{definition}"
         if hasattr(marking_definition, 'name'):
             # should be TLP 2.0 definition

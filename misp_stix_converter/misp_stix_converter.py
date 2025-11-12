@@ -3,32 +3,24 @@
 
 import json
 import os
-import sys
 import urllib3
-from .misp2stix.framing import (
-    _stix1_attributes_framing, _stix1_framing, _handle_namespaces,
-    _create_stix_package)
 from .misp2stix.misp_to_stix1 import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser)
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
-from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
-from .stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
-from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
-from .stix2misp.importparser import (
-    _load_stix1_package, _load_stix2_content, MISP_org_uuid)
-from .stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
-from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
+from .stix2misp.importparser import MISP_org_uuid
+from .tools.stix1_framing import (
+    stix1_attributes_framing, stix1_framing, _create_stix_package)
+from .tools.stix1_loading_helpers import load_stix1_package
+from .tools.stix1_to_misp_helpers import get_stix1_parser, is_stix1_from_misp
+from .tools.stix1_writing_helpers import (
+    write_campaigns, write_courses_of_action, write_events, write_indicators,
+    write_observables, write_threat_actors, write_ttps, _write_raw_stix)
+from .tools.stix2_loading_helpers import load_stix2_file
+from .tools.stix2_to_misp_helpers import get_stix2_parser, is_stix2_from_misp
 from collections import defaultdict
-from cybox.core.observable import Observables
-from mixbox import idgen
-from mixbox.namespaces import (
-    Namespace, NamespaceNotFoundError, register_namespace)
 from pathlib import Path
 from pymisp import MISPEvent, PyMISP, PyMISPError
-from stix.core import (
-    Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXPackage)
-from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
@@ -36,23 +28,19 @@ from typing import List, Optional, Union
 from uuid import uuid4
 
 urllib3.disable_warnings()
-_cybox_features = (
-    'cybox_major_version', 'cybox_minor_version', 'cybox_update_version'
-)
+
 _default_namespace = 'https://misp-project.org'
 _default_org = 'MISP'
 _files_type = Union[Path, str]
-_MISP_STIX_tags = ('misp:tool="MISP-STIX-Converter"', 'misp:tool="misp2stix2"')
 _STIX1_default_format = 'xml'
 _STIX1_default_version = '1.1.1'
 _STIX1_features = (
-    'campaigns', 'courses_of_action', 'exploit_targets', 'indicators',
-    'observables', 'threat_actors', 'ttps'
+    'campaigns', 'courses_of_action', 'exploit_targets',
+    'indicators', 'observables', 'threat_actors', 'ttps'
 )
 _STIX1_valid_formats = ('json', 'xml')
 _STIX1_valid_versions = ('1.1.1', '1.2')
 _STIX2_default_version = '2.1'
-_STIX2_event_types = ('grouping', 'report')
 _STIX2_valid_versions = ('2.0', '2.1')
 
 
@@ -324,8 +312,8 @@ def misp_attribute_collection_to_stix1(
                 for feature in _STIX1_features:
                     values = getattr(package, feature)
                     if values:
-                        content = globals()[f'_get_{feature}'](values, return_format)
-                        if not content:
+                        content = globals()[f'write_{feature}'](values, return_format)
+                        if not content.strip():
                             continue
                         filename = getattr(handler, feature)
                         if filename is None:
@@ -340,8 +328,8 @@ def misp_attribute_collection_to_stix1(
             except Exception as exception:
                 traceback['fails'].append(f'{filename} - {exception.__str__()}')
         if any(filename not in traceback.get('fails', []) for filename in input_files):
-            header, _, footer = _stix1_attributes_framing(
-                namespace, org, return_format, stix_package
+            header, _, footer = stix1_attributes_framing(
+                namespace, org, return_format, stix_package.version
             )
             with open(name, 'wt', encoding='utf-8') as result:
                 result.write(header)
@@ -433,15 +421,15 @@ def misp_event_collection_to_stix1(
                 _write_raw_stix(stix_package, name, *_write_args)
                 traceback.update(_generate_traceback(debug, parser, name))
             return traceback
-        header, separator, footer = _stix1_framing(
-            namespace, org, return_format, stix_package
+        header, separator, footer = stix1_framing(
+            namespace, org, return_format, stix_package.version
         )
         filename = input_files[0]
         try:
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
             parser.parse_json_file(filename)
-            content = _get_events(parser.stix_package, return_format)
+            content = write_events(parser.stix_package, return_format)
             with open(name, 'wt', encoding='utf-8') as f:
                 f.write(f'{header}{content}')
         except Exception as exception:
@@ -451,7 +439,7 @@ def misp_event_collection_to_stix1(
                 if not isinstance(filename, Path):
                     filename = Path(filename).resolve()
                 parser.parse_json_file(filename)
-                content = _get_events(parser.stix_package, return_format)
+                content = write_events(parser.stix_package, return_format)
                 with open(name, 'at', encoding='utf-8') as f:
                     f.write(f'{separator}{content}')
             except Exception as exception:
@@ -656,11 +644,11 @@ def stix_1_to_misp(filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        stix_package = _load_stix1_package(filename)
+        stix_package = load_stix1_package(filename)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    parser, args = _get_stix1_parser(
-        _is_stix1_from_misp(stix_package), distribution, sharing_group_id,
+    parser, args = get_stix1_parser(
+        is_stix1_from_misp(stix_package), distribution, sharing_group_id,
         title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
@@ -700,11 +688,11 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        stix_package = _load_stix1_package(filename)
+        stix_package = load_stix1_package(filename)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    parser, args = _get_stix1_parser(
-        _is_stix1_from_misp(stix_package), distribution, sharing_group_id,
+    parser, args = get_stix1_parser(
+        is_stix1_from_misp(stix_package), distribution, sharing_group_id,
         title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
@@ -750,16 +738,16 @@ def stix_2_to_misp(filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = _load_stix2_content(filename)
+        bundle = load_stix2_file(filename, invalid_objects := {})
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    parser, args = _get_stix2_parser(
-        _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
+    parser, args = get_stix2_parser(
+        is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
         title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
-    stix_parser.load_stix_bundle(bundle)
+    stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
     stix_parser.parse_stix_bundle(**args)
     if output_dir is None:
         output_dir = filename.parent
@@ -794,16 +782,16 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = _load_stix2_content(filename)
+        bundle = load_stix2_file(filename, invalid_objects := {})
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    parser, args = _get_stix2_parser(
-        _is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
+    parser, args = get_stix2_parser(
+        is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
         title, producer, force_contextual_data, galaxies_as_tags, single_event,
         organisation_uuid, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
-    stix_parser.load_stix_bundle(bundle)
+    stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
     stix_parser.parse_stix_bundle(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
@@ -825,337 +813,6 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
     return _generate_traceback(
         debug, stix_parser, *event_ids, errors=list(errors)
     )
-
-
-################################################################################
-#                        STIX CONTENT LOADING FUNCTIONS                        #
-################################################################################
-
-def _get_stix1_parser(
-        from_misp: bool, distribution: int, sharing_group_id: Union[int, None],
-        title: Union[str, None], producer: Union[str, None],
-        force_contextual_data: bool, galaxies_as_tags: bool, single_event: bool,
-        organisation_uuid: str, cluster_distribution: int,
-        cluster_sharing_group_id: Union[int, None]) -> tuple:
-    args = {
-        'distribution': distribution,
-        'force_contextual_data': force_contextual_data,
-        'galaxies_as_tags': galaxies_as_tags,
-        'producer': producer,
-        'sharing_group_id': sharing_group_id,
-        'single_event': single_event,
-        'title': title
-    }
-    if from_misp:
-        return InternalSTIX1toMISPParser, args
-    args.update(
-        {
-            'cluster_distribution': cluster_distribution,
-            'cluster_sharing_group_id': cluster_sharing_group_id,
-            'organisation_uuid': organisation_uuid
-        }
-    )
-    return ExternalSTIX1toMISPParser, args
-
-
-def _get_stix2_parser(
-        from_misp: bool, distribution: int, sharing_group_id: Union[int, None],
-        title: Union[str, None], producer: Union[str, None],
-        force_contextual_data: bool, galaxies_as_tags: bool, single_event: bool,
-        organisation_uuid: str, cluster_distribution: int,
-        cluster_sharing_group_id: Union[int, None]) -> tuple:
-    args = {
-        'distribution': distribution,
-        'force_contextual_data': force_contextual_data,
-        'galaxies_as_tags': galaxies_as_tags,
-        'producer': producer,
-        'sharing_group_id': sharing_group_id,
-        'single_event': single_event,
-        'title': title
-    }
-    if from_misp:
-        return InternalSTIX2toMISPParser, args
-    args.update(
-        {
-            'cluster_distribution': cluster_distribution,
-            'cluster_sharing_group_id': cluster_sharing_group_id,
-            'organisation_uuid': organisation_uuid
-        }
-    )
-    return ExternalSTIX2toMISPParser, args
-
-
-def _is_stix1_from_misp(stix_package: STIXPackage) -> bool:
-    try:
-        title = stix_package.stix_header.title
-    except AttributeError:
-        return False
-    return 'Export from ' in title and 'MISP' in title
-
-
-def _is_stix2_from_misp(stix_objects: list):
-    for stix_object in stix_objects:
-        labels = stix_object.get('labels', [])
-        if stix_object['type'] not in _STIX2_event_types or not labels:
-            continue
-        if any(tag in labels for tag in _MISP_STIX_tags):
-            return True
-    return False
-
-
-def _load_stix_event(filename, tries=0):
-    try:
-        return STIXPackage.from_xml(filename)
-    except NamespaceNotFoundError:
-        if tries == 1:
-            return 4
-        _update_namespaces()
-        return _load_stix_event(filename, 1)
-    except NotImplementedError:
-        print('ERROR - Missing python library: stix_edh', file=sys.stderr)
-        return 5
-    except Exception:
-        try:
-            import maec
-            return 2
-        except ImportError:
-            print('ERROR - Missing python library: maec', file=sys.stderr)
-            return 3
-    return 0
-
-
-def _update_namespaces():
-    # LIST OF ADDITIONAL NAMESPACES
-    # can add additional ones whenever it is needed
-    ADDITIONAL_NAMESPACES = [
-        Namespace(
-            'http://us-cert.gov/ciscp', 'CISCP',
-            'http://www.us-cert.gov/sites/default/files/STIX_Namespace/'
-            'ciscp_vocab_v1.1.1.xsd'
-        ),
-        Namespace(
-            'http://taxii.mitre.org/messages/taxii_xml_binding-1.1', 'TAXII',
-            'http://docs.oasis-open.org/cti/taxii/v1.1.1/cs01/schemas/'
-            'TAXII-XMLMessageBinding-Schema.xsd'
-        )
-    ]
-    for namespace in ADDITIONAL_NAMESPACES:
-        register_namespace(namespace)
-
-
-################################################################################
-#                        STIX CONTENT WRITING FUNCTIONS                        #
-################################################################################
-
-def _format_xml_objects(
-        objects: str, header_length=0, footer_length=0, to_replace='\n',
-        replacement='\n    ') -> str:
-    if footer_length == 0:
-        return f'    {objects[header_length:].replace(to_replace, replacement)}\n'
-    return f'    {objects[header_length:-footer_length].replace(to_replace, replacement)}\n'
-
-
-def _get_campaigns(campaigns: Campaigns, return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        campaigns = campaigns.to_xml(include_namespaces=True).decode()
-        return _format_xml_objects(
-            campaigns, header_length=21, footer_length=23
-        )
-    return ', '.join(campaign.to_json() for campaign in campaigns.campaign)
-
-
-def _get_campaigns_footer(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    </stix:Campaigns>\n'
-    return ']'
-
-
-def _get_campaigns_header(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    <stix:Campaigns>\n'
-    return '"campaigns": ['
-
-
-def _get_courses_of_action(
-        courses_of_action: CoursesOfAction, return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        courses_of_action = courses_of_action.to_xml(
-            include_namespaces=False).decode()
-        return _format_xml_objects(
-            courses_of_action, header_length=27, footer_length=29
-        )
-    return ', '.join(
-        course_of_action.to_json() for course_of_action
-        in courses_of_action.course_of_action
-    )
-
-
-def _get_courses_of_action_footer(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    </stix:Courses_Of_Action>\n'
-    return ']'
-
-
-def _get_courses_of_action_header(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    <stix:Courses_Of_Action>\n'
-    return '"courses_of_action": ['
-
-
-def _get_events(package: STIXPackage, return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        if package.related_packages is not None:
-            length = 135 + len(package.id_) + len(package.version)
-            return package.to_xml(include_namespaces=False).decode()[length:-82]
-        content = '\n            '.join(
-            package.to_xml(include_namespaces=False).decode().split('\n')
-        )
-        return f'            {content}\n'
-    if package.related_packages is not None:
-        return ', '.join(
-            related_package.to_json() for related_package
-            in package.related_packages
-        )
-    return json.dumps({'package': package.to_dict()})
-
-
-def _get_indicators(indicators: Indicators, return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        indicators = indicators.to_xml(include_namespaces=False).decode()
-        return _format_xml_objects(
-            indicators, header_length=22, footer_length=24
-        )
-    return f"{', '.join(indctr.to_json() for indctr in indicators.indicator)}"
-
-
-def _get_indicators_footer(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    </stix:Indicators>\n'
-    return ']'
-
-
-def _get_indicators_header(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    <stix:Indicators>\n'
-    return '"indicators": ['
-
-
-def _get_observables(
-        observables: Observables, return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        header_length = 20
-        for field in _cybox_features:
-            if getattr(observables, field, None) is not None:
-                header_length += len(field) + len(getattr(observables, field)) + 4
-        observables = observables.to_xml(include_namespaces=False).decode()
-        return _format_xml_objects(
-            observables, header_length=header_length, footer_length=22
-        )
-    return f"{', '.join(obs.to_json() for obs in observables.observables)}"
-
-
-def _get_observables_footer(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    </stix:Observables>\n'
-    return ']'
-
-
-def _get_observables_header(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        observables = Observables()
-        versions = ' '.join(
-            f'{feature}="{getattr(observables, feature)}"'
-            for feature in _cybox_features
-        )
-        return f'    <stix:Observables {versions}>\n'
-    return '"observables": ['
-
-
-def _get_threat_actors(
-        threat_actors: ThreatActors, return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        threat_actors = threat_actors.to_xml(include_namespaces=False).decode()
-        return _format_xml_objects(
-            threat_actors, header_length=24, footer_length=26
-        )
-    return ', '.join(
-        threat_actor.to_json() for threat_actor in threat_actors.threat_actor
-    )
-
-
-def _get_threat_actors_footer(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    </stix:Threat_Actors>\n'
-    return ']'
-
-
-def _get_threat_actors_header(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    <stix:Threat_Actors>\n'
-    return '"threat_actors": ['
-
-
-def _get_ttps(ttps: TTPs, return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        ttps = ttps.to_xml(include_namespaces=False).decode()
-        return _format_xml_objects(ttps, header_length=16, footer_length=18)
-    return ', '.join(ttp.to_json() for ttp in ttps.ttp)
-
-
-def _get_ttps_footer(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    </stix:TTPs>\n'
-    return ']}'
-
-
-def _get_ttps_header(return_format: str = 'xml') -> str:
-    if return_format == 'xml':
-        return '    <stix:TTPs>\n'
-    return '"ttps": {"ttps": ['
-
-
-def _write_header(
-        package: STIXPackage, filename: str, namespace: str, org: str,
-        return_format: str) -> str:
-    namespaces = namespaces = {namespace: org}
-    namespaces.update(NS_DICT)
-    try:
-        idgen.set_id_namespace(Namespace(namespace, org))
-    except TypeError:
-        idgen.set_id_namespace(Namespace(namespace, org, "MISP"))
-    if return_format == 'xml':
-        xml_package = package.to_xml(
-            auto_namespace=False, ns_dict=namespaces,
-            schemaloc_dict=SCHEMALOC_DICT
-        ).decode()
-        with open(filename, 'wt', encoding='utf-8') as f:
-            f.write(xml_package[:-21])
-        return xml_package[-21:]
-    json_package = package.to_json()
-    with open(filename, 'wt', encoding='utf-8') as f:
-        f.write(
-            f'{json_package[:-1]}, "related_packages"'
-            f': {json.dumps({"related_packages": []})[:-2]}'
-        )
-    return ']}}'
-
-
-def _write_raw_stix(
-        package: STIXPackage, filename: _files_type, namespace: str,
-        org: str, return_format: str) -> bool:
-    if return_format == 'xml':
-        namespaces = _handle_namespaces(namespace, org)
-        with open(filename, 'wb') as f:
-            f.write(
-                package.to_xml(
-                    auto_namespace=False,
-                    ns_dict=namespaces,
-                    schemaloc_dict=SCHEMALOC_DICT
-                )
-            )
-    else:
-        with open(filename, 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(package.to_dict(), indent=4))
 
 
 ################################################################################
@@ -1217,6 +874,7 @@ def _stix_to_misp(args):
         msg = f'Unable to connect to MISP instance ({error}) -'
     print(f'{msg} Saving MISP results into files instead.')
     return _process_stix_to_misp_files(args)
+
 
 def _process_stix_to_misp_files(args) -> dict:
     results = defaultdict(dict)

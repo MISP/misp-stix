@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
-from .importparser import STIXtoMISPParser, _load_stix1_package
+from ..tools.stix1_loading_helpers import load_stix1_package
+from .importparser import STIXtoMISPParser
 from .stix1_mapping import STIX1toMISPMapping
 from abc import ABCMeta
 from base64 import b64decode, b64encode
@@ -60,7 +61,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self.__stix_package = stix_package
 
     def parse_stix_content(self, filename: Union[Path, str], **kwargs):
-        self.__stix_package = _load_stix1_package(filename)
+        self.__stix_package = load_stix1_package(filename)
         self.parse_stix_package(**kwargs)
 
     ############################################################################

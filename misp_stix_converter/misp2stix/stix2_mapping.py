@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .. import Mapping
+from ..misp_stix_mapping import Mapping
 from .stix_mapping import MISPtoSTIXMapping
 from pymisp.abstract import describe_types
 from typing import Union

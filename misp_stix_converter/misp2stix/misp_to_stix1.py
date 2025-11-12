@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import json
 import re
 import socket
 from .exportparser import MISPtoSTIXParser
-from .framing import _create_stix_package as _stix_package
+from ..tools.stix1_framing import _create_stix_package
 from .stix1_mapping import MISPtoSTIX1Mapping
 from abc import ABCMeta
 from base64 import b64encode
@@ -188,9 +187,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_attachment(self, attribute: dict):
         if attribute.get('data'):
             observable = self._create_attachment_observable(
-                attribute['value'],
-                attribute['data'],
-                attribute['uuid']
+                attribute['value'], attribute['data'], attribute['uuid']
             )
             self._handle_attribute(attribute, observable)
         else:
@@ -225,10 +222,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
-        custom_object.custom_properties.append(self._create_property(
-            attribute['type'],
-            attribute['value']
-        ))
+        custom_object.custom_properties.append(
+            self._create_property(attribute['type'], attribute['value'])
+        )
         observable = self._create_observable(custom_object, attribute['uuid'], 'Custom')
         self._handle_attribute(attribute, observable)
 
@@ -241,21 +237,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if separator in attribute['value']:
                 domain, ip = attribute['value'].split(separator)
                 domain_observable = self._create_domain_observable(
-                    domain,
-                    attribute['uuid'],
+                    domain, attribute['uuid'],
                     alternative_uuid=uuid5(UUID(attribute['uuid']), domain)
                 )
                 address_observable = self._create_address_observable(
-                    attribute['type'],
-                    ip,
-                    attribute['uuid'],
+                    attribute['type'], ip, attribute['uuid'],
                     alternative_uuid=uuid5(UUID(attribute['uuid']), ip)
                 )
                 observable = self._create_observable_composition(
-                    [
-                        domain_observable,
-                        address_observable
-                    ],
+                    [domain_observable, address_observable],
                     attribute['uuid']
                 )
                 self._handle_attribute(attribute, observable)
@@ -783,7 +773,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         address_object.address_value.condition = condition
         return address_object
 
-    def _create_address_observable(self, feature: str, value: str, uuid: str, alternative_uuid: Optional[str] = None) -> Observable:
+    def _create_address_observable(self, feature: str, value: str, uuid: str,
+                                   alternative_uuid: Optional[str] = None) -> Observable:
         address_object = self._create_address_object(feature, value)
         observable = self._create_observable(address_object, uuid, 'Address', alternative_uuid)
         return observable
@@ -832,7 +823,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         domain_object.value.condition = "Equals"
         return domain_object
 
-    def _create_domain_observable(self, domain: str, uuid: str, alternative_uuid: Optional[str] = None) -> Observable:
+    def _create_domain_observable(self, domain: str, uuid: str,
+                                  alternative_uuid: Optional[str] = None) -> Observable:
         domain_object = self._create_domain_object(domain)
         observable = self._create_observable(domain_object, uuid, 'DomainName', alternative_uuid)
         return observable
@@ -874,7 +866,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         information_source = InformationSource(identity=identity)
         return information_source
 
-    def _create_malware_sample_observable(self, filename: str, data: BytesIO, uuid: str) -> Observable:
+    def _create_malware_sample_observable(self, filename: str, data: BytesIO,
+                                          uuid: str) -> Observable:
         artifact_object = self._create_artifact_object(data)
         for separator in self.composite_separators:
             if separator in filename:
@@ -894,7 +887,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         mutex_object.name.condition = "Equals"
         return mutex_object
 
-    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str, alternative_uuid: Optional[str] = None) -> Observable:
+    def _create_observable(
+            self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str,
+            feature: str, alternative_uuid: Optional[str] = None) -> Observable:
         stix_object.parent.id_ = f"{self._orgname_id}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
         if alternative_uuid is None:
@@ -902,7 +897,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable.id_ = f"{self._orgname_id}:Observable-{alternative_uuid}"
         return observable
 
-    def _create_observable_composition(self, observables: list, uuid: str, name: Optional[str] = None) -> Observable:
+    def _create_observable_composition(self, observables: list, uuid: str,
+                                       name: Optional[str] = None) -> Observable:
         object_type = 'ObservableComposition' if name is None else f'{name}_ObservableComposition'
         observable_composition = ObservableComposition(observables=observables)
         observable_composition.operator = 'AND'
@@ -917,7 +913,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         port_object.port_value.condition = "Equals"
         return port_object
 
-    def _create_port_observable(self, port: str, uuid: str, feature: Optional[str] = None) -> Observable:
+    def _create_port_observable(self, port: str, uuid: str,
+                                feature: Optional[str] = None) -> Observable:
         object_type = 'Port'
         if feature is not None:
             object_type = f'{feature}{object_type}'
@@ -941,7 +938,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return registry_key
 
     @staticmethod
-    def _create_related_coa(coa_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedCOA:
+    def _create_related_coa(coa_id: str, category: str,
+                            timestamp: Optional[datetime] = None) -> RelatedCOA:
         coa = CourseOfAction(idref=coa_id)
         if timestamp is not None:
             coa.timestamp = timestamp
@@ -949,14 +947,17 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return related_coa
 
     @staticmethod
-    def _create_related_ttp(ttp_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
+    def _create_related_ttp(ttp_id: str, category: str,
+                            timestamp: Optional[datetime] = None) -> RelatedTTP:
         rttp = TTP(idref=ttp_id)
         if timestamp is not None:
             rttp.timestamp = timestamp
         related_ttp = RelatedTTP(rttp, relationship=category)
         return related_ttp
 
-    def _create_socket_address_object(self, hostname: Optional[str] = None, ip: Optional[tuple] = None, port: Optional[str] = None) -> SocketAddress:
+    def _create_socket_address_object(
+            self, hostname: Optional[str] = None, ip: Optional[tuple] = None,
+            port: Optional[str] = None) -> SocketAddress:
         socket_address_object = SocketAddress()
         if hostname is not None:
             socket_address_object.hostname = self._create_hostname_object(hostname)
@@ -1022,12 +1023,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _set_group_list(
-        account_object: Union[UnixUserAccount, WinUser],
-        attributes: dict,
+        account_object: Union[UnixUserAccount, WinUser], attributes: dict,
         group_list_class: Union[UnixGroupList, WinGroupList],
-        group_class: Union[UnixGroup, WinGroup],
-        feature: str
-    ):
+        group_class: Union[UnixGroup, WinGroup], feature: str):
         group_list = group_list_class()
         groups = attributes.pop('group')
         try:
@@ -1152,7 +1150,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _parse_json_content(self, json_content: dict):
         if json_content.get('response'):
-            package = _stix_package(self._orgname, self._version, header=False)
+            package = _create_stix_package(
+                self._orgname, self._version, header=False
+            )
             for event in json_content['response']:
                 self.parse_misp_event(event)
                 package.add_related_package(self._stix_package)

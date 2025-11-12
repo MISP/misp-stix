@@ -1,38 +1,22 @@
-__version__ = '2025.10.21'
+__version__ = '2025.11.12'
 
 import argparse
-from .misp_stix_mapping import Mapping # noqa
-from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser # noqa
-from .misp2stix import MISPtoSTIX1Mapping # noqa
-from .misp2stix import MISPtoSTIX20Parser, MISPtoSTIX21Parser # noqa
-from .misp2stix import MISPtoSTIX20Mapping, MISPtoSTIX21Mapping # noqa
-from .misp2stix import stix1_attributes_framing, stix1_framing # noqa
-from .misp2stix import stix20_framing, stix21_framing # noqa
+from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser  # noqa
+from .misp2stix import MISPtoSTIX1Mapping  # noqa
+from .misp2stix import MISPtoSTIX20Parser, MISPtoSTIX21Parser  # noqa
+from .misp2stix import MISPtoSTIX20Mapping, MISPtoSTIX21Mapping  # noqa
 # Helpers
-from .misp_stix_converter import ( # noqa
-    _get_stix2_parser, _is_stix1_from_misp, _is_stix2_from_misp,
+from .misp_stix_converter import (  # noqa
     misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
     stix_1_to_misp, stix_2_to_misp, stix2_to_misp_instance)
-# STIX 1 special helpers
-from .misp_stix_converter import ( # noqa
-    _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
-    _get_observables, _get_threat_actors, _get_ttps)
-# STIX 1 footers
-from .misp_stix_converter import ( # noqa
-    _get_campaigns_footer, _get_courses_of_action_footer, _get_indicators_footer,
-    _get_observables_footer, _get_threat_actors_footer, _get_ttps_footer)
-# STIX 1 headers
-from .misp_stix_converter import ( # noqa
-    _get_campaigns_header, _get_courses_of_action_header, _get_indicators_header,
-    _get_observables_header, _get_threat_actors_header, _get_ttps_header)
 # Command line methods
-from .misp_stix_converter import _misp_to_stix, _stix_to_misp # noqa
-from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser # noqa
-from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping # noqa
+from .misp_stix_converter import _misp_to_stix, _stix_to_misp  # noqa
+from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser  # noqa
+from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping  # noqa
 from .stix2misp import ExternalSTIX2Mapping  # noqa
-from .stix2misp import STIX2PatternParser # noqa
-from .stix2misp import MISP_org_uuid # noqa
+from .stix2misp import STIX2PatternParser  # noqa
+from .stix2misp import MISP_org_uuid  # noqa
 from pathlib import Path
 
 
