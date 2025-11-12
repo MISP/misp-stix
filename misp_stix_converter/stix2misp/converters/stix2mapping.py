@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ... import Mapping
-from abc import ABCMeta
+from ...misp_stix_mapping import Mapping
 from typing import Union
 
 

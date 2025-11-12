@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ... import Mapping
+from ...misp_stix_mapping import Mapping
 from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
 from pymisp import MISPEventReport

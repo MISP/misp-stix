@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .. import Mapping
+from ..misp_stix_mapping import Mapping
 from .stix2_mapping import MISPtoSTIX2Mapping
 from stix2.v21.common import MarkingDefinition, TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
 from typing import Union

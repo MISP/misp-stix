@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ... import Mapping
+from ...misp_stix_mapping import Mapping
 from ..exceptions import UnknownParsingFunctionError
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,

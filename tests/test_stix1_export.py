@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import unittest
 from base64 import b64encode
 from datetime import datetime, timezone
 from misp_stix_converter import (MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
@@ -13,7 +12,6 @@ from .test_events import *
 from ._test_stix import TestSTIX
 from ._test_stix_export import TestCollectionSTIX1Export
 
-_DEFAULT_NAMESPACE = 'https://github.com/MISP/MISP'
 _DEFAULT_ORGNAME = 'MISP-Project'
 _ORGNAME_ID = re.sub('[\W]+', '', _DEFAULT_ORGNAME.replace(' ', '_'))
 

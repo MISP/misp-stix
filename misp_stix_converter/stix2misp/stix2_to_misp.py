@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 import sys
+from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
     MarkingDefinitionLoadingError, ObjectRefLoadingError,
     ObjectTypeLoadingError, SynonymsResourceJSONError,
@@ -12,7 +13,7 @@ from .exceptions import (
     UnknownParsingFunctionError, UnknownPatternTypeError,
     UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
-from .importparser import STIXtoMISPParser, _load_stix2_content
+from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .invalid_stix_handling import InvalidMarkingDefinition
 from abc import ABCMeta
@@ -164,7 +165,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
-            bundle = _load_stix2_content(filename, invalid_objects := {})
+            bundle = load_stix2_file(filename, invalid_objects := {})
         except Exception as exception:
             sys.exit(exception)
         self.load_stix_bundle(bundle, invalid_objects=invalid_objects)
