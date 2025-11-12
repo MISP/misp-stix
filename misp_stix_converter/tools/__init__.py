@@ -8,6 +8,7 @@ from .stix1_writing_helpers import (  # noqa
     write_courses_of_action, write_courses_of_action_footer,
     write_courses_of_action_header, write_events,
     write_indicators, write_indicators_footer, write_indicators_header,
+    write_observables, write_observables_footer, write_observables_header,
     write_threat_actors, write_threat_actors_footer, write_threat_actors_header,
     write_ttps, write_ttps_footer, write_ttps_header)
 from .stix2_framing import stix20_framing, stix21_framing  # noqa
@@ -23,6 +24,7 @@ __all__ = [
     'write_courses_of_action', 'write_courses_of_action_footer',
     'write_courses_of_action_header', 'write_events',
     'write_indicators', 'write_indicators_footer', 'write_indicators_header',
+    'write_observables', 'write_observables_footer', 'write_observables_header',
     'write_threat_actors', 'write_threat_actors_footer', 'write_threat_actors_header',
     'write_ttps', 'write_ttps_footer', 'write_ttps_header'
 ]
