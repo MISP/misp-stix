@@ -49,10 +49,12 @@ _STIX_OBJECT_TYPING = Union[
         ('x_misp_author', StringProperty()),
         ('x_misp_language', StringProperty()),
         (
-            'object_ref',
-            ReferenceProperty(
-                valid_types=list(_ANALYST_DATA_REFERENCE_TYPES),
-                spec_version='2.0'
+            'object_refs',
+            ListProperty(
+                ReferenceProperty(
+                    valid_types=list(_ANALYST_DATA_REFERENCE_TYPES),
+                    spec_version='2.0'
+                )
             )
         )
     ]
@@ -71,10 +73,12 @@ class CustomAnalystNote:
         ('x_misp_author', StringProperty()),
         ('x_misp_comment', StringProperty()),
         (
-            'object_ref',
-            ReferenceProperty(
-                valid_types=list(_ANALYST_DATA_REFERENCE_TYPES),
-                spec_version='2.0'
+            'object_refs',
+            ListProperty(
+                ReferenceProperty(
+                    valid_types=list(_ANALYST_DATA_REFERENCE_TYPES),
+                    spec_version='2.0'
+                )
             )
         )
     ]
@@ -238,13 +242,15 @@ class CustomNote:
         ('x_misp_opinion', StringProperty(required=True)),
         ('x_misp_source', StringProperty()),
         (
-            'object_ref',
-            ReferenceProperty(
-                valid_types=[
-                    'campaign', 'indicator', 'observed-data',
-                    'vulnerability', 'x-misp-attribute'
-                ],
-                spec_version='2.0'
+            'object_refs',
+            ListProperty(
+                ReferenceProperty(
+                    valid_types=[
+                        'campaign', 'indicator', 'observed-data',
+                        'vulnerability', 'x-misp-attribute'
+                    ],
+                    spec_version='2.0'
+                )
             )
         )
     ]
@@ -308,45 +314,46 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
 
-    def _handle_note_data(self, stix_object: _STIX_OBJECT_TYPING,
-                          note: MISPNote | dict):
+    def _handle_note_data(self, note: MISPNote | dict,
+                          *stix_objects: tuple[_STIX_OBJECT_TYPING]):
         note_args = {
             'id': f"x-misp-analyst-note--{note['uuid']}",
-            'object_ref': stix_object['id'], 'x_misp_note': note['note'],
-            **dict(self._handle_analyst_time_fields(stix_object, note))
+            'object_refs': [obj['id'] for obj in stix_objects],
+            'x_misp_note': note['note'],
+            **dict(self._handle_analyst_time_fields(stix_objects[0], note))
         }
         if note.get('authors'):
             note_args['x_misp_author'] = note['authors']
         if note.get('language'):
             note_args['x_misp_language'] = note['language']
-        if stix_object['id'].startswith('x-misp-'):
+        if any(obj['id'].startswith('x-misp-') for obj in stix_objects):
             note_args['allow_custom'] = True
         getattr(self, self._results_handling_method)(
             CustomAnalystNote(**note_args)
         )
 
-    def _handle_opinion_data(self, stix_object: _STIX_OBJECT_TYPING,
-                             opinion: MISPOpinion | dict):
+    def _handle_opinion_data(self, opinion: MISPOpinion | dict,
+                             *stix_objects: tuple[_STIX_OBJECT_TYPING]):
         opinion_args = {
             'id': f"x-misp-analyst-opinion--{opinion['uuid']}",
-            'object_ref': stix_object['id'],
+            'object_refs': [obj['id'] for obj in stix_objects],
             'x_misp_opinion': opinion['opinion'],
-            **dict(self._handle_analyst_time_fields(stix_object, opinion))
+            **dict(self._handle_analyst_time_fields(stix_objects[0], opinion))
         }
         if opinion.get('authors'):
             opinion_args['x_misp_author'] = opinion['authors']
         if opinion.get('comment'):
             opinion_args['x_misp_comment'] = opinion['comment']
-        if stix_object['id'].startswith('x-misp-'):
+        if any(obj['id'].startswith('x-misp-') for obj in stix_objects):
             opinion_args['allow_custom'] = True
         getattr(self, self._results_handling_method)(
             CustomAnalystOpinion(**opinion_args)
         )
 
-    def _handle_opinion_object(self, sighting: dict, reference_id: str):
+    def _handle_opinion_object(self, sighting: dict, reference_ids: tuple[str]):
         opinion_args = {
             'id': f"x-misp-opinion--{sighting['uuid']}",
-            'object_ref': reference_id,
+            'object_refs': reference_ids,
             'x_misp_explanation': 'False positive Sighting',
             'x_misp_opinion': 'strongly-disagree'
         }
@@ -542,7 +549,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self, attribute: MISPAttribute | dict):
         to_ids = self._mapping.to_ids_default_value(attribute['type'])
         if attribute.get('to_ids', to_ids):
-            self._parse_github_username_attribute_indicator(attribute)
+            indicator = self._parse_github_username_attribute_indicator(attribute)
+            self._handle_attribute_analyst_fields(attribute, indicator)
         else:
             self._parse_custom_attribute(attribute)
 
@@ -1208,7 +1216,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if attributes:
             network_args.update(self._parse_network_socket_args(attributes))
         observable_object['0'] = NetworkTraffic(**network_args)
-        observed_data = self._handle_object_observable(misp_object, observable_object)
+        observed_data = self._handle_object_observable(
+            misp_object, observable_object
+        )
+        stix_objects = [observed_data]
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_network_socket_object_pattern(
                 misp_object['Attribute']
@@ -1217,6 +1228,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self._parse_indicator_relationship(
                 indicator.id, observed_data.id, indicator.modified
             )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
 
     def _parse_process_object(self, misp_object: MISPObject | dict):
         attributes = self._extract_multiple_object_attributes(
@@ -1277,6 +1290,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observed_data = self._handle_object_observable(
             misp_object, observable_object
         )
+        stix_objects = [observed_data]
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_process_object_pattern(
                 misp_object['Attribute']
@@ -1285,6 +1299,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self._parse_indicator_relationship(
                 indicator.id, observed_data.id, indicator.modified
             )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
 
     def _parse_registry_key_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
