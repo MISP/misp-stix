@@ -1442,7 +1442,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             feature = self._mapping.sigma_object_mapping(relation)
             if feature is not None:
                 if relation == 'sigma':
-                    value = self._handle_value_for_pattern(attribute['value'])
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
@@ -1470,7 +1469,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             feature = self._mapping.suricata_object_mapping(relation)
             if feature is not None:
                 if relation == 'suricata':
-                    value = self._handle_value_for_pattern(value)
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
@@ -1513,7 +1511,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             feature = self._mapping.yara_object_mapping(relation)
             if feature is not None:
                 if relation == 'yara':
-                    value = self._handle_value_for_pattern(value)
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
