@@ -2,12 +2,12 @@
 
 <img src="https://raw.githubusercontent.com/MISP/misp-stix/main/documentation/logos/misp-stix.png" width="125" height="125">
 
-[![Python version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![Python version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 [![MISP-STIX version](https://badge.fury.io/gh/MISP%2Fmisp-stix.svg)](https://badge.fury.io/gh/MISP%2Fmisp-stix)
 [![Github Actions](https://github.com/MISP/misp-stix/workflows/misp-stix/badge.svg)](https://github.com/MISP/misp-stix/actions?query=workflow%3Amisp-stix)
 [![License](https://img.shields.io/github/license/MISP/misp-stix.svg)](#License)
 
-MISP-STIX-converter is a Python library (>=3.9) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
+MISP-STIX-converter is a Python library (>=3.10) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
 The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in PyPI.
 

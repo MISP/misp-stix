@@ -16,11 +16,11 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Information Technology',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
     'Topic :: Security'
 ]
 
@@ -41,7 +41,7 @@ include = [
 misp_stix_converter = 'misp_stix_converter:main'
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 pymisp = "^2.5.4"
 stix = "^1.2.0"
 cybox = "^2.1.0"
