@@ -1159,7 +1159,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         stix_objects = [observed_data]
         to_ids = self._mapping.to_ids_default_value(attribute['type'])
         if attribute.get('to_ids', to_ids):
-            value = self._sanitise_registry_key_value(attribute['value'])
+            value = self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(attribute['value'])
+            )
             indicator = self._handle_attribute_indicator(
                 attribute, f"[{self._create_regkey_pattern(value)}]"
             )
@@ -1185,7 +1187,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         stix_objects = [observed_data]
         to_ids = self._mapping.to_ids_default_value(attribute['type'])
         if attribute.get('to_ids', to_ids):
-            value = self._sanitise_registry_key_value(attribute['value'])
+            value = self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(attribute['value'])
+            )
             for separator in self.composite_separators:
                 if separator in value:
                     key, data = value.split(separator)
@@ -2841,12 +2845,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             values_prefix = f"{prefix}:values[0]"
             if attributes.get('data'):
-                data = self._sanitise_registry_key_value(
-                    attributes.pop('data').strip("'").strip('"')
+                data = self._handle_value_for_pattern(
+                    self._sanitise_registry_key_value(
+                        attributes.pop('data').strip("'").strip('"')
+                    )
                 )
                 pattern.append(f"{values_prefix}.data = '{data}'")
             attributes = {
-                key: self._sanitise_registry_key_value(value)
+                key: self._handle_value_for_pattern(
+                    self._sanitise_registry_key_value(value)
+                )
                 for key, value in attributes.items()
             }
             for key, feature in self._mapping.registry_key_mapping().items():
@@ -4917,8 +4925,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         # return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
         if not isinstance(attribute_value, str):
             return attribute_value
-        sanitized = self._sanitise_value(attribute_value)
-        return sanitized.replace("'", "\\'").replace('"', '\\\\"')
+        return attribute_value.replace("'", "\\'").replace('"', '\"')
 
     @staticmethod
     def _parse_custom_data_value(
@@ -5051,17 +5058,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return key
 
     def _sanitise_registry_key_value(self, value: str) -> str:
-        sanitized = self._sanitise_value(value.strip()).replace('\\', '\\\\')
+        sanitized = value.strip().replace('\\', '\\\\')
         if '%' not in sanitized or '\\\\%' in sanitized:
             return sanitized
         if '\\%' in sanitized:
             return sanitized.replace('\\%', '\\\\%')
         return sanitized.replace('%', '\\\\%')
-
-    def _sanitise_value(self, value: str) -> str:
-        for character in ('"', "'"):
-            if value.startswith(character):
-                return self._sanitise_value(value[1:])
-            if value.endswith(character):
-                return self._sanitise_value(value[:-1])
-        return value
