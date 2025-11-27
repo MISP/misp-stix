@@ -1694,7 +1694,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_attack_pattern_object(
             self, misp_object: MISPObject | dict):
-        attributes = self._extract_multiple_object_attributes_escaped(
+        attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.attack_pattern_single_fields()
         )
