@@ -1260,10 +1260,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         network_traffic_args, objects = self._parse_network_references(
             attributes
         )
-        if attributes:
-            network_traffic_args.update(
-                self._parse_network_connection_args(attributes)
-            )
+        network_traffic_args.update(
+            self._parse_network_connection_args(attributes)
+            if attributes else {'protocols': ['tcp']}
+        )
         network_traffic_args['id'] = self._parse_stix_object_id(
             'object', 'network-traffic', misp_object
         )
@@ -1301,10 +1301,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         network_traffic_args, objects = self._parse_network_references(
             attributes
         )
-        if attributes:
-            network_traffic_args.update(
-                self._parse_network_socket_args(attributes)
-            )
+        network_traffic_args.update(
+            self._parse_network_socket_args(attributes)
+            if attributes else {'protocols': ['tcp']}
+        )
         network_traffic_args['id'] = self._parse_stix_object_id(
             'object', 'network-traffic', misp_object
         )

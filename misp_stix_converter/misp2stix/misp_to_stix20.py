@@ -1172,8 +1172,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         network_args, observable_object = self._parse_network_references(
             attributes
         )
-        if attributes:
-            network_args.update(self._parse_network_connection_args(attributes))
+        network_args.update(
+            self._parse_network_connection_args(attributes)
+            if attributes else {'protocols': ['tcp']}
+        )
         observable_object['0'] = NetworkTraffic(**network_args)
         return self._handle_object_observable(misp_object, observable_object)
 
@@ -1213,8 +1215,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         network_args, observable_object = self._parse_network_references(
             attributes
         )
-        if attributes:
-            network_args.update(self._parse_network_socket_args(attributes))
+        network_args.update(
+            self._parse_network_socket_args(attributes)
+            if attributes else {'protocols': ['tcp']}
+        )
         observable_object['0'] = NetworkTraffic(**network_args)
         observed_data = self._handle_object_observable(
             misp_object, observable_object
