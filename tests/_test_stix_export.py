@@ -147,7 +147,7 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
         self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
-        self.assertEqual(attack_pattern.x_misp_solutions, solution.replace("'", "\\'"))
+        self.assertEqual(attack_pattern.x_misp_solutions, solution)
 
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
@@ -773,34 +773,34 @@ class TestSTIX2Export(TestSTIX):
                     data = b64encode(data.getvalue()).decode()
                 self.assertEqual(custom_attribute['data'], data)
 
-    def _sanitize_documentation(self, documentation):
+    def _sanitise_documentation(self, documentation):
         if isinstance(documentation, list):
-            return [self._sanitize_documentation(value) for value in documentation]
-        sanitized = {}
+            return [self._sanitise_documentation(value) for value in documentation]
+        sanitised = {}
         for key, value in documentation.items():
             if key == 'to_ids':
                 continue
-            sanitized[key] = self._sanitize_documentation(value) if isinstance(value, (dict, list)) else value
-        return sanitized
+            sanitised[key] = self._sanitise_documentation(value) if isinstance(value, (dict, list)) else value
+        return sanitised
 
-    def _sanitize_pattern_value(self, value):
-        sanitized = self._sanitize_registry_key_value(value)
-        return sanitized.replace("'", "\\'").replace('"', '\\\\"')
+    def _sanitise_pattern_value(self, value):
+        sanitised = self._sanitise_registry_key_value(value)
+        return sanitised.replace("'", "\\'").replace('"', '\\\\"')
 
-    def _sanitize_registry_key_value(self, value: str) -> str:
-        sanitized = self._sanitize_value(value.strip()).replace('\\', '\\\\')
-        if '%' not in sanitized or '\\\\%' in sanitized:
-            return sanitized
-        if '\\%' in sanitized:
-            return sanitized.replace('\\%', '\\\\%')
-        return sanitized.replace('%', '\\\\%')
+    def _sanitise_registry_key_value(self, value: str) -> str:
+        sanitised = self._sanitise_value(value.strip()).replace('\\', '\\\\')
+        if '%' not in sanitised or '\\\\%' in sanitised:
+            return sanitised
+        if '\\%' in sanitised:
+            return sanitised.replace('\\%', '\\\\%')
+        return sanitised.replace('%', '\\\\%')
 
-    def _sanitize_value(self, value):
+    def _sanitise_value(self, value):
         for character in ('"', "'"):
             if value.startswith(character):
-                return self._sanitize_value(value[1:])
+                return self._sanitise_value(value[1:])
             if value.endswith(character):
-                return self._sanitize_value(value[:-1])
+                return self._sanitise_value(value[:-1])
         return value
 
 
@@ -812,7 +812,7 @@ class TestSTIX20Export(TestSTIX2Export):
     def _populate_attributes_documentation(self, attribute, **kwargs):
         attribute_type = attribute['type']
         if 'MISP' not in self._attributes_v20[attribute_type]:
-            self._attributes_v20[attribute_type]['MISP'] = self._sanitize_documentation(attribute)
+            self._attributes_v20[attribute_type]['MISP'] = self._sanitise_documentation(attribute)
         for object_type, stix_object in kwargs.items():
             documented = json.loads(stix_object.serialize())
             feature = object_type.replace('_', ' ').title()
@@ -834,7 +834,7 @@ class TestSTIX20Export(TestSTIX2Export):
         if name is None:
             name = misp_object['name']
         if 'MISP' not in self._objects_v20[name]:
-            self._objects_v20[name]['MISP'] = self._sanitize_documentation(misp_object)
+            self._objects_v20[name]['MISP'] = self._sanitise_documentation(misp_object)
         if summary is not None:
             self._objects_v20['summary'][name] = summary
         for object_type, stix_object in kwargs.items():
@@ -851,7 +851,7 @@ class TestSTIX21Export(TestSTIX2Export):
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
         if 'MISP' not in self._attributes_v21[feature]:
-            self._attributes_v21[feature]['MISP'] = self._sanitize_documentation(attribute)
+            self._attributes_v21[feature]['MISP'] = self._sanitise_documentation(attribute)
         for object_type, stix_object in kwargs.items():
             if object_type == 'observed_data':
                 documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
@@ -876,7 +876,7 @@ class TestSTIX21Export(TestSTIX2Export):
         if name is None:
             name = misp_object['name']
         if 'MISP' not in self._objects_v21[name]:
-            self._objects_v21[name]['MISP'] = self._sanitize_documentation(misp_object)
+            self._objects_v21[name]['MISP'] = self._sanitise_documentation(misp_object)
         if summary is not None:
             self._objects_v21['summary'][name] = summary
         if 'observed_data' in kwargs:

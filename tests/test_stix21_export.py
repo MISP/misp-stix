@@ -1465,8 +1465,8 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
         self._check_regkey_value_observable_attribute(attribute, observables[0], object_refs[0])
         key, value = attribute['value'].split('|')
-        key_pattern = f"windows-registry-key:key = '{self._sanitize_registry_key_value(key)}'"
-        value_pattern = f"windows-registry-key:values.data = '{self._sanitize_registry_key_value(value)}'"
+        key_pattern = f"windows-registry-key:key = '{self._sanitise_registry_key_value(key)}'"
+        value_pattern = f"windows-registry-key:values.data = '{self._sanitise_registry_key_value(value)}'"
         self.assertEqual(pattern, f"[{key_pattern} AND {value_pattern}]")
 
     def _test_event_with_regkey_value_observable_attribute(self, event):
