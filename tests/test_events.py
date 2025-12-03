@@ -240,7 +240,7 @@ _EVENT_FOR_ESCAPING_TESTS = {
                 "uuid": "2ea3a395-6b9f-4927-bc85-b33310f0b1bf",
                 "type": "malware-sample",
                 "category": "Payload delivery",
-                "value": "oui|8764605c6f388c89096b534d33565802",
+                "value": "'oui'.txt|8764605c6f388c89096b534d33565802",
                 "to_ids": True,
                 "timestamp": "1603642920",
                 "comment": "Malware Sample test attribute"

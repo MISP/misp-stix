@@ -98,14 +98,14 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             set(attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3])
         )
 
-    def _check_opinion_features(self, opinion, sighting, object_id):
+    def _check_opinion_features(self, opinion, sighting, *object_ids):
         self.assertEqual(opinion.type, 'opinion')
         self.assertEqual(opinion.id, f"opinion--{sighting['uuid']}")
         timestamp = sighting['date_sighting']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._assert_multiple_equal(opinion.created, opinion.modified, timestamp)
-        self.assertEqual(opinion.object_refs, [object_id])
+        self.assertEqual(opinion.object_refs, list(object_ids))
         self.assertEqual(opinion.authors, [sighting['Organisation']['name']])
         self.assertEqual(opinion.explanation, "False positive Sighting")
         self.assertEqual(opinion.opinion, "strongly-disagree")
@@ -124,7 +124,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self.assertEqual(note.type, 'note')
         self._assert_multiple_equal(note.id, object_ref, f"note--{event['uuid']}")
         self.assertEqual(note.created_by_ref, identity_id)
@@ -138,32 +138,30 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
 
     def _test_event_with_analyst_data(self, event):
         orgc = event['Orgc']
-        event_report = event['EventReport'][0]
-        note = event['Note'][0]
-        src_attribute, dst_attribute = event['Attribute']
-        misp_object = event['Object'][0]
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(15)
+        src_attribute, dst_attribute = self.parser._misp_event.attributes
+        misp_object = self.parser._misp_event.objects[0]
+        stix_objects = self._check_bundle_features(22)
         self._check_spec_versions(stix_objects)
         identity, grouping, *stix_objects = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        (attr_indicator, attr_indicator_opinion, observed_data, _,
-         _, obs_data_note, obj_indicator, obj_opinion, obj_attr_note,
-         report, report_opinion, relationship, event_note) = stix_objects
+        (attr_od, _, _, attr_indicator, attr_opinion, observed_data, _,
+         _, obs_data_note, obj_od, _, obj_indicator, obj_opinion, obj_attr_note,
+         report, report_opinion, attr_relationship, relationship,
+         obj_relationship, event_note) = stix_objects
+        self.assertEqual(attr_opinion.object_refs, [attr_od.id, attr_indicator.id])
         self._assert_multiple_equal(
-            attr_indicator.id,
-            relationship.target_ref,
-            attr_indicator_opinion.object_refs[0],
-            f"indicator--{src_attribute['uuid']}"
+            attr_od.id, relationship.target_ref, attr_relationship.target_ref,
+            f"observed-data--{src_attribute['uuid']}"
         )
         attribute_opinion = src_attribute['Opinion'][0]
-        self._check_analyst_opinion(attr_indicator_opinion, attribute_opinion, 'strongly-agree')
+        self._check_analyst_opinion(attr_opinion, attribute_opinion, 'strongly-agree')
         self._assert_multiple_equal(
             observed_data.id,
             obs_data_note.object_refs[0],
@@ -172,16 +170,18 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         attribute_note = dst_attribute['Note'][0]
         self._check_analyst_note(obs_data_note, attribute_note)
         self._assert_multiple_equal(
-            obj_indicator.id,
-            relationship.source_ref,
-            obj_opinion.object_refs[0],
-            obj_attr_note.object_refs[0],
-            f"indicator--{misp_object['uuid']}"
+            obj_opinion.object_refs, obj_attr_note.object_refs,
+            [obj_od.id, obj_indicator.id]
+        )
+        self._assert_multiple_equal(
+            obj_od.id, relationship.source_ref, obj_relationship.target_ref,
+            f"observed-data--{misp_object['uuid']}"
         )
         object_opinion = misp_object['Opinion'][0]
         self._check_analyst_opinion(obj_opinion, object_opinion, 'neutral')
         object_attribute_note = misp_object['Attribute'][0]['Note'][0]
         self._check_analyst_note(obj_attr_note, object_attribute_note)
+        event_report = self.parser._misp_event.event_reports[0]
         self._assert_multiple_equal(
             report.id,
             report_opinion.object_refs[0],
@@ -191,7 +191,14 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         event_report_opinion = event_report['Opinion'][0]
         self._check_analyst_opinion(report_opinion, event_report_opinion, 'agree')
         self.assertEqual(relationship.relationship_type, 'downloaded-from')
-        self._check_analyst_note(event_note, note)
+        self.assertEqual(attr_relationship.source_ref, attr_indicator.id)
+        self.assertEqual(obj_relationship.source_ref, obj_indicator.id)
+        self._assert_multiple_equal(
+            attr_relationship.relationship_type,
+            obj_relationship.relationship_type,
+            'based-on'
+        )
+        self._check_analyst_note(event_note, self.parser._misp_event.notes[0])
 
     def _test_event_with_attribute_confidence_tags(self, event):
         tlp_tag, *confidence_tags = event['Tag']
@@ -208,16 +215,14 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self.assertEqual(grouping.labels[-2:], [tag['name'] for tag in confidence_tags])
         self._assert_multiple_equal(
             [marking.id], grouping.object_marking_refs,
-            observed_data1.object_marking_refs, indicator.object_marking_refs,
-            campaign.object_marking_refs, vulnerability.object_marking_refs,
-            observed_data2.object_marking_refs
+            observed_data1.object_marking_refs, campaign.object_marking_refs,
+            vulnerability.object_marking_refs, observed_data2.object_marking_refs
         )
         self.assertEqual(
             f'{marking.definition_type}:{marking.definition[marking.definition_type]}',
             tlp_tag['name']
         )
         self._check_attribute_confidence_tags(observed_data1, domain)
-        self._check_attribute_confidence_tags(indicator, domain)
         self._check_attribute_confidence_tags(campaign, campaign_name)
         self._check_attribute_confidence_tags(vulnerability, vulnerability_attribute)
         self._check_attribute_confidence_tags(observed_data2, AS)
@@ -249,17 +254,18 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         event_report = event['EventReport'][0]
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(12)
+        stix_objects = self._check_bundle_features(16)
         self._check_spec_versions(stix_objects)
         identity, grouping, *stix_objects = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        observed_data1, _, _, indicator, observed_data2, _, _, domain_ip, note = stix_objects
+        (observed_data1, _, _, indicator1, observed_data2, _, _,
+         observed_data3, _, _, indicator2, note, *_) = stix_objects
         self.assertEqual(note.id, f"note--{event_report['uuid']}")
         self.assertEqual(note.abstract, event_report['name'])
         timestamp = event_report['timestamp']
@@ -268,36 +274,37 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self._assert_multiple_equal(note.created, note.modified, timestamp)
         self.assertEqual(note.content, event_report['content'])
         object_refs = note.object_refs
-        self.assertEqual(len(object_refs), 3)
-        object_ids = {ip_src.id, observed_data.id, domain_ip.id}
+        self.assertEqual(len(object_refs), 5)
+        object_ids = {
+            observed_data1.id, indicator1.id, observed_data2.id,
+            observed_data3.id, indicator2.id
+        }
         self.assertEqual(set(object_refs), object_ids)
 
     def _test_event_with_object_confidence_tags(self, event):
         tlp_tag, *confidence_tags = event['Tag']
-        ip_port, course_of_action, asn = event['Object']
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(7)
+        ip_port, course_of_action, asn = self.parser._misp_event.objects
+        stix_objects = self._check_bundle_features(11)
         self._check_spec_versions(stix_objects)
-        _, grouping, indicator, coa, observed_data, _, marking = stix_objects
+        _, grouping, observed_data1, *_, coa, observed_data2, _, _, marking = stix_objects
         self._assert_multiple_equal(
             grouping.confidence,
             self.parser._mapping.confidence_tags(confidence_tags[1]['name'])
         )
         self.assertEqual(grouping.labels[-2:], [tag['name'] for tag in confidence_tags])
         self._assert_multiple_equal(
-            [marking.id],
-            grouping.object_marking_refs,
-            indicator.object_marking_refs,
-            coa.object_marking_refs,
-            observed_data.object_marking_refs
+            [marking.id], grouping.object_marking_refs,
+            observed_data1.object_marking_refs, coa.object_marking_refs,
+            observed_data2.object_marking_refs
         )
         self.assertEqual(
             f'{marking.definition_type}:{marking.definition[marking.definition_type]}',
             tlp_tag['name']
         )
-        self._check_object_confidence_tags(indicator, ip_port)
+        self._check_object_confidence_tags(observed_data1, ip_port)
         self._check_object_confidence_tags(coa, course_of_action)
-        self._check_object_confidence_tags(observed_data, asn)
+        self._check_object_confidence_tags(observed_data2, asn)
 
     def _test_event_with_sightings(self, event):
         orgc = event['Orgc']
@@ -305,7 +312,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         sightings1 = attribute1['Sighting']
         sightings2 = attribute2['Sighting']
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(24)
+        stix_objects = self._check_bundle_features(20)
         self._check_spec_versions(stix_objects)
         identity, identity1, identity2, identity3, identity4, grouping, *stix_objects = stix_objects
         identities = (identity1, identity2, identity3, identity4)
@@ -313,7 +320,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
         self._check_identities_from_sighting(
@@ -322,8 +329,8 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             tuple(sighting['Organisation']['name'] for sighting in sightings2)
         )
         (observed_data1, _, sighting1, sighting2, opinion1, opinion2,
-         observed_data2, _, sighting3, opinion3, sighting4, opinion4,
-         indicator, sighting5, opinion5, sighting6, opinion6, _) = stix_objects
+         observed_data2, _, indicator, sighting3, opinion3, sighting4,
+         opinion4, _) = stix_objects
         self._check_sighting_features(
             sighting1, sightings1[0], observed_data1.id, identity1.id
         )
@@ -337,28 +344,16 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             opinion2, sightings1[3], observed_data1.id
         )
         self._check_sighting_features(
-            sighting3, sightings2[0], observed_data2.id, identity1.id
+            sighting3, sightings2[0], indicator.id, identity1.id, observed_data2.id
         )
         self._check_opinion_features(
-            opinion3, sightings2[1], observed_data2.id
+            opinion3, sightings2[1], observed_data2.id, indicator.id
         )
         self._check_sighting_features(
-            sighting4, sightings2[2], observed_data2.id, identity3.id
+            sighting4, sightings2[2], indicator.id, identity3.id, observed_data2.id
         )
         self._check_opinion_features(
-            opinion4, sightings2[3], observed_data2.id
-        )
-        self._check_sighting_features(
-            sighting5, sightings2[0], indicator.id, identity1.id
-        )
-        self._check_opinion_features(
-            opinion5, sightings2[1], indicator.id
-        )
-        self._check_sighting_features(
-            sighting6, sightings2[2], indicator.id, identity3.id
-        )
-        self._check_opinion_features(
-            opinion6, sightings2[3], indicator.id
+            opinion4, sightings2[3], observed_data2.id, indicator.id
         )
 
     def _test_event_with_tags(self, event):
@@ -871,8 +866,8 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
     def _run_indicator_tests(self, event, indicator_only=False):
         self._add_attribute_ids_flag(event)
         orgc = event['Orgc']
-        attribute = event['Attribute'][0]
         self.parser.parse_misp_event(event)
+        attribute = self.parser._misp_event.attributes[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         timestamp = event['timestamp']
@@ -881,13 +876,13 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if indicator_only:
             identity, grouping, indicator = stix_objects
             identity_id = self._check_identity_features(identity, orgc, timestamp)
-            object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+            object_ref = self._check_grouping_features(grouping, identity_id)[0]
             self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
             self._check_pattern_features(indicator)
             return attribute['value'], indicator.pattern
         identity, grouping, observed_data, *observables, indicator, relationship = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         od_ref, *observable_refs, indicator_ref, relationship_ref = object_refs
         self._check_attribute_observable_features(observed_data, attribute, identity_id, od_ref)
         self.assertEqual(observable_refs, observed_data.object_refs)
@@ -902,10 +897,10 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
     def _run_indicators_tests(self, event, indicator_only=False):
         self._add_attribute_ids_flag(event)
         orgc = event['Orgc']
-        attributes = event['Attribute']
+        self.parser.parse_misp_event(event)
+        attributes = self.parser._misp_event.attributes
         n_attributes = len(attributes)
         self.assertTrue(n_attributes > 0)
-        self.parser.parse_misp_event(event)
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *SDOs = stix_objects
@@ -913,7 +908,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         if indicator_only:
             for attribute, indicator, object_ref in zip(attributes, SDOs, object_refs):
                 self._check_attribute_indicator_features(
@@ -944,8 +939,8 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
     def _run_observable_tests(self, event):
         self._remove_attribute_ids_flag(event)
         orgc = event['Orgc']
-        attribute = event['Attribute'][0]
         self.parser.parse_misp_event(event)
+        attribute = self.parser._misp_event.attributes[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, *observable = stix_objects
@@ -954,7 +949,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         observed_data_id, *observable_refs = self._check_grouping_features(
-            grouping, event, identity_id
+            grouping, identity_id
         )
         self._check_attribute_observable_features(
             observed_data, attribute, identity_id, observed_data_id
@@ -965,8 +960,8 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
     def _run_observables_tests(self, event, index=2):
         self._remove_attribute_ids_flag(event)
         orgc = event['Orgc']
-        attributes = event['Attribute']
         self.parser.parse_misp_event(event)
+        attributes = self.parser._misp_event.attributes
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *observables = stix_objects
@@ -975,7 +970,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        ids = self._check_grouping_features(grouping, event, identity_id)
+        ids = self._check_grouping_features(grouping, identity_id)
         observable_ids = ids[::index]
         for attribute, observed_data, observable_id in zip(attributes, observed_datas, observable_ids):
             self._check_attribute_observable_features(
@@ -997,10 +992,10 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
 
     def _test_embedded_indicator_attribute_galaxy(self, event):
         orgc = event['Orgc']
-        attribute = deepcopy(event['Attribute'][0])
-        event_galaxy = deepcopy(event['Galaxy'][0])
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(16)
+        attribute = self.parser._misp_event.attributes[0]
+        event_galaxy = self.parser._misp_event.galaxies[0]
+        stix_objects = self._check_bundle_features(13)
         self._check_spec_versions(stix_objects)
         (identity, grouping, attack_pattern, course_of_action, custom,
          observed_data, domain, indicator, malware, *relationships) = stix_objects
@@ -1008,7 +1003,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         (ap_ref, coa_ref, custom_ref, od_ref, domain_ref, indicator_ref,
          malware_ref, *relationship_refs) = object_refs
         ap_galaxy, coa_galaxy, custom_galaxy = attribute['Galaxy']
@@ -1042,8 +1037,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         timestamp = attribute['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        (od_ap_rel, od_coa_rel, od_custom_rel, ind_ap_rel, ind_coa_rel,
-         ind_custom_rel, ind_od_rel) = relationships
+        od_ap_rel, od_coa_rel, od_custom_rel, ind_od_rel = relationships
         self._check_relationship_features(
             od_ap_rel, od_ref, ap_ref, 'related-to', timestamp,
         )
@@ -1054,23 +1048,14 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             od_custom_rel, od_ref, custom_ref, 'related-to', timestamp
         )
         self._check_relationship_features(
-            ind_ap_rel, indicator_ref, ap_ref, 'indicates', timestamp
-        )
-        self._check_relationship_features(
-            ind_coa_rel, indicator_ref, coa_ref, 'related-to', timestamp
-        )
-        self._check_relationship_features(
-            ind_custom_rel, indicator_ref, custom_ref, 'related-to', timestamp
-        )
-        self._check_relationship_features(
             ind_od_rel, indicator_ref, od_ref, 'based-on', timestamp
         )
 
     def _test_embedded_non_indicator_attribute_galaxy(self, event):
         orgc = event['Orgc']
-        attribute = deepcopy(event['Attribute'][0])
-        event_coa_galaxy, malware_galaxy = deepcopy(event['Galaxy'])
         self.parser.parse_misp_event(event)
+        attribute = self.parser._misp_event.attributes[0]
+        event_coa_galaxy, malware_galaxy = self.parser._misp_event.galaxies
         stix_objects = self._check_bundle_features(8)
         self._check_spec_versions(stix_objects)
         identity, grouping, attack_pattern, course_of_action, vulnerability, malware, *relationships = stix_objects
@@ -1078,7 +1063,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         ap_ref, coa_ref, vulnerability_ref, malware_ref, apr_ref, coar_ref = object_refs
         ap_relationship, coa_relationship = relationships
         ap_galaxy, coa_galaxy = attribute['Galaxy']
@@ -1113,9 +1098,9 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
 
     def _test_embedded_observable_attribute_galaxy(self, event):
         orgc = event['Orgc']
-        attribute = deepcopy(event['Attribute'][0])
-        event_galaxy = deepcopy(event['Galaxy'][0])
         self.parser.parse_misp_event(event)
+        attribute = self.parser._misp_event.attributes[0]
+        event_galaxy = self.parser._misp_event.galaxies[0]
         stix_objects = self._check_bundle_features(7)
         self._check_spec_versions(stix_objects)
         identity, grouping, attack_pattern, observed_data, autonomous_system, malware, relationship = stix_objects
@@ -1123,7 +1108,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         ap_ref, od_ref, as_ref, malware_ref, relationship_ref = object_refs
         self._assert_multiple_equal(
             attack_pattern.id,
@@ -1191,7 +1176,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._check_attribute_campaign_features(
             campaign,
             attribute,
@@ -1211,7 +1196,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         for attribute, custom_object, object_ref in zip(attributes, custom_objects, object_refs):
             self._run_custom_attribute_tests(attribute, custom_object, object_ref, identity_id)
 
@@ -1490,7 +1475,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._check_attribute_vulnerability_features(
             vulnerability,
             attribute,
@@ -1980,17 +1965,14 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
     def test_event_with_patterning_language_attributes(self):
         event = get_event_with_patterning_language_attributes()
         orgc = event['Event']['Orgc']
-        attributes = event['Event']['Attribute']
         self.parser.parse_misp_event(event)
+        attributes = self.parser._misp_event.attributes
+        timestamp = self.parser._misp_event.timestamp
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *indicators = stix_objects
-        identity_id = self._check_identity_features(
-            identity,
-            orgc,
-            self._datetime_from_timestamp(event['Event']['timestamp'])
-        )
-        object_refs = self._check_grouping_features(grouping, event['Event'], identity_id)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
             self._check_patterning_language_attribute(attribute, indicator, object_ref, identity_id)
             self._populate_documentation(attribute=attribute, indicator=indicator)
@@ -2477,7 +2459,7 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         self._check_spec_versions(stix_objects)
         identity, grouping, *indicators = stix_objects
         identity_id = self._check_identity_features(identity, misp_event.orgc, misp_event.timestamp)
-        object_refs = self._check_grouping_features(grouping, misp_event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         for attribute, indicator, object_ref in zip(misp_event.attributes, indicators, object_refs):
             self._check_patterning_language_attribute(attribute, indicator, object_ref, identity_id)
 
@@ -3343,10 +3325,10 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _run_indicators_from_objects_tests(self, event):
         self._add_object_ids_flag(event)
         orgc = event['Orgc']
-        misp_objects = deepcopy(event['Object'])
-        n_objects = len(misp_objects)
-        self.assertTrue(n_objects > 0)
         self.parser.parse_misp_event(event)
+        misp_objects = self.parser._misp_event.objects
+        n_objects = len(misp_objects)
+        self.assertTrue(n_objects > 1)
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *SDOs = stix_objects
@@ -3354,7 +3336,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         relationships = SDOs[-n_objects:]
         brol = SDOs[:-n_objects]
         object_chunks = []
@@ -3379,8 +3361,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _run_indicator_from_objects_tests(self, event):
         self._add_object_ids_flag(event)
         orgc = event['Orgc']
-        misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
+        misp_objects = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, observable, indicator, relationship = stix_objects
@@ -3388,7 +3370,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         od_ref, observable_ref, indicator_ref, relationship_ref = object_refs
         self._check_object_observable_features(
             observed_data, misp_objects[0], identity_id, od_ref
@@ -3411,8 +3393,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _run_indicator_from_object_tests(self, event):
         self._add_object_ids_flag(event)
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, *observables, indicator, relationship = stix_objects
@@ -3420,7 +3402,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         od_ref, *observable_refs, indicator_ref, relationship_ref = object_refs
         self._check_object_observable_features(
             observed_data, misp_object, identity_id, od_ref
@@ -3439,8 +3421,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _run_observables_from_objects_tests(self, event):
         self._remove_object_ids_flags(event)
         orgc = event['Orgc']
-        misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
+        misp_objects = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *observables = stix_objects
@@ -3448,7 +3430,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        ids = self._check_grouping_features(grouping, event, identity_id)
+        ids = self._check_grouping_features(grouping, identity_id)
         observables, ids = self._reorder_observable_objects(observables, ids)
         for observable, misp_object, observable_id in zip(observables, misp_objects, ids):
             observed_data, _ = observable
@@ -3462,8 +3444,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _run_observable_from_objects_tests(self, event):
         self._remove_object_ids_flags(event)
         orgc = event['Orgc']
-        misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
+        misp_objects = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, observable = stix_objects
@@ -3472,7 +3454,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         observed_data_id, object_ref = self._check_grouping_features(
-            grouping, event, identity_id
+            grouping, identity_id
         )
         self.assertEqual(len(observed_data.object_refs), 1)
         self._assert_multiple_equal(
@@ -3487,8 +3469,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _run_observable_from_object_tests(self, event):
         self._remove_object_ids_flags(event)
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, *observables = stix_objects
@@ -3497,7 +3479,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         observed_data_id, *object_refs = self._check_grouping_features(
-            grouping, event, identity_id
+            grouping, identity_id
         )
         self.assertEqual(object_refs, observed_data.object_refs)
         self._check_object_observable_features(
@@ -3508,9 +3490,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _test_embedded_indicator_object_galaxy(self, event):
         self._add_object_ids_flag(event)
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
-        tool_galaxy, event_coa_galaxy, event_custom_galaxy = deepcopy(event['Galaxy'])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        tool_galaxy, event_coa_galaxy, event_custom_galaxy = self.parser._misp_event.galaxies
         stix_objects = self._check_bundle_features(13)
         self._check_spec_versions(stix_objects)
         (identity, grouping, malware, coa, custom, observed_data,
@@ -3519,7 +3501,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         (malware_ref, coa_ref, custom_ref, observed_data_ref, as_ref, indicator_ref,
          tool_ref, mr_ref, coar_ref, customr_ref, indr_ref) = object_refs
         (malware_relationship, coa_relationship, custom_relationship,
@@ -3579,9 +3561,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_embedded_non_indicator_object_galaxy(self, event):
         orgc = event['Orgc']
-        coa_object, vulnerability_object = deepcopy(event['Object'])
-        event_coa_galaxy, tool_galaxy = deepcopy(event['Galaxy'])
         self.parser.parse_misp_event(event)
+        coa_object, vulnerability_object = self.parser._misp_event.objects
+        event_coa_galaxy, tool_galaxy = self.parser._misp_event.galaxies
         stix_objects = self._check_bundle_features(12)
         self._check_spec_versions(stix_objects)
         identity, grouping, ap, g_coa, o_coa, malware, vulnerability, tool, *relationships = stix_objects
@@ -3589,7 +3571,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         ap_ref, g_coa_ref, o_coa_ref, malware_ref, vulnerability_ref, tool_ref, *relationship_refs = object_refs
         ap_galaxy = coa_object['Attribute'][0]['Galaxy'][0]
         coa_coa_galaxy = coa_object['Attribute'][1]['Galaxy'][0]
@@ -3646,8 +3628,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_embedded_object_galaxy_with_multiple_clusters(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self._check_bundle_features(8)
         self._check_spec_versions(stix_objects)
         identity, grouping, malware1, malware2, observed_data, autonomous_system, relationship1, relationship2 = stix_objects
@@ -3655,7 +3637,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         malware1_ref, malware2_ref, observed_data_ref, as_ref, relationship1_ref, relationship2_ref = object_refs
         malware_galaxy1 = misp_object['Attribute'][0]['Galaxy'][0]
         malware_galaxy2 = misp_object['Attribute'][1]['Galaxy'][0]
@@ -3689,9 +3671,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_embedded_observable_object_galaxy(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
-        tool_galaxy = deepcopy(event['Galaxy'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        tool_galaxy = self.parser._misp_event.galaxies[0]
         stix_objects = self._check_bundle_features(7)
         self._check_spec_versions(stix_objects)
         identity, grouping, malware, observed_data, autonomous_system, tool, relationship = stix_objects
@@ -3699,7 +3681,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         malware_ref, observed_data_ref, as_ref, tool_ref, relationship_ref = object_refs
         malware_galaxy = misp_object['Attribute'][0]['Galaxy'][0]
         self._assert_multiple_equal(
@@ -3732,9 +3714,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_annotation_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
-        attribute = deepcopy(event['Attribute'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        attribute = self.parser._misp_event.attributes[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         (identity, grouping, observed_data, network_traffic, ip_address,
@@ -3743,7 +3725,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        od_ref, nt_ref, ip_ref, indicator_ref, note_ref, relationship_ref = self._check_grouping_features(grouping, event, identity_id)
+        od_ref, nt_ref, ip_ref, indicator_ref, note_ref, relationship_ref = self._check_grouping_features(grouping, identity_id)
         self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
         self._check_pattern_features(indicator)
         type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
@@ -3803,8 +3785,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_attack_pattern_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, attack_pattern = stix_objects
@@ -3812,7 +3794,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._assert_multiple_equal(
             attack_pattern.id,
             grouping['object_refs'][0],
@@ -3823,8 +3805,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_course_of_action_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, course_of_action = stix_objects
@@ -3832,7 +3814,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._assert_multiple_equal(
             course_of_action.id,
             grouping['object_refs'][0],
@@ -3872,8 +3854,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_custom_object(self, event):
         orgc = event['Orgc']
-        misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
+        misp_objects = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *custom_objects = stix_objects
@@ -3881,7 +3863,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_grouping_features(grouping, event, identity_id)
+        object_refs = self._check_grouping_features(grouping, identity_id)
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
@@ -3965,8 +3947,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_employee_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, employee = stix_objects
@@ -3974,7 +3956,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        employee_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        employee_ref = self._check_grouping_features(grouping, identity_id)[0]
         employee_type = self._check_employee_object(
             employee,
             misp_object,
@@ -4029,8 +4011,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_geolocation_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'])[0]
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, location = stix_objects
@@ -4038,7 +4020,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         address, zipcode, city, country, countrycode, region, latitude, longitude, accuracy, altitude = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(location.type, 'location')
         self._assert_multiple_equal(
@@ -4090,8 +4072,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_identity_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         created_by_ref_identity, grouping, identity = stix_objects
@@ -4099,7 +4081,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(created_by_ref_identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self.assertEqual(identity.type, 'identity')
         self._assert_multiple_equal(
             identity.id,
@@ -4116,8 +4098,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_intrusion_set_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, intrusion_set = stix_objects
@@ -4125,7 +4107,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._assert_multiple_equal(
             intrusion_set.id,
             grouping['object_refs'][0],
@@ -4169,8 +4151,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_legal_entity_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, legal_entity = stix_objects
@@ -4178,7 +4160,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        legal_entity_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        legal_entity_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._check_legal_entity_object_features(
             legal_entity,
             misp_object,
@@ -4285,8 +4267,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_news_agency_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, news_agency = stix_objects
@@ -4294,7 +4276,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        news_agency_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        news_agency_ref = self._check_grouping_features(grouping, identity_id)[0]
         name, address1, email1, phone1, address2, email2, phone2, link, attachment = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(news_agency.type, 'identity')
         self._assert_multiple_equal(
@@ -4321,8 +4303,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_organisation_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, organization = stix_objects
@@ -4330,7 +4312,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        organization_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        organization_ref = self._check_grouping_features(grouping, identity_id)[0]
         name, description, address, email, phone, role, alias = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(organization.type, 'identity')
         self._assert_multiple_equal(
@@ -4355,8 +4337,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_patterning_language_objects(self, event):
         orgc = event['Orgc']
-        sigma, suricata, yara = event['Object']
         self.parser.parse_misp_event(event)
+        sigma, suricata, yara = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, sigma_indicator, suricata_indicator, yara_indicator = stix_objects
@@ -4401,8 +4383,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_person_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, person = stix_objects
@@ -4410,12 +4392,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        person_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        person_ref = self._check_grouping_features(grouping, identity_id)[0]
         role = self._check_person_object(
-            person,
-            misp_object,
-            person_ref,
-            identity_id
+            person, misp_object, person_ref, identity_id
         )
         self.assertEqual(person.roles, [role])
 
@@ -4449,8 +4428,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_script_objects(self, event):
         orgc = event['Orgc']
-        malware_script, tool_script = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
+        malware_script, tool_script = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, malware, tool = stix_objects
@@ -4458,7 +4437,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        malware_ref, tool_ref = self._check_grouping_features(grouping, event, identity_id)
+        malware_ref, tool_ref = self._check_grouping_features(grouping, identity_id)
         language, comment, name, script, script_attachment, state = malware_script['Attribute']
         self._assert_multiple_equal(malware.id, malware_ref, f"malware--{malware_script['uuid']}")
         self.assertEqual(malware.type, 'malware')
@@ -4526,8 +4505,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_vulnerability_object(self, event):
         orgc = event['Orgc']
-        misp_object = deepcopy(event['Object'][0])
         self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, vulnerability = stix_objects
@@ -4535,7 +4514,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._check_object_vulnerability_features(vulnerability, misp_object, identity_id, object_ref)
 
     def _test_event_with_x509_indicator_object(self, event):
@@ -4557,38 +4536,42 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_object_references(self, event):
         orgc = event['Orgc']
-        (ap_object, as_object, btc_object, coa_object, ip_object,
-         person_object, vuln_object) = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
+        (ap_object, as_object, btc_object, coa_object, ip_object,
+         person_object, vuln_object) = self.parser._misp_event.objects
         stix_objects = self._check_bundle_features(21)
         self._check_spec_versions(stix_objects)
         (identity, grouping, attack_pattern, observed_data1, autonomous_system,
-         custom, coa, observed_data2, network_traffic, ip_address, indicator,
+         custom, coa, observed_data2, network_traffic, _, indicator,
          person, vulnerability, *relationships) = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        grouping_refs = self._check_grouping_features(grouping, event, identity_id)
+        grouping_refs = self._check_grouping_features(grouping, identity_id)
         (ap_ref, observed_data1_ref, as_ref, custom_ref, coa_ref,
-         observed_data2_ref, nt_ref, ip_ref, indicator_ref, person_ref,
+         observed_data2_ref, nt_ref, _, indicator_ref, person_ref,
          vuln_ref, *relationship_refs) = grouping_refs
         self._assert_multiple_equal(
             attack_pattern.id, ap_ref, f"attack-pattern--{ap_object['uuid']}"
         )
         self._assert_multiple_equal(
-            observed_data1.id, observed_data1_ref,
-            f"observed-data--{as_object['uuid']}"
+            observed_data1.id, observed_data1_ref, f"observed-data--{as_object['uuid']}"
         )
         self._assert_multiple_equal(
-            autonomous_system.id, as_ref,
-            f"autonomous-system--{as_object['uuid']}"
+            autonomous_system.id, as_ref, f"autonomous-system--{as_object['uuid']}"
         )
         self._assert_multiple_equal(
             custom.id, custom_ref, f"x-misp-object--{btc_object['uuid']}"
         )
         self._assert_multiple_equal(
             coa.id, coa_ref, f"course-of-action--{coa_object['uuid']}"
+        )
+        self._assert_multiple_equal(
+            observed_data2.id, observed_data2_ref, f"observed-data--{ip_object['uuid']}"
+        )
+        self._assert_multiple_equal(
+            network_traffic.id, nt_ref, f"network-traffic--{ip_object['uuid']}"
         )
         self._assert_multiple_equal(
             indicator.id, indicator_ref, f"indicator--{ip_object['uuid']}"
@@ -4634,8 +4617,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             od_coa_relation, observed_data2_ref, coa_ref, 'protected-with', timestamp
         )
         self._check_relationship_features(
-            ind_od_relation, indicator_ref, observed_data2_ref,
-            'based-on', timestamp
+            ind_od_relation, indicator_ref, observed_data2_ref, 'based-on', timestamp
         )
         timestamp = person_object['timestamp']
         if not isinstance(timestamp, datetime):
@@ -4729,7 +4711,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_annotation_object()
         self._test_event_with_annotation_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             note = self.parser.stix_objects[-1]
         )
 
@@ -4737,7 +4719,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_android_app_object()
         self._test_event_with_android_app_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4745,7 +4727,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_android_app_object()
         self._test_event_with_android_app_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -4753,7 +4735,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_asn_object()
         self._test_event_with_asn_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4761,7 +4743,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_asn_object()
         self._test_event_with_asn_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -4769,7 +4751,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_attack_pattern_object()
         self._test_event_with_attack_pattern_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             attack_pattern = self.parser.stix_objects[-1]
         )
 
@@ -4777,7 +4759,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_course_of_action_object()
         self._test_event_with_course_of_action_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             course_of_action = self.parser.stix_objects[-1]
         )
 
@@ -4785,7 +4767,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_cpe_asset_object()
         self._test_event_with_cpe_asset_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4793,7 +4775,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_cpe_asset_object()
         self._test_event_with_cpe_asset_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -4801,7 +4783,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_credential_object()
         self._test_event_with_credential_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4809,7 +4791,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_credential_object()
         self._test_event_with_credential_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -4821,7 +4803,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4829,7 +4811,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_observable_object_custom(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-3:]
         )
 
@@ -4837,7 +4819,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_domain_ip_object_standard()
         self._test_event_with_domain_ip_observable_object_standard(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-5:],
             name = 'domain-ip with the perfect domain & ip matching',
             summary = 'A tuple of IPv4/IPv6 Address & Network Objects for each associated domain & ip'
@@ -4847,7 +4829,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_email_object()
         self._test_event_with_email_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4855,7 +4837,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_email_object()
         self._test_event_with_email_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-9:]
         )
 
@@ -4863,7 +4845,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_email_object_with_display_names()
         self._test_event_with_email_with_display_names_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1],
             name = 'email with display names'
         )
@@ -4872,7 +4854,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_email_object_with_display_names()
         self._test_event_with_email_with_display_names_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-7:],
             name = 'email with display names'
         )
@@ -4881,7 +4863,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_employee_object()
         self._test_event_with_employee_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             identity = self.parser.stix_objects[-1]
         )
 
@@ -4889,7 +4871,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_file_and_pe_objects()
         self._test_event_with_file_and_pe_indicator_objects(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'],
+            misp_object = self.parser._misp_event.objects,
             indicator = self.parser.stix_objects[-1],
             name = 'file with references to pe & pe-section(s)',
             summary = 'File Object with a Windows PE binary extension'
@@ -4899,7 +4881,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_file_and_pe_objects()
         self._test_event_with_file_and_pe_observable_objects(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'],
+            misp_object = self.parser._misp_event.objects,
             observed_data = self.parser.stix_objects[-2:],
             name = 'file with references to pe & pe-section(s)'
         )
@@ -4908,7 +4890,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1],
             summary = 'File Object (potential references to Artifact & Directory Objects)'
         )
@@ -4917,7 +4899,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-4:]
         )
 
@@ -4925,7 +4907,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_geolocation_object()
         self._test_event_with_geolocation_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             location = self.parser.stix_objects[-1]
         )
 
@@ -4933,7 +4915,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_http_request_object()
         self._test_event_with_http_request_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4941,7 +4923,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_http_request_object()
         self._test_event_with_http_request_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-5:]
         )
 
@@ -4949,7 +4931,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_identity_object()
         self._test_event_with_identity_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             identity = self.parser.stix_objects[-1]
         )
 
@@ -4957,7 +4939,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_image_object()
         self._test_event_with_image_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4965,7 +4947,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_image_object()
         self._test_event_with_image_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-3:]
         )
 
@@ -4973,7 +4955,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_intrusion_set_object()
         self._test_event_with_intrusion_set_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             intrusion_set = self.parser.stix_objects[-1]
         )
 
@@ -4981,7 +4963,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_ip_port_object()
         self._test_event_with_ip_port_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -4989,7 +4971,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_ip_port_object()
         self._test_event_with_ip_port_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-3:]
         )
 
@@ -4997,7 +4979,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_legal_entity_object()
         self._test_event_with_legal_entity_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             identity = self.parser.stix_objects[-1]
         )
 
@@ -5005,7 +4987,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_lnk_object()
         self._test_event_with_lnk_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -5013,7 +4995,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_lnk_object()
         self._test_event_with_lnk_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-4:]
         )
 
@@ -5021,7 +5003,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_mutex_object()
         self._test_event_with_mutex_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -5029,7 +5011,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_mutex_object()
         self._test_event_with_mutex_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -5037,7 +5019,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_netflow_object()
         self._test_event_with_netflow_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -5045,7 +5027,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_netflow_object()
         self._test_event_with_netflow_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-6:]
         )
 
@@ -5053,7 +5035,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_network_connection_object()
         self._test_event_with_network_connection_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1],
             summary = 'Network Traffic, IPv4/IPv6 Address & Domain Name Objects'
         )
@@ -5062,7 +5044,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_network_connection_object()
         self._test_event_with_network_connection_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-4:]
         )
 
@@ -5070,7 +5052,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_network_socket_object()
         self._test_event_with_network_socket_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1],
             summary = 'Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects'
         )
@@ -5079,7 +5061,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_network_socket_object()
         self._test_event_with_network_socket_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-4:]
         )
 
@@ -5087,7 +5069,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_news_agency_object()
         self._test_event_with_news_agency_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             identity = self.parser.stix_objects[-1]
         )
 
@@ -5095,21 +5077,21 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_organization_object()
         self._test_event_with_organisation_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             identity = self.parser.stix_objects[-1]
         )
 
     def test_event_with_patterning_language_objects(self):
         event = get_event_with_patterning_language_objects()
         self._test_event_with_patterning_language_objects(event['Event'])
-        for misp_object, indicator in zip(event['Event']['Object'], self.parser.stix_objects[-3:]):
+        for misp_object, indicator in zip(self.parser._misp_event.objects, self.parser.stix_objects[-3:]):
             self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_pe_and_section_indicator_objects(self):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'],
+            misp_object = self.parser._misp_event.objects,
             indicator = self.parser.stix_objects[-1],
             name = 'pe & pe-sections',
             summary = 'Windows PE binary extension within a File Object'
@@ -5119,7 +5101,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'],
+            misp_object = self.parser._misp_event.objects,
             observed_data = self.parser.stix_objects[-2:],
             name = 'pe & pe-sections'
         )
@@ -5128,7 +5110,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_person_object()
         self._test_event_with_person_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             identity = self.parser.stix_objects[-1]
         )
 
@@ -5136,7 +5118,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_process_object_v2()
         self._test_event_with_process_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1],
             summary = 'Process Objects (potential reference to File Objects)'
         )
@@ -5145,7 +5127,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_process_object_v2()
         self._test_event_with_process_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-6:]
         )
 
@@ -5153,7 +5135,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_registry_key_object()
         self._test_event_with_registry_key_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -5161,20 +5143,21 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_registry_key_object()
         self._test_event_with_registry_key_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()
         self._test_event_with_script_objects(event['Event'])
+        misp_objects = self.parser._misp_event.objects
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = misp_objects[0],
             malware = self.parser.stix_objects[-2],
             name = 'Script object where state is "Malicious"'
         )
         self._populate_documentation(
-            misp_object = event['Event']['Object'][1],
+            misp_object = misp_objects[1],
             tool = self.parser.stix_objects[-1],
             name = 'Script object where state is not "Malicious"'
         )
@@ -5183,7 +5166,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_url_object()
         self._test_event_with_url_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -5191,7 +5174,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_url_object()
         self._test_event_with_url_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -5199,7 +5182,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_user_account_object()
         self._test_event_with_user_account_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -5207,7 +5190,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_user_account_object()
         self._test_event_with_user_account_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -5215,7 +5198,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_vulnerability_object()
         self._test_event_with_vulnerability_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             vulnerability = self.parser.stix_objects[-1]
         )
 
@@ -5223,7 +5206,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_x509_object()
         self._test_event_with_x509_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -5231,7 +5214,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_x509_object()
         self._test_event_with_x509_observable_object(event['Event'])
         self._populate_documentation(
-            misp_object = event['Event']['Object'][0],
+            misp_object = self.parser._misp_event.objects[0],
             observed_data = self.parser.stix_objects[-2:]
         )
 
@@ -5737,7 +5720,7 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self._check_spec_versions(stix_objects)
         identity, grouping, stix_object = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self.assertEqual(stix_object.id, object_ref)
         return stix_object
 
@@ -5797,7 +5780,7 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         identity, grouping, location1, location2 = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         location1_ref, location2_ref = self._check_grouping_features(
-            grouping, event, identity_id
+            grouping, identity_id
         )
         self.assertEqual(location1.id, location1_ref)
         self.assertEqual(location2.id, location2_ref)
@@ -6332,7 +6315,7 @@ class TestSTIX21ExportInteroperability(TestSTIX2Export, TestSTIX21):
             self.assertEqual(stix_object.spec_version, '2.1')
         mitre_identity, identity, grouping, stix_object = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self.assertEqual(stix_object.id, object_ref)
         self.assertEqual(stix_object.created_by_ref, mitre_identity.id)
         return stix_object

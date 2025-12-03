@@ -606,7 +606,8 @@ class TestSTIX2Export(TestSTIX):
         )
         return report.object_refs
 
-    def _check_sighting_features(self, stix_sighting, misp_sighting, object_id, identity_id):
+    def _check_sighting_features(
+            self, stix_sighting, misp_sighting, object_id, identity_id, observed_data_id=None):
         self.assertEqual(stix_sighting.type, 'sighting')
         self.assertEqual(stix_sighting.id, f"sighting--{misp_sighting['uuid']}")
         self._assert_multiple_equal(
@@ -616,6 +617,8 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertEqual(stix_sighting.sighting_of_ref, object_id)
         self.assertEqual(stix_sighting.where_sighted_refs, [identity_id])
+        if observed_data_id is not None:
+            self.assertEqual(stix_sighting.observed_data_refs, [observed_data_id])
 
     def _check_threat_actor_meta_fields(self, stix_object, meta):
         self.assertEqual(stix_object.aliases, meta['synonyms'])
