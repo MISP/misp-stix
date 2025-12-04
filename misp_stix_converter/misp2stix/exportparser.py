@@ -285,6 +285,11 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
             'this value should be a valid ISO 3166-1 ALPHA-2 Code.'
         )
 
+    def _handle_validation_errors(self, errors: dict):
+        for message_type, messages in errors.items():
+            feature = f'_validation_{message_type}'
+            getattr(self, feature)(*messages)
+
     def _invalid_attribute_hash_value_error(
             self, attribute: Union[MISPAttribute, dict]):
         self.__errors[self._identifier].append(
@@ -373,3 +378,13 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
             f'The file object {file_uuid} has more than one reference '
             f"to pe objects: {', '.join(pe_uuids)}"
         )
+
+    def _validation_errors(self, *messages: tuple[str]):
+        identifier = getattr(self, '_identifier', 'misp event')
+        for message in messages:
+            self.__errors[identifier].append(message)
+
+    def _validation_warnings(self, *messages: tuple[str]):
+        identifier = getattr(self, '_identifier', 'misp event')
+        for message in messages:
+            self.__warnings[identifier].add(message)

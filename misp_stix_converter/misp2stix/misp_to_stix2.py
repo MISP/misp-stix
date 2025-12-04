@@ -15,6 +15,9 @@ from pathlib import Path
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
     MISPNote, MISPObject, MISPOpinion)
+from pymisp.tools import (
+    AttributeValidationTool, validate_attribute, validate_attributes,
+    validate_event, ValidationError)
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -93,6 +96,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_identity_from_feed(attribute.get('Event', {}))
         if 'Attribute' in attribute:
             attribute = attribute['Attribute']
+        value = AttributeValidationTool.modifyBeforeValidation(
+            attribute['type'], attribute['value']
+        )
+        validated = AttributeValidationTool.validate(attribute['type'], value)
+        if validated is not True:
+            self._validation_errors(validated)
+            return
+        attribute['value'] = value
         self._resolve_attribute(attribute)
         if self.relationships:
             self._handle_relationships()
@@ -108,8 +119,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if 'Galaxy' in attributes:
                 self._parse_event_galaxies(attributes['Galaxy'])
             attributes = attributes['Attribute']
-        for attribute in attributes:
+        errors = defaultdict(list)
+        for attribute in validate_attributes(attributes, errors):
             self._resolve_attribute(attribute)
+        if errors:
+            self._handle_validation_errors(errors)
         if self._markings:
             for marking in self._markings.values():
                 if not marking['used']:
@@ -148,9 +162,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     self.parse_misp_attributes(json_content)
 
     def _parse_misp_event(self, misp_event: MISPEvent | dict):
-        if 'Event' in misp_event:
-            misp_event = misp_event['Event']
-        self._misp_event = misp_event
+        self._misp_event = validate_event(
+            misp_event, errors := defaultdict(list)
+        )
+        if errors:
+            self._handle_validation_errors(errors)
         self._identifier = self._misp_event['uuid']
         self.__event_timestamp = self._handle_event_timestamp()
         self.__object_refs = []
