@@ -180,13 +180,13 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
             attribute_value = attribute['value']
             if '|' in attribute_value:
                 attribute_value, value = attribute_value.split('|')
-                self.assertIn(self._sanitize_pattern_value(value), indicator.pattern)
-            self.assertIn(self._sanitize_pattern_value(attribute_value), indicator.pattern)
+                self.assertIn(self._sanitise_pattern_value(value), indicator.pattern)
+            self.assertIn(self._sanitise_pattern_value(attribute_value), indicator.pattern)
             if attribute.get('data'):
                 data = attribute['data']
                 if not isinstance(data, str):
                     data = b64encode(data.getvalue()).decode()
-                self.assertIn(self._sanitize_pattern_value(data), indicator.pattern)
+                self.assertIn(self._sanitise_pattern_value(data), indicator.pattern)
 
     def _test_event_with_event_report(self, event):
         orgc = event['Orgc']
@@ -951,8 +951,8 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
     def _test_event_with_regkey_value_indicator_attribute(self, event):
         attribute_value, pattern = self._run_indicator_tests(event)
         key, value = attribute_value.split('|')
-        key_pattern = f"windows-registry-key:key = '{self._sanitize_registry_key_value(key)}'"
-        value_pattern = f"windows-registry-key:values.data = '{self._sanitize_registry_key_value(value)}'"
+        key_pattern = f"windows-registry-key:key = '{self._sanitise_registry_key_value(key)}'"
+        value_pattern = f"windows-registry-key:values.data = '{self._sanitise_registry_key_value(value)}'"
         self.assertEqual(pattern, f"[{key_pattern} AND {value_pattern}]")
 
     def _test_event_with_regkey_value_observable_attribute(self, event):
