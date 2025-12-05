@@ -1550,16 +1550,11 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._check_attribute_vulnerability_features(
-            vulnerability,
-            attribute,
-            identity_id,
-            object_ref
+            vulnerability, attribute, identity_id, object_ref
         )
         self.assertEqual(vulnerability.name, attribute['value'])
         self._check_external_reference(
-            vulnerability.external_references[0],
-            'cve',
-            attribute['value']
+            vulnerability.external_references[0], 'cve', attribute['value']
         )
 
 
@@ -1589,40 +1584,32 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_as_attribute()
         self._test_event_with_as_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_as_observable_attribute(self):
         event = get_event_with_as_attribute()
         self._test_event_with_as_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_attachment_indicator_attribute(self):
         event = get_event_with_attachment_attribute()
         self._test_event_with_attachment_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_attachment_observable_attribute(self):
         event = get_event_with_attachment_attribute()
         self._test_event_with_attachment_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_campaign_name_attribute(self):
         event = get_event_with_campaign_name_attribute()
         self._test_event_with_campaign_name_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            campaign = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_attributes(self):
@@ -1633,225 +1620,169 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         event = get_event_with_domain_attribute()
         self._test_event_with_domain_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_domain_observable_attribute(self):
         event = get_event_with_domain_attribute()
         self._test_event_with_domain_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_domain_ip_indicator_attribute(self):
         event = get_event_with_domain_ip_attribute()
         self._test_event_with_domain_ip_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_domain_ip_observable_attribute(self):
         event = get_event_with_domain_ip_attribute()
         self._test_event_with_domain_ip_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_email_attachment_indicator_attribute(self):
         event = get_event_with_email_attachment_attribute()
         self._test_event_with_email_attachment_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_attachment_observable_attribute(self):
         event = get_event_with_email_attachment_attribute()
         self._test_event_with_email_attachment_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_email_body_indicator_attribute(self):
         event = get_event_with_email_body_attribute()
         self._test_event_with_email_body_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_body_observable_attribute(self):
         event = get_event_with_email_body_attribute()
         self._test_event_with_email_body_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_email_destination_indicator_attribute(self):
         event = get_event_with_email_destination_attribute()
         self._test_event_with_email_destination_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_destination_observable_attribute(self):
         event = get_event_with_email_destination_attribute()
         self._test_event_with_email_destination_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_email_header_indicator_attribute(self):
         event = get_event_with_email_header_attribute()
         self._test_event_with_email_header_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_header_observable_attribute(self):
         event = get_event_with_email_header_attribute()
         self._test_event_with_email_header_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_email_indicator_attribute(self):
         event = get_event_with_email_address_attribute()
         self._test_event_with_email_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_message_id_indicator_attribute(self):
         event = get_event_with_email_message_id_attribute()
         self._test_event_with_email_message_id_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_message_id_observable_attribute(self):
         event = get_event_with_email_message_id_attribute()
         self._test_event_with_email_message_id_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_email_observable_attribute(self):
         event = get_event_with_email_address_attribute()
         self._test_event_with_email_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_email_reply_to_indicator_attribute(self):
         event = get_event_with_email_reply_to_attribute()
         self._test_event_with_email_reply_to_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_reply_to_observable_attribute(self):
         event = get_event_with_email_reply_to_attribute()
         self._test_event_with_email_reply_to_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_email_source_indicator_attribute(self):
         event = get_event_with_email_source_attribute()
         self._test_event_with_email_source_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_source_observable_attribute(self):
         event = get_event_with_email_source_attribute()
         self._test_event_with_email_source_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_email_subject_indicator_attribute(self):
         event = get_event_with_email_subject_attribute()
         self._test_event_with_email_subject_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_subject_observable_attribute(self):
         event = get_event_with_email_subject_attribute()
         self._test_event_with_email_subject_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_email_x_mailer_indicator_attribute(self):
         event = get_event_with_email_x_mailer_attribute()
         self._test_event_with_email_x_mailer_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_x_mailer_observable_attribute(self):
         event = get_event_with_email_x_mailer_attribute()
         self._test_event_with_email_x_mailer_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
         self._test_event_with_filename_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_filename_observable_attribute(self):
         event = get_event_with_filename_attribute()
         self._test_event_with_filename_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_github_username_indicator_attribute(self):
         event = get_event_with_github_username_attribute()
         self._test_event_with_github_username_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_github_username_observable_attribute(self):
         event = get_event_with_github_username_attribute()
         self._test_event_with_github_username_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_hash_composite_indicator_attributes(self):
         event = get_event_with_hash_composite_attributes()
@@ -1864,9 +1795,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
                 observable_ref, observed_data, observable, attribute
             )
             self._populate_documentation(
-                attribute=attribute, indicator=indicator,
-                observed_data=[observed_data, observable],
-                relationship=relationship
+                attribute=attribute, stix=[*objects, relationship]
             )
 
     def test_event_with_hash_composite_observable_attributes(self):
@@ -1874,7 +1803,6 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event['Event'])
         for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
             self._check_hash_composite_observable_attribute(grouping_ref, observed_data, observable, attribute)
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, observable])
 
     def test_event_with_hash_indicator_attributes(self):
         event = get_event_with_hash_attributes()
@@ -1887,9 +1815,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
                 observable_ref, observed_data, observable, attribute
             )
             self._populate_documentation(
-                attribute=attribute, indicator=indicator,
-                observed_data=[observed_data, observable],
-                relationship=relationship
+                attribute=attribute, stix=[*objects, relationship]
             )
 
     def test_event_with_hash_observable_attributes(self):
@@ -1897,39 +1823,30 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event['Event'])
         for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
             self._check_hash_observable_attribute(grouping_ref, observed_data, observable, attribute)
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, observable])
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
         self._test_event_with_hostname_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_hostname_observable_attribute(self):
         event = get_event_with_hostname_attribute()
         self._test_event_with_hostname_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_hostname_port_indicator_attribute(self):
         event = get_event_with_hostname_port_attribute()
         self._test_event_with_hostname_port_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_hostname_port_observable_attribute(self):
         event = get_event_with_hostname_port_attribute()
         self._test_event_with_hostname_port_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_http_indicator_attributes(self):
         event = get_event_with_http_attributes()
@@ -1939,7 +1856,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
                 indicator.pattern,
                 f"[{self._http_prefix}.{feature} = '{attribute['value']}']"
             )
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._populate_documentation(attribute=attribute, stix=indicator)
 
     def test_event_with_ip_indicator_attributes(self):
         event = get_event_with_ip_attributes()
@@ -1952,9 +1869,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
                 attribute, observable_refs, observed_data, observables
             )
             self._populate_documentation(
-                attribute=attribute, indicator=indicator,
-                observed_data=[observed_data, *observables],
-                relationship=relationship
+                attribute=attribute, stix=[*objects, relationship]
             )
 
     def test_event_with_ip_observable_attributes(self):
@@ -1962,7 +1877,6 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event['Event'], index=3)
         for attribute, grouping_ref, observed_data, observable in zip(attributes, grouping_refs, observed_datas, observables):
             self._check_ip_observable_attribute(attribute, grouping_ref, observed_data, observable)
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, *observable])
 
     def test_event_with_ip_port_indicator_attributes(self):
         event = get_event_with_ip_port_attributes()
@@ -1975,9 +1889,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
                 attribute, observable_refs, observed_data, observables
             )
             self._populate_documentation(
-                attribute=attribute, indicator=indicator,
-                observed_data=[observed_data, *observables],
-                relationship=relationship
+                attribute=attribute, stix=[*objects, relationship]
             )
 
     def test_event_with_ip_port_observable_attributes(self):
@@ -1985,55 +1897,42 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event['Event'], index=3)
         for attribute, grouping_ref, observed_data, observable in zip(attributes, grouping_refs, observed_datas, observables):
             self._check_ip_port_observable_attribute(attribute, grouping_ref, observed_data, observable)
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, *observable])
 
     def test_event_with_mac_address_indicator_attribute(self):
         event = get_event_with_mac_address_attribute()
         self._test_event_with_mac_address_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_mac_address_observable_attribute(self):
         event = get_event_with_mac_address_attribute()
         self._test_event_with_mac_address_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_malware_sample_indicator_attribute(self):
         event = get_event_with_malware_sample_attribute()
         self._test_event_with_malware_sample_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_malware_sample_observable_attribute(self):
         event = get_event_with_malware_sample_attribute()
         self._test_event_with_malware_sample_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_mutex_indicator_attribute(self):
         event = get_event_with_mutex_attribute()
         self._test_event_with_mutex_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_mutex_observable_attribute(self):
         event = get_event_with_mutex_attribute()
         self._test_event_with_mutex_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_patterning_language_attributes(self):
         event = get_event_with_patterning_language_attributes()
@@ -2048,54 +1947,46 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         object_refs = self._check_grouping_features(grouping, identity_id)
         for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
             self._check_patterning_language_attribute(attribute, indicator, object_ref, identity_id)
-            self._populate_documentation(attribute=attribute, indicator=indicator)
+            self._populate_documentation(attribute=attribute, stix=indicator)
 
     def test_event_with_port_indicator_attribute(self):
         event = get_event_with_port_attribute()
         self._test_event_with_port_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_regkey_indicator_attribute(self):
         event = get_event_with_regkey_attribute()
         self._test_event_with_regkey_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_regkey_observable_attribute(self):
         event = get_event_with_regkey_attribute()
         self._test_event_with_regkey_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_regkey_value_indicator_attribute(self):
         event = get_event_with_regkey_value_attribute()
         self._test_event_with_regkey_value_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_regkey_value_observable_attribute(self):
         event = get_event_with_regkey_value_attribute()
         self._test_event_with_regkey_value_observable_attribute(event['Event'])
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_size_in_bytes_indicator_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
         self._test_event_with_size_in_bytes_indicator_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_url_indicator_attributes(self):
@@ -2109,9 +2000,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
             )
             self.assertEqual(indicator.pattern, f"[url:value = '{attribute['value']}']")
             self._populate_documentation(
-                attribute=attribute, indicator=indicator,
-                observed_data=[observed_data, observable],
-                relationship=relationship
+                attribute=attribute, stix=[*objects, relationship]
             )
 
     def test_event_with_url_observable_attributes(self):
@@ -2119,17 +2008,16 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event['Event'])
         for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
             self._check_url_observable_attribute(grouping_ref, observed_data, observable, attribute)
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, observable])
 
     def test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()
         self._test_event_with_vulnerability_attribute(event['Event'])
         self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            vulnerability = self.parser.stix_objects[-1]
+            attribute=self.parser._misp_event.attributes[0],
+            stix=self.parser.stix_objects[-1]
         )
 
-    def test_event_with_x509_fingerprint_indicator_attributes(self):
+    def test_event_with_x509_fingerprint_oindicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
         stix_objects = self._run_indicators_tests(event['Event'])
         for attribute, objects, object_refs, relationship in zip(*stix_objects):
@@ -2144,9 +2032,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
                 f"[x509-certificate:hashes.{hash_type} = '{attribute['value']}']"
             )
             self._populate_documentation(
-                attribute=attribute, indicator=indicator,
-                observed_data=[observed_data, observable],
-                relationship=relationship
+                attribute=attribute, stix=[*objects, relationship]
             )
 
     def test_event_with_x509_fingerprint_observable_attributes(self):
@@ -2154,7 +2040,6 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event['Event'])
         for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
             self._check_x509_fingerprint_observable_attribute(grouping_ref, observed_data, observable, attribute)
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, observable])
 
 
 class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
@@ -4743,20 +4628,14 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             (stix_object[-1].pattern for stix_object in stix_objects)
         )
         for misp_object, objects, relationship in zip(misp_objects, stix_objects, relationships):
-            *observables, indicator = objects
             self._populate_documentation(
-                misp_object=misp_object, indicator=indicator,
-                observed_data=observables, relationship=relationship
+                misp_object=misp_object, stix=[*objects, relationship]
             )
 
     def test_event_with_account_observable_objects(self):
         event = get_event_with_account_objects()
         misp_objects, stix_objects, object_refs = self._run_observables_from_objects_tests(event['Event'])
         self._check_account_observable_objects(misp_objects, stix_objects, object_refs)
-        for misp_object, observables in zip(misp_objects, stix_objects):
-            self._populate_documentation(
-                misp_object = misp_object, observed_data = observables
-            )
 
     def test_event_with_account_indicator_objects_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
@@ -4767,108 +4646,86 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             (stix_object[-1].pattern for stix_object in stix_objects)
         )
         for misp_object, objects, relationship in zip(misp_objects, stix_objects, relationships):
-            *observables, indicator = objects
             self._populate_documentation(
-                misp_object=misp_object, indicator=indicator,
-                observed_data=observables, relationship=relationship
+                misp_object=misp_object, stix=[*objects, relationship]
             )
 
     def test_event_with_account_observable_object_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
         misp_objects, stix_objects, object_refs = self._run_observables_from_objects_tests(event['Event'])
         self._check_account_with_attachment_observable_objects(misp_objects, stix_objects, object_refs)
-        for misp_object, observables in zip(misp_objects, stix_objects):
-            self._populate_documentation(
-                misp_object = misp_object, observed_data = observables
-            )
 
     def test_event_with_annotation_object(self):
         event = get_event_with_annotation_object()
         self._test_event_with_annotation_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            note = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_android_app_indicator_object(self):
         event = get_event_with_android_app_object()
         self._test_event_with_android_app_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_android_app_observable_object(self):
         event = get_event_with_android_app_object()
         self._test_event_with_android_app_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
         self._test_event_with_asn_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_asn_observable_object(self):
         event = get_event_with_asn_object()
         self._test_event_with_asn_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_attack_pattern_object(self):
         event = get_event_with_attack_pattern_object()
         self._test_event_with_attack_pattern_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            attack_pattern = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_course_of_action_object(self):
         event = get_event_with_course_of_action_object()
         self._test_event_with_course_of_action_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            course_of_action = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_cpe_asset_indicator_object(self):
         event = get_event_with_cpe_asset_object()
         self._test_event_with_cpe_asset_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_cpe_asset_observable_object(self):
         event = get_event_with_cpe_asset_object()
         self._test_event_with_cpe_asset_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_credential_indicator_object(self):
         event = get_event_with_credential_object()
         self._test_event_with_credential_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_credential_observable_object(self):
         event = get_event_with_credential_object()
         self._test_event_with_credential_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_custom_objects(self):
         event = get_event_with_custom_objects()
@@ -4878,420 +4735,331 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_domain_ip_observable_object_custom(self):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_observable_object_custom(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_domain_ip_observable_object_standard(self):
         event = get_event_with_domain_ip_object_standard()
         self._test_event_with_domain_ip_observable_object_standard(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-5:],
-            name = 'domain-ip with the perfect domain & ip matching',
-            summary = 'A tuple of IPv4/IPv6 Address & Network Objects for each associated domain & ip'
-        )
 
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()
         self._test_event_with_email_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_email_observable_object(self):
         event = get_event_with_email_object()
         self._test_event_with_email_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-9:]
-        )
 
     def test_event_with_email_with_display_names_indicator_object(self):
         event = get_event_with_email_object_with_display_names()
         self._test_event_with_email_with_display_names_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1],
-            name = 'email with display names'
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:], name='email with display names'
         )
 
     def test_event_with_email_with_display_names_observable_object(self):
         event = get_event_with_email_object_with_display_names()
         self._test_event_with_email_with_display_names_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-7:],
-            name = 'email with display names'
-        )
 
     def test_event_with_employee_object(self):
         event = get_event_with_employee_object()
         self._test_event_with_employee_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            identity = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
         self._test_event_with_file_and_pe_indicator_objects(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects,
-            indicator = self.parser.stix_objects[-1],
-            name = 'file with references to pe & pe-section(s)',
-            summary = 'File Object with a Windows PE binary extension'
+            misp_object=self.parser._misp_event.objects,
+            stix=self.parser.stix_objects[2:],
+            name='file with references to pe & pe-section(s)',
+            summary='File Object with a Windows PE binary extension'
         )
 
     def test_event_with_file_and_pe_observable_objects(self):
         event = get_event_with_file_and_pe_objects()
         self._test_event_with_file_and_pe_observable_objects(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects,
-            observed_data = self.parser.stix_objects[-2:],
-            name = 'file with references to pe & pe-section(s)'
-        )
 
     def test_event_with_file_indicator_object(self):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1],
-            summary = 'File Object (potential references to Artifact & Directory Objects)'
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:],
+            summary='File Object (potential references to Artifact & Directory Objects)'
         )
 
     def test_event_with_file_observable_object(self):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-4:]
-        )
 
     def test_event_with_geolocation_object(self):
         event = get_event_with_geolocation_object()
         self._test_event_with_geolocation_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            location = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_http_request_indicator_object(self):
         event = get_event_with_http_request_object()
         self._test_event_with_http_request_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_http_request_observable_object(self):
         event = get_event_with_http_request_object()
         self._test_event_with_http_request_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-5:]
-        )
 
     def test_event_with_identity_object(self):
         event = get_event_with_identity_object()
         self._test_event_with_identity_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            identity = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_image_indicator_object(self):
         event = get_event_with_image_object()
         self._test_event_with_image_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_image_observable_object(self):
         event = get_event_with_image_object()
         self._test_event_with_image_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_intrusion_set_object(self):
         event = get_event_with_intrusion_set_object()
         self._test_event_with_intrusion_set_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            intrusion_set = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_ip_port_indicator_object(self):
         event = get_event_with_ip_port_object()
         self._test_event_with_ip_port_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_ip_port_observable_object(self):
         event = get_event_with_ip_port_object()
         self._test_event_with_ip_port_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-3:]
-        )
 
     def test_event_with_legal_entity_object(self):
         event = get_event_with_legal_entity_object()
         self._test_event_with_legal_entity_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            identity = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_lnk_indicator_object(self):
         event = get_event_with_lnk_object()
         self._test_event_with_lnk_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_lnk_observable_object(self):
         event = get_event_with_lnk_object()
         self._test_event_with_lnk_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-4:]
-        )
 
     def test_event_with_mutex_indicator_object(self):
         event = get_event_with_mutex_object()
         self._test_event_with_mutex_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_mutex_observable_object(self):
         event = get_event_with_mutex_object()
         self._test_event_with_mutex_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_netflow_indicator_object(self):
         event = get_event_with_netflow_object()
         self._test_event_with_netflow_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_netflow_observable_object(self):
         event = get_event_with_netflow_object()
         self._test_event_with_netflow_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-6:]
-        )
 
     def test_event_with_network_connection_indicator_object(self):
         event = get_event_with_network_connection_object()
         self._test_event_with_network_connection_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1],
-            summary = 'Network Traffic, IPv4/IPv6 Address & Domain Name Objects'
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:],
+            summary='Network Traffic, IPv4/IPv6 Address & Domain Name Objects'
         )
 
     def test_event_with_network_connection_observable_object(self):
         event = get_event_with_network_connection_object()
         self._test_event_with_network_connection_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-4:]
-        )
 
     def test_event_with_network_socket_indicator_object(self):
         event = get_event_with_network_socket_object()
         self._test_event_with_network_socket_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1],
-            summary = 'Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects'
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:],
+            summary='Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects'
         )
 
     def test_event_with_network_socket_observable_object(self):
         event = get_event_with_network_socket_object()
         self._test_event_with_network_socket_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-4:]
-        )
 
     def test_event_with_news_agency_object(self):
         event = get_event_with_news_agency_object()
         self._test_event_with_news_agency_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            identity = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_organisation_object(self):
         event = get_event_with_organization_object()
         self._test_event_with_organisation_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            identity = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_patterning_language_objects(self):
         event = get_event_with_patterning_language_objects()
         self._test_event_with_patterning_language_objects(event['Event'])
         for misp_object, indicator in zip(self.parser._misp_event.objects, self.parser.stix_objects[-3:]):
-            self._populate_documentation(misp_object=misp_object, indicator=indicator)
+            self._populate_documentation(misp_object=misp_object, stix=indicator)
 
     def test_event_with_pe_and_section_indicator_objects(self):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects,
-            indicator = self.parser.stix_objects[-1],
-            name = 'pe & pe-sections',
-            summary = 'Windows PE binary extension within a File Object'
+            misp_object=self.parser._misp_event.objects,
+            stix=self.parser.stix_objects[2:], name='pe & pe-sections',
+            summary='Windows PE binary extension within a File Object'
         )
 
     def test_event_with_pe_and_section_observable_objects(self):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects,
-            observed_data = self.parser.stix_objects[-2:],
-            name = 'pe & pe-sections'
-        )
 
     def test_event_with_person_object(self):
         event = get_event_with_person_object()
         self._test_event_with_person_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            identity = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_process_indicator_object(self):
         event = get_event_with_process_object_v2()
         self._test_event_with_process_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1],
-            summary = 'Process Objects (potential reference to File Objects)'
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:],
+            summary='Process Objects (potential reference to File Objects)'
         )
 
     def test_event_with_process_observable_object(self):
         event = get_event_with_process_object_v2()
         self._test_event_with_process_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-6:]
-        )
 
     def test_event_with_registry_key_indicator_object(self):
         event = get_event_with_registry_key_object()
         self._test_event_with_registry_key_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_registry_key_observable_object(self):
         event = get_event_with_registry_key_object()
         self._test_event_with_registry_key_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()
         self._test_event_with_script_objects(event['Event'])
         misp_objects = self.parser._misp_event.objects
         self._populate_documentation(
-            misp_object = misp_objects[0],
-            malware = self.parser.stix_objects[-2],
-            name = 'Script object where state is "Malicious"'
+            misp_object=misp_objects[0], stix=self.parser.stix_objects[-2],
+            name='Script object where state is "Malicious"'
         )
         self._populate_documentation(
-            misp_object = misp_objects[1],
-            tool = self.parser.stix_objects[-1],
-            name = 'Script object where state is not "Malicious"'
+            misp_object=misp_objects[1], stix=self.parser.stix_objects[-1],
+            name='Script object where state is not "Malicious"'
         )
 
     def test_event_with_url_indicator_object(self):
         event = get_event_with_url_object()
         self._test_event_with_url_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_url_observable_object(self):
         event = get_event_with_url_object()
         self._test_event_with_url_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_user_account_indicator_object(self):
         event = get_event_with_user_account_object()
         self._test_event_with_user_account_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_user_account_observable_object(self):
         event = get_event_with_user_account_object()
         self._test_event_with_user_account_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_event_with_vulnerability_object(self):
         event = get_event_with_vulnerability_object()
         self._test_event_with_vulnerability_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            vulnerability = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_x509_indicator_object(self):
         event = get_event_with_x509_object()
         self._test_event_with_x509_indicator_object(event['Event'])
         self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            indicator = self.parser.stix_objects[-1]
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
         )
 
     def test_event_with_x509_observable_object(self):
         event = get_event_with_x509_object()
         self._test_event_with_x509_observable_object(event['Event'])
-        self._populate_documentation(
-            misp_object = self.parser._misp_event.objects[0],
-            observed_data = self.parser.stix_objects[-2:]
-        )
 
     def test_object_references(self):
         event = get_event_with_object_references()
@@ -5964,70 +5732,66 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         event = get_event_with_attack_pattern_galaxy()
         self._test_event_with_attack_pattern_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            attack_pattern = self.parser.stix_objects[-1],
-            summary = ', '.join(
-                sorted(self._mapping_types.attack_pattern_types())
-            )
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
+            summary=', '.join(sorted(self._mapping_types.attack_pattern_types()))
         )
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
         self._test_event_with_course_of_action_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            course_of_action = self.parser.stix_objects[-1],
-            summary = ', '.join(
-                sorted(self._mapping_types.course_of_action_types())
-            )
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
+            summary=', '.join(sorted(self._mapping_types.course_of_action_types()))
         )
 
     def test_event_with_custom_attack_pattern_20_galaxy(self):
         event = get_event_with_custom_attack_pattern_galaxy('2.0')
         self._test_event_with_attack_pattern_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            attack_pattern = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_attack_pattern_21_galaxy(self):
         event = get_event_with_custom_attack_pattern_galaxy('2.1')
         self._test_event_with_attack_pattern_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            attack_pattern = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_campaign_20_galaxy(self):
         event = get_event_with_custom_campaign_galaxy('2.0')
         self._test_event_with_campaign_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            campaign = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_campaign_21_galaxy(self):
         event = get_event_with_custom_campaign_galaxy('2.1')
         self._test_event_with_campaign_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            campaign = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_course_of_action_20_galaxy(self):
         event = get_event_with_custom_course_of_action_galaxy('2.0')
         self._test_event_with_course_of_action_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            course_of_action = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_course_of_action_21_galaxy(self):
         event = get_event_with_custom_course_of_action_galaxy('2.1')
         self._test_event_with_course_of_action_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            course_of_action = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_galaxy(self):
@@ -6038,152 +5802,147 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         event = get_event_with_custom_intrusion_set_galaxy('2.0')
         self._test_event_with_intrusion_set_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            intrusion_set = self.parser.stix_objects[-1],
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
         )
 
     def test_event_with_custom_intrusion_set_21_galaxy(self):
         event = get_event_with_custom_intrusion_set_galaxy('2.1')
         self._test_event_with_intrusion_set_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            intrusion_set = self.parser.stix_objects[-1],
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
         )
 
     def test_event_with_custom_location_galaxy(self):
         event = get_event_with_custom_location_galaxy()
         self._test_event_with_location_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            location = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_malware_20_galaxy(self):
         event = get_event_with_custom_malware_galaxy('2.0')
         self._test_event_with_malware_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            malware = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_malware_21_galaxy(self):
         event = get_event_with_custom_malware_galaxy('2.1')
         self._test_event_with_malware_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            malware = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_threat_actor_20_galaxy(self):
         event = get_event_with_custom_threat_actor_galaxy('2.0')
         self._test_event_with_threat_actor_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            threat_actor = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_threat_actor_21_galaxy(self):
         event = get_event_with_custom_threat_actor_galaxy('2.1')
         self._test_event_with_threat_actor_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            threat_actor = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_tool_20_galaxy(self):
         event = get_event_with_custom_tool_galaxy('2.0')
         self._test_event_with_tool_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            tool = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_tool_21_galaxy(self):
         event = get_event_with_custom_tool_galaxy('2.1')
         self._test_event_with_tool_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            tool = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_vulnerability_20_galaxy(self):
         event = get_event_with_custom_vulnerability_galaxy('2.0')
         self._test_event_with_vulnerability_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            vulnerability = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_vulnerability_21_galaxy(self):
         event = get_event_with_custom_vulnerability_galaxy('2.1')
         self._test_event_with_vulnerability_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            vulnerability = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
         self._test_event_with_intrusion_set_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            intrusion_set = self.parser.stix_objects[-1],
-            summary = ', '.join(
-                sorted(self._mapping_types.intrusion_set_types())
-            )
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
+            summary=', '.join(sorted(self._mapping_types.intrusion_set_types()))
         )
 
     def test_event_with_location_galaxies(self):
         event = get_event_with_location_galaxies()
         self._test_event_with_location_galaxies(event['Event'])
-        for galaxy, location in zip(event['Event']['Galaxy'], self.parser.stix_objects[-2:]):
-            self._populate_documentation(
-                galaxy=galaxy,
-                location=location
-            )
+        for galaxy, location in zip(self.parser._misp_event.galaxies, self.parser.stix_objects[-2:]):
+            self._populate_documentation(galaxy=galaxy, stix=location)
 
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
         self._test_event_with_malware_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            malware = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.malware_types()))
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
+            summary=', '.join(sorted(self._mapping_types.malware_types()))
         )
 
     def test_event_with_sector_galaxy(self):
         event = get_event_with_sector_galaxy()
         self._test_event_with_sector_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            identity = self.parser.stix_objects[-1]
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
         self._test_event_with_threat_actor_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            threat_actor = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.threat_actor_types()))
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
+            summary=', '.join(sorted(self._mapping_types.threat_actor_types()))
         )
 
     def test_event_with_tool_galaxy(self):
         event = get_event_with_tool_galaxy()
         self._test_event_with_tool_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            tool = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.tool_types()))
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
+            summary=', '.join(sorted(self._mapping_types.tool_types()))
         )
 
     def test_event_with_vulnerability_galaxy(self):
         event = get_event_with_vulnerability_galaxy()
         self._test_event_with_vulnerability_galaxy(event['Event'])
         self._populate_documentation(
-            galaxy = event['Event']['Galaxy'][0],
-            vulnerability = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.vulnerability_types()))
+            galaxy=self.parser._misp_event.galaxies[0],
+            stix=self.parser.stix_objects[-1],
+            summary=', '.join(sorted(self._mapping_types.vulnerability_types()))
         )
 
     def test_attribute_with_attack_pattern_galaxy(self):
