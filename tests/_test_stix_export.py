@@ -655,6 +655,20 @@ class TestSTIX2Export(TestSTIX):
                 self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
                 self.assertEqual(killchain_phase.phase_name, phase_name)
 
+    def _check_validation_errors(self, error_messages, *fields_to_check):
+        for values in fields_to_check:
+            attribute, *object_fields = values
+            to_check = (attribute['uuid'], attribute['value'], *object_fields)
+            for error_message in error_messages:
+                if all(field in error_message for field in to_check):
+                    break
+            else:
+                message = f"Attribute with UUID ({attribute['uuid']}) and value ({attribute['value']})"
+                if object_fields:
+                    object_uuid, object_name = object_fields
+                    message += f' within {object_name} MISP object with UUID ({object_uuid})'
+                yield message
+
     def _check_vulnerability_meta_fields(self, stix_object, meta):
         if meta.get('aliases') is not None:
             self.assertEqual(

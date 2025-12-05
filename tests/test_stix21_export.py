@@ -231,24 +231,97 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self.assertEqual(relationship.target_ref, observed_data1.id)
 
     def _test_event_with_escaped_characters(self, event):
-        attributes = deepcopy(event['Attribute'])
+        (invalid_AS, _, invalid_domain, invalid_domain_ip, *_, invalid_md5,
+         _, invalid_hostname, invalid_hostname_port, invalid_http_method,
+         invalid_ip, invalid_ip_port, _, _, _, invalid_port, _, _,
+         invalid_size, _, _, invalid_x509_md5, _) = deepcopy(event['Attribute'])
+        (_, _, domain_ip, _, _, ip_port, _, network_connection,
+         network_socket, *_) = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(49)
+        attributes = self.parser._misp_event.attributes
+        misp_objects = self.parser._misp_event.objects
+        stix_objects = self._check_bundle_features(142)
         self._check_spec_versions(stix_objects)
-        _, _, *indicators = stix_objects
-        self.assertIn(attributes[0]['value'][2:], indicators[0].pattern)
-        for attribute, indicator in zip(attributes[1:], indicators[1:]):
-            self.assertEqual(indicator.type, 'indicator')
-            attribute_value = attribute['value']
-            if '|' in attribute_value:
-                attribute_value, value = attribute_value.split('|')
-                self.assertIn(self._sanitize_pattern_value(value), indicator.pattern)
-            self.assertIn(self._sanitize_pattern_value(attribute_value), indicator.pattern)
-            if attribute.get('data'):
-                data = attribute['data']
-                if not isinstance(data, str):
-                    data = b64encode(data.getvalue()).decode()
-                self.assertIn(self._sanitize_pattern_value(data), indicator.pattern)
+        validation_errors = self.parser.warnings.get('misp event', [])
+        self.assertEqual(len(validation_errors), 17)
+        connection_src_ip, connection_dst_ip = network_connection['Attribute']
+        error_messages = list(
+            self._check_validation_errors(
+                validation_errors,
+                [invalid_AS], [invalid_domain], [invalid_domain_ip],
+                [invalid_md5], [invalid_hostname], [invalid_hostname_port],
+                [invalid_http_method], [invalid_ip], [invalid_ip_port],
+                [invalid_port], [invalid_size], [invalid_x509_md5],
+                [domain_ip['Attribute'][0], domain_ip['uuid'], domain_ip['name']],
+                [ip_port['Attribute'][2], ip_port['uuid'], ip_port['name']],
+                [connection_src_ip, network_connection['uuid'], network_connection['name']],
+                [connection_dst_ip, network_connection['uuid'], network_connection['name']],
+                [network_socket['Attribute'][1], network_socket['uuid'], network_socket['name']]
+            )
+        )
+        if error_messages:
+            dont, attr, messages = (
+                ("s don't ", 'attributes', 'messages')
+                if len(error_messages) > 1 else
+                (" doesn't ", 'attribute', 'message')
+            )
+            message = (
+                f'Validation error message{dont} properly describe the {attr} '
+                f'that failed validation in the following {messages}'
+            )
+            self.fail(self._formatMessage('\n'.join(['\n', *error_messages]), message))
+        (attachment, email, email_attachment, email_body, email_dst,
+         email_header, email_reply_to, email_src, email_subject, email_x_mailer,
+         filename, filename_md5, mac_address, malware_sample, mutex, regkey,
+         regkey_value, url, user_agent, email_message_id) = attributes
+        (asn, credential, domain_ip, email_object, file_object, ip_port,
+         mutex_object, _, network_socket, pe, _, process, registry_key,
+         url_object, user_account, x509) = misp_objects
+        indicators = tuple(obj for obj in stix_objects if obj['type'] == 'indicator')
+        (attachment_indicator, email_indicator, email_attachment_indicator,
+         email_body_indicator, email_dst_indicator, email_header_indicator,
+         email_reply_to_indicator, email_src_indicator, email_subject_indicator,
+         email_x_mailer_indicator, filename_indicator, filename_md5_indicator,
+         mac_address_indicator, malware_sample_indicator, mutex_indicator,
+         regkey_indicator, regkey_value_indicator, url_indicator,
+         user_agent_indicator, email_message_id_indicator, asn_indicator,
+         credential_indicator, email_object_indicator, file_indicator,
+         ip_port_indicator, mutex_object_indicator, network_socket_indicator,
+         process_indicator, registry_key_indicator, url_object_indicator,
+         user_account_indicator, x509_indicator, pe_indicator) = indicators
+        self.assertIn(attachment.uuid, attachment_indicator.id)
+        self.assertIn(email.uuid, email_indicator.id)
+        self.assertIn(email_attachment.uuid, email_attachment_indicator.id)
+        self.assertIn(email_body.uuid, email_body_indicator.id)
+        self.assertIn(email_dst.uuid, email_dst_indicator.id)
+        self.assertIn(email_header.uuid, email_header_indicator.id)
+        self.assertIn(email_reply_to.uuid, email_reply_to_indicator.id)
+        self.assertIn(email_src.uuid, email_src_indicator.id)
+        self.assertIn(email_subject.uuid, email_subject_indicator.id)
+        self.assertIn(email_x_mailer.uuid, email_x_mailer_indicator.id)
+        self.assertIn(filename.uuid, filename_indicator.id)
+        self.assertIn(filename_md5.uuid, filename_md5_indicator.id)
+        self.assertIn(mac_address.uuid, mac_address_indicator.id)
+        self.assertIn(malware_sample.uuid, malware_sample_indicator.id)
+        self.assertIn(mutex.uuid, mutex_indicator.id)
+        self.assertIn(regkey.uuid, regkey_indicator.id)
+        self.assertIn(regkey_value.uuid, regkey_value_indicator.id)
+        self.assertIn(url.uuid, url_indicator.id)
+        self.assertIn(user_agent.uuid, user_agent_indicator.id)
+        self.assertIn(email_message_id.uuid, email_message_id_indicator.id)
+        self.assertIn(asn.uuid, asn_indicator.id)
+        self.assertIn(credential.uuid, credential_indicator.id)
+        self.assertIn(email_object.uuid, email_object_indicator.id)
+        self.assertIn(file_object.uuid, file_indicator.id)
+        self.assertIn(ip_port.uuid, ip_port_indicator.id)
+        self.assertIn(mutex_object.uuid, mutex_object_indicator.id)
+        self.assertIn(network_socket.uuid, network_socket_indicator.id)
+        self.assertIn(process.uuid, process_indicator.id)
+        self.assertIn(registry_key.uuid, registry_key_indicator.id)
+        self.assertIn(url_object.uuid, url_object_indicator.id)
+        self.assertIn(user_account.uuid, user_account_indicator.id)
+        self.assertIn(x509.uuid, x509_indicator.id)
+        self.assertIn(pe.uuid, pe_indicator.id)
 
     def _test_event_with_event_report(self, event):
         orgc = event['Orgc']
@@ -2704,7 +2777,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             f"autonomous-system--{misp_object['uuid']}"
         )
         self.assertEqual(autonomous_system.type, 'autonomous-system')
-        self.assertEqual(autonomous_system.number, int(asn[2:]))
+        self.assertEqual(autonomous_system.number, int(asn))
         self.assertEqual(autonomous_system.name, description)
         self.assertEqual(
             autonomous_system.x_misp_subnet_announced,
@@ -3776,7 +3849,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self._check_asn_observable_object(misp_object, observables[0], object_refs[0])
         asn = misp_object['Attribute'][0]
         asn_pattern = pattern[1:-1]
-        self.assertEqual(asn_pattern, f"autonomous-system:number = '{int(asn['value'][2:])}'")
+        self.assertEqual(asn_pattern, f"autonomous-system:number = '{asn['value']}'")
 
     def _test_event_with_asn_observable_object(self, event):
         misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
@@ -4346,23 +4419,25 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        sigma_ref, suricata_ref, yara_ref = self._check_grouping_features(grouping, event, identity_id)
+        sigma_ref, suricata_ref, yara_ref = self._check_grouping_features(
+            grouping, identity_id
+        )
         self._check_object_indicator_features(sigma_indicator, sigma, identity_id, sigma_ref)
         rule, context, reference, name, comment = sigma['Attribute']
-        self.assertEqual(sigma_indicator.pattern, rule['value'].replace("'", "\\'"))
+        self.assertEqual(sigma_indicator.pattern, rule['value'])
         self.assertEqual(sigma_indicator.pattern_type, rule['type'])
         self.assertEqual(sigma_indicator.external_references[0].url, reference['value'])
         self.assertEqual(sigma_indicator.x_misp_context, context['value'])
         self._check_object_indicator_features(suricata_indicator, suricata, identity_id, suricata_ref)
         rule, version, comment, ref = suricata['Attribute']
-        self.assertEqual(suricata_indicator.pattern, rule['value'].replace('"', '\\\\"'))
+        self.assertEqual(suricata_indicator.pattern, rule['value'])
         self.assertEqual(suricata_indicator.pattern_type, rule['type'])
         self.assertEqual(suricata_indicator.pattern_version, version['value'])
         self.assertEqual(suricata_indicator.description, comment['value'])
         self.assertEqual(suricata_indicator.external_references[0].url, ref['value'])
         self._check_object_indicator_features(yara_indicator, yara, identity_id, yara_ref)
         rule, version, comment, name = yara['Attribute']
-        self.assertEqual(yara_indicator.pattern, rule['value'].replace('"', '\\\\"'))
+        self.assertEqual(yara_indicator.pattern, rule['value'])
         self.assertEqual(yara_indicator.pattern_type, rule['type'])
         self.assertEqual(yara_indicator.pattern_version, version['value'])
         self.assertEqual(yara_indicator.description, comment['value'])
