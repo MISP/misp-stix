@@ -54,7 +54,8 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         if isinstance(json_content, (BufferedIOBase, TextIOBase)):
             json_content = json_content.read()
         if isinstance(json_content, (str, bytes)):
-            json_content = json.loads(json_content)
+            with open(json_content, 'r') as file:
+                json_content = json.loads(file.read())
         self._parse_json_content(json_content)
 
     ############################################################################
