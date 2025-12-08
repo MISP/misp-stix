@@ -8,11 +8,16 @@ from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from pymisp import MISPAttribute
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
 from ._test_stix import TestSTIX
 
 _DEFAULT_ORGNAME = 'MISP'
+_ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
+_MISP_OBJECT_EXCLUSION_LIST = (
+    'distribution', 'sharing_group_id', 'template_uuid', 'template_version'
+)
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
@@ -858,9 +863,19 @@ class TestSTIX21Export(TestSTIX2Export):
     _objects_v21 = defaultdict(lambda: defaultdict(dict))
     _galaxies_v21 = defaultdict(lambda: defaultdict(dict))
 
+    @staticmethod
+    def _populate_attribute(attribute, exclude=('disable_correlation')):
+        if isinstance(attribute, MISPAttribute):
+            attribute = json.loads(attribute.to_json())
+        for key, value in attribute.items():
+            if key not in exclude:
+                yield key, value
+
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
-        self._attributes_v21[feature]['MISP'] = json.loads(attribute.to_json())
+        self._attributes_v21[feature]['MISP'] = dict(
+            self._populate_attribute(attribute, exclude=_ATTRIBUTE_EXCLUSION_LIST)
+        )
         stix_objects = kwargs['stix']
         if isinstance(stix_objects, list):
             self._attributes_v21[feature]['STIX'] = [
@@ -877,13 +892,21 @@ class TestSTIX21Export(TestSTIX2Export):
             self._galaxies_v21['summary'][name] = summary
         self._galaxies_v21[name]['STIX'] = json.loads(kwargs['stix'].serialize())
 
+    def _populate_object(self, misp_object, exclude=_MISP_OBJECT_EXCLUSION_LIST):
+        for key, value in json.loads(misp_object.to_json()).items():
+            if key == 'Attribute':
+                yield key, [dict(self._populate_attribute(attribute)) for attribute in value]
+                continue
+            if key not in exclude:
+                yield key, value
+
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
             name = misp_object['name']
         self._objects_v21[name]['MISP'] = (
-            [json.loads(obj.to_json()) for obj in misp_object]
+            [dict(self._populate_object(obj)) for obj in misp_object]
             if isinstance(misp_object, list) else
-            json.loads(misp_object.to_json())
+            dict(self._populate_object(misp_object))
         )
         if summary is not None:
             self._objects_v21['summary'][name] = summary
