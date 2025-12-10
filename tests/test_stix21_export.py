@@ -6336,42 +6336,17 @@ class TestFeedSTIX21Export(TestSTIX2Export):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
-
-class TestFeedSTIX21JSONExport(TestFeedSTIX21Export):
-    def test_attributes_feed(self):
-        attributes = get_attributes_feed()
-        for attribute in attributes[:2]:
-            self.parser.parse_misp_attribute(attribute)
-        bundle = self.parser.bundle
-        (identity1, od1, nt1, ip1, indicator1, relationship1,
-         od2, nt2, ip2, indicator2, relationship2) = bundle.objects
-        for attribute in attributes[2:]:
-            self.parser.parse_misp_attribute(attribute)
-        bundle = self.parser.bundle
-        (identity2, od3, nt3, ip3, indicator3, relationship3,
-         od4, nt4, ip4, indicator4, relationship4) = bundle.objects
-        self._assert_multiple_equal(
-            f"identity--{attributes[2]['Event']['Orgc']['uuid']}",
-            identity1.id,
-            identity2.id
-        )
-        self._assert_multiple_equal(
-            attributes[3]['Event']['Orgc']['name'],
-            identity1.name,
-            identity2.name
-        )
-        indicators = (indicator1, indicator2, indicator3, indicator4)
-        observed_data_objects = (od1, od2, od3, od4)
-        relationships = (relationship1, relationship2, relationship3, relationship4)
-        network_traffic_observables = (nt1, nt2, nt3, nt4)
-        ip_address_observables = (ip1, ip2, ip3, ip4)
+    def _check_attributes_feed(self, indicators, od_objects, relationships,
+                               nt_observables, ip_observables, attributes):
         for index, attribute in enumerate(attributes):
-            attribute_uuid = attribute['Attribute']['uuid']
+            if 'Attribute' in attribute:
+                attribute = attribute['Attribute']
+            attribute_uuid = attribute['uuid']
             indicator = indicators[index]
-            observed_data = observed_data_objects[index]
+            observed_data = od_objects[index]
             relationship = relationships[index]
-            network_traffic = network_traffic_observables[index]
-            ip_address = ip_address_observables[index]
+            network_traffic = nt_observables[index]
+            ip_address = ip_observables[index]
             self._assert_multiple_equal(
                 indicator.id, relationship.source_ref,
                 f'indicator--{attribute_uuid}'
@@ -6382,54 +6357,87 @@ class TestFeedSTIX21JSONExport(TestFeedSTIX21Export):
             )
             self.assertEqual(network_traffic.id, f'network-traffic--{attribute_uuid}')
             self.assertEqual(ip_address.id, f'ipv4-addr--{attribute_uuid}')
+
+    def _test_attributes_feed(self, attributes):
+        (identity1, od1, nt1, ip1, indicator1, relationship1,
+         od2, nt2, ip2, indicator2, relationship2,
+         od3, nt3, ip3, indicator3, relationship3,
+         od4, nt4, ip4, indicator4, relationship4) = self.parser.bundle.objects
+        self.assertEqual(identity1.id, 'identity--a0c22599-9e58-4da4-96ac-7051603fa951')
+        self.assertEqual(identity1.name, 'MISP-Project')
+        indicators = (indicator1, indicator2, indicator3, indicator4)
+        observed_data_objects = (od1, od2, od3, od4)
+        relationships = (relationship1, relationship2, relationship3, relationship4)
+        network_traffic_observables = (nt1, nt2, nt3, nt4)
+        ip_address_observables = (ip1, ip2, ip3, ip4)
+        self._check_attributes_feed(
+            indicators, observed_data_objects, relationships,
+            network_traffic_observables, ip_address_observables, attributes
+        )
+
+    def _test_split_attributes_feed(self, bundle1, bundle2, attributes):
+        (identity1, od1, nt1, ip1, indicator1, relationship1,
+         od2, nt2, ip2, indicator2, relationship2) = bundle1.objects
+        (identity2, od3, nt3, ip3, indicator3, relationship3,
+         od4, nt4, ip4, indicator4, relationship4) = bundle2.objects
+        self._assert_multiple_equal(
+            'identity--a0c22599-9e58-4da4-96ac-7051603fa951',
+            identity1.id, identity2.id
+        )
+        self._assert_multiple_equal(
+            'MISP-Project', identity1.name, identity2.name
+        )
+        indicators = (indicator1, indicator2, indicator3, indicator4)
+        observed_data_objects = (od1, od2, od3, od4)
+        relationships = (relationship1, relationship2, relationship3, relationship4)
+        network_traffic_observables = (nt1, nt2, nt3, nt4)
+        ip_address_observables = (ip1, ip2, ip3, ip4)
+        self._check_attributes_feed(
+            indicators, observed_data_objects, relationships,
+            network_traffic_observables, ip_address_observables, attributes
+        )
+
+
+class TestFeedSTIX21JSONExport(TestFeedSTIX21Export):
+    def test_attributes_feed(self):
+        attributes = get_attributes_feed()
+        for attribute in attributes:
+            self.parser.parse_misp_attribute(attribute)
+        self._test_attributes_feed(attributes)
+
+    def test_split_attributes_feed(self):
+        attributes = get_attributes_feed()
+        for attribute in attributes[:2]:
+            self.parser.parse_misp_attribute(attribute)
+        bundle1 = self.parser.bundle
+        for attribute in attributes[2:]:
+            self.parser.parse_misp_attribute(attribute)
+        bundle2 = self.parser.bundle
+        self._test_split_attributes_feed(bundle1, bundle2, attributes)
 
 
 class TestFeedSTIX21MISPExport(TestFeedSTIX21Export):
     def test_attributes_feed(self):
         attributes = get_attributes_feed()
+        for attribute in attributes:
+            attribute['Attribute']['Event'] = attribute['Event']
+            misp_attribute = MISPAttribute()
+            misp_attribute.from_dict(**attribute)
+            self.parser.parse_misp_attribute(misp_attribute)
+        self._test_attributes_feed(attributes)
+
+    def test_split_attributes_feed(self):
+        attributes = get_attributes_feed()
         for attribute in attributes[:2]:
+            attribute['Attribute']['Event'] = attribute['Event']
             misp_attribute = MISPAttribute()
             misp_attribute.from_dict(**attribute)
             self.parser.parse_misp_attribute(misp_attribute)
-        bundle = self.parser.bundle
-        (identity1, od1, nt1, ip1, indicator1, relationship1,
-         od2, nt2, ip2, indicator2, relationship2) = bundle.objects
+        bundle1 = self.parser.bundle
         for attribute in attributes[2:]:
+            attribute['Attribute']['Event'] = attribute['Event']
             misp_attribute = MISPAttribute()
             misp_attribute.from_dict(**attribute)
             self.parser.parse_misp_attribute(misp_attribute)
-        bundle = self.parser.bundle
-        (identity2, od3, nt3, ip3, indicator3, relationship3,
-         od4, nt4, ip4, indicator4, relationship4) = bundle.objects
-        self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args()['id'],
-            identity1.id,
-            identity2.id
-        )
-        self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args()['name'],
-            identity1.name,
-            identity2.name
-        )
-        indicators = (indicator1, indicator2, indicator3, indicator4)
-        observed_data_objects = (od1, od2, od3, od4)
-        relationships = (relationship1, relationship2, relationship3, relationship4)
-        network_traffic_observables = (nt1, nt2, nt3, nt4)
-        ip_address_observables = (ip1, ip2, ip3, ip4)
-        for index, attribute in enumerate(attributes):
-            attribute_uuid = attribute['Attribute']['uuid']
-            indicator = indicators[index]
-            observed_data = observed_data_objects[index]
-            relationship = relationships[index]
-            network_traffic = network_traffic_observables[index]
-            ip_address = ip_address_observables[index]
-            self._assert_multiple_equal(
-                indicator.id, relationship.source_ref,
-                f'indicator--{attribute_uuid}'
-            )
-            self._assert_multiple_equal(
-                observed_data.id, relationship.target_ref,
-                f'observed-data--{attribute_uuid}'
-            )
-            self.assertEqual(network_traffic.id, f'network-traffic--{attribute_uuid}')
-            self.assertEqual(ip_address.id, f'ipv4-addr--{attribute_uuid}')
+        bundle2 = self.parser.bundle
+        self._test_split_attributes_feed(bundle1, bundle2, attributes)
