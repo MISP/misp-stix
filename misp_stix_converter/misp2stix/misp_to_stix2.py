@@ -15,9 +15,8 @@ from pathlib import Path
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
     MISPNote, MISPObject, MISPOpinion)
-from pymisp.tools import (
-    AttributeValidationTool, validate_attribute, validate_attributes,
-    validate_event, ValidationError)
+from pymisp.exceptions import PyMISPError
+from pymisp.tools import validate_attribute, validate_attributes, validate_event
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -94,17 +93,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._initiate_feed_parsing()
         self.__relationships = []
         self._handle_identity_from_feed(attribute.get('Event', {}))
-        if 'Attribute' in attribute:
-            attribute = attribute['Attribute']
-        value = AttributeValidationTool.modifyBeforeValidation(
-            attribute['type'], attribute['value']
-        )
-        validated = AttributeValidationTool.validate(attribute['type'], value)
-        if validated is not True:
-            self._validation_errors(validated)
+        try:
+            misp_attribute = validate_attribute(attribute)
+        except PyMISPError as exception:
+            self._validation_errors(str(exception))
             return
-        attribute['value'] = value
-        self._resolve_attribute(attribute)
+        self._resolve_attribute(misp_attribute)
         if self.relationships:
             self._handle_relationships()
 
