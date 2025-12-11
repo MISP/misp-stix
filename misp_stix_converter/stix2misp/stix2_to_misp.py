@@ -141,7 +141,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def load_stix_bundle(self, bundle: Bundle_v20 | Bundle_v21,
                          invalid_objects: Optional[dict] = {}):
         self.__invalid_objects = invalid_objects
-        self._identifier = bundle.id
+        self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
         self._load_stix_bundle(bundle)
         self._set_indicator_references()
@@ -212,7 +212,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def generic_info_field(self) -> str:
         if self.event_title is not None:
             return self.event_title
-        message = f'STIX {self.stix_version} Bundle ({self._identifier})'
+        message = f'STIX {self.stix_version} Bundle ({self.identifier})'
         return f'{message} and converted with the MISP-STIX import feature.'
 
     @property
@@ -1047,7 +1047,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         event_args = {
-            'uuid': self._identifier.split('--')[1],
+            'uuid': self.identifier.split('--')[1],
             'info': self.generic_info_field,
             'distribution': self.distribution
         }

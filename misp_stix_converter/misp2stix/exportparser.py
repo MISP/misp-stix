@@ -3,10 +3,10 @@
 
 import json
 import traceback
+from ..abstract import AbstractParser
 from .stix1_mapping import MISPtoSTIX1Mapping
 from .stix20_mapping import MISPtoSTIX20Mapping
 from .stix21_mapping import MISPtoSTIX21Mapping
-from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime, timezone
 from io import BufferedIOBase, TextIOBase
@@ -15,16 +15,13 @@ from pymisp import MISPAttribute, MISPObject
 from typing import IO, Optional, Union
 
 
-class MISPtoSTIXParser(metaclass=ABCMeta):
+class MISPtoSTIXParser(AbstractParser):
     __composite_separators = ('|', '_')
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
     def __init__(self):
         super().__init__()
-        self.__errors: defaultdict = defaultdict(list)
-        self.__warnings: defaultdict = defaultdict(set)
-        self._identifier: str
         self._mapping: Union[
             MISPtoSTIX1Mapping, MISPtoSTIX20Mapping, MISPtoSTIX21Mapping
         ]
@@ -33,17 +30,6 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
     @property
     def composite_separators(cls) -> tuple:
         return cls.__composite_separators
-
-    @property
-    def errors(self) -> dict:
-        return self.__errors
-
-    @property
-    def warnings(self) -> dict:
-        return {
-            identifier: list(warnings)
-            for identifier, warnings in self.__warnings.items()
-        }
 
     def parse_json_file(self, filename: Path | str):
         with open(filename, 'rt', encoding='utf-8') as f:
@@ -257,30 +243,29 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
             f"(uuid: {attribute['uuid']})"
         )
         tb = self._parse_traceback(exception)
-        message = f"Error with the {features}:\n{tb}."
-        self.__errors[self._identifier].append(message)
+        self._add_error(f"Error with the {features}:\n{tb}.")
         self._parse_custom_attribute(attribute)
 
     def _attribute_galaxy_not_mapped_warning(
             self, galaxy_type: str, attribute_type: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f"{galaxy_type} galaxy in {attribute_type} attribute not mapped."
         )
 
     def _attribute_not_mapped_warning(self, attribute_type: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'MISP Attribute type {attribute_type} not mapped.'
         )
 
     def _composite_attribute_value_warning(
             self, attribute_type: str, value: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'The {attribute_type} MISP Attribute '
             f'should have a composite value: {value}.'
         )
 
     def _country_code_warning(self, country: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'Location `country` warning for "{country}": '
             'this value should be a valid ISO 3166-1 ALPHA-2 Code.'
         )
@@ -292,29 +277,29 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
 
     def _invalid_attribute_hash_value_error(
             self, attribute: Union[MISPAttribute, dict]):
-        self.__errors[self._identifier].append(
+        self._add_error(
             f"Error with the {attribute['type']} value: "
             f"{attribute['value']} is not a valid {attribute['type']} hash."
         )
 
     def _invalid_object_hash_value_error(
             self, hash_type: str, misp_object: Union[MISPObject, dict]):
-        self.__errors[self._identifier].append(
+        self._add_error(
             f"Error with the {misp_object['name']} object "
             f"(uuid: {misp_object['uuid']}): Invalid {hash_type} value."
         )
 
     def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'{galaxy_type} galaxy in event not mapped.'
         )
 
     def _missing_orgc_error(self):
-        self.__errors[self._identifier].append(f'Missing Orgc field.')
+        self._add_error(f'Missing Orgc field.')
 
     def _missing_orgc_field_error(self, orgc: dict):
         missing = (field for field in ('name', 'uuid') if field not in orgc)
-        self.__errors[self._identifier].append(
+        self._add_error(
             f"Error with the Orgc field missing its {' and '.join(missing)}"
             f"{'values' if len(missing) > 1 else 'value'}. Please make sure"
             ' both the name and uuid values are provided.'
@@ -323,28 +308,27 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
     def _object_error(self, misp_object: dict, exception: Exception):
         features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
         tb = self._parse_traceback(exception)
-        message = f"Error with the {features}:\n{tb}."
-        self.__errors[self._identifier].append(message)
+        self._add_error(f"Error with the {features}:\n{tb}.")
         self._parse_custom_object(misp_object)
 
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, name: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f"{galaxy_type} galaxy in {name} object not mapped."
         )
 
     def _object_galaxy_incompatible_warning(self, galaxy_type: str, name: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'{galaxy_type} galaxy not compatible with '
             f'the {name} STIX 1 object.'
         )
 
     def _object_not_mapped_warning(self, object_name: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'MISP Object name {object_name} not mapped.'
         )
 
     def _parent_galaxy_not_mapping_warning(self, galaxy_type: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'{galaxy_type} galaxy from event level not mapped.'
         )
 
@@ -354,27 +338,27 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
         return f'{tb}{exception.__str__()}'
 
     def _pe_reference_warning(self, file_uuid: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             'Unable to find the pe object related to '
             f'the file object {file_uuid}.'
         )
 
     def _referenced_object_name_warning(
             self, object_name: str, referenced_uuid: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'Reference to a non existing {object_name} '
             f'object with uuid: {referenced_uuid}.'
         )
 
     def _required_fields_missing_warning(
             self, object_type: str, object_name: str):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'Missing minimum requirement to build a {object_type} '
             f'object from a {object_name} MISP Object.'
         )
 
     def _unclear_pe_references_warning(self, file_uuid: str, pe_uuids: list):
-        self.__warnings[self._identifier].add(
+        self._add_warning(
             f'The file object {file_uuid} has more than one reference '
             f"to pe objects: {', '.join(pe_uuids)}"
         )
@@ -382,9 +366,9 @@ class MISPtoSTIXParser(metaclass=ABCMeta):
     def _validation_errors(self, *messages: tuple[str]):
         identifier = getattr(self, '_identifier', 'misp event')
         for message in messages:
-            self.__errors[identifier].append(message)
+            self._add_error(message, identifier)
 
     def _validation_warnings(self, *messages: tuple[str]):
         identifier = getattr(self, '_identifier', 'misp event')
         for message in messages:
-            self.__warnings[identifier].add(message)
+            self._add_warning(message, identifier)

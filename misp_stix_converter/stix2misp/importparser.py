@@ -2,6 +2,7 @@
 
 import json
 import traceback
+from ..abstract import AbstractParser
 from .exceptions import UnavailableGalaxyResourcesError
 from abc import ABCMeta
 from collections import defaultdict
@@ -10,7 +11,7 @@ from pathlib import Path
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from typing import Optional, Union
-from uuid import UUID, uuid5
+from uuid import UUID
 
 _DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 
@@ -20,7 +21,6 @@ _DEFAULT_DISTRIBUTION = 0
 
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
-_UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 
 def _load_json_file(path) -> dict:
@@ -54,9 +54,9 @@ class ExternalSTIXtoMISPParser(metaclass=ABCMeta):
         return self.__organisation_uuid
 
 
-class STIXtoMISPParser(metaclass=ABCMeta):
+class STIXtoMISPParser(AbstractParser):
     def __init__(self):
-        self._identifier: str
+        super().__init__()
         self.__distribution: int
         self.__galaxies_as_tags: bool
         self.__galaxy_feature: str
@@ -65,8 +65,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         self.__sharing_group_id: Union[int, None]
         self.__title: Union[str, None]
 
-        self.__errors: defaultdict = defaultdict(set)
-        self.__warnings: defaultdict = defaultdict(set)
         self.__replacement_uuids: dict = {}
 
     def _populate_misp_event(self):
@@ -138,10 +136,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return self.__title
 
     @property
-    def errors(self) -> dict:
-        return self.__errors
-
-    @property
     def force_contextual_data(self) -> bool:
         return self.__force_contextual_data
 
@@ -203,44 +197,37 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             self.__get_synonyms_mapping()
             return self.__synonyms_mapping
 
-    @property
-    def warnings(self) -> defaultdict:
-        return self.__warnings
-
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
 
-    def _add_error(self, error: str):
-        self.__errors[self._identifier].add(error)
-
-    def _add_warning(self, warning: str):
-        self.__warnings[self._identifier].add(warning)
-
     def _cluster_distribution_and_sharing_group_id_error(self):
-        self.__errors['init'].add(
+        self._add_error(
             'Invalid Cluster Sharing Group ID - '
-            'cannot be None when distribution is 4'
+            'cannot be None when distribution is 4',
+            'init'
         )
 
     def _distribution_and_sharing_group_id_error(self):
-        self.__errors['init'].add(
-            'Invalid Sharing Group ID - cannot be None when distribution is 4'
+        self._add_error(
+            'Invalid Sharing Group ID - cannot be None when distribution is 4',
+            'init'
         )
 
     def _distribution_and_sharing_group_id_error(self):
-        self.__errors['init'].add(
-            'Invalid Sharing Group ID - cannot be None when distribution is 4'
+        self._add_error(
+            'Invalid Sharing Group ID - cannot be None when distribution is 4',
+            'init'
         )
 
     def _distribution_error(self, exception: Exception):
-        self.__errors['init'].add(
-            f'Wrong distribution format: {exception}'
+        self._add_error(
+            f'Wrong distribution format: {exception}', 'init'
         )
 
     def _distribution_value_error(self, distribution: int):
-        self.__errors['init'].add(
-            f'Invalid distribution value: {distribution}'
+        self._add_error(
+            f'Invalid distribution value: {distribution}', 'init'
         )
 
     @staticmethod
@@ -249,8 +236,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return f'{tb}{exception.__str__()}'
 
     def _sharing_group_id_error(self, exception: Exception):
-        self.__errors['init'].add(
-            f'Wrong sharing group id format: {exception}'
+        self._add_error(
+            f'Wrong sharing group id format: {exception}', 'init'
         )
 
     ############################################################################
@@ -360,10 +347,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             self.replacement_uuids[object_uuid] = self._create_v5_uuid(
                 object_uuid
             )
-
-    @staticmethod
-    def _create_v5_uuid(value: str) -> UUID:
-        return uuid5(_UUIDv4, value)
 
     def _sanitise_attribute_uuid(
             self, object_id: str, comment: Optional[str] = None,

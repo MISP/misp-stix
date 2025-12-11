@@ -88,7 +88,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def parse_misp_attribute(self, attribute: MISPAttribute | dict):
         self._results_handling_method = '_append_SDO_without_refs'
-        self._identifier = 'attribute feed'
+        self._set_identifier('attribute feed')
         if not self.__initiated:
             self._initiate_feed_parsing()
         self.__relationships = []
@@ -104,7 +104,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def parse_misp_attributes(self, attributes: MISPAttribute | dict):
         self._results_handling_method = '_append_SDO_without_refs'
-        self._identifier = 'attributes collection'
+        self._set_identifier('attributes collection')
         if not self.__initiated:
             self._initiate_attributes_parsing()
         else:
@@ -161,7 +161,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if errors:
             self._handle_validation_errors(errors)
-        self._identifier = self._misp_event['uuid']
+        self._set_identifier(self._misp_event['uuid'])
         self.__event_timestamp = self._handle_event_timestamp()
         self.__object_refs = []
         self.__relationships = []
