@@ -4411,6 +4411,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 'relationship_type': reference['relationship_type'],
                 'allow_custom': True, 'interoperability': True
             }
+            if reference.get('uuid'):
+                relationship['id'] = f"relationship--{reference['uuid']}"
             if reference.get('timestamp'):
                 reference_timestamp = self._datetime_from_timestamp(
                     reference['timestamp']
