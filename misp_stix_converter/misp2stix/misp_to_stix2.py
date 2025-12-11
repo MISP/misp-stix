@@ -461,6 +461,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if target_ref is None:
                     continue
                 relationship['target_ref'] = target_ref
+            if relationship.get('id') is None:
+                relationship_id = self._create_v5_uuid(
+                    ' - '.join(
+                        relationship[field] for field in
+                        ('source_ref', 'relationship_type', 'target_ref')
+                    )
+                )
+                relationship['id'] = f'relationship--{relationship_id}'
             getattr(self, self._results_handling_method)(
                 self._create_relationship(relationship)
             )
