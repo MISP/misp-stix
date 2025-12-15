@@ -4965,7 +4965,7 @@ def get_event_with_email_object():
     return event
 
 
-def get_event_with_email_object_with_display_names():
+def get_event_with_email_with_display_names_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES)

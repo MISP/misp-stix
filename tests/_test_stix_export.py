@@ -121,6 +121,42 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
+    def _check_account_indicator_objects(self, misp_objects, patterns):
+        gitlab_object, telegram_object = misp_objects
+        gitlab_pattern, telegram_pattern = patterns
+        gitlab_id = gitlab_object.attributes[0].value
+        account_type, user_id = gitlab_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'gitlab'")
+        self.assertEqual(user_id, f"user-account:user_id = '{gitlab_id}'")
+        telegram_id = telegram_object.attributes[0].value
+        account_type, user_id = telegram_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'telegram'")
+        self.assertEqual(user_id, f"user-account:user_id = '{telegram_id}'")
+
+    def _check_account_with_attachment_indicator_objects(self, misp_objects, patterns):
+        facebook_account, github_user, parler_account, reddit_account, twitter_account = misp_objects
+        facebook_pattern, github_pattern, parler_pattern, reddit_pattern, twitter_pattern = patterns
+        account_id = facebook_account.attributes[0].value
+        account_type, user_id = facebook_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
+        self.assertEqual(user_id, f"user-account:user_id = '{account_id}'")
+        github_id = github_user.attributes[0].value
+        account_type, user_id = github_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'github'")
+        self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
+        parler_id = parler_account.attributes[0].value
+        account_type, user_id = parler_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'parler'")
+        self.assertEqual(user_id, f"user-account:user_id = '{parler_id}'")
+        reddit_id = reddit_account.attributes[0].value
+        account_type, user_id = reddit_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'reddit'")
+        self.assertEqual(user_id, f"user-account:user_id = '{reddit_id}'")
+        _id = twitter_account.attributes[0].value
+        account_type, user_id = twitter_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'twitter'")
+        self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
+
     def _check_attack_pattern_meta_fields(self, stix_object, meta):
         external_ref, *external_refs = stix_object.external_references
         self.assertEqual(external_ref.external_id, meta['external_id'])
@@ -459,9 +495,7 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_object_vulnerability_features(self, vulnerability, misp_object, identity_id, object_ref):
         self._assert_multiple_equal(
-            vulnerability.id,
-            f"vulnerability--{misp_object['uuid']}",
-            object_ref
+            vulnerability.id, f"vulnerability--{misp_object['uuid']}", object_ref
         )
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
@@ -470,7 +504,9 @@ class TestSTIX2Export(TestSTIX):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
-        cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
+        cve, cvss, summary, created, published, references1, references2 = (
+            attribute.value for attribute in misp_object.attributes
+        )
         self.assertEqual(vulnerability.name, cve)
         self.assertEqual(vulnerability.description, summary)
         timestamp = misp_object['timestamp']
@@ -857,6 +893,7 @@ class TestSTIX20Export(TestSTIX2Export):
             ]
             return
         self._objects_v20[name]['STIX'] = json.loads(stix_objects.serialize())
+
 
 class TestSTIX21Export(TestSTIX2Export):
     _attributes_v21 = defaultdict(lambda: defaultdict(dict))

@@ -554,12 +554,10 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
 
     def _check_as_observable_attribute(self, attribute, autonomous_system, object_ref):
         self._assert_multiple_equal(
-            autonomous_system.id, object_ref,
-            f"autonomous-system--{attribute['uuid']}"
+            autonomous_system.id, object_ref, f"autonomous-system--{attribute.uuid}"
         )
         self.assertEqual(autonomous_system.type, 'autonomous-system')
-        number = self._parse_AS_value(attribute['value'])
-        self.assertEqual(autonomous_system.number, number)
+        self.assertEqual(autonomous_system.number, attribute.value)
 
     def _check_attachment_observable_attribute(self, attribute, observables, object_refs):
         file_object, artifact_object = observables
@@ -1215,8 +1213,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         attribute, observable, object_refs, pattern = self._run_indicator_tests(event)
         self._assert_multiple_equal(len(observable), len(object_refs), 1)
         self._check_as_observable_attribute(attribute, observable[0], object_refs[0])
-        number = self._parse_AS_value(attribute['value'])
-        self.assertEqual(pattern, f"[autonomous-system:number = '{number}']")
+        self.assertEqual(pattern, f"[autonomous-system:number = '{attribute.value}']")
 
     def _test_event_with_as_observable_attribute(self, event):
         attribute, observable, object_refs = self._run_observable_tests(event)
@@ -2511,18 +2508,6 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
 
 
 class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
-    def _check_account_indicator_objects(self, misp_objects, patterns):
-        gitlab_object, telegram_object = misp_objects
-        gitlab_pattern, telegram_pattern = patterns
-        gitlab_id = gitlab_object['Attribute'][0]['value']
-        account_type, user_id = gitlab_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'gitlab'")
-        self.assertEqual(user_id, f"user-account:user_id = '{gitlab_id}'")
-        telegram_id = telegram_object['Attribute'][0]['value']
-        account_type, user_id = telegram_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, "user-account:account_type = 'telegram'")
-        self.assertEqual(user_id, f"user-account:user_id = '{telegram_id}'")
-
     def _check_account_observable_objects(self, misp_objects, observables, object_refs):
         for object_ref, observable, misp_object in zip(object_refs, observables, misp_objects):
             self._assert_multiple_equal(
@@ -2545,30 +2530,6 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(telegram.user_id, telegram_id)
         self.assertEqual(telegram.account_login, username)
         self.assertEqual(telegram.x_misp_phone, [phone1, phone2])
-
-    def _check_account_with_attachment_indicator_objects(self, misp_objects, patterns):
-        facebook_account, github_user, parler_account, reddit_account, twitter_account = misp_objects
-        facebook_pattern, github_pattern, parler_pattern, reddit_pattern, twitter_pattern = patterns
-        account_id = facebook_account['Attribute'][0]['value']
-        account_type, user_id = facebook_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
-        self.assertEqual(user_id, f"user-account:user_id = '{account_id}'")
-        github_id = github_user['Attribute'][0]['value']
-        account_type, user_id = github_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, "user-account:account_type = 'github'")
-        self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
-        parler_id = parler_account['Attribute'][0]['value']
-        account_type, user_id = parler_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'parler'")
-        self.assertEqual(user_id, f"user-account:user_id = '{parler_id}'")
-        reddit_id = reddit_account['Attribute'][0]['value']
-        account_type, user_id = reddit_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'reddit'")
-        self.assertEqual(user_id, f"user-account:user_id = '{reddit_id}'")
-        _id = twitter_account['Attribute'][0]['value']
-        account_type, user_id = twitter_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'twitter'")
-        self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
 
     def _check_account_with_attachment_observable_objects(self, misp_objects, observables, object_refs):
         for object_ref, observable, misp_object in zip(object_refs, observables, misp_objects):
@@ -3916,10 +3877,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         employee_ref = self._check_grouping_features(grouping, identity_id)[0]
         employee_type = self._check_employee_object(
-            employee,
-            misp_object,
-            employee_ref,
-            identity_id
+            employee, misp_object, employee_ref, identity_id
         )
         self.assertEqual(employee.roles, [employee_type])
 
@@ -3945,18 +3903,18 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _test_event_with_file_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._check_file_observable_object(misp_object, observables, object_refs)
-        _malware_sample, _filename, _md5, _sha1, _sha256, *_ = misp_object['Attribute']
+        _malware_sample, _filename, _md5, _sha1, _sha256, *_ = misp_object.attributes
         md5_, sha1_, sha256_, filename_, malware_sample_ = self._reassemble_pattern(pattern[1:-1])
-        self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5['value']}'")
-        self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1['value']}'")
-        self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256['value']}'")
-        self.assertEqual(filename_, f"file:name = '{_filename['value']}'")
+        self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5.value}'")
+        self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1.value}'")
+        self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256.value}'")
+        self.assertEqual(filename_, f"file:name = '{_filename.value}'")
         ms_data, ms_filename, ms_md5, mime_type, encryption, decryption = malware_sample_.split(' AND ')
-        data = _malware_sample['data']
+        data = _malware_sample.data
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(ms_data, f"(file:content_ref.payload_bin = '{data}'")
-        filename, md5 = _malware_sample['value'].split('|')
+        filename, md5 = _malware_sample.value.split('|')
         self.assertEqual(ms_filename, f"file:content_ref.x_misp_filename = '{filename}'")
         self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}'")
         self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
@@ -4009,7 +3967,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._check_http_request_observable_object(misp_object, observables, object_refs)
         ip_src, ip_dst, host, _, _, uri, url, _ = (
-            attribute['value'] for attribute in misp_object['Attribute']
+            attribute.value for attribute in misp_object.attributes
         )
         (src_type, src_value, dst_type, dst_value, host_type, host_value,
          req_value1, req_value2, *_) = pattern[1:-1].split(' AND ')
@@ -4038,41 +3996,23 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
-        identity_id = self._check_identity_features(created_by_ref_identity, orgc, timestamp)
+        identity_id = self._check_identity_features(
+            created_by_ref_identity, orgc, timestamp
+        )
         object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self.assertEqual(identity.type, 'identity')
         self._assert_multiple_equal(
-            identity.id,
-            object_ref,
-            f"identity--{misp_object['uuid']}"
+            identity.id, object_ref, f"identity--{misp_object['uuid']}"
         )
         self.assertEqual(identity.created_by_ref, identity_id)
-        name, contact_information, description, identity_class, roles = (attribute['value'] for attribute in misp_object['Attribute'])
+        name, contact_information, description, identity_class, roles = (
+            attribute.value for attribute in misp_object.attributes
+        )
         self.assertEqual(identity.name, name)
         self.assertEqual(identity.contact_information, contact_information)
         self.assertEqual(identity.description, description)
         self.assertEqual(identity.identity_class, identity_class)
         self.assertEqual(identity.roles, [roles])
-
-    def _test_event_with_intrusion_set_object(self, event):
-        orgc = event['Orgc']
-        self.parser.parse_misp_event(event)
-        misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
-        self._check_spec_versions(stix_objects)
-        identity, grouping, intrusion_set = stix_objects
-        timestamp = event['timestamp']
-        if not isinstance(timestamp, datetime):
-            timestamp = self._datetime_from_timestamp(timestamp)
-        identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_ref = self._check_grouping_features(grouping, identity_id)[0]
-        self._assert_multiple_equal(
-            intrusion_set.id,
-            grouping['object_refs'][0],
-            f"intrusion-set--{misp_object['uuid']}",
-            object_ref
-        )
-        self._check_intrusion_set_object(intrusion_set, misp_object, identity_id)
 
     def _test_event_with_image_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -4092,12 +4032,30 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
         self._check_image_observable_object(misp_object, observables, object_refs)
 
+    def _test_event_with_intrusion_set_object(self, event):
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, intrusion_set = stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_ref = self._check_grouping_features(grouping, identity_id)[0]
+        self._assert_multiple_equal(
+            intrusion_set.id, object_ref, grouping['object_refs'][0],
+            f"intrusion-set--{misp_object['uuid']}"
+        )
+        self._check_intrusion_set_object(intrusion_set, misp_object, identity_id)
+
     def _test_event_with_ip_port_indicator_object(self, event):
-        prefix = 'network-traffic'
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._check_ip_port_observable_object(misp_object, observables, object_refs)
         ip, _, domain, _ = (attribute['value'] for attribute in misp_object['Attribute'])
         ip_type, ip_value, domain_type, domain_value = pattern[1:-1].split(' AND ')
+        prefix = 'network-traffic'
         self.assertEqual(ip_type, f"({prefix}:dst_ref.type = 'ipv4-addr'")
         self.assertEqual(ip_value, f"{prefix}:dst_ref.value = '{ip}')")
         self.assertEqual(domain_type, f"({prefix}:dst_ref.type = 'domain-name'")
@@ -4120,18 +4078,13 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         legal_entity_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._check_legal_entity_object_features(
-            legal_entity,
-            misp_object,
-            legal_entity_ref,
-            identity_id
+            legal_entity, misp_object, legal_entity_ref, identity_id
         )
 
     def _test_event_with_lnk_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._check_lnk_observable_object(misp_object, observables, object_refs)
-        filename, _, md5, sha1, sha256, malware_sample, *_ = (
-            attribute for attribute in misp_object['Attribute']
-        )
+        filename, _, md5, sha1, sha256, malware_sample, *_ = misp_object.attributes
         name, md5_pattern, sha1_pattern, sha256_pattern, artifact = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(name, f"file:name = '{filename['value']}'")
         self.assertEqual(md5_pattern, f"file:hashes.MD5 = '{md5['value']}'")
@@ -4274,9 +4227,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         name, description, address, email, phone, role, alias = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(organization.type, 'identity')
         self._assert_multiple_equal(
-            organization.id,
-            organization_ref,
-            f"identity--{misp_object['uuid']}"
+            organization.id, organization_ref, f"identity--{misp_object['uuid']}"
         )
         self.assertEqual(organization.identity_class, 'organization')
         timestamp = misp_object['timestamp']
@@ -4659,7 +4610,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_annotation_object()
         self._test_event_with_annotation_object(event['Event'])
         self._populate_documentation(
-            misp_object=self.parser._misp_event.objects[0],
+            misp_object=self.parser._misp_event.objects,
             stix=self.parser.stix_objects[2:]
         )
 
@@ -4760,7 +4711,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         self._test_event_with_email_observable_object(event['Event'])
 
     def test_event_with_email_with_display_names_indicator_object(self):
-        event = get_event_with_email_object_with_display_names()
+        event = get_event_with_email_with_display_names_object()
         self._test_event_with_email_with_display_names_indicator_object(event['Event'])
         self._populate_documentation(
             misp_object=self.parser._misp_event.objects[0],
@@ -4768,7 +4719,7 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         )
 
     def test_event_with_email_with_display_names_observable_object(self):
-        event = get_event_with_email_object_with_display_names()
+        event = get_event_with_email_with_display_names_object()
         self._test_event_with_email_with_display_names_observable_object(event['Event'])
 
     def test_event_with_employee_object(self):
@@ -5230,13 +5181,13 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         self._test_event_with_email_observable_object(misp_event)
 
     def test_event_with_email_with_display_names_indicator_object(self):
-        event = get_event_with_email_object_with_display_names()
+        event = get_event_with_email_with_display_names_object()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_email_with_display_names_indicator_object(misp_event)
 
     def test_event_with_email_with_display_names_observable_object(self):
-        event = get_event_with_email_object_with_display_names()
+        event = get_event_with_email_with_display_names_object()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_email_with_display_names_observable_object(misp_event)
@@ -5803,7 +5754,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._test_event_with_intrusion_set_galaxy(event['Event'])
         self._populate_documentation(
             galaxy=self.parser._misp_event.galaxies[0],
-            stix=self.parser.stix_objects[-1],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_intrusion_set_21_galaxy(self):
@@ -5811,7 +5762,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._test_event_with_intrusion_set_galaxy(event['Event'])
         self._populate_documentation(
             galaxy=self.parser._misp_event.galaxies[0],
-            stix=self.parser.stix_objects[-1],
+            stix=self.parser.stix_objects[-1]
         )
 
     def test_event_with_custom_location_galaxy(self):
