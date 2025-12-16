@@ -231,97 +231,18 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self.assertEqual(relationship.target_ref, observed_data1.id)
 
     def _test_event_with_escaped_characters(self, event):
-        (invalid_AS, _, invalid_domain, invalid_domain_ip, *_, invalid_md5,
-         _, invalid_hostname, invalid_hostname_port, invalid_http_method,
-         invalid_ip, invalid_ip_port, _, _, _, invalid_port, _, _,
-         invalid_size, _, _, invalid_x509_md5, _) = deepcopy(event['Attribute'])
-        (_, _, domain_ip, _, _, ip_port, _, network_connection,
-         network_socket, *_) = deepcopy(event['Object'])
+        *initial_attributes, _ = deepcopy(event['Attribute'])
+        misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
-        attributes = self.parser._misp_event.attributes
-        misp_objects = self.parser._misp_event.objects
+        *attributes, email_message_id = self.parser._misp_event.attributes
         stix_objects = self._check_bundle_features(142)
+        indicators = [obj for obj in stix_objects if obj.type == 'indicator']
+        email_message_id_indicator = indicators.pop(19)
         self._check_spec_versions(stix_objects)
-        validation_errors = self.parser.warnings.get('misp event', [])
-        self.assertEqual(len(validation_errors), 17)
-        connection_src_ip, connection_dst_ip = network_connection['Attribute']
-        error_messages = list(
-            self._check_validation_errors(
-                validation_errors,
-                [invalid_AS], [invalid_domain], [invalid_domain_ip],
-                [invalid_md5], [invalid_hostname], [invalid_hostname_port],
-                [invalid_http_method], [invalid_ip], [invalid_ip_port],
-                [invalid_port], [invalid_size], [invalid_x509_md5],
-                [domain_ip['Attribute'][0], domain_ip['uuid'], domain_ip['name']],
-                [ip_port['Attribute'][2], ip_port['uuid'], ip_port['name']],
-                [connection_src_ip, network_connection['uuid'], network_connection['name']],
-                [connection_dst_ip, network_connection['uuid'], network_connection['name']],
-                [network_socket['Attribute'][1], network_socket['uuid'], network_socket['name']]
-            )
+        self._check_event_with_escaped_characters(
+            indicators, initial_attributes, attributes, misp_objects
         )
-        if error_messages:
-            dont, attr, messages = (
-                ("s don't ", 'attributes', 'messages')
-                if len(error_messages) > 1 else
-                (" doesn't ", 'attribute', 'message')
-            )
-            message = (
-                f'Validation error message{dont} properly describe the {attr} '
-                f'that failed validation in the following {messages}'
-            )
-            self.fail(self._formatMessage('\n'.join(['\n', *error_messages]), message))
-        (attachment, email, email_attachment, email_body, email_dst,
-         email_header, email_reply_to, email_src, email_subject, email_x_mailer,
-         filename, filename_md5, mac_address, malware_sample, mutex, regkey,
-         regkey_value, url, user_agent, email_message_id) = attributes
-        (asn, credential, domain_ip, email_object, file_object, ip_port,
-         mutex_object, _, network_socket, pe, _, process, registry_key,
-         url_object, user_account, x509) = misp_objects
-        indicators = tuple(obj for obj in stix_objects if obj['type'] == 'indicator')
-        (attachment_indicator, email_indicator, email_attachment_indicator,
-         email_body_indicator, email_dst_indicator, email_header_indicator,
-         email_reply_to_indicator, email_src_indicator, email_subject_indicator,
-         email_x_mailer_indicator, filename_indicator, filename_md5_indicator,
-         mac_address_indicator, malware_sample_indicator, mutex_indicator,
-         regkey_indicator, regkey_value_indicator, url_indicator,
-         user_agent_indicator, email_message_id_indicator, asn_indicator,
-         credential_indicator, email_object_indicator, file_indicator,
-         ip_port_indicator, mutex_object_indicator, network_socket_indicator,
-         process_indicator, registry_key_indicator, url_object_indicator,
-         user_account_indicator, x509_indicator, pe_indicator) = indicators
-        self.assertIn(attachment.uuid, attachment_indicator.id)
-        self.assertIn(email.uuid, email_indicator.id)
-        self.assertIn(email_attachment.uuid, email_attachment_indicator.id)
-        self.assertIn(email_body.uuid, email_body_indicator.id)
-        self.assertIn(email_dst.uuid, email_dst_indicator.id)
-        self.assertIn(email_header.uuid, email_header_indicator.id)
-        self.assertIn(email_reply_to.uuid, email_reply_to_indicator.id)
-        self.assertIn(email_src.uuid, email_src_indicator.id)
-        self.assertIn(email_subject.uuid, email_subject_indicator.id)
-        self.assertIn(email_x_mailer.uuid, email_x_mailer_indicator.id)
-        self.assertIn(filename.uuid, filename_indicator.id)
-        self.assertIn(filename_md5.uuid, filename_md5_indicator.id)
-        self.assertIn(mac_address.uuid, mac_address_indicator.id)
-        self.assertIn(malware_sample.uuid, malware_sample_indicator.id)
-        self.assertIn(mutex.uuid, mutex_indicator.id)
-        self.assertIn(regkey.uuid, regkey_indicator.id)
-        self.assertIn(regkey_value.uuid, regkey_value_indicator.id)
-        self.assertIn(url.uuid, url_indicator.id)
-        self.assertIn(user_agent.uuid, user_agent_indicator.id)
         self.assertIn(email_message_id.uuid, email_message_id_indicator.id)
-        self.assertIn(asn.uuid, asn_indicator.id)
-        self.assertIn(credential.uuid, credential_indicator.id)
-        self.assertIn(email_object.uuid, email_object_indicator.id)
-        self.assertIn(file_object.uuid, file_indicator.id)
-        self.assertIn(ip_port.uuid, ip_port_indicator.id)
-        self.assertIn(mutex_object.uuid, mutex_object_indicator.id)
-        self.assertIn(network_socket.uuid, network_socket_indicator.id)
-        self.assertIn(process.uuid, process_indicator.id)
-        self.assertIn(registry_key.uuid, registry_key_indicator.id)
-        self.assertIn(url_object.uuid, url_object_indicator.id)
-        self.assertIn(user_account.uuid, user_account_indicator.id)
-        self.assertIn(x509.uuid, x509_indicator.id)
-        self.assertIn(pe.uuid, pe_indicator.id)
 
     def _test_event_with_event_report(self, event):
         orgc = event['Orgc']

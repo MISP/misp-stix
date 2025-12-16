@@ -172,21 +172,12 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
     def _test_event_with_escaped_characters(self, event):
         attributes = deepcopy(event['Attribute'])
         self.parser.parse_misp_event(event)
-        bundle = self._check_bundle_features(48)
-        _, _, *indicators = bundle.objects
-        self.assertIn(attributes[0]['value'][2:], indicators[0].pattern)
-        for attribute, indicator in zip(attributes[1:], indicators[1:]):
-            self.assertEqual(indicator.type, 'indicator')
-            attribute_value = attribute['value']
-            if '|' in attribute_value:
-                attribute_value, value = attribute_value.split('|')
-                self.assertIn(self._sanitise_pattern_value(value), indicator.pattern)
-            self.assertIn(self._sanitise_pattern_value(attribute_value), indicator.pattern)
-            if attribute.get('data'):
-                data = attribute['data']
-                if not isinstance(data, str):
-                    data = b64encode(data.getvalue()).decode()
-                self.assertIn(self._sanitise_pattern_value(data), indicator.pattern)
+        attributes = self.parser._misp_event.attributes
+        bundle = self._check_bundle_features(98)
+        indicators = [obj for obj in bundle.objects if obj.type == 'indicator']
+        self._check_event_with_escaped_characters(
+            indicators, initial_attributes, attributes, misp_objects
+        )
 
     def _test_event_with_event_report(self, event):
         orgc = event['Orgc']
