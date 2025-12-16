@@ -163,8 +163,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         attribute_opinion = src_attribute['Opinion'][0]
         self._check_analyst_opinion(attr_opinion, attribute_opinion, 'strongly-agree')
         self._assert_multiple_equal(
-            observed_data.id,
-            obs_data_note.object_refs[0],
+            observed_data.id, obs_data_note.object_refs[0],
             f"observed-data--{dst_attribute['uuid']}"
         )
         attribute_note = dst_attribute['Note'][0]
@@ -183,8 +182,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self._check_analyst_note(obj_attr_note, object_attribute_note)
         event_report = self.parser._misp_event.event_reports[0]
         self._assert_multiple_equal(
-            report.id,
-            report_opinion.object_refs[0],
+            report.id, report_opinion.object_refs[0],
             f"note--{event_report['uuid']}"
         )
         self.assertEqual(report.labels, ['misp:data-layer="Event Report"'])
@@ -478,7 +476,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
             autonomous_system.id, object_ref, f"autonomous-system--{attribute.uuid}"
         )
         self.assertEqual(autonomous_system.type, 'autonomous-system')
-        self.assertEqual(autonomous_system.number, attribute.value)
+        self.assertEqual(autonomous_system.number, int(attribute.value))
 
     def _check_attachment_observable_attribute(self, attribute, observables, object_refs):
         file_object, artifact_object = observables
