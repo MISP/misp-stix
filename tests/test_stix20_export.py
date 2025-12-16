@@ -34,9 +34,7 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(stix_object.x_misp_note, misp_layer['note'])
         self.assertEqual(stix_object.x_misp_author, misp_layer['authors'])
         self.assertEqual(stix_object.x_misp_language, misp_layer['language'])
-        self.assertEqual(
-            stix_object.created, self._datetime_from_str(misp_layer['created'])
-        )
+        self.assertEqual(stix_object.created, misp_layer.created)
         self.assertEqual(
             stix_object.modified,
             self._datetime_from_str(misp_layer['modified'])
@@ -49,23 +47,20 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(stix_object.x_misp_opinion, int(misp_layer['opinion']))
         self.assertEqual(stix_object.x_misp_author, misp_layer['authors'])
         self.assertEqual(stix_object.x_misp_comment, misp_layer['comment'])
-        self.assertEqual(
-            stix_object.created, self._datetime_from_str(misp_layer['created'])
-        )
+        self.assertEqual(stix_object.created, misp_layer.created)
         self.assertEqual(
             stix_object.modified,
             self._datetime_from_str(misp_layer['modified'])
         )
 
-    def _check_opinion_features(self, opinion, sighting, object_id):
+    def _check_opinion_features(self, opinion, sighting, *object_ids):
         self.assertEqual(opinion.type, 'x-misp-opinion')
         self.assertEqual(opinion.id, f"x-misp-opinion--{sighting['uuid']}")
         self._assert_multiple_equal(
-            opinion.created,
-            opinion.modified,
+            opinion.created, opinion.modified,
             self._datetime_from_timestamp(sighting['date_sighting'])
         )
-        self.assertEqual(opinion.object_ref, object_id)
+        self.assertEqual(opinion.object_refs, list(object_ids))
         self.assertEqual(opinion.x_misp_author, sighting['Organisation']['name'])
         self.assertEqual(
             opinion.x_misp_author_ref,
@@ -102,12 +97,12 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
 
     def _test_event_with_analyst_data(self, event):
         orgc = event['Orgc']
-        event_report = event['EventReport'][0]
-        note = event['Note'][0]
-        src_attribute, dst_attribute = event['Attribute']
-        misp_object = event['Object'][0]
         self.parser.parse_misp_event(event)
-        bundle = self._check_bundle_features(13)
+        src_attribute, dst_attribute = self.parser._misp_event.attributes
+        misp_object = self.parser._misp_event.objects[0]
+        event_report = self.parser._misp_event.event_reports[0]
+        note = self.parser._misp_event.notes[0]
+        bundle = self._check_bundle_features(17)
         identity, report, *stix_objects = bundle.objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
@@ -117,60 +112,64 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(report.published, timestamp)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        (attr_indicator, attr_opinion, observed_data, observed_data_note,
-         obj_indicator, obj_opinion, obj_attr_note, report, report_opinion,
-         relationship, event_note) = stix_objects
+        (attr_observed_data, attr_indicator, attr_opinion, observed_data,
+         observed_data_note, obj_observed_data, obj_indicator, obj_opinion,
+         obj_attr_note, report, report_opinion, attr_relationship,
+         relationship, obj_relationship, event_note) = stix_objects
+        attr_opinion_od_ref, attr_opinion_ind_ref = attr_opinion.object_refs
         self._assert_multiple_equal(
-            attr_indicator.id,
-            relationship.target_ref,
-            attr_opinion.object_ref,
-            f"indicator--{src_attribute['uuid']}"
+            attr_observed_data.id, attr_relationship.target_ref,
+            relationship.target_ref, attr_opinion_od_ref,
+            f'observed-data--{src_attribute.uuid}'
         )
         self._assert_multiple_equal(
-            attr_opinion.type,
-            obj_opinion.type,
-            report_opinion.type,
+            attr_indicator.id, attr_relationship.source_ref,
+            attr_opinion_ind_ref, f'indicator--{src_attribute.uuid}'
+        )
+        self._assert_multiple_equal(
+            attr_opinion.type, obj_opinion.type, report_opinion.type,
             'x-misp-analyst-opinion'
         )
         attribute_opinion = src_attribute['Opinion'][0]
         self._check_analyst_opinion(attr_opinion, attribute_opinion)
         self._assert_multiple_equal(
-            observed_data.id,
-            observed_data_note.object_ref,
-            f"observed-data--{dst_attribute['uuid']}"
+            observed_data.id, observed_data_note.object_refs[0],
+            f'observed-data--{dst_attribute.uuid}'
         )
         self._assert_multiple_equal(
-            observed_data_note.type,
-            obj_attr_note.type,
-            event_note.type,
+            observed_data_note.type, obj_attr_note.type, event_note.type,
             'x-misp-analyst-note'
         )
         attribute_note = dst_attribute['Note'][0]
         self._check_analyst_note(observed_data_note, attribute_note)
+        obj_attr_note_od_ref, obj_attr_note_ind_ref = obj_attr_note.object_refs
+        obj_opinion_od_ref, obj_opinion_ind_ref = obj_opinion.object_refs
         self._assert_multiple_equal(
-            obj_indicator.id,
-            relationship.source_ref,
-            obj_opinion.object_ref,
-            obj_attr_note.object_ref,
-            f"indicator--{misp_object['uuid']}"
+            obj_observed_data.id, obj_relationship.target_ref,
+            obj_attr_note_od_ref, relationship.source_ref,
+            obj_opinion_od_ref, f'observed-data--{misp_object.uuid}'
+        )
+        self._assert_multiple_equal(
+            obj_indicator.id, obj_opinion_ind_ref, obj_attr_note_ind_ref,
+            obj_relationship.source_ref, f"indicator--{misp_object['uuid']}"
         )
         object_opinion = misp_object['Opinion'][0]
         self._check_analyst_opinion(obj_opinion, object_opinion)
         object_attribute_note = misp_object['Attribute'][0]['Note'][0]
         self._check_analyst_note(obj_attr_note, object_attribute_note)
         self._assert_multiple_equal(
-            report.id,
-            report_opinion.object_ref,
-            f"x-misp-event-report--{event_report['uuid']}"
+            report.id, report_opinion.object_refs[0],
+            f"x-misp-event-report--{event_report.uuid}"
         )
         self.assertEqual(report.type, 'x-misp-event-report')
-        event_report_opinion = event_report['Opinion'][0]
+        event_report_opinion = event_report.opinions[0]
         self._check_analyst_opinion(report_opinion, event_report_opinion)
         self.assertEqual(relationship.relationship_type, 'downloaded-from')
         self._check_analyst_note(event_note, note)
 
     def _test_event_with_escaped_characters(self, event):
-        attributes = deepcopy(event['Attribute'])
+        initial_attributes = deepcopy(event['Attribute'])
+        misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
         attributes = self.parser._misp_event.attributes
         bundle = self._check_bundle_features(98)
@@ -183,7 +182,7 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         orgc = event['Orgc']
         event_report = event['EventReport'][0]
         self.parser.parse_misp_event(event)
-        bundle = self._check_bundle_features(6)
+        bundle = self._check_bundle_features(10)
         identity, report, *stix_objects = bundle.objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
@@ -193,7 +192,7 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(report.published, timestamp)
         for stix_object, object_ref in zip(stix_objects, object_refs):
             self.assertEqual(stix_object.id, object_ref)
-        ip_src, observed_data, domain_ip, note = stix_objects
+        *stix_objects, note, _, _ = stix_objects
         self.assertEqual(note.id, f"x-misp-event-report--{event_report['uuid']}")
         timestamp = event_report['timestamp']
         if not isinstance(timestamp, datetime):
@@ -202,8 +201,8 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(note.x_misp_content, event_report['content'])
         self.assertEqual(note.x_misp_name, event_report['name'])
         object_refs = note.object_refs
-        self.assertEqual(len(object_refs), 3)
-        object_ids = {ip_src.id, observed_data.id, domain_ip.id}
+        self.assertEqual(len(object_refs), 5)
+        object_ids = {stix_object.id for stix_object in stix_objects}
         self.assertEqual(set(object_refs), object_ids)
 
     def _test_event_with_sightings(self, event):
@@ -227,25 +226,29 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
             tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1),
             tuple(sighting['Organisation']['name'] for sighting in sightings2)
         )
-        (observed_data, sighting1, sighting2, opinion1, opinion2, indicator,
-         sighting3, opinion3, sighting4, opinion4) = stix_objects
+        (observed_data1, sighting1, sighting2, opinion1, opinion2,
+         observed_data2, indicator, sighting3, opinion3, sighting4,
+         opinion4, relationship) = stix_objects
         self._check_sighting_features(
-            sighting1, sightings1[0], observed_data.id, identity1.id
-        )
-        self._check_sighting_features(
-            sighting2, sightings1[1], observed_data.id, identity2.id
-        )
-        self._check_opinion_features(opinion1, sightings1[2], observed_data.id)
-        self._check_opinion_features(opinion2, sightings1[3], observed_data.id
+            sighting1, sightings1[0], observed_data1.id, identity1.id
         )
         self._check_sighting_features(
-            sighting3, sightings2[0], indicator.id, identity1.id
+            sighting2, sightings1[1], observed_data1.id, identity2.id
         )
-        self._check_opinion_features(opinion3, sightings2[1], indicator.id)
+        self._check_opinion_features(opinion1, sightings1[2], observed_data1.id)
+        self._check_opinion_features(opinion2, sightings1[3], observed_data1.id
+        )
         self._check_sighting_features(
-            sighting4, sightings2[2], indicator.id, identity3.id
+            sighting3, sightings2[0], indicator.id, identity1.id, observed_data2.id
         )
-        self._check_opinion_features(opinion4, sightings2[3], indicator.id)
+        self._check_opinion_features(opinion3, sightings2[1], observed_data2.id, indicator.id)
+        self._check_sighting_features(
+            sighting4, sightings2[2], indicator.id, identity3.id, observed_data2.id
+        )
+        self._check_opinion_features(opinion4, sightings2[3], observed_data2.id, indicator.id)
+        self._check_relationship_features(
+            relationship, indicator.id, observed_data2.id, 'based-on', timestamp
+        )
 
     def _test_event_with_tags(self, event):
         self.parser.parse_misp_event(event)
