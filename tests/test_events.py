@@ -4825,6 +4825,7 @@ def get_event_with_android_app_object():
 
 def get_event_with_annotation_object():
     event = deepcopy(_BASE_EVENT)
+    domain_ip = dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
     with open(_TESTFILES_PATH / 'annotation.attachment', 'rb') as f:
         event['Event']['Object'] = [
             {
@@ -4853,22 +4854,13 @@ def get_event_with_annotation_object():
                 ],
                 "ObjectReference": [
                     {
-                        "referenced_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "referenced_uuid": domain_ip['uuid'],
                         "relationship_type": "annotates"
                     }
                 ]
-            }
+            },
+            domain_ip
         ]
-    event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "ip-dst",
-            "category": "Network activity",
-            "value": "8.8.8.8",
-            "to_ids": True,
-            "timestamp": "1603642920"
-        }
-    ]
     return event
 
 

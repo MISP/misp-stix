@@ -3416,36 +3416,26 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         malware_galaxy = vulnerability_object['Attribute'][0]['Galaxy'][0]
         vulnerability_coa_galaxy = vulnerability_object['Attribute'][1]['Galaxy'][0]
         self._assert_multiple_equal(
-            ap.id,
-            ap_ref,
-            f"attack-pattern--{ap_galaxy['GalaxyCluster'][0]['uuid']}"
+            ap.id, ap_ref, f"attack-pattern--{ap_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            g_coa.id,
-            g_coa_ref,
+            g_coa.id, g_coa_ref,
             f"course-of-action--{event_coa_galaxy['GalaxyCluster'][0]['uuid']}",
             f"course-of-action--{coa_coa_galaxy['GalaxyCluster'][0]['uuid']}",
             f"course-of-action--{vulnerability_coa_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            o_coa.id,
-            o_coa_ref,
-            f"course-of-action--{coa_object['uuid']}"
+            o_coa.id, o_coa_ref, f"course-of-action--{coa_object['uuid']}"
         )
         self._assert_multiple_equal(
-            malware.id,
-            malware_ref,
-            f"malware--{malware_galaxy['GalaxyCluster'][0]['uuid']}"
+            malware.id, malware_ref, f"malware--{malware_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            vulnerability.id,
-            vulnerability_ref,
+            vulnerability.id, vulnerability_ref,
             f"vulnerability--{vulnerability_object['uuid']}"
         )
         self._assert_multiple_equal(
-            tool.id,
-            tool_ref,
-            f"tool--{tool_galaxy['GalaxyCluster'][0]['uuid']}"
+            tool.id, tool_ref, f"tool--{tool_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         relationship1, relationship2, relationship3, relationship4 = relationships
         r_ref1, r_ref2, r_ref3, r_ref4 = relationship_refs
@@ -3480,23 +3470,19 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         malware_galaxy1 = misp_object['Attribute'][0]['Galaxy'][0]
         malware_galaxy2 = misp_object['Attribute'][1]['Galaxy'][0]
         self._assert_multiple_equal(
-            malware1.id,
-            malware1_ref,
+            malware1.id, malware1_ref,
             f"malware--{malware_galaxy1['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            malware2.id,
-            malware2_ref,
+            malware2.id, malware2_ref,
             f"malware--{malware_galaxy2['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            observed_data.id,
-            observed_data_ref,
+            observed_data.id, observed_data_ref,
             f"observed-data--{misp_object['uuid']}"
         )
         self._assert_multiple_equal(
-            autonomous_system.id,
-            as_ref,
+            autonomous_system.id, as_ref,
             f"autonomous-system--{misp_object['uuid']}"
         )
         self.assertEqual(relationship1.id, relationship1_ref)
@@ -3523,23 +3509,19 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         malware_ref, observed_data_ref, as_ref, tool_ref, relationship_ref = object_refs
         malware_galaxy = misp_object['Attribute'][0]['Galaxy'][0]
         self._assert_multiple_equal(
-            malware.id,
-            malware_ref,
+            malware.id, malware_ref,
             f"malware--{malware_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
-            observed_data.id,
-            observed_data_ref,
+            observed_data.id, observed_data_ref,
             f"observed-data--{misp_object['uuid']}"
         )
         self._assert_multiple_equal(
-            autonomous_system.id,
-            as_ref,
+            autonomous_system.id, as_ref,
             f"autonomous-system--{misp_object['uuid']}"
         )
         self._assert_multiple_equal(
-            tool.id,
-            tool_ref,
+            tool.id, tool_ref,
             f"tool--{tool_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self.assertEqual(relationship.id, relationship_ref)
@@ -3553,42 +3535,33 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _test_event_with_annotation_object(self, event):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
-        misp_object = self.parser._misp_event.objects[0]
-        attribute = self.parser._misp_event.attributes[0]
+        annotation, domain_ip = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
-        (identity, grouping, observed_data, network_traffic, ip_address,
-         indicator, note, relationship) = stix_objects
+        identity, grouping, observed_data, _, _, indicator, note, _ = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        od_ref, nt_ref, ip_ref, indicator_ref, note_ref, relationship_ref = self._check_grouping_features(grouping, identity_id)
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
-        self._check_pattern_features(indicator)
-        type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
-        value_pattern = f"network-traffic:dst_ref.value = '{attribute['value']}'"
-        self.assertEqual(indicator.pattern, f"[{type_pattern} AND {value_pattern}]")
-        text, annotation_type, attachment = (attribute['value'] for attribute in misp_object['Attribute'])
+        od_ref, _, _, indicator_ref, note_ref, _ = self._check_grouping_features(grouping, identity_id)
+        self._check_object_indicator_features(indicator, domain_ip, identity_id, indicator_ref)
+        self._check_object_observable_features(observed_data, domain_ip, identity_id, od_ref)
+        text, annotation_type, attachment = annotation.attributes
         self.assertEqual(note.type, 'note')
-        self._assert_multiple_equal(
-            note.id,
-            note_ref,
-            f"note--{misp_object['uuid']}"
-        )
-        timestamp = misp_object['timestamp']
+        self._assert_multiple_equal(note.id, note_ref, f"note--{annotation.uuid}")
+        timestamp = annotation['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(note.created, timestamp)
         self.assertEqual(note.modified, timestamp)
-        self.assertEqual(note.labels[0], f'misp:name="{misp_object["name"]}"')
-        self.assertEqual(note.labels[1], f'misp:meta-category="{misp_object["meta-category"]}"')
+        self.assertEqual(note.labels[0], f'misp:name="{annotation.name}"')
+        self.assertEqual(note.labels[1], f'misp:meta-category="{annotation["meta-category"]}"')
         self.assertEqual(note.labels[2], f'misp:to_ids="False"')
-        self.assertEqual(note.content, text)
+        self.assertEqual(note.content, text.value)
         self.assertEqual(set(note.object_refs), {indicator.id, observed_data.id})
-        self.assertEqual(note.x_misp_type, annotation_type)
-        self.assertEqual(note.x_misp_attachment['value'], attachment)
-        data = misp_object['Attribute'][-1]['data']
+        self.assertEqual(note.x_misp_type, annotation_type.value)
+        self.assertEqual(note.x_misp_attachment['value'], attachment.value)
+        data = attachment.data
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(note.x_misp_attachment['data'], data)
@@ -3634,10 +3607,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._assert_multiple_equal(
-            attack_pattern.id,
-            grouping['object_refs'][0],
-            object_ref,
-            f"attack-pattern--{misp_object['uuid']}"
+            attack_pattern.id, grouping['object_refs'][0],
+            object_ref, f"attack-pattern--{misp_object['uuid']}"
         )
         self._check_attack_pattern_object(attack_pattern, misp_object, identity_id)
 
@@ -3654,10 +3625,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_grouping_features(grouping, identity_id)[0]
         self._assert_multiple_equal(
-            course_of_action.id,
-            grouping['object_refs'][0],
-            object_ref,
-            f"course-of-action--{misp_object['uuid']}"
+            course_of_action.id, grouping['object_refs'][0],
+            object_ref, f"course-of-action--{misp_object['uuid']}"
         )
         self._check_course_of_action_object(course_of_action, misp_object, identity_id)
 
