@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-from base64 import b64encode
 from pathlib import Path
 
 _ROOT_PATH = Path(__file__).parents[1].resolve()
@@ -57,7 +56,7 @@ class DocumentationUpdater:
     def summary_path(self):
         return self.__summary_path
 
-    def check_export_mapping(self, feature):
+    def check_export_mapping(self):
         if self._documentation != self.mapping_to_check:
             for name, mapping in self.mapping_to_check.items():
                 if name not in self._documentation:
@@ -67,11 +66,11 @@ class DocumentationUpdater:
                         self._documentation[name]['MISP'] = mapping['MISP']
                     if mapping['STIX'] != self._documentation[name]['STIX']:
                         self._documentation[name]['STIX'] = mapping['STIX']
-                self._check_stix_export_summary(name, mapping['STIX'], feature)
+                self._check_stix_export_summary(name, mapping['STIX'])
             self._write_documentation()
         else:
             for name, mapping in self.mapping_to_check.items():
-                self._check_stix_export_summary(name, mapping['STIX'], feature)
+                self._check_stix_export_summary(name, mapping['STIX'])
         if self._summary_changed:
             self._write_summary()
 
@@ -93,10 +92,11 @@ class DocumentationUpdater:
         if self._summary_changed:
             self._write_summary()
 
-    def _check_stix_export_summary(self, name, mapping, feature):
+    def _check_stix_export_summary(self, name, mapping):
+        print(mapping)
         summary = (
             self.summary_mapping[name] if name in self.summary_mapping else
-            getattr(self, f"_define_{feature}_export_summary")(mapping)
+            self._define_export_summary(mapping)
         )
         if name not in self._summary or self._summary[name] != summary:
             self._summary[name] = summary
@@ -114,7 +114,20 @@ class DocumentationUpdater:
     def _declare_summary(self, summary):
         self.__summary_mapping = summary
 
-    def _define_export_summary(self, *object_types):
+    def _define_export_summary(self, stix_mapping):
+        if isinstance(stix_mapping, dict):
+            return f"**{stix_mapping['type'].capitalize()}**"
+        object_types = {
+            stix_object['type'] for stix_object in stix_mapping
+            if stix_object['type'] != 'relationship'
+        }
+        if all(object_type in object_types for object_type in _OBJECT_FEATURES):
+            return self._observable_types(
+                *(
+                    object_type for object_type in object_types
+                    if object_type not in _OBJECT_FEATURES
+                )
+            )
         return ' / '.join(
             f'**{object_type.capitalize()}**' for object_type in object_types
         )
@@ -132,23 +145,6 @@ class DocumentationUpdater:
                 types.append(f'**{stix_type}**')
         return ' / '.join(types)
 
-    def _define_stix20_export_summary(self, stix_mapping):
-        if isinstance(stix_mapping, dict):
-            return self._define_export_summary(stix_mapping['type'])
-        object_types = {
-            stix_object['type'] for stix_object in stix_mapping
-            if stix_object['type'] != 'relationship'
-        }
-        if all(object_type in object_types for object_type in _OBJECT_FEATURES):
-            return self._observable_types(
-                *(
-                    observable['type'] for stix_object in stix_mapping
-                    if stix_object['type'] == 'observed-data'
-                    for observable in stix_object['objects']
-                )
-            )
-        return self._define_export_summary(*object_types)
-
     def _define_stix20_import_summary(self, stix_mapping):
         if all(feature in stix_mapping for feature in _OBJECT_FEATURES):
             return self._observable_types(stix_mapping['Observed Data']['STIX']['objects'].values())
@@ -156,22 +152,6 @@ class DocumentationUpdater:
             indicator_type = self._pattern_types(stix_mapping['Indicator']['STIX']['pattern'])
             return f"{indicator_type} / Custom Object"
         return self._define_import_summary(stix_mapping)
-
-    def _define_stix21_export_summary(self, stix_mapping):
-        if isinstance(stix_mapping, dict):
-            return self._define_export_summary(stix_mapping['type'])
-        object_types = {
-            stix_object['type'] for stix_object in stix_mapping
-            if stix_object['type'] != 'relationship'
-        }
-        if all(object_type in object_types for object_type in _OBJECT_FEATURES):
-            return self._observable_types(
-                *(
-                    object_type for object_type in object_types
-                    if object_type not in _OBJECT_FEATURES
-                )
-            )
-        return self._define_export_summary(*object_types)
 
     def _define_stix21_import_summary(self, stix_mapping):
         if all(feature in stix_mapping for feature in _OBJECT_FEATURES):

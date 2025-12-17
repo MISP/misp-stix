@@ -1072,7 +1072,7 @@ class TestSTIX20JSONAttributesExport(TestSTIX20AttributesExport):
             self._attributes_v20,
             'export'
         )
-        attributes_documentation.check_export_mapping('stix20')
+        attributes_documentation.check_export_mapping()
 
     def test_embedded_indicator_attribute_galaxy(self):
         event = get_embedded_indicator_attribute_galaxy()
@@ -3508,7 +3508,7 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
             self._objects_v20,
             'export'
         )
-        objects_documentation.check_export_mapping('stix20')
+        objects_documentation.check_export_mapping()
 
     def test_embedded_indicator_object_galaxy(self):
         event = get_embedded_indicator_object_galaxy()
@@ -4534,7 +4534,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             self._galaxies_v20,
             'export'
         )
-        galaxies_documentation.check_export_mapping('stix20')
+        galaxies_documentation.check_export_mapping()
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()

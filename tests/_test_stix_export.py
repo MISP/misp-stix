@@ -834,6 +834,22 @@ class TestSTIX2Export(TestSTIX):
             self._populate_galaxies_documentation(galaxy, **kwargs)
 
     @staticmethod
+    def _populate_attribute(attribute, exclude=('disable_correlation')):
+        if isinstance(attribute, MISPAttribute):
+            attribute = json.loads(attribute.to_json())
+        for key, value in attribute.items():
+            if key not in exclude:
+                yield key, value
+
+    def _populate_object(self, misp_object, exclude=_MISP_OBJECT_EXCLUSION_LIST):
+        for key, value in json.loads(misp_object.to_json()).items():
+            if key == 'Attribute':
+                yield key, [dict(self._populate_attribute(attribute)) for attribute in value]
+                continue
+            if key not in exclude:
+                yield key, value
+
+    @staticmethod
     def _reassemble_pattern(pattern):
         reassembled = []
         middle = False
@@ -946,7 +962,9 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         attribute_type = attribute['type']
-        self._attributes_v20[attribute_type]['MISP'] = json.loads(attribute.to_json())
+        self._attributes_v20[attribute_type]['MISP'] = dict(
+            self._populate_attribute(attribute, exclude=_ATTRIBUTE_EXCLUSION_LIST)
+        )
         stix_objects = kwargs['stix']
         if isinstance(stix_objects, list):
             self._attributes_v20[attribute_type]['STIX'] = [
@@ -958,7 +976,7 @@ class TestSTIX20Export(TestSTIX2Export):
     def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
         if name is None:
             name = galaxy['name']
-        self._galaxies_v20[name]['MISP'] = galaxy
+        self._galaxies_v20[name]['MISP'] = json.loads(galaxy.to_json())
         if summary is not None:
             self._galaxies_v20['summary'][name] = summary
         self._galaxies_v20[name]['STIX'] = json.loads(kwargs['stix'].serialize())
@@ -967,9 +985,9 @@ class TestSTIX20Export(TestSTIX2Export):
         if name is None:
             name = misp_object['name']
         self._objects_v20[name]['MISP'] = (
-            [json.loads(obj.to_json()) for obj in misp_object]
+            [dict(self._populate_object(obj)) for obj in misp_object]
             if isinstance(misp_object, list) else
-            json.loads(misp_object.to_json())
+            dict(self._populate_object(misp_object))
         )
         if summary is not None:
             self._objects_v20['summary'][name] = summary
@@ -986,14 +1004,6 @@ class TestSTIX21Export(TestSTIX2Export):
     _attributes_v21 = defaultdict(lambda: defaultdict(dict))
     _objects_v21 = defaultdict(lambda: defaultdict(dict))
     _galaxies_v21 = defaultdict(lambda: defaultdict(dict))
-
-    @staticmethod
-    def _populate_attribute(attribute, exclude=('disable_correlation')):
-        if isinstance(attribute, MISPAttribute):
-            attribute = json.loads(attribute.to_json())
-        for key, value in attribute.items():
-            if key not in exclude:
-                yield key, value
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
@@ -1015,14 +1025,6 @@ class TestSTIX21Export(TestSTIX2Export):
         if summary is not None:
             self._galaxies_v21['summary'][name] = summary
         self._galaxies_v21[name]['STIX'] = json.loads(kwargs['stix'].serialize())
-
-    def _populate_object(self, misp_object, exclude=_MISP_OBJECT_EXCLUSION_LIST):
-        for key, value in json.loads(misp_object.to_json()).items():
-            if key == 'Attribute':
-                yield key, [dict(self._populate_attribute(attribute)) for attribute in value]
-                continue
-            if key not in exclude:
-                yield key, value
 
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
