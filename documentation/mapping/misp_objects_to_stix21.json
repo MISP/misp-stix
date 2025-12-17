@@ -186,7 +186,7 @@
             "uuid": "02782ed5-b27f-4abc-8bae-efebe13a46dd",
             "Attribute": [
                 {
-                    "uuid": "fa5f83eb-4351-4248-bc22-63d560fced71",
+                    "uuid": "964623e7-46ba-53d1-be15-0372b8e4ccdb",
                     "object_relation": "name",
                     "value": "Facebook",
                     "type": "text",
@@ -194,7 +194,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "993cbf47-36e5-4118-9e17-4ff06b8c07ca",
+                    "uuid": "967f2a4a-b58b-501f-b1f8-a32cb7119c42",
                     "object_relation": "certificate",
                     "value": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
                     "type": "sha1",
@@ -202,7 +202,7 @@
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "23870a72-0425-4418-90f8-6250a5c3c423",
+                    "uuid": "dfe29d95-b46e-5ec1-862f-3ed33925675d",
                     "object_relation": "domain",
                     "value": "facebook.com",
                     "type": "domain",
@@ -284,15 +284,15 @@
                 "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
                 "ObjectReference": [
                     {
-                        "uuid": "fcd4cb5b-2814-4673-97bc-fba91d0f911e",
-                        "object_uuid": "4cdea666-defe-44a3-ba66-98a25278a66b",
+                        "uuid": "22ffbbc1-7041-4a9e-984e-afe1b2d956e6",
+                        "object_uuid": "64747a5d-cf3d-409d-9a11-af1af9cd89d9",
                         "referenced_uuid": "5ac337df-e078-4e99-8b17-02550a00020f",
                         "relationship_type": "annotates"
                     }
                 ],
                 "Attribute": [
                     {
-                        "uuid": "876a4c0d-b91a-4c1f-abd6-87061159da49",
+                        "uuid": "7380c2cb-3a29-54a5-8ae8-2e66a2c9cf62",
                         "object_relation": "text",
                         "value": "Google public DNS",
                         "type": "text",
@@ -300,7 +300,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "8586f7df-0cd8-45b6-8bdf-a8762cf9f5e0",
+                        "uuid": "a67c24ba-191c-518c-ad25-0a18379e568d",
                         "object_relation": "type",
                         "value": "Executive Summary",
                         "type": "text",
@@ -309,7 +309,7 @@
                     },
                     {
                         "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K",
-                        "uuid": "4ac35216-ee0f-4dd7-918d-ba8010b8d2e2",
+                        "uuid": "acdac1c9-cd83-5d27-8d08-92c61ec853e6",
                         "object_relation": "attachment",
                         "value": "annotation.attachment",
                         "type": "attachment",
@@ -413,8 +413,8 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "content": "Google public DNS",
                 "object_refs": [
-                    "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
-                    "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
+                    "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+                    "indicator--5ac337df-e078-4e99-8b17-02550a00020f"
                 ],
                 "labels": [
                     "misp:name=\"annotation\"",
@@ -751,7 +751,7 @@
             "uuid": "3f53a829-6307-4006-b7a2-ff53dace4159",
             "Attribute": [
                 {
-                    "uuid": "271724ea-18eb-444e-ac00-f8428cc9a1e0",
+                    "uuid": "3605adaa-4213-5092-9bbf-0bee890e878b",
                     "object_relation": "cpe",
                     "value": "cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*",
                     "type": "cpe",
@@ -759,7 +759,7 @@
                     "category": "External analysis"
                 },
                 {
-                    "uuid": "ddd34a37-2e5c-45ac-84d1-66ddfd622019",
+                    "uuid": "564cb81e-ef9c-5cd9-924d-dc106bc822d5",
                     "object_relation": "language",
                     "value": "ENG",
                     "type": "text",
@@ -767,7 +767,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "e5a5bcfb-9030-4a59-8347-44992241b360",
+                    "uuid": "b5ae3eef-89b8-5457-913e-25e37d4caf24",
                     "object_relation": "product",
                     "value": "Word",
                     "type": "text",
@@ -775,7 +775,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "469eb1f3-1152-4a19-9421-39d0fba4f967",
+                    "uuid": "6794f620-7708-5617-9db4-29aaddd01e4b",
                     "object_relation": "vendor",
                     "value": "Microsoft",
                     "type": "text",
@@ -783,7 +783,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "45b96606-6784-4373-9c06-5d46f738cbe4",
+                    "uuid": "dbcc7eda-a019-5790-99d3-4b1a988ea554",
                     "object_relation": "version",
                     "value": "2002",
                     "type": "text",
@@ -791,7 +791,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "eb9d2b15-e7ac-4391-a114-1e3db8ac09a4",
+                    "uuid": "96060e2c-f80f-5d61-b3e3-22cd246a6132",
                     "object_relation": "description",
                     "value": "Microsoft Word is a word processing software developed by Microsoft.",
                     "type": "text",
@@ -1693,7 +1693,7 @@
             "uuid": "685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
             "Attribute": [
                 {
-                    "uuid": "a05c75ba-91d6-40fd-9293-abee1a7ac45a",
+                    "uuid": "c839f936-dd0d-5f1e-b8ef-dce8105f1916",
                     "object_relation": "first-name",
                     "value": "John",
                     "type": "first-name",
@@ -1701,7 +1701,7 @@
                     "category": "Person"
                 },
                 {
-                    "uuid": "a0070a78-a3f3-42b9-8b76-3ff2ef9c9188",
+                    "uuid": "763da352-c8dd-5ce8-a3a4-5c59abb5592f",
                     "object_relation": "last-name",
                     "value": "Doe",
                     "type": "last-name",
@@ -1709,7 +1709,7 @@
                     "category": "Person"
                 },
                 {
-                    "uuid": "ec21646a-04ec-4e28-9812-9169956f862a",
+                    "uuid": "5d7f5c31-3718-504c-a5d3-cf1809a24836",
                     "object_relation": "text",
                     "value": "John Doe is known",
                     "type": "text",
@@ -1717,7 +1717,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "4367e417-2a9c-4e29-ae39-615de60a928e",
+                    "uuid": "f4e5c6b7-0469-56d4-a7c6-f2544cdf8667",
                     "object_relation": "email-address",
                     "value": "jdoe@email.com",
                     "type": "target-email",
@@ -1725,7 +1725,7 @@
                     "category": "Targeting data"
                 },
                 {
-                    "uuid": "ac125da3-9ec3-45d2-90fe-5b5cab595604",
+                    "uuid": "5efa2fc1-3f6c-55d3-8dae-e8e1c367ea7c",
                     "object_relation": "employee-type",
                     "value": "Supervisor",
                     "type": "text",
@@ -2074,8 +2074,8 @@
                 "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                 "ObjectReference": [
                     {
-                        "uuid": "849c4758-1fde-450a-b4e4-69e63c48eafa",
-                        "object_uuid": "0a618c6c-262c-4e22-84bd-148df5d811de",
+                        "uuid": "5b9c4203-7046-49c1-bf75-6433f3070f1c",
+                        "object_uuid": "9cd40a7f-f229-4992-8b21-3378eea60ccf",
                         "referenced_uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
                         "relationship_type": "includes",
                         "Object": {
@@ -2144,8 +2144,8 @@
                 "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
                 "ObjectReference": [
                     {
-                        "uuid": "b2d9429f-ebc4-4860-8ba4-f9319d2286f3",
-                        "object_uuid": "60d3a07f-e69b-4d04-99f6-3d76625d237a",
+                        "uuid": "043f6e82-b866-4747-b7bd-6db140ead7d7",
+                        "object_uuid": "0482105c-b79f-4296-82ad-7fa4ad491ec6",
                         "referenced_uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
                         "relationship_type": "includes",
                         "Object": {
@@ -2971,7 +2971,7 @@
             "uuid": "a54e32af-5569-4949-b1fe-ad75054cde45",
             "Attribute": [
                 {
-                    "uuid": "6fa86337-e7f1-4ab7-924a-b20fb14e5b3c",
+                    "uuid": "13186da5-8291-5aa2-8c65-33e69ba49302",
                     "object_relation": "name",
                     "value": "John Doe",
                     "type": "text",
@@ -2979,7 +2979,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "792eeb09-b4fd-45e3-837a-d2bb3654b4dc",
+                    "uuid": "fb28923e-66cb-5874-922e-20d61ba23c5d",
                     "object_relation": "contact_information",
                     "value": "email-address: jdoe@email.com / phone-number: 0123456789",
                     "type": "text",
@@ -2987,7 +2987,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "a21b98c1-c036-4269-9435-d5a11af0f0b9",
+                    "uuid": "88dca187-3769-5b65-8ed2-c9c35c5a17e6",
                     "object_relation": "description",
                     "value": "Unknown person",
                     "type": "text",
@@ -2995,7 +2995,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "f385f503-ca8c-466f-b4c3-c757009944fe",
+                    "uuid": "4e3c432e-f2c6-5ade-b697-93ed04debf99",
                     "object_relation": "identity_class",
                     "value": "individual",
                     "type": "text",
@@ -3003,7 +3003,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "7d6e8c59-88af-42b6-9c62-061938252364",
+                    "uuid": "b587f53f-b1f5-596c-9aba-8e3f237ce5b5",
                     "object_relation": "roles",
                     "value": "Placeholder name",
                     "type": "text",
@@ -3051,7 +3051,7 @@
                     "category": "External analysis"
                 },
                 {
-                    "uuid": "4215a3bf-7835-45a0-883d-75765351c0d6",
+                    "uuid": "3fded30a-57dd-5de6-995b-f47bc371185f",
                     "object_relation": "filename",
                     "value": "STIX.png",
                     "type": "filename",
@@ -3067,7 +3067,7 @@
                     "category": "Network activity"
                 },
                 {
-                    "uuid": "444258b5-681e-4809-b1fe-52b831773ba6",
+                    "uuid": "039c6ee4-fc8a-51e8-a0b0-27df517e7358",
                     "object_relation": "image-text",
                     "value": "STIX",
                     "type": "text",
@@ -3403,7 +3403,7 @@
             "uuid": "0d55ba1f-c3ff-4b91-8a09-8713576e178b",
             "Attribute": [
                 {
-                    "uuid": "b99dfa85-0148-4573-85ea-3e7b744eaa36",
+                    "uuid": "b43404e0-c7e8-5fd9-9981-e45de957f255",
                     "object_relation": "name",
                     "value": "Umbrella Corporation",
                     "type": "text",
@@ -3411,7 +3411,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "5a34dbb9-cf75-456f-987c-c46b150b202c",
+                    "uuid": "61e7577c-ccc8-51f5-8d51-cfa53c2db004",
                     "object_relation": "text",
                     "value": "The Umbrella Corporation is an international pharmaceutical company.",
                     "type": "text",
@@ -3419,7 +3419,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "f1b72fbc-3b12-4a91-a291-6f1dd33f5898",
+                    "uuid": "6987d4a0-109b-5777-ac2e-f97f5a3f0b16",
                     "object_relation": "business",
                     "value": "Pharmaceutical",
                     "type": "text",
@@ -3427,7 +3427,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "0969d43a-bd7a-41cb-b7d1-1332bfc82095",
+                    "uuid": "0a709d2e-74b8-5a4c-87fe-b958f6b676f8",
                     "object_relation": "phone-number",
                     "value": "1234567890",
                     "type": "phone-number",
@@ -3435,7 +3435,7 @@
                     "category": "Person"
                 },
                 {
-                    "uuid": "4101c410-5611-47d4-8889-d1ec736ed48c",
+                    "uuid": "b4b30611-5bb0-5803-8b9e-d22114b29a59",
                     "object_relation": "website",
                     "value": "https://umbrella.org",
                     "type": "link",
@@ -3443,7 +3443,7 @@
                     "category": "External analysis"
                 },
                 {
-                    "uuid": "4ff43530-4dee-4398-b71e-b983e3423716",
+                    "uuid": "3f4829cd-1913-5be3-bc0c-a50abb0df423",
                     "object_relation": "registration-number",
                     "value": "11223344556677889900",
                     "type": "text",
@@ -3452,7 +3452,7 @@
                 },
                 {
                     "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC",
-                    "uuid": "20f6fe8e-dcd3-4e95-9b38-d13f75736822",
+                    "uuid": "5eae2726-eb9a-5980-b9d7-2b1fb9cfb07e",
                     "object_relation": "logo",
                     "value": "umbrella_logo",
                     "type": "attachment",
@@ -3496,7 +3496,7 @@
             "uuid": "153ef8d5-9182-45ec-bf1c-5819932b9ab7",
             "Attribute": [
                 {
-                    "uuid": "b452a9db-2e1b-43fb-9d83-c024f0dba95e",
+                    "uuid": "2ce0918e-020c-53a7-980d-3b6ff629f7c0",
                     "object_relation": "filename",
                     "value": "oui",
                     "type": "filename",
@@ -3512,7 +3512,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "2ddda747-7448-4b64-bea6-4f8a5f5f5eef",
+                    "uuid": "366dfce6-7c95-5eb3-a4da-31a9867ab144",
                     "object_relation": "md5",
                     "value": "8764605c6f388c89096b534d33565802",
                     "type": "md5",
@@ -3520,7 +3520,7 @@
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "0edae937-9539-45ea-9c45-3df3b3a0ce95",
+                    "uuid": "2ca2da7a-ef59-5e60-9425-4f9125289fd8",
                     "object_relation": "sha1",
                     "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
                     "type": "sha1",
@@ -3528,7 +3528,7 @@
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "9ceb1fdd-4ad8-4ea0-9ab6-0313093dfb19",
+                    "uuid": "f6e0a018-81e8-5e45-b11d-6644c11b9c41",
                     "object_relation": "sha256",
                     "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
                     "type": "sha256",
@@ -3546,7 +3546,7 @@
                     "malware_filename": "oui"
                 },
                 {
-                    "uuid": "42b88a6b-338d-4a38-b5ba-46066cc33116",
+                    "uuid": "4e87fefe-f91f-54ee-b202-188cd0d6a5e2",
                     "object_relation": "size-in-bytes",
                     "value": "35",
                     "type": "size-in-bytes",
@@ -3554,7 +3554,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "683ff1c2-b78c-4b1c-8de1-a952c8806bb8",
+                    "uuid": "d0be6ec4-44e7-5953-9998-3ad0ece285ca",
                     "object_relation": "lnk-creation-time",
                     "value": "2017-10-01T08:00:00+00:00",
                     "type": "datetime",
@@ -3562,7 +3562,7 @@
                     "to_ids": false
                 },
                 {
-                    "uuid": "7d91e149-a033-4c38-a69b-0a8e2f2693cd",
+                    "uuid": "f0cdf620-0734-5715-ae7f-e77b069987d9",
                     "object_relation": "lnk-modification-time",
                     "value": "2020-10-25T16:22:00+00:00",
                     "type": "datetime",
@@ -3570,7 +3570,7 @@
                     "to_ids": false
                 },
                 {
-                    "uuid": "48fccceb-a991-4a97-902f-7d9a3fef7cba",
+                    "uuid": "def00e72-650c-5ba1-8ae9-44b0b2cf7907",
                     "object_relation": "lnk-access-time",
                     "value": "2021-01-01T00:00:00+00:00",
                     "type": "datetime",
@@ -3887,8 +3887,8 @@
                 "src_port": 80,
                 "dst_port": 8080,
                 "protocols": [
-                    "tcp",
-                    "ip"
+                    "ip",
+                    "tcp"
                 ],
                 "extensions": {
                     "tcp-ext": {
@@ -4307,7 +4307,7 @@
             "uuid": "d17e31ce-5a7a-4713-bdff-49d89548c259",
             "Attribute": [
                 {
-                    "uuid": "7826bd36-acea-4767-bb00-98c12eabf906",
+                    "uuid": "d16bc7f1-4da2-5292-b4b4-7b5633a2dafc",
                     "object_relation": "name",
                     "value": "Agence France-Presse",
                     "type": "text",
@@ -4315,7 +4315,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "a7c967bd-a6f2-46d7-8d35-58b556ebe6d5",
+                    "uuid": "3d93ed8a-611b-5f26-85ea-46120fa15c47",
                     "object_relation": "address",
                     "value": "13 place de la Bourse, 75002 Paris",
                     "type": "text",
@@ -4323,7 +4323,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "987a4ba6-3705-492e-8655-84a04849df11",
+                    "uuid": "b93faf0b-bd83-5b92-9595-a9baf705b95a",
                     "object_relation": "e-mail",
                     "value": "contact@afp.fr",
                     "type": "email-src",
@@ -4331,7 +4331,7 @@
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "9ea8c7de-2dc1-4378-ada9-c5c9ffb4e358",
+                    "uuid": "2764f4fe-4c02-541f-8109-4bdb84a5284b",
                     "object_relation": "phone-number",
                     "value": "330140414646",
                     "type": "phone-number",
@@ -4339,7 +4339,7 @@
                     "category": "Person"
                 },
                 {
-                    "uuid": "b60ebdab-a62b-482e-9cc5-ec8978040114",
+                    "uuid": "630f2ca8-9dd2-5747-ac8b-0b44fac3bca7",
                     "object_relation": "address",
                     "value": "Southern Railway Building, 1500 K Street, NW, Suite 600",
                     "type": "text",
@@ -4347,7 +4347,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "b4ef06e7-730d-4f9f-9446-08f1a7592e22",
+                    "uuid": "331ecd80-9d0b-516f-9296-e713ab807eab",
                     "object_relation": "e-mail",
                     "value": "contact@afp.us",
                     "type": "email-src",
@@ -4355,7 +4355,7 @@
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "22827c8f-f478-40ed-a8e6-0f00a56ae498",
+                    "uuid": "dd0f3896-5eaf-526e-b5af-3ba648c41c2b",
                     "object_relation": "phone-number",
                     "value": "12024140600",
                     "type": "phone-number",
@@ -4363,7 +4363,7 @@
                     "category": "Person"
                 },
                 {
-                    "uuid": "26d1cc7b-73f0-45b6-b711-b96599729ed8",
+                    "uuid": "45cf7411-7f66-5302-a12e-90f87bf75f3c",
                     "object_relation": "link",
                     "value": "https://www.afp.com/",
                     "type": "link",
@@ -4372,7 +4372,7 @@
                 },
                 {
                     "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg==",
-                    "uuid": "3c2c99e4-e87d-421c-8e52-3d5d00975c44",
+                    "uuid": "1e2e95a2-7dcc-5c2f-b744-2d8ccd55ec50",
                     "object_relation": "attachment",
                     "value": "AFP_logo.png",
                     "type": "attachment",
@@ -4411,7 +4411,7 @@
             "uuid": "fe85995c-189d-4c20-9d0e-dfc03e72000b",
             "Attribute": [
                 {
-                    "uuid": "ee337f68-37f9-43f5-9c8a-b6b47af72a0e",
+                    "uuid": "5ee4f522-1449-50a8-9045-ef1608684e11",
                     "object_relation": "name",
                     "value": "Computer Incident Response Center of Luxembourg",
                     "type": "text",
@@ -4419,7 +4419,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "fe78e05f-3e5c-4596-92bc-ee39b5ac41bc",
+                    "uuid": "fbb18eff-0679-5e31-b395-eb168068285a",
                     "object_relation": "description",
                     "value": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents.",
                     "type": "text",
@@ -4427,7 +4427,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "95faf361-f397-48ef-80a9-734ebc634705",
+                    "uuid": "c7149d20-5242-5301-b293-f3dc7f5df871",
                     "object_relation": "address",
                     "value": "16, bd d'Avranches, L-1160 Luxembourg",
                     "type": "text",
@@ -4435,7 +4435,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "cb8abb4a-3aa9-4d7b-b336-00f6a9d0a0da",
+                    "uuid": "ace71601-7a2b-5bca-a55d-f457d20404ed",
                     "object_relation": "e-mail",
                     "value": "info@circl.lu",
                     "type": "email-src",
@@ -4443,7 +4443,7 @@
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "1f7665b1-4244-460c-984b-3859c465cbbf",
+                    "uuid": "89821e00-fae0-53e2-9c7f-aec02b4dceeb",
                     "object_relation": "phone-number",
                     "value": "+35224788444",
                     "type": "phone-number",
@@ -4451,7 +4451,7 @@
                     "category": "Person"
                 },
                 {
-                    "uuid": "6d95b190-4fc0-4396-938a-b95558f173ac",
+                    "uuid": "5ef6a782-3593-5f7e-9897-e87728196e1a",
                     "object_relation": "role",
                     "value": "national CERT",
                     "type": "text",
@@ -4459,7 +4459,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "9cb0028d-7bc1-4138-a30b-fa085305ef09",
+                    "uuid": "598703d1-2901-551a-bfec-554df8ecec79",
                     "object_relation": "alias",
                     "value": "CIRCL",
                     "type": "text",
@@ -4611,8 +4611,8 @@
                 "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
                 "ObjectReference": [
                     {
-                        "uuid": "2da1926c-f9ee-4208-aabc-406af698dbf2",
-                        "object_uuid": "5f894af5-b92d-45ef-b7ba-1afb47c263dc",
+                        "uuid": "a9ee788b-ccf9-4851-96ad-6e6033812afe",
+                        "object_uuid": "3eebb329-648e-45d0-9f9e-6ccebf72476c",
                         "referenced_uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
                         "relationship_type": "includes",
                         "Object": {
@@ -5433,7 +5433,7 @@
             "uuid": "c8c418e3-b61c-4d40-a1fc-b10cec6585d7",
             "Attribute": [
                 {
-                    "uuid": "96598026-55af-44e8-a93a-6d1df5d9db69",
+                    "uuid": "e002d49e-c3ea-5784-a9ca-1816fcdc9682",
                     "object_relation": "sigma",
                     "value": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high",
                     "type": "sigma",
@@ -5441,7 +5441,7 @@
                     "category": "Payload installation"
                 },
                 {
-                    "uuid": "206ba1c9-9420-48a5-bca2-4f3e4d64a257",
+                    "uuid": "657fa17f-da3d-5630-a961-b3fd35f4abf9",
                     "object_relation": "context",
                     "value": "disk",
                     "type": "text",
@@ -5449,7 +5449,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "c5f1f29c-6c65-4a64-8e5c-478c9d7547c0",
+                    "uuid": "e5161731-5ec8-5a84-bb56-59f7f3afe522",
                     "object_relation": "reference",
                     "value": "https://www.us-cert.gov/ncas/alerts/TA17-293A",
                     "type": "link",
@@ -5457,7 +5457,7 @@
                     "category": "External analysis"
                 },
                 {
-                    "uuid": "5c4e0173-b56e-42a9-92da-69dbb22e6e75",
+                    "uuid": "1214fef3-723f-5bde-92a7-66447a8f49ce",
                     "object_relation": "sigma-rule-name",
                     "value": "Ps.exe",
                     "type": "text",
@@ -5465,7 +5465,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "2e65f89a-618e-4015-a23e-6949d1dee106",
+                    "uuid": "91e260d7-213d-5aa2-85c0-e1a902707c8c",
                     "object_relation": "comment",
                     "value": "Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A",
                     "type": "comment",
@@ -5516,7 +5516,7 @@
             "uuid": "efc15547-4fe9-4188-aa71-b688e1bfa59c",
             "Attribute": [
                 {
-                    "uuid": "28ea56d6-5510-4d89-aaa2-c770505c38bc",
+                    "uuid": "ec2bcad8-a900-57b8-a3ec-4c04ee471b83",
                     "object_relation": "suricata",
                     "value": "alert http any 443 -> 8.8.8.8 any",
                     "type": "snort",
@@ -5524,7 +5524,7 @@
                     "category": "Network activity"
                 },
                 {
-                    "uuid": "1374b636-cfff-4b27-bcd2-d491f4211642",
+                    "uuid": "cdc92f5a-62f1-5bd1-a8bb-c2a0b0288cd6",
                     "object_relation": "version",
                     "value": "3.1.6",
                     "type": "text",
@@ -5532,7 +5532,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "c9747f05-b2a9-4631-9a71-26862908fba3",
+                    "uuid": "9fd47be3-1a47-5247-b693-45d1112e7bf5",
                     "object_relation": "comment",
                     "value": "To rule them all",
                     "type": "comment",
@@ -5540,7 +5540,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "40a874cf-ecb6-4323-ad53-873859f97761",
+                    "uuid": "79601377-2d61-5a55-942d-2e839d822779",
                     "object_relation": "ref",
                     "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html",
                     "type": "link",
@@ -6400,7 +6400,7 @@
             "uuid": "cafdd27e-c3e2-4f7a-88b4-4c1c98f18be7",
             "Attribute": [
                 {
-                    "uuid": "76142f96-691c-4e6b-a142-bf560e6257d9",
+                    "uuid": "b7074b21-9e97-5867-84b9-4df1438b8f0c",
                     "object_relation": "yara",
                     "value": "rule torcryptomining { meta: description = \"Tor miner - broken UPX magic string\" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }",
                     "type": "yara",
@@ -6408,7 +6408,7 @@
                     "category": "Payload installation"
                 },
                 {
-                    "uuid": "12e697a6-88cc-4c77-a033-903ad9f365ff",
+                    "uuid": "d86f032d-66ad-5206-952f-ed033e9d57e3",
                     "object_relation": "version",
                     "value": "4.1.0",
                     "type": "text",
@@ -6416,7 +6416,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "61f981e4-824e-485d-9c80-d4e27372bbe6",
+                    "uuid": "9fd47be3-1a47-5247-b693-45d1112e7bf5",
                     "object_relation": "comment",
                     "value": "To rule them all",
                     "type": "comment",
@@ -6424,7 +6424,7 @@
                     "category": "Other"
                 },
                 {
-                    "uuid": "a713664b-339f-4a41-b0a9-283e28428209",
+                    "uuid": "3e968a51-2909-517c-a526-d8c0055b948c",
                     "object_relation": "yara-rule-name",
                     "value": "Ultimate rule",
                     "type": "text",
