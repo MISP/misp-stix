@@ -4,7 +4,9 @@
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
+from uuid import UUID, uuid5
 
+_TEST_UUID = UUID('fbed367b-f0ba-5142-9156-0aededdb39cc')
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
 ################################################################################
@@ -3378,6 +3380,26 @@ _OBSERVABLE_ATTRIBUTE = {
     "value": "AS174"
 }
 
+
+def _populate_attributes(attribute: dict):
+    if 'uuid' in attribute:
+        yield from attribute.items()
+    else:
+        for key, value in attribute.items():
+            if key == 'value':
+                yield 'uuid', uuid5(_TEST_UUID, str(value)).__str__()
+            yield key, value
+
+
+def _populate_object(misp_object: dict):
+    for key, value in misp_object.items():
+        if key == 'Attribute':
+            yield key, [
+                dict(_populate_attributes(attribute)) for attribute in value
+            ]
+            continue
+        yield key, value
+
 ################################################################################
 #                               BASE EVENT TESTS                               #
 ################################################################################
@@ -3444,12 +3466,12 @@ def get_event_with_object_confidence_tags():
     ]
     event = deepcopy(_BASE_EVENT)
     event['Event']['Tag'] = deepcopy(tags)
-    ip_port_object = deepcopy(_TEST_IP_PORT_OBJECT)
+    ip_port_object = dict(_populate_object(_TEST_IP_PORT_OBJECT))
     ip_port_object['Attribute'][0]['to_ids'] = True
     misp_objects = [
         ip_port_object,
-        deepcopy(_TEST_COURSE_OF_ACTION_OBJECT),
-        deepcopy(_TEST_ASN_OBJECT)
+        dict(_populate_object(_TEST_COURSE_OF_ACTION_OBJECT)),
+        dict(_populate_object(_TEST_ASN_OBJECT))
     ]
     for misp_object in misp_objects:
         for attribute, tag in zip(misp_object['Attribute'][:3], tags):
@@ -4671,7 +4693,7 @@ def get_event_with_x509_fingerprint_attributes():
 
 def get_embedded_indicator_object_galaxy():
     event = deepcopy(_BASE_EVENT)
-    misp_object = deepcopy(_TEST_ASN_OBJECT)
+    misp_object = dict(_populate_object(_TEST_ASN_OBJECT))
     misp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
     misp_object['Attribute'][1]['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
@@ -4688,14 +4710,14 @@ def get_embedded_indicator_object_galaxy():
 
 def get_embedded_non_indicator_object_galaxy():
     event = deepcopy(_BASE_EVENT)
-    coa_object = deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
+    coa_object = dict(_populate_object(_TEST_COURSE_OF_ACTION_OBJECT))
     coa_object['Attribute'][0]['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
     ]
     coa_object['Attribute'][1]['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
-    ttp_object = deepcopy(_TEST_VULNERABILITY_OBJECT)
+    ttp_object = dict(_populate_object(_TEST_VULNERABILITY_OBJECT))
     ttp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
     ttp_object['Attribute'][1]['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
@@ -4713,7 +4735,7 @@ def get_embedded_non_indicator_object_galaxy():
 
 def get_embedded_object_galaxy_with_multiple_clusters():
     event = deepcopy(_BASE_EVENT)
-    misp_object = deepcopy(_TEST_ASN_OBJECT)
+    misp_object = dict(_populate_object(_TEST_ASN_OBJECT))
     misp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
     misp_object['Attribute'][1]['Galaxy'] = [
         {
@@ -4742,7 +4764,7 @@ def get_embedded_object_galaxy_with_multiple_clusters():
 
 def get_embedded_observable_object_galaxy():
     event = deepcopy(_BASE_EVENT)
-    misp_object = deepcopy(_TEST_ASN_OBJECT)
+    misp_object = dict(_populate_object(_TEST_ASN_OBJECT))
     misp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
     event['Event']['Object'] = [misp_object]
     event['Event']['Galaxy'] = [deepcopy(_TEST_TOOL_GALAXY)]
@@ -4751,13 +4773,18 @@ def get_embedded_observable_object_galaxy():
 
 def get_event_with_account_objects():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = deepcopy(_TEST_ACCOUNT_OBJECTS)
+    event['Event']['Object'] = [
+        dict(_populate_object(obj)) for obj in _TEST_ACCOUNT_OBJECTS
+    ]
     return event
 
 
 def get_event_with_account_objects_with_attachment():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = deepcopy(_TEST_ACCOUNT_WITH_ATTACHMENT_OBJECTS)
+    event['Event']['Object'] = [
+        dict(_populate_object(obj)) for obj
+        in _TEST_ACCOUNT_WITH_ATTACHMENT_OBJECTS
+    ]
     with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
         data = b64encode(f.read()).decode()
     for misp_object in event['Event']['Object']:
@@ -4848,7 +4875,7 @@ def get_event_with_annotation_object():
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_ASN_OBJECT)
+        dict(_populate_object(_TEST_ASN_OBJECT))
     ]
     return event
 
@@ -4856,7 +4883,7 @@ def get_event_with_asn_object():
 def get_event_with_attack_pattern_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_ATTACK_PATTERN_OBJECT)
+        dict(_populate_object(_TEST_ATTACK_PATTERN_OBJECT))
     ]
     return event
 
@@ -4864,7 +4891,7 @@ def get_event_with_attack_pattern_object():
 def get_event_with_course_of_action_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
+        dict(_populate_object(_TEST_COURSE_OF_ACTION_OBJECT))
     ]
     return event
 
@@ -4918,7 +4945,7 @@ def get_event_with_cpe_asset_object():
 def get_event_with_credential_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_CREDENTIAL_OBJECT)
+        dict(_populate_object(_TEST_CREDENTIAL_OBJECT))
     ]
     return event
 
@@ -4926,9 +4953,9 @@ def get_event_with_credential_object():
 def get_event_with_custom_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_BANK_ACCOUNT_OBJECT),
-        deepcopy(_TEST_BTC_WALLET_OBJECT),
-        deepcopy(_TEST_REPORT_OBJECT)
+        dict(_populate_object(_TEST_BANK_ACCOUNT_OBJECT)),
+        dict(_populate_object(_TEST_BTC_WALLET_OBJECT)),
+        dict(_populate_object(_TEST_REPORT_OBJECT))
     ]
     return event
 
@@ -4936,7 +4963,7 @@ def get_event_with_custom_objects():
 def get_event_with_domain_ip_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_DOMAIN_IP_OBJECT)
+        dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
     ]
     return event
 
@@ -4944,7 +4971,7 @@ def get_event_with_domain_ip_object():
 def get_event_with_domain_ip_object_custom():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_DOMAIN_IP_OBJECT_CUSTOM)
+        dict(_populate_object(_TEST_DOMAIN_IP_OBJECT_CUSTOM))
     ]
     return event
 
@@ -4952,7 +4979,7 @@ def get_event_with_domain_ip_object_custom():
 def get_event_with_domain_ip_object_standard():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_DOMAIN_IP_OBJECT_STANDARD)
+        dict(_populate_object(_TEST_DOMAIN_IP_OBJECT_STANDARD))
     ]
     return event
 
@@ -4960,7 +4987,7 @@ def get_event_with_domain_ip_object_standard():
 def get_event_with_email_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_EMAIL_OBJECT)
+        dict(_populate_object(_TEST_EMAIL_OBJECT))
     ]
     return event
 
@@ -4968,7 +4995,7 @@ def get_event_with_email_object():
 def get_event_with_email_with_display_names_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES)
+        dict(_populate_object(_TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES))
     ]
     return event
 
@@ -5016,7 +5043,7 @@ def get_event_with_employee_object():
 
 def get_event_with_file_object_with_artifact():
     event = deepcopy(_BASE_EVENT)
-    file_object = deepcopy(_TEST_FILE_OBJECT)
+    file_object = dict(_populate_object(_TEST_FILE_OBJECT))
     with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
         file_object['Attribute'][0]['data'] = b64encode(f.read()).decode()
     file_object['Attribute'][6]['data'] = "Tm9uLW1hbGljaW91cyBmaWxlCg=="
@@ -5029,9 +5056,9 @@ def get_event_with_file_object_with_artifact():
 def get_event_with_file_and_pe_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_FILE_FOR_PE_OBJECT),
-        deepcopy(_TEST_PE_OBJECT),
-        deepcopy(_TEST_PE_SECTION_OBJECT)
+        dict(_populate_object(_TEST_FILE_FOR_PE_OBJECT)),
+        dict(_populate_object(_TEST_PE_OBJECT)),
+        dict(_populate_object(_TEST_PE_SECTION_OBJECT))
     ]
     return event
 
@@ -5039,7 +5066,7 @@ def get_event_with_file_and_pe_objects():
 def get_event_with_file_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_FILE_OBJECT)
+        dict(_populate_object(_TEST_FILE_OBJECT))
     ]
     return event
 
@@ -5047,7 +5074,7 @@ def get_event_with_file_object():
 def get_event_with_geolocation_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_GEOLOCATION_OBJECT)
+        dict(_populate_object(_TEST_GEOLOCATION_OBJECT))
     ]
     return event
 
@@ -5055,7 +5082,7 @@ def get_event_with_geolocation_object():
 def get_event_with_http_request_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_HTTP_REQUEST_OBJECT)
+        dict(_populate_object(_TEST_HTTP_REQUEST_OBJECT))
     ]
     return event
 
@@ -5144,7 +5171,7 @@ def get_event_with_image_object():
 def get_event_with_intrusion_set_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_INTRUSION_SET_OBJECT)
+        dict(_populate_object(_TEST_INTRUSION_SET_OBJECT))
     ]
     return event
 
@@ -5152,7 +5179,7 @@ def get_event_with_intrusion_set_object():
 def get_event_with_ip_port_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_IP_PORT_OBJECT)
+        dict(_populate_object(_TEST_IP_PORT_OBJECT))
     ]
     return event
 
@@ -5283,7 +5310,7 @@ def get_event_with_lnk_object():
 def get_event_with_mutex_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_MUTEX_OBJECT)
+        dict(_populate_object(_TEST_MUTEX_OBJECT))
     ]
     return event
 
@@ -5291,7 +5318,7 @@ def get_event_with_mutex_object():
 def get_event_with_netflow_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_NETFLOW_OBJECT)
+        dict(_populate_object(_TEST_NETFLOW_OBJECT))
     ]
     return event
 
@@ -5299,7 +5326,7 @@ def get_event_with_netflow_object():
 def get_event_with_network_connection_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_NETWORK_CONNECTION_OBJECT)
+        dict(_populate_object(_TEST_NETWORK_CONNECTION_OBJECT))
     ]
     return event
 
@@ -5307,7 +5334,7 @@ def get_event_with_network_connection_object():
 def get_event_with_network_socket_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_NETWORK_SOCKET_OBJECT)
+        dict(_populate_object(_TEST_NETWORK_SOCKET_OBJECT))
     ]
     return event
 
@@ -5376,12 +5403,12 @@ def get_event_with_news_agency_object():
 
 
 def get_event_with_object_references():
-    ap_object = deepcopy(_TEST_ATTACK_PATTERN_OBJECT)
-    as_object = deepcopy(_TEST_ASN_OBJECT)
-    btc_object = deepcopy(_TEST_BTC_WALLET_OBJECT)
-    coa_object = deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
-    ip_object = deepcopy(_TEST_IP_PORT_OBJECT)
-    person_object = deepcopy(_TEST_PERSON_OBJECT)
+    ap_object = dict(_populate_object(_TEST_ATTACK_PATTERN_OBJECT))
+    as_object = dict(_populate_object(_TEST_ASN_OBJECT))
+    btc_object = dict(_populate_object(_TEST_BTC_WALLET_OBJECT))
+    coa_object = dict(_populate_object(_TEST_COURSE_OF_ACTION_OBJECT))
+    ip_object = dict(_populate_object(_TEST_IP_PORT_OBJECT))
+    person_object = dict(_populate_object(_TEST_PERSON_OBJECT))
     vuln_object = {
         "name": "vulnerability",
         "meta-category": "vulnerability",
@@ -5446,13 +5473,8 @@ def get_event_with_object_references():
     ]
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        ap_object,
-        as_object,
-        btc_object,
-        coa_object,
-        ip_object,
-        person_object,
-        vuln_object
+        ap_object, as_object, btc_object, coa_object, ip_object,
+        person_object, dict(_populate_object(vuln_object))
     ]
     return event
 
@@ -5610,8 +5632,8 @@ def get_event_with_patterning_language_objects():
 def get_event_with_pe_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_PE_OBJECT),
-        deepcopy(_TEST_PE_SECTION_OBJECT)
+        dict(_populate_object(_TEST_PE_OBJECT)),
+        dict(_populate_object(_TEST_PE_SECTION_OBJECT))
     ]
     return event
 
@@ -5619,7 +5641,7 @@ def get_event_with_pe_objects():
 def get_event_with_person_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_PERSON_OBJECT)
+        dict(_populate_object(_TEST_PERSON_OBJECT))
     ]
     return event
 
@@ -5627,14 +5649,14 @@ def get_event_with_person_object():
 def get_event_with_process_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_PROCESS_OBJECT)
+        dict(_populate_object(_TEST_PROCESS_OBJECT))
     ]
     return event
 
 
 def get_event_with_process_object_v2():
     event = deepcopy(_BASE_EVENT)
-    process_object = deepcopy(_TEST_PROCESS_OBJECT)
+    process_object = dict(_populate_object(_TEST_PROCESS_OBJECT))
     process_object['Attribute'].extend(
         [
             {
@@ -5660,7 +5682,7 @@ def get_event_with_process_object_v2():
 def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_REGISTRY_KEY_OBJECT)
+        dict(_populate_object(_TEST_REGISTRY_KEY_OBJECT))
     ]
     return event
 
@@ -5732,8 +5754,8 @@ def get_event_with_script_objects():
         ]
     )
     event['Event']['Object'] = [
-        script_to_malware_object,
-        script_to_tool_object
+        dict(_populate_object(script_to_malware_object)),
+        dict(_populate_object(script_to_tool_object))
     ]
     return event
 
@@ -5741,7 +5763,7 @@ def get_event_with_script_objects():
 def get_event_with_url_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_URL_OBJECT)
+        dict(_populate_object(_TEST_URL_OBJECT))
     ]
     return event
 
@@ -5765,7 +5787,7 @@ def get_event_with_user_account_object():
             }
         ]
     )
-    event['Event']['Object'] = [user_account]
+    event['Event']['Object'] = [dict(_populate_object(user_account))]
     return event
 
 
@@ -5788,34 +5810,31 @@ def get_event_with_user_account_objects():
         },
     )
     event['Event']['Object'] = [
-        deepcopy(_TEST_USER_ACCOUNT_OBJECT),
-        unix_user_account,
-        windows_user_account
+        dict(_populate_object(_TEST_USER_ACCOUNT_OBJECT)),
+        dict(_populate_object(unix_user_account)),
+        dict(_populate_object(windows_user_account))
     ]
     return event
 
 
 def get_event_with_vulnerability_and_weakness_objects():
     event = deepcopy(_BASE_EVENT)
-    weakness = deepcopy(_TEST_WEAKNESS_OBJECT)
-    vulnerability = deepcopy(_TEST_VULNERABILITY_OBJECT)
+    weakness = dict(_populate_object(_TEST_WEAKNESS_OBJECT))
+    vulnerability = dict(_populate_object(_TEST_VULNERABILITY_OBJECT))
     vulnerability['ObjectReference'] = [
         {
             "referenced_uuid": weakness['uuid'],
             "relationship_type": "weakened-by"
         }
     ]
-    event['Event']['Object'] = [
-        vulnerability,
-        weakness
-    ]
+    event['Event']['Object'] = [vulnerability, weakness]
     return event
 
 
 def get_event_with_vulnerability_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_VULNERABILITY_OBJECT)
+        dict(_populate_object(_TEST_VULNERABILITY_OBJECT))
     ]
     return event
 
@@ -5823,7 +5842,7 @@ def get_event_with_vulnerability_object():
 def get_event_with_weakness_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_WEAKNESS_OBJECT)
+        dict(_populate_object(_TEST_WEAKNESS_OBJECT))
     ]
     return event
 
@@ -5831,7 +5850,7 @@ def get_event_with_weakness_object():
 def get_event_with_whois_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_WHOIS_OBJECT)
+        dict(_populate_object(_TEST_WHOIS_OBJECT))
     ]
     return event
 
@@ -5839,7 +5858,7 @@ def get_event_with_whois_object():
 def get_event_with_x509_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_X509_OBJECT)
+        dict(_populate_object(_TEST_X509_OBJECT))
     ]
     return event
 
