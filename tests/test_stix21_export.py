@@ -4530,7 +4530,8 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         self._test_event_with_annotation_object(event['Event'])
         self._populate_documentation(
             misp_object=self.parser._misp_event.objects,
-            stix=self.parser.stix_objects[2:]
+            stix=self.parser.stix_objects[2:], name='annotation',
+            summary='**Note** with references to the annotated objects'
         )
 
     def test_event_with_android_app_indicator_object(self):
