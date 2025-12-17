@@ -1548,6 +1548,56 @@ _TEST_ACCOUNT_WITH_ATTACHMENT_OBJECTS = [
     }
 ]
 
+_TEST_ANDROID_APP_OBJECT = {
+    "name": "android-app",
+    "description": "Indicators related to an Android app",
+    "meta-category": "file",
+    "uuid": "02782ed5-b27f-4abc-8bae-efebe13a46dd",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Facebook"
+        },
+        {
+            "type": "sha1",
+            "object_relation": "certificate",
+            "value": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f"
+        },
+        {
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "facebook.com"
+        }
+    ]
+}
+
+_TEST_ANNOTATION_OBJECT = {
+    "name": "annotation",
+    "description": "An annotation object allowing analysts to add annotations, comments, executive summary to a MISP event, objects or attributes.",
+    "meta-category": "misc",
+    "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "text",
+            "value": "Google public DNS"
+        },
+        {
+            "type": "text",
+            "object_relation": "type",
+            "value": "Executive Summary"
+        },
+        {
+            "type": "attachment",
+            "object_relation": "attachment",
+            "value": "annotation.attachment"
+        }
+    ]
+}
+
 _TEST_ASN_OBJECT = {
     "name": "asn",
     "meta-category": "network",
@@ -1760,6 +1810,46 @@ _TEST_COURSE_OF_ACTION_OBJECT = {
             "object_relation": "efficacy",
             "value": "High"
         },
+    ]
+}
+
+_TEST_CPE_ASSET_OBJECT = {
+    "name": "cpe-asset",
+    "description": "An asset which can be defined by a CPE.",
+    "meta-category": "misc",
+    "uuid": "3f53a829-6307-4006-b7a2-ff53dace4159",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "cpe",
+            "object_relation": "cpe",
+            "value": "cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*"
+        },
+        {
+            "type": "text",
+            "object_relation": "language",
+            "value": "ENG"
+        },
+        {
+            "type": "text",
+            "object_relation": "product",
+            "value": "Word"
+        },
+        {
+            "type": "text",
+            "object_relation": "vendor",
+            "value": "Microsoft"
+        },
+        {
+            "type": "text",
+            "object_relation": "version",
+            "value": "2002"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "Microsoft Word is a word processing software developed by Microsoft."
+        }
     ]
 }
 
@@ -2074,6 +2164,41 @@ _TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES = {
     ]
 }
 
+_TEST_EMPLOYEE_OBJECT = {
+    "name": "employee",
+    "description": "An employee and related data points",
+    "meta-category": "misc",
+    "uuid": "685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "first-name",
+            "object_relation": "first-name",
+            "value": "John"
+        },
+        {
+            "type": "last-name",
+            "object_relation": "last-name",
+            "value": "Doe"
+        },
+        {
+            "type": "text",
+            "object_relation": "text",
+            "value": "John Doe is known"
+        },
+        {
+            "type": "target-email",
+            "object_relation": "email-address",
+            "value": "jdoe@email.com"
+        },
+        {
+            "type": "text",
+            "object_relation": "employee-type",
+            "value": "Supervisor"
+        }
+    ]
+}
+
 _TEST_FILE_OBJECT = {
     "name": "file",
     "meta-category": "file",
@@ -2306,6 +2431,73 @@ _TEST_HTTP_REQUEST_OBJECT = {
     ]
 }
 
+_TEST_IDENTITY_OBJECT = {
+    "name": "identity",
+    "description": "Identities can represent actual individuals, organizations, or groups as well as classes of individuals, organizations, systems or groups.",
+    "meta-category": "misc",
+    "uuid": "a54e32af-5569-4949-b1fe-ad75054cde45",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "John Doe"
+        },
+        {
+            "type": "text",
+            "object_relation": "contact_information",
+            "value": "email-address: jdoe@email.com / phone-number: 0123456789"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "Unknown person"
+        },
+        {
+            "type": "text",
+            "object_relation": "identity_class",
+            "value": "individual"
+        },
+        {
+            "type": "text",
+            "object_relation": "roles",
+            "value": "Placeholder name"
+        }
+    ]
+}
+
+_TEST_IMAGE_OBJECT = {
+    "name": "image",
+    "description": "Object describing an image file.",
+    "meta-category": "file",
+    "uuid": "939b2f03-c487-4f62-a90e-cab7acfee294",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "attachment",
+            "object_relation": "attachment",
+            "value": "STIX.png"
+        },
+        {
+            "type": "filename",
+            "object_relation": "filename",
+            "value": "STIX.png"
+        },
+        {
+            "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
+            "type": "url",
+            "object_relation": "url",
+            "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+        },
+        {
+            "type": "text",
+            "object_relation": "image-text",
+            "value": "STIX"
+        }
+    ]
+}
+
 _TEST_INTRUSION_SET_OBJECT = {
     "name": "intrusion-set",
     "meta-category": "misc",
@@ -2401,6 +2593,113 @@ _TEST_IP_PORT_OBJECT = {
             "type": "datetime",
             "object_relation": "first-seen",
             "value": "2020-10-25T16:22:00Z"
+        }
+    ]
+}
+
+_TEST_LEGAL_ENTITY_OBJECT = {
+    "name": "legal-entity",
+    "description": "An object to describe a legal entity.",
+    "meta-category": "misc",
+    "uuid": "0d55ba1f-c3ff-4b91-8a09-8713576e178b",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Umbrella Corporation"
+        },
+        {
+            "type": "text",
+            "object_relation": "text",
+            "value": "The Umbrella Corporation is an international pharmaceutical company."
+        },
+        {
+            "type": "text",
+            "object_relation": "business",
+            "value": "Pharmaceutical"
+        },
+        {
+            "type": "phone-number",
+            "object_relation": "phone-number",
+            "value": "1234567890"
+        },
+        {
+            "type": "link",
+            "object_relation": "website",
+            "value": "https://umbrella.org"
+        },
+        {
+            "type": "text",
+            "object_relation": "registration-number",
+            "value": "11223344556677889900"
+        },
+        {
+            "type": "attachment",
+            "object_relation": "logo",
+            "value": "umbrella_logo"
+        }
+    ]
+}
+
+_TEST_LNK_OBJECT = {
+    "name": "lnk",
+    "descrption": "LNK object describing a Windows LNK binary file (aka Windows shortcut)",
+    "meta-category": "file",
+    "uuid": "153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "filename",
+            "object_relation": "filename",
+            "value": "oui"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "text",
+            "object_relation": "fullpath",
+            "value": "/var/www/MISP/app/files/scripts/tmp"
+        },
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "8764605c6f388c89096b534d33565802"
+        },
+        {
+            "type": "sha1",
+            "object_relation": "sha1",
+            "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+        },
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "malware-sample",
+            "object_relation": "malware-sample",
+            "value": "oui|8764605c6f388c89096b534d33565802"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "size-in-bytes",
+            "value": "35"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "lnk-creation-time",
+            "value": "2017-10-01T08:00:00Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "lnk-modification-time",
+            "value": "2020-10-25T16:22:00Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "lnk-access-time",
+            "value": "2021-01-01T00:00:00Z"
         }
     ]
 }
@@ -2616,6 +2915,201 @@ _TEST_NETWORK_SOCKET_OBJECT = {
         }
     ]
 }
+
+_TEST_NEWS_AGENCY_OBJECT = {
+    "name": "news-agency",
+    "description": "News agencies compile news and disseminate news in bulk.",
+    "meta-category": "misc",
+    "uuid": "d17e31ce-5a7a-4713-bdff-49d89548c259",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Agence France-Presse"
+        },
+        {
+            "type": "text",
+            "object_relation": "address",
+            "value": "13 place de la Bourse, 75002 Paris"
+        },
+        {
+            "type": "email-src",
+            "object_relation": "e-mail",
+            "value": "contact@afp.fr"
+        },
+        {
+            "type": "phone-number",
+            "object_relation": "phone-number",
+            "value": "(33)0140414646"
+        },
+        {
+            "type": "text",
+            "object_relation": "address",
+            "value": "Southern Railway Building, 1500 K Street, NW, Suite 600"
+        },
+        {
+            "type": "email-src",
+            "object_relation": "e-mail",
+            "value": "contact@afp.us"
+        },
+        {
+            "type": "phone-number",
+            "object_relation": "phone-number",
+            "value": "(1)2024140600"
+        },
+        {
+            "type": "link",
+            "object_relation": "link",
+            "value": "https://www.afp.com/"
+        },
+        {
+            "type": "attachment",
+            "object_relation": "attachment",
+            "value": "AFP_logo.png"
+        }
+    ]
+}
+
+_TEST_ORGANIZATION_OBJECT = {
+    "name": "organization",
+    "description": "An object which describes an organization.",
+    "meta-category": "misc",
+    "uuid": "fe85995c-189d-4c20-9d0e-dfc03e72000b",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Computer Incident Response Center of Luxembourg"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents."
+        },
+        {
+            "type": "text",
+            "object_relation": "address",
+            "value": "16, bd d'Avranches, L-1160 Luxembourg"
+        },
+        {
+            "type": "email-src",
+            "object_relation": "e-mail",
+            "value": "info@circl.lu"
+        },
+        {
+            "type": "phone-number",
+            "object_relation": "phone-number",
+            "value": "(+352) 247 88444"
+        },
+        {
+            "type": "text",
+            "object_relation": "role",
+            "value": "national CERT"
+        },
+        {
+            "type": "text",
+            "object_relation": "alias",
+            "value": "CIRCL"
+        }
+    ]
+}
+
+_TEST_PATTERNING_LANGUAGE_OBJECTS = [
+    {
+        "uuid": "c8c418e3-b61c-4d40-a1fc-b10cec6585d7",
+        "meta-category": "misc",
+        "description": "An object describing a Sigma rule (or a Sigma rule name).",
+        "name": "sigma",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "sigma",
+                "object_relation": "sigma",
+                "value": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high"
+            },
+            {
+                "type": "text",
+                "object_relation": "context",
+                "value": "disk"
+            },
+            {
+                "type": "link",
+                "object_relation": "reference",
+                "value": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
+            },
+            {
+                "type": "text",
+                "object_relation": "sigma-rule-name",
+                "value": "Ps.exe"
+            },
+            {
+                "type": "comment",
+                "object_relation": "comment",
+                "value": "Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A"
+            }
+        ]
+    },
+    {
+        "uuid": "efc15547-4fe9-4188-aa71-b688e1bfa59c",
+        "meta-category": "network",
+        "description": "An object describing a suricata rule",
+        "name": "suricata",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "snort",
+                "object_relation": "suricata",
+                "value": "alert http any 443 -> 8.8.8.8 any"
+            },
+            {
+                "type": "text",
+                "object_relation": "version",
+                "value": "3.1.6"
+            },
+            {
+                "type": "comment",
+                "object_relation": "comment",
+                "value": "To rule them all"
+            },
+            {
+                "type": "link",
+                "object_relation": "ref",
+                "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html"
+            }
+        ]
+    },
+    {
+        "uuid": "cafdd27e-c3e2-4f7a-88b4-4c1c98f18be7",
+        "meta-category": "misc",
+        "description": "An object describing a YARA rule (or a YARA rule name) along with its version.",
+        "name": "yara",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "yara",
+                "object_relation": "yara",
+                "value": 'rule torcryptomining { meta: description = "Tor miner - broken UPX magic string" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }'
+            },
+            {
+                "type": "text",
+                "object_relation": "version",
+                "value": "4.1.0"
+            },
+            {
+                "type": "comment",
+                "object_relation": "comment",
+                "value": "To rule them all"
+            },
+            {
+                "type": "text",
+                "object_relation": "yara-rule-name",
+                "value": "Ultimate rule"
+            }
+        ]
+    }
+]
 
 _TEST_PE_OBJECT = {
     "name": "pe",
@@ -4795,30 +5289,7 @@ def get_event_with_account_objects_with_attachment():
 def get_event_with_android_app_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        {
-            "name": "android-app",
-            "description": "Indicators related to an Android app",
-            "meta-category": "file",
-            "uuid": "02782ed5-b27f-4abc-8bae-efebe13a46dd",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "Facebook"
-                },
-                {
-                    "type": "sha1",
-                    "object_relation": "certificate",
-                    "value": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f"
-                },
-                {
-                    "type": "domain",
-                    "object_relation": "domain",
-                    "value": "facebook.com"
-                }
-            ]
-        }
+        dict(_populate_object(_TEST_ANDROID_APP_OBJECT))
     ]
     return event
 
@@ -4826,41 +5297,17 @@ def get_event_with_android_app_object():
 def get_event_with_annotation_object():
     event = deepcopy(_BASE_EVENT)
     domain_ip = dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
+    annotation = dict(_populate_object(_TEST_ANNOTATION_OBJECT))
+    annotation['ObjectReference'] = [
+        {
+            "referenced_uuid": domain_ip['uuid'],
+            "relationship_type": "annotates"
+        }
+    ]
+
     with open(_TESTFILES_PATH / 'annotation.attachment', 'rb') as f:
-        event['Event']['Object'] = [
-            {
-                "name": "annotation",
-                "description": "An annotation object allowing analysts to add annotations, comments, executive summary to a MISP event, objects or attributes.",
-                "meta-category": "misc",
-                "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
-                "timestamp": "1603642920",
-                "Attribute": [
-                    {
-                        "type": "text",
-                        "object_relation": "text",
-                        "value": "Google public DNS"
-                    },
-                    {
-                        "type": "text",
-                        "object_relation": "type",
-                        "value": "Executive Summary"
-                    },
-                    {
-                        "type": "attachment",
-                        "object_relation": "attachment",
-                        "value": "annotation.attachment",
-                        "data": b64encode(f.read()).decode()
-                    }
-                ],
-                "ObjectReference": [
-                    {
-                        "referenced_uuid": domain_ip['uuid'],
-                        "relationship_type": "annotates"
-                    }
-                ]
-            },
-            domain_ip
-        ]
+        annotation['Attribute'][-1]['data'] = b64encode(f.read()).decode()
+    event['Event']['Object'] = [annotation, domain_ip]
     return event
 
 
@@ -4891,45 +5338,7 @@ def get_event_with_course_of_action_object():
 def get_event_with_cpe_asset_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        {
-            "name": "cpe-asset",
-            "description": "An asset which can be defined by a CPE.",
-            "meta-category": "misc",
-            "uuid": "3f53a829-6307-4006-b7a2-ff53dace4159",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "cpe",
-                    "object_relation": "cpe",
-                    "value": "cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "language",
-                    "value": "ENG"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "product",
-                    "value": "Word"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "vendor",
-                    "value": "Microsoft"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "version",
-                    "value": "2002"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "description",
-                    "value": "Microsoft Word is a word processing software developed by Microsoft."
-                }
-            ]
-        }
+        dict(_populate_object(_TEST_CPE_ASSET_OBJECT))
     ]
     return event
 
@@ -4995,40 +5404,7 @@ def get_event_with_email_with_display_names_object():
 def get_event_with_employee_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        {
-            "name": "employee",
-            "description": "An employee and related data points",
-            "meta-category": "misc",
-            "uuid": "685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "first-name",
-                    "object_relation": "first-name",
-                    "value": "John"
-                },
-                {
-                    "type": "last-name",
-                    "object_relation": "last-name",
-                    "value": "Doe"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "text",
-                    "value": "John Doe is known"
-                },
-                {
-                    "type": "target-email",
-                    "object_relation": "email-address",
-                    "value": "jdoe@email.com"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "employee-type",
-                    "value": "Supervisor"
-                }
-            ]
-        }
+        dict(_populate_object(_TEST_EMPLOYEE_OBJECT))
     ]
     return event
 
@@ -5039,9 +5415,7 @@ def get_event_with_file_object_with_artifact():
     with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
         file_object['Attribute'][0]['data'] = b64encode(f.read()).decode()
     file_object['Attribute'][6]['data'] = "Tm9uLW1hbGljaW91cyBmaWxlCg=="
-    event['Event']['Object'] = [
-        file_object
-    ]
+    event['Event']['Object'] = [file_object]
     return event
 
 
@@ -5082,81 +5456,17 @@ def get_event_with_http_request_object():
 def get_event_with_identity_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        {
-            "name": "identity",
-            "description": "Identities can represent actual individuals, organizations, or groups as well as classes of individuals, organizations, systems or groups.",
-            "meta-category": "misc",
-            "uuid": "a54e32af-5569-4949-b1fe-ad75054cde45",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "John Doe"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "contact_information",
-                    "value": "email-address: jdoe@email.com / phone-number: 0123456789"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "description",
-                    "value": "Unknown person"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "identity_class",
-                    "value": "individual"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "roles",
-                    "value": "Placeholder name"
-                }
-            ]
-        }
+        dict(_populate_object(_TEST_IDENTITY_OBJECT))
     ]
     return event
 
 
 def get_event_with_image_object():
     event = deepcopy(_BASE_EVENT)
+    image_object = dict(_populate_object(_TEST_IMAGE_OBJECT))
     with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
-        event['Event']['Object'] = [
-            {
-                "name": "image",
-                "description": "Object describing an image file.",
-                "meta-category": "file",
-                "uuid": "939b2f03-c487-4f62-a90e-cab7acfee294",
-                "timestamp": "1603642920",
-                "Attribute": [
-                    {
-                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                        "type": "attachment",
-                        "object_relation": "attachment",
-                        "value": "STIX.png",
-                        "data": b64encode(f.read()).decode()
-                    },
-                    {
-                        "type": "filename",
-                        "object_relation": "filename",
-                        "value": "STIX.png"
-                    },
-                    {
-                        "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
-                        "type": "url",
-                        "object_relation": "url",
-                        "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
-                    },
-                    {
-                        "type": "text",
-                        "object_relation": "image-text",
-                        "value": "STIX"
-                    }
-                ]
-            }
-        ]
+        image_object['Attribute'][0]['data'] = b64encode(f.read()).decode()
+    event['Event']['Object'] = [image_object]
     return event
 
 
@@ -5178,124 +5488,19 @@ def get_event_with_ip_port_object():
 
 def get_event_with_legal_entity_object():
     event = deepcopy(_BASE_EVENT)
+    legal_entity = dict(_populate_object(_TEST_LEGAL_ENTITY_OBJECT))
     with open(_TESTFILES_PATH / 'umbrella_logo.png', 'rb') as f:
-        event['Event']['Object'] = [
-            {
-                "name": "legal-entity",
-                "description": "An object to describe a legal entity.",
-                "meta-category": "misc",
-                "uuid": "0d55ba1f-c3ff-4b91-8a09-8713576e178b",
-                "timestamp": "1603642920",
-                "Attribute": [
-                    {
-                        "type": "text",
-                        "object_relation": "name",
-                        "value": "Umbrella Corporation"
-                    },
-                    {
-                        "type": "text",
-                        "object_relation": "text",
-                        "value": "The Umbrella Corporation is an international pharmaceutical company."
-                    },
-                    {
-                        "type": "text",
-                        "object_relation": "business",
-                        "value": "Pharmaceutical"
-                    },
-                    {
-                        "type": "phone-number",
-                        "object_relation": "phone-number",
-                        "value": "1234567890"
-                    },
-                    {
-                        "type": "link",
-                        "object_relation": "website",
-                        "value": "https://umbrella.org"
-                    },
-                    {
-                        "type": "text",
-                        "object_relation": "registration-number",
-                        "value": "11223344556677889900"
-                    },
-                    {
-                        "type": "attachment",
-                        "object_relation": "logo",
-                        "value": "umbrella_logo",
-                        "data": b64encode(f.read()).decode()
-                    }
-                ]
-            }
-        ]
+        legal_entity['Attribute'][-1]['data'] = b64encode(f.read()).decode()
+    event['Event']['Object'] = [legal_entity]
     return event
 
 
 def get_event_with_lnk_object():
     event = deepcopy(_BASE_EVENT)
+    lnk_object = dict(_populate_object(_TEST_LNK_OBJECT))
     with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
-        event['Event']['Object'] = [
-            {
-                "name": "lnk",
-                "descrption": "LNK object describing a Windows LNK binary file (aka Windows shortcut)",
-                "meta-category": "file",
-                "uuid": "153ef8d5-9182-45ec-bf1c-5819932b9ab7",
-                "timestamp": "1603642920",
-                "Attribute": [
-                    {
-                        "type": "filename",
-                        "object_relation": "filename",
-                        "value": "oui"
-                    },
-                    {
-                        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-                        "type": "text",
-                        "object_relation": "fullpath",
-                        "value": "/var/www/MISP/app/files/scripts/tmp"
-                    },
-                    {
-                        "type": "md5",
-                        "object_relation": "md5",
-                        "value": "8764605c6f388c89096b534d33565802"
-                    },
-                    {
-                        "type": "sha1",
-                        "object_relation": "sha1",
-                        "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
-                    },
-                    {
-                        "type": "sha256",
-                        "object_relation": "sha256",
-                        "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
-                    },
-                    {
-                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                        "type": "malware-sample",
-                        "object_relation": "malware-sample",
-                        "value": "oui|8764605c6f388c89096b534d33565802",
-                        "data": b64encode(f.read()).decode()
-                    },
-                    {
-                        "type": "size-in-bytes",
-                        "object_relation": "size-in-bytes",
-                        "value": "35"
-                    },
-                    {
-                        "type": "datetime",
-                        "object_relation": "lnk-creation-time",
-                        "value": "2017-10-01T08:00:00Z"
-                    },
-                    {
-                        "type": "datetime",
-                        "object_relation": "lnk-modification-time",
-                        "value": "2020-10-25T16:22:00Z"
-                    },
-                    {
-                        "type": "datetime",
-                        "object_relation": "lnk-access-time",
-                        "value": "2021-01-01T00:00:00Z"
-                    }
-                ]
-            }
-        ]
+        lnk_object['Attribute'][5]['data'] = b64encode(f.read()).decode()
+    event['Event']['Object'] = [lnk_object]
     return event
 
 
@@ -5333,64 +5538,10 @@ def get_event_with_network_socket_object():
 
 def get_event_with_news_agency_object():
     event = deepcopy(_BASE_EVENT)
+    news_agency = dict(_populate_object(_TEST_NEWS_AGENCY_OBJECT))
     with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
-        event['Event']['Object'] = [
-            {
-                "name": "news-agency",
-                "description": "News agencies compile news and disseminate news in bulk.",
-                "meta-category": "misc",
-                "uuid": "d17e31ce-5a7a-4713-bdff-49d89548c259",
-                "timestamp": "1603642920",
-                "Attribute": [
-                    {
-                        "type": "text",
-                        "object_relation": "name",
-                        "value": "Agence France-Presse"
-                    },
-                    {
-                        "type": "text",
-                        "object_relation": "address",
-                        "value": "13 place de la Bourse, 75002 Paris"
-                    },
-                    {
-                        "type": "email-src",
-                        "object_relation": "e-mail",
-                        "value": "contact@afp.fr"
-                    },
-                    {
-                        "type": "phone-number",
-                        "object_relation": "phone-number",
-                        "value": "(33)0140414646"
-                    },
-                    {
-                        "type": "text",
-                        "object_relation": "address",
-                        "value": "Southern Railway Building, 1500 K Street, NW, Suite 600"
-                    },
-                    {
-                        "type": "email-src",
-                        "object_relation": "e-mail",
-                        "value": "contact@afp.us"
-                    },
-                    {
-                        "type": "phone-number",
-                        "object_relation": "phone-number",
-                        "value": "(1)2024140600"
-                    },
-                    {
-                        "type": "link",
-                        "object_relation": "link",
-                        "value": "https://www.afp.com/"
-                    },
-                    {
-                        "type": "attachment",
-                        "object_relation": "attachment",
-                        "value": "AFP_logo.png",
-                        "data": b64encode(f.read()).decode()
-                    }
-                ]
-            }
-        ]
+        news_agency['Attribute'][-1]['data'] = b64encode(f.read()).decode()
+    event['Event']['Object'] = [news_agency]
     return event
 
 
@@ -5474,50 +5625,7 @@ def get_event_with_object_references():
 def get_event_with_organization_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        {
-            "name": "organization",
-            "description": "An object which describes an organization.",
-            "meta-category": "misc",
-            "uuid": "fe85995c-189d-4c20-9d0e-dfc03e72000b",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "Computer Incident Response Center of Luxembourg"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "description",
-                    "value": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents."
-                },
-                {
-                    "type": "text",
-                    "object_relation": "address",
-                    "value": "16, bd d'Avranches, L-1160 Luxembourg"
-                },
-                {
-                    "type": "email-src",
-                    "object_relation": "e-mail",
-                    "value": "info@circl.lu"
-                },
-                {
-                    "type": "phone-number",
-                    "object_relation": "phone-number",
-                    "value": "(+352) 247 88444"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "role",
-                    "value": "national CERT"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "alias",
-                    "value": "CIRCL"
-                }
-            ]
-        }
+        dict(_populate_object(_TEST_ORGANIZATION_OBJECT))
     ]
     return event
 
@@ -5525,98 +5633,7 @@ def get_event_with_organization_object():
 def get_event_with_patterning_language_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        {
-            "uuid": "c8c418e3-b61c-4d40-a1fc-b10cec6585d7",
-            "meta-category": "misc",
-            "description": "An object describing a Sigma rule (or a Sigma rule name).",
-            "name": "sigma",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "sigma",
-                    "object_relation": "sigma",
-                    "value": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "context",
-                    "value": "disk"
-                },
-                {
-                    "type": "link",
-                    "object_relation": "reference",
-                    "value": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "sigma-rule-name",
-                    "value": "Ps.exe"
-                },
-                {
-                    "type": "comment",
-                    "object_relation": "comment",
-                    "value": "Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A"
-                }
-            ]
-        },
-        {
-            "uuid": "efc15547-4fe9-4188-aa71-b688e1bfa59c",
-            "meta-category": "network",
-            "description": "An object describing a suricata rule",
-            "name": "suricata",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "snort",
-                    "object_relation": "suricata",
-                    "value": "alert http any 443 -> 8.8.8.8 any"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "version",
-                    "value": "3.1.6"
-                },
-                {
-                    "type": "comment",
-                    "object_relation": "comment",
-                    "value": "To rule them all"
-                },
-                {
-                    "type": "link",
-                    "object_relation": "ref",
-                    "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html"
-                }
-            ]
-        },
-        {
-            "uuid": "cafdd27e-c3e2-4f7a-88b4-4c1c98f18be7",
-            "meta-category": "misc",
-            "description": "An object describing a YARA rule (or a YARA rule name) along with its version.",
-            "name": "yara",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "yara",
-                    "object_relation": "yara",
-                    "value": 'rule torcryptomining { meta: description = "Tor miner - broken UPX magic string" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }'
-                },
-                {
-                    "type": "text",
-                    "object_relation": "version",
-                    "value": "4.1.0"
-                },
-                {
-                    "type": "comment",
-                    "object_relation": "comment",
-                    "value": "To rule them all"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "yara-rule-name",
-                    "value": "Ultimate rule"
-                }
-            ]
-        }
+        dict(_populate_object(obj)) for obj in _TEST_PATTERNING_LANGUAGE_OBJECTS
     ]
     return event
 
