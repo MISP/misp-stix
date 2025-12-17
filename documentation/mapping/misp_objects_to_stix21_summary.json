@@ -2,7 +2,7 @@
     "Script object where state is \"Malicious\"": "**Malware**",
     "Script object where state is not \"Malicious\"": "**Tool**",
     "android-app": "Software Object and IoCs described in Indicator (pattern)",
-    "annotation": "Ipv4 Addr & Network Traffic & Note Objects and IoCs described in Indicator (pattern)",
+    "annotation": "**Note** with references to the annotated objects",
     "asn": "Autonomous System Object and IoCs described in Indicator (pattern)",
     "attack-pattern": "**Attack-pattern**",
     "course-of-action": "**Course-of-action**",
