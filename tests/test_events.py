@@ -553,6 +553,8 @@ _EVENT_FOR_ESCAPING_TESTS = {
                 ],
                 "ObjectReference": [
                     {
+                        "uuid": uuid5(_TEST_UUID, "68bd413b-5392-4239-93a9-e574fb80af8c").__str__(),
+                        "object_uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
                         "referenced_uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
                         "relationship_type": "includes",
                         "Object": {
@@ -840,6 +842,8 @@ _TEST_EVENT_WITH_ANALYST_DATA = {
             ],
             "ObjectReference": [
                 {
+                    "uuid": uuid5(_TEST_UUID, "f7ef1b4a-964a-4a69-9e21-808f85c56238").__str__(),
+                    "object_uuid": "eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
                     "referenced_uuid": "f7ef1b4a-964a-4a69-9e21-808f85c56238",
                     "relationship_type": "downloaded-from"
                 }
@@ -2307,6 +2311,8 @@ _TEST_FILE_FOR_PE_OBJECT = {
     ],
     "ObjectReference": [
         {
+            "uuid": uuid5(_TEST_UUID, "2183705f-e8d6-4c08-a820-5b56a1303bb1").__str__(),
+            "object_uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
             "referenced_uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
             "relationship_type": "includes",
             "Object": {
@@ -3196,6 +3202,8 @@ _TEST_PE_OBJECT = {
     ],
     "ObjectReference": [
         {
+            "uuid": uuid5(_TEST_UUID, "68bd413b-5392-4239-93a9-e574fb80af8c").__str__(),
+            "object_uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
             "referenced_uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
             "relationship_type": "includes",
             "Object": {
@@ -5300,6 +5308,8 @@ def get_event_with_annotation_object():
     annotation = dict(_populate_object(_TEST_ANNOTATION_OBJECT))
     annotation['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, domain_ip['uuid']).__str__(),
+            "object_uuid": annotation['uuid'],
             "referenced_uuid": domain_ip['uuid'],
             "relationship_type": "annotates"
         }
@@ -5572,6 +5582,8 @@ def get_event_with_object_references():
         ],
         "ObjectReference": [
             {
+                "uuid": uuid5(_TEST_UUID, f"{ip_object['uuid']} - affects").__str__(),
+                "object_uuid": "651a981f-6f59-4609-b735-e57efb9d44df",
                 "referenced_uuid": ip_object['uuid'],
                 "relationship_type": "affects"
             }
@@ -5579,30 +5591,40 @@ def get_event_with_object_references():
     }
     ap_object['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, f"{ip_object['uuid']} - threatens").__str__(),
+            "object_uuid": ap_object['uuid'],
             "referenced_uuid": ip_object['uuid'],
             "relationship_type": "threatens"
         }
     ]
     as_object['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, f"{ip_object['uuid']} - includes").__str__(),
+            "object_uuid": as_object['uuid'],
             "referenced_uuid": ip_object['uuid'],
             "relationship_type": "includes"
         }
     ]
     btc_object['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, f"{ip_object['uuid']} - connected-to").__str__(),
+            "object_uuid": btc_object['uuid'],
             "referenced_uuid": ip_object['uuid'],
             "relationship_type": "connected-to"
         }
     ]
     coa_object['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, f"{vuln_object['uuid']} - protects-against").__str__(),
+            "object_uuid": coa_object['uuid'],
             "referenced_uuid": vuln_object['uuid'],
             "relationship_type": "protects-against"
         }
     ]
     person_object['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, f"{ip_object['uuid']} - owns").__str__(),
+            "object_uuid": person_object['uuid'],
             "referenced_uuid": ip_object['uuid'],
             "relationship_type": "owns"
         }
@@ -5610,6 +5632,8 @@ def get_event_with_object_references():
     ip_object['Attribute'][0]['to_ids'] = True
     ip_object['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, coa_object['uuid']).__str__(),
+            "object_uuid": ip_object['uuid'],
             "referenced_uuid": coa_object['uuid'],
             "relationship_type": "protected-with"
         }
@@ -5832,6 +5856,8 @@ def get_event_with_vulnerability_and_weakness_objects():
     vulnerability = dict(_populate_object(_TEST_VULNERABILITY_OBJECT))
     vulnerability['ObjectReference'] = [
         {
+            "uuid": uuid5(_TEST_UUID, weakness['uuid']).__str__(),
+            "object_uuid": vulnerability['uuid'],
             "referenced_uuid": weakness['uuid'],
             "relationship_type": "weakened-by"
         }
