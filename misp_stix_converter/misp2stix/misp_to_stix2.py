@@ -1195,6 +1195,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._composite_attribute_value_warning(
                 attribute['type'], attribute['value']
             )
+            value = self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(attribute["value"])
+            )
             indicator = self._handle_attribute_indicator(
                 attribute, f"[{self._create_regkey_pattern(value)}]",
                 standalone=True
