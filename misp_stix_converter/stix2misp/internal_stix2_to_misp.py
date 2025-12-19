@@ -21,6 +21,8 @@ from stix2.v21.sdo import CustomObject as CustomObject_v21, Note, Opinion
 from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Union
 
+_STORAGE_VARIABLE_NAMES = ('_indicator', '_observed_data')
+
 _CUSTOM_TYPING = Union[
     CustomObject_v20,
     CustomObject_v21
@@ -349,16 +351,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ############################################################################
 
     def _set_indicator_references(self):
-        if not getattr(self, '_indicator', []) or not getattr(self, '_observed_data', []):
+        if not all(hasattr(self, field) for field in _STORAGE_VARIABLE_NAMES):
             return
-        indicator_references = {
-            self._extract_uuid(indicator_id)
-            for indicator_id in self._indicator.keys()
+        pattern_parser = self.indicator_parser._compile_stix_pattern
+        self._indicator_references = {
+            self._extract_uuid(indicator_id): tuple(val[-1] for val in pattern)
+            for indicator_id, indicator in self._indicator.items()
+            for pattern in pattern_parser(indicator).comparisons.values()
         }
-        observable_references = {
-            self._extract_uuid(observable_id)
-            for observable_id in self._observed_data.keys()
-        }
-        self._indicator_references = tuple(
-            indicator_references & observable_references
-        )

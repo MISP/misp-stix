@@ -97,6 +97,16 @@ class STIX2IndicatorConverter(STIX2Converter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
+    def _compile_stix_pattern(self, indicator: _INDICATOR_TYPING) -> PatternData:
+        try:
+            self._pattern_parser.handle_indicator(indicator)
+        except AttributeError:
+            self._pattern_parser = STIX2PatternParser()
+            self._pattern_parser.handle_indicator(indicator)
+        if not self._pattern_parser.valid:
+            raise InvalidSTIXPatternError(indicator.pattern)
+        return self._pattern_parser.pattern
+
 
 class ExternalSTIX2IndicatorMapping(
         STIX2IndicatorMapping, ExternalSTIX2Mapping):
@@ -345,17 +355,6 @@ class ExternalSTIX2IndicatorConverter(
             }
         )
         self.main_parser._add_misp_object(misp_object, indicator)
-
-    def _compile_stix_pattern(
-            self, indicator: _INDICATOR_TYPING) -> PatternData:
-        try:
-            self._pattern_parser.handle_indicator(indicator)
-        except AttributeError:
-            self._pattern_parser = STIX2PatternParser()
-            self._pattern_parser.handle_indicator(indicator)
-        if not self._pattern_parser.valid:
-            raise InvalidSTIXPatternError(indicator.pattern)
-        return self._pattern_parser.pattern
 
     def _handle_pattern_mapping(self, indicator: _INDICATOR_TYPING) -> str:
         if isinstance(indicator, Indicator_v21):
@@ -1446,6 +1445,9 @@ class InternalSTIX2IndicatorConverter(
         self._mapping = InternalSTIX2IndicatorMapping
 
     def parse(self, indicator_ref: str):
+        od_id = self.main_parser._extract_uuid(indicator_ref)
+        if f'observed-data--{od_id}' in self.main_parser._observed_data:
+            return
         indicator = self.main_parser._get_stix_object(indicator_ref)
         try:
             feature = self._handle_mapping_from_labels(
