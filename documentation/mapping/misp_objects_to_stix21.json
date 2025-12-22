@@ -1151,64 +1151,95 @@
                 }
             ]
         },
-        "STIX": {
-            "Observed Data": [
-                {
-                    "type": "observed-data",
-                    "spec_version": "2.1",
-                    "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
-                    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-                    "created": "2020-10-25T16:22:00.000Z",
-                    "modified": "2020-10-25T16:22:00.000Z",
-                    "first_observed": "2020-10-25T16:22:00Z",
-                    "last_observed": "2020-10-25T16:22:00Z",
-                    "number_observed": 1,
-                    "object_refs": [
-                        "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-                        "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb",
-                        "domain-name--a2e44443-a974-47b6-bb35-69d17b1cd243",
-                        "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
-                    ],
-                    "labels": [
-                        "misp:name=\"domain-ip\"",
-                        "misp:meta-category=\"network\"",
-                        "misp:to_ids=\"False\""
-                    ]
-                },
-                {
-                    "type": "ipv4-addr",
-                    "spec_version": "2.1",
-                    "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-                    "value": "149.13.33.14"
-                },
-                {
-                    "type": "ipv4-addr",
-                    "spec_version": "2.1",
-                    "id": "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb",
-                    "value": "185.194.93.14"
-                },
-                {
-                    "type": "domain-name",
-                    "spec_version": "2.1",
-                    "id": "domain-name--a2e44443-a974-47b6-bb35-69d17b1cd243",
-                    "value": "misp-project.org",
-                    "resolves_to_refs": [
-                        "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-                        "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb"
-                    ]
-                },
-                {
-                    "type": "domain-name",
-                    "spec_version": "2.1",
-                    "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "value": "circl.lu",
-                    "resolves_to_refs": [
-                        "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-                        "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb"
-                    ]
-                }
-            ]
-        }
+        "STIX": [
+            {
+                "type": "observed-data",
+                "spec_version": "2.1",
+                "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "object_refs": [
+                    "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+                    "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb",
+                    "domain-name--a2e44443-a974-47b6-bb35-69d17b1cd243",
+                    "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+                ],
+                "labels": [
+                    "misp:name=\"domain-ip\"",
+                    "misp:meta-category=\"network\"",
+                    "misp:to_ids=\"False\""
+                ]
+            },
+            {
+                "type": "ipv4-addr",
+                "spec_version": "2.1",
+                "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+                "value": "149.13.33.14"
+            },
+            {
+                "type": "ipv4-addr",
+                "spec_version": "2.1",
+                "id": "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb",
+                "value": "185.194.93.14"
+            },
+            {
+                "type": "domain-name",
+                "spec_version": "2.1",
+                "id": "domain-name--a2e44443-a974-47b6-bb35-69d17b1cd243",
+                "value": "misp-project.org",
+                "resolves_to_refs": [
+                    "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+                    "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb"
+                ]
+            },
+            {
+                "type": "domain-name",
+                "spec_version": "2.1",
+                "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "value": "circl.lu",
+                "resolves_to_refs": [
+                    "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+                    "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb"
+                ]
+            },
+            {
+                "type": "indicator",
+                "spec_version": "2.1",
+                "id": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+                "pattern_type": "stix",
+                "pattern_version": "2.1",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "network"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"domain-ip\"",
+                    "misp:meta-category=\"network\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
+                "type": "relationship",
+                "spec_version": "2.1",
+                "id": "relationship--0acb9b01-ce40-5a1f-8ae0-4b4af33a1ca8",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+                "target_ref": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
+            }
+        ]
     },
     "email": {
         "MISP": {
@@ -2247,7 +2278,7 @@
                     {
                         "uuid": "6d317d97-d1fc-5932-805a-3327a0362d97",
                         "object_relation": "legal-copyright",
-                        "value": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                        "value": "Copyright © 1997-2019 Simon Tatham.",
                         "type": "text",
                         "to_ids": false,
                         "category": "Other"
@@ -2413,7 +2444,7 @@
                         "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
                         "x_misp_internal_filename": "PuTTy",
                         "x_misp_lang_id": "080904B0",
-                        "x_misp_legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                        "x_misp_legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
                         "x_misp_original_filename": "PuTTy",
                         "x_misp_product_name": "PuTTy suite",
                         "x_misp_product_version": "Release 0.71"
@@ -4714,7 +4745,7 @@
                     {
                         "uuid": "6d317d97-d1fc-5932-805a-3327a0362d97",
                         "object_relation": "legal-copyright",
-                        "value": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                        "value": "Copyright © 1997-2019 Simon Tatham.",
                         "type": "text",
                         "to_ids": false,
                         "category": "Other"
@@ -4874,7 +4905,7 @@
                         "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
                         "x_misp_internal_filename": "PuTTy",
                         "x_misp_lang_id": "080904B0",
-                        "x_misp_legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                        "x_misp_legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
                         "x_misp_original_filename": "PuTTy",
                         "x_misp_product_name": "PuTTy suite",
                         "x_misp_product_version": "Release 0.71"

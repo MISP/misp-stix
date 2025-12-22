@@ -228,11 +228,21 @@ class DocumentationUpdater:
 
     def _write_documentation(self):
         with open(self.mapping_path, 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(dict(self._order_mapping('_documentation')), indent=4))
+            f.write(
+                json.dumps(
+                    dict(self._order_mapping('_documentation')),
+                    indent=4, ensure_ascii=False
+                )
+            )
 
     def _write_summary(self):
         with open(self.summary_path, 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(dict(self._order_mapping('_summary')), indent=4))
+            f.write(
+                json.dumps(
+                    dict(self._order_mapping('_summary')),
+                    indent=4, ensure_ascii=False
+                )
+            )
 
 
 class AttributesDocumentationUpdater(DocumentationUpdater):
