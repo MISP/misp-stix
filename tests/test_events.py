@@ -5930,62 +5930,78 @@ def _get_hash_composite_attributes(to_ids):
 
 def get_hash_attributes():
     return {
-        'md5': {
-            'value': 'b2a5abfeef9e36964281a31e17b57c97',
-            'uuid': '34cb1a7c-55ec-412a-8684-ba4a88d83a45'
+        "md5": {
+            "value": "b2a5abfeef9e36964281a31e17b57c97",
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
         },
-        'sha1': {
-            'value': '2920d5e6c579fce772e5506caf03af65579088bd',
-            'uuid': 'f2259650-bc33-4b64-a3a8-a324aa7ea6bb'
+        "sha1": {
+            "value": "2920d5e6c579fce772e5506caf03af65579088bd",
+            "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
         },
-        'sha224': {
-            'value': '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9',
-            'uuid': '90bd7dae-b78c-4025-9073-568950c780fb'
+        "sha224": {
+            "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+            "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
         },
-        'sha256': {
-            'value': '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4',
-            'uuid': '2007ec09-8137-4a71-a3ce-6ef967bebacf'
+        "sha256": {
+            "value": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4",
+            "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
         },
-        'sha384': {
-            'value': 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce',
-            'uuid': 'c8760340-85a9-4e40-bfde-522d66ef1e9f'
+        "sha384": {
+            "value": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
+            "uuid": "c8760340-85a9-4e40-bfde-522d66ef1e9f",
         },
-        'sha512': {
-            'value': '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe',
-            'uuid': '55ffda25-c3fe-48b5-a6eb-59c986cb593e'
+        "sha512": {
+            "value": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe",
+            "uuid": "55ffda25-c3fe-48b5-a6eb-59c986cb593e",
         },
-        'ssdeep': {
-            'value': '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi',
-            'uuid': '9060e814-a36f-45ab-84e5-66fc82dc7cff'
+        "ssdeep": {
+            "value": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
+            "uuid": "9060e814-a36f-45ab-84e5-66fc82dc7cff",
         },
-        'authentihash': {
-            'value': 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc',
-            'uuid': '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f'
+        "authentihash": {
+            "value": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc",
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         },
-        'imphash': {
-            'value': '68f013d7437aa653a8a98a05807afeb1',
-            'uuid': '518b4bcb-a86b-4783-9457-391d548b605b'
+        "imphash": {
+            "value": "68f013d7437aa653a8a98a05807afeb1",
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
         },
-        'pehash': {
-            'value': 'ffb7a38174aab4744cc4a509e34800aee9be8e57',
-            'uuid': '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
+        "pehash": {
+            "value": "ffb7a38174aab4744cc4a509e34800aee9be8e57",
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
         },
-        'sha512/256': {
-            'value': '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
-            'uuid': '2d35a390-ccdd-4d6b-a36d-513b05e3682a'
+        "sha512/224": {
+            "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+            "uuid": "bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
         },
-        'tlsh': {
-            'value': 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297',
-            'uuid': '7467406e-88d3-4856-afc9-412459bc3c8b'
+        "sha512/256": {
+            "value": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+            "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
         },
-        'vhash': {
-            'value': '115056655d15151138z66hz1021z55z66z3',
-            'uuid': 'cea8c6f6-696c-41cc-b7c7-2566ca0b0975'
+        "tlsh": {
+            "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+            "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
         },
-        'sha3-256': {
-            'value': '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4',
-            'uuid': 'e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6'
-        }
+        "vhash": {
+            "value": "115056655d15151138z66hz1021z55z66z3",
+            "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        },
+        "sha3-224": {
+            "value": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc",
+            "uuid": "f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        },
+        "sha3-256": {
+            "value": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+            "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        },
+        "sha3-384": {
+            "value": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+            "uuid": "0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        },
+        "sha3-512": {
+            "value": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+            "uuid": "7e5ec865-a97c-41ba-99ba-a21c006da460",
+        },
     }
 
 ################################################################################

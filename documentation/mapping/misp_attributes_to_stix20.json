@@ -1204,8 +1204,32 @@
             "timestamp": "1603642920",
             "comment": "Filename|pehash test attribute"
         },
-        "STIX": {
-            "Indicator": {
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+                        },
+                        "name": "filename10"
+                    }
+                },
+                "labels": [
+                    "misp:type=\"filename|pehash\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
                 "type": "indicator",
                 "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
@@ -1226,30 +1250,16 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
-                "type": "observed-data",
-                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            {
+                "type": "relationship",
+                "id": "relationship--a304e5a4-5169-5b78-a50e-520ef8b41b03",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2020-10-25T16:22:00Z",
-                "last_observed": "2020-10-25T16:22:00Z",
-                "number_observed": 1,
-                "objects": {
-                    "0": {
-                        "type": "file",
-                        "hashes": {
-                            "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
-                        },
-                        "name": "filename10"
-                    }
-                },
-                "labels": [
-                    "misp:type=\"filename|pehash\"",
-                    "misp:category=\"Payload delivery\""
-                ]
+                "relationship_type": "based-on",
+                "source_ref": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "target_ref": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
             }
-        }
+        ]
     },
     "filename|sha1": {
         "MISP": {
@@ -1451,22 +1461,46 @@
     },
     "filename|sha3-224": {
         "MISP": {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "uuid": "f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
             "type": "filename|sha3-224",
+            "value": "filename15|47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc",
             "category": "Payload delivery",
-            "value": "testfile.name|3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618",
             "timestamp": "1603642920",
             "comment": "Filename|sha3-224 test attribute"
         },
-        "STIX": {
-            "Indicator": {
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "SHA3-224": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc"
+                        },
+                        "name": "filename15"
+                    }
+                },
+                "labels": [
+                    "misp:type=\"filename|sha3-224\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
                 "type": "indicator",
-                "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha3-224 test attribute",
-                "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3224 = '3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618']",
+                "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -1480,37 +1514,23 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
-                "type": "observed-data",
-                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            {
+                "type": "relationship",
+                "id": "relationship--66a532bd-5151-50b3-891b-961d510c79f9",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2020-10-25T16:22:00Z",
-                "last_observed": "2020-10-25T16:22:00Z",
-                "number_observed": 1,
-                "objects": {
-                    "0": {
-                        "type": "file",
-                        "hashes": {
-                            "SHA3-224": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618"
-                        },
-                        "name": "testfile.name"
-                    }
-                },
-                "labels": [
-                    "misp:type=\"filename|sha3-224\"",
-                    "misp:category=\"Payload delivery\""
-                ]
+                "relationship_type": "based-on",
+                "source_ref": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+                "target_ref": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
             }
-        }
+        ]
     },
     "filename|sha3-256": {
         "MISP": {
             "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
             "type": "filename|sha3-256",
+            "value": "filename16|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
             "category": "Payload delivery",
-            "value": "filename14|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
             "timestamp": "1603642920",
             "comment": "Filename|sha3-256 test attribute"
         },
@@ -1530,7 +1550,7 @@
                         "hashes": {
                             "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
                         },
-                        "name": "filename14"
+                        "name": "filename16"
                     }
                 },
                 "labels": [
@@ -1546,7 +1566,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha3-256 test attribute",
-                "pattern": "[file:name = 'filename14' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+                "pattern": "[file:name = 'filename16' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -1573,38 +1593,17 @@
     },
     "filename|sha3-384": {
         "MISP": {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "uuid": "0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
             "type": "filename|sha3-384",
+            "value": "filename17|93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
             "category": "Payload delivery",
-            "value": "testfile.name|93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
             "timestamp": "1603642920",
             "comment": "Filename|sha3-384 test attribute"
         },
-        "STIX": {
-            "Indicator": {
-                "type": "indicator",
-                "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-                "created": "2020-10-25T16:22:00.000Z",
-                "modified": "2020-10-25T16:22:00.000Z",
-                "description": "Filename|sha3-384 test attribute",
-                "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
-                "valid_from": "2020-10-25T16:22:00Z",
-                "kill_chain_phases": [
-                    {
-                        "kill_chain_name": "misp-category",
-                        "phase_name": "Payload delivery"
-                    }
-                ],
-                "labels": [
-                    "misp:type=\"filename|sha3-384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
-                ]
-            },
-            "Observed Data": {
+        "STIX": [
+            {
                 "type": "observed-data",
-                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "id": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
@@ -1617,34 +1616,89 @@
                         "hashes": {
                             "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
                         },
-                        "name": "testfile.name"
+                        "name": "filename17"
                     }
                 },
                 "labels": [
                     "misp:type=\"filename|sha3-384\"",
-                    "misp:category=\"Payload delivery\""
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
                 ]
+            },
+            {
+                "type": "indicator",
+                "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "description": "Filename|sha3-384 test attribute",
+                "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "Payload delivery"
+                    }
+                ],
+                "labels": [
+                    "misp:type=\"filename|sha3-384\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
+                "type": "relationship",
+                "id": "relationship--6fd071b8-79dc-5c14-b62b-e59788ef4b57",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+                "target_ref": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
             }
-        }
+        ]
     },
     "filename|sha3-512": {
         "MISP": {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "uuid": "7e5ec865-a97c-41ba-99ba-a21c006da460",
             "type": "filename|sha3-512",
+            "value": "filename18|fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
             "category": "Payload delivery",
-            "value": "testfile.name|fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
             "timestamp": "1603642920",
             "comment": "Filename|sha3-512 test attribute"
         },
-        "STIX": {
-            "Indicator": {
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
+                        },
+                        "name": "filename18"
+                    }
+                },
+                "labels": [
+                    "misp:type=\"filename|sha3-512\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
                 "type": "indicator",
-                "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha3-512 test attribute",
-                "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+                "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -1658,30 +1712,16 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
-                "type": "observed-data",
-                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            {
+                "type": "relationship",
+                "id": "relationship--0ea01092-e57f-5d81-855e-9460aa8b2771",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2020-10-25T16:22:00Z",
-                "last_observed": "2020-10-25T16:22:00Z",
-                "number_observed": 1,
-                "objects": {
-                    "0": {
-                        "type": "file",
-                        "hashes": {
-                            "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
-                        },
-                        "name": "testfile.name"
-                    }
-                },
-                "labels": [
-                    "misp:type=\"filename|sha3-512\"",
-                    "misp:category=\"Payload delivery\""
-                ]
+                "relationship_type": "based-on",
+                "source_ref": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+                "target_ref": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460"
             }
-        }
+        ]
     },
     "filename|sha384": {
         "MISP": {
@@ -1817,17 +1857,41 @@
     },
     "filename|sha512/224": {
         "MISP": {
-            "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "uuid": "bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
             "type": "filename|sha512/224",
-            "category": "Payload delivery",
             "value": "filename11|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+            "category": "Payload delivery",
             "timestamp": "1603642920",
             "comment": "Filename|sha512/224 test attribute"
         },
-        "STIX": {
-            "Indicator": {
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+                        },
+                        "name": "filename11"
+                    }
+                },
+                "labels": [
+                    "misp:type=\"filename|sha512/224\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
                 "type": "indicator",
-                "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+                "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
@@ -1846,37 +1910,23 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
-                "type": "observed-data",
-                "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            {
+                "type": "relationship",
+                "id": "relationship--395842d5-b89b-55e8-b368-ad238a4ec1ae",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2020-10-25T16:22:00Z",
-                "last_observed": "2020-10-25T16:22:00Z",
-                "number_observed": 1,
-                "objects": {
-                    "0": {
-                        "type": "file",
-                        "hashes": {
-                            "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
-                        },
-                        "name": "filename11"
-                    }
-                },
-                "labels": [
-                    "misp:type=\"filename|sha512/224\"",
-                    "misp:category=\"Payload delivery\""
-                ]
+                "relationship_type": "based-on",
+                "source_ref": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+                "target_ref": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
             }
-        }
+        ]
     },
     "filename|sha512/256": {
         "MISP": {
             "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
             "type": "filename|sha512/256",
+            "value": "filename12|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
             "category": "Payload delivery",
-            "value": "filename11|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
             "timestamp": "1603642920",
             "comment": "Filename|sha512/256 test attribute"
         },
@@ -1896,7 +1946,7 @@
                         "hashes": {
                             "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
                         },
-                        "name": "filename11"
+                        "name": "filename12"
                     }
                 },
                 "labels": [
@@ -1912,7 +1962,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha512/256 test attribute",
-                "pattern": "[file:name = 'filename11' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+                "pattern": "[file:name = 'filename12' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -2007,8 +2057,8 @@
         "MISP": {
             "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
             "type": "filename|tlsh",
+            "value": "filename13|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
             "category": "Payload delivery",
-            "value": "filename12|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
             "timestamp": "1603642920",
             "comment": "Filename|tlsh test attribute"
         },
@@ -2028,7 +2078,7 @@
                         "hashes": {
                             "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
                         },
-                        "name": "filename12"
+                        "name": "filename13"
                     }
                 },
                 "labels": [
@@ -2044,7 +2094,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|tlsh test attribute",
-                "pattern": "[file:name = 'filename12' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+                "pattern": "[file:name = 'filename13' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -2073,8 +2123,8 @@
         "MISP": {
             "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
             "type": "filename|vhash",
+            "value": "filename14|115056655d15151138z66hz1021z55z66z3",
             "category": "Payload delivery",
-            "value": "filename13|115056655d15151138z66hz1021z55z66z3",
             "timestamp": "1603642920",
             "comment": "Filename|vhash test attribute"
         },
@@ -2094,7 +2144,7 @@
                         "hashes": {
                             "VHASH": "115056655d15151138z66hz1021z55z66z3"
                         },
-                        "name": "filename13"
+                        "name": "filename14"
                     }
                 },
                 "labels": [
@@ -2110,7 +2160,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|vhash test attribute",
-                "pattern": "[file:name = 'filename13' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+                "pattern": "[file:name = 'filename14' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -3427,22 +3477,45 @@
     },
     "sha3-224": {
         "MISP": {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "uuid": "f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
             "type": "sha3-224",
+            "value": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc",
             "category": "Payload delivery",
-            "value": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618",
             "timestamp": "1603642920",
             "comment": "SHA3-224 test attribute"
         },
-        "STIX": {
-            "Indicator": {
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "SHA3-224": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc"
+                        }
+                    }
+                },
+                "labels": [
+                    "misp:type=\"sha3-224\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
                 "type": "indicator",
-                "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "SHA3-224 test attribute",
-                "pattern": "[file:hashes.SHA3224 = '3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618']",
+                "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -3456,29 +3529,16 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
-                "type": "observed-data",
-                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            {
+                "type": "relationship",
+                "id": "relationship--66a532bd-5151-50b3-891b-961d510c79f9",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2020-10-25T16:22:00Z",
-                "last_observed": "2020-10-25T16:22:00Z",
-                "number_observed": 1,
-                "objects": {
-                    "0": {
-                        "type": "file",
-                        "hashes": {
-                            "SHA3-224": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618"
-                        }
-                    }
-                },
-                "labels": [
-                    "misp:type=\"sha3-224\"",
-                    "misp:category=\"Payload delivery\""
-                ]
+                "relationship_type": "based-on",
+                "source_ref": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+                "target_ref": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
             }
-        }
+        ]
     },
     "sha3-256": {
         "MISP": {
@@ -3547,17 +3607,40 @@
     },
     "sha3-384": {
         "MISP": {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "uuid": "0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
             "type": "sha3-384",
-            "category": "Payload delivery",
             "value": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+            "category": "Payload delivery",
             "timestamp": "1603642920",
             "comment": "SHA3-384 test attribute"
         },
-        "STIX": {
-            "Indicator": {
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+                        }
+                    }
+                },
+                "labels": [
+                    "misp:type=\"sha3-384\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
                 "type": "indicator",
-                "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
@@ -3576,9 +3659,30 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
+            {
+                "type": "relationship",
+                "id": "relationship--6fd071b8-79dc-5c14-b62b-e59788ef4b57",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+                "target_ref": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
+            }
+        ]
+    },
+    "sha3-512": {
+        "MISP": {
+            "uuid": "7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "type": "sha3-512",
+            "value": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+            "category": "Payload delivery",
+            "timestamp": "1603642920",
+            "comment": "SHA3-512 test attribute"
+        },
+        "STIX": [
+            {
                 "type": "observed-data",
-                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "id": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
@@ -3589,30 +3693,19 @@
                     "0": {
                         "type": "file",
                         "hashes": {
-                            "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+                            "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
                         }
                     }
                 },
                 "labels": [
-                    "misp:type=\"sha3-384\"",
-                    "misp:category=\"Payload delivery\""
+                    "misp:type=\"sha3-512\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
                 ]
-            }
-        }
-    },
-    "sha3-512": {
-        "MISP": {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-            "type": "sha3-512",
-            "category": "Payload delivery",
-            "value": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
-            "timestamp": "1603642920",
-            "comment": "SHA3-512 test attribute"
-        },
-        "STIX": {
-            "Indicator": {
+            },
+            {
                 "type": "indicator",
-                "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
@@ -3631,29 +3724,16 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
-                "type": "observed-data",
-                "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            {
+                "type": "relationship",
+                "id": "relationship--0ea01092-e57f-5d81-855e-9460aa8b2771",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2020-10-25T16:22:00Z",
-                "last_observed": "2020-10-25T16:22:00Z",
-                "number_observed": 1,
-                "objects": {
-                    "0": {
-                        "type": "file",
-                        "hashes": {
-                            "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
-                        }
-                    }
-                },
-                "labels": [
-                    "misp:type=\"sha3-512\"",
-                    "misp:category=\"Payload delivery\""
-                ]
+                "relationship_type": "based-on",
+                "source_ref": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+                "target_ref": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460"
             }
-        }
+        ]
     },
     "sha384": {
         "MISP": {
@@ -3787,17 +3867,40 @@
     },
     "sha512/224": {
         "MISP": {
+            "uuid": "bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
             "type": "sha512/224",
+            "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
             "category": "Payload delivery",
             "timestamp": "1603642920",
-            "comment": "SHA512/224 test attribute",
-            "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
-            "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+            "comment": "SHA512/224 test attribute"
         },
-        "STIX": {
-            "Indicator": {
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+                        }
+                    }
+                },
+                "labels": [
+                    "misp:type=\"sha512/224\"",
+                    "misp:category=\"Payload delivery\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            {
                 "type": "indicator",
-                "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+                "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
@@ -3816,29 +3919,16 @@
                     "misp:to_ids=\"True\""
                 ]
             },
-            "Observed Data": {
-                "type": "observed-data",
-                "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            {
+                "type": "relationship",
+                "id": "relationship--395842d5-b89b-55e8-b368-ad238a4ec1ae",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2020-10-25T16:22:00Z",
-                "last_observed": "2020-10-25T16:22:00Z",
-                "number_observed": 1,
-                "objects": {
-                    "0": {
-                        "type": "file",
-                        "hashes": {
-                            "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
-                        }
-                    }
-                },
-                "labels": [
-                    "misp:type=\"sha512/224\"",
-                    "misp:category=\"Payload delivery\""
-                ]
+                "relationship_type": "based-on",
+                "source_ref": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+                "target_ref": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
             }
-        }
+        ]
     },
     "sha512/256": {
         "MISP": {

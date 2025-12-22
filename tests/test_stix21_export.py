@@ -649,16 +649,18 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
 
     def _check_hash_composite_observable_attribute(self, grouping_ref, observed_data, observable, attribute):
         self._assert_multiple_equal(
-            observable.id,
-            grouping_ref,
-            observed_data['object_refs'][0],
+            observable.id, grouping_ref, observed_data['object_refs'][0],
             f"file--{attribute['uuid']}"
         )
         self.assertEqual(observable.type, 'file')
         filename, hash_value = attribute['value'].split('|')
         self.assertEqual(observable.name, filename)
         hash_type = self.hash_types_mapping(attribute['type'].split('|')[1])
-        self.assertEqual(observable.hashes[hash_type], hash_value)
+        hashes = observable.hashes
+        if hash_type in hashes:
+            self.assertEqual(hashes[hash_type], hash_value)
+        else:
+            self.assertEqual(hashes[hash_type.replace('-', '')], hash_value)
 
     def _check_hash_indicator_attribute(self, attribute, indicator):
         hash_type = attribute['type']
@@ -671,14 +673,16 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
 
     def _check_hash_observable_attribute(self, grouping_ref, observed_data, observable, attribute):
         self._assert_multiple_equal(
-            observable.id,
-            grouping_ref,
-            observed_data['object_refs'][0],
+            observable.id, grouping_ref, observed_data['object_refs'][0],
             f"file--{attribute['uuid']}"
         )
         self.assertEqual(observable.type, 'file')
         hash_type = self.hash_types_mapping(attribute['type'])
-        self.assertEqual(observable.hashes[hash_type], attribute['value'])
+        hashes = observable.hashes
+        if hash_type in hashes:
+            self.assertEqual(hashes[hash_type], attribute['value'])
+        else:
+            self.assertEqual(hashes[hash_type.replace('-', '')], attribute['value'])
 
     def _check_hostname_observable_attribute(self, attribute, domain, object_ref):
         self._assert_multiple_equal(
