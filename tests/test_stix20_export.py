@@ -3680,7 +3680,7 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_file_and_pe_objects()
         self._test_event_with_file_and_pe_indicator_objects(event['Event'])
         self._populate_documentation(
-            misp_object=self.parser._misp_event.objects[0],
+            misp_object=self.parser._misp_event.objects,
             stix=self.parser.stix_objects[2:],
             name='file with references to pe & pe-section(s)',
             summary='File Object with a Windows PE binary extension'
