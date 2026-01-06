@@ -1446,7 +1446,7 @@ class InternalSTIX2IndicatorConverter(
 
     def parse(self, indicator_ref: str):
         od_id = self.main_parser._extract_uuid(indicator_ref)
-        if f'observed-data--{od_id}' in self.main_parser._observed_data:
+        if f'observed-data--{od_id}' in self._observed_data:
             return
         indicator = self.main_parser._get_stix_object(indicator_ref)
         try:
@@ -1472,6 +1472,10 @@ class InternalSTIX2IndicatorConverter(
                 'Error while parsing the Indicator object with id '
                 f'{indicator.id}: {_traceback}'
             )
+
+    @property
+    def _observed_data(self) -> dict:
+        return getattr(self.main_parser, '_observed_data', {})
 
     ############################################################################
     #                        ATTRIBUTES PARSING METHODS                        #
