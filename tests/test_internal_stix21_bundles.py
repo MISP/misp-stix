@@ -106,7 +106,7 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--f1f2fa84-d954-5ea5-a79c-ab531b7b2289",
+        "id": "relationship--746d942a-8a4a-482c-8bb2-88137bb9ef72",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -162,7 +162,7 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--3b182b94-4054-52f3-9d8f-55e7de1a71fc",
+        "id": "relationship--f8117c4c-1a27-48e2-9df4-bbce247b3783",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -362,7 +362,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--8fcf9b3a-1f27-5f28-a265-41f56a14feeb",
+        "id": "relationship--7db8539b-3a18-4ba3-9fac-d38d3aa03bdd",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -427,7 +427,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--736ecf93-5d5a-552c-9d0f-bb3df9390b04",
+        "id": "relationship--d88cf4b1-e4ed-46c6-9a2d-af8bafda3e8a",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -491,7 +491,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--ba5f302f-42da-5e3a-b7b4-19b878ba22b0",
+        "id": "relationship--2bb5818f-2e44-43a2-b0de-1d69516b48cb",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -555,7 +555,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--76d9748e-2b95-502d-a0c5-5d6885f75905",
+        "id": "relationship--601caace-838b-470d-b5b7-9e0bf59782e8",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -620,7 +620,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--7ab13a4c-ded9-5d4d-97ab-55ca22c13078",
+        "id": "relationship--c24d40c6-edda-4cb4-9afe-75b63789b974",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -696,7 +696,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--a9308038-fb86-5937-9105-f98016ca85bf",
+        "id": "relationship--127637c9-7a83-4e0c-8d1f-666ad1cc3fa2",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -985,7 +985,7 @@ _ANDROID_APP_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--49a00cf0-36aa-5d38-91dd-42dd5bbb09ae",
+        "id": "relationship--083173fd-5fce-4b13-b413-bf10aa781ee5",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -1149,7 +1149,7 @@ _AS_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -1229,7 +1229,7 @@ _ASN_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--6b121871-cb57-5fbb-8ff7-9c8b4be5afd3",
+        "id": "relationship--36414951-fe93-4021-8234-9d7fae390de9",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -1317,7 +1317,7 @@ _ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -1871,7 +1871,7 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
             "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
             "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
             "indicator--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
-            "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+            "relationship--600e528a-1967-4489-a604-a04af707490c",
             "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
             "relationship--a950cb91-1a8a-4c3a-ad73-3e2e38a39070"
         ],
@@ -1954,7 +1954,7 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -2112,7 +2112,7 @@ _BUNDLE_WITH_NO_REPORT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -2568,7 +2568,7 @@ _CPE_ASSET_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0bf8e05-276f-5fbb-80a7-379c74b0cd04",
+        "id": "relationship--ea9e373b-57f1-46bd-9b65-aa845865817b",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -2652,7 +2652,7 @@ _CREDENTIAL_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--220ccf27-9286-5c4d-ad40-03d68317094c",
+        "id": "relationship--49fd4899-8273-4e23-9e70-d92c507fb3bf",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3027,7 +3027,7 @@ _DOMAIN_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3140,7 +3140,7 @@ _DOMAIN_IP_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3291,7 +3291,7 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--0acb9b01-ce40-5a1f-8ae0-4b4af33a1ca8",
+        "id": "relationship--5d2dcfac-c0c1-418c-af91-028b8776bdee",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3386,7 +3386,7 @@ _EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3465,7 +3465,7 @@ _EMAIL_BODY_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3555,7 +3555,7 @@ _EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0779bac-8ac6-5b28-ad47-c23c748879fe",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3636,7 +3636,7 @@ _EMAIL_HEADER_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3816,7 +3816,7 @@ _EMAIL_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -3952,7 +3952,7 @@ _EMAIL_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--0a936557-847e-5016-ad92-c772d85cd447",
+        "id": "relationship--dd033127-0059-4994-9c1d-5a9b3830fcd9",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4033,7 +4033,7 @@ _EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--a304e5a4-5169-5b78-a50e-520ef8b41b03",
+        "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4123,7 +4123,7 @@ _EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4202,7 +4202,7 @@ _EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9b7f6cad-8dfe-5002-9126-18734b4e79ca",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4283,7 +4283,7 @@ _EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--4b5755d9-bae8-5b05-be20-4908f6a88ead",
+        "id": "relationship--f6ca586b-8e47-4457-b8f4-28b3f258d9de",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4554,7 +4554,7 @@ _FILE_AND_PE_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--bc7a056a-872e-50a5-be2d-7edff850ea0e",
+        "id": "relationship--381d4bb0-d07c-4128-8880-eede3c7825f5",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4662,7 +4662,7 @@ _FILE_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--84a09ac4-d222-57f1-9fab-f36595b47888",
+        "id": "relationship--f9626c9a-ad6f-4351-9553-0a3dbffc46d6",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4742,7 +4742,7 @@ _FILENAME_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -4846,7 +4846,7 @@ _GITHUB_USERNAME_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5241,7 +5241,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9b7f6cad-8dfe-5002-9126-18734b4e79ca",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5296,7 +5296,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--f7753a88-71a0-5d09-84b9-51cd5ce9e156",
+        "id": "relationship--fa05ec41-b6ee-4072-a3be-06970eca319a",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5353,7 +5353,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--eb9e9476-6942-5bf2-9dbe-402bec74aace",
+        "id": "relationship--aea91422-ae58-40c0-815c-e9160fb552a4",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5410,7 +5410,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--e6d76c68-6c71-5903-b1b4-7611fb73ab74",
+        "id": "relationship--40d6c7e0-1e8c-4fe0-8650-f0a959bc878b",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5467,7 +5467,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--e2c7ae14-1442-5b06-8983-2b36fa641930",
+        "id": "relationship--61ef6c1d-f504-4d0d-94af-6a745270dce5",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5524,7 +5524,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--cded3aba-253d-529d-9e70-1d638f3d43bd",
+        "id": "relationship--9dd12c5c-cafb-4087-86ac-98a91cd8eff7",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5581,7 +5581,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--0f0ed729-61bf-515d-bbae-4670857bd3f1",
+        "id": "relationship--6170abd7-7ddc-4e22-9cdb-30880b463973",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5638,7 +5638,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5693,7 +5693,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0779bac-8ac6-5b28-ad47-c23c748879fe",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5748,7 +5748,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--a304e5a4-5169-5b78-a50e-520ef8b41b03",
+        "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5805,7 +5805,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--395842d5-b89b-55e8-b368-ad238a4ec1ae",
+        "id": "relationship--7ac97cac-bedc-4c6e-b2ee-d72358493da1",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5862,7 +5862,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9566c5c9-73b8-5040-84f2-1a02eef91dbc",
+        "id": "relationship--59b95b7e-504d-4fa4-a072-c675498292f5",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5919,7 +5919,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--3cbb6e43-cf8c-5aef-ae7d-76461f6805ab",
+        "id": "relationship--388e22d6-85b7-4189-8b89-589cdd931ecf",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -5974,7 +5974,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--2e5ecd49-0bdd-59ae-8bc4-d7674afeac7b",
+        "id": "relationship--f7455a6c-4a23-40a2-82f5-a2191822ed59",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6031,7 +6031,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--66a532bd-5151-50b3-891b-961d510c79f9",
+        "id": "relationship--5415bd6a-5127-4b74-9a26-e0d38952af1c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6088,7 +6088,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--685e41c3-23e3-5495-a7ba-d3f580cec62d",
+        "id": "relationship--9ecc7f6c-75c7-4663-baea-a4e5d0e30a35",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6145,7 +6145,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--6fd071b8-79dc-5c14-b62b-e59788ef4b57",
+        "id": "relationship--3b8187c2-a105-452f-88ee-f34bd860782f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6202,7 +6202,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--0ea01092-e57f-5d81-855e-9460aa8b2771",
+        "id": "relationship--f5e0f1d6-2154-45ec-8697-f6231c217133",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6620,7 +6620,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9b7f6cad-8dfe-5002-9126-18734b4e79ca",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6674,7 +6674,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--f7753a88-71a0-5d09-84b9-51cd5ce9e156",
+        "id": "relationship--fa05ec41-b6ee-4072-a3be-06970eca319a",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6730,7 +6730,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--eb9e9476-6942-5bf2-9dbe-402bec74aace",
+        "id": "relationship--aea91422-ae58-40c0-815c-e9160fb552a4",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6786,7 +6786,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--e6d76c68-6c71-5903-b1b4-7611fb73ab74",
+        "id": "relationship--40d6c7e0-1e8c-4fe0-8650-f0a959bc878b",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6842,7 +6842,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--e2c7ae14-1442-5b06-8983-2b36fa641930",
+        "id": "relationship--61ef6c1d-f504-4d0d-94af-6a745270dce5",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6898,7 +6898,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--cded3aba-253d-529d-9e70-1d638f3d43bd",
+        "id": "relationship--9dd12c5c-cafb-4087-86ac-98a91cd8eff7",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -6954,7 +6954,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--0f0ed729-61bf-515d-bbae-4670857bd3f1",
+        "id": "relationship--6170abd7-7ddc-4e22-9cdb-30880b463973",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7010,7 +7010,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7064,7 +7064,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0779bac-8ac6-5b28-ad47-c23c748879fe",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7118,7 +7118,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--a304e5a4-5169-5b78-a50e-520ef8b41b03",
+        "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7174,7 +7174,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--395842d5-b89b-55e8-b368-ad238a4ec1ae",
+        "id": "relationship--7ac97cac-bedc-4c6e-b2ee-d72358493da1",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7230,7 +7230,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9566c5c9-73b8-5040-84f2-1a02eef91dbc",
+        "id": "relationship--59b95b7e-504d-4fa4-a072-c675498292f5",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7286,7 +7286,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--3cbb6e43-cf8c-5aef-ae7d-76461f6805ab",
+        "id": "relationship--388e22d6-85b7-4189-8b89-589cdd931ecf",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7340,7 +7340,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--2e5ecd49-0bdd-59ae-8bc4-d7674afeac7b",
+        "id": "relationship--f7455a6c-4a23-40a2-82f5-a2191822ed59",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7396,7 +7396,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--66a532bd-5151-50b3-891b-961d510c79f9",
+        "id": "relationship--5415bd6a-5127-4b74-9a26-e0d38952af1c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7452,7 +7452,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--685e41c3-23e3-5495-a7ba-d3f580cec62d",
+        "id": "relationship--9ecc7f6c-75c7-4663-baea-a4e5d0e30a35",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7508,7 +7508,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--6fd071b8-79dc-5c14-b62b-e59788ef4b57",
+        "id": "relationship--3b8187c2-a105-452f-88ee-f34bd860782f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7564,7 +7564,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--0ea01092-e57f-5d81-855e-9460aa8b2771",
+        "id": "relationship--f5e0f1d6-2154-45ec-8697-f6231c217133",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7620,7 +7620,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--12a3d2ab-3fc8-58e9-94f3-0d25ffd0ed0c",
+        "id": "relationship--65a745c4-8c12-45cd-9127-330f6cd0f812",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7700,7 +7700,7 @@ _HOSTNAME_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7791,7 +7791,7 @@ _HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7955,7 +7955,7 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--ebea2f94-85c1-5d84-a4bd-4f7ca8ab1daa",
+        "id": "relationship--3071c6a2-fdb1-453c-b603-e4d6b9017ccc",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8064,7 +8064,7 @@ _IMAGE_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--76ad9b09-f2b7-55da-b0fc-56fd9eef58ce",
+        "id": "relationship--d90dbb2f-9511-43c1-86e4-80d4cf7c5b57",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8237,7 +8237,7 @@ _IP_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8301,7 +8301,7 @@ _IP_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0779bac-8ac6-5b28-ad47-c23c748879fe",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8441,7 +8441,7 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8506,7 +8506,7 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0779bac-8ac6-5b28-ad47-c23c748879fe",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8574,7 +8574,7 @@ _IP_PORT_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--fe702a84-9baf-56af-8f52-f16b46f7d8df",
+        "id": "relationship--37dd31ee-24a7-4a7c-9704-aecef00e7082",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8839,7 +8839,7 @@ _MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8961,7 +8961,7 @@ _MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -9064,7 +9064,7 @@ _MUTEX_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -9121,7 +9121,7 @@ _MUTEX_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--bf518690-a15d-5479-bbd4-b2b7401a314b",
+        "id": "relationship--20389086-0cc2-45d4-b7a9-f4d367e49dc5",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -9237,7 +9237,7 @@ _NETFLOW_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--4a74e43e-9a68-5b6f-9005-158c2acfc4c0",
+        "id": "relationship--b0d20387-14e3-40ae-a170-58db0dd99bc6",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -9336,7 +9336,7 @@ _NETWORK_CONNECTION_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--808a7355-d235-5530-bbe6-989b3a7fe1d1",
+        "id": "relationship--7a706d93-4c0b-4084-bbee-552515ffac59",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -9443,7 +9443,7 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--17ee379b-2ee8-54d0-b79f-3462fc161a7a",
+        "id": "relationship--bc5e3b34-b274-4ef7-b082-ee286c87ce84",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10022,7 +10022,7 @@ _PROCESS_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--4d73e2f2-8274-5360-89b3-ce45d6335fef",
+        "id": "relationship--74004798-7758-4553-90fe-60cbb722dc62",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10109,7 +10109,7 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9b3ea668-d313-53c7-8e7f-57c14b4b0f01",
+        "id": "relationship--0ec23b58-fbd1-4dbb-be28-6a48d4677410",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10189,7 +10189,7 @@ _REGKEY_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10270,7 +10270,7 @@ _REGKEY_VALUE_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10573,7 +10573,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10627,7 +10627,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0779bac-8ac6-5b28-ad47-c23c748879fe",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10681,7 +10681,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9b7f6cad-8dfe-5002-9126-18734b4e79ca",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10740,7 +10740,7 @@ _URL_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--e2b8fa6f-ff8b-5cf9-a54a-0d3980a01bf0",
+        "id": "relationship--9c435f8e-5d9c-4f84-9650-6bb3355ae28a",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10941,7 +10941,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--860e90aa-53db-5b32-b295-3c3926c82f10",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -10995,7 +10995,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--d0779bac-8ac6-5b28-ad47-c23c748879fe",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -11051,7 +11051,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--9b7f6cad-8dfe-5002-9126-18734b4e79ca",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -11143,7 +11143,7 @@ _X509_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "spec_version": "2.1",
-        "id": "relationship--afaf82e1-57d1-5dc8-bf1b-817333005aa4",
+        "id": "relationship--ef692888-dc5d-4f5c-85c2-b9a13f2ea85e",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -11685,7 +11685,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             'x_misp_profile_image',
             'x_misp_user_avatar'
         )
-        for observable, feature in zip(observables[1::2], features):
+        for observable, feature in zip(observables[1::4], features):
             observable[feature]['data'] = data
         return cls.__assemble_bundle(*observables)
 
