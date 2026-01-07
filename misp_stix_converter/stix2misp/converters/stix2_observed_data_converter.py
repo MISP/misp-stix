@@ -73,6 +73,16 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def observables(self) -> dict:
         return self.main_parser._observable
 
+    @staticmethod
+    def _handle_misp_object_references(
+            misp_object: MISPObject, *object_ids: tuple,
+            relationship_type: str = 'contains'):
+        for object_id in object_ids:
+            if not any(reference.referenced_uuid == object_id and
+                   reference.relationship_type == relationship_type
+                   for reference in misp_object.references):
+                misp_object.add_reference(object_id, relationship_type)
+
     # Errors handling
     def _missing_observable_object_error(
             self, observed_data_id: str, observable_object_id: str):
@@ -2192,9 +2202,7 @@ class ExternalSTIX2ObservedDataConverter(
                     registry_value, observed_data,
                     f'{object_id} - values - {index}', indicator_ref
                 )
-                self._handle_misp_object_references(
-                    misp_object, value_uuid
-                )
+                self._handle_misp_object_references(misp_object, value_uuid)
         return misp_object
 
     def _parse_registry_key_observable_object_ref(
@@ -2220,9 +2228,7 @@ class ExternalSTIX2ObservedDataConverter(
                     registry_value, observed_data,
                     f'{registry_key.id} - values - {index}', indicator_ref
                 )
-                self._handle_misp_object_references(
-                    misp_object, value_uuid
-                )
+                self._handle_misp_object_references(misp_object, value_uuid)
         return misp_object
 
     def _parse_registry_key_observable_object_refs(
@@ -2307,9 +2313,7 @@ class ExternalSTIX2ObservedDataConverter(
                         registry_value, observed_data,
                         f'{observed_data.id} - values - {index}', indicator_ref
                     )
-                    self._handle_misp_object_references(
-                        misp_object, value_uuid
-                    )
+                    self._handle_misp_object_references(misp_object, value_uuid)
             return misp_object
         if observable_objects is None:
             observable_objects = {
@@ -2599,16 +2603,6 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object.comment = comment
         elif comment not in misp_object.comment:
             misp_object.comment = f'{misp_object.comment} - {comment}'
-
-    @staticmethod
-    def _handle_misp_object_references(
-            misp_object: MISPObject, *object_ids: tuple,
-            relationship_type: str = 'contains'):
-        for object_id in object_ids:
-            if not any(reference.referenced_uuid == object_id and
-                   reference.relationship_type == relationship_type
-                   for reference in misp_object.references):
-                misp_object.add_reference(object_id, relationship_type)
 
 
 class InternalSTIX2ObservedDataConverter(
@@ -3031,9 +3025,8 @@ class InternalSTIX2ObservedDataConverter(
         observable = getattr(self, f'_fetch_observables_{version}')(
             observed_data
         )
-        attributes = self._parse_asn_observable(
-            observable, getattr(observable, 'id', observed_data.id)
-        )
+        object_id = getattr(observable, 'id', observed_data.id)
+        attributes = self._parse_asn_observable(observable, object_id)
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, observed_data)
@@ -3794,16 +3787,49 @@ class InternalSTIX2ObservedDataConverter(
 
     def _object_from_registry_key_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
-        misp_object = self._create_misp_object('registry-key', observed_data)
+        regkey_object = self._create_misp_object('registry-key', observed_data)
         observable = getattr(self, f'_fetch_observables_{version}')(
             observed_data
         )
-        attributes = self._parse_registry_key_observable(
-            observable, getattr(observable, 'id', observed_data.id)
-        )
+        object_id = getattr(observable, 'id', observed_data.id)
+        attributes = self._parse_registry_key_observable(observable, object_id)
         for attribute in attributes:
-            misp_object.add_attribute(**attribute)
-        self.main_parser._add_misp_object(misp_object, observed_data)
+            regkey_object.add_attribute(**attribute)
+        misp_object = self.main_parser._add_misp_object(
+            regkey_object, observed_data
+        )
+        if len(observable.get('values', [])) > 1:
+            for index, registry_value in enumerate(observable['values']):
+                value_uuid = self._object_from_registry_key_value_observable(
+                    registry_value, observed_data, object_id, index
+                )
+                self._handle_misp_object_references(misp_object, value_uuid)
+        return misp_object
+
+    def _object_from_registry_key_value_observable(
+            self, registry_value: _WINDOWS_REGISTRY_VALUE_TYPING,
+            observed_data: _OBSERVED_DATA_TYPING,
+            object_id: str, index: int) -> str:
+        misp_object = self._create_misp_object_from_observable_object(
+            'registry-key-value', observed_data, object_id
+        )
+        mapping = self._mapping.registry_key_values_object_mapping
+        for field, attribute in mapping().items():
+            if hasattr(registry_value, field):
+                value = getattr(registry_value, field)
+                misp_object.add_attribute(
+                    **self._populate_object_attribute(
+                        value, attribute,
+                        self._handle_object_id(
+                            value, object_id, attribute['object_relation'],
+                            feature=f'{object_id} - values - {index}'
+                        )
+                    )
+                )
+        misp_object = self.main_parser._add_misp_object(
+            misp_object, observed_data
+        )
+        return misp_object.uuid
 
     def _object_from_registry_key_observable_v20(
             self, observed_data: ObservedData_v20):
