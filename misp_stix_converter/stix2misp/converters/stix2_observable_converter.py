@@ -1033,38 +1033,34 @@ class InternalSTIX2ObservableMapping(
 
 class InternalSTIX2ObservableConverter(
         STIX2ObservableConverter, InternalSTIX2Converter):
-    def _check_indicator_reference(self, reference: str) ->bool:
-        return reference in self.main_parser.indicator_references
+    def _check_indicator_reference(self, object_id: str, field: str) -> bool:
+        return field in self.indicator_references.get(object_id, [])
 
-    def _handle_hash_attribute(
-            self, indicator_ref: set | None, hash_type: str, value: str,
-            object_id: str, mapping: Optional[str] = 'file') -> dict:
+    def _handle_hash_attribute(self, hash_type: str, value: str, object_id: str,
+                               mapping: Optional[str] = 'file') -> dict:
         mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
         if mapping is not None:
-            to_ids = self._check_indicator_reference(indicator_ref)
-            attribute = {'to_ids': to_ids, **mapping}
             return self._populate_object_attribute(
-                attribute, value,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+                value, mapping, self._handle_object_id(
+                    value, object_id, mapping['object_relation']
+                )
             )
         self._hash_type_error(hash_type)
 
-    def _handle_object_attributes(
-            self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: set | None, field: str, object_id: str) -> Iterator[dict]:
-        values = observable[field]
+    def _handle_object_attributes(self, mapping: dict, values: list | str,
+                                  object_id: str) -> Iterator[dict]:
         if isinstance(values, list):
             for value in values:
-                to_ids = self._check_indicator_reference(indicator_ref)
                 yield self._populate_object_attribute(
-                    {'to_ids': to_ids, **mapping}, value,
-                    f'{indicator_ref} - {object_id}' if to_ids else object_id
+                    value, mapping, self._handle_object_id(
+                        value, object_id, mapping['object_relation']
+                    )
                 )
         else:
-            to_ids = self._check_indicator_reference(indicator_ref)
             yield self._populate_object_attribute(
-                {'to_ids': to_ids, **mapping}, values,
-                f'{indicator_ref} - {object_id}' if to_ids else object_id
+                values, mapping, self._handle_object_id(
+                    values, object_id, mapping['object_relation']
+                )
             )
 
     def _handle_object_attributes_with_data(
@@ -1088,6 +1084,28 @@ class InternalSTIX2ObservableConverter(
                     f"{object_id} - {mapping['object_relation']}"
                 )
             )
+
+    def _handle_object_id(
+            self, value: str, object_id: str, object_relation: str,
+            value_to_check: Optional[str] = None, feature: Optional[str] = None,
+            **attribute: dict[str, str | bool]) -> dict:
+        object_uuid = self.main_parser._extract_uuid(object_id)
+        reference = f'{feature or object_id} - {object_relation} - {value}'
+        if self._check_indicator_reference(object_uuid, value_to_check or value):
+            indicator_id = f'indicator--{object_uuid}'
+            comment = f'Indicator ID: {indicator_id}'
+            if attribute.get('comment'):
+                comment = f"{comment} - {attribute.pop('comment')}"
+            return {
+                'to_ids': True, 'comment': comment, **attribute,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{indicator_id} - {reference}'
+                )
+            }
+        return {
+            'to_ids': False, **attribute,
+            'uuid': self.main_parser._create_v5_uuid(reference)
+        }
 
     def _has_domain_custom_fields(self, observable: DomainName_v21) -> bool:
         for feature in self._mapping.domain_ip_object_mapping():
