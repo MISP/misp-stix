@@ -897,15 +897,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid, relationship_type = relationship
-            if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]
+            referenced_id, relationship_type = relationship
+            referenced_uuid = self._sanitise_uuid(referenced_id)
+            if referenced_uuid == misp_object.uuid:
+                continue
+            if referenced_id in self._clusters:
+                cluster = self._clusters[referenced_id]
                 clusters[cluster['cluster']['type']].append(cluster['cluster'])
                 cluster['used'][self.misp_event.uuid] = True
             else:
-                misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid), relationship_type
-                )
+                misp_object.add_reference(referenced_uuid, relationship_type)
         if clusters:
             for galaxy in self._aggregate_galaxy_clusters(clusters):
                 for attribute in misp_object.attributes:
@@ -913,17 +914,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_object_relationships_as_tag_names(self, misp_object: MISPObject):
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid, relationship_type = relationship
-            if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]
+            referenced_id, relationship_type = relationship
+            referenced_uuid = self._sanitise_uuid(referenced_id)
+            if referenced_uuid == misp_object.uuid:
+                continue
+            if referenced_id in self._clusters:
+                cluster = self._clusters[referenced_id]
                 for attribute in misp_object.attributes:
                     for tag in cluster['tag_names']:
                         attribute.add_tag(tag)
                 cluster['used'][self.misp_event.uuid] = True
             else:
-                misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid), relationship_type
-                )
+                misp_object.add_reference(referenced_uuid, relationship_type)
 
     def _parse_relationships(self):
         for attribute in self.misp_event.attributes:
