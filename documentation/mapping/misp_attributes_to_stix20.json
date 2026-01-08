@@ -25,8 +25,7 @@
                 },
                 "labels": [
                     "misp:type=\"AS\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -45,8 +44,7 @@
                 ],
                 "labels": [
                     "misp:type=\"AS\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -92,8 +90,7 @@
                 },
                 "labels": [
                     "misp:type=\"attachment\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -112,8 +109,7 @@
                 ],
                 "labels": [
                     "misp:type=\"attachment\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -156,8 +152,7 @@
                 },
                 "labels": [
                     "misp:type=\"authentihash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -177,8 +172,7 @@
                 ],
                 "labels": [
                     "misp:type=\"authentihash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -240,8 +234,7 @@
                 },
                 "labels": [
                     "misp:type=\"domain\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -261,8 +254,7 @@
                 ],
                 "labels": [
                     "misp:type=\"domain\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -310,8 +302,7 @@
                 },
                 "labels": [
                     "misp:type=\"domain|ip\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -331,8 +322,7 @@
                 ],
                 "labels": [
                     "misp:type=\"domain|ip\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -372,8 +362,7 @@
                 },
                 "labels": [
                     "misp:type=\"email\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -392,8 +381,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -444,8 +432,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-attachment\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -465,8 +452,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-attachment\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -507,8 +493,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-body\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -527,8 +512,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-body\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -576,8 +560,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-dst\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -597,8 +580,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-dst\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -641,8 +623,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-header\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -661,8 +642,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-header\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -705,8 +685,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-reply-to\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -725,8 +704,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-reply-to\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -772,8 +750,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-src\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -793,8 +770,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-src\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -835,8 +811,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-subject\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -855,8 +830,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-subject\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -899,8 +873,7 @@
                 },
                 "labels": [
                     "misp:type=\"email-x-mailer\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -919,8 +892,7 @@
                 ],
                 "labels": [
                     "misp:type=\"email-x-mailer\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -961,8 +933,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -982,8 +953,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1027,8 +997,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|authentihash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1048,8 +1017,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|authentihash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1093,8 +1061,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|imphash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1114,8 +1081,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|imphash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1159,8 +1125,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|md5\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1180,8 +1145,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|md5\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1225,8 +1189,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|pehash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1246,8 +1209,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|pehash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1291,8 +1253,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha1\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1312,8 +1273,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha1\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1357,8 +1317,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1378,8 +1337,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1423,8 +1381,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1444,8 +1401,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1489,8 +1445,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha3-224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1510,8 +1465,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha3-224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1555,8 +1509,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha3-256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1576,8 +1529,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha3-256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1621,8 +1573,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha3-384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1642,8 +1593,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha3-384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1687,8 +1637,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha3-512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1708,8 +1657,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha3-512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1753,8 +1701,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1774,8 +1721,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1819,8 +1765,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1840,8 +1785,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1885,8 +1829,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha512/224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1906,8 +1849,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha512/224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1951,8 +1893,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|sha512/256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -1972,8 +1913,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|sha512/256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2017,8 +1957,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|ssdeep\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2038,8 +1977,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|ssdeep\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2083,8 +2021,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|tlsh\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2104,8 +2041,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|tlsh\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2149,8 +2085,7 @@
                 },
                 "labels": [
                     "misp:type=\"filename|vhash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2170,8 +2105,7 @@
                 ],
                 "labels": [
                     "misp:type=\"filename|vhash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2212,8 +2146,7 @@
                 ],
                 "labels": [
                     "misp:type=\"github-username\"",
-                    "misp:category=\"Social network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Social network\""
                 ]
             }
         ]
@@ -2245,8 +2178,7 @@
                 },
                 "labels": [
                     "misp:type=\"hostname\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2266,8 +2198,7 @@
                 ],
                 "labels": [
                     "misp:type=\"hostname\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2316,8 +2247,7 @@
                 },
                 "labels": [
                     "misp:type=\"hostname|port\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2337,8 +2267,7 @@
                 ],
                 "labels": [
                     "misp:type=\"hostname|port\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2376,8 +2305,7 @@
             ],
             "labels": [
                 "misp:type=\"http-method\"",
-                "misp:category=\"Network activity\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Network activity\""
             ]
         }
     },
@@ -2410,8 +2338,7 @@
                 },
                 "labels": [
                     "misp:type=\"imphash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2431,8 +2358,7 @@
                 ],
                 "labels": [
                     "misp:type=\"imphash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2480,8 +2406,7 @@
                 },
                 "labels": [
                     "misp:type=\"ip-dst\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2501,8 +2426,7 @@
                 ],
                 "labels": [
                     "misp:type=\"ip-dst\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2551,8 +2475,7 @@
                 },
                 "labels": [
                     "misp:type=\"ip-dst|port\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2572,8 +2495,7 @@
                 ],
                 "labels": [
                     "misp:type=\"ip-dst|port\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2621,8 +2543,7 @@
                 },
                 "labels": [
                     "misp:type=\"ip-src\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2642,8 +2563,7 @@
                 ],
                 "labels": [
                     "misp:type=\"ip-src\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2692,8 +2612,7 @@
                 },
                 "labels": [
                     "misp:type=\"ip-src|port\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2713,8 +2632,7 @@
                 ],
                 "labels": [
                     "misp:type=\"ip-src|port\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -2755,8 +2673,7 @@
                 },
                 "labels": [
                     "misp:type=\"link\"",
-                    "misp:category=\"External analysis\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"External analysis\""
                 ]
             },
             {
@@ -2776,8 +2693,7 @@
                 ],
                 "labels": [
                     "misp:type=\"link\"",
-                    "misp:category=\"External analysis\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"External analysis\""
                 ]
             },
             {
@@ -2817,8 +2733,7 @@
                 },
                 "labels": [
                     "misp:type=\"mac-address\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2837,8 +2752,7 @@
                 ],
                 "labels": [
                     "misp:type=\"mac-address\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2890,8 +2804,7 @@
                 },
                 "labels": [
                     "misp:type=\"malware-sample\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2911,8 +2824,7 @@
                 ],
                 "labels": [
                     "misp:type=\"malware-sample\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2955,8 +2867,7 @@
                 },
                 "labels": [
                     "misp:type=\"md5\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -2976,8 +2887,7 @@
                 ],
                 "labels": [
                     "misp:type=\"md5\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3018,8 +2928,7 @@
                 },
                 "labels": [
                     "misp:type=\"mutex\"",
-                    "misp:category=\"Artifacts dropped\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Artifacts dropped\""
                 ]
             },
             {
@@ -3039,8 +2948,7 @@
                 ],
                 "labels": [
                     "misp:type=\"mutex\"",
-                    "misp:category=\"Artifacts dropped\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Artifacts dropped\""
                 ]
             },
             {
@@ -3083,8 +2991,7 @@
                 },
                 "labels": [
                     "misp:type=\"pehash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3104,8 +3011,7 @@
                 ],
                 "labels": [
                     "misp:type=\"pehash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3143,8 +3049,7 @@
             ],
             "labels": [
                 "misp:type=\"port\"",
-                "misp:category=\"Network activity\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Network activity\""
             ]
         }
     },
@@ -3175,8 +3080,7 @@
                 },
                 "labels": [
                     "misp:type=\"regkey\"",
-                    "misp:category=\"Persistence mechanism\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Persistence mechanism\""
                 ]
             },
             {
@@ -3196,8 +3100,7 @@
                 ],
                 "labels": [
                     "misp:type=\"regkey\"",
-                    "misp:category=\"Persistence mechanism\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Persistence mechanism\""
                 ]
             },
             {
@@ -3244,8 +3147,7 @@
                 },
                 "labels": [
                     "misp:type=\"regkey|value\"",
-                    "misp:category=\"Persistence mechanism\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Persistence mechanism\""
                 ]
             },
             {
@@ -3265,8 +3167,7 @@
                 ],
                 "labels": [
                     "misp:type=\"regkey|value\"",
-                    "misp:category=\"Persistence mechanism\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Persistence mechanism\""
                 ]
             },
             {
@@ -3309,8 +3210,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha1\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3330,8 +3230,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha1\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3374,8 +3273,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3395,8 +3293,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3439,8 +3336,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3460,8 +3356,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3504,8 +3399,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha3-224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3525,8 +3419,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha3-224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3569,8 +3462,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha3-256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3590,8 +3482,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha3-256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3634,8 +3525,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha3-384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3655,8 +3545,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha3-384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3699,8 +3588,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha3-512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3720,8 +3608,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha3-512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3764,8 +3651,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3785,8 +3671,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha384\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3829,8 +3714,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3850,8 +3734,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha512\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3894,8 +3777,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha512/224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3915,8 +3797,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha512/224\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3959,8 +3840,7 @@
                 },
                 "labels": [
                     "misp:type=\"sha512/256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -3980,8 +3860,7 @@
                 ],
                 "labels": [
                     "misp:type=\"sha512/256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4019,8 +3898,7 @@
             ],
             "labels": [
                 "misp:type=\"size-in-bytes\"",
-                "misp:category=\"Other\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Other\""
             ]
         }
     },
@@ -4053,8 +3931,7 @@
                 },
                 "labels": [
                     "misp:type=\"ssdeep\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4074,8 +3951,7 @@
                 ],
                 "labels": [
                     "misp:type=\"ssdeep\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4118,8 +3994,7 @@
                 },
                 "labels": [
                     "misp:type=\"telfhash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4139,8 +4014,7 @@
                 ],
                 "labels": [
                     "misp:type=\"telfhash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4183,8 +4057,7 @@
                 },
                 "labels": [
                     "misp:type=\"tlsh\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4204,8 +4077,7 @@
                 ],
                 "labels": [
                     "misp:type=\"tlsh\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4246,8 +4118,7 @@
                 },
                 "labels": [
                     "misp:type=\"uri\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -4267,8 +4138,7 @@
                 ],
                 "labels": [
                     "misp:type=\"uri\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -4309,8 +4179,7 @@
                 },
                 "labels": [
                     "misp:type=\"url\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -4330,8 +4199,7 @@
                 ],
                 "labels": [
                     "misp:type=\"url\"",
-                    "misp:category=\"Network activity\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Network activity\""
                 ]
             },
             {
@@ -4371,8 +4239,7 @@
             ],
             "labels": [
                 "misp:type=\"user-agent\"",
-                "misp:category=\"Network activity\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Network activity\""
             ]
         }
     },
@@ -4405,8 +4272,7 @@
                 },
                 "labels": [
                     "misp:type=\"vhash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4426,8 +4292,7 @@
                 ],
                 "labels": [
                     "misp:type=\"vhash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4459,8 +4324,7 @@
             "name": "CVE-2017-11774",
             "labels": [
                 "misp:type=\"vulnerability\"",
-                "misp:category=\"External analysis\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"External analysis\""
             ],
             "external_references": [
                 {
@@ -4499,8 +4363,7 @@
                 },
                 "labels": [
                     "misp:type=\"x509-fingerprint-md5\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4520,8 +4383,7 @@
                 ],
                 "labels": [
                     "misp:type=\"x509-fingerprint-md5\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4564,8 +4426,7 @@
                 },
                 "labels": [
                     "misp:type=\"x509-fingerprint-sha1\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4585,8 +4446,7 @@
                 ],
                 "labels": [
                     "misp:type=\"x509-fingerprint-sha1\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4629,8 +4489,7 @@
                 },
                 "labels": [
                     "misp:type=\"x509-fingerprint-sha256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {
@@ -4650,8 +4509,7 @@
                 ],
                 "labels": [
                     "misp:type=\"x509-fingerprint-sha256\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
+                    "misp:category=\"Payload delivery\""
                 ]
             },
             {

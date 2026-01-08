@@ -79,8 +79,7 @@
             ],
             "labels": [
                 "misp:name=\"script\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"True\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_script": "print('You are infected')",
             "x_misp_script_as_attachment": {
@@ -166,8 +165,7 @@
             ],
             "labels": [
                 "misp:name=\"script\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"True\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_language": "Python",
             "x_misp_script": "print('Hello World')",
@@ -228,8 +226,7 @@
                 ],
                 "labels": [
                     "misp:name=\"android-app\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -259,8 +256,7 @@
                 ],
                 "labels": [
                     "misp:name=\"android-app\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -362,8 +358,7 @@
                 ],
                 "labels": [
                     "misp:name=\"domain-ip\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -400,8 +395,7 @@
                 ],
                 "labels": [
                     "misp:name=\"domain-ip\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -418,8 +412,7 @@
                 ],
                 "labels": [
                     "misp:name=\"annotation\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ],
                 "x_misp_attachment": {
                     "value": "annotation.attachment",
@@ -497,8 +490,7 @@
                 ],
                 "labels": [
                     "misp:name=\"asn\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -531,8 +523,7 @@
                 ],
                 "labels": [
                     "misp:name=\"asn\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -630,8 +621,7 @@
             ],
             "labels": [
                 "misp:name=\"attack-pattern\"",
-                "misp:meta-category=\"vulnerability\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"vulnerability\""
             ],
             "external_references": [
                 {
@@ -732,8 +722,7 @@
             "description": "Block communication between the PIVY agents and the C2 Server",
             "labels": [
                 "misp:name=\"course-of-action\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_cost": "Low",
             "x_misp_efficacy": "High",
@@ -817,8 +806,7 @@
                 ],
                 "labels": [
                     "misp:name=\"cpe-asset\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -853,8 +841,7 @@
                 ],
                 "labels": [
                     "misp:name=\"cpe-asset\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -951,8 +938,7 @@
                 ],
                 "labels": [
                     "misp:name=\"credential\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -986,8 +972,7 @@
                 ],
                 "labels": [
                     "misp:name=\"credential\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -1061,8 +1046,7 @@
                 ],
                 "labels": [
                     "misp:name=\"domain-ip\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -1101,8 +1085,7 @@
                 ],
                 "labels": [
                     "misp:name=\"domain-ip\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -1418,8 +1401,7 @@
                 ],
                 "labels": [
                     "misp:name=\"email\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -1523,8 +1505,7 @@
                 ],
                 "labels": [
                     "misp:name=\"email\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -1633,8 +1614,7 @@
                 ],
                 "labels": [
                     "misp:name=\"email\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -1700,8 +1680,7 @@
                 ],
                 "labels": [
                     "misp:name=\"email\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -1782,8 +1761,7 @@
             "contact_information": "email-address: jdoe@email.com",
             "labels": [
                 "misp:name=\"employee\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"misc\""
             ]
         }
     },
@@ -1846,8 +1824,7 @@
                 ],
                 "labels": [
                     "misp:name=\"facebook-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -1882,8 +1859,7 @@
                 ],
                 "labels": [
                     "misp:name=\"facebook-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -2017,8 +1993,7 @@
                 ],
                 "labels": [
                     "misp:name=\"file\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -2080,8 +2055,7 @@
                 ],
                 "labels": [
                     "misp:name=\"file\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -2400,8 +2374,7 @@
                 ],
                 "labels": [
                     "misp:name=\"file\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -2471,8 +2444,7 @@
                 ],
                 "labels": [
                     "misp:name=\"file\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -2594,8 +2566,7 @@
             "postal_code": "MD 20755",
             "labels": [
                 "misp:name=\"geolocation\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_altitude": "55",
             "x_misp_country": "USA"
@@ -2668,8 +2639,7 @@
                 ],
                 "labels": [
                     "misp:name=\"github-user\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -2705,8 +2675,7 @@
                 ],
                 "labels": [
                     "misp:name=\"github-user\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -2771,8 +2740,7 @@
                 ],
                 "labels": [
                     "misp:name=\"gitlab-user\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -2803,8 +2771,7 @@
                 ],
                 "labels": [
                     "misp:name=\"gitlab-user\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -2912,8 +2879,7 @@
                 ],
                 "labels": [
                     "misp:name=\"http-request\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -2978,8 +2944,7 @@
                 ],
                 "labels": [
                     "misp:name=\"http-request\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -3060,8 +3025,7 @@
             "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
             "labels": [
                 "misp:name=\"identity\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"misc\""
             ]
         }
     },
@@ -3125,8 +3089,7 @@
                 ],
                 "labels": [
                     "misp:name=\"image\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -3165,8 +3128,7 @@
                 ],
                 "labels": [
                     "misp:name=\"image\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -3305,8 +3267,7 @@
             ],
             "labels": [
                 "misp:name=\"intrusion-set\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"misc\""
             ]
         }
     },
@@ -3369,8 +3330,7 @@
                 ],
                 "labels": [
                     "misp:name=\"ip-port\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -3410,8 +3370,7 @@
                 ],
                 "labels": [
                     "misp:name=\"ip-port\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -3509,8 +3468,7 @@
             "contact_information": "phone-number: 1234567890 / website: https://umbrella.org",
             "labels": [
                 "misp:name=\"legal-entity\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_logo": {
                 "value": "umbrella_logo",
@@ -3630,8 +3588,7 @@
                 ],
                 "labels": [
                     "misp:name=\"lnk\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -3689,8 +3646,7 @@
                 ],
                 "labels": [
                     "misp:name=\"lnk\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -3755,8 +3711,7 @@
                 ],
                 "labels": [
                     "misp:name=\"mutex\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -3786,8 +3741,7 @@
                 ],
                 "labels": [
                     "misp:name=\"mutex\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -3904,8 +3858,7 @@
                 ],
                 "labels": [
                     "misp:name=\"netflow\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -3976,8 +3929,7 @@
                 ],
                 "labels": [
                     "misp:name=\"netflow\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -4084,8 +4036,7 @@
                 ],
                 "labels": [
                     "misp:name=\"network-connection\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -4134,8 +4085,7 @@
                 ],
                 "labels": [
                     "misp:name=\"network-connection\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -4258,8 +4208,7 @@
                 ],
                 "labels": [
                     "misp:name=\"network-socket\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -4314,8 +4263,7 @@
                 ],
                 "labels": [
                     "misp:name=\"network-socket\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -4425,8 +4373,7 @@
             "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: 330140414646; 12024140600 / link: https://www.afp.com/",
             "labels": [
                 "misp:name=\"news-agency\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"True\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_attachment": {
                 "value": "AFP_logo.png",
@@ -4516,8 +4463,7 @@
             "contact_information": "address: 16, bd d'Avranches, L-1160 Luxembourg / e-mail: info@circl.lu / phone-number: +35224788444",
             "labels": [
                 "misp:name=\"organization\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"True\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_alias": "CIRCL"
         }
@@ -4581,8 +4527,7 @@
                 ],
                 "labels": [
                     "misp:name=\"parler-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -4617,8 +4562,7 @@
                 ],
                 "labels": [
                     "misp:name=\"parler-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -4867,8 +4811,7 @@
                 ],
                 "labels": [
                     "misp:name=\"pe\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -4931,8 +4874,7 @@
                 ],
                 "labels": [
                     "misp:name=\"pe\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -5020,8 +4962,7 @@
             "contact_information": "phone-number: 0123456789",
             "labels": [
                 "misp:name=\"person\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"misc\""
             ],
             "x_misp_nationality": "USA",
             "x_misp_passport_number": "ABA9875413"
@@ -5137,8 +5078,7 @@
                 ],
                 "labels": [
                     "misp:name=\"process\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5201,8 +5141,7 @@
                 ],
                 "labels": [
                     "misp:name=\"process\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5276,8 +5215,7 @@
                 ],
                 "labels": [
                     "misp:name=\"reddit-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5312,8 +5250,7 @@
                 ],
                 "labels": [
                     "misp:name=\"reddit-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5402,8 +5339,7 @@
                 ],
                 "labels": [
                     "misp:name=\"registry-key\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -5440,8 +5376,7 @@
                 ],
                 "labels": [
                     "misp:name=\"registry-key\"",
-                    "misp:meta-category=\"file\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"file\""
                 ]
             },
             {
@@ -5527,8 +5462,7 @@
             ],
             "labels": [
                 "misp:name=\"sigma\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"True\""
+                "misp:meta-category=\"misc\""
             ],
             "external_references": [
                 {
@@ -5601,8 +5535,7 @@
             ],
             "labels": [
                 "misp:name=\"suricata\"",
-                "misp:meta-category=\"network\"",
-                "misp:to_ids=\"True\""
+                "misp:meta-category=\"network\""
             ],
             "external_references": [
                 {
@@ -5670,8 +5603,7 @@
                 ],
                 "labels": [
                     "misp:name=\"telegram-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5705,8 +5637,7 @@
                 ],
                 "labels": [
                     "misp:name=\"telegram-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5788,8 +5719,7 @@
                 ],
                 "labels": [
                     "misp:name=\"twitter-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5825,8 +5755,7 @@
                 ],
                 "labels": [
                     "misp:name=\"twitter-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -5907,8 +5836,7 @@
                 ],
                 "labels": [
                     "misp:name=\"url\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -5940,8 +5868,7 @@
                 ],
                 "labels": [
                     "misp:name=\"url\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -6071,8 +5998,7 @@
                 ],
                 "labels": [
                     "misp:name=\"user-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -6119,8 +6045,7 @@
                 ],
                 "labels": [
                     "misp:name=\"user-account\"",
-                    "misp:meta-category=\"misc\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"misc\""
                 ]
             },
             {
@@ -6212,8 +6137,7 @@
             "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
             "labels": [
                 "misp:name=\"vulnerability\"",
-                "misp:meta-category=\"vulnerability\"",
-                "misp:to_ids=\"False\""
+                "misp:meta-category=\"vulnerability\""
             ],
             "external_references": [
                 {
@@ -6364,8 +6288,7 @@
                 ],
                 "labels": [
                     "misp:name=\"x509\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"False\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -6407,8 +6330,7 @@
                 ],
                 "labels": [
                     "misp:name=\"x509\"",
-                    "misp:meta-category=\"network\"",
-                    "misp:to_ids=\"True\""
+                    "misp:meta-category=\"network\""
                 ]
             },
             {
@@ -6486,8 +6408,7 @@
             ],
             "labels": [
                 "misp:name=\"yara\"",
-                "misp:meta-category=\"misc\"",
-                "misp:to_ids=\"True\""
+                "misp:meta-category=\"misc\""
             ]
         }
     }
