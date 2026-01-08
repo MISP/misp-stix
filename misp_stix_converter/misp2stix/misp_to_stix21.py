@@ -705,8 +705,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         software_object = Software(**software_args)
         return self._handle_object_observable(misp_object, [software_object])
 
-    def _parse_annotation_object(
-            self, to_ids: bool, misp_object: MISPObject | dict):
+    def _parse_annotation_object(self, misp_object: MISPObject | dict):
         object_refs = set()
         for reference in misp_object['ObjectReference']:
             for object_ref in self.object_refs:
@@ -722,7 +721,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         note_args = {
             'id': note_id, 'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id, 'interoperability': True,
-            'labels': self._create_object_labels(misp_object, to_ids=to_ids),
+            'labels': self._create_object_labels(misp_object),
             'object_refs': list(object_refs)
         }
         markings = self._handle_object_tags_and_galaxies(
@@ -990,10 +989,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         location_args = {
             'id': location_id, 'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id, 'interoperability': True,
-            'labels': self._create_object_labels(
-                misp_object,
-                to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-            )
+            'labels': self._create_object_labels(misp_object)
         }
         if misp_object.get('comment'):
             location_args['description'] = misp_object['comment']

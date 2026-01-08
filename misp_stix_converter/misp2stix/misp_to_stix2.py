@@ -44,7 +44,7 @@ except ImportError:
     UTC = timezone.utc
 
 _event_report_regex = r'@[!]?\[%s\]\([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\)'
-_label_fields = ('type', 'category', 'to_ids')
+_label_fields = ('type', 'category')
 _labelled_object_types = ('malware', 'threat-actor', 'tool')
 _misp_time_fields = ('first_seen', 'last_seen')
 _object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
@@ -1421,10 +1421,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 'id': object_id, 'type': object_type,
                 'created_by_ref': self.identity_id, 'created': timestamp,
                 'modified': timestamp, 'interoperability': True,
-                'labels': self._create_object_labels(
-                    misp_object,
-                    to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-                )
+                'labels': self._create_object_labels(misp_object)
             }
         )
         if killchain:
@@ -1463,7 +1460,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         indicator_args = {
             'id': indicator_id, 'type': 'indicator',
-            'labels': self._create_object_labels(misp_object, to_ids=True),
+            'labels': self._create_object_labels(misp_object),
             'created_by_ref': self.identity_id, 'allow_custom': True,
             'pattern': f'[{" AND ".join(pattern)}]', 'interoperability': True,
             **self._handle_indicator_time_fields(misp_object),
@@ -1485,7 +1482,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         observable_args = {
             'id': observable_id, 'type': 'observed-data',
-            'labels': self._create_object_labels(misp_object, to_ids=False),
+            'labels': self._create_object_labels(misp_object),
             'number_observed': 1, 'created_by_ref': self.identity_id,
             'allow_custom': True, 'interoperability': True,
             **self._handle_observable_time_fields(misp_object)
@@ -1587,18 +1584,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return pattern
 
     def _handle_pe_object_references(
-            self, pe_object: dict, to_ids: list) -> Tuple[bool, list]:
-        if pe_object.get('ObjectReference'):
-            section_uuids = self._fetch_included_reference_uuids(
-                pe_object['ObjectReference'], 'pe-section'
-            )
-            if section_uuids:
-                for section_uuid in section_uuids:
-                    pe_section = self._objects_to_parse['pe-section'][
-                        section_uuid
-                    ]
-                    to_ids.append(pe_section['to_ids'])
-                return any(to_ids), section_uuids
+            self, pe_object: MISPObject) -> tuple[bool, list]:
+        to_ids = [self._fetch_ids_flag(pe_object.attributes)]
+        section_uuids = self._fetch_included_reference_uuids(
+            pe_object.get('ObjectReference', []), 'pe-section'
+        )
+        if section_uuids:
+            for section_uuid in section_uuids:
+                pe_section = self._objects_to_parse['pe-section'][section_uuid]
+                to_ids.append(
+                    self._fetch_ids_flag(pe_section['misp_object'].attributes)
+                )
+            return any(to_ids), section_uuids
         return any(to_ids), []
 
     def _parse_account_object(self, misp_object: MISPObject | dict):
@@ -3106,15 +3103,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_object_analyst_fields(misp_object, *stix_objects)
 
     def _populate_objects_to_parse(self, misp_object: MISPObject | dict):
-        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
         self._objects_to_parse[misp_object['name']][misp_object['uuid']] = {
-            'misp_object': misp_object, 'to_ids': to_ids, 'used': False
+            'misp_object': misp_object, 'used': False
         }
 
-    def _resolve_file_to_parse(
-            self, file_object: dict, file_uuid: str, file_ids: bool):
+    def _resolve_file_to_parse(self, file_object: dict, file_uuid: str):
         pe_uuid = self._fetch_included_reference_uuids(
-            file_object['ObjectReference'], 'pe'
+            file_object.get('ObjectReference', []), 'pe'
         )
         pe_found = len(pe_uuid)
         if pe_found != 1:
@@ -3124,7 +3119,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._unclear_pe_references_warning(file_uuid, pe_uuid)
             observed_data = self._parse_file_object_observable(file_object)
             stix_objects = [observed_data]
-            if file_ids:
+            if self._fetch_ids_flag(file_object['Attribute']):
                 pattern = self._parse_file_object_pattern(file_object)
                 indicator = self._handle_object_indicator(file_object, pattern)
                 self._parse_indicator_relationship(
@@ -3135,7 +3130,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return
         pe_object = self._objects_to_parse['pe'].get(pe_uuid[0])
         to_ids, section_uuids = self._handle_pe_object_references(
-            pe_object['misp_object'], [file_ids, pe_object['to_ids']]
+            pe_object['misp_object']
         )
         file_args, observable = self._parse_file_observable_object(
             file_object
@@ -3154,7 +3149,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_file_observable_objects(file_args, observable)
         observed_data = self._handle_object_observable(file_object, observable)
         stix_objects = [observed_data]
-        if to_ids:
+        if self._fetch_ids_flag(file_object.attributes) or to_ids:
             pattern = self._parse_file_object_pattern(file_object)
             pattern.extend(
                 self._parse_pe_extensions_pattern(
@@ -3177,9 +3172,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     continue
                 file_object = misp_object['misp_object']
                 try:
-                    self._resolve_file_to_parse(
-                        file_object, file_uuid, misp_object['to_ids']
-                    )
+                    self._resolve_file_to_parse(file_object, file_uuid)
                 except Exception as exception:
                     self._object_error(file_object, exception)
                 misp_object['used'] = True
@@ -3189,7 +3182,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     continue
                 pe_object = misp_object['misp_object']
                 try:
-                    self._resolve_pe_to_parse(pe_object, misp_object['to_ids'])
+                    self._resolve_pe_to_parse(pe_object)
                 except Exception as exception:
                     self._object_error(pe_object, exception)
                 misp_object['used'] = True
@@ -3211,13 +3204,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if custom:
                     self._parse_custom_object(annotation_object)
                 else:
-                    self._parse_annotation_object(
-                        misp_object['to_ids'], annotation_object
-                    )
+                    self._parse_annotation_object(annotation_object)
 
-    def _resolve_pe_to_parse(self, pe_object: dict, pe_ids: bool):
+    def _resolve_pe_to_parse(self, pe_object: dict):
         to_ids, section_uuids = self._handle_pe_object_references(
-            pe_object, [pe_ids]
+            pe_object
         )
         extension_args, custom = self._parse_pe_extensions_observable(
             pe_object, section_uuids
@@ -3239,7 +3230,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable = self._handle_file_observable_object(file_args)
         observed_data = self._handle_object_observable(pe_object, observable)
         stix_objects = [observed_data]
-        if to_ids:
+        if self._fetch_ids_flag(pe_object.attributes) or to_ids:
             pattern = self._parse_pe_extensions_pattern(
                 pe_object, section_uuids
             )
@@ -4147,15 +4138,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         ]
 
     @staticmethod
-    def _create_object_labels(misp_object: MISPObject | dict,
-                              to_ids: Optional[bool] = None) -> list:
-        labels = [
+    def _create_object_labels(misp_object: MISPObject | dict) -> list:
+        return [
             f'misp:name="{misp_object["name"].replace("|", "-")}"',
             f'misp:meta-category="{misp_object["meta-category"]}"'
         ]
-        if to_ids is not None:
-            labels.append(f'misp:to_ids="{to_ids}"')
-        return labels
 
     def _create_sector_galaxy_args(
             self, cluster: MISPGalaxyCluster | dict, description: str,
@@ -4204,10 +4191,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'id': identity_id, 'created': timestamp, 'modified': timestamp,
             'created_by_ref': self.identity_id,
             'identity_class': identity_class, 'interoperability': True,
-            'labels': self._create_object_labels(
-                misp_object,
-                to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-            )
+            'labels': self._create_object_labels(misp_object)
         }
         markings = self._handle_object_tags_and_galaxies(
             misp_object, identity_args
@@ -4770,7 +4754,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         indicator_args.update(
             {
                 'id': indicator_id, 'type': 'indicator', 'allow_custom': True,
-                'labels': self._create_object_labels(misp_object, to_ids=True),
+                'labels': self._create_object_labels(misp_object),
                 'created_by_ref': self.identity_id, 'interoperability': True,
                 **self._handle_indicator_time_fields(misp_object),
                 'kill_chain_phases': self._create_killchain(
