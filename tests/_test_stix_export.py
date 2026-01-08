@@ -172,7 +172,7 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self.assertEqual(attack_pattern.created_by_ref, identity_id)
         self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
-        self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
+        self._check_object_labels(misp_object, attack_pattern.labels)
         timestamp = misp_object['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
@@ -212,11 +212,7 @@ class TestSTIX2Export(TestSTIX):
         self._check_indicator_time_features(indicator, attribute['timestamp'])
 
     def _check_attribute_labels(self, attribute, labels):
-        if attribute.get('to_ids'):
-            type_label, category_label, ids_label = labels
-            self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
-        else:
-            type_label, category_label = labels
+        type_label, category_label = labels
         self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
         self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
 
@@ -564,21 +560,17 @@ class TestSTIX2Export(TestSTIX):
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
         self._check_killchain(indicator.kill_chain_phases[0], misp_object['meta-category'])
-        self._check_object_labels(misp_object, indicator.labels, to_ids=True)
+        self._check_object_labels(misp_object, indicator.labels)
         self._check_indicator_time_features(indicator, misp_object['timestamp'])
 
-    def _check_object_labels(self, misp_object, labels, to_ids=None):
-        if to_ids is not None:
-            name_label, category_label, ids_label = labels
-            self.assertEqual(ids_label, f'misp:to_ids="{to_ids}"')
-        else:
-            name_label, category_label = labels
+    def _check_object_labels(self, misp_object, labels):
+        name_label, category_label = labels
         self.assertEqual(name_label, f'misp:name="{misp_object["name"]}"')
         self.assertEqual(category_label, f'misp:meta-category="{misp_object["meta-category"]}"')
 
     def _check_object_observable_features(self, observed_data, misp_object, identity_id, object_ref):
         self._check_observable_features(observed_data, identity_id, object_ref, misp_object['uuid'])
-        self._check_object_labels(misp_object, observed_data.labels, to_ids=False)
+        self._check_object_labels(misp_object, observed_data.labels)
         self._check_observable_time_features(observed_data, misp_object['timestamp'])
 
     def _check_object_vulnerability_features(self, vulnerability, misp_object, identity_id, object_ref):
@@ -587,7 +579,7 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, vulnerability.labels, to_ids=False)
+        self._check_object_labels(misp_object, vulnerability.labels)
         timestamp = misp_object['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
@@ -883,7 +875,7 @@ class TestSTIX2Export(TestSTIX):
     def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
         attribute_type = attribute['type']
         category = attribute['category']
-        custom_type = f"x-misp-attribute"
+        custom_type = 'x-misp-attribute'
         self.assertEqual(custom_object.type, custom_type)
         self._assert_multiple_equal(
             custom_object.id,
@@ -893,8 +885,6 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(custom_object.created_by_ref, identity_id)
         self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
         self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
-        if attribute.get('to_ids', False):
-            self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
         self.assertEqual(custom_object.x_misp_type, attribute_type)
         self.assertEqual(custom_object.x_misp_category, category)
         if attribute.get('comment'):

@@ -82,8 +82,7 @@
             },
             "labels": [
                 "misp:type=\"domain\"",
-                "misp:category=\"Network activity\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Network activity\""
             ]
         },
         {
@@ -103,8 +102,7 @@
             ],
             "labels": [
                 "misp:type=\"domain\"",
-                "misp:category=\"Network activity\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Network activity\""
             ]
         },
         {
@@ -158,8 +156,7 @@
             },
             "labels": [
                 "misp:type=\"domain|ip\"",
-                "misp:category=\"Network activity\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Network activity\""
             ]
         },
         {
@@ -179,8 +176,7 @@
             ],
             "labels": [
                 "misp:type=\"domain|ip\"",
-                "misp:category=\"Network activity\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Network activity\""
             ]
         },
         {
@@ -227,8 +223,7 @@
             },
             "labels": [
                 "misp:type=\"filename\"",
-                "misp:category=\"Payload delivery\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Payload delivery\""
             ]
         },
         {
@@ -248,8 +243,7 @@
             ],
             "labels": [
                 "misp:type=\"filename\"",
-                "misp:category=\"Payload delivery\"",
-                "misp:to_ids=\"True\""
+                "misp:category=\"Payload delivery\""
             ]
         },
         {
