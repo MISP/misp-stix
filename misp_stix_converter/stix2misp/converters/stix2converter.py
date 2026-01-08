@@ -109,7 +109,7 @@ class STIX2Converter(metaclass=ABCMeta):
         return {'value': value, **mapping, **attribute}
 
     def _populate_object_attribute_with_data(
-            self, value: dict | str, mapping: dict, attribute: dict) -> dict:
+            self, value: dict | str, mapping: dict, **attribute: dict) -> dict:
         if isinstance(value, dict):
             return {**value, **mapping, **attribute}
         return self._populate_object_attribute(value, mapping, attribute)

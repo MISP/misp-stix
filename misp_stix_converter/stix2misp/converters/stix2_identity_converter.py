@@ -391,8 +391,11 @@ class InternalSTIX2IdentityConverter(
         if hasattr(identity, 'x_misp_logo'):
             misp_object.add_attribute(
                 **self._populate_object_attribute_with_data(
+                    identity.x_misp_logo,
                     {'type': 'attachment', 'object_relation': 'logo'},
-                    identity.x_misp_logo, f'{identity.id} - logo'
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{identity.id} - logo - {identity.x_misp_logo}'
+                    )
                 )
             )
         self.main_parser._add_misp_object(misp_object, identity)
@@ -404,8 +407,11 @@ class InternalSTIX2IdentityConverter(
         if hasattr(identity, 'x_misp_attachment'):
             misp_object.add_attribute(
                 **self._populate_object_attribute_with_data(
+                    identity.x_misp_attachment,
                     {'type': 'attachment', 'object_relation': 'attachment'},
-                    identity.x_misp_attachment, f'{identity.id} - attachment'
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{identity.id} - attachment - {identity.x_misp_attachment}'
+                    )
                 )
             )
         self.main_parser._add_misp_object(misp_object, identity)
@@ -421,8 +427,11 @@ class InternalSTIX2IdentityConverter(
         if hasattr(identity, 'x_misp_portrait'):
             misp_object.add_attribute(
                 **self._populate_object_attribute_with_data(
+                    identity.x_misp_portrait,
                     {'type': 'attachment', 'object_relation': 'portrait'},
-                    identity.x_misp_portrait, f'{identity.id} - portrait'
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{identity.id} - portrait - {identity.x_misp_portrait}'
+                    )
                 )
             )
         self.main_parser._add_misp_object(misp_object, identity)
