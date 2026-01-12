@@ -166,7 +166,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if tags:
             ttp.handling = self._set_handling(tags)
         self._stix_package.add_ttp(ttp)
-        if self._identifier != 'attributes collection':
+        if self.identifier != 'attributes collection':
             related_ttp = self._create_related_ttp(ttp.id_, attribute['type'], timestamp=timestamp)
             self._incident.add_leveraged_ttps(related_ttp)
 
@@ -1097,7 +1097,7 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
     def __init__(self, orgname: str, version: str):
         super().__init__(orgname, version)
         self._producer = self._create_information_source(orgname)
-        self._identifier = 'attributes collection'
+        self._set_identifier('attributes collection')
         self._ids = set()
 
     def _parse_json_content(self, attributes: dict | list):
@@ -1169,7 +1169,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
-        self._identifier = self._misp_event['uuid']
+        self._set_identifier(self._misp_event['uuid'])
         producer = self._set_producer()
         self._producer = self._create_information_source(producer)
         self._stix_package = self._create_stix_package()
