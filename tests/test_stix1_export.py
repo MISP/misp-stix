@@ -1223,8 +1223,8 @@ class TestStix1Export(TestSTIX):
             ssdeep['value'],
             ssdeep['type'].upper()
         )
-        authentihash_prop, imphash_prop, pehash_prop, sha512_256_prop, *properties = properties[7:]
-        authentihash, imphash, pehash, sha512_256, *attributes = attributes[7:]
+        authentihash_prop, imphash_prop, pehash_prop, sha512_224_prop, sha512_256_prop, *properties = properties[7:]
+        authentihash, imphash, pehash, sha512_224, sha512_256, *attributes = attributes[7:]
         self._check_simple_hash_property(
             authentihash_prop.hashes[0],
             authentihash['value'],
@@ -1232,6 +1232,7 @@ class TestStix1Export(TestSTIX):
         )
         self._check_simple_hash_property(imphash_prop.hashes[0], imphash['value'], 'MD5')
         self._check_simple_hash_property(pehash_prop.hashes[0], pehash['value'], 'SHA1')
+        self._check_simple_hash_property(sha512_224_prop.hashes[0], sha512_224['value'], 'SHA224')
         self._check_simple_hash_property(sha512_256_prop.hashes[0], sha512_256['value'], 'SHA256')
         for stix_property, attribute in zip(properties[:2], attributes[:2]):
             self._check_simple_hash_property(stix_property.hashes[0], attribute['value'], 'Other')
@@ -1249,8 +1250,8 @@ class TestStix1Export(TestSTIX):
         filename, ssdeep = attributes[6]['value'].split('|')
         self.assertEqual(ssdeep_property.file_name.value, filename)
         self._check_fuzzy_hash_property(ssdeep_property.hashes[0], ssdeep, 'SSDEEP')
-        authentihash_prop, imphash_prop, pehash_prop, sha512_256_prop, *properties = properties[7:]
-        authentihash, imphash, pehash, sha512_256, *attributes = attributes[7:]
+        authentihash_prop, imphash_prop, pehash_prop, sha512_224_prop, sha512_256_prop, *properties = properties[7:]
+        authentihash, imphash, pehash, sha512_224, sha512_256, *attributes = attributes[7:]
         filename, authentihash = authentihash['value'].split('|')
         self.assertEqual(authentihash_prop.file_name.value, filename)
         self._check_simple_hash_property(authentihash_prop.hashes[0], authentihash, 'SHA256')
@@ -1260,6 +1261,9 @@ class TestStix1Export(TestSTIX):
         filename, pehash = pehash['value'].split('|')
         self.assertEqual(pehash_prop.file_name.value, filename)
         self._check_simple_hash_property(pehash_prop.hashes[0], pehash, 'SHA1')
+        filename, sha512_224 = sha512_224['value'].split('|')
+        self.assertEqual(sha512_224_prop.file_name.value, filename)
+        self._check_simple_hash_property(sha512_224_prop.hashes[0], sha512_224, 'SHA224')
         filename, sha512_256 = sha512_256['value'].split('|')
         self.assertEqual(sha512_256_prop.file_name.value, filename)
         self._check_simple_hash_property(sha512_256_prop.hashes[0], sha512_256, 'SHA256')
