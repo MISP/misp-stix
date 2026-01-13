@@ -1755,21 +1755,15 @@ class InternalSTIX2IndicatorConverter(
                 if 'content_ref.payload_bin' in attachment:
                     attribute['data'] = attachment['content_ref.payload_bin']
                 if 'content_ref.hashes.MD5' in attachment:
+                    md5 = attachment['content_ref.hashes.MD5']
                     attribute.update(
                         {
-                            'type': 'malware-sample',
-                            'object_relation': 'malware-sample',
-                            'value': f"{attribute['value']}|"
-                                     f"{attachment['content_ref.hashes.MD5']}"
+                            'value': f"{attribute['value']}|{md5}",
+                            **self._mapping.malware_sample_attribute()
                         }
                     )
                 else:
-                    attribute.update(
-                        {
-                            'type': 'attachment',
-                            'object_relation': 'attachment'
-                        }
-                    )
+                    attribute.update(self._mapping.attachment_attribute())
                 file_object.add_attribute(**attribute)
         misp_object = self.main_parser._add_misp_object(file_object, indicator)
         if extension:
@@ -1895,14 +1889,13 @@ class InternalSTIX2IndicatorConverter(
                 **{'value': value, **self._mapping.lnk_pattern_mapping(feature)}
             )
         if attachment:
+            mapping = self._mapping.malware_sample_attribute()
             attribute = {
-                'type': 'malware-sample',
-                'object_relation': 'malware-sample',
                 'value': f"{attachment['x_misp_filename']}|{attachment['MD5']}"
             }
             if 'payload_bin' in attachment:
                 attribute['data'] = attachment['payload_bin']
-            misp_object.add_attribute(**attribute)
+            misp_object.add_attribute(**attribute, **mapping)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_mutex_indicator(self, indicator: _INDICATOR_TYPING):
@@ -2184,9 +2177,7 @@ class InternalSTIX2IndicatorConverter(
             protocol = value.upper()
             misp_object.add_attribute(
                 **{
-                    'type': 'text',
-                    'object_relation': 'protocol',
-                    'value': protocol
+                    'value': protocol, **self._mapping.protocol_attribute()
                 }
             )
         elif "extensions.'socket-ext'" in feature:
@@ -2194,9 +2185,8 @@ class InternalSTIX2IndicatorConverter(
             if value in ('True', 'true', True):
                 misp_object.add_attribute(
                     **{
-                        'type': 'text',
-                        'object_relation': 'state',
-                        'value': key.split('_')[1]
+                        'value': key.split('_')[1],
+                        **self._mapping.state_attribute()
                     }
                 )
             else:

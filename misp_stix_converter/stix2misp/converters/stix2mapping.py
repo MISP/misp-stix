@@ -1007,6 +1007,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __last_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'last-seen'}
     )
+    __malware_sample_attribute = Mapping(
+        **{'type': 'malware-sample', 'object_relation': 'malware-sample'}
+    )
     __parent_command_line_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-command-line'}
     )
@@ -1702,6 +1705,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def lnk_object_mapping(cls) -> dict:
         return cls.__lnk_object_mapping
+
+    @classmethod
+    def malware_sample_attribute(cls) -> dict:
+        return cls.__malware_sample_attribute
 
     @classmethod
     def mutex_object_mapping(cls) -> dict:

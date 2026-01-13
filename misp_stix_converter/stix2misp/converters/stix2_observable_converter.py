@@ -1002,9 +1002,6 @@ class InternalSTIX2ObservableMapping(
         }
     )
 
-    __malware_sample_attribute = Mapping(
-        **{'type': 'malware-sample', 'object_relation': 'malware-sample'}
-    )
     __parent_process_object_mapping = Mapping(
         command_line=InternalSTIX2Mapping.parent_command_line_attribute(),
         name=InternalSTIX2Mapping.parent_process_name_attribute(),
@@ -1017,10 +1014,6 @@ class InternalSTIX2ObservableMapping(
     @classmethod
     def attributes_mapping(cls, field: str) -> Union[str, None]:
         return cls.__attributes_mapping.get(field)
-
-    @classmethod
-    def malware_sample_attribute(cls) -> dict:
-        return cls.__malware_sample_attribute
 
     @classmethod
     def network_connection_reference_mapping(cls, field: str) -> dict:
