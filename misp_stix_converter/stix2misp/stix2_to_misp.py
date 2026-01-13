@@ -1031,16 +1031,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
         data_layer.add_opinion(**opinion)
 
-    def _add_misp_attribute(self, attribute: dict,
-                            *stix_objects: tuple) -> MISPAttribute:
-        misp_attribute = MISPAttribute()
-        misp_attribute.from_dict(**attribute)
-        for stix_object in stix_objects:
-            if stix_object.id in self._analyst_data:
-                for reference in self._analyst_data[stix_object.id]:
-                    self._add_analyst_data(misp_attribute, reference)
-            self._add_markings_to_misp_attribute(misp_attribute, stix_object)
-        return self.misp_event.add_attribute(**misp_attribute)
+    def _add_misp_attribute(
+            self, attribute: dict, stix_object: _SDO_TYPING) -> MISPAttribute:
+        misp_attribute = self.misp_event.add_attribute(**attribute)
+        if stix_object.id in self._analyst_data:
+            for reference in self._analyst_data[stix_object.id]:
+                self._add_analyst_data(misp_attribute, reference)
+        self._add_markings_to_misp_attribute(misp_attribute, stix_object)
+        return misp_attribute
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
