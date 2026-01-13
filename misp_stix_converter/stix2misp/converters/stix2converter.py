@@ -405,17 +405,11 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        attribute = {}
-        tags = []
+        attribute = super()._create_attribute_dict(stix_object)
         for label in stix_object.labels:
             if label.startswith('misp:'):
                 feature, value = label.split('=')
                 attribute[feature.split(':')[-1]] = value.strip('"')
-            else:
-                tags.append({'name': label})
-        if tags:
-            attribute['Tag'] = tags
-        attribute.update(super()._create_attribute_dict(stix_object))
         return attribute
 
     ############################################################################
@@ -558,7 +552,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             in (label.split('=') for label in labels if '=' in label)
         }
         if 'misp:galaxy-type' in parsed_labels:
-            return f'_parse_galaxy'
+            return '_parse_galaxy'
         if 'misp:name' in parsed_labels:
             to_call = self._mapping.objects_mapping(parsed_labels['misp:name'])
             if to_call is not None:
