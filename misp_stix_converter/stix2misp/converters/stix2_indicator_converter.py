@@ -22,7 +22,7 @@ from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
 from stix2patterns.inspector import _PatternData as PatternData
 from types import GeneratorType
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import Any, Iterator, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -107,6 +107,22 @@ class STIX2IndicatorConverter(STIX2Converter, metaclass=ABCMeta):
             raise InvalidSTIXPatternError(indicator.pattern)
         return self._pattern_parser.pattern
 
+    def _handle_object_attributes(self, values: Any, mapping: dict,
+                                  object_id: str) -> Iterator[dict]:
+        reference = f"{object_id} - {mapping['object_relation']}"
+        if isinstance(values, tuple):
+            for value in values:
+                _uuid = self.main_parser._create_v5_uuid(
+                    f'{reference} - {value}'
+                )
+                yield self._populate_object_attribute(
+                    value, mapping, {'to_ids': True, 'uuid': _uuid}
+                )
+        else:
+            _uuid = self.main_parser._create_v5_uuid(f'{reference} - {values}')
+            yield self._populate_object_attribute(
+                values, mapping, {'to_ids': True, 'uuid': _uuid}
+            )
 
 class ExternalSTIX2IndicatorMapping(
         STIX2IndicatorMapping, ExternalSTIX2Mapping):
