@@ -827,10 +827,7 @@ class ExternalSTIX2IndicatorConverter(
                     continue
                 if 'type' in keys:
                     continue
-                attribute = {
-                    'type': f"ip-{keys[0].split('_')[0]}", 'value': value,
-                    **self._create_attribute_dict(indicator)
-                }
+                attribute = self._create_attribute_dict(indicator, value)
                 self.main_parser._add_misp_attribute(attribute, indicator)
         elif 'socket-ext' in indicator.pattern:
             self._parse_network_socket_pattern(pattern, indicator)
@@ -920,8 +917,8 @@ class ExternalSTIX2IndicatorConverter(
                     attributes.append(attribute)
             if len(attributes) == 1 and attributes[0]['type'] == 'sigma':
                 self.main_parser._add_misp_attribute(
-                    dict(
-                        self._create_attribute_dict(indicator), **attributes[0]
+                    self._create_attribute_dict(
+                        indicator, attributes[0]['value']
                     ),
                     indicator
                 )
@@ -932,21 +929,13 @@ class ExternalSTIX2IndicatorConverter(
                 self.main_parser._add_misp_object(misp_object, indicator)
         else:
             self.main_parser._add_misp_attribute(
-                {
-                    'value': indicator.pattern,
-                    **self._mapping.sigma_attribute(),
-                    **self._create_attribute_dict(indicator)
-                },
+                self._create_attribute_dict(indicator, indicator.pattern),
                 indicator
             )
 
     def _parse_snort_pattern(self, indicator: _INDICATOR_TYPING):
         self.main_parser._add_misp_attribute(
-            {
-                'value': indicator.pattern,
-                **self._mapping.snort_attribute(),
-                **self._create_attribute_dict(indicator)
-            },
+            self._create_attribute_dict(indicator, indicator.pattern),
             indicator
         )
 
@@ -1101,11 +1090,7 @@ class ExternalSTIX2IndicatorConverter(
             self.main_parser._add_misp_object(misp_object, indicator)
         else:
             self.main_parser._add_misp_attribute(
-                {
-                    'value': indicator.pattern,
-                    **self._mapping.yara_attribute(),
-                    **self._create_attribute_dict(indicator)
-                },
+                self._create_attribute_dict(indicator, indicator.pattern),
                 indicator
             )
 
@@ -1482,15 +1467,18 @@ class InternalSTIX2IndicatorConverter(
     ############################################################################
 
     def _attribute_from_AS_indicator(self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
-        attribute['value'] = self._parse_AS_value(
-            self._extract_value_from_pattern(indicator.pattern[1:-1])
+        attribute = self._create_attribute_dict(
+            indicator, self._parse_AS_value(
+                self._extract_value_from_pattern(indicator.pattern[1:-1])
+            )
         )
         self.main_parser._add_misp_attribute(attribute, indicator)
 
     def _attribute_from_attachment_indicator(
             self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
+        attribute = {
+            'to_ids': True, **super()._create_attribute_dict(indicator)
+        }
         pattern = indicator.pattern[1:-1]
         if ' AND ' in pattern:
             pattern, data_pattern = pattern.split(' AND ')
@@ -1502,55 +1490,58 @@ class InternalSTIX2IndicatorConverter(
 
     def _attribute_from_double_pattern_indicator(
             self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
         domain_pattern, pattern = indicator.pattern[1:-1].split(' AND ')
         domain_value = self._extract_value_from_pattern(
             domain_pattern
         )
         value = self._extract_value_from_pattern(pattern)
-        attribute['value'] = f'{domain_value}|{value}'
+        attribute = self._create_attribute_dict(
+            indicator, f'{domain_value}|{value}'
+        )
         self.main_parser._add_misp_attribute(attribute, indicator)
 
     def _attribute_from_dual_pattern_indicator(
             self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
         pattern = indicator.pattern[1:-1].split(' AND ')[1]
-        attribute['value'] = self._extract_value_from_pattern(pattern)
+        attribute = self._create_attribute_dict(
+            indicator, self._extract_value_from_pattern(pattern)
+        )
         self.main_parser._add_misp_attribute(attribute, indicator)
 
     def _attribute_from_filename_hash_indicator(
             self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             if 'file:name = ' in pattern:
                 filename = self._extract_value_from_pattern(pattern)
             elif 'file:hashes.' in pattern:
                 hash_value = self._extract_value_from_pattern(pattern)
         try:
-            attribute['value'] = f"{filename}|{hash_value}"
+            attribute = self._create_attribute_dict(
+                indicator, f"{filename}|{hash_value}"
+            )
         except NameError:
             raise AttributeFromPatternParsingError(indicator.id)
         self.main_parser._add_misp_attribute(attribute, indicator)
 
     def _attribute_from_ip_port_indicator(self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
         values = [
             self._extract_value_from_pattern(pattern) for pattern
             in indicator.pattern[1:-1].split(' AND ')[1:]
         ]
-        attribute['value'] = '|'.join(values)
+        attribute = self._create_attribute_dict(indicator, '|'.join(values))
         self.main_parser._add_misp_attribute(attribute, indicator)
 
     def _attribute_from_malware_sample_indicator(
             self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
         pattern = indicator.pattern[1:-1]
         filename_pattern, md5_pattern, *pattern = pattern.split(' AND ')
         filename_value = self._extract_value_from_pattern(
             filename_pattern
         )
         md5_value = self._extract_value_from_pattern(md5_pattern)
-        attribute['value'] = f'{filename_value}|{md5_value}'
+        attribute = self._create_attribute_dict(
+            indicator, f'{filename_value}|{md5_value}'
+        )
         if pattern:
             attribute['data'] = self._extract_value_from_pattern(
                 pattern[0]
@@ -1559,17 +1550,23 @@ class InternalSTIX2IndicatorConverter(
 
     def _attribute_from_patterning_language_indicator(
             self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
-        attribute['value'] = indicator.pattern
+        attribute = self._create_attribute_dict(indicator, indicator.pattern)
         self.main_parser._add_misp_attribute(attribute, indicator)
 
     def _attribute_from_simple_pattern_indicator(
             self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
-        attribute['value'] = self._extract_value_from_pattern(
-            indicator.pattern[1:-1]
+        attribute = self._create_attribute_dict(
+            indicator, self._extract_value_from_pattern(indicator.pattern[1:-1])
         )
         self.main_parser._add_misp_attribute(attribute, indicator)
+
+    def _create_attribute_dict(
+            self, indicator: _INDICATOR_TYPING, value: str) -> dict:
+        attribute = {
+            'value': value, 'to_ids': True,
+            **super()._create_attribute_dict(indicator)
+        }
+        return attribute
 
     ############################################################################
     #                       MISP OBJECTS PARSING METHODS                       #
