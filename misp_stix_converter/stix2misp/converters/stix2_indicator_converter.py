@@ -756,13 +756,12 @@ class ExternalSTIX2IndicatorConverter(
                         values, indicator.id
                     )
                     continue
-                if isinstance(values, tuple):
-                    for value in values:
-                        misp_object.add_attribute(
-                            f'layer{layer}-protocol', value
-                        )
-                else:
-                    misp_object.add_attribute(f'layer{layer}-protocol', values)
+                feature = f'layer{layer}_protocol_attribute'
+                attributes = self._handle_object_attributes(
+                    values, getattr(self._mapping, feature)(), indicator.id
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 continue
             self._parse_network_traffic_attribute(
                 misp_object, keys, values, indicator.id, 'network_connection'
@@ -851,7 +850,7 @@ class ExternalSTIX2IndicatorConverter(
             self._parse_network_connection_pattern(pattern, indicator)
 
     def _parse_network_traffic_reference(
-            self, feature: str, value: str) -> Tuple[str]:
+            self, feature: str, value: str) -> tuple[str]:
         if re.match(self._mapping.mac_address_pattern(), value):
             return f'mac-{feature}', value
         try:
@@ -1598,7 +1597,13 @@ class InternalSTIX2IndicatorConverter(
             key, value = self._extract_features_from_pattern(pattern)
             if key == 'account_type':
                 continue
-            misp_object.add_attribute(**{'value': value, **mapping(key)})
+            attribute = mapping(key)
+            misp_object.add_attribute(
+                **attribute, value=value, to_ids=True,
+                uuid=self.main_parser._create_v5_uuid(
+                    f"{indicator.id} - {attribute['object_relation']} - {value}"
+                )
+            )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_account_with_attachment_indicator(
@@ -1616,11 +1621,22 @@ class InternalSTIX2IndicatorConverter(
                 feature, key = key.split('.')
                 attachments[feature][key] = value
             else:
-                misp_object.add_attribute(**{'value': value, **mapping(key)})
+                attributes = self._handle_object_attributes(
+                    value, mapping(key), indicator.id
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
         if attachments:
             for feature, attribute in attachments.items():
-                attribute.update(mapping(feature))
-                misp_object.add_attribute(**attribute)
+                value = attribute['value']
+                attribute.update(**mapping(feature))
+                misp_object.add_attribute(
+                    **attribute, to_ids=True,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {attribute['object_relation']}"
+                        f' - {value}'
+                    )
+                )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_android_app_indicator(self, indicator: _INDICATOR_TYPING):
@@ -1632,12 +1648,18 @@ class InternalSTIX2IndicatorConverter(
             feature, value = self._extract_features_from_pattern(pattern)
             if feature == 'number':
                 value = self._parse_AS_value(value)
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.asn_pattern_mapping(feature)
-                }
+                misp_object.add_attribute(
+                    **self._mapping.asn_pattern_mapping(feature), value=value,
+                    to_ids=True, uuid=self.main_parser._create_v5_uuid(
+                        f'{indicator.id} - asn - {value}'
+                    )
+                )
+                continue
+            attributes = self._handle_object_attributes(
+                value, self._mapping.asn_pattern_mapping(feature), indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_cpe_asset_indicator(self, indicator: _INDICATOR_TYPING):
@@ -1652,61 +1674,80 @@ class InternalSTIX2IndicatorConverter(
             feature, value = self._extract_features_from_pattern(pattern)
             if 'resolves_to_refs' in feature:
                 misp_object.add_attribute(
-                    **{'value': value, **self._mapping.ip_attribute()}
+                    **self._mapping.ip_attribute(), value=value, to_ids=True,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{indicator.id} - ip - {value}'
+                    )
                 )
             else:
-                misp_object.add_attribute(
-                    **{
-                        'value': value,
-                        **self._mapping.domain_ip_pattern_mapping(feature)
-                    }
+                mapping = self._mapping.domain_ip_pattern_mapping(feature)
+                attributes = self._handle_object_attributes(
+                    value, mapping, indicator.id
                 )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_email_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('email', indicator)
         mapping = self._mapping.email_pattern_mapping
         attachments: defaultdict = defaultdict(dict)
+        object_id = indicator.id
         for pattern in indicator.pattern[1:-1].split(' AND '):
             field, value = self._extract_features_from_pattern(pattern)
             if 'body_multipart[' in field:
                 index = field[15]
                 if field.split('.')[1] == 'content_disposition':
-                    attachments[index]['object_relation'] = value
+                    attachments[index].update(
+                        {'object_relation': value, 'type': 'attachment'}
+                    )
                 else:
                     key = 'value' if field.split('.')[-1] == 'name' else 'data'
                     attachments[index][key] = value
                 continue
             if '_refs[' in field:
                 ref_type = field.split('[')[0]
-                misp_object.add_attribute(
-                    **{
-                        'value': value,
-                        **mapping(ref_type)[field.split('.')[-1]]
-                    }
+                attributes = self._handle_object_attributes(
+                    value, mapping(ref_type)[field.split('.')[-1]], object_id
                 )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 continue
-            misp_object.add_attribute(**{'value': value, **mapping(field)})
-        if attachments:
-            for attribute in attachments.values():
-                attribute['type'] = 'attachment'
+            attributes = self._handle_object_attributes(
+                value, mapping(field), object_id
+            )
+            for attribute in attributes:
                 misp_object.add_attribute(**attribute)
+        if attachments:
+            for attr in attachments.values():
+                misp_object.add_attribute(
+                    **attr, to_ids=True, uuid=self.main_parser._create_v5_uuid(
+                        f"{object_id} - {attr['object_relation']}"
+                        f" - {attr['value']}"
+                    )
+                )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_file_extension_pattern(
             self, extension: dict, indicator: _INDICATOR_TYPING) -> str:
+        object_id = indicator.id
         pe_object = self._create_misp_object('pe')
         pe_object.from_dict(**self._parse_timeline(indicator))
         if 'address_of_entry_point' in extension['pe']:
+            value = extension['pe'].pop('address_of_entry_point')
             pe_object.add_attribute(
-                **{
-                    'value': extension['pe'].pop('address_of_entry_point'),
-                    **self._mapping.entrypoint_address_attribute()
-                }
+                **self._mapping.entrypoint_address_attribute(), value=value,
+                to_ids=True, uuid=self.main_parser._create_v5_uuid(
+                    f"{indicator.id} - entrypoint-address - {value}"
+                )
             )
         for feature, value in extension['pe'].items():
+            mapping = self._mapping.pe_pattern_mapping(feature)
             pe_object.add_attribute(
-                **{'value': value, **self._mapping.pe_pattern_mapping(feature)}
+                **mapping, value=value, to_ids=True,
+                uuid=self.main_parser._create_v5_uuid(
+                    f"{object_id} - {mapping['object_relation']} - {value}"
+                )
             )
         misp_object = self.main_parser._add_misp_object(pe_object, indicator)
         for section in extension.get('sections').values():
@@ -1715,15 +1756,20 @@ class InternalSTIX2IndicatorConverter(
             for feature, value in section.items():
                 attribute = self._mapping.pe_section_pattern_mapping(feature)
                 if attribute is not None:
+                    relation = attribute['object_relation']
                     section_object.add_attribute(
-                        **{'value': value, **attribute}
+                        **attribute, value=value, to_ids=True,
+                        uuid=self.main_parser._create_v5_uuid(
+                            f"{object_id} - {relation} - {value}"
+                        )
                     )
                     continue
+                mapping = self._mapping.file_hashes_mapping(feature)
                 section_object.add_attribute(
-                    **{
-                        'value': value,
-                        **self._mapping.file_hashes_mapping(feature)
-                    }
+                    **mapping, value=value, to_ids=True,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f"{object_id} - {mapping['object_relation']} - {value}"
+                    )
                 )
             self.main_parser._add_misp_object(section_object, indicator)
             misp_object.add_reference(section_object.uuid, 'includes')
@@ -1756,12 +1802,12 @@ class InternalSTIX2IndicatorConverter(
             if in_attachment:
                 attachment[feature] = value
             else:
-                file_object.add_attribute(
-                    **{
-                        'value': value,
-                        **self._mapping.file_pattern_mapping(feature)
-                    }
+                attributes = self._handle_object_attributes(
+                    value, self._mapping.file_pattern_mapping(feature),
+                    indicator.id
                 )
+                for attribute in attributes:
+                    file_object.add_attribute(**attribute)
         if attachments:
             for attachment in attachments:
                 attribute = {'value': attachment['content_ref.x_misp_filename']}
@@ -1777,7 +1823,13 @@ class InternalSTIX2IndicatorConverter(
                     )
                 else:
                     attribute.update(self._mapping.attachment_attribute())
-                file_object.add_attribute(**attribute)
+                file_object.add_attribute(
+                    **attribute, to_ids=True,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {attribute['object_relation']}"
+                        f" - {attribute['value']}"
+                    )
+                )
         misp_object = self.main_parser._add_misp_object(file_object, indicator)
         if extension:
             pe_uuid = self._object_from_file_extension_pattern(
@@ -1815,28 +1867,35 @@ class InternalSTIX2IndicatorConverter(
                 reference.update(
                     self._parse_http_request_reference(feature, value)
                 )
-                misp_object.add_attribute(**reference)
+                misp_object.add_attribute(
+                    **reference, uuid=self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {reference['object_relation']}"
+                        f" - {reference['value']}"
+                    )
+                )
                 continue
             if feature == request_value:
                 request_values.append(value)
                 continue
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.http_request_pattern_mapping(feature)
-                }
+            mapping = self._mapping.http_request_pattern_mapping(feature)
+            attributes = self._handle_object_attributes(
+                value, mapping, indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         if request_values:
             if len(request_values) == 1:
+                value = request_values[0]
                 misp_object.add_attribute(
-                    **{
-                        'value': request_values[0],
-                        **self._mapping.uri_attribute()
-                    }
+                    **self._mapping.uri_attribute(), value=value,
+                    to_ids=True, uuid=self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - uri - {value}"
+                    )
                 )
             else:
                 self._parse_http_request_values(
-                    misp_object, *self._get_contained_value(*request_values)
+                    misp_object, indicator.id,
+                    *self._get_contained_value(*request_values)
                 )
         self.main_parser._add_misp_object(misp_object, indicator)
 
@@ -1844,23 +1903,27 @@ class InternalSTIX2IndicatorConverter(
         misp_object = self._create_misp_object('image', indicator)
         attachment = {'type': 'attachment', 'object_relation': 'attachment'}
         for pattern in indicator.pattern[1:-1].split(' AND '):
-            feature, value = self._extract_features_from_pattern(pattern)
-            if feature == 'content_ref.mime_type':
+            field, value = self._extract_features_from_pattern(pattern)
+            if field == 'content_ref.mime_type':
                 continue
-            if 'payload_bin' in feature:
+            if 'payload_bin' in field:
                 attachment['data'] = value
                 continue
-            if 'x_misp_filename' in feature:
+            if 'x_misp_filename' in field:
                 attachment['value'] = value
                 continue
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.image_pattern_mapping(feature)
-                }
+            attributes = self._handle_object_attributes(
+                value, self._mapping.image_pattern_mapping(field), indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         if 'data' in attachment or 'value' in attachment:
-            misp_object.add_attribute(**attachment)
+            misp_object.add_attribute(
+                **attachment, to_ids=True,
+                uuid=self.main_parser._create_v5_uuid(
+                    f"{indicator.id} - attachment - {attachment['value']}"
+                )
+            )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_ip_port_indicator(self, indicator: _INDICATOR_TYPING):
@@ -1875,19 +1938,28 @@ class InternalSTIX2IndicatorConverter(
                 reference.update(
                     self._parse_ip_port_reference(feature, value[:-2])
                 )
-                misp_object.add_attribute(**reference)
-                continue
-            if 'protocol' in feature:
                 misp_object.add_attribute(
-                    **{'value': value, **self._mapping.protocol_attribute()}
+                    **reference, uuid=self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {reference['object_relation']}"
+                        f" - {reference['value']}"
+                    )
                 )
                 continue
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.ip_port_pattern_mapping(feature)
-                }
+            if 'protocol' in feature:
+                mapping = self._mapping.protocol_attribute()
+                misp_object.add_attribute(
+                    **mapping, value=value,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{indicator.id} - protocol - {value}'
+                    )
+                )
+                continue
+            attributes = self._handle_object_attributes(
+                value, self._mapping.ip_port_pattern_mapping(feature),
+                indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_lnk_indicator(self, indicator: _INDICATOR_TYPING):
@@ -1898,17 +1970,22 @@ class InternalSTIX2IndicatorConverter(
             if 'content_ref.' in feature:
                 attachment[feature.split('.')[-1]] = value
                 continue
-            misp_object.add_attribute(
-                **{'value': value, **self._mapping.lnk_pattern_mapping(feature)}
+            attributes = self._handle_object_attributes(
+                value, self._mapping.lnk_pattern_mapping(feature), indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         if attachment:
             mapping = self._mapping.malware_sample_attribute()
+            value = f"{attachment['x_misp_filename']}|{attachment['MD5']}"
             attribute = {
-                'value': f"{attachment['x_misp_filename']}|{attachment['MD5']}"
+                'value': value, 'uuid': self.main_parser._create_v5_uuid(
+                    f'{indicator.id} - malware-sample - {value}'
+                )
             }
             if 'payload_bin' in attachment:
                 attribute['data'] = attachment['payload_bin']
-            misp_object.add_attribute(**attribute, **mapping)
+            misp_object.add_attribute(**attribute, **mapping, to_ids=True)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_mutex_indicator(self, indicator: _INDICATOR_TYPING):
@@ -1927,16 +2004,22 @@ class InternalSTIX2IndicatorConverter(
                         reference, feature, value[:-2]
                     )
                     for attribute in reference.values():
-                        misp_object.add_attribute(**attribute)
+                        misp_object.add_attribute(
+                            **attribute, uuid=self.main_parser._create_v5_uuid(
+                                f'{indicator.id} -'
+                                f" {attribute['object_relation']} "
+                                f"- {attribute['value']}"
+                            )
+                        )
                     continue
                 self._parse_netflow_reference(reference, feature, value)
                 continue
-            misp_object.add_attribute(
-                **{
-                    'value': value.upper() if 'protocols' in feature else value,
-                    **self._mapping.netflow_pattern_mapping(feature)
-                }
+            attributes = self._handle_object_attributes(
+                value.upper() if 'protocols' in feature else value,
+                self._mapping.netflow_pattern_mapping(feature), indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_network_connection_indicator(
@@ -1970,11 +2053,15 @@ class InternalSTIX2IndicatorConverter(
                 continue
             attribute = mapping(feature)
             if attribute is not None:
-                misp_object.add_attribute(**{'value': value, **attribute})
-            else:
-                getattr(self, f'_parse_{name}_pattern')(
-                    misp_object, feature, value
+                attributes = self._handle_object_attributes(
+                    value, attribute, indicator.id
                 )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
+                continue
+            getattr(self, f'_parse_{name}_pattern')(
+                misp_object, feature, value, indicator.id
+            )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_parler_account_indicator(
@@ -2009,19 +2096,19 @@ class InternalSTIX2IndicatorConverter(
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if 'child_refs' in feature:
-                misp_object.add_attribute(
-                    **{
-                        **self._mapping.child_pid_attribute(),
-                        'value': value
-                    }
+                attributes = self._handle_object_attributes(
+                    value, self._mapping.child_pid_attribute(), indicator.id
                 )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 continue
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.process_pattern_mapping(feature)
-                }
-            )
+            mapping = self._mapping.process_pattern_mapping(feature)
+            if mapping is not None:
+                attributes = self._handle_object_attributes(
+                    value, mapping, indicator.id
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_reddit_account_indicator(
@@ -2035,21 +2122,21 @@ class InternalSTIX2IndicatorConverter(
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if 'values[0].' in feature:
-                misp_object.add_attribute(
-                    **{
-                        'value': value,
-                        **self._mapping.registry_key_values_pattern_mapping(
-                            feature.split('.')[-1]
-                        )
-                    }
+                mapping = self._mapping.registry_key_values_pattern_mapping(
+                    feature.split('.')[-1]
                 )
+                attributes = self._handle_object_attributes(
+                    value, mapping, indicator.id
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 continue
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.registry_key_pattern_mapping(feature)
-                }
+            mapping = self._mapping.registry_key_pattern_mapping(feature)
+            attributes = self._handle_object_attributes(
+                value, mapping, indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_standard_pattern(
@@ -2059,8 +2146,12 @@ class InternalSTIX2IndicatorConverter(
             self._mapping, f"{name.replace('-', '_')}_pattern_mapping"
         )
         for pattern in indicator.pattern[1:-1].split(' AND '):
-            feature, value = self._extract_features_from_pattern(pattern)
-            misp_object.add_attribute(**{'value': value, **mapping(feature)})
+            field, value = self._extract_features_from_pattern(pattern)
+            attributes = self._handle_object_attributes(
+                value, mapping(field), indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_telegram_account_indicator(
@@ -2086,27 +2177,34 @@ class InternalSTIX2IndicatorConverter(
                 attachments[key][feature] = value
                 continue
             if 'unix-account-ext' in feature:
-                misp_object.add_attribute(
-                    **{
-                        'value': value,
-                        **self._mapping.unix_user_account_pattern_mapping(
-                            feature.split('.')[-1]
-                        )
-                    }
+                mapping = self._mapping.unix_user_account_pattern_mapping(
+                    feature.split('.')[-1]
                 )
+                attributes = self._handle_object_attributes(
+                    value, mapping, indicator.id
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 continue
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.user_account_pattern_mapping(feature)
-                }
+            attributes = self._handle_object_attributes(
+                value, self._mapping.user_account_pattern_mapping(feature),
+                indicator.id
             )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         if attachments:
             for feature, attribute in attachments.items():
+                value = attribute['value']
                 attribute.update(
                     self._mapping.user_account_pattern_mapping(feature)
                 )
-                misp_object.add_attribute(**attribute)
+                misp_object.add_attribute(
+                    **attribute, to_ids=True,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {attribute['object_relation']}"
+                        f" - {value}"
+                    )
+                )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_x509_indicator(self, indicator: _INDICATOR_TYPING):
@@ -2133,18 +2231,24 @@ class InternalSTIX2IndicatorConverter(
 
     def _parse_http_request_reference(self, feature: str, value: str) -> dict:
         if feature.split('.')[1] == 'value':
-            return {'value': value}
+            return {'value': value, 'to_ids': True}
         if value == 'domain-name':
             return self._mapping.host_attribute()
         return getattr(self._mapping, f"ip_{feature.split('_')[0]}_attribute")()
 
     def _parse_http_request_values(
-            self, misp_object: MISPObject, uri: str, url: str):
+            self, misp_object: MISPObject, object_id: str, uri: str, url: str):
         misp_object.add_attribute(
-            **{'value': uri, **self._mapping.uri_attribute()}
+            **self._mapping.uri_attribute(), value=uri,
+            to_ids=True, uuid=self.main_parser._create_v5_uuid(
+                f'{object_id} - uri - {uri}'
+            )
         )
         misp_object.add_attribute(
-            **{'value': url, **self._mapping.url_attribute()}
+            **self._mapping.url_attribute(), value=url,
+            to_ids=True, uuid=self.main_parser._create_v5_uuid(
+                f'{object_id} - url - {url}'
+            )
         )
     
     def _parse_netflow_reference(
@@ -2153,18 +2257,19 @@ class InternalSTIX2IndicatorConverter(
         if '_ref.type' in feature:
             relation = f'ip-{ref_type}'
             reference[relation].update(
-                {'type': relation, 'object_relation': relation}
+                {'type': relation, 'object_relation': relation, 'to_ids': True}
             )
         elif '_ref.value' in feature:
             reference[f'ip-{ref_type}']['value'] = value
         else:
             reference[f'{ref_type}-as'] = {
-                'value': value,
+                'value': value, 'to_ids': True,
                 **getattr(self._mapping, f'{ref_type}_as_attribute')()
             }
 
     def _parse_network_connection_pattern(
-            self, misp_object: MISPObject, feature: str, value: str):
+            self, misp_object: MISPObject,
+            feature: str, value: str, object_id: str):
         if 'protocols' in feature:
             protocol = value.upper()
             layer = self._mapping.connection_protocols(protocol)
@@ -2184,31 +2289,37 @@ class InternalSTIX2IndicatorConverter(
             return getattr(self._mapping, f'hostname_{feature}_attribute')()
         return getattr(self._mapping, f'ip_{feature}_attribute')()
 
-    def _parse_network_socket_pattern(
-            self, misp_object: MISPObject, feature: str, value: str):
+    def _parse_network_socket_pattern(self, misp_object: MISPObject,
+                                      feature: str, value: str, object_id: str):
         if 'protocols' in feature:
             protocol = value.upper()
             misp_object.add_attribute(
                 **{
-                    'value': protocol, **self._mapping.protocol_attribute()
+                    'value': protocol, **self._mapping.protocol_attribute(),
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f"{object_id} - protocol - {protocol}"
+                    )
                 }
             )
         elif "extensions.'socket-ext'" in feature:
             key = feature.split('.')[-1]
             if value in ('True', 'true', True):
+                attr_value = key.split('_')[1]
                 misp_object.add_attribute(
                     **{
-                        'value': key.split('_')[1],
-                        **self._mapping.state_attribute()
+                        'value': attr_value, **self._mapping.state_attribute(),
+                        'uuid': self.main_parser._create_v5_uuid(
+                            f'{object_id} - state - {attr_value}'
+                        )
                     }
                 )
             else:
-                misp_object.add_attribute(
-                    **{
-                        'value': value,
-                        **self._mapping.socket_extension_pattern_mapping(key)
-                    }
+                mapping = self._mapping.socket_extension_pattern_mapping(key)
+                attributes = self._handle_object_attributes(
+                    value, mapping, object_id
                 )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -2219,12 +2330,12 @@ class InternalSTIX2IndicatorConverter(
         return pattern.split(' = ')[1].strip("'")
 
     @staticmethod
-    def _extract_features_from_pattern(pattern: str) -> Tuple[str]:
+    def _extract_features_from_pattern(pattern: str) -> tuple[str]:
         identifier, value = pattern.split(' = ')
         return identifier.split(':')[1], value.strip("'")
 
     @staticmethod
-    def _get_contained_value(first_value: str, second_value: str) -> Tuple[str]:
+    def _get_contained_value(first_value: str, second_value: str) -> tuple[str]:
         if first_value in second_value:
             return first_value, second_value
         return second_value, first_value
@@ -2232,7 +2343,7 @@ class InternalSTIX2IndicatorConverter(
     @staticmethod
     def _parse_ip_port_reference(feature: str, value: str) -> dict:
         if feature.split('.')[1] == 'value':
-            return {'value': value}
+            return {'value': value, 'to_ids': True}
         relation = (
             'domain' if value == 'domain-name'
             else f"ip-{feature.split('_')[0]}"

@@ -145,6 +145,15 @@ class STIX2Mapping:
     __last_packet_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'last-packet-seen'}
     )
+    __layer3_protocol_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'layer3-protocol'}
+    )
+    __layer4_protocol_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'layer4-protocol'}
+    )
+    __layer7_protocol_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'layer7-protocol'}
+    )
     __md5_attribute = Mapping(
         **{'type': 'md5', 'object_relation': 'md5'}
     )
@@ -617,6 +626,18 @@ class STIX2Mapping:
     @classmethod
     def last_packet_seen_attribute(cls) -> dict:
         return cls.__last_packet_seen_attribute
+
+    @classmethod
+    def layer3_protocol_attribute(cls) -> dict:
+        return cls.__layer3_protocol_attribute
+
+    @classmethod
+    def layer4_protocol_attribute(cls) -> dict:
+        return cls.__layer4_protocol_attribute
+
+    @classmethod
+    def layer7_protocol_attribute(cls) -> dict:
+        return cls.__layer7_protocol_attribute
 
     @classmethod
     def md5_attribute(cls) -> dict:
