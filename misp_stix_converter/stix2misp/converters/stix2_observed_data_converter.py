@@ -2647,249 +2647,272 @@ class InternalSTIX2ObservedDataConverter(
 
     def _attribute_from_address_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         for observable_object in observed_data.objects.values():
             if '-addr' in observable_object.type:
-                attribute['value'] = observable_object.value
+                attribute = self._create_attribute_dict(
+                    observed_data, observable_object.value
+                )
                 break
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_address_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         for reference in observed_data.object_refs:
             if '-addr' in reference:
-                observable = self._fetch_observable(reference)
-                attribute['value'] = observable.value
+                attribute = self._create_attribute_dict(
+                    observed_data, self._fetch_observable(reference).value
+                )
                 break
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_AS_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         observable = observed_data.objects['0']
-        attribute['value'] = self._parse_AS_value(observable.number)
+        to_ids = self._check_indicator_reference(
+            self.main_parser._extract_uuid(observed_data.id),
+            str(observable.number)
+        )
+        attribute = {
+            "value": self._parse_AS_value(observable.number), "to_ids": to_ids,
+            **super()._create_attribute_dict(observed_data),
+        }
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_AS_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = self._parse_AS_value(observable.number)
+        attribute = self._create_attribute_dict(
+            observed_data, self._parse_AS_value(observable.number)
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
-    @staticmethod
-    def _attribute_from_attachment_observable(observables: tuple) -> dict:
-        attribute = {}
+    def _attribute_from_attachment_observable(
+            self, observables: tuple, observed_data: _OBSERVED_DATA_TYPING):
+        attribute = super()._create_attribute_dict(observed_data)
         for observable in observables:
             if observable.type == 'file':
-                attribute['value'] = observable.name
+                value = observable.name
+                attribute.update(
+                    {
+                        'value': value,
+                        'to_ids': self._check_indicator_reference(
+                            self.main_parser._extract_uuid(observed_data.id),
+                            value
+                        )
+                    }
+                )
             else:
                 attribute['data'] = observable.payload_bin
-        return attribute
+        self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_attachment_observable_v20(
             self, observed_data: ObservedData_v20):
-        self.main_parser._add_misp_attribute(
-            dict(
-                self._create_attribute_dict(observed_data),
-                **self._attribute_from_attachment_observable(
-                    tuple(observed_data.objects.values())
-                )
-            ),
-            observed_data
+        self._attribute_from_attachment_observable(
+            tuple(observed_data.objects.values()), observed_data
         )
 
     def _attribute_from_attachment_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observables = tuple(
             self._fetch_observables(observed_data.id, observed_data.object_refs)
         )
-        if len(observables) > 1:
-            attribute.update(
-                self._attribute_from_attachment_observable(observables)
-            )
-        else:
-            attribute['value'] = observables.name
-        self.main_parser._add_misp_attribute(attribute, observed_data)
+        self._attribute_from_attachment_observable(observables, observed_data)
 
     def _attribute_from_domain_ip_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         domain, address = observed_data.objects.values()
-        attribute['value'] = f'{domain.value}|{address.value}'
+        attribute = self._create_attribute_dict(
+            observed_data, f'{domain.value}|{address.value}'
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_domain_ip_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         domain, address = self._fetch_observables(
             observed_data.id, observed_data.object_refs
         )
-        attribute['value'] = f'{domain.value}|{address.value}'
+        attribute = self._create_attribute_dict(
+            observed_data, f'{domain.value}|{address.value}'
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_attachment_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['1'].name
+        attribute = self._create_attribute_dict(
+            observed_data, observed_data.objects['1'].name
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_attachment_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[1])
-        attribute['value'] = observable.name
+        attribute = self._create_attribute_dict(observed_data, observable.name)
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_body_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].body
+        attribute = self._create_attribute_dict(
+            observed_data, observed_data.objects['0'].body
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_body_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.body
+        attribute = self._create_attribute_dict(observed_data, observable.body)
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_header_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].received_lines[0]
+        attribute = self._create_attribute_dict(
+            observed_data, observed_data.objects['0'].received_lines[0]
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_header_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.received_lines[0]
+        attribute = self._create_attribute_dict(
+            observed_data, observable.received_lines[0]
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_message_id_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.message_id
+        attribute = self._create_attribute_dict(
+            observed_data, observable.message_id
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_reply_to_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         email_message = observed_data.objects['0']
-        attribute['value'] = email_message.additional_header_fields['Reply-To']
+        attribute = self._create_attribute_dict(
+            observed_data, email_message.additional_header_fields['Reply-To']
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_reply_to_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.additional_header_fields['Reply-To']
+        attribute = self._create_attribute_dict(
+            observed_data, observable.additional_header_fields['Reply-To']
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_subject_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].subject
+        attribute = self._create_attribute_dict(
+            observed_data, observed_data.objects['0'].subject
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_subject_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.subject
+        attribute = self._create_attribute_dict(
+            observed_data, observable.subject
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_x_mailer_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         email_message = observed_data.objects['0']
-        attribute['value'] = email_message.additional_header_fields['X-Mailer']
+        attribute = self._create_attribute_dict(
+            observed_data, email_message.additional_header_fields['X-Mailer']
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_email_x_mailer_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.additional_header_fields['X-Mailer']
+        attribute = self._create_attribute_dict(
+            observed_data, observable.additional_header_fields['X-Mailer']
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_filename_hash_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         observable = observed_data.objects['0']
         hash_value = list(observable.hashes.values())[0]
-        attribute['value'] = f'{observable.name}|{hash_value}'
+        attribute = self._create_attribute_dict(
+            observed_data, f'{observable.name}|{hash_value}'
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_filename_hash_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
         hash_value = list(observable.hashes.values())[0]
-        attribute['value'] = f'{observable.name}|{hash_value}'
+        attribute = self._create_attribute_dict(
+            observed_data, f'{observable.name}|{hash_value}'
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_first_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].value
+        attribute = self._create_attribute_dict(
+            observed_data, observed_data.objects['0'].value
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_first_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.value
+        attribute = self._create_attribute_dict(observed_data, observable.value)
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_github_username_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.account_login
+        attribute = self._create_attribute_dict(
+            observed_data, observable.account_login
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_hash_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = list(observed_data.objects['0'].hashes.values())[0]
+        attribute = self._create_attribute_dict(
+            observed_data, list(observed_data.objects['0'].hashes.values())[0]
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_hash_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = list(observable.hashes.values())[0]
+        attribute = self._create_attribute_dict(
+            observed_data, list(observable.hashes.values())[0]
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_hostname_port_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         domain, network = observed_data.objects.values()
-        attribute['value'] = f'{domain.value}|{network.dst_port}'
+        attribute = self._create_attribute_dict(
+            observed_data, f'{domain.value}|{network.dst_port}'
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_hostname_port_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         domain, network = self._fetch_observables(
             observed_data.id, observed_data.object_refs
         )
-        attribute['value'] = f'{domain.value}|{network.dst_port}'
+        attribute = self._create_attribute_dict(
+            observed_data, f'{domain.value}|{network.dst_port}'
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_ip_port_observable(
             self, network_traffic: _NETWORK_TRAFFIC_TYPING,
             ip_value: str, observed_data: _OBSERVED_DATA_TYPING):
-        attribute = self._create_attribute_dict(observed_data)
         for feature in ('src_port', 'dst_port'):
             if hasattr(network_traffic, feature):
                 port_value = getattr(network_traffic, feature)
-                attribute['value'] = f'{ip_value}|{port_value}'
+                attribute = self._create_attribute_dict(
+                    observed_data, f'{ip_value}|{port_value}'
+                )
                 self.main_parser._add_misp_attribute(attribute, observed_data)
                 break
 
@@ -2909,85 +2932,91 @@ class InternalSTIX2ObservedDataConverter(
             network, address.value, observed_data
         )
 
-    @staticmethod
-    def _attribute_from_malware_sample_observable(observables: tuple) -> dict:
-        attribute = {}
+    def _attribute_from_malware_sample_observable(
+            self, observables: tuple, observed_data: _OBSERVED_DATA_TYPING):
+        attribute = super()._create_attribute_dict(observed_data)
         for observable in observables:
             if observable.type == 'file':
-                attribute['value'] = (
-                    f"{observable.name}|{observable.hashes['MD5']}"
+                value = f"{observable.name}|{observable.hashes['MD5']}"
+                attribute.update(
+                    {
+                        "value": value,
+                        "to_ids": self._check_indicator_reference(
+                            self.main_parser._extract_uuid(observed_data.id),
+                            value
+                        ),
+                    }
                 )
             else:
                 attribute['data'] = observable.payload_bin
-        return attribute
+        self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_malware_sample_observable_v20(
             self, observed_data: ObservedData_v20):
-        self.main_parser._add_misp_attribute(
-            dict(
-                self._create_attribute_dict(observed_data),
-                **self._attribute_from_malware_sample_observable(
-                    observed_data.objects.values()
-                )
-            ),
-            observed_data
+        self._attribute_from_malware_sample_observable(
+            tuple(observed_data.objects.values()), observed_data
         )
 
     def _attribute_from_malware_sample_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observables = tuple(
             self._fetch_observables(observed_data.id, observed_data.object_refs)
         )
-        if len(observables) > 1:
-            attribute.update(
-                self._attribute_from_malware_sample_observable(observables)
-            )
-        else:
-            attribute['value'] = (
-                f"{observables.name}|{observables.hashes['MD5']}"
-            )
-        self.main_parser._add_misp_attribute(attribute, observed_data)
+        self._attribute_from_malware_sample_observable(
+            observables, observed_data
+        )
 
     def _attribute_from_name_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].name
+        attribute = self._create_attribute_dict(
+            observed_data, observed_data.objects['0'].name
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_name_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.name
+        attribute = self._create_attribute_dict(observed_data, observable.name)
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_regkey_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].key
+        attribute = self._create_attribute_dict(
+            observed_data, observed_data.objects['0'].key
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_regkey_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = observable.key
+        attribute = self._create_attribute_dict(observed_data, observable.key)
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_regkey_value_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
         observable = observed_data.objects['0']
-        attribute['value'] = f"{observable.key}|{observable['values'][0].data}"
+        attribute = self._create_attribute_dict(
+            observed_data, f"{observable.key}|{observable['values'][0].data}"
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_regkey_value_observable_v21(
             self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute['value'] = f"{observable.key}|{observable['values'][0].data}"
+        attribute = self._create_attribute_dict(
+            observed_data, f"{observable.key}|{observable['values'][0].data}"
+        )
         self.main_parser._add_misp_attribute(attribute, observed_data)
+
+    def _create_attribute_dict(
+            self, observed_data: _OBSERVED_DATA_TYPING, value: str) -> dict:
+        to_ids = self._check_indicator_reference(
+            self.main_parser._extract_uuid(observed_data.id), value
+        )
+        return {
+            'value': value, 'to_ids': to_ids,
+            **super()._create_attribute_dict(observed_data)
+        }
 
     ############################################################################
     #                       MISP OBJECTS PARSING METHODS                       #
