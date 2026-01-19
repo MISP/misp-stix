@@ -231,18 +231,6 @@ class STIX2ObservableConverter(STIX2Converter):
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable.get(object_ref)
 
-    def _get_indicator_refs(self, observable_object_id: str,
-                            observed_data_id: Optional[str] = None) -> set | None:
-        try:
-            return self._fetch_observable(observable_object_id).get(
-                'indicator_ref'
-            )
-        except AttributeError:
-            if observed_data_id is not None:
-                return self._get_observed_data_indicator_refs(
-                    observed_data_id, observable_object_id
-                )
-
     def _handle_misp_object_storage(
             self, observable: dict, misp_object: MISPObject):
         observable['used'][self.event_uuid] = True
@@ -558,6 +546,19 @@ class ExternalSTIX2ObservableConverter(
                 f'{object_id} - {value}'
             )
         }
+
+    def _get_indicator_refs(
+            self, observable_object_id: str,
+            observed_data_id: Optional[str] = None) -> set | None:
+        try:
+            return self._fetch_observable(observable_object_id).get(
+                'indicator_ref'
+            )
+        except AttributeError:
+            if observed_data_id is not None:
+                return self._get_observed_data_indicator_refs(
+                    observed_data_id, observable_object_id
+                )
 
     def _parse_artifact_observable(
             self, observable: _ARTIFACT_TYPING, object_id: Optional[str] = None,

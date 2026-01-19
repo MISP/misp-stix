@@ -64,11 +64,6 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
             return observed_data
         return observed_data['observed_data']
 
-    def _get_observed_data_indicator_refs(
-            self, observed_data_id: str, object_id: str) -> Union[set, None]:
-        observed_data = self.main_parser._observed_data[observed_data_id]
-        return observed_data.get('indicator_refs', {}).get(object_id)
-
     @property
     def observables(self) -> dict:
         return self.main_parser._observable
@@ -2580,6 +2575,11 @@ class ExternalSTIX2ObservedDataConverter(
             self.main_parser._sanitise_uuid(observed_data.id), misp_object.uuid
         )
         return misp_object
+
+    def _get_observed_data_indicator_refs(
+            self, observed_data_id: str, object_id: str) -> set | None:
+        observed_data = self.main_parser._observed_data[observed_data_id]
+        return observed_data.get("indicator_refs", {}).get(object_id)
 
     def _handle_misp_object_fields(
             self, misp_object: list | MISPAttribute | MISPObject,
