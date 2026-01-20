@@ -3089,30 +3089,31 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_domain_ip_observable_v20(
             self, observed_data: ObservedData_v20):
         misp_object = self._create_misp_object('domain-ip', observed_data)
-        mapping = self._mapping.domain_ip_object_mapping
+        mapping = self._mapping.domain_ip_object_mapping()
         ip_parsed = set()
+        object_id = observed_data.id
         for observable in observed_data.objects.values():
             if observable.type == 'domain-name':
-                for field, attribute in mapping().items():
+                for field, attribute in mapping.items():
                     if hasattr(observable, field):
-                        attributes = self._populate_object_attributes(
-                            attribute, getattr(observable, field),
-                            observed_data.id
+                        attributes = self._handle_object_attributes(
+                            attribute, getattr(observable, field), object_id
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
                 if hasattr(observable, 'resolves_to_refs'):
+                    attribute = self._mapping.ip_attribute()
                     for reference in observable.resolves_to_refs:
                         if reference in ip_parsed:
                             continue
                         value = observed_data.objects[reference].value
                         misp_object.add_attribute(
-                            **{
-                                'value': value, **self._mapping.ip_attribute(),
-                                'uuid': self.main_parser._create_v5_uuid(
-                                    f'{observed_data.id} - ip - {value}'
+                            **self._populate_object_attribute(
+                                value, attribute, self._handle_object_id(
+                                    value, object_id,
+                                    attribute['object_relation']
                                 )
-                            }
+                            )
                         )
                         ip_parsed.add(reference)
         self.main_parser._add_misp_object(misp_object, observed_data)
@@ -3151,13 +3152,14 @@ class InternalSTIX2ObservedDataConverter(
                 observed_data
             )
         )
+        object_id = observed_data.id
         for observable in observables.values():
             if observable.type != 'email-message':
                 continue
             if hasattr(observable, 'from_ref'):
                 address = observables[observable.from_ref]
                 attributes = self._parse_email_reference_observable(
-                    address, 'from', getattr(address, 'id', observed_data.id)
+                    address, 'from', object_id
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -3166,12 +3168,10 @@ class InternalSTIX2ObservedDataConverter(
                     for reference in getattr(observable, f'{feature}_refs'):
                         address = observables[reference]
                         attributes = self._parse_email_reference_observable(
-                            address, feature,
-                            getattr(address, 'id', observed_data.id)
+                            address, feature, object_id
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
-            object_id = getattr(observable, 'id', observed_data.id)
             attributes = self._parse_email_observable(observable, object_id)
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
@@ -3184,8 +3184,7 @@ class InternalSTIX2ObservedDataConverter(
                     )
                     reference = observables[body_part.body_raw_ref]
                     attributes = self._parse_email_body_observable(
-                        reference, feature, value,
-                        getattr(reference, 'id', observed_data.id)
+                        reference, feature, value, object_id
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
@@ -3213,17 +3212,16 @@ class InternalSTIX2ObservedDataConverter(
 
     def _object_from_file_extension_observable(
             self, extension: _EXTENSION_TYPING,
-            observed_data: _OBSERVED_DATA_TYPING, object_id: str) -> str:
+            observed_data: _OBSERVED_DATA_TYPING) -> str:
+        object_id = observed_data.id
         pe_object = self._create_misp_object('pe')
         pe_object.from_dict(
+            **self._parse_timeline(observed_data),
             uuid=self.main_parser._create_v5_uuid(
-                f'{observed_data.id} - windows-pebinary-ext'
-            ),
-            **self._parse_timeline(observed_data)
+                f'{object_id} - windows-pebinary-ext'
+            )
         )
-        attributes = self._parse_pe_extension_observable(
-            extension, f'{object_id} - windows-pebinary-ext'
-        )
+        attributes = self._parse_pe_extension_observable(extension, object_id)
         for attribute in attributes:
             pe_object.add_attribute(**attribute)
         misp_object = self.main_parser._add_misp_object(pe_object, observed_data)
@@ -3231,13 +3229,14 @@ class InternalSTIX2ObservedDataConverter(
             for index, section in enumerate(extension.sections):
                 section_object = self._create_misp_object('pe-section')
                 section_object.from_dict(
+                    **self._parse_timeline(observed_data),
                     uuid=self.main_parser._create_v5_uuid(
-                        f'{observed_data.id} - sections - {index}'
+                        f'{object_id} - windows-pebinary-ext'
+                        f' - sections - {index}'
                     ),
-                    **self._parse_timeline(observed_data)
                 )
                 attributes = self._parse_pe_section_observable(
-                    section, f'{object_id} - sections - {index}'
+                    section, index, object_id
                 )
                 for attribute in attributes:
                     section_object.add_attribute(**attribute)
@@ -3256,15 +3255,14 @@ class InternalSTIX2ObservedDataConverter(
         for observable in observables.values():
             if observable.type != 'file':
                 continue
-            object_id = getattr(observable, 'id', observed_data.id)
+            object_id = observed_data.id
             attributes = self._parse_file_observable(observable, object_id)
             for attribute in attributes:
                 file_object.add_attribute(**attribute)
             if hasattr(observable, 'parent_directory_ref'):
                 file_object.add_attribute(
                     **self._parse_file_parent_observable(
-                        observables[observable.parent_directory_ref],
-                        observed_data.id
+                        observables[observable.parent_directory_ref], object_id
                     )
                 )
             if hasattr(observable, 'content_ref'):
@@ -3278,23 +3276,16 @@ class InternalSTIX2ObservedDataConverter(
                     attribute.update(self._mapping.malware_sample_attribute())
                 else:
                     attribute.update(self._mapping.attachment_attribute())
-                if hasattr(artifact, 'id'):
-                    attribute.update(
-                        self.main_parser._sanitise_attribute_uuid(artifact.id)
-                    )
-                else:
-                    attribute['uuid'] = self.main_parser._create_v5_uuid(
-                        f"{observed_data.id} - {attribute['type']}"
-                        f" - {attribute['value']}"
-                    )
+                attribute['uuid'] = self.main_parser._create_v5_uuid(
+                    f"{object_id} - {attribute['type']} - {attribute['value']}"
+                )
                 file_object.add_attribute(**attribute)
             misp_object = self.main_parser._add_misp_object(
                 file_object, observed_data
             )
             if getattr(observable, 'extensions', {}).get('windows-pebinary-ext'):
                 pe_uuid = self._object_from_file_extension_observable(
-                    observable.extensions['windows-pebinary-ext'],
-                    observed_data, object_id
+                    observable.extensions['windows-pebinary-ext'], observed_data
                 )
                 misp_object.add_reference(pe_uuid, 'includes')
 
@@ -3312,8 +3303,7 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._parse_generic_observable(
-            observable, name.replace('-', '_'),
-            getattr(observable, 'id', observed_data.id)
+            observable, name.replace('-', '_'), observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3351,18 +3341,14 @@ class InternalSTIX2ObservedDataConverter(
                 observed_data
             )
         )
-        for observable_id, observable in observables.items():
-            object_id = getattr(
-                observable, 'id', f'{observed_data.id} - {observable_id}'
-            )
+        for observable in observables.values():
+            object_id = observed_data.id
             if observable.type == 'domain-name':
-                attribute = {
-                    'value': observable.value, **self._mapping.host_attribute()
-                }
-                attribute['uuid'] = self.main_parser._create_v5_uuid(
-                    f'{object_id} - host - {observable.value}'
+                attributes = self._handle_object_attributes(
+                    self._mapping.host_attribute(), observable.value, object_id
                 )
-                misp_object.add_attribute(**attribute)
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 continue
             attributes = self._parse_generic_observable(
                 observable, 'http_request', object_id
@@ -3374,10 +3360,7 @@ class InternalSTIX2ObservedDataConverter(
                     address_ref = getattr(observable, f'{feature}_ref')
                     address = observables[address_ref]
                     content = self._parse_network_traffic_reference_observable(
-                        feature, address, getattr(
-                            address, 'id', f'{observed_data.id} - {address_ref}'
-                        ),
-                        name='http_request'
+                        feature, address, object_id, 'http_request'
                     )
                     for attribute in content:
                         misp_object.add_attribute(**attribute)
@@ -3558,41 +3541,33 @@ class InternalSTIX2ObservedDataConverter(
                 observed_data
             )
         )
+        object_id = observed_data.id
         for observable in observables.values():
             if observable.type != 'network-traffic':
                 continue
-            for feature in ('src', 'dst'):
-                if hasattr(observable, f'{feature}_ref'):
-                    address = observables[getattr(observable, f'{feature}_ref')]
-                    attribute = {
-                        'value': address.value,
-                        **getattr(self._mapping, f'ip_{feature}_attribute')()
-                    }
-                    if hasattr(address, 'id'):
-                        attribute.update(
-                            self.main_parser._sanitise_attribute_uuid(
-                                address.id
+            for asset in ('src', 'dst'):
+                if hasattr(observable, f'{asset}_ref'):
+                    address = observables[getattr(observable, f'{asset}_ref')]
+                    value = address.value
+                    mapping = getattr(self._mapping, f'ip_{asset}_attribute')()
+                    misp_object.add_attribute(
+                        **self._populate_object_attribute(
+                            value, mapping, self._handle_object_id(
+                                value, object_id, mapping['object_relation']
                             )
                         )
-                    else:
-                        attribute['uuid'] = self.main_parser._create_v5_uuid(
-                            f'{observed_data.id} - ip-{feature}'
-                            f' - {address.value}'
-                        )
-                    misp_object.add_attribute(**attribute)
+                    )
                     if hasattr(address, 'belongs_to_refs'):
                         autonomous_systems = (
                             observables[reference] for reference
                             in getattr(address, 'belongs_to_refs')
                         )
                         attributes = self._parse_netflow_references(
-                            feature, observed_data.id, *autonomous_systems
+                            asset, object_id, *autonomous_systems
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
-            attributes = self._parse_netflow_observable(
-                observable, observed_data.id
-            )
+            attributes = self._parse_netflow_observable(observable, object_id)
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
             self.main_parser._add_misp_object(misp_object, observed_data)
@@ -3620,9 +3595,7 @@ class InternalSTIX2ObservedDataConverter(
                 observable_id
             )
             attributes = self._parse_network_connection_observable(
-                observable, getattr(
-                    observable, 'id', f'{observed_data.id} - {observable_id}'
-                )
+                observable, observed_data.id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
@@ -3650,9 +3623,7 @@ class InternalSTIX2ObservedDataConverter(
                 'network-socket', observed_data, observables, observable_id
             )
             attributes = self._parse_network_socket_observable(
-                observable, getattr(
-                    observable, 'id', f'{observed_data.id} - {observable_id}'
-                )
+                observable, observed_data.id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
@@ -3672,9 +3643,7 @@ class InternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object(name, observed_data)
         observable = observables[observable_id]
         attributes = self._parse_generic_observable(
-            observable, name.replace('-', '_'), getattr(
-                observable, 'id', f'{observed_data.id} - {observable_id}'
-            )
+            observable, name.replace('-', '_'), observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3683,11 +3652,7 @@ class InternalSTIX2ObservedDataConverter(
                 address_ref = getattr(observable, f'{asset}_ref')
                 address = observables[address_ref]
                 attributes = self._parse_network_traffic_reference_observable(
-                    asset, address,
-                    getattr(
-                        address, 'id', f'{observed_data.id} - {address_ref}'
-                    ),
-                    name.replace('-', '_')
+                    asset, address, observed_data.id, name.replace('-', '_')
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -3714,83 +3679,78 @@ class InternalSTIX2ObservedDataConverter(
             )
         )
         main_process = self._fetch_main_process(observables)
-        attributes = self._parse_process_observable(
-            main_process, getattr(main_process, 'id', observed_data.id)
-        )
+        object_id = observed_data.id
+        attributes = self._parse_process_observable(main_process, object_id)
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
         if hasattr(main_process, 'binary_ref'):
             image = observables[main_process.binary_ref]
             misp_object.add_attribute(
-                **{
-                    **self._mapping.image_attribute(),
-                    'value': image.name,
-                    'uuid': self.main_parser._create_v5_uuid(
-                        f'{observed_data.id} - image - {image.name}'
+                **self._populate_object_attribute(
+                    value := image.name,
+                    attribute := self._mapping.image_attribute(),
+                    self._handle_object_id(
+                        value, object_id, attribute['object_relation']
                     )
-                }
+                )
             )
         elif hasattr(main_process, 'image_ref'):
             image = observables[main_process.image_ref]
             misp_object.add_attribute(
-                **{
-                    'value': image.name,
-                    **self._mapping.image_attribute(),
-                    **self.main_parser._sanitise_attribute_uuid(image.id)
-                }
+                **self._populate_object_attribute(
+                    value := image.name,
+                    attribute := self._mapping.image_attribute(),
+                    self._handle_object_id(
+                        value, object_id, attribute['object_relation']
+                    )
+                )
             )
         if hasattr(main_process, 'child_refs'):
             for child_ref in main_process.child_refs:
                 process = observables[child_ref]
-                attribute = {
-                    'value': process.pid,
-                    **self._mapping.child_pid_attribute()
-                }
-                if hasattr(process, 'id'):
-                    attribute.update(
-                        self.main_parser._sanitise_attribute_uuid(process.id)
+                value = process.pid
+                attribute = self._mapping.child_pid_attribute()
+                misp_object.add_attribute(
+                    **self._populate_object_attribute(
+                        value, attribute, self._handle_object_id(
+                            value, object_id, attribute['object_relation']
+                        )
                     )
-                else:
-                    attribute['uuid'] = self.main_parser._create_v5_uuid(
-                        f'{observed_data.id} - child-pid - {process.pid}'
-                    )
-                misp_object.add_attribute(**attribute)
+                )
         if hasattr(main_process, 'parent_ref'):
             parent_process = observables[main_process.parent_ref]
-            object_id = getattr(parent_process, 'id', observed_data.id)
             mapping = self._mapping.parent_process_object_mapping
             for feature, attribute in mapping().items():
                 if hasattr(parent_process, feature):
+                    value = getattr(parent_process, feature)
                     misp_object.add_attribute(
-                        **{
-                            **attribute,
-                            'value': getattr(parent_process, feature),
-                            'uuid': self.main_parser._create_v5_uuid(
-                                f"{object_id} - {attribute['object_relation']}"
-                                f" - {getattr(parent_process, feature)}"
+                        **self._populate_object_attribute(
+                            value, attribute, self._handle_object_id(
+                                value, object_id, attribute['object_relation']
                             )
-                        }
+                        )
                     )
-                    misp_object.add_attribute(**attribute)
             if hasattr(parent_process, 'binary_ref'):
                 image = observables[parent_process.binary_ref]
                 misp_object.add_attribute(
-                    **{
-                        **self._mapping.parent_image_attribute(),
-                        'value': image.name,
-                        'uuid': self.main_parser._create_v5_uuid(
-                            f'{observed_data.id} - parent-image - {image.name}'
+                    **self._populate_object_attribute(
+                        value := image.name,
+                        attribute := self._mapping.parent_image_attribute(),
+                        self._handle_object_id(
+                            value, object_id, attribute['object_relation']
                         )
-                    }
+                    )
                 )
             elif hasattr(parent_process, 'image_ref'):
                 image = observables[parent_process.image_ref]
                 misp_object.add_attribute(
-                    **{
-                        'value': image.name,
-                        **self._mapping.parent_image_attribute(),
-                        **self.main_parser._sanitise_attribute_uuid(image.id)
-                    }
+                    **self._populate_object_attribute(
+                        value := image.name,
+                        attribute := self._mapping.parent_image_attribute(),
+                        self._handle_object_id(
+                            value, object_id, attribute["object_relation"]
+                        )
+                    )
                 )
         self.main_parser._add_misp_object(misp_object, observed_data)
 
@@ -3820,8 +3780,9 @@ class InternalSTIX2ObservedDataConverter(
         observable = getattr(self, f'_fetch_observables_{version}')(
             observed_data
         )
-        object_id = getattr(observable, 'id', observed_data.id)
-        attributes = self._parse_registry_key_observable(observable, object_id)
+        attributes = self._parse_registry_key_observable(
+            observable, observed_data.id
+        )
         for attribute in attributes:
             regkey_object.add_attribute(**attribute)
         misp_object = self.main_parser._add_misp_object(
@@ -3830,18 +3791,18 @@ class InternalSTIX2ObservedDataConverter(
         if len(observable.get('values', [])) > 1:
             for index, registry_value in enumerate(observable['values']):
                 value_uuid = self._object_from_registry_key_value_observable(
-                    registry_value, observed_data, object_id, index
+                    registry_value, observed_data, index
                 )
                 self._handle_misp_object_references(misp_object, value_uuid)
         return misp_object
 
     def _object_from_registry_key_value_observable(
             self, registry_value: _WINDOWS_REGISTRY_VALUE_TYPING,
-            observed_data: _OBSERVED_DATA_TYPING,
-            object_id: str, index: int) -> str:
-        misp_object = self._create_misp_object_from_observable_object(
-            'registry-key-value', observed_data, object_id
+            observed_data: _OBSERVED_DATA_TYPING, index: int) -> str:
+        misp_object = self._create_misp_object(
+            'registry-key-value', observed_data
         )
+        object_id = observed_data.id
         mapping = self._mapping.registry_key_values_object_mapping
         for field, attribute in mapping().items():
             if hasattr(registry_value, field):
@@ -3904,7 +3865,7 @@ class InternalSTIX2ObservedDataConverter(
         observable = getattr(self, f'_fetch_observables_{version}')(
             observed_data
         )
-        object_id = getattr(observable, 'id', observed_data.id)
+        object_id = observed_data.id
         attributes = self._parse_generic_observable_with_data(
             observable, 'user_account', object_id
         )
@@ -3933,25 +3894,21 @@ class InternalSTIX2ObservedDataConverter(
         observable = getattr(self, f'_fetch_observables_{version}')(
             observed_data
         )
-        object_id = getattr(observable, 'id', observed_data.id)
+        object_id = observed_data.id
         for attribute in self._parse_x509_observable(observable, object_id):
             misp_object.add_attribute(**attribute)
         if hasattr(observable, 'x509_v3_extensions'):
             extension = observable.x509_v3_extensions
+            mapping = self._mapping.x509_subject_alternative_name_mapping
             for values in extension.subject_alternative_name.split(','):
                 key, value = values.split('=')
-                mapping = self._mapping.x509_subject_alternative_name_mapping(
-                    key
-                )
-                if mapping is not None:
+                if attribute := mapping(key) is not None:
                     misp_object.add_attribute(
-                        **{
-                            'value': value, **mapping,
-                            'uuid': self.main_parser._create_v5_uuid(
-                                f"{object_id} - {mapping['object_relation']}"
-                                f" - {value}"
+                        self._populate_object_attribute(
+                            value, attribute, self._handle_object_id(
+                                value, object_id, attribute['object_relation']
                             )
-                        }
+                        )
                     )
         self.main_parser._add_misp_object(misp_object, observed_data)
 
