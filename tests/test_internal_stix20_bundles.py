@@ -18,16 +18,9 @@ _ACCOUNT_INDICATOR_OBJECTS = [
         "pattern": "[user-account:account_type = 'gitlab' AND user-account:user_id = '1234567890' AND user-account:display_name = 'John Doe' AND user-account:account_login = 'j0hnd0e']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"gitlab-user\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="gitlab-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -38,16 +31,9 @@ _ACCOUNT_INDICATOR_OBJECTS = [
         "pattern": "[user-account:account_type = 'telegram' AND user-account:user_id = '1234567890' AND user-account:account_login = 'T3l3gr4mUs3r' AND user-account:x_misp_phone = '0112233445' AND user-account:x_misp_phone = '0556677889']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"telegram-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="telegram-account"', 'misp:meta-category="misc"']
     }
 ]
 _ACCOUNT_OBSERVABLE_OBJECTS = [
@@ -69,11 +55,7 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
                 "display_name": "John Doe"
             }
         },
-        "labels": [
-            'misp:name="gitlab-user"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="gitlab-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -86,11 +68,7 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="gitlab-user"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="gitlab-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -119,11 +97,7 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
                 "x_misp_phone": ["0112233445", "0556677889"]
             }
         },
-        "labels": [
-            'misp:name="telegram-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="telegram-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -136,11 +110,7 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="telegram-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="telegram-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -161,16 +131,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"facebook-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="facebook-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -180,16 +143,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"github-user\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="github-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -199,16 +155,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"parler-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="parler-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -218,16 +167,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"reddit-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="reddit-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -237,16 +179,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"twitter-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="twitter-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -256,16 +191,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"user-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="user-account"', 'misp:meta-category="misc"']
     }
 ]
 _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
@@ -288,11 +216,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "x_misp_user_avatar": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            'misp:name="facebook-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"',
-        ],
+        "labels": ['misp:name="facebook-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -305,11 +229,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="facebook-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="facebook-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -340,11 +260,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "x_misp_profile_image": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            'misp:name="github-user"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="github-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -357,11 +273,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="github-user"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="github-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -391,11 +303,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "x_misp_profile_photo": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            'misp:name="parler-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="parler-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -408,11 +316,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="parler-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="parler-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -442,11 +346,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "x_misp_description": "Reddit account of the OctoCat"
             }
         },
-        "labels": [
-            'misp:name="reddit-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="reddit-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -459,11 +359,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="reddit-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="reddit-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -494,11 +390,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "x_misp_profile_image": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            'misp:name="twitter-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="twitter-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -511,11 +403,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="twitter-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="twitter-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -554,11 +442,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "x_misp_user_avatar": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            'misp:name="user-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="user-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -571,11 +455,7 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="user-account"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="user-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -597,16 +477,9 @@ _ANALYST_DATA_SAMPLES = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '194.78.89.250']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "x-misp-analyst-opinion",
@@ -628,22 +501,10 @@ _ANALYST_DATA_SAMPLES = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "network-traffic",
-                "dst_ref": "1",
-                "protocols": [
-                    "tcp"
-                ]
-            },
-            "1": {
-                "type": "ipv4-addr",
-                "value": "8.8.8.8"
-            }
+            "0": {"type": "network-traffic", "dst_ref": "1", "protocols": ["tcp"]},
+            "1": {"type": "ipv4-addr", "value": "8.8.8.8"}
         },
-        "labels": [
-            "misp:type=\"ip-dst\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
     },
     {
         "type": "x-misp-analyst-note",
@@ -664,16 +525,9 @@ _ANALYST_DATA_SAMPLES = [
         "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip')]",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "file"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            "misp:name=\"file\"",
-            "misp:meta-category=\"file\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
     {
         "type": "x-misp-analyst-opinion",
@@ -701,9 +555,7 @@ _ANALYST_DATA_SAMPLES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2024-06-11T11:34:42.000Z",
         "modified": "2024-06-11T11:34:42.000Z",
-        "object_refs": [
-            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
-        ],
+        "object_refs": ["indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"],
         "x_misp_content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
         "x_misp_name": "Summary of the case"
     },
@@ -736,17 +588,8 @@ _ANDROID_APP_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"android-app\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="android-app"', 'misp:meta-category="file"']
 }
 _ANDROID_APP_OBSERVABLE_OBJECT = [
     {
@@ -766,11 +609,7 @@ _ANDROID_APP_OBSERVABLE_OBJECT = [
                 "x_misp_domain": "facebook.com"
             }
         },
-        "labels": [
-            'misp:name="android-app"',
-            'misp:meta-category="file"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="android-app"', 'misp:meta-category="file"']
     },
     {
         "type": "indicator",
@@ -783,11 +622,7 @@ _ANDROID_APP_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            'misp:name="android-app"',
-            'misp:meta-category="file"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="android-app"', 'misp:meta-category="file"']
     },
     {
         "type": "relationship",
@@ -808,16 +643,9 @@ _AS_INDICATOR_ATTRIBUTE = {
     "pattern": "[autonomous-system:number = '174']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"AS\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="AS"', 'misp:category="Network activity"']
 }
 _AS_OBSERVABLE_ATTRIBUTE = [
     {
@@ -830,11 +658,7 @@ _AS_OBSERVABLE_ATTRIBUTE = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {"0": {"type": "autonomous-system", "number": 174}},
-        "labels": [
-            'misp:type="AS"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -847,11 +671,7 @@ _AS_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="AS"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -872,16 +692,9 @@ _ASN_INDICATOR_OBJECT = {
     "pattern": "[autonomous-system:number = '66642' AND autonomous-system:name = 'AS name' AND autonomous-system:x_misp_subnet_announced = '1.2.3.4' AND autonomous-system:x_misp_subnet_announced = '8.8.8.8']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"asn\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="asn"', 'misp:meta-category="network"']
 }
 _ASN_OBSERVABLE_OBJECT = [
     {
@@ -901,11 +714,7 @@ _ASN_OBSERVABLE_OBJECT = [
                 "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            'misp:name="asn"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -918,11 +727,7 @@ _ASN_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="asn"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -943,16 +748,9 @@ _ATTACHMENT_INDICATOR_ATTRIBUTE = {
     "pattern": "[file:name = 'attachment.test' AND file:content_ref.payload_bin = 'ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"attachment\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
 }
 _ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
     {
@@ -971,11 +769,7 @@ _ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
                 "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
             }
         },
-        "labels": [
-            'misp:type="attachment"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -988,11 +782,7 @@ _ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="attachment"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -1012,32 +802,18 @@ _ATTACK_PATTERN_GALAXY = {
     "name": "Access Token Manipulation",
     "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "mitre-attack",
-            "phase_name": "defense-evasion"
-        },
-        {
-            "kill_chain_name": "mitre-attack",
-            "phase_name": "privilege-escalation"
-        }
+        {"kill_chain_name": "mitre-attack", "phase_name": "defense-evasion"},
+        {"kill_chain_name": "mitre-attack", "phase_name": "privilege-escalation"}
     ],
     "labels": [
-        "misp:galaxy-name=\"Attack Pattern\"",
-        "misp:galaxy-type=\"mitre-attack-pattern\""
+        'misp:galaxy-name="Attack Pattern"',
+        'misp:galaxy-type="mitre-attack-pattern"'
     ],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "T1134"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/techniques/T1134"
-        }
+        {"source_name": "mitre-attack", "external_id": "T1134"},
+        {"source_name": "url", "url": "https://attack.mitre.org/techniques/T1134"}
     ],
-    "x_misp_mitre_platforms": [
-        "Windows"
-    ]
+    "x_misp_mitre_platforms": ["Windows"]
 }
 _ATTACK_PATTERN_OBJECT = {
     "type": "attack-pattern",
@@ -1048,27 +824,12 @@ _ATTACK_PATTERN_OBJECT = {
     "name": "Buffer Overflow in Local Command-Line Utilities",
     "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "vulnerability"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
     ],
-    "labels": [
-        "misp:name=\"attack-pattern\"",
-        "misp:meta-category=\"vulnerability\"",
-        "misp:to_ids=\"False\""
-    ],
-    "external_references": [
-        {
-            "source_name": "capec",
-            "external_id": "CAPEC-9"
-        }
-    ],
+    "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+    "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
     "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-    "x_misp_related_weakness": [
-        "CWE-118",
-        "CWE-120"
-    ],
+    "x_misp_related_weakness": ["CWE-118", "CWE-120"],
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
 _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
@@ -1081,8 +842,8 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "name": "Automated Exfiltration Mitigation",
         "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
-            "misp:galaxy-name=\"Course of Action\"",
-            "misp:galaxy-type=\"mitre-course-of-action\""
+            'misp:galaxy-name="Course of Action"',
+            'misp:galaxy-type="mitre-course-of-action"'
         ]
     },
     {
@@ -1095,16 +856,9 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "pattern": "[domain-name:value = 'circl.lu']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "malware",
@@ -1113,10 +867,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-        "labels": [
-            "misp:galaxy-name=\"Malware\"",
-            "misp:galaxy-type=\"mitre-malware\""
-        ]
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"']
     },
     {
         "type": "relationship",
@@ -1154,10 +905,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "MISP-STIX-Converter test event",
         "published": "2020-10-25T16:22:00Z",
-        "labels": [
-            "Threat-Report",
-            "misp:tool=\"MISP-STIX-Converter\""
-        ],
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"'],
         "object_refs": [
             "attack-pattern--00000000-0000-0000-0000-000000000000",
             "course-of-action--11111111-1111-1111-1111-111111111111",
@@ -1187,14 +935,11 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "name": "Access Token Manipulation",
         "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
         "labels": [
-            "misp:galaxy-name=\"Attack Pattern\"",
-            "misp:galaxy-type=\"mitre-attack-pattern\""
+            'misp:galaxy-name="Attack Pattern"',
+            'misp:galaxy-type="mitre-attack-pattern"'
         ],
         "external_references": [
-            {
-                "source_name": "mitre-attack",
-                "external_id": "T1134"
-            }
+            {"source_name": "mitre-attack", "external_id": "T1134"}
         ],
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
     },
@@ -1206,8 +951,8 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "name": "Automated Exfiltration Mitigation",
         "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
-            "misp:galaxy-name=\"Course of Action\"",
-            "misp:galaxy-type=\"mitre-course-of-action\""
+            'misp:galaxy-name="Course of Action"',
+            'misp:galaxy-type="mitre-course-of-action"'
         ],
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
     },
@@ -1221,16 +966,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "pattern": "[domain-name:value = 'circl.lu']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "malware",
@@ -1239,10 +977,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-        "labels": [
-            "misp:galaxy-name=\"Malware\"",
-            "misp:galaxy-type=\"mitre-malware\""
-        ],
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"'],
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
     },
     {
@@ -1271,22 +1006,10 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Buffer Overflow in Local Command-Line Utilities",
         "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
-        "labels": [
-            "misp:name=\"attack-pattern\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
-        ],
-        "external_references": [
-            {
-                "source_name": "capec",
-                "external_id": "CAPEC-9"
-            }
-        ],
+        "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+        "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
         "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-        "x_misp_related_weakness": [
-            "CWE-118",
-            "CWE-120"
-        ],
+        "x_misp_related_weakness": ["CWE-118", "CWE-120"],
         "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
     },
     {
@@ -1303,17 +1026,10 @@ _BUNDLE_WITH_INVALID_UUIDS = [
                 "type": "autonomous-system",
                 "number": 66642,
                 "name": "AS name",
-                "x_misp_subnet_announced": [
-                    "1.2.3.4",
-                    "8.8.8.8"
-                ]
+                "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            "misp:name=\"asn\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "x-misp-object",
@@ -1321,10 +1037,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"btc-wallet\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "uuid": "66666666-1111-1111-1111-666666666666",
@@ -1363,11 +1076,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
         "description": "Block communication between the PIVY agents and the C2 Server",
-        "labels": [
-            "misp:name=\"course-of-action\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
         "x_misp_cost": "Low",
         "x_misp_efficacy": "High",
         "x_misp_impact": "Low",
@@ -1384,16 +1093,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"ip-port\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
     },
     {
         "type": "vulnerability",
@@ -1403,16 +1105,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "CVE-2021-29921",
         "description": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string.",
-        "labels": [
-            "misp:name=\"vulnerability\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
         "external_references": [
-            {
-                "source_name": "cve",
-                "external_id": "CVE-2021-29921"
-            }
+            {"source_name": "cve", "external_id": "CVE-2021-29921"}
         ]
     },
     {
@@ -1506,11 +1201,7 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
                 "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            'misp:name="asn"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
@@ -1535,11 +1226,7 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="AS"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -1577,20 +1264,12 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="domain-ip"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
         "type": "indicator",
-        "labels": [
-            'misp:type="domain"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ],
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"'],
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
@@ -1647,11 +1326,7 @@ _BUNDLE_WITH_NO_REPORT = [
                 "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            'misp:name="asn"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -1664,11 +1339,7 @@ _BUNDLE_WITH_NO_REPORT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="asn"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -1682,36 +1353,21 @@ _BUNDLE_WITH_NO_REPORT = [
     {
         "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
         "type": "observed-data",
-        "labels": [
-            "misp:type=\"AS\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"'],
         "number_observed": 1,
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "first_observed": "2020-10-25T16:22:00Z",
         "last_observed": "2020-10-25T16:22:00Z",
-        "objects": {
-            "0": {
-                "number": 66642,
-                "type": "autonomous-system"
-            }
-        }
+        "objects": {"0": {"number": 66642, "type": "autonomous-system"}}
     },
     {
         "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
         "type": "indicator",
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ],
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"'],
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "pattern": "[domain-name:value = 'circl.lu']",
@@ -1729,16 +1385,9 @@ _BUNDLE_WITH_NO_REPORT = [
         "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"domain-ip\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "type": "malware",
@@ -1747,10 +1396,7 @@ _BUNDLE_WITH_NO_REPORT = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-        "labels": [
-            "misp:galaxy-name=\"Malware\"",
-            "misp:galaxy-type=\"mitre-malware\""
-        ]
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"']
     },
     {
         "type": "relationship",
@@ -1824,10 +1470,7 @@ _BUNDLE_WITH_SIGHTINGS = [
             "sighting--ec0c6809-9ccb-4201-bc47-d5ffc5ecaa88",
             "x-misp-opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d"
         ],
-        "labels": [
-            "Threat-Report",
-            "misp:tool=\"MISP-STIX-Converter\""
-        ]
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"']
     },
     {
         "type": "observed-data",
@@ -1838,16 +1481,8 @@ _BUNDLE_WITH_SIGHTINGS = [
         "first_observed": "2020-10-25T16:22:00Z",
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
-        "objects": {
-            "0": {
-                "type": "autonomous-system",
-                "number": 174
-            }
-        },
-        "labels": [
-            "misp:type=\"AS\"",
-            "misp:category=\"Network activity\""
-        ]
+        "objects": {"0": {"type": "autonomous-system", "number": 174}},
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
     },
     {
         "type": "sighting",
@@ -1855,9 +1490,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:05.000Z",
         "modified": "2020-10-25T16:22:05.000Z",
         "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "where_sighted_refs": [
-            "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"
-        ]
+        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"]
     },
     {
         "type": "sighting",
@@ -1865,9 +1498,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:30.000Z",
         "modified": "2020-10-25T16:22:30.000Z",
         "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "where_sighted_refs": [
-            "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"
-        ]
+        "where_sighted_refs": ["identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"]
     },
     {
         "type": "x-misp-opinion",
@@ -1901,16 +1532,9 @@ _BUNDLE_WITH_SIGHTINGS = [
         "pattern": "[domain-name:value = 'circl.lu']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "sighting",
@@ -1918,9 +1542,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:05.000Z",
         "modified": "2020-10-25T16:22:05.000Z",
         "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
-        "where_sighted_refs": [
-            "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"
-        ]
+        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"]
     },
     {
         "type": "x-misp-opinion",
@@ -1939,9 +1561,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:20.000Z",
         "modified": "2020-10-25T16:22:20.000Z",
         "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
-        "where_sighted_refs": [
-            "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90"
-        ]
+        "where_sighted_refs": ["identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90"]
     },
     {
         "type": "x-misp-opinion",
@@ -1962,10 +1582,7 @@ _CAMPAIGN_NAME_ATTRIBUTE = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "MartyMcFly",
-    "labels": [
-        "misp:type=\"campaign-name\"",
-        "misp:category=\"Attribution\""
-    ]
+    "labels": ['misp:type="campaign-name"', 'misp:category="Attribution"']
 }
 _COURSE_OF_ACTION_GALAXY = {
     "type": "course-of-action",
@@ -1975,22 +1592,16 @@ _COURSE_OF_ACTION_GALAXY = {
     "name": "Automated Exfiltration Mitigation",
     "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
     "labels": [
-        "misp:galaxy-name=\"Course of Action\"",
-        "misp:galaxy-type=\"mitre-course-of-action\""
+        'misp:galaxy-name="Course of Action"',
+        'misp:galaxy-type="mitre-course-of-action"'
     ],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "T1020"
-        },
+        {"source_name": "mitre-attack", "external_id": "T1020"},
         {
             "source_name": "url",
             "url": "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm"
         },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/mitigations/T1020"
-        }
+        {"source_name": "url", "url": "https://attack.mitre.org/mitigations/T1020"}
     ]
 }
 _COURSE_OF_ACTION_OBJECT = {
@@ -2001,11 +1612,7 @@ _COURSE_OF_ACTION_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
     "description": "Block communication between the PIVY agents and the C2 Server",
-    "labels": [
-        "misp:name=\"course-of-action\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
     "x_misp_cost": "Low",
     "x_misp_efficacy": "High",
     "x_misp_impact": "Low",
@@ -2021,17 +1628,8 @@ _CPE_ASSET_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[software:cpe = 'cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*' AND software:languages = 'ENG' AND software:name = 'Word' AND software:vendor = 'Microsoft' AND software:version = '2002' AND software:x_misp_description = 'Microsoft Word is a word processing software developed by Microsoft.']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"cpe-asset\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="cpe-asset"', 'misp:meta-category="misc"']
 }
 _CPE_ASSET_OBSERVABLE_OBJECT = [
     {
@@ -2054,11 +1652,7 @@ _CPE_ASSET_OBSERVABLE_OBJECT = [
                 "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
             }
         },
-        "labels": [
-            'misp:name="cpe-asset"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="cpe-asset"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -2071,11 +1665,7 @@ _CPE_ASSET_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="cpe-asset"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="cpe-asset"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -2095,17 +1685,8 @@ _CREDENTIAL_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[user-account:user_id = 'misp' AND user-account:x_misp_text = 'MISP default credentials' AND user-account:x_misp_password = 'Password1234' AND user-account:x_misp_type = 'password' AND user-account:x_misp_origin = 'malware-analysis' AND user-account:x_misp_format = 'clear-text' AND user-account:x_misp_notification = 'victim-notified']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"credential\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="credential"', 'misp:meta-category="misc"']
 }
 _CREDENTIAL_OBSERVABLE_OBJECT = [
     {
@@ -2129,11 +1710,7 @@ _CREDENTIAL_OBSERVABLE_OBJECT = [
                 "x_misp_type": "password"
             }
         },
-        "labels": [
-            'misp:name="credential"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="credential"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -2146,11 +1723,7 @@ _CREDENTIAL_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="credential"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="credential"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -2169,11 +1742,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"btc\"",
-            "misp:category=\"Financial fraud\"",
-            "misp:to_ids=\"True\""
-        ],
+        "labels": ['misp:type="btc"', 'misp:category="Financial fraud"'],
         "x_misp_category": "Financial fraud",
         "x_misp_comment": "Btc test attribute",
         "x_misp_type": "btc",
@@ -2185,11 +1754,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"iban\"",
-            "misp:category=\"Financial fraud\"",
-            "misp:to_ids=\"True\""
-        ],
+        "labels": ['misp:type="iban"', 'misp:category="Financial fraud"'],
         "x_misp_category": "Financial fraud",
         "x_misp_comment": "IBAN test attribute",
         "x_misp_type": "iban",
@@ -2201,10 +1766,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"http-method\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="http-method"', 'misp:category="Network activity"'],
         "x_misp_category": "Network activity",
         "x_misp_type": "http-method",
         "x_misp_value": "POST"
@@ -2215,10 +1777,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"port\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="port"', 'misp:category="Network activity"'],
         "x_misp_category": "Network activity",
         "x_misp_type": "port",
         "x_misp_value": "8443"
@@ -2229,10 +1788,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"size-in-bytes\"",
-            "misp:category=\"Other\""
-        ],
+        "labels": ['misp:type="size-in-bytes"', 'misp:category="Other"'],
         "x_misp_category": "Other",
         "x_misp_type": "size-in-bytes",
         "x_misp_value": "1234"
@@ -2243,10 +1799,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"user-agent\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="user-agent"', 'misp:category="Network activity"'],
         "x_misp_category": "Network activity",
         "x_misp_comment": "User-agent test attribute",
         "x_misp_type": "user-agent",
@@ -2258,10 +1811,7 @@ _CUSTOM_GALAXY = {
     "id": "x-misp-galaxy-cluster--24430dc6-9c27-4b3c-a5e7-6dda478fffa0",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "labels": [
-        "misp:galaxy-name=\"Tea Matrix\"",
-        "misp:galaxy-type=\"tea-matrix\""
-    ],
+    "labels": ['misp:galaxy-name="Tea Matrix"', 'misp:galaxy-type="tea-matrix"'],
     "x_misp_description": "Milk in tea",
     "x_misp_name": "Tea Matrix",
     "x_misp_type": "tea-matrix",
@@ -2274,10 +1824,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"bank-account\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "type": "iban",
@@ -2332,10 +1879,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"btc-wallet\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "type": "btc",
@@ -2372,10 +1916,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"person\"",
-            "misp:meta-category=\"misc\""
-        ],
+        "labels": ['misp:name="person"', 'misp:meta-category="misc"'],
         "x_misp_attributes": [
             {
                 "type": "first-name",
@@ -2417,10 +1958,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"report\"",
-            "misp:meta-category=\"misc\""
-        ],
+        "labels": ['misp:name="report"', 'misp:meta-category="misc"'],
         "x_misp_attributes": [
             {
                 "type": "text",
@@ -2456,16 +1994,9 @@ _DOMAIN_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"domain\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="domain"', 'misp:category="Network activity"']
 }
 _DOMAIN_OBSERVABLE_ATTRIBUTE = [
     {
@@ -2478,11 +2009,7 @@ _DOMAIN_OBSERVABLE_ATTRIBUTE = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {"0": {"type": "domain-name", "value": "circl.lu"}},
-        "labels": [
-            'misp:type="domain"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -2496,11 +2023,7 @@ _DOMAIN_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="domain"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -2522,16 +2045,9 @@ _DOMAIN_IP_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"domain|ip\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="domain|ip"', 'misp:category="Network activity"']
 }
 _DOMAIN_IP_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -2542,16 +2058,9 @@ _DOMAIN_IP_INDICATOR_OBJECT = {
     "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"domain-ip\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
 }
 _DOMAIN_IP_OBSERVABLE_ATTRIBUTE = [
     {
@@ -2571,11 +2080,7 @@ _DOMAIN_IP_OBSERVABLE_ATTRIBUTE = [
             },
             "1": {"type": "ipv4-addr", "value": "149.13.33.14"}
         },
-        "labels": [
-            'misp:type="domain|ip"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="domain|ip"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -2589,11 +2094,7 @@ _DOMAIN_IP_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="domain|ip"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="domain|ip"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -2616,20 +2117,16 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {"type": "ipv4-addr", "value": "149.13.33.14"},
             "0": {
                 "type": "domain-name",
                 "value": "circl.lu",
                 "resolves_to_refs": ["1"],
                 "x_misp_hostname": "circl.lu",
                 "x_misp_port": "8443"
-            }
+            },
+            "1": {"type": "ipv4-addr", "value": "149.13.33.14"}
         },
-        "labels": [
-            'misp:name="domain-ip"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -2642,11 +2139,7 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="domain-ip"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -2656,6 +2149,53 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
         "relationship_type": "based-on",
         "source_ref": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
         "target_ref": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {"type": "ipv4-addr", "value": "149.13.33.14"},
+            "1": {"type": "ipv4-addr", "value": "185.194.93.14"},
+            "2": {
+                "type": "domain-name",
+                "value": "misp-project.org",
+                "resolves_to_refs": ["0", "1"]
+            },
+            "3": {
+                "type": "domain-name",
+                "value": "circl.lu",
+                "resolves_to_refs": ["0", "1"]
+            }
+        },
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--52285aa9-410f-4382-8474-28a7d424075f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+        "target_ref": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
     }
 ]
 _EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE = {
@@ -2668,16 +2208,9 @@ _EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:body_multipart[*].body_raw_ref.name = 'email_attachment.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-attachment\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-attachment"', 'misp:category="Payload delivery"']
 }
 _EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
     {
@@ -2700,13 +2233,9 @@ _EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
                     }
                 ]
             },
-            "1": {"type": "file", "name": "email_attachment.test"},
+            "1": {"type": "file", "name": "email_attachment.test"}
         },
-        "labels": [
-            'misp:type="email-attachment"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"',
-        ],
+        "labels": ['misp:type="email-attachment"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -2720,11 +2249,7 @@ _EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-attachment"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-attachment"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -2745,16 +2270,9 @@ _EMAIL_BODY_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:body = 'Email body test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-body\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-body"', 'misp:category="Payload delivery"']
 }
 _EMAIL_BODY_OBSERVABLE_ATTRIBUTE = [
     {
@@ -2773,11 +2291,7 @@ _EMAIL_BODY_OBSERVABLE_ATTRIBUTE = [
                 "body": "Email body test"
             }
         },
-        "labels": [
-            'misp:type="email-body"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-body"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -2790,11 +2304,7 @@ _EMAIL_BODY_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-body"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-body"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -2816,16 +2326,9 @@ _EMAIL_DESTINATION_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:to_refs[*].value = 'dst@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-dst\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-dst"', 'misp:category="Payload delivery"']
 }
 _EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE = [
     {
@@ -2841,11 +2344,7 @@ _EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE = [
             "0": {"type": "email-message", "is_multipart": False, "to_refs": ["1"]},
             "1": {"type": "email-addr", "value": "dst@email.test"}
         },
-        "labels": [
-            'misp:type="email-dst"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-dst"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -2859,11 +2358,7 @@ _EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-dst"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-dst"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -2884,16 +2379,9 @@ _EMAIL_HEADER_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:received_lines = 'from mail.example.com ([198.51.100.3]) by smtp.gmail.com']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-header\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-header"', 'misp:category="Payload delivery"']
 }
 _EMAIL_HEADER_OBSERVABLE_ATTRIBUTE = [
     {
@@ -2914,11 +2402,7 @@ _EMAIL_HEADER_OBSERVABLE_ATTRIBUTE = [
                 ]
             }
         },
-        "labels": [
-            'misp:type="email-header"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-header"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -2931,11 +2415,7 @@ _EMAIL_HEADER_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-header"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-header"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -2956,16 +2436,9 @@ _EMAIL_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-addr:value = 'address@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email"', 'misp:category="Payload delivery"']
 }
 _EMAIL_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -2976,16 +2449,9 @@ _EMAIL_INDICATOR_OBJECT = {
     "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[0].display_name = 'Diana Prince' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary' AND email-message:x_misp_message_id = '25']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"email\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="email"', 'misp:meta-category="network"']
 }
 _EMAIL_OBSERVABLE_ATTRIBUTE = [
     {
@@ -2998,11 +2464,7 @@ _EMAIL_OBSERVABLE_ATTRIBUTE = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {"0": {"type": "email-addr", "value": "address@email.test"}},
-        "labels": [
-            'misp:type="email"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3015,11 +2477,7 @@ _EMAIL_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -3042,6 +2500,32 @@ _EMAIL_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": True,
+                "from_ref": "1",
+                "to_refs": ["2"],
+                "cc_refs": ["3", "4"],
+                "bcc_refs": ["5"],
+                "subject": "Email test subject",
+                "additional_header_fields": {
+                    "Reply-To": "reply-to@email.test",
+                    "X-Mailer": "x-mailer-test"
+                },
+                "body_multipart": [
+                    {
+                        "body_raw_ref": "6",
+                        "content_disposition": "attachment; filename='attachment1.file'"
+                    },
+                    {
+                        "body_raw_ref": "7",
+                        "content_disposition": "attachment; filename='attachment2.file'"
+                    }
+                ],
+                "x_misp_message_id": "25",
+                "x_misp_mime_boundary": "Test mime boundary",
+                "x_misp_user_agent": "Test user agent"
+            },
             "1": {
                 "type": "email-addr",
                 "value": "donald.duck@disney.com",
@@ -3068,39 +2552,9 @@ _EMAIL_OBSERVABLE_OBJECT = [
                 "display_name": "John Fitzgerald Kennedy"
             },
             "6": {"type": "file", "name": "attachment1.file"},
-            "7": {"type": "file", "name": "attachment2.file"},
-            "0": {
-                "type": "email-message",
-                "is_multipart": True,
-                "from_ref": "1",
-                "to_refs": ["2"],
-                "cc_refs": ["3", "4"],
-                "bcc_refs": ["5"],
-                "subject": "Email test subject",
-                "additional_header_fields": {
-                    "Reply-To": "reply-to@email.test",
-                    "X-Mailer": "x-mailer-test"
-                },
-                "body_multipart": [
-                    {
-                        "body_raw_ref": "6",
-                        "content_disposition": "attachment; filename='attachment1.file'"
-                    },
-                    {
-                        "body_raw_ref": "7",
-                        "content_disposition": "attachment; filename='attachment2.file'"
-                    }
-                ],
-                "x_misp_message_id": "25",
-                "x_misp_mime_boundary": "Test mime boundary",
-                "x_misp_user_agent": "Test user agent"
-            }
+            "7": {"type": "file", "name": "attachment2.file"}
         },
-        "labels": [
-            'misp:name="email"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="email"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -3113,11 +2567,7 @@ _EMAIL_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="email"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="email"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -3138,16 +2588,9 @@ _EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:additional_header_fields.reply_to = 'reply-to@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-reply-to\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-reply-to"', 'misp:category="Payload delivery"']
 }
 _EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE = [
     {
@@ -3166,11 +2609,7 @@ _EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE = [
                 "additional_header_fields": {"Reply-To": "reply-to@email.test"}
             }
         },
-        "labels": [
-            'misp:type="email-reply-to"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-reply-to"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3183,11 +2622,7 @@ _EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-reply-to"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-reply-to"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -3209,16 +2644,9 @@ _EMAIL_SOURCE_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:from_ref.value = 'src@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-src\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-src"', 'misp:category="Payload delivery"']
 }
 _EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE = [
     {
@@ -3232,13 +2660,9 @@ _EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE = [
         "number_observed": 1,
         "objects": {
             "0": {"type": "email-message", "is_multipart": False, "from_ref": "1"},
-            "1": {"type": "email-addr", "value": "src@email.test"},
+            "1": {"type": "email-addr", "value": "src@email.test"}
         },
-        "labels": [
-            'misp:type="email-src"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-src"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3252,11 +2676,7 @@ _EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-src"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-src"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -3277,16 +2697,9 @@ _EMAIL_SUBJECT_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:subject = 'Test Subject']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-subject\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-subject"', 'misp:category="Payload delivery"']
 }
 _EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE = [
     {
@@ -3305,11 +2718,7 @@ _EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE = [
                 "subject": "Test Subject"
             }
         },
-        "labels": [
-            'misp:type="email-subject"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-subject"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3322,11 +2731,7 @@ _EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-subject"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-subject"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -3347,16 +2752,9 @@ _EMAIL_X_MAILER_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:additional_header_fields.x_mailer = 'Email X-Mailer test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-x-mailer\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-x-mailer"', 'misp:category="Payload delivery"']
 }
 _EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE = [
     {
@@ -3375,11 +2773,7 @@ _EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE = [
                 "additional_header_fields": {"X-Mailer": "Email X-Mailer test"}
             }
         },
-        "labels": [
-            'misp:type="email-x-mailer"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-x-mailer"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3392,11 +2786,7 @@ _EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="email-x-mailer"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="email-x-mailer"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -3418,11 +2808,7 @@ _EMPLOYEE_OBJECT = {
     "description": "John Doe is known",
     "identity_class": "individual",
     "contact_information": "email-address: jdoe@email.com",
-    "labels": [
-        "misp:name=\"employee\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="employee"', 'misp:meta-category="misc"']
     "x_misp_employee_type": "Supervisor"
 }
 _EVENT_REPORT = [
@@ -3434,14 +2820,11 @@ _EVENT_REPORT = [
         "name": "DNS Server",
         "description": "Adversaries may compromise third-party DNS servers that can be used during targeting.",
         "labels": [
-            "misp:galaxy-name=\"Attack Pattern\"",
-            "misp:galaxy-type=\"mitre-attack-pattern\""
+            'misp:galaxy-name="Attack Pattern"',
+            'misp:galaxy-type="mitre-attack-pattern"'
         ],
         "external_references": [
-            {
-                "source_name": "mitre-attack",
-                "external_id": "T1584.002"
-            },
+            {"source_name": "mitre-attack", "external_id": "T1584.002"},
             {
                 "source_name": "url",
                 "url": "https://attack.mitre.org/techniques/T1584/002"
@@ -3457,16 +2840,9 @@ _EVENT_REPORT = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "observed-data",
@@ -3478,20 +2854,13 @@ _EVENT_REPORT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "file",
-                "name": "google_screenshot.png",
-                "content_ref": "1"
-            },
+            "0": {"type": "file", "name": "google_screenshot.png", "content_ref": "1"},
             "1": {
                 "type": "artifact",
                 "payload_bin": "iVBORw0KGgoAAAANSUhEUgAAAgkAAAAzCAYAAAAdHJsaAAAABHNCSVQICAgIfAhkiAAAABl0RVh0U29mdHdhcmUAZ25vbWUtc2NyZWVuc2hvdO8Dvz4AABpmSURBVHic7Z3pb1xXlth/99XOWlgkq1hcRIkl7ou1WLYkS7It2S3b3U5j3En3jDEz3bMAQYAgwADzDyRfEwRIvkwDQTrdSLqRyQTTSzzt8b7Istu2LEu2LIkSRYqbuBZZLJK1L+/lA0nxVbFIVnEploz7A+oDi7fevee9+84999x7zxH0nNSQSCQSiUQiyUHZ7wZIJBKJRCIpT6SRIJFIJBKJJC/SSJBIJBKJRJIXaSRIJBKJRCLJi3G/GyCRSCSS7WKg8/lX+dN2E2LTcipDl3/NL25GkDvVJcVQnJFgjUFNFBwpMKmAgKQJlmwwVwHJzbtp2SHlKW++bfJ8KxGY7G4avVV4nDZsJgMikyIajxKcm2V8LkJCjkoSySNLAUZCBpqmoSsA3gQbmquaAaZq4HY9TFp2tZG7i5RHyiPZMQY7/s5unuo+TJvHtqEiURMLDA7c4+qtfvrmknIWK5E8YohN4ySYInBmAJoSRVzSAPcPwhUvpHfewF1FyoOUR7IzBPb6Hr5/4RjdlcYtXNxraGqc8Ttf8NtPBpmRz2lXEUIgxPonUX3ku/y7p7wYALncINkuG3sSjBG4cAdqMzn/EBCzQMwAqGBPgEXV/T8Dh4fBosGlWlApD6Q8K0h5JNvFQE37WX5y/jDVhvX/1dDIpDNgMGLMGbOEYuVAZzut1+8zsyiHqd1E0zQ0LfeeClR5myW7wAZGggY9QzkKW8BEPVyvg3n9z1TwBuHxUfCm137fOAbtLrhj3aOmF4OUR8oj2RkCR/NpfnzhMNW6M1GaGmWs/w5X7o5yP7DIUkoFYcBW4cBXf4DOw4c55q/BLs9RSSSPJPlfXfM8tEd1XwgY9cMHB3IU9solAh54txNm9NOLDHRNQ54ZR8mR8kh5JDtCOFv5o/Ot1Og0RmZplNd/8zt+9sENvp4ILRsIAFqGWGSB4YFbvPn27/mv/3iJyw8i5PqIJBJJ+ZPfSPCGwKz7O2OH6x42XczKVMB1b3aZigWoKgOfl5RHyiPZAVa6Tz1Oh21tDUGLj/PG7z/k88BWmxE14nNDvP366/zqy2kicjlIInmkyG8kVMazd5UvVkK4gKsFK0G/50wkwVEGWkHKs4yUR7INlJpOnm2xrT0iLcnA559yJVTEvVajDFy9xtdhacRJJI8SefYkaCtn0nXEzJvP6lZRTRATYF0trIFRZX99wFKeh0h5JEVj4FB3Gz7ddEJdvMelu+GS7ZJXTHZ8Pg++SgdOixGFDMl4lOD8HA9mFojs0jpGSepRrHjrajlQ7cJpUdDSCRZDQUYnZplPPaoGlMDsqMqKlUEmSTSyxEwgwHgo8WguNQkjDncNjTUuKu0WrEYFLZ0iGl0iMDvHZCjGTh7Z3vc3E9UNBzjsdVBBkmBggnsTS1nzKoO1Cv9BH3UOMyIVZWZynMHZWNZBsTxGgoBkjoPBoC7P9La8IVqOflYgsd8KW8qzhpRHUiSGWnqbK3QuR5XAwCBjJdD6lupmzp7o5Qm/B+cGj1VNLjEy0MelL+8yGN5eo0pSj2Kn5ejjXDzqp8GmrDs6qqWWGLz5Ja9fHWZWO8iP/uo5jphW6l64yc/+z1XGys1Jptg40N7D070ttHs3ipWhEg2Oc+2rr/iof47YI2AHGR11HD/SzROtjdTbDRsc89VIhmfpH7jH598MMlxEn9j9/mbl8Zd/xA8OLl8sM32Vn76zwImLZznts2a9u+GJb/i/b11nKG7A0/4Urz7dQq1Z6GRMMzd4hb9/v5/pFUsh/3OdrwAtvOYCdkWXFya2aqslCnZdL8jYIVgG25qlPMtIeSRFolTX46/QqUktwsBoaI9PmpppfOwcf/LUQaq2sPkUsxN/90maW1u5eukD/nlgqYhwGaWpR1jruPDieZ5tsG6YLEeYnLQef5Z/7XPxy7cWCpZgvzC5/bz4/GmerLVskQBIoaK6iXPPNXK07Sv+4d0bjMRL1MhiERaaHnuKf3myGY9py8KYHV56j3np6e3m8muv8c70Vm9Fifq10cOzLx3jMU9uHBMFR8MRXj2/xM9v1fDqhVY86x6ekZqW07waXuCnf5gmxUZ7EgI1ENZd3joPB1NbtEyDlkD2zG7cC5ECBdtLpDxIeSTbwV7rzT7ymJ7jwdxemggG6o4+x0/Orlek6XiY6ZkADwIhFpNqlqNJmKt54vkX+UGrvcCsdSWqx1DN2Ref43yOgaBpGaKLISYCQQLh5Io9LKhoOMYfP9WArSAZ9gezt5c/e+UZTuYYCJqaYjE0z8TMLFOhCPGsbqLgbDrOj793jKYtB+B9QNjpfua7/NXZ9QbCslxBxqeX+8R8LJ1lJAuDFceWQV9L1a/BUNPMEY+RTCzE6MQ0k+GU7pqCiuYn+IvnOqhRQE0sMT4xxYMF/ZKQQk1HJ+0rMuX3JGSc8HUVnA0uz+5EGp4cgFgrTOV7wiocGoEjut1mcTdcry5QrD1GyiPlkWwDBU+1K2s2oi2GmN3DpQaT7yg/PFWH3nmRCN7n/U+u8+X40loeCMWCr7mbF8700uZcdgkLxcFjz5xlZOYdrmwRsKk09RhoPHGO5xvMuk2fKab7r/HPVwcYWlxV3goVNYc4d+4kZxtsuDvacZdpWhLh8PPKSyc4bFtzUWfCk3z+5dd8NjDDfHJt+FRMDg619fKdkx002QQCgcV3hB89NcNPP5qgfBwKRg48eYF/1e1mTdtoJIIjfHLtFteGZ1nI2nygYK300tnRxbneQ9Sa118xl1L169W2R0ev8D/e6luObqpU0PXMS7za5Vo2NIQVZ4VGfOIav3jjBhNJAAv+My/xk6NVGAFhqafdZ+DWaAYDtY3/IW89oUogDL7ksuI2JMEfgNoEVKTAHoeqCDTNwfFh6Fpa80tE3fBhC4TKyPUr5ZHySIrERHPPMXrca/c1MzvIB/1BtvLzbAvh5OTzT3Oscm3NPhX4hl++9hnfzCezV5+0DJH5KW7eX6TKfxCfZXnQEkYHjdYg14YWNnbPlqge4WjjB8+143k4c0wxcf1dfv7xMIGEfi6qkYqFGBwYJ+Hz05YT7lpLzHDt5gTFBaoU2OraONW0OgPVCI328dXMDp6cqODohec571vNOKkRm7zBr/7pE76YDBPPZDdQU5OEAg+4MRTG4z+I17xsKFg9VaSH7zFcJhsUTL7j/PkFP5UPb3qGuf5P+Pkb17k9GyWxznGmkU5EmBof5mrfBDGXF8vsAP0LG8iz5/3NSH17D12VK++pFuHqhx/z1WqH0VLMzRto62lYk1GLcu3SR3w5v9rmDAvzgsO9B6hSAKGghYa5NhnfLMGTAb7pgNAEPD4NzgyIDNQHlj/5SFphsB5uerOPppUFUh4pj6QohAW7LXtKm4nHSe5RdYqnjSfr1gZITQ3y8aWvGN7k2arhYV7/uBH/d9tWFKDAfriT3s/H+GKD45alqUdQ29GJXzfLTAdu8psvpjeeQWdCfHbpK7r++BT+MnTJG309nG+2Prxvavg+v3vrOkOxzX+XXhjkn/7QSPPFwzgECKWKE90+Pr48uTfGZjEIO0ee6KRWN7+IT1zjf38wyGwBq2pqPMCnb7+J2bhx4VL161W0zDzjwez2aEtBphMaTSvvs6bO8yCQ7RLUoiGmYxp+hwAElU47gtBWyxwKjB2A17vhjnPzuPhpC9z3wWBVGStsKY+UR1I4RsxZ0wiNVDqzR0cfFXz+pqyNVKmxPq4Etl7biI/e5qpun4Qw+ug+aCW/x75E9YhKOv1u3ZaZFPdu3GVmi4FHWxzk85FEGSZhMtHSdVgXcTPNyPXr9G1hIKwSHe7n5sPBTeA81ERDGTj+lEo/TxwwZQ3gn37St+VzyiZDckO3Van6tY5EhKV11leMpaiuV8UjLOSW0WIsxdaekaXChpmtUkUrSeh4AD1zurPoG2BMQOfIcvnRRviijjJadFpGyiPlkRSOUDDkKHJV3Ux7Cly9L/K3T9dtHKlCDXHpN6/xbiDnOsJKU51+/0OGseEHhe1D1RboH1nkgse9Musx0FjvwXh7bP1MtUT1CGstzbodn1pmhrtj8QIG/yRDozOkW5soK2eCwUunboDS0tPcuF9ErIzMHCMzaU45lwdkxe6h0SEY2ddkXwJn0wHq9KHGp+5xbTc35paqX+t/lkyuV4VailhSXyaRR12miOvKCJMJi9jMSDCH4dl74NM1Z7EK+rwwZYeocdkd7IhCwxx0zYJNW/7u0ChUR+FdP0TKZAeOlEfKIykOTSWToy8VZY+mf6ISn1sXP0ANMz5b6IxaJRCYI4mb1fRe5qoq3GKMwLrkiKWpR3G7s2aP2uIcUwV6vOJzQYJqU1YAq/1GqfTSYNWF5V6YZbwoozzDwlIMjZVZu7BT7RQUudFilzHQ4KvWGbQqM2OTu9ukUvVrHVo6Qzr3/1qGtG7PiJbJV0Ylo08dajBgYCMjQcThbD/4Vn0oAkaa4VMv2bsmjBByLX/ue+CZe1C7UsA5C+ds8E79/qfvlfJIefYNgd3np8dr2dpNiMbixAB9wcJP+u8tGVJZTREYjRsFl9khxgpcukEILcL8UuEPMrMUZkEF68rAqlRU4BSsV6Ylqsdgt2PXVaNGln9XCFokwpIGvoJbtfcoLlfWUVil5ij/9t8c3f4FhQWbeZ8NelFBjUu/STTNTHBpd9VHqfq1Hk3NI4NGlhNQzVdGzS6jbGYkHBqDBp12WKjLo7BziDvh8iF4eZCHZo9nEg55YGifHWdSHinPviFw+4/y8vHKAs45Zxi8NMKdYLo81qS1OOF4dkuMFgsmNno0Gonpft79bHxNVmGn7WgHzdbNBwRhNpOlS7Vklnt0y6YmctynOdcrdT1msynbmEomC946oyWTxMuiA6xhtlq3WJsuFoHBsN9GgoUKfXwDLU54l09clKq/Zf8ovwxaIWWygjQsHzRbr7dEAtpDuoQ7Ctz1ba6wV4lVw6B17W+RBn+ogB/uIVKeNaQ8kqJIs7iU7RoVKzOZjUgE7vPx9W/4aPXz1SAPChkdFSVbGamZ4uL9q2pWeaEYUPK1s0T1CJH9paZpRRh+xZQtDYbczSnfChSMekNFy5De7RggperXe8h649C0BNW6LqraYKbQmZmAKRd067L6eZbA4N06xO5eIeXRIeWRFIPG3PwiKhUP120VVyXVBpaDtOwmue7PFVdnwShKVnlNzaDmG2lLVE86k90BhcGIkcJsXxQDxjLbWpPJ2pyiEb3zHv/pgweP+GumrqzTr9xsYcC426lfStWv95D1RoIjnh3qVjNBtIgeG13J4Lf6E2MSLEB0B63cCVKebKQ8JUZl/LPf8u8/2+92bAeNcGCWkFZHzaoeNVXT6Fa4U8gh8mJqynGxC2HGZgYKPGInLBas+i82cNmXqp5ULE6KNQUrbFYqBAUtI6yWLSeS8ThpVuURmCxmjDzitriWIJqVat6K07a7N75U/W0vWe9DMuU+dlFY2t5V1pVVwbiPzjMpTzZSHkkRZOYmsyPjKZUcbrTv/ubFdJTFLG1qp8pZuIvb4HRQqSuuRqMs5esGJapHXVpiXmdHKS63LsbA5iiuSqp34QbnLlqIHVxTXVzMksfgqlyOzPcoo0WZW9Tv/zHirXEWnCOhIErVr/eQ9a3N5HwlkstHzQrFliJbgyiQ3kezWMqTjZRHUgzpaW6P6M/3KzS2+fHu9i3WFpgO6ZLbKA4aPYWcCFluk9dbgz6EfnI+RChfNypRPerCLJOJtX8IS3bchI0ReHzeXfAkaKRzAl+ZTLlZAQtHXZhlQi+Puw6//VF/zzJMTgezEhvVHqjHtZtilapf7yHre+2q+/ZhiTh4CnUqaeAJZyvtlGUbEfFUaAhAa87Hs40gnmUhjwHPwTZOdLXrPm085rMV/9KWhTzftucj2Zg0g30DWSFqDZ4Ozh4y7643QYszNrWo6woGmvwHsBfyW1FJ+yGXTpllmJgM5F//L1U9mQAD47rse4qLnjbP1icElCp6WtzFrVtvQCwa1bVN4K7cwSw5M8PdsbVNrMLg5fHOql1pZ+Hsoh4FQGNx7AFT+r5d186J9fmTt0+p+tsesv5uxBzZaXvJQFuAgp6CIQItOYvBs85tLFxloGsYTg/pPsPQvI2QemUhj5nmI6d55fyZrM8Lra7iX9qykOfb9nwkm5GZ6ePyqO6Ug7Bz7OyTdOxqPmOV6aEx9MHuTAe6OOnZehiyHuzmCZ0vX0vPcHt0o+iGpaonyb3+EdbC7Auqux7nSfdmb7zA1XqUkwV5HLYmMxfUhRcW2BoP0LTtc4wpBvqGdLNYBd+Rk5yu3o6ZIDBsa4v+LurRFdSFIa4+WDPmhFLFU2e6snI5bM1mGx5L1d/2jvW3QquA4Zy33zsBxxY3V9wiBSeGwKUTQTPCfffutHS7SHmWkfJItosW5canXzOc1C06uNr44cun6HJuoewMJiwFjiPq7D2+mErrFHY1Z88f45Bl498o9kO8fK5F5yLWiA7d4ZtNkuCUqp7E2C0+C6y5/IW5josvnqI775q0oKL+GH9y7iC75cXXlia4F1xzdSvOFi4ezXZfF0Nq8iYf6PJKCHMdF797jserCrU8DLjq23np5T/iT3v2YF/LdtAi3Lh6JytXg6Xhcf7suRY8BYglTFUcP3+RFzZJRFGq/rZX5EkVLSBkAv88a8HDNagNQo0KESvEdG+9yIBvDk4PwqEcP+9sI1yvLG4jGgAqHJ4CZ067Zj0wscmdzUs5yGOiob2bzsrsjhSfHuCzsUiRlysHeb5tz0eyFVp8lqFIFb1+N5YVxWW0e+ntaqbBAqlknEg8uRLqVWCyVdLc2s2LF05ytFIXpVGLM9J3l/vRfA8pyfSCme6O2ocDpcHuo+egk9RCkJklXVpdxYLP/xivvHCSHtfa9bXkNO+8d43hTZ1aJapHizMxZ6C9vY5Vu8Bg89DbcYg6q4KiGDBb7XhrGzh6/CSvnGmh1iRIz80yY6nAsZr5d1upogESBFUvJ5pdK0cqDbga/HRUmxDCiK3CQZXLSfXKp8qUZiG2WSCvFNNTMXytq2mfQbFU0dnRTIM5TXgpzGIiJwGYYqbaW09XZy8vnD/Hy8eaOVRpJjzWx/XpYvOJ7qYeXUONBJg0NPJYw+pRXwVbzUGO+6swJCPML8Vy0kULzA4PHd3H+cHF05yqNxEYuMWdjVJF73l/y04VrUUmuHJnJueAVyFlDNS19dK94u3SolNcvT29wRJZogo+qYPzkzrFrULjxPInZYKYEYQKtmT+3eSR6uVrlEOIXCnP+mtIeSRFoRHqv8yvLAZ+fObAw0FPmCrpPHaazmOgaSrpdAZVMWA2KHlnisn5SUbDGz+k1NRX/PqKl7885WP1NJqlpoXvfb+FF+JLzC7GSQkTrkoXLnN2HZoa4dblj7lSwM6uktUz8zX/8FElf32++eEudWFx033sJN3H1pfXUrN8dPk23pefoW7HC/4ai/1XeKfVw79oWk7OJISZupYjfL9lfen08GX+4xuDm+ZJ08KD/PZNG7bvncBvWzYUhMlF5/GzdB4/QzIWZj4cJ6kasFgtOO0VWI2iPLwGG5Jm7Iv3+bXtIj/sdq+oIIGlupnnvtPMBTXJ0mKYxUQaTTFhtztwV5jW3PAFWCel6m97wcY+kukmeL8JwnmKmFLgioEzkUdhC5itg3dactaa9xkpzwpSHsl2STP5zfv8tzduMBhR1+lGIRRMJhOWPAaCpiUYv/0J//13n9O/6RnxNBPX3+N/fTpGKGdvidHqpK7WS5PXTWWuIk3Nc/2Dt/l1f7hAO7FU9agE737Ez966yXB0/T3LKhmb5vKb7/HhTM5sXtuBc0xd5It33uPt0ciubXhLzNzkl7+9xKdTsZztPwKzzYnP66XJV01tpR1bHgNBy8QIRcts45AW4fZHb/CLPwwzm7P/WihmXO5qDvhqafJWUa03EAAtkyC85WbpUvW33WfzVZdAPfy+CtqnoDUIrk26maZA0A1362HIXp4uXymPlEeyQ1QWRq/xP/9+gI6eXk53NdPsNm+4y11NLjE6NMCVG3e4NZsoUNElefD1e/zdAz9nT/TyRHMNjg0q0FJhRgbv8NGXfdxbLHbgKVU9KqHhq/x84h4dnR0c9dfTVOPEYVbQ0gkW54MMjwxy5dYw4zEVDEp26N1MZkcDvJYI8PHr/49+fzunOg5x2OfGbTNhEIXtD85HemGYN343wbXDnZzpaaW73vUwCVE+1GSYiYkJ7o2McHNwkplEGbr8tARjX3/I3w3WcfxIN0+0NVJfsVFCM41UeJb+gQE+/2aAoU28Y2uUqr/tLoKekwWqV205TW9VDOwpMGmgCUgZIWyFoB1ij1J0DSlPefNtk+fbioLVVU2jp5Iapw2r0YBQ08RjEYLzQcZnF9nppFExO6ir9eBz23FYjBi0DMl4jPlQkLGZecK7NEUuVT1bISo6+Is/f4qWlQEkM/E5/+W1PjZc8i4DDBYHPm81tS4HDosRo6KSSqSIxpaYDYaYWYhSjnbBpggjzqoaGqpduO1WrEaBmk4Ri4aZmZ1lMhQjtYNnUi79bSuKMBIkEolEstcY6p7kb17poUoAaET63uU/fzhe8vPxEglstidBIpFIJCVGUNNYpzv6pjKRFRVQIikt0kiQSCSScsFcz+nO6od7PLT0NH1jpQ+gI5GsIo0EiUQi2SuEkxPPPsN3Outwb5UB3VjJ8fNnOPHQjaARHuzblwA6Eskq2w7SKZFIJJKtEFTUNPNs92GePhfmwegY98ZnGJsNMR+Jk8goWO1O6uubONbbTrvbtBZAJzbG21cebBq3QCLZa6SRIJFIJCVAMTk42NLFwZauLctqiQCX3v6Yr6UXQbLPSCNBIpFI9gyVZFpFI38Eynzllybv8ualL7kxL88zSPYfeQRSIpFI9hJhotJbR0uDlwPeGmrdTqocNmxmI0ZUUqk4iwsLTE5PcndwiNuTYbaRdF0i2ROkkSCRSCQSiSQv8nSDRCKRSCSSvEgjQSKRSCQSSV6kkSCRSCQSiSQv/x8i/Ja3OdLlpgAAAABJRU5ErkJggg=="
             }
         },
-        "labels": [
-            "misp:type=\"attachment\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3502,16 +2871,9 @@ _EVENT_REPORT = [
         "pattern": "[domain-name:value = 'google.com' AND domain-name:resolves_to_refs[*].value = '8.8.8.8']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"domain-ip\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "type": "x-misp-event-report",
@@ -3524,7 +2886,7 @@ _EVENT_REPORT = [
             "observed-data--f715be9f-845f-4d8c-8dce-852b353b3488",
             "indicator--f91abf56-b017-462a-849f-d03ae0187498"
         ],
-        "x_misp_content": "This Event showcases a @[object](f91abf56-b017-462a-849f-d03ae0187498) MISP Object with its @[attribute](7ef43014-e2d6-4a13-b8fd-129fe4009310) value (also reported in a single attribute @[attribute](f9b286a9-3ed6-4ace-a60c-a5fe6529a783)) and the corresponding @[attribute](07a4c4aa-7380-44b5-82d4-06628ee3afba), contextualised with a @[tag](misp-galaxy:mitre-attack-pattern=\"DNS Server - T1584.002\") Galaxy Cluster.\r\n\r\nThe event is also illustrated with the screenshot picturing the case we have here: @![attribute](f715be9f-845f-4d8c-8dce-852b353b3488)\r\n\r\nThe information here is public, as the @[tag](tlp:clear) tag indicates.\r\n",
+        "x_misp_content": 'This Event showcases a @[object](f91abf56-b017-462a-849f-d03ae0187498) MISP Object with its @[attribute](7ef43014-e2d6-4a13-b8fd-129fe4009310) value (also reported in a single attribute @[attribute](f9b286a9-3ed6-4ace-a60c-a5fe6529a783)) and the corresponding @[attribute](07a4c4aa-7380-44b5-82d4-06628ee3afba), contextualised with a @[tag](misp-galaxy:mitre-attack-pattern="DNS Server - T1584.002") Galaxy Cluster.\r\n\r\nThe event is also illustrated with the screenshot picturing the case we have here: @![attribute](f715be9f-845f-4d8c-8dce-852b353b3488)\r\n\r\nThe information here is public, as the @[tag](tlp:clear) tag indicates.\r\n',
         "x_misp_name": "EventReport Test"
     },
     {
@@ -3541,9 +2903,7 @@ _EVENT_REPORT = [
         "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
         "created": "2017-01-20T00:00:00.000Z",
         "definition_type": "tlp",
-        "definition": {
-            "tlp": "white"
-        }
+        "definition": {"tlp": "white"}
     }
 ]
 _FILE_AND_PE_INDICATOR_OBJECT = {
@@ -3554,17 +2914,8 @@ _FILE_AND_PE_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"file\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="file"', 'misp:meta-category="file"']
 }
 _FILE_AND_PE_OBSERVABLE_OBJECT = [
     {
@@ -3622,11 +2973,7 @@ _FILE_AND_PE_OBSERVABLE_OBJECT = [
                 "x_misp_entropy": "1.234"
             }
         },
-        "labels": [
-            'misp:name="file"',
-            'misp:meta-category="file"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
     {
         "type": "indicator",
@@ -3639,11 +2986,7 @@ _FILE_AND_PE_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            'misp:name="file"',
-            'misp:meta-category="file"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
     {
         "type": "relationship",
@@ -3662,17 +3005,8 @@ _FILE_INDICATOR_OBJECT = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"file\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="file"', 'misp:meta-category="file"']
 }
 _FILE_OBSERVABLE_OBJECT = [
     {
@@ -3685,13 +3019,6 @@ _FILE_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {"type": "directory", "path": "/var/www/MISP/app/files/scripts/tmp"},
-            "2": {
-                "type": "artifact",
-                "mime_type": "application/zip",
-                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"},
-                "x_misp_filename": "oui"
-            },
             "0": {
                 "type": "file",
                 "hashes": {
@@ -3710,13 +3037,16 @@ _FILE_OBSERVABLE_OBJECT = [
                     "value": "non",
                     "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
                 }
+            },
+            "1": {"type": "directory", "path": "/var/www/MISP/app/files/scripts/tmp"},
+            "2": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"},
+                "x_misp_filename": "oui"
             }
         },
-        "labels": [
-            'misp:name="file"',
-            'misp:meta-category="file"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
     {
         "type": "indicator",
@@ -3728,11 +3058,7 @@ _FILE_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            'misp:name="file"',
-            'misp:meta-category="file"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
     {
         "type": "relationship",
@@ -3754,16 +3080,9 @@ _FILENAME_INDICATOR_ATTRIBUTE = {
     "pattern": "[file:name = 'test_file_name']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"filename\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="filename"', 'misp:category="Payload delivery"']
 }
 _FILENAME_OBSERVABLE_ATTRIBUTE = [
     {
@@ -3776,11 +3095,7 @@ _FILENAME_OBSERVABLE_ATTRIBUTE = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {"0": {"type": "file", "name": "test_file_name"}},
-        "labels": [
-            'misp:type="filename"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3794,11 +3109,7 @@ _FILENAME_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -3820,16 +3131,9 @@ _GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
     "pattern": "[user-account:account_type = 'github' AND user-account:account_login = 'chrisr3d']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Social network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Social network"}
     ],
-    "labels": [
-        "misp:type=\"github-username\"",
-        "misp:category=\"Social network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="github-username"', 'misp:category="Social network"']
 }
 _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
     {
@@ -3842,16 +3146,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|md5\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3863,16 +3160,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha1\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3884,16 +3174,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha224\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3905,16 +3188,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3926,16 +3202,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha384\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3947,16 +3216,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha512\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3968,16 +3230,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename7' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|ssdeep\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3989,15 +3244,11 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename8' AND file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"filename|authentihash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="filename|authentihash"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4010,16 +3261,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename9' AND file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|imphash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4031,15 +3275,25 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename10' AND file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/224 test attribute",
+        "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"filename|pehash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="filename|sha512/224"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4052,16 +3306,26 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename11' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"filename|sha512/256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="filename|sha512/256"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-224 test attribute",
+        "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4073,16 +3337,37 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename12' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha3-256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-384 test attribute",
+        "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-512 test attribute",
+        "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4094,16 +3379,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename14' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|tlsh\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4115,16 +3393,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename15' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|vhash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|vhash"', 'misp:category="Payload delivery"']
     }
 ]
 _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
@@ -4144,11 +3415,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename1"
             }
         },
-        "labels": [
-            'misp:type="filename|md5"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4162,11 +3429,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|md5"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4193,11 +3456,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename2"
             }
         },
-        "labels": [
-            'misp:type="filename|sha1"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4211,11 +3470,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha1"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4244,11 +3499,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename3"
             }
         },
-        "labels": [
-            'misp:type="filename|sha224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4262,11 +3513,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4295,11 +3542,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename4"
             }
         },
-        "labels": [
-            'misp:type="filename|sha256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4313,11 +3556,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4346,11 +3585,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename5"
             }
         },
-        "labels": [
-            'misp:type="filename|sha384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4364,11 +3599,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4397,11 +3628,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename6"
             }
         },
-        "labels": [
-            'misp:type="filename|sha512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4415,11 +3642,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4448,11 +3671,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename7"
             }
         },
-        "labels": [
-            'misp:type="filename|ssdeep"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4466,11 +3685,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|ssdeep"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4501,8 +3716,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         },
         "labels": [
             'misp:type="filename|authentihash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4519,8 +3733,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         ],
         "labels": [
             'misp:type="filename|authentihash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4548,11 +3761,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename9"
             }
         },
-        "labels": [
-            'misp:type="filename|imphash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4566,11 +3775,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|imphash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4597,11 +3802,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename10"
             }
         },
-        "labels": [
-            'misp:type="filename|pehash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|pehash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4615,11 +3816,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|pehash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|pehash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4650,8 +3847,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         },
         "labels": [
             'misp:type="filename|sha512/224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4668,8 +3864,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         ],
         "labels": [
             'misp:type="filename|sha512/224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4701,8 +3896,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         },
         "labels": [
             'misp:type="filename|sha512/256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4719,8 +3913,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         ],
         "labels": [
             'misp:type="filename|sha512/256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -4750,11 +3943,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename15"
             }
         },
-        "labels": [
-            'misp:type="filename|sha3-224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4768,11 +3957,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha3-224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4801,11 +3986,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename16"
             }
         },
-        "labels": [
-            'misp:type="filename|sha3-256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4819,11 +4000,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha3-256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4852,11 +4029,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename17"
             }
         },
-        "labels": [
-            'misp:type="filename|sha3-384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4870,11 +4043,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha3-384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4903,11 +4072,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename18"
             }
         },
-        "labels": [
-            'misp:type="filename|sha3-512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4921,11 +4086,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|sha3-512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -4954,11 +4115,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename13"
             }
         },
-        "labels": [
-            'misp:type="filename|tlsh"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4972,11 +4129,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|tlsh"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5003,11 +4156,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename14"
             }
         },
-        "labels": [
-            'misp:type="filename|vhash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|vhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5021,11 +4170,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="filename|vhash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="filename|vhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5048,16 +4193,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"md5\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5069,16 +4207,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha1\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5090,16 +4221,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha224\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5111,16 +4235,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5132,16 +4249,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha384\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5153,16 +4263,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha512\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5174,16 +4277,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"ssdeep\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5195,16 +4291,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"authentihash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="authentihash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5216,16 +4305,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"imphash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5237,16 +4319,23 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"pehash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/224 test attribute",
+        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha512/224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5258,16 +4347,23 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha512/256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha512/256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-224 test attribute",
+        "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5279,16 +4375,37 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha3-256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-384 test attribute",
+        "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-512 test attribute",
+        "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5300,16 +4417,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"telfhash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="telfhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5321,16 +4431,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"tlsh\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5342,16 +4445,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"vhash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="vhash"', 'misp:category="Payload delivery"']
     }
 ]
 _HASH_OBSERVABLE_ATTRIBUTES = [
@@ -5367,11 +4463,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {"type": "file", "hashes": {"MD5": "b2a5abfeef9e36964281a31e17b57c97"}}
         },
-        "labels": [
-            'misp:type="md5"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5385,11 +4477,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="md5"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5415,11 +4503,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 "hashes": {"SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"}
             }
         },
-        "labels": [
-            'misp:type="sha1"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5433,11 +4517,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha1"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5465,11 +4545,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5483,11 +4559,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5515,11 +4587,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5533,11 +4601,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5565,11 +4629,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5583,11 +4643,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5615,11 +4671,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5633,11 +4685,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5665,11 +4713,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="ssdeep"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5683,11 +4727,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="ssdeep"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5715,11 +4755,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="authentihash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="authentihash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5733,11 +4769,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="authentihash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="authentihash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5763,11 +4795,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 "hashes": {"IMPHASH": "68f013d7437aa653a8a98a05807afeb1"}
             }
         },
-        "labels": [
-            'misp:type="imphash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5781,11 +4809,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="imphash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5811,11 +4835,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 "hashes": {"PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"}
             }
         },
-        "labels": [
-            'misp:type="pehash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="pehash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5829,11 +4849,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="pehash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="pehash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5861,11 +4877,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha512/224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha512/224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5879,11 +4891,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha512/224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha512/224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5911,11 +4919,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha512/256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha512/256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5929,11 +4933,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha512/256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha512/256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -5961,11 +4961,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha3-224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -5979,11 +4975,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha3-224"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -6011,11 +5003,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha3-256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -6029,11 +5017,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha3-256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -6061,11 +5045,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha3-384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -6079,11 +5059,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha3-384"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -6111,11 +5087,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="sha3-512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -6129,11 +5101,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="sha3-512"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -6161,11 +5129,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="telfhash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="telfhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -6179,11 +5143,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="telfhash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="telfhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -6211,11 +5171,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            'misp:type="tlsh"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -6229,11 +5185,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="tlsh"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -6259,11 +5211,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 "hashes": {"VHASH": "115056655d15151138z66hz1021z55z66z3"}
             }
         },
-        "labels": [
-            'misp:type="vhash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="vhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -6277,11 +5225,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="vhash"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="vhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -6303,16 +5247,9 @@ _HOSTNAME_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"hostname\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="hostname"', 'misp:category="Network activity"']
 }
 _HOSTNAME_OBSERVABLE_ATTRIBUTE = [
     {
@@ -6325,11 +5262,7 @@ _HOSTNAME_OBSERVABLE_ATTRIBUTE = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {"0": {"type": "domain-name", "value": "circl.lu"}},
-        "labels": [
-            'misp:type="hostname"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="hostname"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6343,11 +5276,7 @@ _HOSTNAME_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="hostname"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="hostname"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -6369,16 +5298,9 @@ _HOSTNAME_PORT_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu' AND network-traffic:dst_port = '8443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"hostname|port\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="hostname|port"', 'misp:category="Network activity"']
 }
 _HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE = [
     {
@@ -6399,11 +5321,7 @@ _HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE = [
                 "protocols": ["tcp"]
             }
         },
-        "labels": [
-            'misp:type="hostname|port"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="hostname|port"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6417,11 +5335,7 @@ _HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="hostname|port"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="hostname|port"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -6443,16 +5357,9 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:extensions.'http-request-ext'.request_method = 'POST']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"http-method\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="http-method"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6464,16 +5371,9 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"user-agent\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="user-agent"', 'misp:category="Network activity"']
     }
 ]
 _HTTP_REQUEST_INDICATOR_OBJECT = {
@@ -6485,16 +5385,9 @@ _HTTP_REQUEST_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_method = 'POST' AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_header.'Content-Type' = 'JSON' AND network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"http-request\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="http-request"', 'misp:meta-category="network"']
 }
 _HTTP_REQUEST_OBSERVABLE_OBJECT = [
     {
@@ -6507,13 +5400,6 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {"type": "ipv4-addr", "value": "8.8.8.8"},
-            "2": {"type": "ipv4-addr", "value": "149.13.33.14"},
-            "3": {
-                "type": "domain-name",
-                "value": "circl.lu",
-                "resolves_to_refs": ["2"]
-            },
             "0": {
                 "type": "network-traffic",
                 "src_ref": "1",
@@ -6530,13 +5416,16 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = [
                     }
                 },
                 "x_misp_url": "http://circl.lu/projects/internships/"
+            },
+            "1": {"type": "ipv4-addr", "value": "8.8.8.8"},
+            "2": {"type": "ipv4-addr", "value": "149.13.33.14"},
+            "3": {
+                "type": "domain-name",
+                "value": "circl.lu",
+                "resolves_to_refs": ["2"]
             }
         },
-        "labels": [
-            'misp:name="http-request"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="http-request"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -6549,11 +5438,7 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="http-request"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="http-request"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -6575,11 +5460,7 @@ _IDENTITY_OBJECT = {
     "description": "Unknown person",
     "identity_class": "individual",
     "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
-    "labels": [
-        "misp:name=\"identity\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="identity"', 'misp:meta-category="misc"'],
     "x_misp_roles": "Placeholder name"
 }
 _IMAGE_INDICATOR_OBJECT = {
@@ -6589,17 +5470,8 @@ _IMAGE_INDICATOR_OBJECT = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"image\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="image"', 'misp:meta-category="file"']
 }
 _IMAGE_OBSERVABLE_OBJECT = [
     {
@@ -6625,11 +5497,7 @@ _IMAGE_OBSERVABLE_OBJECT = [
                 "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
             }
         },
-        "labels": [
-            'misp:name="image"',
-            'misp:meta-category="file"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="image"', 'misp:meta-category="file"']
     },
     {
         "type": "indicator",
@@ -6641,11 +5509,7 @@ _IMAGE_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            'misp:name="image"',
-            'misp:meta-category="file"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="image"', 'misp:meta-category="file"']
     },
     {
         "type": "relationship",
@@ -6665,18 +5529,12 @@ _INTRUSION_SET_GALAXY = {
     "name": "APT16",
     "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
     "labels": [
-        "misp:galaxy-name=\"Intrusion Set\"",
-        "misp:galaxy-type=\"mitre-intrusion-set\""
+        'misp:galaxy-name="Intrusion Set"',
+        'misp:galaxy-type="mitre-intrusion-set"'
     ],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "G0023"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/groups/G0023"
-        },
+        {"source_name": "mitre-attack", "external_id": "G0023"},
+        {"source_name": "url", "url": "https://attack.mitre.org/groups/G0023"},
         {
             "source_name": "url",
             "url": "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
@@ -6691,26 +5549,14 @@ _INTRUSION_SET_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Bobcat Breakin",
     "description": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first.",
-    "aliases": [
-        "Zookeeper"
-    ],
+    "aliases": ["Zookeeper"],
     "first_seen": "2016-04-06T20:03:48Z",
     "last_seen": "2017-05-15T21:05:06Z",
-    "goals": [
-        "acquisition-theft",
-        "harassment",
-        "damage"
-    ],
+    "goals": ["acquisition-theft", "harassment", "damage"],
     "resource_level": "organization",
     "primary_motivation": "organizational gain",
-    "secondary_motivations": [
-        "personal gain"
-    ],
-    "labels": [
-        "misp:name=\"intrusion-set\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ]
+    "secondary_motivations": ["personal gain"],
+    "labels": ['misp:name="intrusion-set"', 'misp:meta-category="misc"']
 }
 _IP_INDICATOR_ATTRIBUTES = [
     {
@@ -6723,16 +5569,9 @@ _IP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6744,16 +5583,9 @@ _IP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-dst\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
     }
 ]
 _IP_OBSERVABLE_ATTRIBUTES = [
@@ -6770,11 +5602,7 @@ _IP_OBSERVABLE_ATTRIBUTES = [
             "0": {"type": "network-traffic", "src_ref": "1", "protocols": ["tcp"]},
             "1": {"type": "ipv4-addr", "value": "1.2.3.4"}
         },
-        "labels": [
-            'misp:type="ip-src"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6788,11 +5616,7 @@ _IP_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="ip-src"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -6816,11 +5640,7 @@ _IP_OBSERVABLE_ATTRIBUTES = [
             "0": {"type": "network-traffic", "dst_ref": "1", "protocols": ["tcp"]},
             "1": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "labels": [
-            'misp:type="ip-dst"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6834,11 +5654,7 @@ _IP_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="ip-dst"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -6861,16 +5677,9 @@ _IP_PORT_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_port = '1234']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src|port\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src|port"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6882,16 +5691,9 @@ _IP_PORT_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-dst|port\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-dst|port"', 'misp:category="Network activity"']
     }
 ]
 _IP_PORT_INDICATOR_OBJECT = {
@@ -6903,16 +5705,9 @@ _IP_PORT_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"ip-port\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
 }
 _IP_PORT_OBSERVABLE_ATTRIBUTES = [
     {
@@ -6933,11 +5728,7 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
             },
             "1": {"type": "ipv4-addr", "value": "1.2.3.4"}
         },
-        "labels": [
-            'misp:type="ip-src|port"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-src|port"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6951,11 +5742,7 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="ip-src|port"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-src|port"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -6984,11 +5771,7 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
             },
             "1": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "labels": [
-            'misp:type="ip-dst|port"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-dst|port"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -7002,11 +5785,7 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="ip-dst|port"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="ip-dst|port"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -7029,7 +5808,6 @@ _IP_PORT_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {"type": "ipv4-addr", "value": "149.13.33.14"},
             "0": {
                 "type": "network-traffic",
                 "start": "2020-10-25T16:22:00Z",
@@ -7037,13 +5815,10 @@ _IP_PORT_OBSERVABLE_OBJECT = [
                 "dst_port": 443,
                 "protocols": ["ipv4"],
                 "x_misp_domain": "circl.lu"
-            }
+            },
+            "1": {"type": "ipv4-addr", "value": "149.13.33.14"}
         },
-        "labels": [
-            'misp:name="ip-port"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -7056,11 +5831,7 @@ _IP_PORT_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="ip-port"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -7081,19 +5852,11 @@ _LEGAL_ENTITY_OBJECT = {
     "name": "Umbrella Corporation",
     "description": "The Umbrella Corporation is an international pharmaceutical company.",
     "identity_class": "organization",
-    "sectors": [
-        "Pharmaceutical"
-    ],
+    "sectors": ["Pharmaceutical"],
     "contact_information": "phone-number: 1234567890 / website: https://umbrella.org",
-    "labels": [
-        "misp:name=\"legal-entity\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="legal-entity"', 'misp:meta-category="misc"'],
     "x_misp_registration_number": "11223344556677889900",
-    "x_misp_logo": {
-        "value": "umbrella_logo"
-    }
+    "x_misp_logo": {"value": "umbrella_logo"}
 }
 _LNK_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -7102,17 +5865,8 @@ _LNK_INDICATOR_OBJECT = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"lnk\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="lnk"', 'misp:meta-category="file"']
 }
 _LNK_OBSERVABLE_OBJECT = [
     {
@@ -7125,14 +5879,6 @@ _LNK_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {"type": "directory", "path": "/var/www/MISP/app/files/scripts/tmp"},
-            "2": {
-                "type": "artifact",
-                "mime_type": "application/zip",
-                "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"},
-                "x_misp_filename": "oui"
-            },
             "0": {
                 "type": "file",
                 "hashes": {
@@ -7147,13 +5893,17 @@ _LNK_OBSERVABLE_OBJECT = [
                 "accessed": "2021-01-01T00:00:00Z",
                 "parent_directory_ref": "1",
                 "content_ref": "2"
+            },
+            "1": {"type": "directory", "path": "/var/www/MISP/app/files/scripts/tmp"},
+            "2": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
+                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"},
+                "x_misp_filename": "oui"
             }
         },
-        "labels": [
-            'misp:name="lnk"',
-            'misp:meta-category="file"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="lnk"', 'misp:meta-category="file"']
     },
     {
         "type": "indicator",
@@ -7166,15 +5916,11 @@ _LNK_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            'misp:name="lnk"',
-            'misp:meta-category="file"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="lnk"', 'misp:meta-category="file"']
     },
     {
         "type": "relationship",
-        "id": "relationship--07f16a3d-81c4-5672-bfee-35849cabd11d",
+        "id": "relationship--464aa205-829e-4b75-9758-c6ebaea487c6",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -7191,16 +5937,9 @@ _MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
     "pattern": "[mac-addr:value = '12:34:56:78:90:AB']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"mac-address\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="mac-address"', 'misp:category="Payload delivery"']
 }
 _MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
     {
@@ -7213,11 +5952,7 @@ _MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {"0": {"type": "mac-addr", "value": "12:34:56:78:90:ab"}},
-        "labels": [
-            'misp:type="mac-address"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="mac-address"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -7230,11 +5965,7 @@ _MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="mac-address"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="mac-address"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -7253,27 +5984,16 @@ _MALWARE_GALAXY = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "BISCUIT",
     "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-    "labels": [
-        "misp:galaxy-name=\"Malware\"",
-        "misp:galaxy-type=\"mitre-malware\""
-    ],
+    "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"'],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "S0017"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/software/S0017"
-        },
+        {"source_name": "mitre-attack", "external_id": "S0017"},
+        {"source_name": "url", "url": "https://attack.mitre.org/software/S0017"},
         {
             "source_name": "url",
             "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
         }
     ],
-    "x_misp_mitre_platforms": [
-        "Windows"
-    ]
+    "x_misp_mitre_platforms": ["Windows"]
 }
 _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
@@ -7284,16 +6004,9 @@ _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "description": "Malware Sample test attribute",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"malware-sample\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="malware-sample"', 'misp:category="Payload delivery"']
 }
 _MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = [
     {
@@ -7312,16 +6025,9 @@ _MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = [
                 "name": "oui",
                 "content_ref": "1"
             },
-            "1": {
-                "type": "artifact",
-                "mime_type": "application/zip"
-            }
+            "1": {"type": "artifact", "mime_type": "application/zip"}
         },
-        "labels": [
-            'misp:type="malware-sample"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="malware-sample"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -7334,11 +6040,7 @@ _MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            'misp:type="malware-sample"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="malware-sample"', 'misp:category="Payload delivery"']
     },
     {
         "type": "relationship",
@@ -7360,16 +6062,9 @@ _MUTEX_INDICATOR_ATTRIBUTE = {
     "pattern": "[mutex:name = 'MutexTest']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Artifacts dropped"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Artifacts dropped"}
     ],
-    "labels": [
-        "misp:type=\"mutex\"",
-        "misp:category=\"Artifacts dropped\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="mutex"', 'misp:category="Artifacts dropped"']
 }
 _MUTEX_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -7379,17 +6074,8 @@ _MUTEX_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[mutex:name = 'MutexTest' AND mutex:x_misp_description = 'Test mutex on unix' AND mutex:x_misp_operating_system = 'Unix']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"mutex\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="mutex"', 'misp:meta-category="misc"']
 }
 _MUTEX_OBSERVABLE_ATTRIBUTE = [
     {
@@ -7402,11 +6088,7 @@ _MUTEX_OBSERVABLE_ATTRIBUTE = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {"0": {"type": "mutex", "name": "MutexTest"}},
-        "labels": [
-            'misp:type="mutex"',
-            'misp:category="Artifacts dropped"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="mutex"', 'misp:category="Artifacts dropped"']
     },
     {
         "type": "indicator",
@@ -7420,11 +6102,7 @@ _MUTEX_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Artifacts dropped"}
         ],
-        "labels": [
-            'misp:type="mutex"',
-            'misp:category="Artifacts dropped"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="mutex"', 'misp:category="Artifacts dropped"']
     },
     {
         "type": "relationship",
@@ -7454,11 +6132,7 @@ _MUTEX_OBSERVABLE_OBJECT = [
                 "x_misp_operating_system": "Unix"
             }
         },
-        "labels": [
-            'misp:name="mutex"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="mutex"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -7471,11 +6145,7 @@ _MUTEX_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="mutex"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="mutex"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -7496,16 +6166,9 @@ _NETFLOW_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_ref.belongs_to_refs[0].number = '1234') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_ref.belongs_to_refs[0].number = '5678') AND network-traffic:protocols[0] = 'ip' AND network-traffic:src_port = '80' AND network-traffic:dst_port = '8080' AND network-traffic:start = '2020-10-25T16:22:00Z' AND network-traffic:extensions.'tcp-ext'.src_flags_hex = '00000002']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"netflow\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="netflow"', 'misp:meta-category="network"']
 }
 _NETFLOW_OBSERVABLE_OBJECT = [
     {
@@ -7518,10 +6181,6 @@ _NETFLOW_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "2": {"type": "autonomous-system", "number": 1234},
-            "1": {"type": "ipv4-addr", "value": "1.2.3.4", "belongs_to_refs": ["2"]},
-            "4": {"type": "autonomous-system", "number": 5678},
-            "3": {"type": "ipv4-addr", "value": "5.6.7.8", "belongs_to_refs": ["4"]},
             "0": {
                 "type": "network-traffic",
                 "start": "2020-10-25T16:22:00Z",
@@ -7531,13 +6190,13 @@ _NETFLOW_OBSERVABLE_OBJECT = [
                 "dst_port": 8080,
                 "protocols": ["ip", "tcp"],
                 "extensions": {"tcp-ext": {"src_flags_hex": "00000002"}}
-            }
+            },
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4", "belongs_to_refs": ["2"]},
+            "2": {"type": "autonomous-system", "number": 1234},
+            "3": {"type": "ipv4-addr", "value": "5.6.7.8", "belongs_to_refs": ["4"]},
+            "4": {"type": "autonomous-system", "number": 5678}
         },
-        "labels": [
-            'misp:name="netflow"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="netflow"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -7550,11 +6209,7 @@ _NETFLOW_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="netflow"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="netflow"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -7575,16 +6230,9 @@ _NETWORK_CONNECTION_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'ip' AND network-traffic:protocols[1] = 'tcp' AND network-traffic:protocols[2] = 'http']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"network-connection\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="network-connection"', 'misp:meta-category="network"']
 }
 _NETWORK_CONNECTION_OBSERVABLE_OBJECT = [
     {
@@ -7597,8 +6245,6 @@ _NETWORK_CONNECTION_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
-            "2": {"type": "ipv4-addr", "value": "5.6.7.8"},
             "0": {
                 "type": "network-traffic",
                 "src_ref": "1",
@@ -7607,13 +6253,11 @@ _NETWORK_CONNECTION_OBSERVABLE_OBJECT = [
                 "dst_port": 8080,
                 "protocols": ["ip", "tcp", "http"],
                 "x_misp_hostname_dst": "circl.lu"
-            }
+            },
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
+            "2": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "labels": [
-            'misp:name="network-connection"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="network-connection"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -7626,11 +6270,7 @@ _NETWORK_CONNECTION_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="network-connection"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="network-connection"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -7651,16 +6291,9 @@ _NETWORK_SOCKET_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.protocol_family = 'PF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"network-socket\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
 }
 _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
     {
@@ -7673,8 +6306,6 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
-            "2": {"type": "ipv4-addr", "value": "5.6.7.8"},
             "0": {
                 "type": "network-traffic",
                 "src_ref": "1",
@@ -7691,13 +6322,11 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
                     }
                 },
                 "x_misp_hostname_dst": "circl.lu"
-            }
+            },
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
+            "2": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "labels": [
-            'misp:name="network-socket"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -7710,11 +6339,7 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="network-socket"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -7735,14 +6360,8 @@ _NEWS_AGENCY_OBJECT = {
     "name": "Agence France-Presse",
     "identity_class": "organization",
     "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: (33)0140414646; (1)2024140600",
-    "labels": [
-        "misp:name=\"news-agency\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
-    "x_misp_attachment": {
-        "value": "AFP_logo.png"
-    },
+    "labels": ['misp:name="news-agency"', 'misp:meta-category="misc"'],
+    "x_misp_attachment": {"value": "AFP_logo.png"},
     "x_misp_link": "https://www.afp.com/"
 }
 _OBJECTS_WITH_REFERENCES = [
@@ -7755,28 +6374,16 @@ _OBJECTS_WITH_REFERENCES = [
         "name": "Buffer Overflow in Local Command-Line Utilities",
         "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "vulnerability"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
         ],
         "labels": [
-            "misp:name=\"attack-pattern\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
+            'misp:name="attack-pattern"',
+            'misp:meta-category="vulnerability"'
         ],
-        "external_references": [
-            {
-                "source_name": "capec",
-                "external_id": "CAPEC-9"
-            }
-        ],
+        "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
         "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-        "x_misp_related_weakness": [
-            "CWE-118",
-            "CWE-120"
-        ],
-        "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
+        "x_misp_related_weakness": ["CWE-118", "CWE-120"],
+        "x_misp_solutions": "Carefully review the service's implementation before making it available to users."
     },
     {
         "type": "observed-data",
@@ -7792,17 +6399,10 @@ _OBJECTS_WITH_REFERENCES = [
                 "type": "autonomous-system",
                 "number": 66642,
                 "name": "AS name",
-                "x_misp_subnet_announced": [
-                    "1.2.3.4",
-                    "8.8.8.8"
-                ]
+                "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            "misp:name=\"asn\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "x-misp-object",
@@ -7810,10 +6410,7 @@ _OBJECTS_WITH_REFERENCES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"btc-wallet\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "type": "btc",
@@ -7821,21 +6418,9 @@ _OBJECTS_WITH_REFERENCES = [
                 "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
                 "to_ids": True
             },
-            {
-                "type": "float",
-                "object_relation": "balance_BTC",
-                "value": "2.25036953"
-            },
-            {
-                "type": "float",
-                "object_relation": "BTC_received",
-                "value": "3.35036953"
-            },
-            {
-                "type": "float",
-                "object_relation": "BTC_sent",
-                "value": "1.1"
-            }
+            {"type": "float", "object_relation": "balance_BTC", "value": "2.25036953"},
+            {"type": "float", "object_relation": "BTC_received", "value": "3.35036953"},
+            {"type": "float", "object_relation": "BTC_sent", "value": "1.1"}
         ],
         "x_misp_meta_category": "financial",
         "x_misp_name": "btc-wallet"
@@ -7848,11 +6433,7 @@ _OBJECTS_WITH_REFERENCES = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
         "description": "Block communication between the PIVY agents and the C2 Server",
-        "labels": [
-            "misp:name=\"course-of-action\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
         "x_misp_cost": "Low",
         "x_misp_efficacy": "High",
         "x_misp_impact": "Low",
@@ -7869,16 +6450,9 @@ _OBJECTS_WITH_REFERENCES = [
         "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"ip-port\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
     },
     {
         "type": "vulnerability",
@@ -7888,16 +6462,9 @@ _OBJECTS_WITH_REFERENCES = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "CVE-2021-29921",
         "description": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string.",
-        "labels": [
-            "misp:name=\"vulnerability\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
         "external_references": [
-            {
-                "source_name": "cve",
-                "external_id": "CVE-2021-29921"
-            }
+            {"source_name": "cve", "external_id": "CVE-2021-29921"}
         ]
     },
     {
@@ -7965,11 +6532,7 @@ _ORGANIZATION_OBJECT = {
     "description": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents.",
     "identity_class": "organization",
     "contact_information": "address: 16, bd d'Avranches, L-1160 Luxembourg / e-mail: info@circl.lu / phone-number: (+352) 247 88444",
-    "labels": [
-        "misp:name=\"organization\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="organization"', 'misp:meta-category="misc"'],
     "x_misp_alias": "CIRCL",
     "x_misp_role": "national CERT"
 }
@@ -7982,11 +6545,7 @@ _PERSON_OBJECT = {
     "name": "John Smith",
     "identity_class": "individual",
     "contact_information": "phone-number: 0123456789",
-    "labels": [
-        "misp:name=\"person\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="person"', 'misp:meta-category="misc"'],
     "x_misp_nationality": "USA",
     "x_misp_passport_number": "ABA9875413",
     "x_misp_role": "Guru"
@@ -8000,16 +6559,9 @@ _PORT_INDICATOR_ATTRIBUTE = {
     "pattern": "[network-traffic:dst_port = '8443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"port\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="port"', 'misp:category="Network activity"']
 }
 _PROCESS_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -8019,17 +6571,8 @@ _PROCESS_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[process:name = 'TestProcess' AND process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.binary_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:is_hidden = 'True' AND process:x_misp_port = '1234']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"process\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="process"', 'misp:meta-category="misc"']
 }
 _PROCESS_OBSERVABLE_OBJECT = [
     {
@@ -8042,16 +6585,6 @@ _PROCESS_OBSERVABLE_OBJECT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "2": {"type": "file", "name": "parent_process.exe"},
-            "1": {
-                "type": "process",
-                "pid": 2107,
-                "name": "Friends_From_H",
-                "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
-                "binary_ref": "2"
-            },
-            "3": {"type": "process", "pid": 1401},
-            "4": {"type": "file", "name": "test_process.exe"},
             "0": {
                 "type": "process",
                 "is_hidden": True,
@@ -8061,13 +6594,19 @@ _PROCESS_OBSERVABLE_OBJECT = [
                 "parent_ref": "1",
                 "child_refs": ["3"],
                 "x_misp_port": "1234"
-            }
+            },
+            "1": {
+                "type": "process",
+                "pid": 2107,
+                "name": "Friends_From_H",
+                "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
+                "binary_ref": "2"
+            },
+            "2": {"type": "file", "name": "parent_process.exe"},
+            "3": {"type": "process", "pid": 1401},
+            "4": {"type": "file", "name": "test_process.exe"}
         },
-        "labels": [
-            'misp:name="process"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="process"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -8080,11 +6619,7 @@ _PROCESS_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            'misp:name="process"',
-            'misp:meta-category="misc"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="process"', 'misp:meta-category="misc"']
     },
     {
         "type": "relationship",
@@ -8104,17 +6639,8 @@ _REGISTRY_KEY_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:modified = '2020-10-25T16:22:00Z']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"registry-key\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
 }
 _REGISTRY_KEY_OBSERVABLE_OBJECT = [
     {
@@ -8141,11 +6667,7 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = [
                 "x_misp_hive": "hklm"
             }
         },
-        "labels": [
-            'misp:name="registry-key"',
-            'misp:meta-category="file"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
     },
     {
         "type": "indicator",
@@ -8158,11 +6680,7 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            'misp:name="registry-key"',
-            'misp:meta-category="file"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
     },
     {
         "type": "relationship",
@@ -8184,16 +6702,9 @@ _REGKEY_INDICATOR_ATTRIBUTE = {
     "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Persistence mechanism"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
     ],
-    "labels": [
-        "misp:type=\"regkey\"",
-        "misp:category=\"Persistence mechanism\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="regkey"', 'misp:category="Persistence mechanism"']
 }
 _REGKEY_OBSERVABLE_ATTRIBUTE = [
     {
@@ -8208,11 +6719,7 @@ _REGKEY_OBSERVABLE_ATTRIBUTE = [
         "objects": {
             "0": {"type": "windows-registry-key", "key": "HKLM\\Software\\mthjk"}
         },
-        "labels": [
-            'misp:type="regkey"',
-            'misp:category="Persistence mechanism"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="regkey"', 'misp:category="Persistence mechanism"']
     },
     {
         "type": "indicator",
@@ -8226,11 +6733,7 @@ _REGKEY_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
         ],
-        "labels": [
-            'misp:type="regkey"',
-            'misp:category="Persistence mechanism"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="regkey"', 'misp:category="Persistence mechanism"']
     },
     {
         "type": "relationship",
@@ -8252,16 +6755,9 @@ _REGKEY_VALUE_INDICATOR_ATTRIBUTE = {
     "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '\\\\%DATA\\\\%\\\\1234567890']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Persistence mechanism"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
     ],
-    "labels": [
-        "misp:type=\"regkey|value\"",
-        "misp:category=\"Persistence mechanism\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="regkey|value"', 'misp:category="Persistence mechanism"']
 }
 _REGKEY_VALUE_OBSERVABLE_ATTRIBUTE = [
     {
@@ -8280,11 +6776,7 @@ _REGKEY_VALUE_OBSERVABLE_ATTRIBUTE = [
                 "values": [{"name": "", "data": "%DATA%\\1234567890"}]
             }
         },
-        "labels": [
-            'misp:type="regkey|value"',
-            'misp:category="Persistence mechanism"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="regkey|value"', 'misp:category="Persistence mechanism"']
     },
     {
         "type": "indicator",
@@ -8298,11 +6790,7 @@ _REGKEY_VALUE_OBSERVABLE_ATTRIBUTE = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
         ],
-        "labels": [
-            'misp:type="regkey|value"',
-            'misp:category="Persistence mechanism"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="regkey|value"', 'misp:category="Persistence mechanism"']
     },
     {
         "type": "relationship",
@@ -8322,17 +6810,8 @@ _SIZE_IN_BYTES_INDICATOR_ATTRIBUTE = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[file:size = '1234']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Other"
-        }
-    ],
-    "labels": [
-        "misp:type=\"size-in-bytes\"",
-        "misp:category=\"Other\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "Other"}],
+    "labels": ['misp:type="size-in-bytes"', 'misp:category="Other"']
 }
 _SCRIPT_OBJECTS = [
     {
@@ -8344,19 +6823,10 @@ _SCRIPT_OBJECTS = [
         "name": "infected.py",
         "description": "A script that infects command line shells",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"script\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
-        "implementation_languages": [
-            "Python"
-        ],
+        "labels": ['misp:name="script"', 'misp:meta-category="misc"'],
+        "implementation_languages": ["Python"],
         "x_misp_script": "print('You are infected')",
         "x_misp_script_as_attachment": {
             "value": "infected.py",
@@ -8373,16 +6843,9 @@ _SCRIPT_OBJECTS = [
         "name": "hello.py",
         "description": "A peaceful script",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"script\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="script"', 'misp:meta-category="misc"'],
         "x_misp_language": "Python",
         "x_misp_script": "print('Hello World')",
         "x_misp_script_as_attachment": {
@@ -8400,10 +6863,7 @@ _SECTOR_GALAXY = {
     "name": "IT - Security",
     "description": "Activity sectors",
     "identity_class": "class",
-    "labels": [
-        "misp:galaxy-name=\"Sector\"",
-        "misp:galaxy-type=\"sector\""
-    ]
+    "labels": ['misp:galaxy-name="Sector"', 'misp:galaxy-type="sector"']
 }
 _THREAT_ACTOR_GALAXY = {
     "type": "threat-actor",
@@ -8412,16 +6872,9 @@ _THREAT_ACTOR_GALAXY = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Cutting Kitten",
     "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
-    "aliases": [
-        "Ghambar"
-    ],
-    "labels": [
-        "misp:galaxy-name=\"Threat Actor\"",
-        "misp:galaxy-type=\"threat-actor\""
-    ],
-    "x_misp_cfr_type_of_incident": [
-        "Denial of service"
-    ]
+    "aliases": ["Ghambar"],
+    "labels": ['misp:galaxy-name="Threat Actor"', 'misp:galaxy-type="threat-actor"'],
+    "x_misp_cfr_type_of_incident": ["Denial of service"]
 }
 _TOOL_GALAXY = {
     "type": "tool",
@@ -8430,30 +6883,17 @@ _TOOL_GALAXY = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "cmd",
     "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
-    "labels": [
-        "misp:galaxy-name=\"Tool\"",
-        "misp:galaxy-type=\"mitre-tool\""
-    ],
+    "labels": ['misp:galaxy-name="Tool"', 'misp:galaxy-type="mitre-tool"'],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "S0106"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/software/S0106"
-        },
+        {"source_name": "mitre-attack", "external_id": "S0106"},
+        {"source_name": "url", "url": "https://attack.mitre.org/software/S0106"},
         {
             "source_name": "url",
             "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
         }
     ],
-    "x_misp_mitre_platforms": [
-        "Windows"
-    ],
-    "x_misp_synonyms": [
-        "cmd.exe"
-    ]
+    "x_misp_mitre_platforms": ["Windows"],
+    "x_misp_synonyms": ["cmd.exe"]
 }
 _URL_INDICATOR_ATTRIBUTES = [
     {
@@ -8466,16 +6906,9 @@ _URL_INDICATOR_ATTRIBUTES = [
         "pattern": "[url:value = 'https://misp-project.org/download/']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "External analysis"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "External analysis"}
         ],
-        "labels": [
-            "misp:type=\"link\"",
-            "misp:category=\"External analysis\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="link"', 'misp:category="External analysis"']
     },
     {
         "type": "indicator",
@@ -8487,16 +6920,9 @@ _URL_INDICATOR_ATTRIBUTES = [
         "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"uri\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="uri"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -8508,16 +6934,9 @@ _URL_INDICATOR_ATTRIBUTES = [
         "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"url\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="url"', 'misp:category="Network activity"']
     }
 ]
 _URL_INDICATOR_OBJECT = {
@@ -8529,16 +6948,9 @@ _URL_INDICATOR_OBJECT = {
     "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14' AND url:x_misp_port = '443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"url\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="url"', 'misp:meta-category="network"']
 }
 _URL_OBSERVABLE_ATTRIBUTES = [
     {
@@ -8553,11 +6965,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {"type": "url", "value": "https://misp-project.org/download/"}
         },
-        "labels": [
-            'misp:type="link"',
-            'misp:category="External analysis"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="link"', 'misp:category="External analysis"']
     },
     {
         "type": "indicator",
@@ -8571,11 +6979,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "External analysis"}
         ],
-        "labels": [
-            'misp:type="link"',
-            'misp:category="External analysis"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="link"', 'misp:category="External analysis"']
     },
     {
         "type": "relationship",
@@ -8601,11 +7005,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
                 "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova"
             }
         },
-        "labels": [
-            'misp:type="uri"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="uri"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -8619,11 +7019,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="uri"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="uri"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -8646,11 +7042,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {"type": "url", "value": "https://vm.misp-project.org/latest/"}
         },
-        "labels": [
-            'misp:type="url"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="url"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -8664,11 +7056,7 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            'misp:type="url"',
-            'misp:category="Network activity"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:type="url"', 'misp:category="Network activity"']
     },
     {
         "type": "relationship",
@@ -8700,11 +7088,7 @@ _URL_OBSERVABLE_OBJECT = [
                 "x_misp_port": "443"
             }
         },
-        "labels": [
-            'misp:name="url"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="url"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -8717,11 +7101,7 @@ _URL_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="url"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="url"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -8740,17 +7120,8 @@ _VULNERABILITY_ATTRIBUTE = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "CVE-2017-11774",
-    "labels": [
-        "misp:type=\"vulnerability\"",
-        "misp:category=\"External analysis\"",
-        "misp:to_ids=\"True\""
-    ],
-    "external_references": [
-        {
-            "source_name": "cve",
-            "external_id": "CVE-2017-11774"
-        }
-    ]
+    "labels": ['misp:type="vulnerability"', 'misp:category="External analysis"'],
+    "external_references": [{"source_name": "cve", "external_id": "CVE-2017-11774"}]
 }
 _VULNERABILITY_GALAXY = {
     "type": "vulnerability",
@@ -8760,15 +7131,10 @@ _VULNERABILITY_GALAXY = {
     "name": "Ghost",
     "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
     "labels": [
-        "misp:galaxy-name=\"Branded Vulnerability\"",
-        "misp:galaxy-type=\"branded-vulnerability\""
+        'misp:galaxy-name="Branded Vulnerability"',
+        'misp:galaxy-type="branded-vulnerability"'
     ],
-    "external_references": [
-        {
-            "source_name": "cve",
-            "external_id": "CVE-2015-0235"
-        }
-    ]
+    "external_references": [{"source_name": "cve", "external_id": "CVE-2015-0235"}]
 }
 _VULNERABILITY_OBJECT = {
     "type": "vulnerability",
@@ -8778,20 +7144,10 @@ _VULNERABILITY_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "CVE-2017-11774",
     "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
-    "labels": [
-        "misp:name=\"vulnerability\"",
-        "misp:meta-category=\"vulnerability\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
     "external_references": [
-        {
-            "source_name": "cve",
-            "external_id": "CVE-2017-11774"
-        },
-        {
-            "source_name": "url",
-            "url": "http://www.securityfocus.com/bid/101098"
-        },
+        {"source_name": "cve", "external_id": "CVE-2017-11774"},
+        {"source_name": "url", "url": "http://www.securityfocus.com/bid/101098"},
         {
             "source_name": "url",
             "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
@@ -8812,15 +7168,11 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "pattern": "[x509-certificate:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"x509-fingerprint-md5\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="x509-fingerprint-md5"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -8833,15 +7185,11 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "pattern": "[x509-certificate:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"x509-fingerprint-sha1\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="x509-fingerprint-sha1"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -8854,15 +7202,11 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "pattern": "[x509-certificate:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"x509-fingerprint-sha256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="x509-fingerprint-sha256"',
+            'misp:category="Payload delivery"'
         ]
     }
 ]
@@ -8884,8 +7228,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         },
         "labels": [
             'misp:type="x509-fingerprint-md5"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -8902,8 +7245,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         ],
         "labels": [
             'misp:type="x509-fingerprint-md5"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -8932,8 +7274,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         },
         "labels": [
             'misp:type="x509-fingerprint-sha1"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -8950,8 +7291,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         ],
         "labels": [
             'misp:type="x509-fingerprint-sha1"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -8982,8 +7322,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         },
         "labels": [
             'misp:type="x509-fingerprint-sha256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -9000,8 +7339,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         ],
         "labels": [
             'misp:type="x509-fingerprint-sha256"',
-            'misp:category="Payload delivery"',
-            'misp:to_ids="True"'
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -9023,16 +7361,9 @@ _X509_INDICATOR_OBJECT = {
     "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"x509\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="x509"', 'misp:meta-category="network"']
 }
 _X509_OBSERVABLE_OBJECT = [
     {
@@ -9064,11 +7395,7 @@ _X509_OBSERVABLE_OBJECT = [
                 "x_misp_pem": "RawCertificateInPEMFormat"
             }
         },
-        "labels": [
-            'misp:name="x509"',
-            'misp:meta-category="network"',
-            'misp:to_ids="False"'
-        ]
+        "labels": ['misp:name="x509"', 'misp:meta-category="network"']
     },
     {
         "type": "indicator",
@@ -9081,11 +7408,7 @@ _X509_OBSERVABLE_OBJECT = [
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            'misp:name="x509"',
-            'misp:meta-category="network"',
-            'misp:to_ids="True"'
-        ]
+        "labels": ['misp:name="x509"', 'misp:meta-category="network"']
     },
     {
         "type": "relationship",
@@ -9144,12 +7467,20 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     ############################################################################
 
     @classmethod
+    def get_bundle_with_AS_attribute(cls):
+        return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_AS_indicator_attribute(cls):
         return cls.__assemble_bundle(_AS_INDICATOR_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_AS_observable_attribute(cls):
-        return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_AS_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_attachment_attribute(cls):
+        return cls.__assemble_bundle(*_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_attachment_indicator_attribute(cls):
@@ -9157,7 +7488,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_attachment_observable_attribute(cls):
-        return cls.__assemble_bundle(*_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_ATTACHMENT_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_campaign_name_attribute(cls):
@@ -9172,16 +7503,28 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_DOMAIN_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_domain_ip_attribute(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_domain_ip_indicator_attribute(cls):
         return cls.__assemble_bundle(_DOMAIN_IP_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_domain_attribute(cls):
+        return cls.__assemble_bundle(*_DOMAIN_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_domain_ip_observable_attribute(cls):
-        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_domain_observable_attribute(cls):
-        return cls.__assemble_bundle(*_DOMAIN_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_DOMAIN_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_attachment_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_attachment_indicator_attribute(cls):
@@ -9189,7 +7532,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_attachment_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_body_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_BODY_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_body_indicator_attribute(cls):
@@ -9197,7 +7548,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_body_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_BODY_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_BODY_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_destination_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_destination_indicator_attribute(cls):
@@ -9205,7 +7560,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_destination_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_header_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_header_indicator_attribute(cls):
@@ -9213,7 +7572,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_header_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_email_indicator_attribute(cls):
@@ -9221,7 +7580,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_reply_to_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_reply_to_indicator_attribute(cls):
@@ -9229,7 +7592,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_reply_to_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_source_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_source_indicator_attribute(cls):
@@ -9237,7 +7604,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_source_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_subject_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_subject_indicator_attribute(cls):
@@ -9245,7 +7616,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_subject_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_x_mailer_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_x_mailer_indicator_attribute(cls):
@@ -9253,7 +7628,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_x_mailer_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_filename_attribute(cls):
+        return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_filename_indicator_attribute(cls):
@@ -9261,7 +7640,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_filename_observable_attribute(cls):
-        return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_FILENAME_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_galaxy_embedded_in_attribute(cls):
@@ -9272,12 +7651,20 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_GITHUB_USERNAME_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_hash_composite_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):
         return cls.__assemble_bundle(*_HASH_COMPOSITE_INDICATOR_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_hash_composite_observable_attributes(cls):
-        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_hash_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_hash_indicator_attributes(cls):
@@ -9285,7 +7672,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hash_observable_attributes(cls):
-        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_hostname_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hostname_indicator_attribute(cls):
@@ -9293,7 +7684,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hostname_observable_attribute(cls):
-        return cls.__assemble_bundle(*_HOSTNAME_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_HOSTNAME_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_hostname_port_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hostname_port_indicator_attribute(cls):
@@ -9301,11 +7696,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hostname_port_observable_attribute(cls):
-        return cls.__assemble_bundle(*_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_http_indicator_attributes(cls):
         return cls.__assemble_bundle(*_HTTP_INDICATOR_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_attributes(cls):
+        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_ip_indicator_attributes(cls):
@@ -9313,7 +7712,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_ip_observable_attributes(cls):
-        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_ip_port_attributes(cls):
+        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_ip_port_indicator_attributes(cls):
@@ -9321,7 +7724,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_ip_port_observable_attributes(cls):
-        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_mac_address_attribute(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_mac_address_indicator_attribute(cls):
@@ -9329,7 +7736,22 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mac_address_observable_attribute(cls):
-        return cls.__assemble_bundle(*_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_malware_sample_attribute(cls):
+        observed_data, indicator, relationship = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            data = b64encode(f.read()).decode()
+        observed_data['objects']['1']['payload_bin'] = data
+        pattern = [
+            f"file:content_ref.payload_bin = '{data}'",
+            "file:name = 'oui'",
+            "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+            "file:content_ref.mime_type = 'application/zip'"
+        ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
 
     @classmethod
     def get_bundle_with_malware_sample_indicator_attribute(cls):
@@ -9346,18 +7768,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_malware_sample_observable_attribute(cls):
-        observed_data, indicator, relationship = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        observed_data = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE[0])
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             data = b64encode(f.read()).decode()
         observed_data['objects']['1']['payload_bin'] = data
-        pattern = [
-            f"file:content_ref.payload_bin = '{data}'",
-            "file:name = 'oui'",
-            "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
-            "file:content_ref.mime_type = 'application/zip'"
-        ]
-        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(observed_data, indicator, relationship)
+        return cls.__assemble_bundle(observed_data)
+
+    @classmethod
+    def get_bundle_with_mutex_attribute(cls):
+        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_mutex_indicator_attribute(cls):
@@ -9365,11 +7784,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mutex_observable_attribute(cls):
-        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_MUTEX_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_port_indicator_attribute(cls):
         return cls.__assemble_bundle(_PORT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_regkey_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_regkey_indicator_attribute(cls):
@@ -9377,7 +7800,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_regkey_observable_attribute(cls):
-        return cls.__assemble_bundle(*_REGKEY_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_REGKEY_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_regkey_value_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_regkey_value_indicator_attribute(cls):
@@ -9385,11 +7812,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_regkey_value_observable_attribute(cls):
-        return cls.__assemble_bundle(*_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_size_in_bytes_indicator_attribute(cls):
         return cls.__assemble_bundle(_SIZE_IN_BYTES_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_url_attributes(cls):
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_url_indicator_attributes(cls):
@@ -9397,11 +7828,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_url_observable_attributes(cls):
-        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES[::3])
 
     @classmethod
     def get_bundle_with_vulnerability_attribute(cls):
         return cls.__assemble_bundle(_VULNERABILITY_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_x509_fingerprint_attributes(cls):
+        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_x509_fingerprint_indicator_attributes(cls):
@@ -9409,7 +7844,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_x509_fingerprint_observable_attributes(cls):
-        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES[::3])
 
     ############################################################################
     #                              EVENTS SAMPLES                              #
@@ -9809,10 +8244,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_lnk_observable_object(cls):
-        observed_data = deepcopy(_LNK_OBSERVABLE_OBJECT)
+        observed_data, indicator, relationship = deepcopy(_LNK_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
-        return cls.__assemble_bundle(observed_data)
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
 
     @classmethod
     def get_bundle_with_mutex_indicator_object(cls):
