@@ -126,7 +126,7 @@ class TestSTIX2Export(TestSTIX):
         gitlab_pattern, telegram_pattern = patterns
         gitlab_id = gitlab_object.attributes[0].value
         account_type, user_id = gitlab_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'gitlab'")
+        self.assertEqual(account_type, "user-account:account_type = 'gitlab'")
         self.assertEqual(user_id, f"user-account:user_id = '{gitlab_id}'")
         telegram_id = telegram_object.attributes[0].value
         account_type, user_id = telegram_pattern[1:-1].split(' AND ')
@@ -138,7 +138,7 @@ class TestSTIX2Export(TestSTIX):
         facebook_pattern, github_pattern, parler_pattern, reddit_pattern, twitter_pattern = patterns
         account_id = facebook_account.attributes[0].value
         account_type, user_id = facebook_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
+        self.assertEqual(account_type, "user-account:account_type = 'facebook'")
         self.assertEqual(user_id, f"user-account:user_id = '{account_id}'")
         github_id = github_user.attributes[0].value
         account_type, user_id = github_pattern[1:-1].split(' AND ')
@@ -146,15 +146,15 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
         parler_id = parler_account.attributes[0].value
         account_type, user_id = parler_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'parler'")
+        self.assertEqual(account_type, "user-account:account_type = 'parler'")
         self.assertEqual(user_id, f"user-account:user_id = '{parler_id}'")
         reddit_id = reddit_account.attributes[0].value
         account_type, user_id = reddit_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'reddit'")
+        self.assertEqual(account_type, "user-account:account_type = 'reddit'")
         self.assertEqual(user_id, f"user-account:user_id = '{reddit_id}'")
         _id = twitter_account.attributes[0].value
         account_type, user_id = twitter_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'twitter'")
+        self.assertEqual(account_type, "user-account:account_type = 'twitter'")
         self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
 
     def _check_attack_pattern_meta_fields(self, stix_object, meta):
@@ -182,9 +182,7 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(attack_pattern.name, name)
         self.assertEqual(attack_pattern.description, summary)
         self._check_external_reference(
-            attack_pattern.external_references[0],
-            'capec',
-            f'CAPEC-{id_}'
+            attack_pattern.external_references[0], 'capec', f'CAPEC-{id_}'
         )
         self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
         self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
@@ -192,9 +190,7 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
-            campaign.id,
-            f"campaign--{attribute['uuid']}",
-            object_ref
+            campaign.id, f"campaign--{attribute['uuid']}", object_ref
         )
         self.assertEqual(campaign.type, 'campaign')
         self.assertEqual(campaign.created_by_ref, identity_id)
@@ -223,9 +219,7 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_attribute_vulnerability_features(self, vulnerability, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
-            vulnerability.id,
-            f"vulnerability--{attribute['uuid']}",
-            object_ref
+            vulnerability.id, f"vulnerability--{attribute['uuid']}", object_ref
         )
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
@@ -262,8 +256,7 @@ class TestSTIX2Export(TestSTIX):
         for attribute in attributes:
             self.assertEqual(
                 getattr(
-                    course_of_action,
-                    f"x_misp_{attribute['object_relation']}"
+                    course_of_action, f"x_misp_{attribute['object_relation']}"
                 ),
                 attribute['value']
             )
@@ -293,9 +286,7 @@ class TestSTIX2Export(TestSTIX):
     def _check_employee_object(self, employee, misp_object, employee_ref, identity_id):
         self.assertEqual(employee.type, 'identity')
         self._assert_multiple_equal(
-            employee.id,
-            employee_ref,
-            f"identity--{misp_object['uuid']}"
+            employee.id, employee_ref, f"identity--{misp_object['uuid']}"
         )
         self.assertEqual(employee.identity_class, 'individual')
         timestamp = misp_object['timestamp']
