@@ -1504,15 +1504,13 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_object, attribute = self._check_misp_event_features(event, report)
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         self._assert_multiple_equal(
-            attribute.timestamp,
-            indicator.created,
-            indicator.modified
+            attribute.timestamp, indicator.created, indicator.modified
         )
-        type_label, category_label, ids_label, _ = indicator.labels
-        self.assertEqual(ids_label, f'misp:to_ids="{attribute.to_ids}"')
+        type_label, category_label, free_tag = indicator.labels
         self.assertEqual(type_label, f'misp:type="{attribute.type}"')
         self.assertEqual(category_label, f'misp:category="{attribute.category}"')
         self.assertEqual(attribute.type, 'domain|ip')
+        self.assertEqual(free_tag, attribute.tags[0].name)
         domain, address = indicator.pattern[1:-1].split(' AND ')
         self.assertEqual(
             attribute.value,
@@ -1520,27 +1518,32 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
         self._assert_multiple_equal(
-            misp_object.timestamp,
-            observed_data.created,
-            observed_data.modified
+            misp_object.timestamp, observed_data.created, observed_data.modified
         )
-        name_label, category_label, ids_label, _ = observed_data.labels
-        self.assertEqual(ids_label, 'misp:to_ids="False"')
+        name_label, category_label, free_tag = observed_data.labels
         self.assertEqual(name_label, f'misp:name="{misp_object.name}"')
         self.assertEqual(
             category_label,
             f'misp:meta-category="{getattr(misp_object, "meta-category")}"'
         )
-        domain1, ip1, ip2, domain2 = misp_object.attributes
         observables = observed_data.objects
-        for attribute, index in zip((domain1, domain2), ('2', '3')):
-            self.assertEqual(attribute.type,'domain')
-            self.assertEqual(attribute.object_relation, 'domain')
-            self.assertEqual(attribute.value, observables[index].value)
-        for attribute, index in zip((ip1, ip2), ('0', '1')):
-            self.assertEqual(attribute.type, 'ip-dst')
-            self.assertEqual(attribute.object_relation, 'ip')
-            self.assertEqual(attribute.value, observables[index].value)
+        domain, hostname, port, ip = misp_object.attributes
+        self.assertEqual(domain.type, "domain")
+        self.assertEqual(domain.object_relation, "domain")
+        self.assertEqual(domain.value, observables["0"].value)
+        self.assertEqual(free_tag, domain.tags[0].name)
+        self.assertEqual(hostname.type, "hostname")
+        self.assertEqual(hostname.object_relation, "hostname")
+        self.assertEqual(hostname.value, observables["0"].x_misp_hostname)
+        self.assertEqual(free_tag, hostname.tags[0].name)
+        self.assertEqual(ip.type, "ip-dst")
+        self.assertEqual(ip.object_relation, "ip")
+        self.assertEqual(ip.value, observables["1"].value)
+        self.assertEqual(free_tag, ip.tags[0].name)
+        self.assertEqual(port.type, "port")
+        self.assertEqual(port.object_relation, "port")
+        self.assertEqual(port.value, observables["0"].x_misp_port)
+        self.assertEqual(free_tag, port.tags[0].name)
 
     def test_stix20_bundle_with_event_report(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_event_report()
@@ -1631,15 +1634,20 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         bundle = TestInternalSTIX20Bundles.get_bundle_with_multiple_reports()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
-        self._check_events_from_bundle_with_multiple_reports(bundle.objects[1:])
+        (_, grouping1, od1, od2, indicator1, _, grouping2, indicator2,
+         indicator3, malware, relation1, relation2) = bundle.objects
+        self._check_events_from_bundle_with_multiple_reports(
+            grouping1, od1, od2, indicator1, grouping2, indicator2,
+            indicator3, malware, relation1, relation2
+        )
 
     def test_stix20_bundle_with_multiple_reports_as_single_event(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_multiple_reports()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle(single_event = True)
-        _, _, od1, od2, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
+        _, _, od1, od2, indicator1, _, _, indicator2, indicator3, malware, relation1, relation2 = bundle.objects
         self._check_single_event_from_bundle_with_multiple_reports(
-            (od1, od2, indicator1, indicator2, malware, relation1, relation2),
+            (od1, od2, indicator1, indicator2, indicator3, malware, relation1, relation2),
             bundle.id
         )
 
@@ -1647,7 +1655,11 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         bundle = TestInternalSTIX20Bundles.get_bundle_with_no_report()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
-        self._check_event_from_bundle_with_no_report(bundle.objects[1:], bundle.id)
+        _, od1, indicator1, _, od2, indicator2, indicator3, malware, relation1, relation2 = bundle.objects
+        self._check_event_from_bundle_with_no_report(
+            (od1, indicator1, od2, indicator2, indicator3, malware, relation1, relation2),
+            bundle.id
+        )
 
     def test_stix20_bundle_with_sightings(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_sightings()
@@ -1682,7 +1694,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         bundle = TestInternalSTIX20Bundles.get_bundle_with_single_report()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
-        self._check_event_from_bundle_with_single_report(bundle.objects[1:])
+        _, grouping, od1, indicator1, _, od2, indicator2, indicator3, malware, relation1, relation2 = bundle.objects
+        self._check_event_from_bundle_with_single_report(
+            (grouping, od1, indicator1, od2, indicator2, indicator3, malware, relation1, relation2)
+        )
 
     ############################################################################
     #                        MISP GALAXIES IMPORT TESTS                        #

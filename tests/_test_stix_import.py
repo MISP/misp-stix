@@ -70,9 +70,7 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(event.info, report.name)
         self.assertEqual(event.distribution, 0)
         self._assert_multiple_equal(
-            event.timestamp,
-            report.created,
-            report.modified
+            event.timestamp, report.created, report.modified
         )
         self.assertEqual(event.published, published)
         return (*event.objects, *event.attributes)
@@ -1802,9 +1800,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(attribute.uuid, campaign.id.split('--')[1])
         self.assertEqual(attribute.type, 'campaign-name')
         self._assert_multiple_equal(
-            attribute.timestamp,
-            campaign.created,
-            campaign.modified
+            attribute.timestamp, campaign.created, campaign.modified
         )
         self._check_attribute_labels(attribute, campaign.labels)
         self.assertEqual(attribute.value, campaign.name)
@@ -1821,9 +1817,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     def _check_indicator_attribute(self, attribute, indicator):
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         self._assert_multiple_equal(
-            attribute.timestamp,
-            indicator.created,
-            indicator.modified
+            attribute.timestamp, indicator.created, indicator.modified
         )
         self._check_attribute_labels(attribute, indicator.labels)
         return indicator.pattern
@@ -1832,14 +1826,11 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(attribute.uuid, vulnerability.id.split('--')[1])
         self.assertEqual(attribute.type, vulnerability.type)
         self._assert_multiple_equal(
-            attribute.timestamp,
-            vulnerability.created,
-            vulnerability.modified
+            attribute.timestamp, vulnerability.created, vulnerability.modified
         )
         self._check_attribute_labels(attribute, vulnerability.labels)
         self._assert_multiple_equal(
-            attribute.value,
-            vulnerability.name,
+            attribute.value, vulnerability.name,
             vulnerability.external_references[0].external_id
         )
 
@@ -1847,8 +1838,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     #                        MISP EVENTS CHECKING FUNCTIONS                        #
     ################################################################################
 
-    def _check_events_from_bundle_with_multiple_reports(self, bundle_objects):
-        report1, od1, od2, report2, indicator1, indicator2, malware, relation1, relation2 = bundle_objects
+    def _check_events_from_bundle_with_multiple_reports(self, *bundle_objects):
+        (report1, od1, od2, indicator1, report2, indicator2,
+         indicator3, malware, relation1, relation2) = bundle_objects
         self.assertEqual(len(self.parser.misp_events), 2)
         event1, event2 = self.parser.misp_events
         self.assertEqual(event1.uuid, report1.id.split('--')[1])
@@ -1859,9 +1851,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(len(object1.references), 1)
         reference1 = object1.references[0]
         self._assert_multiple_equal(
-            reference1.referenced_uuid,
-            event1.attributes[0].uuid,
-            od2.id.split('--')[1]
+            reference1.referenced_uuid, event1.attributes[0].uuid,
+            od2.id.split('--')[1], indicator1.id.split('--')[1]
         )
         self.assertEqual(reference1.relationship_type, relation1.relationship_type)
         self._check_generic_malware_galaxy(event1.galaxies[0], malware)
@@ -1869,48 +1860,75 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(len(event2.objects), 1)
         self.assertEqual(len(event2.attributes), 1)
         object2 = event2.objects[0]
-        self.assertEqual(object2.uuid, indicator1.id.split('--')[1])
+        self.assertEqual(object2.uuid, indicator2.id.split('--')[1])
         self.assertEqual(len(object2.references), 1)
         reference2 = object2.references[0]
         self._assert_multiple_equal(
-            reference2.referenced_uuid,
-            event2.attributes[0].uuid,
-            indicator2.id.split('--')[1]
+            reference2.referenced_uuid, event2.attributes[0].uuid,
+            indicator3.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, relation2.relationship_type)
         self._check_generic_malware_galaxy(event2.galaxies[0], malware)
 
     def _check_event_from_bundle_with_no_report(self, bundle_objects, bundle_id):
-        od1, od2, indicator1, indicator2, malware, relation1, relation2 = bundle_objects
+        od1, indicator1, od2, indicator2, indicator3, malware, relation1, relation2 = bundle_objects
         event = self.parser.misp_event
         self.assertEqual(event.uuid, bundle_id.split('--')[1])
         self.assertEqual(len(event.objects), 2)
         self.assertEqual(len(event.attributes), 2)
         object1, object2 = event.objects
-        self.assertEqual(object1.uuid, indicator2.id.split('--')[1])
-        self.assertEqual(object2.uuid, od1.id.split('--')[1])
+        self.assertEqual(object1.uuid, indicator3.id.split('--')[1])
+        self._assert_multiple_equal(
+            object2.uuid, od1.id.split('--')[1], indicator1.id.split('--')[1]
+        )
         self.assertEqual(len(object1.references), 1)
         self.assertEqual(len(object2.references), 1)
         reference1 = object1.references[0]
         self._assert_multiple_equal(
-            reference1.referenced_uuid,
-            event.attributes[0].uuid,
-            indicator1.id.split('--')[1]
+            reference1.referenced_uuid, event.attributes[0].uuid,
+            indicator2.id.split('--')[1]
         )
         self.assertEqual(reference1.relationship_type, relation1.relationship_type)
         reference2 = object2.references[0]
         self._assert_multiple_equal(
-            reference2.referenced_uuid,
-            event.attributes[1].uuid,
+            reference2.referenced_uuid, event.attributes[1].uuid,
             od2.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, relation2.relationship_type)
         self._check_generic_malware_galaxy(event.galaxies[0], malware)
 
     def _check_event_from_bundle_with_single_report(self, bundle_objects):
-        report, od1, od2, indicator1, indicator2, malware, relation1, relation2 = bundle_objects
+        (report, od1, indicator1, od2, indicator2, indicator3,
+         malware, relation1, relation2) = bundle_objects
         event = self.parser.misp_event
         self.assertEqual(event.uuid, report.id.split('--')[1])
+        self.assertEqual(len(event.objects), 2)
+        self.assertEqual(len(event.attributes), 2)
+        object1, object2 = event.objects
+        self._assert_multiple_equal(
+            object1.uuid, od1.id.split('--')[1], indicator1.id.split('--')[1]
+        )
+        self.assertEqual(object2.uuid, indicator3.id.split('--')[1])
+        self.assertEqual(len(object1.references), 1)
+        self.assertEqual(len(object2.references), 1)
+        reference1 = object1.references[0]
+        self._assert_multiple_equal(
+            reference1.referenced_uuid, event.attributes[0].uuid,
+            od2.id.split('--')[1]
+        )
+        self.assertEqual(reference1.relationship_type, relation1.relationship_type)
+        reference2 = object2.references[0]
+        self._assert_multiple_equal(
+            reference2.referenced_uuid, event.attributes[1].uuid,
+            indicator2.id.split('--')[1]
+        )
+        self.assertEqual(reference2.relationship_type, relation2.relationship_type)
+        self._check_generic_malware_galaxy(event.galaxies[0], malware)
+
+    def _check_single_event_from_bundle_with_multiple_reports(self, bundle_objects, bundle_id):
+        od1, od2, indicator1, indicator2, indicator3, malware, relation1, relation2 = bundle_objects
+        event = self.parser.misp_event
+        self.assertEqual(event.uuid, bundle_id.split('--')[1])
         self.assertEqual(len(event.objects), 2)
         self.assertEqual(len(event.attributes), 2)
         object1, object2 = event.objects
@@ -1920,43 +1938,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(len(object2.references), 1)
         reference1 = object1.references[0]
         self._assert_multiple_equal(
-            reference1.referenced_uuid,
-            event.attributes[0].uuid,
-            od2.id.split('--')[1]
+            reference1.referenced_uuid, event.attributes[0].uuid,
+            od2.id.split('--')[1], indicator1.id.split('--')[1]
         )
         self.assertEqual(reference1.relationship_type, relation1.relationship_type)
         reference2 = object2.references[0]
         self._assert_multiple_equal(
-            reference2.referenced_uuid,
-            event.attributes[1].uuid,
-            indicator1.id.split('--')[1]
-        )
-        self.assertEqual(reference2.relationship_type, relation2.relationship_type)
-        self._check_generic_malware_galaxy(event.galaxies[0], malware)
-
-    def _check_single_event_from_bundle_with_multiple_reports(self, bundle_objects, bundle_id):
-        od1, od2, indicator1, indicator2, malware, relation1, relation2 = bundle_objects
-        event = self.parser.misp_event
-        self.assertEqual(event.uuid, bundle_id.split('--')[1])
-        self.assertEqual(len(event.objects), 2)
-        self.assertEqual(len(event.attributes), 2)
-        object1, object2 = event.objects
-        self.assertEqual(object1.uuid, od1.id.split('--')[1])
-        self.assertEqual(object2.uuid, indicator1.id.split('--')[1])
-        self.assertEqual(len(object1.references), 1)
-        self.assertEqual(len(object2.references), 1)
-        reference1 = object1.references[0]
-        self._assert_multiple_equal(
-            reference1.referenced_uuid,
-            event.attributes[0].uuid,
-            od2.id.split('--')[1]
-        )
-        self.assertEqual(reference1.relationship_type, relation1.relationship_type)
-        reference2 = object2.references[0]
-        self._assert_multiple_equal(
-            reference2.referenced_uuid,
-            event.attributes[1].uuid,
-            indicator2.id.split('--')[1]
+            reference2.referenced_uuid, event.attributes[1].uuid,
+            indicator3.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, relation2.relationship_type)
         self._check_generic_malware_galaxy(event.galaxies[0], malware)
