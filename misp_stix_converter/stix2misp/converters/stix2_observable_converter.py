@@ -1057,23 +1057,43 @@ class InternalSTIX2ObservableConverter(
                 )
             )
 
+    def _handle_object_attribute_with_data(
+            self, values: Any, mapping: dict, object_id: str) -> dict:
+        object_uuid = self.main_parser._extract_uuid(object_id)
+        if isinstance(values, dict):
+            value = values['value']
+            reference = f"{object_id} - {mapping['object_relation']} - {value}"
+            to_ids = self._check_indicator_reference(
+                object_uuid, value, values['data']
+            )
+            attribute = {'to_ids': to_ids, **mapping, **values}
+            if to_ids:
+                indicator_id = f'indicator--{object_uuid}'
+                reference = f'{indicator_id} - {reference}'
+                attribute['comment'] = f"Indicator ID: {indicator_id}"
+            attribute['uuid'] = self.main_parser._create_v5_uuid(reference)
+            return attribute
+        reference = f"{object_id} - {mapping['object_relation']} - {values}"
+        to_ids = self._check_indicator_reference(object_uuid, values)
+        attribute = {'to_ids': to_ids, 'value': values, **mapping}
+        if to_ids:
+            indicator_id = f'indicator--{object_uuid}'
+            reference = f'{indicator_id} - {reference}'
+            attribute['comment'] = f"Indicator ID: {indicator_id}"
+        attribute['uuid'] = self.main_parser._create_v5_uuid(reference)
+        return attribute
+
     def _handle_object_attributes_with_data(
             self, mapping: dict, values: dict | str,
             object_id: str) -> Iterator[dict]:
         if isinstance(values, list):
             for value in values:
-                yield self._populate_object_attribute_with_data(
-                    value, mapping, self._handle_object_id(
-                        value['value'] if isinstance(value, dict) else value,
-                        object_id, mapping['object_relation']
-                    )
+                yield self._handle_object_attribute_with_data(
+                    value, mapping, object_id
                 )
         else:
-            yield self._populate_object_attribute_with_data(
-                values, mapping, **self._handle_object_id(
-                    values['value'] if isinstance(values, dict) else values,
-                    object_id, mapping['object_relation']
-                )
+            yield self._handle_object_attribute_with_data(
+                values, mapping, object_id
             )
 
     def _handle_object_id(
@@ -1193,7 +1213,7 @@ class InternalSTIX2ObservableConverter(
                     )
                 }
             else:
-                yield from self._populate_object_attributes_with_data(
+                yield from self._handle_object_attributes_with_data(
                     getattr(self._mapping, mapping)(), content, object_id
                 )
 
@@ -1246,34 +1266,17 @@ class InternalSTIX2ObservableConverter(
             self, observable: _ARTIFACT_TYPING,
             observed_data_id: str) -> Iterator[dict]:
         attribute = {
-            'value': observable.x_misp_filename,
-            'data': observable.payload_bin
+            'value': observable.x_misp_filename, 'data': observable.payload_bin
         }
-        if hasattr(observable, 'id'):
-            if hasattr(observable, 'x_misp_url'):
-                yield from self._handle_object_attributes_with_data(
-                    self._mapping.attachment_attribute(),
-                    attribute, observable.id
-                )
-                yield from self._populate_object_attributes(
-                    self._mapping.url_attribute(),
-                    observable.x_misp_url, observable.id
-                )
-            else:
-                yield {
-                    **attribute, **self._mapping.attachment_attribute(),
-                    **self.main_parser._sanitise_attribute_uuid(observable.id)
-                }
-        else:
-            yield from self._handle_object_attributes_with_data(
-                self._mapping.attachment_attribute(),
-                attribute, observed_data_id
+        yield from self._handle_object_attributes_with_data(
+            self._mapping.attachment_attribute(),
+            attribute, observed_data_id
+        )
+        if hasattr(observable, 'x_misp_url'):
+            yield from self._populate_object_attributes(
+                self._mapping.url_attribute(),
+                observable.x_misp_url, observed_data_id
             )
-            if hasattr(observable, 'x_misp_url'):
-                yield from self._populate_object_attributes(
-                    self._mapping.url_attribute(),
-                    observable.x_misp_url, observed_data_id
-                )
     
     def _parse_image_url_observable(self, observable: _ARTIFACT_TYPING,
                                     observed_data_id: str) -> Iterator[dict]:
