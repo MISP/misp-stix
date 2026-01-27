@@ -1021,14 +1021,15 @@ class InternalSTIX2ObservableMapping(
 
 class InternalSTIX2ObservableConverter(
         STIX2ObservableConverter, InternalSTIX2Converter):
-    def _check_indicator_reference(self, object_id: str, value: Any) -> bool:
+    def _check_indicator_reference(
+            self, object_id: str, *values: tuple[Any]) -> bool:
         indicator_references = self.indicator_references.get(object_id, [])
-        if isinstance(value, str) and '|' in value:
-            any_hit = any(
-                field in indicator_references for field in value.split('|')
-            )
-            return any_hit or value in indicator_references
-        return str(value) in indicator_references
+        return any(
+            any(field in indicator_references for field in value.split('|'))
+            if isinstance(value, str) and '|' in value
+            else str(value) in indicator_references
+            for value in values
+        )
 
     def _handle_hash_attribute(self, hash_type: str, value: str, object_id: str,
                                mapping: Optional[str] = 'file') -> dict:
