@@ -2312,9 +2312,11 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
         pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
-        self._check_file_observable_object(
+        creation_time, modification_time = self._check_file_observable_object(
             misp_object.attributes, observables, pattern
         )
+        self.assertEqual(creation_time, observables['0'].created)
+        self.assertEqual(modification_time, observables['0'].modified)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
             observed_data=[observed_data, indicator, relationship]

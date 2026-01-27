@@ -2670,10 +2670,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(sha256.value, file_object.hashes['SHA-256'])
         self.assertEqual(creation_time.type, 'datetime')
         self.assertEqual(creation_time.object_relation, 'creation-time')
-        self.assertEqual(creation_time.value, file_object.created)
         self.assertEqual(modification_time.type, 'datetime')
         self.assertEqual(modification_time.object_relation, 'modification-time')
-        self.assertEqual(modification_time.value, file_object.modified)
         self.assertEqual(filename.type, 'filename')
         self.assertEqual(filename.object_relation, 'filename')
         self.assertEqual(filename.value, file_object.name)
@@ -2700,6 +2698,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             f"{artifact.x_misp_filename}|{artifact.hashes['MD5']}"
         )
         self.assertEqual(self._get_data_value(malware_sample.data), artifact.payload_bin)
+        return creation_time.value, modification_time.value
 
     def _check_github_user_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 5)
