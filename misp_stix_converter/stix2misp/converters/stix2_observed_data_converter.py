@@ -1593,7 +1593,7 @@ class ExternalSTIX2ObservedDataConverter(
         if single:
             return self.main_parser._add_misp_attribute(
                 self._create_single_misp_attribute(
-                    indicator_ref, observed_data.id, strict_value=strict_value,
+                    indicator_ref, observed_data.id, strict_value,
                     **{
                         'type': attribute_type, 'comment': comment,
                         'value': value or strict_value, **attribute
@@ -1653,8 +1653,7 @@ class ExternalSTIX2ObservedDataConverter(
         )
         return self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
-                indicator_ref, observable_object.id,
-                strict_value=strict_value,
+                indicator_ref, observable_object.id, strict_value,
                 **{
                     'type': attribute_type, 'comment': comment,
                     'value': value or strict_value, **attribute
