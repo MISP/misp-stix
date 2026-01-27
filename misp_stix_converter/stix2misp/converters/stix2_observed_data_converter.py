@@ -2681,9 +2681,13 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_AS_observable_v21(
             self, observed_data: ObservedData_v21):
         observable = self._fetch_observable(observed_data.object_refs[0])
-        attribute = self._create_attribute_dict(
-            observed_data, self._parse_AS_value(observable.number)
+        to_ids = self._check_indicator_reference(
+            self.main_parser._extract_uuid(observed_data.id), observable.number
         )
+        attribute = {
+            'value': self._parse_AS_value(observable.number), 'to_ids': to_ids,
+            **super()._create_attribute_dict(observed_data),
+        }
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_attachment_observable(
