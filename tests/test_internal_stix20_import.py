@@ -65,10 +65,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, "AS")
         self.assertEqual(attribute.value, f"AS{observable.number}")
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship],
-        )
 
     def test_stix20_bundle_with_AS_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_AS_indicator_attribute()
@@ -96,6 +92,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'AS')
         self.assertEqual(attribute.value, f'AS{observable.number}')
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_attachment_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_attachment_attribute()
@@ -113,10 +113,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self._get_data_value(attribute.data), artifact_observable.payload_bin
         )
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship]
-        )
 
     def test_stix20_bundle_with_attachment_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_attachment_indicator_attribute()
@@ -151,6 +147,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.value, file_observable.name)
         self.assertEqual(self._get_data_value(attribute.data), artifact_observable.payload_bin)
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_campaign_name_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_campaign_name_attribute()
@@ -347,10 +347,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-body')
         self.assertEqual(attribute.value, observable.body)
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship]
-        )
 
     def test_stix20_bundle_with_email_body_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_body_indicator_attribute()
@@ -378,6 +374,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-body')
         self.assertEqual(attribute.value, observable.body)
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_email_destination_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_destination_attribute()
@@ -435,10 +435,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-header')
         self.assertEqual(attribute.value, observable.received_lines[0])
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship]
-        )
 
     def test_stix20_bundle_with_email_header_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_header_indicator_attribute()
@@ -466,6 +462,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-header')
         self.assertEqual(attribute.value, observable.received_lines[0])
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_email_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_indicator_attribute()
@@ -506,10 +506,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-reply-to')
         self.assertEqual(attribute.value, observable.additional_header_fields['Reply-To'])
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship]
-        )
 
     def test_stix20_bundle_with_email_reply_to_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_reply_to_indicator_attribute()
@@ -537,6 +533,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-reply-to')
         self.assertEqual(attribute.value, observable.additional_header_fields['Reply-To'])
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_email_source_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_source_attribute()
@@ -594,10 +594,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-subject')
         self.assertEqual(attribute.value, observable.subject)
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship]
-        )
 
     def test_stix20_bundle_with_email_subject_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_subject_indicator_attribute()
@@ -625,6 +621,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-subject')
         self.assertEqual(attribute.value, observable.subject)
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_email_x_mailer_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_x_mailer_attribute()
@@ -638,10 +638,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-x-mailer')
         self.assertEqual(attribute.value, observable.additional_header_fields['X-Mailer'])
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship]
-        )
 
     def test_stix20_bundle_with_email_x_mailer_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_x_mailer_indicator_attribute()
@@ -669,6 +665,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'email-x-mailer')
         self.assertEqual(attribute.value, observable.additional_header_fields['X-Mailer'])
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_filename_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_filename_attribute()
@@ -1086,10 +1086,6 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'mac-address')
         self.assertEqual(attribute.value, observable.value)
         self.assertTrue(attribute.to_ids)
-        self._populate_documentation(
-            attribute=json.loads(attribute.to_json()),
-            observed_data=[observed_data, indicator, relationship]
-        )
 
     def test_stix20_bundle_with_mac_address_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_mac_address_indicator_attribute()
@@ -1117,6 +1113,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.type, 'mac-address')
         self.assertEqual(attribute.value, observable.value)
         self.assertFalse(attribute.to_ids)
+        self._populate_documentation(
+            attribute=json.loads(attribute.to_json()),
+            observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_malware_sample_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_malware_sample_attribute()
@@ -1355,6 +1355,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(attribute.type, attribute_type)
             self.assertEqual(attribute.value, url.value)
             self.assertTrue(attribute.to_ids)
+            if attribute.type == 'link':
+                continue
             self._populate_documentation(
                 attribute=json.loads(attribute.to_json()),
                 observed_data=[observed_data, indicator, relationship]
@@ -1392,6 +1394,12 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(attribute.type, attribute_type)
             self.assertEqual(attribute.value, url.value)
             self.assertFalse(attribute.to_ids)
+            if attribute.type != 'link':
+                continue
+            self._populate_documentation(
+                attribute=json.loads(attribute.to_json()),
+                observed_data=observed_data
+            )
 
     def test_stix20_bundle_with_vulnerability_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_vulnerability_attribute()
