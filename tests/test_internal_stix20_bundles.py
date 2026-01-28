@@ -2808,7 +2808,7 @@ _EMPLOYEE_OBJECT = {
     "description": "John Doe is known",
     "identity_class": "individual",
     "contact_information": "email-address: jdoe@email.com",
-    "labels": ['misp:name="employee"', 'misp:meta-category="misc"']
+    "labels": ['misp:name="employee"', 'misp:meta-category="misc"'],
     "x_misp_employee_type": "Supervisor"
 }
 _EVENT_REPORT = [
