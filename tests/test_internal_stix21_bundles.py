@@ -2531,6 +2531,63 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
     {
         "type": "observed-data",
         "spec_version": "2.1",
+        "id": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "domain-name--dc624447-684a-488f-9e16-f78f717d8efd",
+            "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
+        ],
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--dc624447-684a-488f-9e16-f78f717d8efd",
+        "value": "circl.lu",
+        "resolves_to_refs": ["ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"],
+        "x_misp_hostname": "circl.lu",
+        "x_misp_port": "8443"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca",
+        "value": "149.13.33.14"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--5d2dcfac-c0c1-418c-af91-028b8776bdee",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "target_ref": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
         "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -2603,63 +2660,6 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
         "relationship_type": "based-on",
         "source_ref": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
         "target_ref": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
-    },
-    {
-        "type": "observed-data",
-        "spec_version": "2.1",
-        "id": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "first_observed": "2020-10-25T16:22:00Z",
-        "last_observed": "2020-10-25T16:22:00Z",
-        "number_observed": 1,
-        "object_refs": [
-            "domain-name--dc624447-684a-488f-9e16-f78f717d8efd",
-            "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
-        ],
-        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
-    },
-    {
-        "type": "domain-name",
-        "spec_version": "2.1",
-        "id": "domain-name--dc624447-684a-488f-9e16-f78f717d8efd",
-        "value": "circl.lu",
-        "resolves_to_refs": ["ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"],
-        "x_misp_hostname": "circl.lu",
-        "x_misp_port": "8443"
-    },
-    {
-        "type": "ipv4-addr",
-        "spec_version": "2.1",
-        "id": "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca",
-        "value": "149.13.33.14"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2020-10-25T16:22:00Z",
-        "kill_chain_phases": [
-            {"kill_chain_name": "misp-category", "phase_name": "network"}
-        ],
-        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
-    },
-    {
-        "type": "relationship",
-        "spec_version": "2.1",
-        "id": "relationship--5d2dcfac-c0c1-418c-af91-028b8776bdee",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "relationship_type": "based-on",
-        "source_ref": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
-        "target_ref": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd"
     }
 ]
 _EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE = {
@@ -4134,6 +4134,26 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
         "spec_version": "2.1",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/224 test attribute",
+        "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": [
+            'misp:type="filename|sha512/224"',
+            'misp:category="Payload delivery"'
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
         "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -4188,6 +4208,23 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
         "spec_version": "2.1",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-224 test attribute",
+        "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
         "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -4201,6 +4238,40 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": ['misp:type="filename|sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-384 test attribute",
+        "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-512 test attribute",
+        "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-512"', 'misp:category="Payload delivery"']
     }
 ]
 _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
@@ -5269,6 +5340,23 @@ _HASH_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
         "spec_version": "2.1",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/224 test attribute",
+        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha512/224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
         "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -5320,6 +5408,23 @@ _HASH_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
         "spec_version": "2.1",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-224 test attribute",
+        "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
         "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -5333,6 +5438,40 @@ _HASH_INDICATOR_ATTRIBUTES = [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": ['misp:type="sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-384 test attribute",
+        "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-512 test attribute",
+        "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -9109,6 +9248,8 @@ _X509_OBSERVABLE_OBJECT = [
     }
 ]
 
+_indicator_types = ('indicator', 'relationship')
+
 
 class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     __bundle = {
@@ -9151,17 +9292,31 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         bundle['objects'] = [deepcopy(cls.__identity), grouping, *stix_objects]
         return dict_to_stix2(bundle, allow_custom=True)
 
+    @staticmethod
+    def __extract_observables(stix_objects):
+        for stix_object in stix_objects:
+            if stix_object.get('type', 'indicator') not in _indicator_types:
+                yield stix_object
+
     ############################################################################
     #                            ATTRIBUTES SAMPLES                            #
     ############################################################################
 
     @classmethod
+    def get_bundle_with_AS_attribute(cls):
+        return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_AS_indicator_attribute(cls):
-        return cls.__assemble_bundle(*_AS_INDICATOR_ATTRIBUTE)
+        return cls.__assemble_bundle(_AS_INDICATOR_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_AS_observable_attribute(cls):
-        return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_attachment_attribute(cls):
+        return cls.__assemble_bundle(*_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_attachment_indicator_attribute(cls):
@@ -9169,7 +9324,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_attachment_observable_attribute(cls):
-        return cls.__assemble_bundle(*_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_ATTACHMENT_OBSERVABLE_ATTRIBUTE[:-2])
 
     @classmethod
     def get_bundle_with_campaign_name_attribute(cls):
@@ -9178,6 +9333,14 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_custom_attributes(cls):
         return cls.__assemble_bundle(*_CUSTOM_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_domain_attribute(cls):
+        return cls.__assemble_bundle(*_DOMAIN_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_domain_ip_attribute(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_domain_indicator_attribute(cls):
@@ -9189,11 +9352,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_domain_ip_observable_attribute(cls):
-        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_ATTRIBUTE[:-2])
 
     @classmethod
     def get_bundle_with_domain_observable_attribute(cls):
-        return cls.__assemble_bundle(*_DOMAIN_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_DOMAIN_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_attachment_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_attachment_indicator_attribute(cls):
@@ -9201,7 +9368,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_attachment_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_body_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_BODY_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_body_indicator_attribute(cls):
@@ -9209,7 +9384,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_body_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_BODY_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_BODY_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_destination_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_destination_indicator_attribute(cls):
@@ -9217,7 +9396,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_destination_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_header_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_header_indicator_attribute(cls):
@@ -9225,11 +9408,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_header_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE[:-2])
 
     @classmethod
     def get_bundle_with_email_indicator_attribute(cls):
         return cls.__assemble_bundle(_EMAIL_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_message_id_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_ID_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_message_id_indicator_attribute(cls):
@@ -9237,11 +9424,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_message_id_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_MESSAGE_ID_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_ID_OBSERVABLE_ATTRIBUTE[:-2])
 
     @classmethod
     def get_bundle_with_email_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_reply_to_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_reply_to_indicator_attribute(cls):
@@ -9249,7 +9440,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_reply_to_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_source_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_source_indicator_attribute(cls):
@@ -9257,7 +9452,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_source_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_subject_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_subject_indicator_attribute(cls):
@@ -9265,7 +9464,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_subject_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_email_x_mailer_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_x_mailer_indicator_attribute(cls):
@@ -9273,7 +9476,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_x_mailer_observable_attribute(cls):
-        return cls.__assemble_bundle(*_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_filename_attribute(cls):
+        return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_filename_indicator_attribute(cls):
@@ -9281,11 +9488,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_filename_observable_attribute(cls):
-        return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE[:-2])
 
     @classmethod
     def get_bundle_with_galaxy_embedded_in_attribute(cls):
         return cls.__assemble_bundle(*_ATTRIBUTE_WITH_EMBEDDED_GALAXY)
+
+    @classmethod
+    def get_bundle_with_github_username_attribute(cls):
+        return cls.__assemble_bundle(*_GITHUB_USERNAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_github_username_indicator_attribute(cls):
@@ -9293,7 +9504,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_github_username_observable_attribute(cls):
-        return cls.__assemble_bundle(*_GITHUB_USERNAME_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_GITHUB_USERNAME_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_hash_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_hash_composite_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):
@@ -9301,7 +9520,9 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hash_composite_observable_attributes(cls):
-        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(
+            *cls.__extract_observables(_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
+        )
 
     @classmethod
     def get_bundle_with_hash_indicator_attributes(cls):
@@ -9309,7 +9530,13 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hash_observable_attributes(cls):
-        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(
+            *cls.__extract_observables(_HASH_OBSERVABLE_ATTRIBUTES)
+        )
+
+    @classmethod
+    def get_bundle_with_hostname_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hostname_indicator_attribute(cls):
@@ -9317,7 +9544,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hostname_observable_attribute(cls):
-        return cls.__assemble_bundle(*_HOSTNAME_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_HOSTNAME_OBSERVABLE_ATTRIBUTE[:-2])
+
+    @classmethod
+    def get_bundle_with_hostname_port_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hostname_port_indicator_attribute(cls):
@@ -9325,11 +9556,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hostname_port_observable_attribute(cls):
-        return cls.__assemble_bundle(*_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE[:-2])
 
     @classmethod
     def get_bundle_with_http_indicator_attributes(cls):
         return cls.__assemble_bundle(*_HTTP_INDICATOR_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_attributes(cls):
+        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_ip_indicator_attributes(cls):
@@ -9337,7 +9572,13 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_ip_observable_attributes(cls):
-        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(
+            *cls.__extract_observables(_IP_OBSERVABLE_ATTRIBUTES)
+        )
+
+    @classmethod
+    def get_bundle_with_ip_port_attributes(cls):
+        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_ip_port_indicator_attributes(cls):
@@ -9345,7 +9586,13 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_ip_port_observable_attributes(cls):
-        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(
+            *cls.__extract_observables(_IP_PORT_OBSERVABLE_ATTRIBUTES)
+        )
+
+    @classmethod
+    def get_bundle_with_mac_address_attribute(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_mac_address_indicator_attribute(cls):
@@ -9353,7 +9600,24 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mac_address_observable_attribute(cls):
-        return cls.__assemble_bundle(*_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE[:2])
+
+    @classmethod
+    def get_bundle_with_malware_sample_attribute(cls):
+        observables = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        with open(_TESTFILES_PATH / "malware_sample.zip", "rb") as f:
+            data = b64encode(f.read()).decode()
+        od, _file, artifact, indicator, relationship = observables
+        artifact["payload_bin"] = data
+        pattern = [
+            f"file:content_ref.payload_bin = '{data}'",
+            "file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+            "file:content_ref.mime_type = 'application/zip'",
+            "file:content_ref.encryption_algorithm = 'mime-type-indicated'",
+            "file:content_ref.decryption_key = 'infected'",
+        ]
+        indicator["pattern"] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(od, _file, artifact, indicator, relationship)
 
     @classmethod
     def get_bundle_with_malware_sample_indicator_attribute(cls):
@@ -9372,20 +9636,14 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_malware_sample_observable_attribute(cls):
-        observables = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        observed_data, _file, artifact, *_ = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
-            data = b64encode(f.read()).decode()
-        *_, artifact, indicator, _ = observables
-        artifact['payload_bin'] = data
-        pattern = [
-            f"file:content_ref.payload_bin = '{data}'",
-            "file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
-            "file:content_ref.mime_type = 'application/zip'",
-            "file:content_ref.encryption_algorithm = 'mime-type-indicated'",
-            "file:content_ref.decryption_key = 'infected'"
-        ]
-        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(*observables)
+            artifact['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(observed_data, _file, artifact)
+
+    @classmethod
+    def get_bundle_with_mutex_attribute(cls):
+        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_mutex_indicator_attribute(cls):
@@ -9393,7 +9651,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mutex_observable_attribute(cls):
-        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_ATTRIBUTE[:2])
 
     @classmethod
     def get_bundle_with_patterning_language_attributes(cls):
@@ -9404,12 +9662,20 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_PORT_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_regkey_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_regkey_indicator_attribute(cls):
         return cls.__assemble_bundle(_REGKEY_INDICATOR_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_regkey_observable_attribute(cls):
-        return cls.__assemble_bundle(*_REGKEY_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_REGKEY_OBSERVABLE_ATTRIBUTE[:2])
+
+    @classmethod
+    def get_bundle_with_regkey_value_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_regkey_value_indicator_attribute(cls):
@@ -9417,11 +9683,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_regkey_value_observable_attribute(cls):
-        return cls.__assemble_bundle(*_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(*_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE[:2])
 
     @classmethod
     def get_bundle_with_size_in_bytes_indicator_attribute(cls):
         return cls.__assemble_bundle(_SIZE_IN_BYTES_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_url_attributes(cls):
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_url_indicator_attributes(cls):
@@ -9429,11 +9699,17 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_url_observable_attributes(cls):
-        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(
+            *cls.__extract_observables(_URL_OBSERVABLE_ATTRIBUTES)
+        )
 
     @classmethod
     def get_bundle_with_vulnerability_attribute(cls):
         return cls.__assemble_bundle(_VULNERABILITY_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_x509_fingerprint_attributes(cls):
+        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_x509_fingerprint_indicator_attributes(cls):
@@ -9441,7 +9717,9 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_x509_fingerprint_observable_attributes(cls):
-        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(
+            *cls.__extract_observables(_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
+        )
 
     ############################################################################
     #                              EVENTS SAMPLES                              #
@@ -9455,7 +9733,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_custom_labels(cls):
         indicator = deepcopy(_DOMAIN_IP_INDICATOR_OBJECT)
         indicator['labels'].append('Object tag')
-        observed_data, domain, ip = deepcopy(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+        observed_data, domain, ip = deepcopy(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE[:-2])
         observed_data['labels'].append('Attribute tag')
         return cls.__assemble_bundle(indicator, observed_data, domain, ip)
 
@@ -9660,7 +9938,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_asn_indicator_object(cls):
-        return cls.__assemble_bundle(*_ASN_INDICATOR_OBJECT)
+        return cls.__assemble_bundle(_ASN_INDICATOR_OBJECT)
 
     @classmethod
     def get_bundle_with_asn_observable_object(cls):
@@ -9748,8 +10026,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_file_observable_object(cls):
-        observables = deepcopy(_FILE_OBSERVABLE_OBJECT)
-        *_, artifact, indicator, _ = observables
+        *observables, artifact, indicator, relationship = deepcopy(_FILE_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             data = b64encode(f.read()).decode()
         artifact['payload_bin'] = data
@@ -9766,7 +10043,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             "file:content_ref.decryption_key = 'infected')"
         ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(*observables)
+        return cls.__assemble_bundle(*observables, artifact, indicator, relationship)
 
     @classmethod
     def get_bundle_with_geolocation_object(cls):
@@ -9801,10 +10078,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_image_observable_object(cls):
-        observables = deepcopy(_IMAGE_OBSERVABLE_OBJECT)
+        stix_objects = deepcopy(_IMAGE_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
             data = b64encode(f.read()).decode()
-        *_, artifact, indicator, _ = observables
+        *observables, artifact, indicator, relationship = stix_objects
         artifact['payload_bin'] = data
         pattern = [
             "file:name = 'STIX.png'",
@@ -9814,7 +10091,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             "file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png'"
         ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(*observables)
+        return cls.__assemble_bundle(*observables, artifact, indicator, relationship)
 
     @classmethod
     def get_bundle_with_intrusion_set_object(cls):
@@ -9861,10 +10138,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_lnk_observable_object(cls):
-        observables = deepcopy(_LNK_OBSERVABLE_OBJECT)
+        stix_objects = deepcopy(_LNK_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             data = b64encode(f.read()).decode()
-        *_, artifact, indicator, _ = observables
+        *observables, artifact, indicator, relationship = stix_objects
         artifact['payload_bin'] = data
         pattern = [
             "file:name = 'oui'",
@@ -9879,7 +10156,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             "file:content_ref.decryption_key = 'infected')"
         ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(*observables)
+        return cls.__assemble_bundle(*observables, artifact, indicator, relationship)
 
     @classmethod
     def get_bundle_with_mutex_indicator_object(cls):
