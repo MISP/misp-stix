@@ -82,7 +82,9 @@ class DocumentationUpdater:
                 else:
                     for object_type, mapping in mappings.items():
                         for standard in ('MISP', 'STIX'):
-                            if mapping[standard] != self._documentation[name][object_type][standard]:
+                            if self._documentation[name].get(object_type) is None:
+                                self._documentation[name][object_type] = {}
+                            if mapping[standard] != self._documentation[name].get(object_type, {}).get(standard):
                                 self._documentation[name][object_type][standard] = mapping[standard]
                 self._check_stix_import_summary(name, mappings, feature)
             self._write_documentation()
@@ -93,7 +95,6 @@ class DocumentationUpdater:
             self._write_summary()
 
     def _check_stix_export_summary(self, name, mapping):
-        print(mapping)
         summary = (
             self.summary_mapping[name] if name in self.summary_mapping else
             self._define_export_summary(mapping)
@@ -103,7 +104,10 @@ class DocumentationUpdater:
             self._summary_changed = True
 
     def _check_stix_import_summary(self, name, mappings, feature):
-        summary = self.summary_mapping[name] if name in self.summary_mapping else getattr(self, f"_define_{feature}_import_summary")(mappings)
+        summary = (
+            self.summary_mapping[name] if name in self.summary_mapping
+            else getattr(self, f"_define_{feature}_import_summary")(mappings)
+        )
         if name not in self._summary or self._summary[name] != summary:
             self._summary[name] = summary
             self._summary_changed = True
