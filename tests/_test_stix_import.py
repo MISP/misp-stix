@@ -172,6 +172,12 @@ class TestSTIX20Import(TestSTIX2Import):
         )
         objects_documentation.check_import_mapping('stix20')
 
+    @staticmethod
+    def _handle_observed_data_documentation(observed_data):
+        if isinstance(observed_data, list):
+            return [json.loads(obj.serialize()) for obj in observed_data]
+        return json.loads(observed_data.serialize())
+
     def _populate_attack_pattern_documentation(self, **kwargs):
         if 'misp_object' in kwargs:
             self._objects_v20['attack-pattern']['Attack Pattern'] = {
@@ -225,7 +231,9 @@ class TestSTIX20Import(TestSTIX2Import):
             name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
             self._attributes_v20[name]['Observed Data'] = {
                 'MISP': kwargs['attribute'],
-                'STIX': [json.loads(observed_data.serialize()) for observed_data in kwargs['observed_data']]
+                'STIX': self._handle_observed_data_documentation(
+                    kwargs['observed_data']
+                )
             }
         elif 'misp_object' in kwargs:
             name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']

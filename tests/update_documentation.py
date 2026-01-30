@@ -139,8 +139,14 @@ class DocumentationUpdater:
             if stix_type == 'Indicator':
                 types.append(self._pattern_types(stix_object['pattern']))
             elif stix_type == 'Observed Data':
-                observables = stix_object[1:] if isinstance(stix_object, list) else tuple(stix_object['objects'].values())
-                types.append(f"{self._observable_types(observables)} (observable)")
+                observables = (
+                    stix_object['objects'].values()
+                    if isinstance(stix_object, dict) else
+                    tuple(stix_object[0]['objects'].values())
+                    if 'objects' in stix_object[0] else stix_object[1:-2]
+                )
+                observable_types = (observable['type'] for observable in observables)
+                types.append(f"{self._observable_types(*observable_types)} (observable)")
             else:
                 types.append(f'**{stix_type}**')
         return ' / '.join(types)
