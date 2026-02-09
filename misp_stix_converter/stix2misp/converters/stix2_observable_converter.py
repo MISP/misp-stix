@@ -505,8 +505,7 @@ class ExternalSTIX2ObservableConverter(
         if isinstance(values, list):
             for value in values:
                 yield self._populate_object_attribute_with_data(
-                    value, mapping,
-                    self._handle_object_id(
+                    value, mapping, **self._handle_object_id(
                         indicator_ref,
                         value['data'] if isinstance(value, dict) else value,
                         f"{object_id} - {mapping['object_relation']}"
@@ -514,8 +513,7 @@ class ExternalSTIX2ObservableConverter(
                 )
         else:
             yield self._populate_object_attribute_with_data(
-                values, mapping,
-                self._handle_object_id(
+                values, mapping, **self._handle_object_id(
                     indicator_ref,
                     values['data'] if isinstance(values, dict) else values,
                     f"{object_id} - {mapping['object_relation']}"
@@ -571,8 +569,7 @@ class ExternalSTIX2ObservableConverter(
             value = getattr(observable, 'id', object_id.split(' - ')[0])
             yield self._populate_object_attribute_with_data(
                 {'data': data, 'value': value.split('--')[1]},
-                {'object_relation': object_relation},
-                self._handle_object_id(
+                {'object_relation': object_relation}, **self._handle_object_id(
                     indicator_ref, data, f'{object_id} - {object_relation}'
                 )
             )
