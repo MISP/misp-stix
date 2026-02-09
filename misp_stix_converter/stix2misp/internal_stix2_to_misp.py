@@ -12,14 +12,16 @@ from .converters import (
     InternalSTIX2ObservedDataConverter, InternalSTIX2ThreatActorConverter,
     InternalSTIX2ToolConverter, InternalSTIX2VulnerabilityConverter,
     STIX2CustomObjectConverter)
-from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
+from .stix2_to_misp import (
+    STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING, _SDO_TYPING)
 from collections import defaultdict
-from pymisp import MISPAttribute, MISPEventReport, MISPObject, MISPSighting
+from pymisp import (
+    MISPAttribute, MISPEvent, MISPEventReport, MISPObject, MISPSighting)
 from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21, Note, Opinion
 from stix2.v21.sro import Sighting as Sighting_v21
-from typing import Union
+from typing import Iterator, Union
 
 _STORAGE_VARIABLE_NAMES = ('_indicator', '_observed_data')
 
@@ -317,6 +319,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             for sighting in self._sighting['custom_opinion'][object_uuid]:
                 for attribute in misp_object.attributes:
                     attribute.add_sighting(sighting)
+
+    def _handle_tags_from_stix_fields(
+            self, misp_layer: MISPAttribute | MISPEvent | MISPObject,
+            stix_object: _SDO_TYPING) -> Iterator[str]:
+        yield from super()._handle_tags_from_stix_fields(
+            misp_layer, stix_object
+        )
+        for label in stix_object.get("labels", []):
+            if label.startswith("misp:"):
+                continue
+            yield label
 
     def _parse_opinion(self, opinion: Opinion) -> MISPSighting:
         misp_sighting = MISPSighting()

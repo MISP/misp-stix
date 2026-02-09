@@ -690,10 +690,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     misp_layer.__class__.__name__
                 )
                 getattr(self, to_call)(misp_layer, *cluster_ids)
-        for label in stix_object.get('labels', []):
-            if label.startswith('misp:'):
-                continue
-            yield label
 
     def _parse_acs_access_privilege(
             self, tags: list, privilege: dict,
