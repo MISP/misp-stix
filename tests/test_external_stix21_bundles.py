@@ -281,7 +281,7 @@ _ARTIFACT_OBJECTS = [
             "SHA-1": "003d59659a3e28781aaf03da1ac1cb0e326ed65e",
             "SHA-256": "2dd39c08867f34010fd9ea1833aa549a02da16950dda4a8ef922113a9eccd963"
         },
-        "decryption_key": "infected",
+        "decryption_key": "infected"
     },
     {
         "type": "artifact",
@@ -304,7 +304,21 @@ _ARTIFACT_OBJECTS = [
             "SHA-1": "5ec1405887e5a74bf2cb97a8d64481194dc13fdc",
             "SHA-256": "367e474683cb1f61aae1f963aa9a17446afb5f71a8a03dae7203ac84765a5efa"
         },
-        "decryption_key": "clear",
+        "decryption_key": "clear"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--dca02c37-2447-4009-bdc0-a187a24ce918",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Malicious artifact MD5 hash",
+        "description": "MD5 hash matching a known malicious artifact.",
+        "pattern": "[artifact:hashes.MD5 = 'b3982699c1b9a25346cc8498f483b150']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _AS_OBJECTS = [
@@ -376,6 +390,20 @@ _AS_OBJECTS = [
         "spec_version": "2.1",
         "id": "autonomous-system--cd890f31-5825-4fea-85ca-0b3ab3872926",
         "number": 50588
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--50e99804-b9b5-4ea9-9ea8-25dbdd0f19f9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious autonomous system",
+        "description": "Autonomous system associated with malicious activity.",
+        "pattern": "[autonomous-system:number = 666 AND autonomous-system:name = 'Satan autonomous system']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _ATTACK_PATTERN_OBJECTS = [
@@ -559,6 +587,20 @@ _DIRECTORY_OBJECTS = [
         "ctime": "2021-07-21T11:44:56Z",
         "mtime": "2023-12-12T11:24:30Z",
         "atime": "2023-12-12T11:24:30Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--19892ccd-c2bf-486d-bc64-1d482c53a8d4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious directory path",
+        "description": "Directory path associated with malware staging.",
+        "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _DOMAIN_ATTRIBUTES = [
@@ -608,6 +650,20 @@ _DOMAIN_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "domain-name--f93cb275-0366-4ecc-abf0-a17928d1e177",
         "value": "misp-project.org"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--6fdbd93d-bda2-4a06-b5c7-fd13c3082d6e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Monitored domain",
+        "description": "Domain name under active threat investigation.",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _DOMAIN_IP_OBJECTS = [
@@ -671,6 +727,20 @@ _DOMAIN_IP_OBJECTS = [
         "resolves_to_refs": [
             "domain-name--3c10e93f-798e-5a26-a0c1-08156efab7f5"
         ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--d4e1caeb-f5d3-47a7-ac54-5320d2bd706e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Domain with suspicious IP resolution",
+        "description": "Domain resolving to a suspicious IP address.",
+        "pattern": "[domain-name:value = 'example.com' AND domain-name:resolves_to_refs[*].value = '198.51.100.3']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _EMAIL_ADDRESS_ATTRIBUTES = [
@@ -742,6 +812,20 @@ _EMAIL_ADDRESS_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "email-addr--cd890f31-5825-4fea-85ca-0b3ab3872926",
         "value": "donald.duck@gmail.com"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--36d4345a-5cad-400a-a0ab-5f0bc47b1584",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious email address",
+        "description": "Email address associated with phishing campaigns.",
+        "pattern": "[email-addr:value = 'john.doe@gmail.com' AND email-addr:display_name = 'John Doe']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _EMAIL_MESSAGE_OBJECTS = [
@@ -841,6 +925,20 @@ _EMAIL_MESSAGE_OBJECTS = [
         "hashes": {
             "SHA-256": "fe90a7e910cb3a4739bed9180e807e93fa70c90f25a8915476f5e4bfbac681db"
         }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--9b5e4bbd-5a9a-4309-a921-82ccc2d2b1cc",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious email message pattern",
+        "description": "Email subject and sender matching known phishing campaign.",
+        "pattern": "[email-message:subject = 'Check out this picture of a cat!' AND email-message:from_ref.value = 'jdoe@example.com']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _FILE_OBJECTS = [
@@ -1221,6 +1319,20 @@ _IP_ADDRESS_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "ipv4-addr--f93cb275-0366-4ecc-abf0-a17928d1e177",
         "value": "185.194.93.14"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--c43ea7e7-36fd-42f4-a554-4cf8eb20ac44",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious IP address",
+        "description": "IP address associated with known threat infrastructure.",
+        "pattern": "[ipv4-addr:value = '8.8.8.8']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _LOCATION_OBJECTS = [
@@ -1293,6 +1405,20 @@ _MAC_ADDRESS_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "mac-addr--f93cb275-0366-4ecc-abf0-a17928d1e177",
         "value": "ae:49:db:d4:d9:cf"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--e947ce95-9ba7-4837-b191-a1357e50e292",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Monitored MAC address",
+        "description": "MAC address associated with a compromised device.",
+        "pattern": "[mac-addr:value = 'd2:fb:49:24:37:18']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _MALWARE_OBJECTS = [
@@ -1389,6 +1515,20 @@ _MUTEX_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "mutex--f93cb275-0366-4ecc-abf0-a17928d1e177",
         "name": "sensitive_resource_lock"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--0cb1bfdf-a8db-4cfb-bc11-3e3842f9cd76",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Malware mutex indicator",
+        "description": "Mutex name used by known malware families.",
+        "pattern": "[mutex:name = 'shared_resource_lock']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _NETWORK_TRAFFIC_OBJECTS = [
@@ -1542,6 +1682,20 @@ _NETWORK_TRAFFIC_OBJECTS = [
             "MD5": "b3982699c1b9a25346cc8498f483b150",
             "SHA-256": "836f395a4f86e9d1b2f528756c248e76665c02c5d0fc89f9b26136db5ac7f7ae"
         }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--fb1003ac-b789-4390-bd76-afee7184d9e9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious network traffic pattern",
+        "description": "Network traffic pattern matching known C2 communication.",
+        "pattern": "[network-traffic:dst_port = 80 AND network-traffic:protocols[*] = 'http']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _PROCESS_OBJECTS = [
@@ -1637,6 +1791,20 @@ _PROCESS_OBJECTS = [
         "pid": 666,
         "name": "SatanProcess",
         "command_line": "rm -rf *"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--dd4cf728-e866-4018-abfd-baa0619a42f3",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious process indicator",
+        "description": "Process matching known malicious behavior.",
+        "pattern": "[process:name = 'TestProcess' AND process:pid = 2510]",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _REGISTRY_KEY_OBJECTS = [
@@ -1728,6 +1896,20 @@ _REGISTRY_KEY_OBJECTS = [
         "account_login": "JohnDoe",
         "account_type": "windows-local",
         "is_privileged": True
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--3726693f-cc87-476f-8927-dd402328dd9a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious registry key",
+        "description": "Registry key associated with malware persistence mechanism.",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _SOFTWARE_OBJECTS = [
@@ -1797,6 +1979,20 @@ _SOFTWARE_OBJECTS = [
         ],
         "vendor": "Adobe Inc.",
         "version": "10.0"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2e386a0a-7f81-45a0-8f90-158f0ac1f17a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Monitored software",
+        "description": "Software name and vendor under investigation.",
+        "pattern": "[software:name = 'misp-stix' AND software:vendor = 'CIRCL']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _THREAT_ACTOR_OBJECTS = [
@@ -1944,6 +2140,20 @@ _URL_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "url--f93cb275-0366-4ecc-abf0-a17928d1e177",
         "value": "https://misp-project.org/blog/"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--b068f6dd-59f1-4bd3-b2e1-66d8b870ec45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Monitored URL",
+        "description": "URL associated with threat intelligence investigation.",
+        "pattern": "[url:value = 'https://circl.lu/team/']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _USER_ACCOUNT_OBJECTS = [
@@ -2020,6 +2230,20 @@ _USER_ACCOUNT_OBJECTS = [
                 "shell": "/bin/bash"
             }
         }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--499bb4ed-007d-41d0-9aec-0f015515665f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious user account",
+        "description": "User account matching known threat actor activity patterns.",
+        "pattern": "[user-account:account_login = 'thegrugq_ebooks' AND user-account:account_type = 'twitter']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 _VULNERABILITY_OBJECTS = [
@@ -2148,6 +2372,20 @@ _X509_OBJECTS = [
         "subject_public_key_algorithm": "rsaEncryption",
         "subject_public_key_modulus": "00:e2:12:e4:5c:44:90:fa:0f:75:77:c8:88:51:21:1d:ce:b8:0e:f2:73:d5:68:79:02:50:51:5f:2c:a3:82:d1:48:60:f8:fa:c7:75:72:12:bc:b9:7c:d9:12:a8:1a:18:3a:f9:1d:a9:18:04:59:cd:8a:81:03:f7:0a:3d:22:6e:7d:63:65:d7:4d:c5:65:0e:fc:4f:97:9c:e0:3d:52:a4:d9:0b:d9:04:c3:f3:52:2a:a3:cc:e2:82:2c:2b:b8:54:1b:cc:41:2b:1b:76:d0:2a:fd:65:c4:3f:a2:4b:36:5f:5a:79:28:4b:98:1e:38:6c:b6:33:d2:3d:db:53:9c:0b:3f:2b:ab:87:2e:94:47:72:4f:27:58:8d:b0:b2:38:5f:1d:e0:67:53:6e:38:c7:ac:24:49:c9:b6:81:42:e0:06:95:26:c0:c9:bf:5e:7f:1b:92:f5:58:8e:8a:70:88:a9:e5:82:5c:5c:71:54:e0:74:1b:a9:33:1a:f2:3d:bf:9d:1b:45:1a:0e:02:d8:a3:d8:db:64:a9:f8:28:16:7f:4e:c3:ee:33:a1:be:18:72:e3:bd:79:12:54:ea:b9:77:9b:d0:d0:b0:2d:75:af:4d:47:4e:c1:16:84:a2:88:65:ef:18:ff:33:2a:ab:83:7c:43:14:ad:b8:cd:f0:b9:7c:c1:23",
         "subject_public_key_exponent": 65537
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--bcfd8c1c-b5fd-4420-b75b-407e161e17ad",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious X.509 certificate",
+        "description": "X.509 certificate hash matching known malicious code signing.",
+        "pattern": "[x509-certificate:hashes.'SHA-1' = 'bffc1a508d3c02d4a3f86941d3a99f7bf9ec3895']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
 
@@ -2344,7 +2582,7 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
             "target_ref": malwares[1]['id']
         }
         grouping['object_refs'] = [indicator['id'], malwares[0]['id']]
-        ip_addresses = deepcopy(_IP_ADDRESS_ATTRIBUTES[-3:])
+        ip_addresses = deepcopy(_IP_ADDRESS_ATTRIBUTES[-4:-1])
         bundle['objects'] = [
             deepcopy(cls.__identity), deepcopy(cls.__indicator), grouping,
             indicator, *ip_addresses, *malwares, *marking_definitions,
@@ -2406,77 +2644,77 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_artifact_objects(cls):
-        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS)
+        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_artifact_observables(cls):
-        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS[-2:])
+        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS[-3:-1])
 
     @classmethod
     def get_bundle_with_as_objects(cls):
-        return cls.__assemble_bundle(*_AS_OBJECTS)
+        return cls.__assemble_bundle(*_AS_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_as_observables(cls):
-        return cls.__assemble_bundle(*_AS_OBJECTS[-2:])
+        return cls.__assemble_bundle(*_AS_OBJECTS[-3:-1])
 
     @classmethod
     def get_bundle_with_directory_objects(cls):
-        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS)
+        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_directory_observables(cls):
-        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS[-2:])
+        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS[-3:-1])
 
     @classmethod
     def get_bundle_with_domain_attributes(cls):
-        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES)
+        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES[:-1])
 
     @classmethod
     def get_bundle_with_domain_observable(cls):
-        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES[-1:])
+        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES[-2:-1])
 
     @classmethod
     def get_bundle_with_domain_ip_objects(cls):
-        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS)
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_domain_ip_observables(cls):
-        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[-4:])
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[-5:-1])
 
     @classmethod
     def get_bundle_with_email_address_attributes(cls):
-        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
+        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES[:-1])
 
     @classmethod
     def get_bundle_with_email_address_observables(cls):
-        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES[-2:])
+        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES[-3:-1])
 
     @classmethod
     def get_bundle_with_email_message_objects(cls):
-        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS)
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_email_message_observables(cls):
-        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS[1:])
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS[1:-1])
 
     @classmethod
     def get_bundle_with_file_objects(cls):
-        observables = deepcopy(_FILE_OBJECTS)
+        observables = deepcopy(_FILE_OBJECTS[:-1])
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observables[-3]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
 
     @classmethod
     def get_bundle_with_file_observables(cls):
-        observables = deepcopy(_FILE_OBJECTS[3:])
+        observables = deepcopy(_FILE_OBJECTS[3:-1])
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observables[2]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
 
     @classmethod
     def get_bundle_with_ip_address_attributes(cls):
-        return cls.__assemble_bundle(*_IP_ADDRESS_ATTRIBUTES)
+        return cls.__assemble_bundle(*_IP_ADDRESS_ATTRIBUTES[:-1])
 
     @classmethod
     def get_bundle_with_ip_address_observables(cls):
@@ -2484,81 +2722,254 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mac_address_attributes(cls):
-        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES)
+        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES[:-1])
 
     @classmethod
     def get_bundle_with_mac_address_observable(cls):
-        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES[-1:])
+        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES[-2:-1])
 
     @classmethod
     def get_bundle_with_mutex_attributes(cls):
-        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[:-1])
 
     @classmethod
     def get_bundle_with_mutex_observable(cls):
-        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[-1:])
+        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[-2:-1])
 
     @classmethod
     def get_bundle_with_network_traffic_objects(cls):
-        return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS)
+        return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_network_traffic_observables(cls):
-        _, _, _, ip, _, _, _, *observables = deepcopy(_NETWORK_TRAFFIC_OBJECTS)
+        _, _, _, ip, _, _, _, *observables = deepcopy(_NETWORK_TRAFFIC_OBJECTS[:-1])
         return cls.__assemble_bundle(ip, *observables)
 
     @classmethod
     def get_bundle_with_process_objects(cls):
-        return cls.__assemble_bundle(*_PROCESS_OBJECTS)
+        return cls.__assemble_bundle(*_PROCESS_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_process_observables(cls):
-        return cls.__assemble_bundle(*_PROCESS_OBJECTS[2:-1])
+        return cls.__assemble_bundle(*_PROCESS_OBJECTS[2:-2])
 
     @classmethod
     def get_bundle_with_registry_key_objects(cls):
-        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS)
+        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_registry_key_observables(cls):
-        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS[2:])
+        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS[2:-1])
 
     @classmethod
     def get_bundle_with_software_objects(cls):
-        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS)
+        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_software_observables(cls):
-        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS[-2:])
+        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS[-3:-1])
 
     @classmethod
     def get_bundle_with_url_attributes(cls):
-        return cls.__assemble_bundle(*_URL_ATTRIBUTES)
+        return cls.__assemble_bundle(*_URL_ATTRIBUTES[:-1])
 
     @classmethod
     def get_bundle_with_url_observable(cls):
-        return cls.__assemble_bundle(*_URL_ATTRIBUTES[-1:])
+        return cls.__assemble_bundle(*_URL_ATTRIBUTES[-2:-1])
 
     @classmethod
     def get_bundle_with_user_account_objects(cls):
-        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS)
+        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_user_account_observables(cls):
-        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS[-3:])
+        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS[-4:-1])
 
     @classmethod
     def get_bundle_with_wrapped_objects(cls):
-        return cls.__assemble_bundle(*cls.__get_wrapped_objects())
+        return cls.__assemble_bundle(
+            *(
+                obj for obj in cls.__get_wrapped_objects()
+                if obj['type'] != 'indicator'
+            )
+        )
 
     @classmethod
     def get_bundle_with_wrapped_observables(cls):
-        return cls.__assemble_bundle(*cls.__get_wrapped_observables())
+        return cls.__assemble_bundle(
+            *(
+                obj for obj in cls.__get_wrapped_observables()
+                if obj['type'] != 'indicator'
+            )
+        )
 
     @classmethod
     def get_bundle_with_x509_objects(cls):
-        return cls.__assemble_bundle(*_X509_OBJECTS)
+        return cls.__assemble_bundle(*_X509_OBJECTS[:-1])
 
     @classmethod
     def get_bundle_with_x509_observable(cls):
-        return cls.__assemble_bundle(*_X509_OBJECTS[-1:])
+        return cls.__assemble_bundle(*_X509_OBJECTS[-2:-1])
+
+    ############################################################################
+    #                OBSERVED DATA WITH INLINE INDICATOR SAMPLES.              #
+    ############################################################################
+
+    @classmethod
+    def get_bundle_with_artifact_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_artifact_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS[-3:])
+
+    @classmethod
+    def get_bundle_with_as_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_AS_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_as_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_AS_OBJECTS[-3:])
+
+    @classmethod
+    def get_bundle_with_directory_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_directory_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS[-3:])
+
+    @classmethod
+    def get_bundle_with_domain_attributes_and_indicator(cls):
+        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_domain_observable_and_indicator(cls):
+        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES[-2:])
+
+    @classmethod
+    def get_bundle_with_domain_ip_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_domain_ip_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[-5:])
+
+    @classmethod
+    def get_bundle_with_email_address_attributes_and_indicator(cls):
+        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_email_address_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES[-3:])
+
+    @classmethod
+    def get_bundle_with_email_message_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_email_message_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS[1:])
+
+    @classmethod
+    def get_bundle_with_file_objects_and_indicator(cls):
+        observables = deepcopy(_FILE_OBJECTS)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observables[-4]['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_file_observables_and_indicator(cls):
+        observables = deepcopy(_FILE_OBJECTS[3:])
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observables[2]['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_ip_address_attributes_and_indicator(cls):
+        return cls.__assemble_bundle(*_IP_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_address_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_IP_ADDRESS_ATTRIBUTES[-3:])
+
+    @classmethod
+    def get_bundle_with_mac_address_attributes_and_indicator(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_mac_address_observable_and_indicator(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES[-2:])
+
+    @classmethod
+    def get_bundle_with_mutex_attributes_and_indicator(cls):
+        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_mutex_observable_and_indicator(cls):
+        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[-2:])
+
+    @classmethod
+    def get_bundle_with_network_traffic_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_network_traffic_observables_and_indicator(cls):
+        _, _, _, ip, _, _, _, *observables = deepcopy(_NETWORK_TRAFFIC_OBJECTS)
+        return cls.__assemble_bundle(ip, *observables)
+
+    @classmethod
+    def get_bundle_with_process_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_PROCESS_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_process_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_PROCESS_OBJECTS[2:])
+
+    @classmethod
+    def get_bundle_with_registry_key_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_registry_key_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS[2:])
+
+    @classmethod
+    def get_bundle_with_software_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_software_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS[-3:])
+
+    @classmethod
+    def get_bundle_with_url_attributes_and_indicator(cls):
+        return cls.__assemble_bundle(*_URL_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_url_observable_and_indicator(cls):
+        return cls.__assemble_bundle(*_URL_ATTRIBUTES[-2:])
+
+    @classmethod
+    def get_bundle_with_user_account_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_user_account_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS[-4:])
+
+    @classmethod
+    def get_bundle_with_wrapped_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*cls.__get_wrapped_objects())
+
+    @classmethod
+    def get_bundle_with_wrapped_observables_and_indicator(cls):
+        return cls.__assemble_bundle(*cls.__get_wrapped_observables())
+
+    @classmethod
+    def get_bundle_with_x509_objects_and_indicator(cls):
+        return cls.__assemble_bundle(*_X509_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_x509_observable_and_indicator(cls):
+        return cls.__assemble_bundle(*_X509_OBJECTS[-2:])
