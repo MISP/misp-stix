@@ -78,10 +78,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
 
     def _load_stix_bundle(self, bundle: _BUNDLE_TYPING):
         stix_objects, object_refs = self._partition_stix_objects(bundle.objects)
-        standalone_objects = set()
+        standalone_objects = {}
         for stix_object in stix_objects:
-            if stix_object['id'] not in object_refs:
-                standalone_objects.add(stix_object['id'])
+            object_id = stix_object['id']
+            if object_id not in object_refs:
+                standalone_objects[object_id] = None
             self._load_stix_object(stix_object)
         if standalone_objects:
             self.__standalone_object_refs = tuple(standalone_objects)
