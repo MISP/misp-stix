@@ -454,8 +454,9 @@ class ExternalSTIX2ObservedDataConverter(
                 **self._populate_object_attribute(
                     AS_value, asn_attribute,
                     self._handle_object_id(
-                        indicator_ref, autonomous_system.number,
-                        f"{object_id} - {asn_attribute['object_relation']}"
+                        indicator_ref, AS_value,
+                        f"{object_id} - {asn_attribute['object_relation']}",
+                        value_to_check=autonomous_system.number
                     )
                 )
             )
@@ -537,8 +538,9 @@ class ExternalSTIX2ObservedDataConverter(
                 misp_object.add_attribute(
                     **self._populate_object_attribute(
                         AS_value, asn_attribute, self._handle_object_id(
-                            indicator_ref, autonomous_system.number,
-                            f"{object_id} - {asn_attribute['object_relation']}"
+                            indicator_ref, AS_value,
+                            f"{object_id} - {asn_attribute['object_relation']}",
+                            value_to_check=autonomous_system.number
                         )
                     )
                 )
