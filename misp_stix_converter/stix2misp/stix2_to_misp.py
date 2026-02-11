@@ -662,7 +662,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_tags_from_stix_fields(
             self, misp_layer: MISPAttribute | MISPEvent | MISPObject,
-            stix_object: _SDO_TYPING):
+            stix_object: _SDO_TYPING) -> Iterator[str]:
         if hasattr(stix_object, 'confidence'):
             yield self._parse_confidence_level(stix_object.confidence)
         if hasattr(stix_object, 'object_marking_refs'):

@@ -277,7 +277,7 @@ class STIX2ObservableConverter(STIX2Converter):
                 self._handle_object_id(
                     indicator_ref, protocol.upper(),
                     f"{object_id} - {protocol_attribute['object_relation']}",
-                    protocol
+                    value_to_check=protocol
                 )
             )
 
