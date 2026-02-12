@@ -65,18 +65,6 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(type_label, f'misp:type="{attribute.type}"')
         self.assertEqual(category_label, f'misp:category="{attribute.category}"')
 
-    def _check_attributes_ids_flag(self, feature, pattern, *attributes):
-        pattern_values = [value[-1] for value in pattern.comparisons[feature]]
-        for attribute in attributes:
-            if isinstance(attribute.value, str) and '|' in attribute.value:
-                if any(value in pattern_values for value in attribute.value.split('|')):
-                    self.assertTrue(attribute.to_ids)
-                    continue
-            if str(attribute.value) in pattern_values:
-                self.assertTrue(attribute.to_ids)
-                continue
-            self.assertFalse(attribute.to_ids)
-
     def _check_misp_event_features(self, event, report, published=False):
         self.assertEqual(event.uuid, report.id.split('--')[1])
         self.assertEqual(event.info, report.name)
@@ -114,6 +102,10 @@ class TestSTIX2Import(TestSTIX):
     @staticmethod
     def _get_data_value(data):
         return b64encode(data.getvalue()).decode()
+
+    def _get_compiled_pattern(self, indicator):
+        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        return pattern.comparisons
 
     @staticmethod
     def _get_pattern_value(pattern):
@@ -2193,6 +2185,18 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             f"CAPEC-{capec_id.value}",
             attack_pattern.external_references[0].external_id
         )
+
+    def _check_attributes_ids_flag(self, feature, pattern, *attributes):
+        pattern_values = [value[-1] for value in pattern[feature]]
+        for attribute in attributes:
+            if isinstance(attribute.value, str) and '|' in attribute.value:
+                if any(value in pattern_values for value in attribute.value.split('|')):
+                    self.assertTrue(attribute.to_ids)
+                    continue
+            if str(attribute.value) in pattern_values:
+                self.assertTrue(attribute.to_ids)
+                continue
+            self.assertFalse(attribute.to_ids)
 
     def _check_course_of_action_object(self, misp_object, course_of_action):
         self.assertEqual(misp_object.uuid, course_of_action.id.split('--')[1])

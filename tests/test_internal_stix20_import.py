@@ -1849,14 +1849,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, gitlab_od, gitlab_ind, gitlab_rel, telegram_od, telegram_ind, telegram_rel = bundle.objects
         gitlab, telegram = self._check_misp_event_features(event, report)
         gitlab_observable = self._check_observed_data_object(gitlab, gitlab_od)['0']
-        gitlab_pattern = self.parser.indicator_parser._compile_stix_pattern(gitlab_ind)
+        gitlab_pattern = self._get_compiled_pattern(gitlab_ind)
         self._check_gitlab_user_observable_object(gitlab.attributes, gitlab_observable, gitlab_pattern)
         self._populate_documentation(
             misp_object=json.loads(gitlab.to_json()),
             observed_data=[gitlab_od, gitlab_ind, gitlab_rel]
         )
         telegram_observable = self._check_observed_data_object(telegram, telegram_od)['0']
-        telegram_pattern = self.parser.indicator_parser._compile_stix_pattern(telegram_ind)
+        telegram_pattern = self._get_compiled_pattern(telegram_ind)
         self._check_telegram_account_observable_object(telegram.attributes, telegram_observable, telegram_pattern)
         self._populate_documentation(
             misp_object=json.loads(telegram.to_json()),
@@ -1923,42 +1923,42 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
          red_od, red_ind, red_rel, tw_od, tw_ind, tw_rel, user_od, user_ind, user_rel) = bundle.objects
         facebook, github, parler, reddit, twitter, user_account = self._check_misp_event_features(event, report)
         facebook_observable = self._check_observed_data_object(facebook, fb_od)['0']
-        fb_pattern = self.parser.indicator_parser._compile_stix_pattern(fb_ind)
+        fb_pattern = self._get_compiled_pattern(fb_ind)
         self._check_facebook_account_observable_object(facebook.attributes, facebook_observable, fb_pattern)
         self._populate_documentation(
             misp_object=json.loads(facebook.to_json()),
             observed_data=[fb_od, fb_ind, fb_rel]
         )
         github_observable = self._check_observed_data_object(github, gh_od)['0']
-        gh_pattern = self.parser.indicator_parser._compile_stix_pattern(gh_ind)
+        gh_pattern = self._get_compiled_pattern(gh_ind)
         self._check_github_user_observable_object(github.attributes, github_observable, gh_pattern)
         self._populate_documentation(
             misp_object=json.loads(github.to_json()),
             observed_data=[gh_od, gh_ind, gh_rel]
         )
         parler_observable = self._check_observed_data_object(parler, par_od)['0']
-        par_pattern = self.parser.indicator_parser._compile_stix_pattern(par_ind)
+        par_pattern = self._get_compiled_pattern(par_ind)
         self._check_parler_account_observable_object(parler.attributes, parler_observable, par_pattern)
         self._populate_documentation(
             misp_object=json.loads(parler.to_json()),
             observed_data=[par_od, par_ind, par_rel]
         )
         reddit_observable = self._check_observed_data_object(reddit, red_od)['0']
-        red_pattern = self.parser.indicator_parser._compile_stix_pattern(red_ind)
+        red_pattern = self._get_compiled_pattern(red_ind)
         self._check_reddit_account_observable_object(reddit.attributes, reddit_observable, red_pattern)
         self._populate_documentation(
             misp_object=json.loads(reddit.to_json()),
             observed_data=[red_od, red_ind, red_rel]
         )
         twitter_observable = self._check_observed_data_object(twitter, tw_od)['0']
-        tw_pattern = self.parser.indicator_parser._compile_stix_pattern(tw_ind)
+        tw_pattern = self._get_compiled_pattern(tw_ind)
         self._check_twitter_account_observable_object(twitter.attributes, twitter_observable, tw_pattern)
         self._populate_documentation(
             misp_object=json.loads(twitter.to_json()),
             observed_data=[tw_od, tw_ind, tw_rel]
         )
         user_account_observable = self._check_observed_data_object(user_account, user_od)['0']
-        user_pattern = self.parser.indicator_parser._compile_stix_pattern(user_ind)
+        user_pattern = self._get_compiled_pattern(user_ind)
         username, account_type, display_name, user_id, last_changed, password, *attributes = user_account.attributes
         self._check_user_account_observable_object(
             user_account_observable, user_pattern,
@@ -1996,7 +1996,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observable = self._check_observed_data_object(misp_object, observed_data)['0']
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_android_app_observable_object(misp_object.attributes, observable, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
@@ -2024,7 +2024,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observable = self._check_observed_data_object(misp_object, observed_data)['0']
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_asn_observable_object(misp_object.attributes, observable, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
@@ -2078,7 +2078,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observable = self._check_observed_data_object(misp_object, observed_data)['0']
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_cpe_asset_observable_object(misp_object.attributes, observable, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
@@ -2111,7 +2111,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observable = self._check_observed_data_object(misp_object, observed_data)['0']
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         password = self._check_credential_observable_object(
             misp_object.attributes, observable, pattern
         )
@@ -2176,7 +2176,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[od1, ind1, rel1]
         )
         observables2 = self._check_observed_data_object(domain_ip2, od2)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(ind2)
+        pattern = self._get_compiled_pattern(ind2)
         self._check_attributes_ids_flag('domain-name', pattern, *domain_ip2.attributes)
         domain1, ip1, ip2, domain2 = domain_ip2.attributes
         for attribute, index in zip((domain1, domain2), ('2', '3')):
@@ -2217,7 +2217,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         email = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(email, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         message_id = self._check_email_observable_object(
             email.attributes, observables, pattern
         )
@@ -2282,7 +2282,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(pe_object.timestamp, observed_data.modified)
         self.assertEqual(section_object.name, 'pe-section')
         self.assertEqual(section_object.timestamp, observed_data.modified)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_file_and_pe_observable_object(
             file_object.attributes, pe_object.attributes,
             section_object.attributes, observable, pattern
@@ -2319,7 +2319,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         creation_time, modification_time = self._check_file_observable_object(
             misp_object.attributes, observables, pattern
         )
@@ -2351,7 +2351,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_http_request_observable_object(
             misp_object.attributes, observables, pattern
         )
@@ -2395,7 +2395,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_image_observable_object(misp_object.attributes, observables, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
@@ -2436,7 +2436,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_ip_port_observable_object(misp_object.attributes, observables, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
@@ -2483,7 +2483,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         atime, ctime, mtime = self._check_lnk_observable_object(misp_object.attributes, observables, pattern)
         file_object = observed_data.objects['0']
         self.assertEqual(atime.type, 'datetime')
@@ -2521,7 +2521,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         mutex = self._check_observed_data_object(misp_object, observed_data)['0']
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_mutex_observable_object(misp_object.attributes, mutex, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
@@ -2549,7 +2549,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_netflow_observable_object(
             misp_object.attributes, observables, pattern
         )
@@ -2579,7 +2579,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_network_connection_observable_object(
             misp_object.attributes, observables, pattern
         )
@@ -2620,7 +2620,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         src_port, dst_port, hostname, ip_src, ip_dst, protocol, address_family, domain_family, socket_type, listening = misp_object.attributes
         self._check_network_socket_observable_object(
             (
@@ -2732,7 +2732,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         name, parent_process_name = self._check_process_observable_object(
             misp_object.attributes, observables, pattern
         )
@@ -2771,7 +2771,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_object = self._check_misp_event_features(event, report)[0]
         observable = self._check_observed_data_object(misp_object, observed_data)['0']
         self.assertEqual(misp_object.uuid, indicator.id.split("--")[1])
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         modified_time = self._check_registry_key_observable_object(
             misp_object.attributes, observable, pattern
         )
@@ -2827,7 +2827,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_object = self._check_misp_event_features(event, report)[0]
         url = self._check_observed_data_object(misp_object, observed_data)['0']
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_url_observable_object(misp_object.attributes, url, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
@@ -2869,7 +2869,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_object = self._check_misp_event_features(event, report)[0]
         x509 = self._check_observed_data_object(misp_object, observed_data)['0']
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_x509_observable_object(misp_object.attributes, x509, pattern)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),

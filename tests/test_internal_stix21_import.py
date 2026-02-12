@@ -2192,7 +2192,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
          telegram_od, telegram_o, telegram_ind, telegram_rel) = bundle.objects
         gitlab, telegram = self._check_misp_event_features_from_grouping(event, grouping)
         gitlab_ref = self._check_observed_data_object(gitlab, gitlab_od)[0]
-        gitlab_pattern = self.parser.indicator_parser._compile_stix_pattern(gitlab_ind)
+        gitlab_pattern = self._get_compiled_pattern(gitlab_ind)
         self._assert_multiple_equal(
             gitlab.uuid, gitlab_o.id.split('--')[1],
             gitlab_ref.split('--')[1], gitlab_ind.id.split('--')[1]
@@ -2203,7 +2203,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[gitlab_od, gitlab_o, gitlab_ind, gitlab_rel]
         )
         telegram_ref = self._check_observed_data_object(telegram, telegram_od)[0]
-        telegram_pattern = self.parser.indicator_parser._compile_stix_pattern(telegram_ind)
+        telegram_pattern = self._get_compiled_pattern(telegram_ind)
         self._assert_multiple_equal(
             telegram.uuid, telegram_o.id.split('--')[1],
             telegram_ref.split('--')[1], telegram_ind.id.split('--')[1]
@@ -2264,7 +2264,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
          tw_od, tw_o, tw_ind, tw_rel, user_od, user_o, user_ind, user_rel) = bundle.objects
         facebook, github, parler, reddit, twitter, user_account = self._check_misp_event_features_from_grouping(event, grouping)
         facebook_ref = self._check_observed_data_object(facebook, fb_od)[0]
-        fb_pattern = self.parser.indicator_parser._compile_stix_pattern(fb_ind)
+        fb_pattern = self._get_compiled_pattern(fb_ind)
         self._assert_multiple_equal(
             facebook.uuid, fb_od.id.split('--')[1],
             facebook_ref.split('--')[1], fb_ind.id.split('--')[1]
@@ -2275,7 +2275,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[fb_od, fb_o, fb_ind, fb_rel]
         )
         github_ref = self._check_observed_data_object(github, gh_od)[0]
-        gh_pattern = self.parser.indicator_parser._compile_stix_pattern(gh_ind)
+        gh_pattern = self._get_compiled_pattern(gh_ind)
         self._assert_multiple_equal(
             github.uuid, gh_o.id.split('--')[1],
             github_ref.split('--')[1], gh_ind.id.split('--')[1]
@@ -2286,7 +2286,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[gh_od, gh_o, gh_ind, gh_rel]
         )
         parler_ref = self._check_observed_data_object(parler, par_od)[0]
-        par_pattern = self.parser.indicator_parser._compile_stix_pattern(par_ind)
+        par_pattern = self._get_compiled_pattern(par_ind)
         self._assert_multiple_equal(
             parler.uuid, par_o.id.split('--')[1],
             parler_ref.split('--')[1], par_ind.id.split('--')[1]
@@ -2297,7 +2297,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[par_od, par_o, par_ind, par_rel]
         )
         reddit_ref = self._check_observed_data_object(reddit, red_od)[0]
-        red_pattern = self.parser.indicator_parser._compile_stix_pattern(red_ind)
+        red_pattern = self._get_compiled_pattern(red_ind)
         self._assert_multiple_equal(
             reddit.uuid, red_o.id.split('--')[1],
             reddit_ref.split('--')[1], red_ind.id.split('--')[1]
@@ -2308,7 +2308,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[red_od, red_o, red_ind, red_rel]
         )
         twitter_ref = self._check_observed_data_object(twitter, tw_od)[0]
-        tw_pattern = self.parser.indicator_parser._compile_stix_pattern(tw_ind)
+        tw_pattern = self._get_compiled_pattern(tw_ind)
         self._assert_multiple_equal(
             twitter.uuid, tw_o.id.split('--')[1],
             twitter_ref.split('--')[1], tw_ind.id.split('--')[1]
@@ -2319,7 +2319,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[tw_od, tw_o, tw_ind, tw_rel]
         )
         user_account_ref = self._check_observed_data_object(user_account, user_od)[0]
-        user_pattern = self.parser.indicator_parser._compile_stix_pattern(user_ind)
+        user_pattern = self._get_compiled_pattern(user_ind)
         self._assert_multiple_equal(
             user_account.uuid, user_o.id.split('--')[1],
             user_account_ref.split('--')[1], user_ind.id.split('--')[1]
@@ -2361,7 +2361,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, observable, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, observable.id.split('--')[1],
             observable_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2435,7 +2435,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, observable, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, observable.id.split('--')[1],
             observable_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2493,7 +2493,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, observable, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, observable.id.split('--')[1],
             observable_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2527,7 +2527,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, observable, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, observable.id.split('--')[1],
             observable_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2633,7 +2633,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         (_from, _from_dn, _to, _to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, message_id,
          subject, boundary, user_agent, reply_to, x_mailer, *attachments) = email.attributes
         message_ref = self._check_observed_data_object(email, od)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             email.uuid, od.id.split('--')[1], message.id.split('--')[1],
             message_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2706,7 +2706,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, observable, indicator, relatonship = bundle.objects
         file_object, pe_object, section_object = self._check_misp_event_features_from_grouping(event, grouping)
         file_ref = self._check_observed_data_object(file_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             file_object.uuid, observable.id.split('--')[1],
             file_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2751,7 +2751,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, file_object, directory, artifact, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         file_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, file_object.id.split('--')[1],
             file_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2816,7 +2816,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
          domain_name, indicator, relationship) = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         object_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, network_traffic.id.split('--')[1],
             object_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2874,7 +2874,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, file_object, artifact, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         file_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, file_object.id.split('--')[1],
             file_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2926,7 +2926,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, network_traffic, address, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         network_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, network_traffic.id.split('--')[1],
             network_ref.split('--')[1], indicator.id.split('--')[1]
@@ -2987,7 +2987,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, file_object, directory, artifact, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         file_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, file_object.id.split('--')[1],
             file_ref.split('--')[1], indicator.id.split('--')[1]
@@ -3036,7 +3036,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, mutex, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         mutex_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, mutex.id.split('--')[1],
             mutex_ref.split('--')[1], indicator.id.split('--')[1]
@@ -3069,7 +3069,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
          address2, as2, indicator, relationship) = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         network_traffic_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, network_traffic.id.split('--')[1],
             network_traffic_ref.split('--')[1], indicator.id.split('--')[1]
@@ -3114,7 +3114,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
          indicator, relationship) = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._check_network_connection_observable_object(
             misp_object.attributes,
             {
@@ -3156,7 +3156,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
          indicator, relationship) = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_observed_data_object(misp_object, observed_data)
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         port_src, port_dst, domain_family, *attributes = misp_object.attributes
         self._check_network_socket_observable_object(
             (port_src, port_dst, *attributes),
@@ -3350,7 +3350,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
          child_process, image, indicator, relationship) = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         process_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, process.id.split('--')[1],
             process_ref.split('--')[1], indicator.id.split('--')[1]
@@ -3404,7 +3404,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, registry_key, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         registry_key_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, registry_key.id.split('--')[1],
             registry_key_ref.split('--')[1], indicator.id.split('--')[1]
@@ -3468,7 +3468,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, url, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         url_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, url.id.split('--')[1],
             url_ref.split('--')[1], indicator.id.split('--')[1]
@@ -3513,7 +3513,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, x509, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         x509_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self._get_compiled_pattern(indicator)
         self._assert_multiple_equal(
             misp_object.uuid, x509.id.split('--')[1], x509_ref.split('--')[1],
             indicator.id.split('--')[1]
