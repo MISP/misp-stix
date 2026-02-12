@@ -45,12 +45,12 @@ python = "^3.10"
 pymisp = "^2.5.4"
 stix = "^1.2.0"
 cybox = "^2.1.0"
-misp-lib-stix2="^3.0.1"
 mixbox = "^1.0.3"
 maec = "^4.1.0"
 stix-edh = "1.0.3"
 setuptools = "*"
 pycountry = "^24.6.1"
+stix2 = "^3.0.2"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^3.8.3"
