@@ -1233,7 +1233,7 @@ _NETWORK_TRAFFIC_OBJECTS = [
         "modified": "2024-10-25T16:22:00.000Z",
         "name": "Suspicious network traffic pattern",
         "description": "Network traffic pattern matching known C2 communication.",
-        "pattern": "[network-traffic:dst_port = 80 AND network-traffic:protocols[*] = 'http']",
+        "pattern": "[network-traffic:dst_port = 80 AND network-traffic:protocols[*] = 'http' AND network-traffic:dst_ref.value = '203.0.113.2']",
         "valid_from": "2024-10-25T16:22:00Z",
         "labels": ["malicious-activity"]
     }
