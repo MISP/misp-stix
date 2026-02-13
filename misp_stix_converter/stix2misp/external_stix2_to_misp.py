@@ -349,15 +349,25 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     #       METHODS TO LINK INDICATORS AND OBSERVABLES WITH SIMILAR DATA       #
     ############################################################################
 
+    def _check_observable_types_match(
+            self, observable_type: str, indicator_type: str) -> bool:
+        if observable_type == indicator_type:
+            return True
+        obs_types = self._mapping.related_observable_types(observable_type)
+        return indicator_type in obs_types
+
     def _fetch_indicator_reference(
             self, observable: _OBSERVABLE_TYPING) -> Iterator[str]:
         observable_references = tuple(
             self._fetch_observable_references(observable)
         )
         for indicator_id, patterns in self._indicator_references.items():
-            if not any(ref in patterns for ref in observable_references):
-                continue
-            yield indicator_id
+            for obs_type, values in patterns.items():
+                if not self._check_observable_types_match(observable.type, obs_type):
+                    continue
+                if not any(ref in values for ref in observable_references):
+                    continue
+                yield indicator_id
 
     def _fetch_observable_references(
             self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
@@ -388,9 +398,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             return
         pattern_parser = self.indicator_parser._compile_stix_pattern
         self._indicator_references = {
-            indicator_id: tuple(val[-1] for val in pattern)
+            indicator_id: {obs_type: tuple(val[-1] for val in pattern)}
             for indicator_id, indicator in self._indicator.items()
-            for pattern in pattern_parser(indicator).comparisons.values()
+            for obs_type, pattern in pattern_parser(indicator).comparisons.items()
         }
         if score in (3, 7):
             for observable_id, observable in self._observable.items():

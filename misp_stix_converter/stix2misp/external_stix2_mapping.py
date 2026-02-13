@@ -113,6 +113,42 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             )
         }
     )
+    __related_observable_types = Mapping(
+        **{
+            'artifact': ['email-message', 'file', 'network-traffic', 'url'],
+            'autonomous-system': ['ipv4-addr', 'ipv6-addr'],
+            'directory': ['file'],
+            'domain-name': [
+                'email-message', 'ipv4-addr', 'ipv6-addr', 'mac-addr',
+                'network-traffic'
+            ],
+            'email-addr': ['email-message', 'user-account'],
+            'email-message': [
+                'artifact', 'domain-name', 'email-addr', 'file',
+                'ipv4-addr', 'ipv6-addr'
+            ],
+            'file': ['artifact', 'directory', 'email-message', 'process'],
+            'ipv4-addr': [
+                'autonomous-system', 'domain-name', 'email-message',
+                'mac-addr', 'network-traffic'
+            ],
+            'ipv6-addr': [
+                'autonomous-system', 'domain-name', 'email-message',
+                'mac-addr', 'network-traffic'
+            ],
+            'mac-addr': [
+                'domain-name', 'ipv4-addr', 'ipv6-addr', 'network-traffic'
+            ],
+            'network-traffic': [
+                'artifact', 'domain-name', 'ipv4-addr',
+                'ipv6-addr', 'mac-addr', 'process'
+            ],
+            'process': ['file', 'network-traffic', 'user-account'],
+            'url': ['artifact'],
+            'user-account': ['email-addr', 'process', 'windows-registry-key'],
+            'windows-registry-key': ['user-account']
+        }
+    )
 
     # MISP OPINION MAPPING
     __opinion_mapping = Mapping(
@@ -136,6 +172,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def opinion_mapping(cls, field: str) -> int:
         return cls.__opinion_mapping.get(field, 50)
+
+    @classmethod
+    def related_observable_types(cls, field: str) -> list:
+        return cls.__related_observable_types.get(field, [])
 
     @classmethod
     def stix_object_loading_mapping(cls, field: str) -> Union[str, None]:
