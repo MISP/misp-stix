@@ -407,13 +407,26 @@ class ExternalSTIX2ObservableMapping(
 
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
+    def related_observable_types(self, field: str) -> list:
+        return self.main_parser._mapping.related_observable_types(field)
+
     def _check_indicator_reference(
-            self, references: set | None, field: str) -> tuple | None:
+            self, reference: str, observable_type: str, field: str) -> bool:
+        for obs_type, values in self.indicator_references.get(reference, {}).items():
+            if observable_type == obs_type and field in values:
+                return True
+            if observable_type in self.related_observable_types(obs_type):
+                return field in values
+        return False
+
+    def _check_indicator_references(
+            self, references: set | None,
+            observable_type: str, field: str) -> tuple | None:
         if references is None:
             return None
         return tuple(
-            reference for reference in sorted(references)
-            if field in self.indicator_references.get(reference, [])
+            reference for reference in sorted(references) if
+            self._check_indicator_reference(reference, observable_type, field)
         )
 
     def _create_misp_attribute(
