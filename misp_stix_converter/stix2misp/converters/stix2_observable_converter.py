@@ -241,46 +241,6 @@ class STIX2ObservableConverter(STIX2Converter):
         else:
             observable['misp_object'] = [observable['misp_object'], misp_object]
 
-    def _parse_http_request_observable(
-            self, extension: _HTTP_REQUEST_EXTENSION_TYPING,
-            object_id: str) -> Iterator[dict]:
-        mapping = self._mapping.http_request_extension_mapping
-        for field, attribute in mapping().items():
-            if hasattr(extension, field):
-                yield from self._handle_object_attributes(
-                    attribute, getattr(extension, field), object_id
-                )
-        if hasattr(extension, 'request_header'):
-            mapping = self._mapping.http_request_header_mapping
-            for field, attribute in mapping().items():
-                if extension.request_header.get(field):
-                    yield from self._handle_object_attributes(
-                        attribute, extension.request_header[field], object_id
-                    )
-
-    def _parse_network_traffic_observable(
-            self, observable: _NETWORK_TRAFFIC_TYPING,
-            object_id: Optional[str] = None,
-            indicator_ref: set | None = None) -> Iterator[dict]:
-        if object_id is None:
-            object_id = observable.id
-        mapping = self._mapping.network_traffic_object_mapping()
-        for field, attribute in mapping.items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    observable, attribute, indicator_ref, field, object_id
-                )
-        protocol_attribute = self._mapping.protocol_attribute()
-        for protocol in observable.protocols:
-            yield self._populate_object_attribute(
-                protocol.upper(), protocol_attribute,
-                self._handle_object_id(
-                    indicator_ref, protocol.upper(),
-                    f"{object_id} - {protocol_attribute['object_relation']}",
-                    value_to_check=protocol
-                )
-            )
-
     # Errors handling
     def _hash_type_error(self, hash_type: str):
         self.main_parser._add_error(f'Wrong hash_type: {hash_type}')
@@ -1273,6 +1233,23 @@ class InternalSTIX2ObservableConverter(
                     mapping, getattr(observable, feature), object_id
                 )
 
+    def _parse_http_request_observable(
+            self, extension: _HTTP_REQUEST_EXTENSION_TYPING,
+            object_id: str) -> Iterator[dict]:
+        mapping = self._mapping.http_request_extension_mapping
+        for field, attribute in mapping().items():
+            if hasattr(extension, field):
+                yield from self._handle_object_attributes(
+                    attribute, getattr(extension, field), object_id
+                )
+        if hasattr(extension, 'request_header'):
+            mapping = self._mapping.http_request_header_mapping
+            for field, attribute in mapping().items():
+                if extension.request_header.get(field):
+                    yield from self._handle_object_attributes(
+                        attribute, extension.request_header[field], object_id
+                    )
+
     def _parse_image_attachment_observable(
             self, observable: _ARTIFACT_TYPING,
             observed_data_id: str) -> Iterator[dict]:
@@ -1413,6 +1390,29 @@ class InternalSTIX2ObservableConverter(
                         feature, object_id, mapping['object_relation']
                     )
                 )
+
+    def _parse_network_traffic_observable(
+            self, observable: _NETWORK_TRAFFIC_TYPING,
+            object_id: Optional[str] = None,
+            indicator_ref: set | None = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
+        mapping = self._mapping.network_traffic_object_mapping()
+        for field, attribute in mapping.items():
+            if hasattr(observable, field):
+                yield from self._handle_object_attributes(
+                    observable, attribute, indicator_ref, field, object_id
+                )
+        protocol_attribute = self._mapping.protocol_attribute()
+        for protocol in observable.protocols:
+            yield self._populate_object_attribute(
+                protocol.upper(), protocol_attribute,
+                self._handle_object_id(
+                    indicator_ref, protocol.upper(),
+                    f"{object_id} - {protocol_attribute['object_relation']}",
+                    value_to_check=protocol
+                )
+            )
 
     def _parse_network_traffic_reference_observable(
             self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING,
