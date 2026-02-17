@@ -432,7 +432,8 @@ class ExternalSTIX2ObservableConverter(
             }
         comment = attribute.pop('comment', None)
         return {
-            **attribute, **self.main_parser._sanitise_attribute_uuid(
+            'to_ids': False, **attribute,
+            **self.main_parser._sanitise_attribute_uuid(
                 object_id, comment=comment
             )
         }
