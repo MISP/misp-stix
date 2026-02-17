@@ -565,11 +565,12 @@ class ExternalSTIX2ObservableConverter(
         if object_id is None:
             object_id = observable.id
         asn_attribute = self._mapping.asn_attribute()
+        AS_value = self._parse_AS_value(observable.number)
         yield self._populate_object_attribute(
-            self._parse_AS_value(observable.number), asn_attribute,
-            self._handle_object_id(
-                indicator_ref, observable.number,
-                f"{object_id} - {asn_attribute['object_relation']}"
+            AS_value, asn_attribute, self._handle_object_id(
+                indicator_ref, AS_value,
+                f"{object_id} - {asn_attribute['object_relation']}",
+                value_to_check=observable.number
             )
         )
         if hasattr(observable, 'name'):

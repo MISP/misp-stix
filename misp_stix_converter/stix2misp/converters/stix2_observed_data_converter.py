@@ -572,12 +572,13 @@ class ExternalSTIX2ObservedDataConverter(
             autonomous_system.id, observed_data.id
         )
         asn_attribute = self._mapping.asn_attribute()
+        AS_value = self._parse_AS_value(autonomous_system.number)
         misp_object.add_attribute(
             **self._populate_object_attribute(
-                self._parse_AS_value(autonomous_system.number), asn_attribute,
-                self._handle_object_id(
-                    indicator_ref, autonomous_system.number,
-                    f"{autonomous_system.id} - {asn_attribute['object_relation']}"
+                AS_value, asn_attribute, self._handle_object_id(
+                    indicator_ref, AS_value,
+                    f"{autonomous_system.id} - {asn_attribute['object_relation']}",
+                    value_to_check=autonomous_system.number
                 )
             )
         )
