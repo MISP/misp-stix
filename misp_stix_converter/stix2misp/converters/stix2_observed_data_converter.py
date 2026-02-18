@@ -2371,19 +2371,11 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object_from_observable_object(
             'registry-key-value', observed_data, object_id
         )
-        mapping = self._mapping.registry_key_values_object_mapping
-        for field, attribute in mapping().items():
-            if hasattr(registry_value, field):
-                value = getattr(registry_value, field)
-                misp_object.add_attribute(
-                    **self._populate_object_attribute(
-                        value, attribute,
-                        self._handle_object_id(
-                            indicator_ref, value,
-                            f"{object_id} - {attribute['object_relation']}"
-                        )
-                    )
-                )
+        attributes = super()._parse_registry_key_value_observable(
+            registry_value, object_id, indicator_ref=indicator_ref
+        )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
         misp_object = self.main_parser._add_misp_object(
             misp_object, observed_data
         )

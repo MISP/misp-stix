@@ -742,9 +742,8 @@ class STIX2ObservableObjectConverter(
                     uuid=self.main_parser._create_v5_uuid(reference),
                     comment=f'Original Windows Registry Key ID: {object_id}'
                 )
-                attributes = self._parse_generic_observable(
-                    registry_key_value, 'registry_key_values', reference,
-                    indicator_ref=indicator_ref
+                attributes = self._parse_registry_key_value_observable(
+                    registry_key_value, reference, indicator_ref=indicator_ref
                 )
                 for attribute in attributes:
                     value_object.add_attribute(**attribute)

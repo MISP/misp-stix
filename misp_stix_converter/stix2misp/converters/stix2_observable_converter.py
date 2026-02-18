@@ -98,6 +98,9 @@ _PROCESS_TYPING = Union[
 _REGISTRY_KEY_TYPING = Union[
     WindowsRegistryKey_v20, WindowsRegistryKey_v21
 ]
+_REGISTRY_VALUE_TYPING = Union[
+    WindowsRegistryValue_v20, WindowsRegistryValue_v21
+]
 _SECTION_TYPING = Union[
     WindowsPESection_v20, WindowsPESection_v21
 ]
@@ -829,6 +832,20 @@ class ExternalSTIX2ObservableConverter(
                     yield from self._handle_object_attributes(
                         key_value, attribute, indicator_ref, field, object_id
                     )
+
+    def _parse_registry_key_value_observable(
+            self, registry_value: _REGISTRY_VALUE_TYPING, object_id: str,
+            indicator_ref: set | None) -> Iterator[dict]:
+        mapping = self._mapping.registry_key_values_object_mapping
+        for field, attribute in mapping().items():
+            if hasattr(registry_value, field):
+                value = getattr(registry_value, field)
+                yield self._populate_object_attribute(
+                    value, attribute, self._handle_object_id(
+                        indicator_ref, value,
+                        f"{object_id} - {attribute['object_relation']}",
+                    )
+                )
 
     def _parse_url_observable(
             self, observable: _URL_TYPING,  observed_data_id: str,
