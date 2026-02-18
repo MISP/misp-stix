@@ -583,24 +583,6 @@ class ExternalSTIX2ObservableConverter(
                 )
             )
 
-    def _parse_domain_observable(
-            self, observable: _DOMAIN_TYPING, object_id: Optional[str] = None,
-            indicator_ref: set | None = None) -> dict:
-        if object_id is None:
-            object_id = observable.id
-        attribute = {
-            'value': observable.value, **self._mapping.domain_attribute()
-        }
-        if object_id is None:
-            attribute.update(
-                self.main_parser._sanitise_attribute_uuid(observable.id)
-            )
-            return attribute
-        attribute['uuid'] = self.main_parser._create_v5_uuid(
-            f'{object_id} - domain - {observable.value}'
-        )
-        return attribute
-
     def _parse_email_address_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, field: str,
             object_id: str, indicator_ref: set | None | tuple) -> dict:
