@@ -547,9 +547,12 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 description = autonomous_system.name
                 misp_object.add_attribute(
-                    'description', description,
-                    uuid=self.main_parser._create_v5_uuid(
-                        f'{object_id} - description - {description}'
+                    **self._populate_object_attribute(
+                        description, self._mapping.description_attribute(),
+                        self._handle_object_id(
+                            indicator_ref, description,
+                            f'{object_id} - description'
+                        )
                     )
                 )
                 return self.main_parser._add_misp_object(
@@ -584,9 +587,12 @@ class ExternalSTIX2ObservedDataConverter(
         )
         description = autonomous_system.name
         misp_object.add_attribute(
-            'description', description,
-            uuid=self.main_parser._create_v5_uuid(
-                f'{autonomous_system.id} - description - {description}'
+            **self._populate_object_attribute(
+                description, self._mapping.description_attribute(),
+                self._handle_object_id(
+                    indicator_ref, description,
+                    f'{autonomous_system.id} - description'
+                )
             )
         )
         return self.main_parser._add_misp_object(misp_object, observed_data)
