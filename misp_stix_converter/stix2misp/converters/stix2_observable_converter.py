@@ -730,6 +730,29 @@ class ExternalSTIX2ObservableConverter(
                     self._mapping.state_attribute(), feature, object_id
                 )
 
+    def _parse_network_traffic_observable(
+            self, observable: _NETWORK_TRAFFIC_TYPING,
+            object_id: Optional[str] = None,
+            indicator_ref: set | None = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
+        mapping = self._mapping.network_traffic_object_mapping()
+        for field, attribute in mapping.items():
+            if hasattr(observable, field):
+                yield from self._handle_object_attributes(
+                    observable, attribute, indicator_ref, field, object_id
+                )
+        protocol_attribute = self._mapping.protocol_attribute()
+        for protocol in observable.protocols:
+            yield self._populate_object_attribute(
+                protocol.upper(), protocol_attribute,
+                self._handle_object_id(
+                    indicator_ref, protocol.upper(),
+                    f"{object_id} - {protocol_attribute['object_relation']}",
+                    value_to_check=protocol
+                )
+            )
+
     @staticmethod
     def _parse_network_traffic_observable_fields(
             observable: NetworkTraffic_v21) -> str:
