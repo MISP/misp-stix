@@ -292,9 +292,12 @@ class STIX2ObservableObjectConverter(
                 'domain-ip', domain_name
             )
             domain_object.add_attribute(
-                **self._parse_domain_observable(
-                    domain_name,
-                    indicator_ref=observable.get('indicator_ref')
+                **self._populate_object_attribute(
+                    domain_name.value, self._mapping.domain_attribute(),
+                    self._handle_object_id(
+                        observable.get('indicator_ref'),
+                        domain_name.value, f'{domain_name.id} - domain'
+                    )
                 )
             )
             misp_object = self.main_parser._add_misp_object(
