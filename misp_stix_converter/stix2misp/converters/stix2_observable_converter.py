@@ -393,13 +393,15 @@ class ExternalSTIX2ObservableConverter(
         )
 
     def _create_misp_attribute(
-            self, indicator_ref: set | None, object_id: str,
+            self, indicator_ref: set | None, observable_type: str, object_id: str,
             single: Optional[bool] = False, strict_value: Optional[str] = None,
             **attribute: dict[str, str]) -> dict:
         value = strict_value or attribute['value']
         if not single:
             object_id = f"{object_id} - {attribute['type']} - {value}"
-        indicator_id = self._check_indicator_reference(indicator_ref, value)
+        indicator_id = self._check_indicator_references(
+            indicator_ref, observable_type, value
+        )
         to_ids = bool(indicator_id)
         if to_ids:
             id_comment = 'ID' if len(indicator_id) == 1 else 'IDs'
@@ -415,10 +417,11 @@ class ExternalSTIX2ObservableConverter(
 
     def _create_single_misp_attribute(
             self, indicator_ref: set | None, object_id: str,
+            observable_type: Optional[str] = None,
             value_to_check: Optional[str] = None,
             **attribute: dict[str, str]) -> dict:
-        indicator_id = self._check_indicator_reference(
-            indicator_ref, value_to_check or attribute['value']
+        indicator_id = self._check_indicator_references(
+            indicator_ref, observable_type, value_to_check or attribute['value']
         )
         to_ids = bool(indicator_id)
         if to_ids:
@@ -442,14 +445,15 @@ class ExternalSTIX2ObservableConverter(
         }
 
     def _handle_hash_attribute(
-            self, indicator_ref: set | None, hash_type: str, value: str,
-            object_id: str, mapping: Optional[str] = 'file') -> dict:
+            self, indicator_ref: set | None, observable_type: str,
+            hash_type: str, value: str, object_id: str,
+            mapping: Optional[str] = 'file') -> dict:
         attribute = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
         if attribute is not None:
             return self._populate_object_attribute(
                 value, attribute,
                 self._handle_object_id(
-                    indicator_ref, value,
+                    indicator_ref, observable_type, value,
                     f"{object_id} - {attribute['object_relation']}"
                 )
             )
@@ -457,21 +461,24 @@ class ExternalSTIX2ObservableConverter(
 
     def _handle_object_attributes(
             self, observable: _OBSERVABLE_TYPING, mapping: dict,
-            indicator_ref: set | None, field: str, object_id: str) -> Iterator[dict]:
+            indicator_ref: set | None, field: str, object_id: str,
+            observable_type: str = None) -> Iterator[dict]:
+        if observable_type is None:
+            observable_type = observable.type
         values = observable[field]
         if isinstance(values, list):
             for value in values:
                 yield self._populate_object_attribute(
                     value, mapping, self._handle_object_id(
-                        indicator_ref, value,
-                        f"{object_id} - {mapping['object_relation']}"
+                        indicator_ref, observable_type,
+                        value, f"{object_id} - {mapping['object_relation']}"
                     )
                 )
         else:
             yield self._populate_object_attribute(
                 values, mapping, self._handle_object_id(
-                    indicator_ref, values,
-                    f"{object_id} - {mapping['object_relation']}"
+                    indicator_ref, observable_type,
+                    values, f"{object_id} - {mapping['object_relation']}"
                 )
             )
 
@@ -483,7 +490,7 @@ class ExternalSTIX2ObservableConverter(
             for value in values:
                 yield self._populate_object_attribute_with_data(
                     value, mapping, **self._handle_object_id(
-                        indicator_ref,
+                        indicator_ref, observable.type,
                         value['data'] if isinstance(value, dict) else value,
                         f"{object_id} - {mapping['object_relation']}"
                     )
@@ -491,18 +498,18 @@ class ExternalSTIX2ObservableConverter(
         else:
             yield self._populate_object_attribute_with_data(
                 values, mapping, **self._handle_object_id(
-                    indicator_ref,
+                    indicator_ref, observable.type,
                     values['data'] if isinstance(values, dict) else values,
                     f"{object_id} - {mapping['object_relation']}"
                 )
             )
 
     def _handle_object_id(
-            self, indicator_ref: set | None, value: str,
+            self, indicator_ref: set | None, observable_type: str, value: str,
             object_id: str, value_to_check: Optional[str] = None,
             **attribute: dict[str, str | bool]) -> dict:
-        indicator_id = self._check_indicator_reference(
-            indicator_ref, value_to_check or value
+        indicator_id = self._check_indicator_references(
+            indicator_ref, observable_type, value_to_check or value
         )
         if bool(indicator_id):
             id_comment = 'ID' if len(indicator_id) == 1 else 'IDs'
