@@ -554,13 +554,14 @@ class ExternalSTIX2ObservableConverter(
             yield self._populate_object_attribute_with_data(
                 {'data': data, 'value': value.split('--')[1]},
                 {'object_relation': object_relation}, **self._handle_object_id(
-                    indicator_ref, data, f'{object_id} - {object_relation}'
+                    indicator_ref, observable.type, data,
+                    f'{object_id} - {object_relation}'
                 )
             )
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 yield self._handle_hash_attribute(
-                    indicator_ref, hash_type, value, object_id
+                    indicator_ref, observable.type, hash_type, value, object_id
                 )
         for field, mapping in self._mapping.artifact_object_mapping().items():
             if hasattr(observable, field):
@@ -578,7 +579,7 @@ class ExternalSTIX2ObservableConverter(
         AS_value = self._parse_AS_value(observable.number)
         yield self._populate_object_attribute(
             AS_value, asn_attribute, self._handle_object_id(
-                indicator_ref, AS_value,
+                indicator_ref, observable.type, AS_value,
                 f"{object_id} - {asn_attribute['object_relation']}",
                 value_to_check=observable.number
             )
@@ -588,7 +589,7 @@ class ExternalSTIX2ObservableConverter(
             yield self._populate_object_attribute(
                 observable.name, description_attribute,
                 self._handle_object_id(
-                    indicator_ref, observable.name,
+                    indicator_ref, observable.type, observable.name,
                     f"{object_id} - {description_attribute['object_relation']}"
                 )
             )
@@ -596,8 +597,8 @@ class ExternalSTIX2ObservableConverter(
     def _parse_email_address_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, field: str,
             object_id: str, indicator_ref: set | None | tuple) -> dict:
-        indicator_id = self._check_indicator_reference(
-            indicator_ref, observable.value
+        indicator_id = self._check_indicator_references(
+            indicator_ref, observable.type, observable.value
         )
         to_ids = bool(indicator_id)
         attribute = {
@@ -636,7 +637,8 @@ class ExternalSTIX2ObservableConverter(
             for field, mapping in mapping().items():
                 if email_header.get(field):
                     yield from self._handle_object_attributes(
-                        email_header, mapping, indicator_ref, field, object_id
+                        email_header, mapping, indicator_ref, field, object_id,
+                        observable_type=observable.type
                     )
 
     def _parse_email_reference_observable(
@@ -668,7 +670,7 @@ class ExternalSTIX2ObservableConverter(
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 yield self._handle_hash_attribute(
-                    indicator_ref, hash_type, value, object_id
+                    indicator_ref, observable.type, hash_type, value, object_id
                 )
         for field, mapping in self._mapping.file_object_mapping().items():
             if hasattr(observable, field):
@@ -694,8 +696,8 @@ class ExternalSTIX2ObservableConverter(
                              indicator_ref: set | None = None) -> dict:
         if object_id is None:
             object_id = observable.id
-        indicator_id = self._check_indicator_reference(
-            indicator_ref, observable.value
+        indicator_id = self._check_indicator_references(
+            indicator_ref, observable.type, observable.value
         )
         to_ids = bool(indicator_id)
         attribute = {
@@ -729,7 +731,8 @@ class ExternalSTIX2ObservableConverter(
         for field, attribute in mapping().items():
             if hasattr(socket_extension, field):
                 yield from self._handle_object_attributes(
-                    socket_extension, attribute, indicator_ref, field, object_id
+                    socket_extension, attribute, indicator_ref, field,
+                    object_id, observable_type=observable.type
                 )
         for feature in ('blocking', 'listening'):
             if getattr(socket_extension, f'is_{feature}', False):
@@ -754,7 +757,7 @@ class ExternalSTIX2ObservableConverter(
             yield self._populate_object_attribute(
                 protocol.upper(), protocol_attribute,
                 self._handle_object_id(
-                    indicator_ref, protocol.upper(),
+                    indicator_ref, observable.type, protocol.upper(),
                     f"{object_id} - {protocol_attribute['object_relation']}",
                     value_to_check=protocol
                 )
@@ -790,12 +793,14 @@ class ExternalSTIX2ObservableConverter(
                 yield from self._handle_object_attributes(
                     extension.optional_header,
                     self._mapping.entrypoint_address_attribute(),
-                    indicator_ref, 'address_of_entry_point', reference
+                    indicator_ref, 'address_of_entry_point', reference,
+                    observable_type='file'
                 )
         for field, mapping in self._mapping.pe_object_mapping().items():
             if hasattr(extension, field):
                 yield from self._handle_object_attributes(
-                    extension, mapping, indicator_ref, field, reference
+                    extension, mapping, indicator_ref, field, reference,
+                    observable_type='file'
                 )
 
     def _parse_pe_section_observable(
@@ -804,12 +809,13 @@ class ExternalSTIX2ObservableConverter(
         for field, mapping in self._mapping.pe_section_object_mapping().items():
             if hasattr(section, field):
                 yield from self._handle_object_attributes(
-                    section, mapping, indicator_ref, field, reference
+                    section, mapping, indicator_ref, field, reference,
+                    observable_type='file'
                 )
         if hasattr(section, 'hashes'):
             for hash_type, hash_value in section.hashes.items():
                 yield self._handle_hash_attribute(
-                    indicator_ref, hash_type, hash_value, reference
+                    indicator_ref, 'file', hash_type, hash_value, reference
                 )
 
     def _parse_process_observable(
@@ -860,7 +866,8 @@ class ExternalSTIX2ObservableConverter(
             for field, attribute in values_mapping().items():
                 if hasattr(key_value, field):
                     yield from self._handle_object_attributes(
-                        key_value, attribute, indicator_ref, field, object_id
+                        key_value, attribute, indicator_ref, field, object_id,
+                        observable_type=observable.type
                     )
 
     def _parse_registry_key_value_observable(
@@ -872,7 +879,7 @@ class ExternalSTIX2ObservableConverter(
                 value = getattr(registry_value, field)
                 yield self._populate_object_attribute(
                     value, attribute, self._handle_object_id(
-                        indicator_ref, value,
+                        indicator_ref, 'windows-registry-key', value,
                         f"{object_id} - {attribute['object_relation']}",
                     )
                 )
@@ -905,7 +912,8 @@ class ExternalSTIX2ObservableConverter(
             for field, attribute in mapping().items():
                 if hasattr(extension, field):
                     yield from self._handle_object_attributes(
-                        extension, attribute, indicator_ref, field, object_id
+                        extension, attribute, indicator_ref, field, object_id,
+                        observable_type=observable.type
                     )
 
     def _parse_x509_observable(
@@ -917,7 +925,8 @@ class ExternalSTIX2ObservableConverter(
         if hasattr(observable, 'hashes'):
             for hash_type, hash_value in observable.hashes.items():
                 yield self._handle_hash_attribute(
-                    indicator_ref, hash_type, hash_value, object_id, 'x509'
+                    indicator_ref, observable.type, hash_type, hash_value,
+                    object_id, 'x509'
                 )
         for field, mapping in self._mapping.x509_object_mapping().items():
             if hasattr(observable, field):
