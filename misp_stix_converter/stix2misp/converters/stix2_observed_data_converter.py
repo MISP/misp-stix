@@ -453,7 +453,7 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object.add_attribute(
                 **self._populate_object_attribute(
                     AS_value, asn_attribute, self._handle_object_id(
-                        indicator_ref, AS_value,
+                        indicator_ref, autonomous_system.type, AS_value,
                         f"{object_id} - {asn_attribute['object_relation']}",
                         value_to_check=autonomous_system.number
                     )
@@ -464,7 +464,8 @@ class ExternalSTIX2ObservedDataConverter(
                 **self._populate_object_attribute(
                     description, self._mapping.description_attribute(),
                     self._handle_object_id(
-                        indicator_ref, description, f'{object_id} - description'
+                        indicator_ref, autonomous_system.type,
+                        description, f'{object_id} - description'
                     )
                 )
             )
@@ -539,7 +540,7 @@ class ExternalSTIX2ObservedDataConverter(
                 misp_object.add_attribute(
                     **self._populate_object_attribute(
                         AS_value, asn_attribute, self._handle_object_id(
-                            indicator_ref, AS_value,
+                            indicator_ref, autonomous_system.type, AS_value,
                             f"{object_id} - {asn_attribute['object_relation']}",
                             value_to_check=autonomous_system.number
                         )
@@ -550,8 +551,8 @@ class ExternalSTIX2ObservedDataConverter(
                     **self._populate_object_attribute(
                         description, self._mapping.description_attribute(),
                         self._handle_object_id(
-                            indicator_ref, description,
-                            f'{object_id} - description'
+                            indicator_ref, autonomous_system.type,
+                            description, f'{object_id} - description'
                         )
                     )
                 )
@@ -579,7 +580,7 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object.add_attribute(
             **self._populate_object_attribute(
                 AS_value, asn_attribute, self._handle_object_id(
-                    indicator_ref, AS_value,
+                    indicator_ref, autonomous_system.type, AS_value,
                     f"{autonomous_system.id} - {asn_attribute['object_relation']}",
                     value_to_check=autonomous_system.number
                 )
@@ -590,7 +591,7 @@ class ExternalSTIX2ObservedDataConverter(
             **self._populate_object_attribute(
                 description, self._mapping.description_attribute(),
                 self._handle_object_id(
-                    indicator_ref, description,
+                    indicator_ref, autonomous_system.type, description,
                     f'{autonomous_system.id} - description'
                 )
             )
@@ -723,7 +724,8 @@ class ExternalSTIX2ObservedDataConverter(
                 domain_object.add_attribute(
                     **self._populate_object_attribute(
                         domain.value, domain_attribute, self._handle_object_id(
-                            observable.get('indicator_ref'), domain.value,
+                            observable.get('indicator_ref'),
+                            domain.type, domain.value,
                             f"{domain.id} - {domain_attribute['object_relation']}"
                         )
                     )
@@ -757,7 +759,8 @@ class ExternalSTIX2ObservedDataConverter(
                     misp_object.add_attribute(
                         **self._populate_object_attribute(
                             value, ip_attribute, self._handle_object_id(
-                                resolved.get('indicator_ref'), value,
+                                resolved.get('indicator_ref'),
+                                resolved_observable.type, value,
                                 f'{domain.id} - {resolved_ref}'
                                 f" - {ip_attribute['object_relation']}"
                             )
@@ -822,7 +825,7 @@ class ExternalSTIX2ObservedDataConverter(
                 domain_object.add_attribute(
                     **self._populate_object_attribute(
                         value, attribute, self._handle_object_id(
-                            indicator_ref, value,
+                            indicator_ref, observable_object.type, value,
                             f"{object_id} - {attribute['object_relation']}"
                         )
                     )
@@ -858,7 +861,7 @@ class ExternalSTIX2ObservedDataConverter(
                     misp_object.add_attribute(
                         **self._populate_object_attribute(
                             value, ip_attribute, self._handle_object_id(
-                                indicator_ref, value,
+                                indicator_ref, resolved.type, value,
                                 f'{object_id} - {resolved_ref}'
                                 f" - {ip_attribute['object_relation']}"
                             )
@@ -958,14 +961,14 @@ class ExternalSTIX2ObservedDataConverter(
         if hasattr(email_address, 'display_name'):
             yield self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
-                    indicator_ref, object_id, **attribute,
+                    indicator_ref, email_address.type, object_id, **attribute,
                     **{'type': 'email', 'value': address}
                 ),
                 observed_data
             )
             yield self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
-                    indicator_ref, object_id, **attribute,
+                    indicator_ref, email_address.type, object_id, **attribute,
                     **{
                         'type': 'email-dst-display-name',
                         'value': email_address.display_name
@@ -976,7 +979,7 @@ class ExternalSTIX2ObservedDataConverter(
         else:
             yield self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
-                    indicator_ref, object_id, single=True,
+                    indicator_ref, email_address.type, object_id, single=True,
                     **{'type': 'email', 'value': address, **attribute}
                 ),
                 observed_data
@@ -997,15 +1000,15 @@ class ExternalSTIX2ObservedDataConverter(
             )
             yield self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
-                    indicator_ref, email_address.id, **attribute,
-                    **{'type': 'email', 'value': address}
+                    indicator_ref, email_address.type, email_address.id,
+                    **attribute, **{'type': 'email', 'value': address}
                 ),
                 observed_data
             )
             yield self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
-                    indicator_ref, email_address.id, **attribute,
-                    **{
+                    indicator_ref, email_address.type, email_address.id,
+                    **attribute, **{
                         'type': 'email-dst-display-name',
                         'value': email_address.display_name
                     }
@@ -1015,7 +1018,8 @@ class ExternalSTIX2ObservedDataConverter(
         else:
             yield self.main_parser._add_misp_attribute(
                 self._create_single_misp_attribute(
-                    indicator_ref, email_address.id, **attribute,
+                    indicator_ref, email_address.id,
+                    observable_type=email_address.type, **attribute,
                     **{'comment': comment, 'type': 'email', 'value': address}
                 ),
                 observed_data
@@ -1079,15 +1083,15 @@ class ExternalSTIX2ObservedDataConverter(
             if hasattr(email_address, 'display_name'):
                 self.main_parser._add_misp_attribute(
                     self._create_misp_attribute(
-                        indicator_ref, observed_data.id, **attribute,
-                        **{'type': 'email', 'value': address}
+                        indicator_ref, email_address.type, observed_data.id,
+                        **attribute, **{'type': 'email', 'value': address}
                     ),
                     observed_data
                 )
                 self.main_parser._add_misp_attribute(
                     self._create_misp_attribute(
-                        indicator_ref, observed_data.id, **attribute,
-                        **{
+                        indicator_ref, email_address.type, observed_data.id,
+                        **attribute, **{
                             'type': 'email-dst-display-name',
                             'value': email_address.display_name
                         }
@@ -1097,7 +1101,8 @@ class ExternalSTIX2ObservedDataConverter(
                 return
             self.main_parser._add_misp_attribute(
                 self._create_single_misp_attribute(
-                    indicator_ref, observed_data.id, **attribute,
+                    indicator_ref, observed_data.id,
+                    observable_type=email_address.type, **attribute,
                     **{'type': 'email', 'value': address}
                 ),
                 observed_data
@@ -1170,7 +1175,8 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body,
                             **self._handle_object_id(
-                                observable.get(object_ref), multipart.body,
+                                observable.get(object_ref),
+                                'email-message', multipart.body,
                                 f'{object_ref} - body_multipart - '
                                 f'{index} - email-body'
                             )
@@ -1229,7 +1235,7 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body,
                             **self._handle_object_id(
-                                indicator_ref, multipart.body,
+                                indicator_ref, 'email-message', multipart.body,
                                 f'{object_id} - body_multipart - '
                                 f'{index} - email-body'
                             )
@@ -1251,8 +1257,8 @@ class ExternalSTIX2ObservedDataConverter(
             if hasattr(observable, 'from_ref'):
                 from_ref = observable.from_ref
                 attributes = self._parse_email_reference_observable(
-                    observed_data.objects[from_ref],
-                    'from', f'{object_id} - {from_ref}',
+                    observed_data.objects[from_ref], 'from',
+                    object_id=f'{object_id} - {from_ref}',
                     indicator_ref=self._get_observed_data_indicator_refs(
                         observed_data.id, from_ref
                     )
@@ -1288,7 +1294,7 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body,
                             **self._handle_object_id(
-                                indicator_ref, multipart.body,
+                                indicator_ref, 'email-message', multipart.body,
                                 f'{object_id} - body_multipart - '
                                 f'{index} - email-body'
                             )
@@ -1603,8 +1609,9 @@ class ExternalSTIX2ObservedDataConverter(
         if single:
             return self.main_parser._add_misp_attribute(
                 self._create_single_misp_attribute(
-                    indicator_ref, observed_data.id, strict_value,
-                    **{
+                    indicator_ref, observed_data.id,
+                    observable_type=observable_object.type,
+                    value_to_check=strict_value, **{
                         'type': attribute_type, 'comment': comment,
                         'value': value or strict_value, **attribute
                     }
@@ -1614,8 +1621,8 @@ class ExternalSTIX2ObservedDataConverter(
         object_id = f'{observed_data.id} - {identifier}'
         return self.main_parser._add_misp_attribute(
             self._create_misp_attribute(
-                indicator_ref, object_id, single=True,
-                strict_value=strict_value,
+                indicator_ref, observable_object.type, object_id,
+                single=True, strict_value=strict_value,
                 **{
                     'type': attribute_type, 'comment': comment,
                     'value': value or strict_value, **attribute
@@ -1663,8 +1670,9 @@ class ExternalSTIX2ObservedDataConverter(
         )
         return self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
-                indicator_ref, observable_object.id, strict_value,
-                **{
+                indicator_ref, observable_object.id,
+                observable_type=observable_object.type,
+                value_to_check=strict_value, **{
                     'type': attribute_type, 'comment': comment,
                     'value': value or strict_value, **attribute
                 }
