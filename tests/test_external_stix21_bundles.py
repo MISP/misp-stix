@@ -369,8 +369,8 @@ _AS_OBJECTS = [
         "type": "autonomous-system",
         "spec_version": "2.1",
         "id": "autonomous-system--46f7e73f-36e5-40dd-9b27-735a0a6b44c2",
-        "number": 666,
-        "name": "Satan autonomous system"
+        "number": 197869,
+        "name": "CIRCL"
     },
     {
         "type": "autonomous-system",
@@ -382,8 +382,8 @@ _AS_OBJECTS = [
         "type": "autonomous-system",
         "spec_version": "2.1",
         "id": "autonomous-system--81294150-8f7a-453d-a1d8-96c2cfe04efa",
-        "number": 197869,
-        "name": "CIRCL"
+        "number": 666,
+        "name": "Satan autonomous system"
     },
     {
         "type": "autonomous-system",
@@ -597,7 +597,7 @@ _DIRECTORY_OBJECTS = [
         "modified": "2024-10-25T16:22:00.000Z",
         "name": "Suspicious directory path",
         "description": "Directory path associated with malware staging.",
-        "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/']",
+        "pattern": "[directory:path = '/var/www/MISP/app/files/scripts']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2024-10-25T16:22:00Z"
@@ -637,7 +637,7 @@ _DOMAIN_ATTRIBUTES = [
         "type": "domain-name",
         "spec_version": "2.1",
         "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "value": "circl.lu"
+        "value": "misp-project.org"
     },
     {
         "type": "domain-name",
@@ -649,7 +649,7 @@ _DOMAIN_ATTRIBUTES = [
         "type": "domain-name",
         "spec_version": "2.1",
         "id": "domain-name--f93cb275-0366-4ecc-abf0-a17928d1e177",
-        "value": "misp-project.org"
+        "value": "circl.lu"
     },
     {
         "type": "indicator",
@@ -822,7 +822,7 @@ _EMAIL_ADDRESS_ATTRIBUTES = [
         "modified": "2024-10-25T16:22:00.000Z",
         "name": "Suspicious email address",
         "description": "Email address associated with phishing campaigns.",
-        "pattern": "[email-addr:value = 'john.doe@gmail.com' AND email-addr:display_name = 'John Doe']",
+        "pattern": "[email-addr:value = 'donald.duck@disney.com' AND email-addr:display_name = 'Donald Duck']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2024-10-25T16:22:00Z"
@@ -1094,137 +1094,17 @@ _FILE_OBJECTS = [
                 ]
             }
         }
-    }
-]
-_INDICATOR_OBJECTS = [
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--64d04217-9347-4168-94b6-652997baab75",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = 'bc590af5f7b16b890860248dc0d4c68f']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
     },
     {
         "type": "indicator",
         "spec_version": "2.1",
-        "id": "indicator--b1e58d08-85c7-43c6-9e15-05f4e960489c",
-        "created": "2024-10-25T15:22:00.000Z",
+        "id": "indicator--0079268d-8646-4e72-9598-3a0d47edb904",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
         "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = 'b3982699c1b9a25346cc8498f483b150' AND file:hashes.SHA256 = '836f395a4f86e9d1b2f528756c248e76665c02c5d0fc89f9b26136db5ac7f7ae']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--21518750-4e1f-4b8f-995c-3e0fe401a600",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[artifact:hashes.SHA1 = '5ec1405887e5a74bf2cb97a8d64481194dc13fdc']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--c3a82b2b-001c-4028-92bf-ba41c2e601b1",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[artifact:hashes.SHA256 = '367e474683cb1f61aae1f963aa9a17446afb5f71a8a03dae7203ac84765a5efa']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--5750cac6-2474-4060-89d7-19000bf932a5",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[ipv4-addr:value = '198.51.100.3']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--52756007-42fc-41d2-aa7f-73d13abdc342",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[email-addr:value = 'john@doe.org']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--d60420c1-330b-4406-a442-a84bccf04d61",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.SHA256 = 'fe90a7e910cb3a4739bed9180e807e93fa70c90f25a8915476f5e4bfbac681db']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--8df8b78d-73b6-4394-9f16-3cedca8dfcad",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = 'b1de37bf229890ac181bdef1ad8ee0c2' OR file:hashes.SHA1 = 'ffdb3cc7ab5b01d276d23ac930eb21ffe3202d11' OR file:hashes.SHA256 = '99b80c5ac352081a64129772ed5e1543d94cad708ba2adc46dc4ab7a0bd563f1']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--21541ca6-8e08-4aa3-9e68-b84814316060",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = 'd41d8cd98f00b204e9800998ecf8427e']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--dee398cd-c8da-4922-b2fa-afe00050de14",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[ipv4-addr:value = '198.51.100.34']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--29e97917-9ffa-48d3-90e6-34f3ece9cfbf",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[ipv4-addr:value = '198.51.100.54']",
-        "pattern_type": "stix",
-        "pattern_version": "2.1",
-        "valid_from": "2024-10-25T16:22:00Z"
-    },
-    {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": "indicator--cd649265-01c8-48af-b681-dc66caa0ce92",
-        "created": "2024-10-25T15:22:00.000Z",
-        "modified": "2024-10-25T16:22:00.000Z",
-        "pattern": "[process:command_line = 'grep -nrG iglocska ${HOME}/friends.txt']",
+        "name": "Malicious file indicator",
+        "description": "File hash and name matching known malware sample.",
+        "pattern": "[file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2024-10-25T16:22:00Z"
@@ -1329,7 +1209,7 @@ _IP_ADDRESS_ATTRIBUTES = [
         "modified": "2024-10-25T16:22:00.000Z",
         "name": "Suspicious IP address",
         "description": "IP address associated with known threat infrastructure.",
-        "pattern": "[ipv4-addr:value = '8.8.8.8']",
+        "pattern": "[ipv4-addr:value = '185.194.93.14']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2024-10-25T16:22:00Z"
@@ -1392,7 +1272,7 @@ _MAC_ADDRESS_ATTRIBUTES = [
         "type": "mac-addr",
         "spec_version": "2.1",
         "id": "mac-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "value": "d2:fb:49:24:37:18"
+        "value": "ae:49:db:d4:d9:cf"
     },
     {
         "type": "mac-addr",
@@ -1404,7 +1284,7 @@ _MAC_ADDRESS_ATTRIBUTES = [
         "type": "mac-addr",
         "spec_version": "2.1",
         "id": "mac-addr--f93cb275-0366-4ecc-abf0-a17928d1e177",
-        "value": "ae:49:db:d4:d9:cf"
+        "value": "d2:fb:49:24:37:18"
     },
     {
         "type": "indicator",
@@ -1525,7 +1405,7 @@ _MUTEX_ATTRIBUTES = [
         "modified": "2024-10-25T16:22:00.000Z",
         "name": "Malware mutex indicator",
         "description": "Mutex name used by known malware families.",
-        "pattern": "[mutex:name = 'shared_resource_lock']",
+        "pattern": "[mutex:name = 'sensitive_resource_lock']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2024-10-25T16:22:00Z"
@@ -1692,7 +1572,7 @@ _NETWORK_TRAFFIC_OBJECTS = [
         "modified": "2024-10-25T16:22:00.000Z",
         "name": "Suspicious network traffic pattern",
         "description": "Network traffic pattern matching known C2 communication.",
-        "pattern": "[network-traffic:dst_port = 80 AND network-traffic:protocols[*] = 'http']",
+        "pattern": "[network-traffic:dst_port = 24678 AND network-traffic:protocols[*] = 'http']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2024-10-25T16:22:00Z"
@@ -1962,7 +1842,6 @@ _SOFTWARE_OBJECTS = [
             "Python"
         ],
         "vendor": "CIRCL",
-        "spec_version": "2.1",
         "version": "2.4.183"
     },
     {
@@ -2119,15 +1998,13 @@ _URL_ATTRIBUTES = [
         "first_observed": "2020-10-25T16:22:00Z",
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
-        "object_refs": [
-            "url--f93cb275-0366-4ecc-abf0-a17928d1e177"
-        ]
+        "object_refs": ["url--f93cb275-0366-4ecc-abf0-a17928d1e177"]
     },
     {
         "type": "url",
         "spec_version": "2.1",
         "id": "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "value": "https://circl.lu/team/"
+        "value": "https://misp-project.org/blog/"
     },
     {
         "type": "url",
@@ -2139,7 +2016,7 @@ _URL_ATTRIBUTES = [
         "type": "url",
         "spec_version": "2.1",
         "id": "url--f93cb275-0366-4ecc-abf0-a17928d1e177",
-        "value": "https://misp-project.org/blog/"
+        "value": "https://circl.lu/team/"
     },
     {
         "type": "indicator",
@@ -2313,27 +2190,6 @@ _X509_OBJECTS = [
     {
         "type": "x509-certificate",
         "spec_version": "2.1",
-        "id": "x509-certificate--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "is_self_signed": False,
-        "hashes": {
-            "MD5": "a39a417abcbe62460665c9da765aefbe",
-            "SHA-1": "bffc1a508d3c02d4a3f86941d3a99f7bf9ec3895",
-            "SHA-256": "caf71b19bf181230a3b203a6c3beaceb4d261409a8dbeef2e1d9eb4a5e0182c6"
-        },
-        "version": "3",
-        "serial_number": "00:bb:ae:27:7a:c3:d9:cf:3f:85:00:86:a3:14:e7:0a:d7",
-        "signature_algorithm": "sha256WithRSAEncryption",
-        "issuer": "C=GB, ST=Greater Manchester, L=Salford, O=COMODO CA Limited, CN=COMODO RSA Code Signing CA",
-        "validity_not_before": "2017-11-12T00:00:00Z",
-        "validity_not_after": "2018-09-12T23:59:59Z",
-        "subject": "C=GB/postalCode=EC1V 2NX, ST=London, L=London/street=Kemp House, 160 City Road, O=CYBASICS LTD, CN=CYBASICS LTD",
-        "subject_public_key_algorithm": "rsaEncryption",
-        "subject_public_key_modulus": "c7:97:8a:4c:a0:6b:9c:91:d0:ed:7e:74:ca:8c:48:41:84:cf:fa:f1:07:ae:51:3f:d1:cb:3c:2e:43:1e:c3:dc:c2:e7:fa:60:cd:c7:25:2c:c4:2e:1c:e0:c2:a2:63:8b:df:f7:1a:55:c8:66:0d:eb:a9:a7:9e:f6:89:6e:ca:63:be:b8:75:18:56:6d:53:c1:8b:b4:f6:b5:04:6d:cc:0f:17:e0:b5:12:70:d6:b5:55:77:76:98:de:84:44:55:6d:5f:8a:a6:1e:a8:62:47:22:96:3d:5a:85:c9:9f:00:f3:3b:c6:ec:cb:68:ff:34:ab:73:d7:02:b6:29:aa:ff:87:1b:39:87:e5:0f:fd:f0:6a:d6:de:81:a3:e6:05:61:5d:84:6c:1f:5e:20:ae:c1:93:56:45:37:b7:c0:d6:6d:ab:27:f6:98:70:cf:a2:9b:c8:4a:04:2d:dc:01:fb:1a:f1:dc:8f:4c:31:7c:c4:71:4a:1c:d7:81:ed:1a:04:cb:4d:aa:3b:37:94:d3:7d:14:c4:4c:0e:8d:eb:75:1c:26:46:35:1c:83:2a:09:cf:41:c9:cb:c6:8c:a6:db:28:90:48:17:92:ff:70:db:5c:4f:d2:27:1a:51:2b:1f:12:f8:f6:ee:8a:88:15:fd:68:13:f0:7a:50:4f:8e:23:d5:4d:51",
-        "subject_public_key_exponent": 65537
-    },
-    {
-        "type": "x509-certificate",
-        "spec_version": "2.1",
         "id": "x509-certificate--5e384ae7-672c-4250-9cda-3b4da964451a",
         "is_self_signed": False,
         "hashes": {
@@ -2371,6 +2227,27 @@ _X509_OBJECTS = [
         "subject": "C=GB, ST=London, L=London, O=Ziber Ltd, CN=Ziber Ltd",
         "subject_public_key_algorithm": "rsaEncryption",
         "subject_public_key_modulus": "00:e2:12:e4:5c:44:90:fa:0f:75:77:c8:88:51:21:1d:ce:b8:0e:f2:73:d5:68:79:02:50:51:5f:2c:a3:82:d1:48:60:f8:fa:c7:75:72:12:bc:b9:7c:d9:12:a8:1a:18:3a:f9:1d:a9:18:04:59:cd:8a:81:03:f7:0a:3d:22:6e:7d:63:65:d7:4d:c5:65:0e:fc:4f:97:9c:e0:3d:52:a4:d9:0b:d9:04:c3:f3:52:2a:a3:cc:e2:82:2c:2b:b8:54:1b:cc:41:2b:1b:76:d0:2a:fd:65:c4:3f:a2:4b:36:5f:5a:79:28:4b:98:1e:38:6c:b6:33:d2:3d:db:53:9c:0b:3f:2b:ab:87:2e:94:47:72:4f:27:58:8d:b0:b2:38:5f:1d:e0:67:53:6e:38:c7:ac:24:49:c9:b6:81:42:e0:06:95:26:c0:c9:bf:5e:7f:1b:92:f5:58:8e:8a:70:88:a9:e5:82:5c:5c:71:54:e0:74:1b:a9:33:1a:f2:3d:bf:9d:1b:45:1a:0e:02:d8:a3:d8:db:64:a9:f8:28:16:7f:4e:c3:ee:33:a1:be:18:72:e3:bd:79:12:54:ea:b9:77:9b:d0:d0:b0:2d:75:af:4d:47:4e:c1:16:84:a2:88:65:ef:18:ff:33:2a:ab:83:7c:43:14:ad:b8:cd:f0:b9:7c:c1:23",
+        "subject_public_key_exponent": 65537
+    },
+    {
+        "type": "x509-certificate",
+        "spec_version": "2.1",
+        "id": "x509-certificate--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "is_self_signed": False,
+        "hashes": {
+            "MD5": "a39a417abcbe62460665c9da765aefbe",
+            "SHA-1": "bffc1a508d3c02d4a3f86941d3a99f7bf9ec3895",
+            "SHA-256": "caf71b19bf181230a3b203a6c3beaceb4d261409a8dbeef2e1d9eb4a5e0182c6"
+        },
+        "version": "3",
+        "serial_number": "00:bb:ae:27:7a:c3:d9:cf:3f:85:00:86:a3:14:e7:0a:d7",
+        "signature_algorithm": "sha256WithRSAEncryption",
+        "issuer": "C=GB, ST=Greater Manchester, L=Salford, O=COMODO CA Limited, CN=COMODO RSA Code Signing CA",
+        "validity_not_before": "2017-11-12T00:00:00Z",
+        "validity_not_after": "2018-09-12T23:59:59Z",
+        "subject": "C=GB/postalCode=EC1V 2NX, ST=London, L=London/street=Kemp House, 160 City Road, O=CYBASICS LTD, CN=CYBASICS LTD",
+        "subject_public_key_algorithm": "rsaEncryption",
+        "subject_public_key_modulus": "c7:97:8a:4c:a0:6b:9c:91:d0:ed:7e:74:ca:8c:48:41:84:cf:fa:f1:07:ae:51:3f:d1:cb:3c:2e:43:1e:c3:dc:c2:e7:fa:60:cd:c7:25:2c:c4:2e:1c:e0:c2:a2:63:8b:df:f7:1a:55:c8:66:0d:eb:a9:a7:9e:f6:89:6e:ca:63:be:b8:75:18:56:6d:53:c1:8b:b4:f6:b5:04:6d:cc:0f:17:e0:b5:12:70:d6:b5:55:77:76:98:de:84:44:55:6d:5f:8a:a6:1e:a8:62:47:22:96:3d:5a:85:c9:9f:00:f3:3b:c6:ec:cb:68:ff:34:ab:73:d7:02:b6:29:aa:ff:87:1b:39:87:e5:0f:fd:f0:6a:d6:de:81:a3:e6:05:61:5d:84:6c:1f:5e:20:ae:c1:93:56:45:37:b7:c0:d6:6d:ab:27:f6:98:70:cf:a2:9b:c8:4a:04:2d:dc:01:fb:1a:f1:dc:8f:4c:31:7c:c4:71:4a:1c:d7:81:ed:1a:04:cb:4d:aa:3b:37:94:d3:7d:14:c4:4c:0e:8d:eb:75:1c:26:46:35:1c:83:2a:09:cf:41:c9:cb:c6:8c:a6:db:28:90:48:17:92:ff:70:db:5c:4f:d2:27:1a:51:2b:1f:12:f8:f6:ee:8a:88:15:fd:68:13:f0:7a:50:4f:8e:23:d5:4d:51",
         "subject_public_key_exponent": 65537
     },
     {
