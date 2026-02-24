@@ -608,6 +608,9 @@ class TestExternalSTIX2Import(TestSTIX2Import):
                     f'{indicator.id} - {object_id} - asn - AS{autonomous_system.number}'
                 )
             )
+        else:
+            self.assertFalse(asn.to_ids)
+
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'description')
         self.assertEqual(name.value, autonomous_system.name)
@@ -620,6 +623,8 @@ class TestExternalSTIX2Import(TestSTIX2Import):
                     f'{indicator.id} - {object_id} - description - {autonomous_system.name}'
                 )
             )
+        else:
+            self.assertFalse(name.to_ids)
 
     def _check_content_ref_fields(self, misp_object, artifact, object_id = None):
         if object_id is None:
@@ -730,15 +735,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         # Domain attribute (standard UUID)
         if domain.value in pattern_values:
             self.assertTrue(domain_attribute.to_ids)
-            expected_domain_uuid = uuid5(
-                UUIDv4, f'{indicator.id} - {domain_id} - domain - {domain.value}'
+            self.assertEqual(
+                domain_attribute.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{indicator.id} - {domain_id} - domain - {domain.value}'
+                )
             )
         else:
             self.assertFalse(domain_attribute.to_ids)
-            expected_domain_uuid = uuid5(
-                UUIDv4, f'{domain_id} - domain - {domain_attribute.value}'
+            self.assertEqual(
+                domain_attribute.uuid,
+                uuid5(UUIDv4, f'{domain_id} - domain - {domain_attribute.value}')
             )
-        self.assertEqual(domain_attribute.uuid, expected_domain_uuid)
 
         # IP attributes (compound UUID with sub-ref IDs - keep manual checks)
         self._assert_multiple_equal(
@@ -1517,10 +1526,15 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(UUIDv4, f'{object_id} - last_login - {last_login.value}')
         )
 
-    def _check_user_account_twitter_fields(self, misp_object, user_account, object_id = None):
+    def _check_user_account_twitter_fields(
+            self, misp_object, user_account, object_id=None, indicator=None):
         if object_id is None:
             object_id = user_account.id
         self.assertEqual(len(misp_object.attributes), 4)
+        self._check_attributes_fields(
+            'user-account', object_id, *misp_object.attributes,
+            indicator=indicator
+        )
         username, account_type, display_name, user_id = misp_object.attributes
         self._assert_multiple_equal(
             username.type, account_type.type, display_name.type,
@@ -1528,80 +1542,69 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         self.assertEqual(username.object_relation, 'username')
         self.assertEqual(username.value, user_account.account_login)
-        self.assertEqual(
-            username.uuid,
-            uuid5(UUIDv4, f'{object_id} - username - {username.value}')
-        )
         self.assertEqual(account_type.object_relation, 'account-type')
         self.assertEqual(account_type.value, user_account.account_type)
-        self.assertEqual(
-            account_type.uuid,
-            uuid5(UUIDv4, f'{object_id} - account-type - {account_type.value}')
-        )
         self.assertEqual(display_name.object_relation, 'display-name')
         self.assertEqual(display_name.value, user_account.display_name)
-        self.assertEqual(
-            display_name.uuid,
-            uuid5(UUIDv4, f'{object_id} - display-name - {display_name.value}')
-        )
         self.assertEqual(user_id.object_relation, 'user-id')
         self.assertEqual(user_id.value, user_account.user_id)
-        self.assertEqual(
-            user_id.uuid,
-            uuid5(UUIDv4, f'{object_id} - user-id - {user_id.value}')
-        )
 
-    def _check_wrapped_attribute(self, attribute_uuid, object_id, relation, value):
-        self.assertEqual(
-            attribute_uuid,
-            uuid5(UUIDv4, f'{object_id} - {relation} - {value}')
-        )
+    def _check_wrapped_attribute(self, attribute, object_id, indicator_id=None):
+        reference = f'{attribute.object_relation} - {attribute.value}'
+        if indicator_id is None:
+            self.assertFalse(attribute.to_ids)
+            self.assertEqual(
+                attribute.uuid, uuid5(UUIDv4, f'{object_id} - {reference}')
+            )
+        else:
+            self.assertTrue(attribute.to_ids)
+            self.assertEqual(
+                attribute.uuid,
+                uuid5(UUIDv4, f'{indicator_id} - {object_id} - {reference}')
+            )
 
     def _check_wrapped_attributes(self, object_id, *attributes):
         for attribute in attributes:
-            self._check_wrapped_attribute(
-                attribute.uuid, object_id,
-                attribute.object_relation, attribute.value
-            )
+            self._check_wrapped_attribute(attribute, object_id)
 
     def _check_wrapped_email_object(self, misp_object, object_id, from_id, to_id,
-                                    cc_id, artifact_id, file_id, indicator_id = None):
+                                    cc_id, artifact_id, file_id, indicator=None):
         self.assertEqual(len(misp_object.attributes), 12)
         (*attributes, received_header_ip, from_addr, from_dn, to_addr, to_dn,
          cc_addr, cc_dn, body) = misp_object.attributes
-        self._check_wrapped_attributes(object_id, *attributes)
-        reference = f'{object_id} - received-header-ip - {received_header_ip.value}'
-        if indicator_id is not None:
-            reference = f'{indicator_id} - {reference}'
-        self.assertEqual(received_header_ip.uuid, uuid5(UUIDv4, reference))
-        self.assertEqual(
-            from_addr.uuid,
-            uuid5(UUIDv4, f'{object_id} - {from_id} - from - {from_addr.value}')
-        )
-        self.assertEqual(
-            from_dn.uuid,
-            uuid5(UUIDv4, f'{object_id} - {from_id} - from-display-name - {from_dn.value}')
-        )
-        self.assertEqual(
-            to_addr.uuid,
-            uuid5(UUIDv4, f'{object_id} - {to_id} - to - {to_addr.value}')
-        )
-        self.assertEqual(
-            to_dn.uuid,
-            uuid5(UUIDv4, f'{object_id} - {to_id} - to-display-name - {to_dn.value}')
-        )
-        self.assertEqual(
-            cc_addr.uuid,
-            uuid5(UUIDv4, f'{object_id} - {cc_id} - cc - {cc_addr.value}')
-        )
-        self.assertEqual(
-            cc_dn.uuid,
-            uuid5(UUIDv4, f'{object_id} - {cc_id} - cc-display-name - {cc_dn.value}')
-        )
+
+        pattern = self._get_compiled_pattern(indicator) if indicator is not None else {}
+        pattern_values = [value[-1] for value in pattern.get('email-message', [])]
+
+        for attribute in attributes:
+            if attribute.value in pattern_values:
+                self.assertTrue(attribute.to_ids)
+                self.assertEqual(
+                    attribute.uuid,
+                    uuid5(
+                        UUIDv4,
+                        f'{indicator.id} - {object_id} - '
+                        f'{attribute.object_relation} - {attribute.value}'
+                    )
+                )
+                continue
+            self.assertFalse(attribute.to_ids)
+            self.assertEqual(
+                attribute.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{object_id} - {attribute.object_relation} - {attribute.value}'
+                )
+            )
         self._check_wrapped_attribute(
-            body.uuid, f'{object_id} - body_multipart - 0',
-            body.object_relation, body.value
+            from_addr, f'{object_id} - {from_id}',
+            indicator_id=indicator.id if from_addr.value in pattern_values else None
         )
+        self._check_wrapped_attribute(to_addr, f'{object_id} - {to_id}')
+        self._check_wrapped_attribute(to_dn, f'{object_id} - {to_id}')
+        self._check_wrapped_attribute(cc_addr, f'{object_id} - {cc_id}')
+        self._check_wrapped_attribute(cc_dn, f'{object_id} - {cc_id}')
+        self._check_wrapped_attribute(body, f'{object_id} - body_multipart - 0')
         self.assertEqual(len(misp_object.references), 2)
         artifact_ref, file_ref = misp_object.references
         self.assertEqual(artifact_ref.referenced_uuid, artifact_id)
@@ -1611,18 +1614,53 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             file_ref.relationship_type,
             'contains'
         )
+        return received_header_ip, from_dn
 
     def _check_wrapped_network_traffic_object(
             self, misp_object, object_id, src_id, dst_id, n_attributes,
-            *references, src_indicator_id = None, dst_indicator_id = None):
+            *references, indicator=None):
         self.assertEqual(len(misp_object.attributes), n_attributes)
+
+        pattern = self._get_compiled_pattern(indicator) if indicator is not None else {}
+        pattern_values = [value[-1] for value in pattern.get('network-traffic', [])]
         *attributes, src_ip, dst_ip = misp_object.attributes
         for attribute in attributes:
-            self.assertEqual(
-                attribute.uuid,
-                uuid5(UUIDv4, f'{object_id} - {attribute.object_relation} - {attribute.value}')
+            value = (
+                attribute.value.lower()
+                if isinstance(attribute.value, str)
+                else attribute.value
             )
-        if src_indicator_id is None:
+            if value in pattern_values:
+                self.assertTrue(attribute.to_ids)
+                self.assertEqual(
+                    attribute.uuid,
+                    uuid5(
+                        UUIDv4,
+                        f'{indicator.id} - {object_id} - '
+                        f'{attribute.object_relation} - {attribute.value}'
+                    )
+                )
+            else:
+                self.assertFalse(attribute.to_ids)
+                self.assertEqual(
+                    attribute.uuid,
+                    uuid5(
+                        UUIDv4,
+                        f'{object_id} - {attribute.object_relation} - {attribute.value}'
+                    )
+                )
+        if src_ip.value in pattern_values:
+            self.assertTrue(src_ip.to_ids)
+            self.assertEqual(
+                src_ip.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{indicator.id} - {object_id} - '
+                    f'{src_id} - src_ip - {src_ip.value}'
+                )
+            )
+        else:
+            self.assertFalse(src_ip.to_ids)
             self.assertEqual(
                 src_ip.uuid,
                 uuid5(
@@ -1630,30 +1668,23 @@ class TestExternalSTIX2Import(TestSTIX2Import):
                     f'{object_id} - {src_id} - src_ip - {src_ip.value}'
                 )
             )
-        else:
+        if dst_ip.value in pattern_values:
+            self.assertTrue(dst_ip.to_ids)
             self.assertEqual(
-                src_ip.uuid,
+                dst_ip.uuid,
                 uuid5(
                     UUIDv4,
-                    f'{src_indicator_id} - {object_id} - '
-                    f'{src_id} - src_ip - {src_ip.value}'
+                    f'{indicator.id} - {object_id} - '
+                    f'{dst_id} - dst_ip - {dst_ip.value}'
                 )
             )
-        if dst_indicator_id is None:
+        else:
+            self.assertFalse(dst_ip.to_ids)
             self.assertEqual(
                 dst_ip.uuid,
                 uuid5(
                     UUIDv4,
                     f'{object_id} - {dst_id} - dst_ip - {dst_ip.value}'
-                )
-            )
-        else:
-            self.assertEqual(
-                dst_ip.uuid,
-                uuid5(
-                    UUIDv4,
-                    f'{dst_indicator_id} - {object_id} - '
-                    f'{dst_id} - dst_ip - {dst_ip.value}'
                 )
             )
         self.assertEqual(len(misp_object.references), len(references))
