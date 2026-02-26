@@ -260,8 +260,8 @@ class STIX2ObservableObjectConverter(
             )
             observable['misp_object'] = misp_object
             return misp_object
-        to_ids = self._check_indicator_reference(
-            indicator_ref, autonomous_system.number
+        to_ids = self._check_indicator_references(
+            indicator_ref, autonomous_system.type, autonomous_system.number
         )
         value = self._parse_AS_value(autonomous_system.number)
         attribute = {'type': 'AS', 'to_ids': to_ids, 'value': value}
@@ -295,7 +295,7 @@ class STIX2ObservableObjectConverter(
                 **self._populate_object_attribute(
                     domain_name.value, self._mapping.domain_attribute(),
                     self._handle_object_id(
-                        observable.get('indicator_ref'),
+                        observable.get('indicator_ref'), domain_name.type,
                         domain_name.value, f'{domain_name.id} - domain'
                     )
                 )
@@ -332,7 +332,7 @@ class STIX2ObservableObjectConverter(
                         misp_attribute = self.main_parser._add_misp_attribute(
                             self._create_single_misp_attribute(
                                 indicator_ref, referenced_mac,
-                                **{
+                                observable_type=mac_address.type, **{
                                     'type': 'mac-address',
                                     'value': mac_address.value,
                                     'comment': f'Resolved by {ip_address.value}'
@@ -349,6 +349,7 @@ class STIX2ObservableObjectConverter(
         misp_attribute = self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
                 observable.get('indicator_ref'), domain_ref,
+                observable_type=domain_name.type,
                 **{'type': 'domain', 'value': domain_name.value}
             ),
             domain_name
@@ -374,7 +375,8 @@ class STIX2ObservableObjectConverter(
             user_account_object.add_attribute(
                 'email', email_address.value,
                 **self._handle_object_id(
-                    indicator_ref, email_address.value, f'{object_id} - email'
+                    indicator_ref, email_address.type,
+                    email_address.value, f'{object_id} - email'
                 )
             )
             observable['misp_object'] = user_account_object
@@ -384,7 +386,7 @@ class STIX2ObservableObjectConverter(
             comment = f'Observable object ID: {object_id}'
             misp_attribute = self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
-                    indicator_ref, object_id, **{
+                    indicator_ref, email_address.type, object_id, **{
                         'type': 'email', 'comment': comment,
                         'value': email_address.value,
                     }
@@ -393,7 +395,7 @@ class STIX2ObservableObjectConverter(
             )
             self.main_parser._add_misp_attribute(
                 self._create_misp_attribute(
-                    indicator_ref, object_id, **{
+                    indicator_ref, email_address.type, object_id, **{
                         'type': 'email-dst-display-name', 'comment': comment,
                         'value': email_address.display_name
                     }
@@ -406,6 +408,7 @@ class STIX2ObservableObjectConverter(
         misp_attribute = self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
                 indicator_ref, email_address_ref,
+                observable_type=email_address.type,
                 **{'type': 'email', 'value': email_address.value}
             ),
             email_address
@@ -474,8 +477,8 @@ class STIX2ObservableObjectConverter(
             for index, multipart in enumerate(email_message.body_multipart):
                 if hasattr(multipart, 'body'):
                     object_id = email_message.id
-                    to_ids = self._check_indicator_reference(
-                        indicator_ref, multipart.body
+                    to_ids = self._check_indicator_references(
+                        indicator_ref, email_message.type, multipart.body
                     )
                     if to_ids:
                         object_id = f'{indicator_ref} - {object_id}'
@@ -514,8 +517,8 @@ class STIX2ObservableObjectConverter(
             if observable.type not in ('ipv4-addr', 'ipv6-addr'):
                 continue
             if AS_id in getattr(observable, 'belongs_to_refs', []):
-                indicator_id = self._check_indicator_reference(
-                    indicator_ref, observable.value
+                indicator_id = self._check_indicator_references(
+                    indicator_ref, observable.type, observable.value
                 )
                 to_ids = bool(indicator_id)
                 attribute = {
@@ -545,6 +548,7 @@ class STIX2ObservableObjectConverter(
         misp_attribute = self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
                 observable.get('indicator_ref'), ip_address_ref,
+                observable_type=ip_address.type,
                 **{'type': 'ip-dst', 'value': ip_address.value}
             ),
             ip_address
@@ -562,6 +566,7 @@ class STIX2ObservableObjectConverter(
         misp_attribute = self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
                 observable.get('indicator_ref'), mac_address_ref,
+                observable_type=mac_address.type,
                 **{'type': 'mac-address', 'value': mac_address.value}
             ),
             mac_address
@@ -578,6 +583,7 @@ class STIX2ObservableObjectConverter(
         misp_attribute = self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
                 observable.get('indicator_ref'), mutex_ref,
+                observable_type=mutex.type,
                 **{'type': 'mutex', 'value': mutex.name}
             ),
             mutex
@@ -773,6 +779,7 @@ class STIX2ObservableObjectConverter(
         misp_attribute = self.main_parser._add_misp_attribute(
             self._create_single_misp_attribute(
                 observable.get('indicator_ref'), url_ref,
+                observable_type=url.type,
                 **{'type': 'url', 'value': url.value}
             ),
             url
