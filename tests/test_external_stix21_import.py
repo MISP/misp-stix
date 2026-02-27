@@ -2803,6 +2803,23 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self._check_artifact_object(single, od2, artifact3)
 
+    def test_stix21_bundle_with_artifact_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_artifact_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, artifact1, artifact2, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 2)
+        misp_object1, misp_object2 = misp_objects
+        self._assert_multiple_equal(misp_object1.name, misp_object2.name, 'artifact')
+
+        self.assertEqual(misp_object1.uuid, artifact1.id.split('--')[1])
+        self._check_artifact_with_url_fields(misp_object1, artifact1, artifact1.id, indicator=indicator)
+
+        self.assertEqual(misp_object2.uuid, artifact2.id.split('--')[1])
+        self._check_artifact_fields(misp_object2, artifact2, artifact2.id)
+
     def test_stix21_bundle_with_as_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_as_objects_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -2816,6 +2833,22 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_as_object(s_object, od2, as3, indicator=indicator)
         self._check_as_attribute(m_attribute, od1, as2)
         self._check_as_attribute(s_attribute, od3, as4)
+
+    def test_stix21_bundle_with_as_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_as_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, as1, as2, indicator = bundle.objects
+        misp_object, attribute = self._check_misp_event_features_from_grouping(event, grouping)
+
+        self.assertEqual(misp_object.name, 'asn')
+        self.assertEqual(misp_object.uuid, as1.id.split('--')[1])
+        self._check_as_fields(misp_object, as1, indicator=indicator)
+
+        self.assertEqual(attribute.uuid, as2.id.split('--')[1])
+        self.assertEqual(attribute.type, 'AS')
+        self.assertEqual(attribute.value, f'AS{as2.number}')
 
     def test_stix21_bundle_with_directory_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_directory_objects_and_indicator()
@@ -2845,6 +2878,27 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(reference2.relationship_type, 'contains')
 
+    def test_stix21_bundle_with_directory_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_directory_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, directory1, directory2, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 2)
+        misp_object1, misp_object2 = misp_objects
+        self._assert_multiple_equal(misp_object1.name, misp_object2.name, 'directory')
+
+        self.assertEqual(misp_object1.uuid, directory1.id.split('--')[1])
+        self._check_directory_fields(misp_object1, directory1, indicator=indicator)
+        reference = misp_object1.references[0]
+        self.assertEqual(reference.relationship_type, 'contains')
+        self._assert_multiple_equal(
+            reference.referenced_uuid, misp_object2.uuid,
+            directory2.id.split('--')[1]
+        )
+        self._check_directory_fields(misp_object2, directory2)
+
     def test_stix21_bundle_with_domain_attributes_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -2861,6 +2915,22 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(m_domain1.type, 'domain')
         self.assertEqual(m_domain1.value, domain_1.value)
+
+    def test_stix21_bundle_with_domain_observable_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_observable_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, domain, indicator = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 1)
+        attribute = attributes[0]
+        self.assertTrue(attribute.to_ids)
+        self.assertEqual(
+            attribute.uuid, uuid5(UUIDv4, f'{indicator.id} - {domain.id}')
+        )
+        self.assertEqual(attribute.type, 'domain')
+        self.assertEqual(attribute.value, domain.value)
 
     def test_stix21_bundle_with_domain_ip_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_objects_and_indicator()
@@ -2899,6 +2969,43 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             f'{domain1.id} - {ipv6.id}', indicator=indicator
         )
 
+    def test_stix21_bundle_with_domain_ip_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, domain1, ipv4, ipv6, domain2, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 2)
+        domain_ip_object, domain_object = misp_objects
+        self._assert_multiple_equal(
+            domain_ip_object.name, domain_object.name, 'domain-ip'
+        )
+
+        self.assertEqual(domain_ip_object.uuid, domain1.id.split('--')[1])
+        self._check_domain_ip_fields(
+            domain_ip_object, domain1, ipv4, ipv6,
+            domain1.id, f'{domain1.id} - {ipv4.id}',
+            f'{domain1.id} - {ipv6.id}', indicator=indicator
+        )
+
+        self.assertEqual(domain_object.uuid, domain2.id.split('--')[1])
+        self.assertEqual(len(domain_object.attributes), 1)
+        domain_attribute = domain_object.attributes[0]
+        self._assert_multiple_equal(
+            domain_attribute.type, domain_attribute.object_relation, 'domain'
+        )
+        self.assertEqual(domain_attribute.value, domain2.value)
+        self.assertEqual(
+            domain_attribute.uuid,
+            uuid5(UUIDv4, f'{domain2.id} - domain - {domain2.value}')
+        )
+
+        self.assertEqual(len(domain_object.references), 1)
+        reference = domain_object.references[0]
+        self.assertEqual(reference.referenced_uuid, domain_ip_object.uuid)
+        self.assertEqual(reference.relationship_type, 'alias-of')
+
     def test_stix21_bundle_with_email_address_attributes_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_attributes_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -2927,6 +3034,42 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_email_address_attribute(od1, ms_address, ea2)
         self._check_email_address_attribute(od3, ss_address, ea4)
 
+    def test_stix21_bundle_with_email_address_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, address1, address2, indicator = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        email_address1, display_name, email_address2 = attributes
+        self._assert_multiple_equal(email_address1.type, email_address2.type, "email")
+        self.assertTrue(email_address1.to_ids)
+        self.assertEqual(
+            email_address1.uuid,
+            uuid5(
+                UUIDv4,
+                f'{indicator.id} - {address1.id} - email - {address1.value}'
+            )
+        )
+        self.assertEqual(email_address1.value, address1.value)
+        self.assertTrue(display_name.to_ids)
+        self.assertEqual(display_name.type, "email-dst-display-name")
+        self.assertEqual(
+            display_name.uuid,
+            uuid5(
+                UUIDv4, ' - '.join(
+                    (
+                        indicator.id, address1.id, display_name.type,
+                        address1.display_name
+                    )
+                )
+            ),
+        )
+        self.assertEqual(display_name.value, address1.display_name)
+        self.assertFalse(email_address2.to_ids)
+        self.assertEqual(email_address2.uuid, address2.id.split("--")[1])
+        self.assertEqual(email_address2.value, address2.value)
+
     def test_stix21_bundle_with_email_message_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_objects_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -2951,6 +3094,40 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self._check_email_artifact_object(artifact_object, observed_data, artifact)
         self._check_email_file_object(file_object, observed_data, _file)
+
+    def test_stix21_bundle_with_email_message_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, message, ea1, ea2, ea3, artifact, _file, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        email_object, artifact_object, file_object = misp_objects
+
+        self.assertEqual(email_object.name, 'email')
+        message_id = message.id
+        self.assertEqual(email_object.uuid, message_id.split('--')[1])
+        self._check_email_object_fields(
+            email_object, message, ea1, ea2, ea3, message_id,
+            f'{message_id} - {ea1.id}', f'{message_id} - {ea2.id}',
+            f'{message_id} - {ea3.id}', indicator=indicator
+        )
+        email_references = email_object.references
+        self.assertEqual(len(email_references), 2)
+        artifact_reference, file_reference = email_references
+        self.assertEqual(artifact_reference.referenced_uuid, artifact_object.uuid)
+        self.assertEqual(artifact_reference.relationship_type, 'contains')
+        self.assertEqual(file_reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contains')
+
+        self.assertEqual(artifact_object.name, 'artifact')
+        self.assertEqual(artifact_object.uuid, artifact.id.split('--')[1])
+        self._check_email_artifact_object_fields(artifact_object, artifact)
+
+        self.assertEqual(file_object.name, 'file')
+        self.assertEqual(file_object.uuid, _file.id.split('--')[1])
+        self._check_email_file_object_fields(file_object, _file)
 
     def test_stix21_bundle_with_file_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_file_objects_and_indicator()
@@ -2984,6 +3161,68 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self._check_file_and_pe_objects(od3, file3, file_object2, pe_object, *sections)
 
+    def test_stix21_bundle_with_file_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_file_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, file1, directory, artifact, file2, file3, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 10)
+        file_object1, directory_object, artifact_object, archive, file_object2, pe_object, *sections = misp_objects
+        self._assert_multiple_equal(
+            file_object1.name, archive.name, file_object2.name, 'file'
+        )
+
+        self.assertEqual(file_object1.uuid, file1.id.split('--')[1])
+        self._check_file_fields(file_object1, file1, indicator=indicator)
+
+        self.assertEqual(directory_object.name, 'directory')
+        self.assertEqual(directory_object.uuid, directory.id.split('--')[1])
+        self.assertEqual(len(directory_object.attributes), 1)
+        path_attribute = directory_object.attributes[0]
+        self.assertEqual(path_attribute.type, 'text')
+        self.assertEqual(path_attribute.object_relation, 'path')
+        self.assertEqual(path_attribute.value, directory.path)
+        self.assertEqual(
+            path_attribute.uuid,
+            uuid5(UUIDv4, f'{directory.id} - path - {path_attribute.value}')
+        )
+
+        self.assertEqual(artifact_object.name, 'artifact')
+        self.assertEqual(artifact_object.uuid, artifact.id.split('--')[1])
+        self._check_content_ref_fields(artifact_object, artifact)
+        self._check_file_object_references(file_object1, directory_object, artifact_object)
+
+        self.assertEqual(archive.uuid, file2.id.split('--')[1])
+        self.assertEqual(archive.comment, file2.extensions['archive-ext'].comment)
+        self._check_archive_file_fields(archive, file2)
+        self._check_archive_object_references(archive, file_object1, directory_object)
+
+        self.assertEqual(file_object2.uuid, file3.id.split('--')[1])
+        self._check_file_with_pe_fields(file_object2, file3)
+        file_reference = file_object2.references[0]
+        self.assertEqual(file_reference.referenced_uuid, pe_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'includes')
+
+        self.assertEqual(pe_object.name, 'pe')
+        object_id = f'{file3.id} - windows-pebinary-ext'
+        self.assertEqual(pe_object.uuid, uuid5(UUIDv4, object_id))
+        extension = file3.extensions['windows-pebinary-ext']
+        self._check_pe_fields(pe_object, extension, object_id)
+
+        self.assertEqual(len(pe_object.references), len(sections))
+        for reference, section in zip(pe_object.references, sections):
+            self.assertEqual(reference.referenced_uuid, section.uuid)
+            self.assertEqual(reference.relationship_type, 'includes')
+        for index, section in enumerate(sections):
+            self.assertEqual(section.name, 'pe-section')
+            section_id = f'{object_id} - sections - {index}'
+            self.assertEqual(section.uuid, uuid5(UUIDv4, section_id))
+            self._check_pe_section_fields(
+                section, extension.sections[index], section_id
+            )
+
     def test_stix21_bundle_with_ip_address_attributes_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_attributes_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -2998,6 +3237,24 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_indicator_ids_attribute(s_ip, od2, f'{indicator.id} - {address_3.id}')
         self.assertEqual(s_ip.type, 'ip-dst')
         self.assertEqual(s_ip.value, address_3.value)
+
+    def test_stix21_bundle_with_ip_address_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, address_1, address_2, indicator = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        ip_address1, ip_address2 = attributes
+        self._assert_multiple_equal(ip_address1.type, ip_address2.type, "ip-dst")
+        self.assertTrue(ip_address1.to_ids)
+        self.assertEqual(
+            ip_address1.uuid, uuid5(UUIDv4, f'{indicator.id} - {address_2.id}')
+        )
+        self.assertEqual(ip_address1.value, address_2.value)
+        self.assertFalse(ip_address2.to_ids)
+        self.assertEqual(ip_address2.uuid, address_1.id.split("--")[1])
+        self.assertEqual(ip_address2.value, address_1.value)
 
     def test_stix21_bundle_with_mac_address_attributes_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mac_address_attributes_and_indicator()
@@ -3016,6 +3273,22 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(s_mac.type, 'mac-address')
         self.assertEqual(s_mac.value, address_3.value)
 
+    def test_stix21_bundle_with_mac_address_observable_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_mac_address_observable_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, address, indicator = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 1)
+        mac_address = attributes[0]
+        self.assertEqual(mac_address.type, 'mac-address')
+        self.assertTrue(mac_address.to_ids)
+        self.assertEqual(
+            mac_address.uuid, uuid5(UUIDv4, f'{indicator.id} - {address.id}')
+        )
+        self.assertEqual(mac_address.value, address.value)
+
     def test_stix21_bundle_with_mutex_attributes_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mutex_attributes_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3032,6 +3305,22 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(m_mutex1.type, 'mutex')
         self.assertEqual(m_mutex1.value, mutex_1.name)
+
+    def test_stix21_bundle_with_mutex_observable_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_mutex_observable_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, mutex, indicator = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 1)
+        mutex_attribute = attributes[0]
+        self.assertTrue(mutex_attribute.to_ids)
+        self.assertEqual(mutex_attribute.type, 'mutex')
+        self.assertEqual(
+            mutex_attribute.uuid, uuid5(UUIDv4, f'{indicator.id} - {mutex.id}')
+        )
+        self.assertEqual(mutex_attribute.value, mutex.name)
 
     def test_stix21_bundle_with_network_traffic_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_objects_and_indicator()
@@ -3089,6 +3378,39 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             'encapsulated-by'
         )
 
+    def test_stix21_bundle_with_network_traffic_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, ip1, ip2, ip3, nt1, nt2, artifact, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        nt_object1, artifact_object, nt_object2 = misp_objects
+        self._assert_multiple_equal(nt_object1.name, nt_object2.name, "network-traffic")
+
+        self.assertEqual(nt_object1.uuid, nt1.id.split("--")[1])
+        self._check_network_traffic_packet_sizes(nt_object1, nt1, ip1, ip2, 9)
+        self.assertEqual(len(nt_object1.references), 2)
+        payload_ref, encapsulates2 = nt_object1.references
+        self.assertEqual(encapsulates2.referenced_uuid, nt_object2.uuid)
+        self.assertEqual(encapsulates2.relationship_type, "encapsulates")
+        self.assertEqual(payload_ref.referenced_uuid, artifact_object.uuid)
+        self.assertEqual(payload_ref.relationship_type, "source-sent")
+
+        self.assertEqual(artifact_object.uuid, artifact.id.split("--")[1])
+        self._check_payload_object_fields(artifact_object, artifact)
+
+        self._check_network_traffic_packet_counts(
+            nt_object2, nt2, ip2, ip3, 10, indicator=indicator
+        )
+        self.assertEqual(len(nt_object2.references), 2)
+        payload_ref, encapsulated2 = nt_object2.references
+        self.assertEqual(encapsulated2.referenced_uuid, nt_object1.uuid)
+        self.assertEqual(encapsulated2.relationship_type, "encapsulated-by")
+        self.assertEqual(payload_ref.referenced_uuid, artifact_object.uuid)
+        self.assertEqual(payload_ref.relationship_type, "destination-sent")
+
     def test_stix21_bundle_with_process_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_process_objects_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3125,6 +3447,37 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self._check_process_object_references(multiple, parent, child, image1, image2)
 
+    def test_stix21_bundle_with_process_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_process_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, process1, process2, file1, process3, file2, process4, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 6)
+        process, image1, parent, image2, child, satan = misp_objects
+        self._assert_multiple_equal(process.name, parent.name, child.name, "process")
+        self._assert_multiple_equal(image1.name, image2.name, "file")
+
+        self.assertEqual(process.uuid, process1.id.split("--")[1])
+        self._check_process_multiple_fields(process, process1, indicator=indicator)
+
+        self.assertEqual(image1.uuid, file2.id.split("--")[1])
+        self._check_process_image_reference_fields(image1, file2)
+
+        self.assertEqual(parent.uuid, process2.id.split("--")[1])
+        self._check_process_parent_fields(parent, process2)
+
+        self.assertEqual(child.uuid, process3.id.split("--")[1])
+        self._check_process_child_fields(child, process3)
+
+        self.assertEqual(image2.uuid, file1.id.split("--")[1])
+        self._check_process_image_reference_fields(image2, file1)
+
+        self._check_process_object_references(process, parent, child, image1, image2)
+
+        self._check_process_single_fields(satan, process4)
+
     def test_stix21_bundle_with_registry_key_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_registry_key_objects_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3157,6 +3510,48 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             creator_user, multiple2, single, value1.uuid, value2.uuid
         )
 
+    def test_stix21_bundle_with_registry_key_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_registry_key_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, key1, key2, key3, user, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 6)
+        regkey1, regkey2, value1, value2, creator_user, regkey3 = misp_objects
+        self._assert_multiple_equal(
+            regkey1.name, regkey2.name, regkey3.name, "registry-key"
+        )
+        self._assert_multiple_equal(value1.name, value2.name, "registry-key-value")
+
+        self.assertEqual(regkey1.uuid, key1.id.split("--")[1])
+        modified = self._check_registry_key_with_values_fields(regkey1, key1)
+        self.assertEqual(modified.value, key1.modified_time)
+
+        self.assertEqual(regkey2.uuid, key2.id.split("--")[1])
+        modified = self._check_registry_key_fields(regkey2, key2, indicator=indicator)
+        self.assertEqual(modified.value, key2.modified_time)
+
+        value1_id = f"{key2.id} - values - 0"
+        self.assertEqual(value1.uuid, uuid5(UUIDv4, value1_id))
+        self._check_registry_key_value_fields(value1, key2["values"][0], value1_id)
+
+        value2_id = f"{key2.id} - values - 1"
+        self.assertEqual(value2.uuid, uuid5(UUIDv4, value2_id))
+        self._check_registry_key_value_fields(value2, key2["values"][1], value2_id)
+
+        self.assertEqual(creator_user.uuid, user.id.split("--")[1])
+        self.assertEqual(creator_user.name, "user-account")
+        self._check_creator_user_fields(creator_user, user, user.id)
+
+        self.assertEqual(regkey3.uuid, key3.id.split("--")[1])
+        modified = self._check_registry_key_with_values_fields(regkey3, key3)
+        self.assertEqual(modified.value, key3.modified_time)
+
+        self._check_registry_key_references(
+            creator_user, regkey2, regkey3, value1.uuid, value2.uuid
+        )
+
     def test_stix21_bundle_with_software_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_software_objects_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3174,6 +3569,25 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_object_fields(single, od2, software3.id)
         self._check_software_with_swid_fields(single, software3)
 
+    def test_stix21_bundle_with_software_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_software_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, software1, software2, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 2)
+        software_object1, software_object2 = misp_objects
+        self._assert_multiple_equal(
+            software_object1.name, software_object2.name, "software"
+        )
+
+        self.assertEqual(software_object1.uuid, software1.id.split("--")[1])
+        self._check_software_fields(software_object1, software1, indicator=indicator)
+
+        self.assertEqual(software_object2.uuid, software2.id.split("--")[1])
+        self._check_software_with_swid_fields(software_object2, software2)
+
     def test_stix21_bundle_with_url_attributes_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_url_attributes_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3190,6 +3604,21 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(s_url.type, 'url')
         self.assertEqual(s_url.value, url_3.value)
+
+    def test_stix21_bundle_with_url_observable_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_url_observable_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, url, indicator = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 1)
+        url_attribute = attributes[0]
+        self.assertEqual(url_attribute.type, 'url')
+        self.assertEqual(
+            url_attribute.uuid, uuid5(UUIDv4, f'{indicator.id} - {url.id}')
+        )
+        self.assertEqual(url_attribute.value, url.value)
 
     def test_stix21_bundle_with_user_account_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_user_account_objects_and_indicator()
@@ -3241,6 +3670,34 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             user3.id
         )
 
+    def test_stix21_bundle_with_user_account_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_user_account_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, user1, user2, user3, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        user_account1, user_account2, user_account3 = misp_objects
+        self._assert_multiple_equal(
+            user_account1.name, user_account2.name, user_account3.name, "user-account"
+        )
+
+        self.assertEqual(user_account1.uuid, user1.id.split("--")[1])
+        self._check_user_account_object(user_account1, user1)
+
+        self.assertEqual(user_account2.uuid, user2.id.split("--")[1])
+        self._check_user_account_twitter_fields(
+            user_account2, user2, indicator=indicator
+        )
+
+        self.assertEqual(user_account3.uuid, user3.id.split("--")[1])
+        self.assertEqual(len(user_account3.attributes), 11)
+        self._check_user_account_fields(user_account3.attributes[:7], user3)
+        self._check_user_account_extension_fields(
+            user_account3.attributes[7:], user3.extensions["unix-account-ext"], user3.id
+        )
+
     def test_stix21_bundle_with_wrapped_objects_and_indicators(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_wrapped_objects_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3256,6 +3713,17 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
         self._check_wrapped_observable_objects_and_indicators(misp_content, scos, indicators)
 
+    def test_stix21_bundle_with_wrapped_observables_and_indicators(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_wrapped_observables_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *stix_objects = bundle.objects
+        indicators = [obj for obj in stix_objects if obj.type == 'indicator']
+        scos = [obj for obj in stix_objects if obj.type != 'indicator']
+        misp_content = self._check_misp_event_features_from_grouping(event, grouping)
+        self._check_wrapped_observable_objects_and_indicators(misp_content, scos, indicators)
+
     def test_stix21_bundle_with_x509_objects_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_objects_and_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3268,3 +3736,16 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_x509_object(multiple1, od1, cert3, indicator=indicator)
         self._check_x509_object(multiple2, od1, cert1)
         self._check_x509_object(single, od2, cert2)
+
+    def test_stix21_bundle_with_x509_observables_and_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_observable_and_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, certificate, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 1)
+        x509_object = misp_objects[0]
+        self.assertEqual(x509_object.name, "x509")
+        self.assertEqual(x509_object.uuid, certificate.id.split("--")[1])
+        self._check_x509_fields(x509_object, certificate, indicator=indicator)
