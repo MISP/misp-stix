@@ -116,14 +116,6 @@ _X509_CERTIFICATE_TYPING = Union[
 
 
 class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
-    __artifact_object_mapping = Mapping(
-        decryption_key={'type': 'text', 'object_relation': 'decryption_key'},
-        encyption_algorithm={
-            'type': 'text', 'object_relation': 'encryption_algorithm'
-        },
-        mime_type={'type': 'mime-type', 'object_relation': 'mime_type'},
-        url=STIX2Mapping.url_attribute()
-    )
     __email_additional_header_fields_mapping = Mapping(
         **{
             'Reply-To': STIX2Mapping.reply_to_attribute(),
@@ -131,18 +123,16 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'X-Originating-IP': STIX2Mapping.received_header_ip_attribute(),
         }
     )
-    __dst_ip_attribute = {'type': 'ip-dst', 'object_relation': 'dst_ip'}
-    __src_ip_attribute = {'type': 'ip-src', 'object_relation': 'src_ip'}
     __generic_network_traffic_reference_mapping = Mapping(
         **{
-            'domain-name_dst': {'type': 'hostname', 'object_relation': 'dst_hostname'},
-            'domain-name_src': {'type': 'hostname', 'object_relation': 'src_hostname'},
-            'ipv4-addr_dst': __dst_ip_attribute,
-            'ipv4-addr_src': __src_ip_attribute,
-            'ipv6-addr_dst': __dst_ip_attribute,
-            'ipv6-addr_src': __src_ip_attribute,
-            'mac-address_dst': {'type': 'mac-address', 'object_relation': 'dst_mac'},
-            'mac-address_src': {'type': 'mac-address', 'object_relation': 'src_mac'}
+            'domain-name_dst': STIX2Mapping.dst_hostname_attribute(),
+            'domain-name_src': STIX2Mapping.src_hostname_attribute(),
+            'ipv4-addr_dst': STIX2Mapping.dst_ip_attribute(),
+            'ipv4-addr_src': STIX2Mapping.src_ip_attribute(),
+            'ipv6-addr_dst': STIX2Mapping.dst_ip_attribute(),
+            'ipv6-addr_src': STIX2Mapping.src_ip_attribute(),
+            'mac-address_dst': STIX2Mapping.dst_mac_attribute(),
+            'mac-address_src': STIX2Mapping.src_mac_attribute()
         }
     )
     __http_request_extension_mapping = Mapping(
@@ -184,10 +174,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'SHA-256': STIX2Mapping.x509_sha256_attribute()
         }
     )
-
-    @classmethod
-    def artifact_object_mapping(cls) -> dict:
-        return cls.__artifact_object_mapping
 
     @classmethod
     def email_additional_header_fields_mapping(cls) -> dict:

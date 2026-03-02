@@ -56,9 +56,20 @@ class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
     )
 
     @classmethod
-    def network_connection_pattern_mapping(
-            cls, field: str) -> Union[dict, None]:
-        return cls.network_connection_object_mapping().get(field)
+    def artifact_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.artifact_object_mapping().get(field)
+
+    @classmethod
+    def directory_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.directory_object_mapping().get(field)
+
+    @classmethod
+    def network_socket_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.network_socket_object_mapping().get(field)
+
+    @classmethod
+    def network_traffic_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.network_traffic_object_mapping().get(field)
 
     @classmethod
     def pe_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -288,10 +299,6 @@ class ExternalSTIX2IndicatorMapping(
     @classmethod
     def mac_address_pattern(cls) -> str:
         return cls.__mac_address_pattern
-
-    @classmethod
-    def network_socket_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.network_socket_object_mapping().get(field)
 
     @classmethod
     def pattern_forbidden_relations(cls) -> tuple:
@@ -1383,10 +1390,6 @@ class InternalSTIX2IndicatorMapping(
     @classmethod
     def netflow_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__netflow_pattern_mapping.get(field)
-
-    @classmethod
-    def network_socket_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.network_socket_object_mapping().get(field)
 
     @classmethod
     def parler_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
