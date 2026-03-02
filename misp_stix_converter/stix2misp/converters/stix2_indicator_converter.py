@@ -388,6 +388,19 @@ class ExternalSTIX2IndicatorConverter(
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
 
+    def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
+        compiled_pattern = self._compile_stix_pattern(indicator)
+        observable_types = '_'.join(sorted(compiled_pattern.comparisons.keys()))
+        mapping = self._mapping.pattern_mapping(observable_types)
+        if mapping is None:
+            raise UnknownPatternMappingError(observable_types)
+        feature = f'_parse_{mapping}_pattern'
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        parser(compiled_pattern, indicator)
+
     ############################################################################
     #                        INDICATORS PARSING METHODS                        #
     ############################################################################
@@ -974,19 +987,6 @@ class ExternalSTIX2IndicatorConverter(
         else:
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
-
-    def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
-        compiled_pattern = self._compile_stix_pattern(indicator)
-        observable_types = '_'.join(sorted(compiled_pattern.comparisons.keys()))
-        mapping = self._mapping.pattern_mapping(observable_types)
-        if mapping is None:
-            raise UnknownPatternMappingError(observable_types)
-        feature = f'_parse_{mapping}_pattern'
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        parser(compiled_pattern, indicator)
 
     def _parse_suricata_pattern(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('suricata', indicator)
