@@ -156,7 +156,9 @@ class ExternalSTIX2IndicatorMapping(
     # MAIN MAPPING
     __pattern_mapping = Mapping(
         **{
+            'artifact': 'artifact',
             'directory': 'directory',
+            'domain-name': 'domain',
             'email-addr': 'email_address',
             'email-message': 'email_message',
             'mac-addr': 'mac_address',
@@ -181,10 +183,9 @@ class ExternalSTIX2IndicatorMapping(
                     'domain-name',
                     'domain-name_ipv4-addr',
                     'domain-name_ipv6-addr',
-                    'domain-name_ipv4-addr_ipv6-addr',
-                    'domain-name_network-traffic'
+                    'domain-name_ipv4-addr_ipv6-addr'
                 ),
-                'domain_ip_port'
+                'domain_ip'
             ),
             **dict.fromkeys(
                 (
@@ -494,7 +495,7 @@ class ExternalSTIX2IndicatorConverter(
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
-    def _parse_domain_ip_port_pattern(
+    def _parse_domain_ip_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         features = ('domain-name', 'ipv4-addr', 'ipv6-addr')
