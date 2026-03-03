@@ -512,11 +512,11 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    misp_object.add_attribute(**{'value': value, **mapping})
-            else:
-                misp_object.add_attribute(**{'value': values, **mapping})
+            attributes = self._handle_object_attributes(
+                values, mapping, indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
         if misp_object.attributes:
             self.main_parser._add_misp_object(misp_object, indicator)
         else:
@@ -660,16 +660,12 @@ class ExternalSTIX2IndicatorConverter(
                         pe_object.add_attribute(**{'value': value, **mapping})
                     continue
                 if keys[-1] == 'address_of_entry_point':
-                    attribute = self._mapping.entrypoint_address_attribute()
-                    if isinstance(values, tuple):
-                        for value in values:
-                            pe_object.add_attribute(
-                                **{'value': value, **attribute}
-                            )
-                    else:
-                        pe_object.add_attribute(
-                            **{'value': values, **attribute}
-                        )
+                    attributes = self._handle_object_attributes(
+                        values, self._mapping.entrypoint_address_attribute(),
+                        indicator.id
+                    )
+                    for attribute in attributes:
+                        pe_object.add_attribute(**attribute)
                     continue
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
@@ -834,18 +830,11 @@ class ExternalSTIX2IndicatorConverter(
                 if mapping is None:
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                if isinstance(values, tuple):
-                    for value in values:
-                        misp_object.add_attribute(**{'value': value, **mapping})
-                else:
-                    misp_object.add_attribute(**{'value': values, **mapping})
-                continue
-            if 'protocols' in keys:
-                if isinstance(values, tuple):
-                    for value in values:
-                        misp_object.add_attribute('protocol', value)
-                else:
-                    misp_object.add_attribute('protocol', values)
+                attributes = self._handle_object_attributes(
+                    values, mapping, indicator.id
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 continue
             self._parse_network_traffic_attribute(
                 misp_object, keys, values, indicator.id, 'network_socket'
@@ -877,11 +866,11 @@ class ExternalSTIX2IndicatorConverter(
         if mapping is None:
             self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
             return
-        if isinstance(values, tuple):
-            for value in values:
-                misp_object.add_attribute(**{'value': value, **mapping})
-        else:
-            misp_object.add_attribute(**{'value': values, **mapping})
+        attributes = self._handle_object_attributes(
+            values, mapping, indicator_id
+        )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
 
     def _parse_network_traffic_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
