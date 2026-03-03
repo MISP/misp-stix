@@ -380,6 +380,34 @@ class ExternalSTIX2IndicatorConverter(
         )
         self.main_parser._add_misp_object(misp_object, indicator)
 
+    def _handle_import_case(
+            self, indicator: _INDICATOR_TYPING, attributes: list,
+            name: str, *force_object: tuple[str]):
+        if self._handle_object_forcing(attributes, force_object):
+            self._handle_object_case(indicator, attributes, name)
+        else:
+            self.main_parser._add_misp_attribute(
+                dict(self._create_attribute_dict(indicator), **attributes[0]),
+                indicator
+            )
+
+    def _handle_object_case(self, indicator: _INDICATOR_TYPING,
+                            attributes: list, name: str) -> MISPObject:
+        misp_object = self._create_misp_object(name, indicator)
+        for attr in attributes:
+            attr['uuid'] = self.main_parser._create_v5_uuid(
+                f"{indicator.id} - {attr['object_relation']} - {attr['value']}"
+            )
+            misp_object.add_attribute(**attr)
+        return self.main_parser._add_misp_object(misp_object, indicator)
+
+    @staticmethod
+    def _handle_object_forcing(
+            attributes: list, force_object: tuple[str]) -> bool:
+        if len(attributes) > 1:
+            return True
+        return attributes[0]['object_relation'] in force_object
+
     def _handle_pattern_mapping(self, indicator: _INDICATOR_TYPING) -> str:
         if isinstance(indicator, Indicator_v21):
             pattern_type = indicator.pattern_type

@@ -359,31 +359,6 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             meta['external_id'] = meta.pop('external_id')[0]
         return meta
 
-    def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list,
-                            name: str, *force_object: Tuple[str]):
-        if self._handle_object_forcing(attributes, force_object):
-            self._handle_object_case(stix_object, attributes, name)
-        else:
-            self.main_parser._add_misp_attribute(
-                dict(
-                    self._create_attribute_dict(stix_object), **attributes[0]
-                ),
-                stix_object
-            )
-
-    @staticmethod
-    def _handle_object_forcing(attributes: list, force_object: tuple) -> bool:
-        if len(attributes) > 1:
-            return True
-        return attributes[0]['object_relation'] in force_object
-
-    def _handle_object_case(self, stix_object: _SDO_TYPING, attributes: list,
-                            name: str) -> MISPObject:
-        misp_object = self._create_misp_object(name, stix_object)
-        for attribute in attributes:
-            misp_object.add_attribute(**attribute)
-        return self.main_parser._add_misp_object(misp_object, stix_object)
-
 
 class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
