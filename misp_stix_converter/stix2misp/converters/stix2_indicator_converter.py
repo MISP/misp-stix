@@ -466,6 +466,31 @@ class ExternalSTIX2IndicatorConverter(
                 return False
         return True
 
+    def _parse_artifact_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('artifact', indicator)
+        for keys, assertion, values in pattern.comparisons['artifact']:
+            if assertion not in self._mapping.valid_pattern_assertions():
+                continue
+            feature, index = (
+                ('file_hashes', 1) if 'hashes' in keys
+                else ('artifact_pattern', 0)
+            )
+            mapping = getattr(self._mapping, f'{feature}_mapping')(keys[index])
+            if mapping is None:
+                self._unmapped_pattern_warning(indicator.id, ".".join(keys))
+                continue
+            attributes = self._handle_object_attributes(
+                values, mapping, indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        if misp_object.attributes:
+            self.main_parser._add_misp_object(misp_object, indicator)
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_asn_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
