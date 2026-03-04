@@ -380,6 +380,17 @@ class ExternalSTIX2IndicatorConverter(
         )
         self.main_parser._add_misp_object(misp_object, indicator)
 
+    def _handle_attributes(self, values: Any, mapping: dict) -> Iterator[dict]:
+        if isinstance(values, (list, tuple)):
+            for value in values:
+                yield self._populate_object_attribute(
+                    value, mapping, {'to_ids': True}
+                )
+        else:
+            yield self._populate_object_attribute(
+                values, mapping, {'to_ids': True}
+            )
+
     def _handle_import_case(
             self, indicator: _INDICATOR_TYPING, attributes: list,
             name: str, *force_object: tuple[str]):
@@ -491,11 +502,7 @@ class ExternalSTIX2IndicatorConverter(
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                if isinstance(values, tuple):
-                    for value in values:
-                        attributes.append({'value': value, **mapping})
-                else:
-                    attributes.append({'value': values, **mapping})
+                attributes.extend(self._handle_attributes(values, mapping))
         if 'asn' in (attr['object_relation'] for attr in attributes):
             self._handle_import_case(indicator, attributes, 'asn')
         else:
@@ -537,11 +544,7 @@ class ExternalSTIX2IndicatorConverter(
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                if isinstance(values, tuple):
-                    for value in values:
-                        attributes.append({'value': value, **mapping})
-                else:
-                    attributes.append({'value': values, **mapping})
+                attributes.extend(self._handle_attributes(values, mapping))
         if any(key not in features for key in pattern.comparisons.keys()):
             self._unknown_pattern_mapping_warning(
                 indicator.id,
@@ -569,11 +572,7 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    attributes.append({'value': value, **mapping})
-            else:
-                attributes.append({'value': values, **mapping})
+            attributes.extend(self._handle_attributes(values, mapping))
         if attributes:
             self._handle_import_case(indicator, attributes, 'email')
         else:
@@ -591,11 +590,7 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, field)
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    attributes.append({'value': value, **mapping})
-            else:
-                attributes.append({'value': values, **mapping})
+            attributes.extend(self._handle_attributes(values, mapping))
         if attributes:
             self._handle_import_case(
                 indicator, attributes, 'email',
@@ -624,15 +619,9 @@ class ExternalSTIX2IndicatorConverter(
                                 indicator.id, '.'.join(keys)
                             )
                             continue
-                        if isinstance(values, tuple):
-                            for value in values:
-                                attributes[index.strip('[]')].append(
-                                    {'value': value, **mapping}
-                                )
-                        else:
-                            attributes[index.strip('[]')].append(
-                                {'value': values, **mapping}
-                            )
+                        attributes[index.strip('[]')].extend(
+                            self._handle_attributes(values, mapping)
+                        )
                         continue
                     _, _, _, index, feature = keys
                     mapping = self._mapping.pe_section_pattern_mapping(feature)
@@ -641,15 +630,9 @@ class ExternalSTIX2IndicatorConverter(
                             indicator.id, '.'.join(keys)
                         )
                         continue
-                    if isinstance(values, tuple):
-                        for value in values:
-                            attributes[index.strip('[]')].append(
-                                {'value': value, **mapping}
-                            )
-                    else:
-                        attributes[index.strip('[]')].append(
-                            {'value': values, **mapping}
-                        )
+                    attributes[index.strip('[]')].extend(
+                        self._handle_attributes(values, mapping)
+                    )
                     continue
                 mapping = self._mapping.pe_pattern_mapping(keys[-1])
                 if mapping is not None:
@@ -699,17 +682,13 @@ class ExternalSTIX2IndicatorConverter(
                 self._create_stix_pattern_object(indicator)
 
     def _parse_file_attribute(
-            self, keys: list, values: Union[str, tuple], indicator_id: str):
+            self, keys: list, values: str | tuple, indicator_id: str):
         feature, index = (
             ('file_hashes', 1) if 'hashes' in keys else ('file_pattern', 0)
         )
         mapping = getattr(self._mapping, f'{feature}_mapping')(keys[index])
         if mapping is not None:
-            if isinstance(values, tuple):
-                for value in values:
-                    yield {'value': value, **mapping}
-            else:
-                yield {'value': values, **mapping}
+            yield from self._handle_attributes(values, mapping)
         else:
             self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
 
@@ -722,11 +701,9 @@ class ExternalSTIX2IndicatorConverter(
             for keys, assertion, value in pattern.comparisons['file']:
                 if assertion not in self._mapping.valid_pattern_assertions():
                     continue
-                file_attributes = self._parse_file_attribute(
-                    keys, value, indicator.id
+                attributes.extend(
+                    self._parse_file_attribute(keys, value, indicator.id)
                 )
-                for attribute in file_attributes:
-                    attributes.append(attribute)
             if attributes:
                 self._handle_import_case(
                     indicator, attributes, 'file',
@@ -750,15 +727,11 @@ class ExternalSTIX2IndicatorConverter(
                             indicator.id, '.'.join(keys)
                         )
                         continue
-                    if isinstance(values, tuple):
-                        for value in values:
-                            attributes.append(
-                                {'value': value, **self._mapping.ip_attribute()}
-                            )
-                    else:
-                        attributes.append(
-                            {'value': values, **self._mapping.ip_attribute()}
+                    attributes.extend(
+                        self._handle_attributes(
+                            values, self._mapping.ip_attribute()
                         )
+                    )
         if attributes:
             self._handle_import_case(indicator, attributes, 'ip-port')
         else:
@@ -935,11 +908,7 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    attributes.append({'value': value, **mapping})
-            else:
-                attributes.append({'value': values, **mapping})
+            attributes.extend(self._handle_attributes(values, mapping))
         if attributes:
             self._handle_import_case(
                 indicator, attributes, 'registry-key',
@@ -1002,11 +971,7 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    attributes.append({'value': value, **mapping})
-            else:
-                attributes.append({'value': values, **mapping})
+            attributes.extend(self._handle_attributes(values, mapping))
         if attributes:
             self._handle_object_case(indicator, attributes, 'software')
         else:
@@ -1036,15 +1001,11 @@ class ExternalSTIX2IndicatorConverter(
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                if isinstance(values, tuple):
-                    for value in values:
-                        attributes.append(
-                            {'value': value, **self._mapping.url_attribute()}
-                        )
-                else:
-                    attributes.append(
-                        {'value': values, **self._mapping.url_attribute()}
+                attributes.extend(
+                    self._handle_attributes(
+                        values, self._mapping.url_attribute()
                     )
+                )
         if any(key != 'url' for key in pattern.comparisons.keys()):
             self._unknown_pattern_mapping_warning(
                 indicator.id,
@@ -1068,11 +1029,7 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    attributes.append({'value': value, **mapping})
-            else:
-                attributes.append({'value': values, **mapping})
+            attributes.extend(self._handle_attributes(values, mapping))
         if attributes:
             self._handle_object_case(indicator, attributes, 'user-account')
         else:
@@ -1091,11 +1048,7 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    attributes.append({'value': value, **mapping})
-            else:
-                attributes.append({'value': values, **mapping})
+            attributes.extend(self._handle_attributes(values, mapping))
         if attributes:
             self._handle_import_case(
                 indicator, attributes, 'x509',
