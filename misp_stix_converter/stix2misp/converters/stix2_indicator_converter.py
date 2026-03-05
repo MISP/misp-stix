@@ -516,21 +516,22 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, field)
                 continue
-            if not isinstance(values, tuple):
-                attributes.append(
-                    {
-                        'value': f'AS{values}' if field == 'number' else values,
-                        **mapping
-                    }
-                )
+            if field == 'number':
+                if not isinstance(values, (list, tuple)):
+                    attributes.append(
+                        self._populate_object_attribute(
+                            f'AS{values}', mapping, {'to_ids': True}
+                        )
+                    )
+                    continue
+                for value in values:
+                    attributes.append(
+                        self._populate_object_attribute(
+                            f'AS{value}', mapping, {'to_ids': True}
+                        )
+                    )
                 continue
-            for value in values:
-                attributes.append(
-                    {
-                        'value': f'AS{value}' if field == 'number' else value,
-                        **mapping
-                    }
-                )
+            attributes.extend(self._handle_attributes(values, mapping))
         mapping = self._mapping.subnet_announced_attribute()
         for feature in ('ipv4-addr', 'ipv6-addr'):
             if feature not in pattern.comparisons:
