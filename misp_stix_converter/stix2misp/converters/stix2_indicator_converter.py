@@ -56,31 +56,31 @@ class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
     )
 
     @classmethod
-    def artifact_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def artifact_pattern_mapping(cls, field: str) -> dict | None:
         return cls.artifact_object_mapping().get(field)
 
     @classmethod
-    def directory_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def directory_pattern_mapping(cls, field: str) -> dict | None:
         return cls.directory_object_mapping().get(field)
 
     @classmethod
-    def network_socket_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def network_socket_pattern_mapping(cls, field: str) -> dict | None:
         return cls.network_socket_object_mapping().get(field)
 
     @classmethod
-    def network_traffic_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def network_traffic_pattern_mapping(cls, field: str) -> dict | None:
         return cls.network_traffic_object_mapping().get(field)
 
     @classmethod
-    def pe_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def pe_pattern_mapping(cls, field: str) -> dict | None:
         return cls.pe_object_mapping().get(field)
 
     @classmethod
-    def pe_section_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def pe_section_pattern_mapping(cls, field: str) -> dict | None:
         return cls.pe_section_object_mapping().get(field)
 
     @classmethod
-    def registry_key_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def registry_key_pattern_mapping(cls, field: str) -> dict | None:
         return cls.registry_key_object_mapping().get(field)
 
     @classmethod
@@ -88,7 +88,7 @@ class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__sigma_object_mapping
 
     @classmethod
-    def socket_extension_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def socket_extension_pattern_mapping(cls, field: str) -> dict | None:
         return cls.network_socket_extension_mapping().get(field)
 
     @classmethod
@@ -278,23 +278,23 @@ class ExternalSTIX2IndicatorMapping(
     )
 
     @classmethod
-    def asn_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def asn_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__asn_pattern_mapping.get(field)
 
     @classmethod
-    def domain_ip_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def domain_ip_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__domain_ip_pattern_mapping.get(field)
 
     @classmethod
-    def email_address_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def email_address_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__email_address_pattern_mapping.get(field)
 
     @classmethod
-    def email_message_mapping(cls, field: str) -> Union[dict, None]:
+    def email_message_mapping(cls, field: str) -> dict | None:
         return cls.__email_message_mapping.get(field)
 
     @classmethod
-    def file_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def file_pattern_mapping(cls, field: str) -> dict | None:
         return cls.file_object_mapping().get(field)
 
     @classmethod
@@ -306,19 +306,19 @@ class ExternalSTIX2IndicatorMapping(
         return cls.__pattern_forbidden_relations
 
     @classmethod
-    def pattern_mapping(cls, field: str) -> Union[str, None]:
+    def pattern_mapping(cls, field: str) -> str | None:
         return cls.__pattern_mapping.get(field)
 
     @classmethod
-    def process_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def process_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__process_pattern_mapping.get(field)
 
     @classmethod
-    def software_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def software_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__software_pattern_mapping.get(field)
 
     @classmethod
-    def user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def user_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__user_account_pattern_mapping.get(field)
 
     @classmethod
@@ -326,7 +326,7 @@ class ExternalSTIX2IndicatorMapping(
         return cls.__valid_pattern_assertions
 
     @classmethod
-    def x509_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def x509_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__x509_pattern_mapping.get(field)
 
 
@@ -1320,88 +1320,92 @@ class InternalSTIX2IndicatorMapping(
     )
 
     @classmethod
-    def android_app_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def android_app_pattern_mapping(cls, field: str) -> dict | None:
         return cls.android_app_object_mapping().get(field)
 
     @classmethod
-    def asn_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def asn_pattern_mapping(cls, field: str) -> dict | None:
         return cls.asn_object_mapping().get(field)
 
     @classmethod
-    def attributes_mapping(cls, field: str) -> Union[dict, None]:
+    def attributes_mapping(cls, field: str) -> dict | None:
         return cls.__attributes_mapping.get(field)
 
     @classmethod
-    def cpe_asset_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def cpe_asset_pattern_mapping(cls, field: str) -> dict | None:
         return cls.cpe_asset_object_mapping().get(field)
 
     @classmethod
-    def credential_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def credential_pattern_mapping(cls, field: str) -> dict | None:
         return cls.credential_object_mapping().get(field)
 
     @classmethod
-    def domain_ip_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def domain_ip_pattern_mapping(cls, field: str) -> dict | None:
         return cls.domain_ip_object_mapping().get(field)
 
     @classmethod
-    def email_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def email_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__email_pattern_mapping.get(field)
 
     @classmethod
-    def facebook_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def facebook_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.facebook_account_object_mapping().get(field)
 
     @classmethod
-    def file_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def file_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__file_pattern_mapping.get(field)
 
     @classmethod
-    def github_user_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def github_user_pattern_mapping(cls, field: str) -> dict | None:
         return cls.github_user_object_mapping().get(field)
 
     @classmethod
-    def gitlab_user_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def gitlab_user_pattern_mapping(cls, field: str) -> dict | None:
         return cls.gitlab_user_object_mapping().get(field)
 
     @classmethod
-    def http_request_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def http_request_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__http_request_pattern_mapping.get(field)
 
     @classmethod
-    def image_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def image_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__image_pattern_mapping.get(field)
 
     @classmethod
-    def ip_port_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def ip_port_pattern_mapping(cls, field: str) -> dict | None:
         return cls.ip_port_object_mapping().get(field)
 
     @classmethod
-    def lnk_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def lnk_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__lnk_pattern_mapping.get(field)
 
     @classmethod
-    def mutex_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def mutex_pattern_mapping(cls, field: str) -> dict | None:
         return cls.mutex_object_mapping().get(field)
 
     @classmethod
-    def netflow_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def netflow_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__netflow_pattern_mapping.get(field)
 
     @classmethod
-    def parler_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def network_connection_pattern_mapping(cls, field: str) -> dict | None:
+        return cls.network_connection_object_mapping().get(field)
+
+    @classmethod
+    def parler_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.parler_account_object_mapping().get(field)
 
     @classmethod
-    def process_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def process_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__process_pattern_mapping.get(field)
 
     @classmethod
-    def reddit_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def reddit_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.reddit_account_object_mapping().get(field)
 
     @classmethod
     def registry_key_values_pattern_mapping(
-            cls, field: str) -> Union[dict, None]:
+            cls, field: str) -> dict | None:
         return cls.registry_key_values_object_mapping().get(field)
 
     @classmethod
@@ -1409,27 +1413,27 @@ class InternalSTIX2IndicatorMapping(
         return cls.__sigma_object_mapping
 
     @classmethod
-    def telegram_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def telegram_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.telegram_account_object_mapping().get(field)
 
     @classmethod
-    def twitter_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def twitter_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.twitter_account_object_mapping().get(field)
 
     @classmethod
-    def unix_user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def unix_user_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.unix_user_account_extension_object_mapping().get(field)
 
     @classmethod
-    def url_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def url_pattern_mapping(cls, field: str) -> dict | None:
         return cls.url_object_mapping().get(field)
 
     @classmethod
-    def user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def user_account_pattern_mapping(cls, field: str) -> dict | None:
         return cls.user_account_object_mapping().get(field)
 
     @classmethod
-    def x509_pattern_mapping(cls, field: str) -> Union[dict, None]:
+    def x509_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__x509_pattern_mapping.get(field)
 
     @classmethod
