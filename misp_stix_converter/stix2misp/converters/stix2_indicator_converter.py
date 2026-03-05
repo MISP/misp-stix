@@ -278,6 +278,10 @@ class ExternalSTIX2IndicatorMapping(
     )
 
     @classmethod
+    def additional_header_pattern_mapping(cls, field: str) -> dict | None:
+        return cls.email_additional_header_fields_mapping().get(field)
+
+    @classmethod
     def asn_pattern_mapping(cls, field: str) -> dict | None:
         return cls.__asn_pattern_mapping.get(field)
 
@@ -629,7 +633,24 @@ class ExternalSTIX2IndicatorConverter(
         for keys, assertion, values in pattern.comparisons['email-message']:
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
-            field = '.'.join(keys) if len(keys) > 1 else keys[0]
+            if 'additional_header_fields' in keys:
+                mapping = self._mapping.additional_header_pattern_mapping(
+                    keys[-1]
+                )
+                if mapping is None:
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                    continue
+                attributes.extend(self._handle_attributes(values, mapping))
+                continue
+            clean_keys = list(self._clean_pattern_keys(keys))
+            if 'body_multipart' in clean_keys and clean_keys[1] == 'body':
+                attributes.extend(
+                    self._handle_attributes(
+                        values, self._mapping.email_body_attribute()
+                    )
+                )
+                continue
+            field = '.'.join(clean_keys)
             mapping = self._mapping.email_message_mapping(field)
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, field)
@@ -1130,6 +1151,17 @@ class ExternalSTIX2IndicatorConverter(
                 self._create_attribute_dict(indicator, indicator.pattern),
                 indicator
             )
+
+    ############################################################################
+    #                             UTILITY METHODS.                             #
+    ############################################################################
+
+    @staticmethod
+    def _clean_pattern_keys(keys: list) -> Iterator[str]:
+        for key in keys:
+            if '[' in key or ']' in key:
+                continue
+            yield key
 
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #

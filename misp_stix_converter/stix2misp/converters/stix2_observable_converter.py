@@ -116,13 +116,6 @@ _X509_CERTIFICATE_TYPING = Union[
 
 
 class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
-    __email_additional_header_fields_mapping = Mapping(
-        **{
-            'Reply-To': STIX2Mapping.reply_to_attribute(),
-            'X-Mailer': STIX2Mapping.x_mailer_attribute(),
-            'X-Originating-IP': STIX2Mapping.received_header_ip_attribute(),
-        }
-    )
     __generic_network_traffic_reference_mapping = Mapping(
         **{
             'domain-name_dst': STIX2Mapping.dst_hostname_attribute(),
@@ -174,10 +167,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'SHA-256': STIX2Mapping.x509_sha256_attribute()
         }
     )
-
-    @classmethod
-    def email_additional_header_fields_mapping(cls) -> dict:
-        return cls.__email_additional_header_fields_mapping
 
     @classmethod
     def http_request_extension_mapping(cls) -> dict:

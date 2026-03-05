@@ -331,6 +331,13 @@ class STIX2Mapping:
     __password_last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
 
     # MISP OBJECTS MAPPING
+    __email_additional_header_fields_mapping = Mapping(
+        **{
+            'Reply-To': __reply_to_attribute,
+            'X-Mailer': __x_mailer_attribute,
+            'X-Originating-IP': __received_header_ip_attribute
+        }
+    )
     __artifact_object_mapping = Mapping(
         decryption_key={'type': 'text', 'object_relation': 'decryption_key'},
         encyption_algorithm={
@@ -480,6 +487,10 @@ class STIX2Mapping:
     @classmethod
     def access_time_attribute(cls) -> dict:
         return cls.__access_time_attribute
+
+    @classmethod
+    def email_additional_header_fields_mapping(cls) -> dict:
+        return cls.__email_additional_header_fields_mapping
 
     @classmethod
     def address_family_attribute(cls) -> dict:
