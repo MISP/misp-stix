@@ -581,6 +581,13 @@ class ExternalSTIX2IndicatorConverter(
             for keys, assertion, values in pattern.comparisons[feature]:
                 if assertion not in self._mapping.valid_pattern_assertions():
                     continue
+                if 'resolves_to_refs' in keys:
+                    attributes.extend(
+                        self._handle_attributes(
+                            values, self._mapping.ip_attribute()
+                        )
+                    )
+                    continue
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
@@ -594,10 +601,7 @@ class ExternalSTIX2IndicatorConverter(
                 )
             )
         if attributes:
-            self._handle_import_case(
-                indicator, attributes, 'domain-ip',
-                'first-seen', 'last-seen'
-            )
+            self._handle_import_case(indicator, attributes, 'domain-ip', 'ip')
         else:
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
