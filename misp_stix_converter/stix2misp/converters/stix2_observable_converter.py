@@ -533,15 +533,15 @@ class ExternalSTIX2ObservableConverter(
             indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
-        object_relation = 'payload_bin'
-        if hasattr(observable, object_relation):
+        if hasattr(observable, 'payload_bin'):
             data = observable.payload_bin
             value = getattr(observable, 'id', object_id.split(' - ')[0])
             yield self._populate_object_attribute_with_data(
                 {'data': data, 'value': value.split('--')[1]},
-                {'object_relation': object_relation}, **self._handle_object_id(
+                self._mapping.payload_bin_attribute(),
+                **self._handle_object_id(
                     indicator_ref, observable.type, data,
-                    f'{object_id} - {object_relation}'
+                    f'{object_id} - payload_bin'
                 )
             )
         if hasattr(observable, 'hashes'):

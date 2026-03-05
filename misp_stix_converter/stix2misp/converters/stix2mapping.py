@@ -729,7 +729,7 @@ class STIX2Mapping:
     def path_attribute(cls) -> dict:
         return cls.__path_attribute
 
-    @staticmethod
+    @classmethod
     def payload_bin_attribute(cls) -> dict:
         return cls.__payload_bin_attribute
 

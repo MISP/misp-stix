@@ -121,7 +121,7 @@ class STIX2IndicatorConverter(STIX2Converter, metaclass=ABCMeta):
     def _handle_object_attributes(self, values: Any, mapping: dict,
                                   object_id: str) -> Iterator[dict]:
         reference = f"{object_id} - {mapping['object_relation']}"
-        if isinstance(values, tuple):
+        if isinstance(values, (list, tuple)):
             for value in values:
                 _uuid = self.main_parser._create_v5_uuid(
                     f'{reference} - {value}'
@@ -471,6 +471,20 @@ class ExternalSTIX2IndicatorConverter(
         misp_object = self._create_misp_object('artifact', indicator)
         for keys, assertion, values in pattern.comparisons['artifact']:
             if assertion not in self._mapping.valid_pattern_assertions():
+                continue
+            if 'payload_bin' in keys:
+                misp_object.add_attribute(
+                    **self._populate_object_attribute_with_data(
+                        {'data': values, 'value': indicator.id.split('--')[1]},
+                        self._mapping.payload_bin_attribute(),
+                        **{
+                            'to_ids': True,
+                            'uuid': self.main_parser._create_v5_uuid(
+                                f"{indicator.id} - payload_bin - {values}"
+                            )
+                        }
+                    )
+                )
                 continue
             feature, index = (
                 ('file_hashes', 1) if 'hashes' in keys
