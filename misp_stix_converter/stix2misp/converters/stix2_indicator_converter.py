@@ -846,14 +846,26 @@ class ExternalSTIX2IndicatorConverter(
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             if 'socket-ext' in keys:
-                mapping = self._mapping.socket_extension_pattern_mapping(
-                    keys[-1]
-                )
+                field = keys[-1]
+                if field in ('is_blocking', 'is_listening'):
+                    if values in ('true', 'True', True):
+                        value = field.lstrip('is_')
+                        _uuid = self.main_parser._create_v5_uuid(
+                            f'{indicator.id} - socket-ext - state - {value}'
+                        )
+                        misp_object.add_attribute(
+                            **self._populate_object_attribute(
+                                value, self._mapping.state_attribute(),
+                                {'to_ids': True, 'uuid': _uuid}
+                            )
+                        )
+                    continue
+                mapping = self._mapping.socket_extension_pattern_mapping(field)
                 if mapping is None:
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
                 attributes = self._handle_object_attributes(
-                    values, mapping, indicator.id
+                    values, mapping, f'{indicator.id} - socket-ext'
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)

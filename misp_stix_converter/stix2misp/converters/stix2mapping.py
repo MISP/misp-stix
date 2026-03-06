@@ -256,6 +256,9 @@ class STIX2Mapping:
     __ssdeep_attribute = Mapping(
         **{'type': 'ssdeep', 'object_relation': 'ssdeep'}
     )
+    __state_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'state'}
+    )
     __subnet_announced_attribute = Mapping(
         **{'type': 'ip-src', 'object_relation': 'subnet-announced'}
     )
@@ -849,6 +852,10 @@ class STIX2Mapping:
         return cls.__ssdeep_attribute
 
     @classmethod
+    def state_attribute(cls) -> dict:
+        return cls.__state_attribute
+
+    @classmethod
     def subnet_announced_attribute(cls) -> dict:
         return cls.__subnet_announced_attribute
 
@@ -1118,9 +1125,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __src_as_attribute = Mapping(
         **{'type': 'AS', 'object_relation': 'src-as'}
     )
-    __state_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'state'}
-    )
     __tcp_flags_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'tcp-flags'}
     )
@@ -1355,7 +1359,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_fullpath=__fullpath_attribute,
         x_misp_path=STIX2Mapping.path_attribute(),
         x_misp_pattern_in_file=__pattern_in_file_attribute,
-        x_misp_state=__state_attribute,
+        x_misp_state=STIX2Mapping.state_attribute(),
         x_misp_text=STIX2Mapping.text_attribute()
     )
     __github_user_object_mapping = Mapping(
@@ -1446,7 +1450,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_lnk_working_directory={'type': 'text', 'object_relation': 'lnk-working-directory'},
         x_misp_machine_identifier={'type': 'text', 'object_relation': 'machine-identifier'},
         x_misp_pattern_in_file=__pattern_in_file_attribute,
-        x_misp_state=__state_attribute,
+        x_misp_state=STIX2Mapping.state_attribute(),
         x_misp_text=STIX2Mapping.text_attribute()
     )
     __mutex_object_mapping = Mapping(
@@ -1880,10 +1884,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def src_as_attribute(cls) -> dict:
         return cls.__src_as_attribute
-
-    @classmethod
-    def state_attribute(cls) -> dict:
-        return cls.__state_attribute
 
     @classmethod
     def tcp_flags_attribute(cls) -> dict:
