@@ -817,18 +817,24 @@ class ExternalSTIX2IndicatorConverter(
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             field = keys[0]
-            if field == 'name':
-                if isinstance(values, tuple):
-                    for value in values:
-                        attributes.append(
-                            {'value': value, **self._mapping.name_attribute()}
-                        )
-                else:
-                    attributes.append(
-                        {'value': values, **self._mapping.name_attribute()}
-                    )
+            if field == "name":
+                attributes.extend(
+                    self._handle_attributes(values, {'type': 'mutex'})
+                )
         if attributes:
-            self._handle_import_case(indicator, attributes, 'mutex', 'name')
+            if len(attributes) == 1:
+                self.main_parser._add_misp_attribute(
+                    dict(
+                        self._create_attribute_dict(indicator), **attributes[0]
+                    ),
+                    indicator,
+                )
+            else:
+                for attribute in attributes:
+                    attribute['uuid'] = self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {attribute['value']}"
+                    )
+                    self.main_parser._add_misp_attribute(attribute, indicator)
         else:
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
