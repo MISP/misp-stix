@@ -783,6 +783,33 @@ class ExternalSTIX2IndicatorConverter(
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
+    def _parse_mac_address_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for keys, assertion, values in pattern.comparisons['mac-addr']:
+            if assertion not in self._mapping.valid_pattern_assertions():
+                continue
+            field = keys[0]
+            if field == 'value':
+                attributes.extend(
+                    self._handle_attributes(values, {'type': 'mac-address'})
+                )
+        if attributes:
+            if len(attributes) == 1:
+                self.main_parser._add_misp_attribute(
+                    dict(self._create_attribute_dict(indicator), **attributes[0]),
+                    indicator,
+                )
+            else:
+                for attribute in attributes:
+                    attribute['uuid'] = self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {attribute['value']}"
+                    )
+                    self.main_parser._add_misp_attribute(attribute, indicator)
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_mutex_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []

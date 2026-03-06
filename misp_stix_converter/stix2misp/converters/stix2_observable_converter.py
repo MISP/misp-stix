@@ -148,8 +148,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'ipv4-addr_src': STIX2Mapping.ip_src_attribute(),
             'ipv6-addr_dst': STIX2Mapping.ip_dst_attribute(),
             'ipv6-addr_src': STIX2Mapping.ip_src_attribute(),
-            'mac-address_dst': {'type': 'mac-address', 'object_relation': 'mac-dst'},
-            'mac-address_src': {'type': 'mac-address', 'object_relation': 'mac-src'}
+            "mac-address_dst": STIX2Mapping.dst_mac_attribute(),
+            "mac-address_src": STIX2Mapping.src_mac_attribute()
         }
     )
     __software_object_mapping = Mapping(
