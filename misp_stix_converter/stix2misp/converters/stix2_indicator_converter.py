@@ -839,35 +839,6 @@ class ExternalSTIX2IndicatorConverter(
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
-    def _parse_network_connection_pattern(
-            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
-        misp_object = self._create_misp_object('network-connection', indicator)
-        for keys, assertion, values in pattern.comparisons['network-traffic']:
-            if assertion not in self._mapping.valid_pattern_assertions():
-                continue
-            if 'protocols' in keys:
-                layer = self._mapping.connection_protocols(values)
-                if layer is None:
-                    self._unknown_network_protocol_warning(
-                        values, indicator.id
-                    )
-                    continue
-                feature = f'layer{layer}_protocol_attribute'
-                attributes = self._handle_object_attributes(
-                    values, getattr(self._mapping, feature)(), indicator.id
-                )
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-                continue
-            self._parse_network_traffic_attribute(
-                misp_object, keys, values, indicator.id, 'network_connection'
-            )
-        if misp_object.attributes:
-            self.main_parser._add_misp_object(misp_object, indicator)
-        else:
-            self._no_converted_content_from_pattern_warning(indicator)
-            self._create_stix_pattern_object(indicator)
-
     def _parse_network_socket_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('network-socket', indicator)
