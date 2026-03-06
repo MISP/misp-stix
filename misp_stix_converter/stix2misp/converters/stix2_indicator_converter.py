@@ -22,7 +22,7 @@ from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
 from stix2patterns.inspector import _PatternData as PatternData
 from types import GeneratorType
-from typing import Any, Iterator, TYPE_CHECKING, Union
+from typing import Any, Iterator, Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -668,9 +668,8 @@ class ExternalSTIX2IndicatorConverter(
     def _parse_file_and_pe_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         file_object = self._create_misp_object('file', indicator)
-        attributes = defaultdict(list)
-        pe_object = self._create_misp_object('pe')
-        pe_object.from_dict(**self._parse_timeline(indicator))
+        pe_attributes = []
+        section_attributes = defaultdict(list)
         for keys, assertion, values in pattern.comparisons['file']:
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
@@ -684,7 +683,7 @@ class ExternalSTIX2IndicatorConverter(
                                 indicator.id, '.'.join(keys)
                             )
                             continue
-                        attributes[index.strip('[]')].extend(
+                        section_attributes[index.strip('[]')].extend(
                             self._handle_attributes(values, mapping)
                         )
                         continue
@@ -695,67 +694,46 @@ class ExternalSTIX2IndicatorConverter(
                             indicator.id, '.'.join(keys)
                         )
                         continue
-                    attributes[index.strip('[]')].extend(
+                    section_attributes[index('[]')].extend(
                         self._handle_attributes(values, mapping)
+                    )
+                    continue
+                if keys[-1] == 'address_of_entry_point':
+                    pe_attributes.extend(
+                        self._handle_attributes(
+                            values, self._mapping.entrypoint_address_attribute()
+                        )
                     )
                     continue
                 mapping = self._mapping.pe_pattern_mapping(keys[-1])
                 if mapping is not None:
-                    if not isinstance(values, tuple):
-                        pe_object.add_attribute(**{'value': values, **mapping})
-                        continue
-                    for value in values:
-                        pe_object.add_attribute(**{'value': value, **mapping})
-                    continue
-                if keys[-1] == 'address_of_entry_point':
-                    attributes = self._handle_object_attributes(
-                        values, self._mapping.entrypoint_address_attribute(),
-                        indicator.id
+                    pe_attributes.extend(
+                        self._handle_attributes(values, mapping)
                     )
-                    for attribute in attributes:
-                        pe_object.add_attribute(**attribute)
                     continue
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            file_attributes = self._parse_file_attribute(
-                keys, values, indicator.id
+            mapping = self._get_pattern_with_hashes_mapping(keys)
+            if mapping is None:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                continue
+            attributes = self._handle_object_attributes(
+                values, mapping, indicator.id
             )
-            for attribute in file_attributes:
+            for attribute in attributes:
                 file_object.add_attribute(**attribute)
-        if pe_object.attributes or attributes:
-            if file_object.attributes:
-                misp_file_object = self.main_parser._add_misp_object(
-                    file_object, indicator
-                )
-                misp_pe_object = self.main_parser._add_misp_object(
-                    pe_object, indicator
-                )
-                misp_file_object.add_reference(misp_pe_object.uuid, 'includes')
-                for section in attributes.values():
-                    section_object = self._create_misp_object('pe-section')
-                    for attribute in section:
-                        section_object.add_attribute(**attribute)
-                    self.main_parser._add_misp_object(section_object, indicator)
-                    misp_pe_object.add_reference(
-                        section_object.uuid, 'includes'
-                    )
+        if file_object.attributes:
+            misp_file_object = self.main_parser._add_misp_object(
+                file_object, indicator
+            )
+            self._parse_pe_objects(
+                indicator, pe_attributes, section_attributes, misp_file_object
+            )
+        elif pe_attributes or section_attributes:
+            self._parse_pe_objects(indicator, pe_attributes, section_attributes)
         else:
-            if file_object.attributes:
-                self.main_parser._add_misp_object(file_object, indicator)
-            else:
-                self._no_converted_content_from_pattern_warning(indicator)
-                self._create_stix_pattern_object(indicator)
-
-    def _parse_file_attribute(
-            self, keys: list, values: str | tuple, indicator_id: str):
-        feature, index = (
-            ('file_hashes', 1) if 'hashes' in keys else ('file_pattern', 0)
-        )
-        mapping = getattr(self._mapping, f'{feature}_mapping')(keys[index])
-        if mapping is not None:
-            yield from self._handle_attributes(values, mapping)
-        else:
-            self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
 
     def _parse_file_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
@@ -766,9 +744,11 @@ class ExternalSTIX2IndicatorConverter(
             for keys, assertion, value in pattern.comparisons['file']:
                 if assertion not in self._mapping.valid_pattern_assertions():
                     continue
-                attributes.extend(
-                    self._parse_file_attribute(keys, value, indicator.id)
-                )
+                mapping = self._get_file_pattern_mapping(keys)
+                if mapping is None:
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                    continue
+                attributes.extend(self._handle_attributes(value, mapping))
             if attributes:
                 self._handle_import_case(
                     indicator, attributes, 'file',
@@ -934,6 +914,58 @@ class ExternalSTIX2IndicatorConverter(
             return f'ip-{feature}', value
         except ValueError:
             return f'hostname-{feature}', value
+
+    def _parse_pe_object(self, indicator: _INDICATOR_TYPING,
+                         *attributes: tuple[dict]) -> MISPObject:
+        object_id = f'{indicator.id} - windows-pebinary-ext'
+        misp_object = self._create_misp_object('pe')
+        misp_object.from_dict(**self._parse_timeline(indicator))
+        misp_object.uuid = self.main_parser._create_v5_uuid(object_id)
+        for attr in attributes:
+            misp_object.add_attribute(
+                **attr, uuid=self.main_parser._create_v5_uuid(
+                    f"{object_id} - {attr['object_relation']} - {attr['value']}"
+                )
+            )
+        return self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _parse_pe_objects(
+            self, indicator: _INDICATOR_TYPING, pe_attributes: list,
+            section_attributes: dict, file_object: Optional[MISPObject] = None):
+        if pe_attributes:
+            misp_pe_object = self._parse_pe_object(
+                indicator, *pe_attributes
+            )
+            if file_object is not None:
+                file_object.add_reference(misp_pe_object.uuid, 'includes')
+            for index, section_attributes in section_attributes.items():
+                section_uuid = self._parse_pe_section_object(
+                    indicator, index, *section_attributes
+                )
+                misp_pe_object.add_reference(
+                    section_uuid, 'includes'
+                )
+            return
+        for index, section_attributes in section_attributes.items():
+            section_uuid = self._parse_pe_section_object(
+                indicator, index, *section_attributes
+            )
+            if file_object is not None:
+                file_object.add_reference(section_uuid, 'includes')
+
+    def _parse_pe_section_object(self, indicator: _INDICATOR_TYPING,
+                                 index: str, *attributes: tuple[dict]) -> str:
+        object_id = f'{indicator.id} - windows-pebinary-ext - sections - {index}'
+        misp_object = self._create_misp_object('pe-section')
+        misp_object.from_dict(**self._parse_timeline(indicator))
+        misp_object.uuid = self.main_parser._create_v5_uuid(object_id)
+        for attr in attributes:
+            misp_object.add_attribute(
+                **attr, uuid=self.main_parser._create_v5_uuid(
+                    f"{object_id} - {attr['object_relation']} - {attr['value']}"
+                )
+            )
+        return self.main_parser._add_misp_object(misp_object, indicator).uuid
 
     def _parse_process_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
@@ -1162,6 +1194,12 @@ class ExternalSTIX2IndicatorConverter(
             if '[' in key or ']' in key:
                 continue
             yield key
+
+    def _get_file_pattern_mapping(self, keys: list) -> dict | None:
+        feature, index = (
+            ('file_hashes', 1) if 'hashes' in keys else ('file_pattern', 0)
+        )
+        return getattr(self._mapping, f'{feature}_mapping')(keys[index])
 
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
