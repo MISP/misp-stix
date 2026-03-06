@@ -863,26 +863,37 @@ class ExternalSTIX2IndicatorConverter(
             )
         self.main_parser._add_misp_object(misp_object, indicator)
 
+    def _parse_network_socket_reference(self, feature: str, value: str) -> dict:
+        if re.match(self._mapping.mac_address_pattern(), value):
+            return getattr(self._mapping, f'mac_{feature}_attribute')()
+        try:
+            ipaddress.ip_interface(value)
+            return getattr(self._mapping, f'ip_{feature}_attribute')()
+        except ValueError:
+            return getattr(self._mapping, f'hostname_{feature}_attribute')()
+
     def _parse_network_traffic_attribute(
-            self, misp_object: MISPObject, keys: list,
-            values: Union[str, tuple], indicator_id: str, name: str):
+            self, misp_object: MISPObject, keys: list, values: str | tuple,
+            indicator_id: str, name: Optional[str] = 'network_traffic'):
         field = keys[0]
         if any(field == f'{feature}_ref' for feature in ('src', 'dst')):
             if keys [-1] == 'type':
                 return
-            if isinstance(values, tuple):
-                for value in values:
-                    misp_object.add_attribute(
-                        *self._parse_network_traffic_reference(
-                            field.split('_')[0], value
-                        )
-                    )
-            else:
-                misp_object.add_attribute(
-                    *self._parse_network_traffic_reference(
-                        field.split('_')[0], values
-                    )
-                )
+            mapping = getattr(self, f'_parse_{name}_reference')(
+                field.split('_')[0], values
+            )
+            attributes = self._handle_object_attributes(
+                values, mapping, indicator_id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+            return
+        if 'protocols' in keys:
+            attributes = self._handle_object_attributes(
+                values, self._mapping.protocol_attribute(), indicator_id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
             return
         mapping = getattr(self._mapping, f'{name}_pattern_mapping')(field)
         if mapping is None:
@@ -907,17 +918,28 @@ class ExternalSTIX2IndicatorConverter(
         elif 'socket-ext' in indicator.pattern:
             self._parse_network_socket_pattern(pattern, indicator)
         else:
-            self._parse_network_connection_pattern(pattern, indicator)
+            misp_object = self._create_misp_object('network-traffic', indicator)
+            for keys, assertion, values in pattern.comparisons['network-traffic']:
+                if assertion not in self._mapping.valid_pattern_assertions():
+                    continue
+                self._parse_network_traffic_attribute(
+                    misp_object, keys, values, indicator.id,
+                )
+            if misp_object.attributes:
+                self.main_parser._add_misp_object(misp_object, indicator)
+            else:
+                self._no_converted_content_from_pattern_warning(indicator)
+                self._create_stix_pattern_object(indicator)
 
     def _parse_network_traffic_reference(
-            self, feature: str, value: str) -> tuple[str]:
+            self, feature: str, value: str) -> dict:
         if re.match(self._mapping.mac_address_pattern(), value):
-            return f'mac-{feature}', value
+            return getattr(self._mapping, f'{feature}_mac_attribute')()
         try:
             ipaddress.ip_interface(value)
-            return f'ip-{feature}', value
+            return getattr(self._mapping, f'{feature}_ip_attribute')()
         except ValueError:
-            return f'hostname-{feature}', value
+            return getattr(self._mapping, f'{feature}_hostname_attribute')()
 
     def _parse_pe_object(self, indicator: _INDICATOR_TYPING,
                          *attributes: tuple[dict]) -> MISPObject:
