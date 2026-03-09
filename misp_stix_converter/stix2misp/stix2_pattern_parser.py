@@ -93,7 +93,7 @@ class STIX2PatternParser:
             self, features: list, assertion: str, value: str) -> list:
         return [
             [
-                feature if isinstance(feature, str) else '[*]'
+                feature if isinstance(feature, (int, str)) else '[*]'
                 for feature in features
             ],
             assertion, self.__validate_value(value)

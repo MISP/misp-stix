@@ -683,7 +683,7 @@ class ExternalSTIX2IndicatorConverter(
                                 indicator.id, '.'.join(keys)
                             )
                             continue
-                        section_attributes[index.strip('[]')].extend(
+                        section_attributes[str(index)].extend(
                             self._handle_attributes(values, mapping)
                         )
                         continue
@@ -694,7 +694,7 @@ class ExternalSTIX2IndicatorConverter(
                             indicator.id, '.'.join(keys)
                         )
                         continue
-                    section_attributes[index('[]')].extend(
+                    section_attributes[str(index)].extend(
                         self._handle_attributes(values, mapping)
                     )
                     continue
@@ -1008,8 +1008,6 @@ class ExternalSTIX2IndicatorConverter(
     def _parse_process_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
-        # if any(feature != 'process' for feature in pattern.comparisons.keys()):
-        #    print(f'Process with non process values: {pattern}')
         for keys, assertion, values in pattern.comparisons['process']:
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
@@ -1229,7 +1227,7 @@ class ExternalSTIX2IndicatorConverter(
     @staticmethod
     def _clean_pattern_keys(keys: list) -> Iterator[str]:
         for key in keys:
-            if '[' in key or ']' in key:
+            if isinstance(key, int) or key == '[*]':
                 continue
             yield key
 
