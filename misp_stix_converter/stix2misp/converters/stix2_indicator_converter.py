@@ -84,6 +84,10 @@ class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.registry_key_object_mapping().get(field)
 
     @classmethod
+    def registry_key_values_pattern_mapping(cls, field: str) -> dict | None:
+        return cls.registry_key_values_object_mapping().get(field)
+
+    @classmethod
     def sigma_object_mapping(cls) -> dict:
         return cls.__sigma_object_mapping
 
@@ -1032,24 +1036,71 @@ class ExternalSTIX2IndicatorConverter(
     def _parse_registry_key_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
+        values_attributes = defaultdict(list)
         for keys, assertion, values in pattern.comparisons['windows-registry-key']:
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
-            mapping = self._mapping.registry_key_pattern_mapping(
-                keys[-1 if 'values' in keys else 0]
-            )
+            if keys[0] == 'values':
+                _, index, field = keys
+                mapping = self._mapping.registry_key_values_pattern_mapping(
+                    field
+                )
+                if mapping is None:
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                    continue
+                values_attributes[str(index)].extend(
+                    self._handle_attributes(values, mapping)
+                )
+                continue
+            mapping = self._mapping.registry_key_pattern_mapping(keys[0])
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             attributes.extend(self._handle_attributes(values, mapping))
-        if attributes:
+        if values_attributes:
+            registry_key_object = self._handle_object_case(
+                indicator, attributes, 'registry-key'
+            )
+            if len(values_attributes) == 1:
+                index = next(iter(values_attributes))
+                for attribute in values_attributes[index]:
+                    attribute['uuid'] = self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {attribute['object_relation']}"
+                        f" - {attribute['value']}"
+                    )
+                    registry_key_object.add_attribute(**attribute)
+            else:
+                self._handle_misp_object_references(
+                    registry_key_object,
+                    *self._parse_registry_key_value_pattern(
+                        values_attributes, indicator
+                    )
+                )
+        elif attributes:
             self._handle_import_case(
-                indicator, attributes, 'registry-key',
-                'data', 'data-type', 'name'
+                indicator, attributes, 'registry-key', 'modified'
             )
         else:
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
+
+    def _parse_registry_key_value_pattern(
+            self, values_attributes: dict,
+            indicator: _INDICATOR_TYPING) -> Iterator[str]:
+        for index, value_attributes in values_attributes.items():
+            object_id = f'{indicator.id} - values - {index}'
+            value_object = self._create_misp_object('registry-key-value')
+            value_object.from_dict(**self._parse_timeline(indicator))
+            value_object.uuid = self.main_parser._create_v5_uuid(object_id)
+            for attr in value_attributes:
+                attr['uuid'] = self.main_parser._create_v5_uuid(
+                    f"{object_id} - {attr['object_relation']} - {attr['value']}"
+                )
+                value_object.add_attribute(**attr)
+            misp_object = self.main_parser._add_misp_object(
+                value_object, indicator
+            )
+            yield misp_object.uuid
 
     def _parse_sigma_pattern(self, indicator: _INDICATOR_TYPING):
         if hasattr(indicator, 'name') or hasattr(indicator, 'external_references'):

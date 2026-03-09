@@ -155,6 +155,16 @@ class STIX2Converter(metaclass=ABCMeta):
             meta['labels'] = meta_labels
 
     @staticmethod
+    def _handle_misp_object_references(
+            misp_object: MISPObject, *object_ids: tuple,
+            relationship_type: str = 'contains'):
+        for object_id in object_ids:
+            if not any(reference.referenced_uuid == object_id and
+                   reference.relationship_type == relationship_type
+                   for reference in misp_object.references):
+                misp_object.add_reference(object_id, relationship_type)
+
+    @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'

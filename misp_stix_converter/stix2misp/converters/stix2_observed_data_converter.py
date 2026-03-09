@@ -68,16 +68,6 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def observables(self) -> dict:
         return self.main_parser._observable
 
-    @staticmethod
-    def _handle_misp_object_references(
-            misp_object: MISPObject, *object_ids: tuple,
-            relationship_type: str = 'contains'):
-        for object_id in object_ids:
-            if not any(reference.referenced_uuid == object_id and
-                   reference.relationship_type == relationship_type
-                   for reference in misp_object.references):
-                misp_object.add_reference(object_id, relationship_type)
-
     # Errors handling
     def _missing_observable_object_error(
             self, observed_data_id: str, observable_object_id: str):
