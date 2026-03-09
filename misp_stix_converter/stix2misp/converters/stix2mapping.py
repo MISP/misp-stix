@@ -466,6 +466,13 @@ class STIX2Mapping:
         credential_last_changed=__password_last_changed_attribute,
         password_last_changed=__password_last_changed_attribute
     )
+    __x509_hashes_mapping = Mapping(
+        **{
+            'MD5': __x509_md5_attribute,
+            'SHA-1': __x509_sha1_attribute,
+            'SHA-256': __x509_sha256_attribute
+        }
+    )
     __x509_object_mapping = Mapping(
         is_self_signed={'type': 'boolean', 'object_relation': 'self_signed'},
         issuer={'type': 'text', 'object_relation': 'issuer'},
@@ -868,7 +875,7 @@ class STIX2Mapping:
         return cls.__text_attribute
 
     @classmethod
-    def timeline_mapping(cls, field: str) -> Union[tuple, None]:
+    def timeline_mapping(cls, field: str) -> tuple | None:
         return cls.__timeline_mapping.get(field)
 
     @classmethod
@@ -926,6 +933,10 @@ class STIX2Mapping:
     @classmethod
     def x509_md5_attribute(cls) -> dict:
         return cls.__x509_md5_attribute
+
+    @classmethod
+    def x509_hashes_mapping(cls, field: str) -> dict | None:
+        return cls.__x509_hashes_mapping.get(field)
 
     @classmethod
     def x509_object_mapping(cls) -> dict:

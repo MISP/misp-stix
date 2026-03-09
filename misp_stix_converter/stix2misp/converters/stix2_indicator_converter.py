@@ -494,11 +494,9 @@ class ExternalSTIX2IndicatorConverter(
                     )
                 )
                 continue
-            feature, index = (
-                ('file_hashes', 1) if 'hashes' in keys
-                else ('artifact_pattern', 0)
+            mapping = self._get_pattern_with_hashes_mapping(
+                keys, regular_mapping='artifact'
             )
-            mapping = getattr(self._mapping, f'{feature}_mapping')(keys[index])
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, ".".join(keys))
                 continue
@@ -748,7 +746,7 @@ class ExternalSTIX2IndicatorConverter(
             for keys, assertion, value in pattern.comparisons['file']:
                 if assertion not in self._mapping.valid_pattern_assertions():
                     continue
-                mapping = self._get_file_pattern_mapping(keys)
+                mapping = self._get_pattern_with_hashes_mapping(keys)
                 if mapping is None:
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
@@ -1222,8 +1220,8 @@ class ExternalSTIX2IndicatorConverter(
         for keys, assertion, values in pattern.comparisons['x509-certificate']:
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
-            mapping = self._mapping.x509_pattern_mapping(
-                keys[1 if 'hashes' in keys else 0]
+            mapping = self._get_pattern_with_hashes_mapping(
+                keys, hashes_mapping='x509', regular_mapping='x509'
             )
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
@@ -1278,11 +1276,14 @@ class ExternalSTIX2IndicatorConverter(
                 continue
             yield key
 
-    def _get_file_pattern_mapping(self, keys: list) -> dict | None:
-        feature, index = (
-            ('file_hashes', 1) if 'hashes' in keys else ('file_pattern', 0)
-        )
-        return getattr(self._mapping, f'{feature}_mapping')(keys[index])
+    def _get_pattern_with_hashes_mapping(
+            self, keys: list, hashes_mapping: Optional[str] = 'file',
+            regular_mapping: Optional[str] = 'file') -> dict | None:
+        if 'hashes' in keys:
+            feature = f'{hashes_mapping}_hashes_mapping'
+            return getattr(self._mapping, feature)(keys[1])
+        feature = f'{regular_mapping}_pattern_mapping'
+        return getattr(self._mapping, feature)(keys[0])
 
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #

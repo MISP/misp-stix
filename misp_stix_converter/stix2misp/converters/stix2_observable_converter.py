@@ -160,13 +160,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
         vendor={'type': 'text', 'object_relation': 'vendor'},
         version={'type': 'text', 'object_relation': 'version'}
     )
-    __x509_hashes_mapping = Mapping(
-        **{
-            'MD5': STIX2Mapping.x509_md5_attribute(),
-            'SHA-1': STIX2Mapping.x509_sha1_attribute(),
-            'SHA-256': STIX2Mapping.x509_sha256_attribute()
-        }
-    )
 
     @classmethod
     def http_request_extension_mapping(cls) -> dict:
@@ -195,10 +188,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
     @classmethod
     def software_object_mapping(cls) -> dict:
         return cls.__software_object_mapping
-
-    @classmethod
-    def x509_hashes_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.__x509_hashes_mapping.get(field)
 
 
 class STIX2ObservableConverter(STIX2Converter):
