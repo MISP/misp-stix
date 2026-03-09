@@ -1019,11 +1019,7 @@ class ExternalSTIX2IndicatorConverter(
             if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
-            if isinstance(values, tuple):
-                for value in values:
-                    attributes.append({'value': value, **mapping})
-            else:
-                attributes.append({'value': values, **mapping})
+            attributes.extend(self._handle_attributes(values, mapping))
         if attributes:
             self._handle_import_case(
                 indicator, attributes, 'process',
