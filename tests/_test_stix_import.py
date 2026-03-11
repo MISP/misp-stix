@@ -407,6 +407,15 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
         self.parser = ExternalSTIX2toMISPParser()
 
+    def _check_object_attribute_uuid(self, attr, object_id, value=None):
+        self.assertEqual(
+            attr.uuid,
+            uuid5(
+                UUIDv4,
+                f'{object_id} - {attr.object_relation} - {value or attr.value}'
+            )
+        )
+
     ############################################################################
     #                      MISP GALAXIES CHECKING METHODS                      #
     ############################################################################
@@ -634,23 +643,12 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             value = attribute.value
             if value in pattern_values:
                 self.assertTrue(attribute.to_ids)
-                self.assertEqual(
-                    attribute.uuid,
-                    uuid5(
-                        UUIDv4,
-                        f'{indicator.id} - {object_id} - '
-                        f'{attribute.object_relation} - {value}'
-                    )
+                self._check_object_attribute_uuid(
+                    attribute, f'{indicator.id} - {object_id}'
                 )
                 continue
             self.assertFalse(attribute.to_ids)
-            self.assertEqual(
-                attribute.uuid,
-                uuid5(
-                    UUIDv4,
-                    f'{object_id} - {attribute.object_relation} - {value}'
-                )
-            )
+            self._check_object_attribute_uuid(attribute, object_id)
 
     def _check_as_fields(self, misp_object, autonomous_system,
                          object_id=None, indicator=None):
