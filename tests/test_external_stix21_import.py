@@ -3749,3 +3749,79 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(x509_object.name, "x509")
         self.assertEqual(x509_object.uuid, certificate.id.split("--")[1])
         self._check_x509_fields(x509_object, certificate, indicator=indicator)
+
+    ############################################################################
+    #                      STANDALONE INDICATOR TESTS                         #
+    ############################################################################
+
+    def test_stix21_bundle_with_domain_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_domain_indicator_attribute(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_email_address_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_email_address_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_ip_address_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_ip_address_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_mac_address_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_mac_address_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_mac_address_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_mutex_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_mutex_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_mutex_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_url_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_url_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_url_indicator(indicator, misp_content[0])

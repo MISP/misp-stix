@@ -74,7 +74,6 @@
             "labels": [
                 "misp:type=\"domain|ip\"",
                 "misp:category=\"Network activity\""
-
             ]
         },
         {

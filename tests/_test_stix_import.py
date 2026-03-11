@@ -447,6 +447,70 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         return meta
 
     ############################################################################
+    #                    INDICATOR OBJECTS CHECKING METHODS                    #
+    ############################################################################
+
+    def _check_as_indicator_attribute(self, indicator, attribute):
+        pattern = self._get_compiled_pattern(indicator)
+        AS_value = pattern['autonomous-system'][0][-1]
+        self.assertTrue(attribute.to_ids)
+        self.assertEqual(attribute.type, 'AS')
+        self.assertEqual(attribute.value, f'AS{AS_value}')
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.comment, indicator.description)
+        self.assertEqual(attribute.timestamp, indicator.modified)
+
+    def _check_domain_indicator_attribute(self, indicator, attribute):
+        pattern = self._get_compiled_pattern(indicator)
+        domain_value = pattern['domain-name'][0][-1]
+        self.assertTrue(attribute.to_ids)
+        self.assertEqual(attribute.type, 'domain')
+        self.assertEqual(attribute.value, domain_value)
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.comment, indicator.description)
+        self.assertEqual(attribute.timestamp, indicator.modified)
+
+    def _check_email_address_indicator(self, indicator, attribute):
+        pattern = self._get_compiled_pattern(indicator)
+        address = pattern['email-addr'][0][-1]
+        self.assertTrue(attribute.to_ids)
+        self.assertEqual(attribute.type, 'email-dst')
+        self.assertEqual(attribute.value, address)
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.comment, indicator.description)
+        self.assertEqual(attribute.timestamp, indicator.modified)
+
+    def _check_mac_address_indicator(self, indicator, attribute):
+        pattern = self._get_compiled_pattern(indicator)
+        mac_value = pattern['mac-addr'][0][-1]
+        self.assertTrue(attribute.to_ids)
+        self.assertEqual(attribute.type, 'mac-address')
+        self.assertEqual(attribute.value, mac_value)
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.comment, indicator.description)
+        self.assertEqual(attribute.timestamp, indicator.modified)
+
+    def _check_mutex_indicator(self, indicator, attribute):
+        pattern = self._get_compiled_pattern(indicator)
+        mutex = pattern['mutex'][0][-1]
+        self.assertTrue(attribute.to_ids)
+        self.assertEqual(attribute.type, 'mutex')
+        self.assertEqual(attribute.value, mutex)
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.comment, indicator.description)
+        self.assertEqual(attribute.timestamp, indicator.modified)
+
+    def _check_url_indicator(self, indicator, attribute):
+        pattern = self._get_compiled_pattern(indicator)
+        value = pattern['url'][0][-1]
+        self.assertTrue(attribute.to_ids)
+        self.assertEqual(attribute.type, 'url')
+        self.assertEqual(attribute.value, value)
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.comment, indicator.description)
+        self.assertEqual(attribute.timestamp, indicator.modified)
+
+    ############################################################################
     #                  OBSERVED DATA OBJECTS CHECKING METHODS                  #
     ############################################################################
 

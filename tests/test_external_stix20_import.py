@@ -2738,3 +2738,67 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         self._check_x509_object(multiple2, observed_data1, '1')
         self._check_x509_object(single, observed_data2)
+
+    ########################################################################
+    #                    STANDALONE INDICATOR TESTS                        #
+    ########################################################################
+
+    def test_stix20_bundle_with_domain_indicator(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 1)
+        self._check_domain_indicator_attribute(indicator, misp_content[0])
+
+    def test_stix20_bundle_with_email_address_indicator(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_email_address_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 1)
+        self._check_email_address_indicator(indicator, misp_content[0])
+
+    def test_stix20_bundle_with_ip_address_indicator(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_ip_address_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 1)
+        self._check_ip_address_indicator(indicator, misp_content[0])
+
+    def test_stix20_bundle_with_mac_address_indicator(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_mac_address_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 1)
+        self._check_mac_address_indicator(indicator, misp_content[0])
+
+    def test_stix20_bundle_with_mutex_indicator(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_mutex_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 1)
+        self._check_mutex_indicator(indicator, misp_content[0])
+
+    def test_stix20_bundle_with_url_indicator(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_url_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 1)
+        self._check_url_indicator(indicator, misp_content[0])
