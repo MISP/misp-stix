@@ -3754,6 +3754,48 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                      STANDALONE INDICATOR TESTS                         #
     ############################################################################
 
+    def test_stix21_bundle_with_artifact_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_artifact_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        artifact_object = misp_content[0]
+        self.assertEqual(artifact_object.name, 'artifact')
+        self.assertEqual(artifact_object.uuid, indicator.id.split('--')[1])
+        self.assertEqual(artifact_object.timestamp, indicator.modified)
+        self.assertEqual(len(artifact_object.attributes), 6)
+        mime_type, payload_bin, md5, sha1, sha256, decryption_key = artifact_object.attributes
+        self._check_artifact_indicator(
+            indicator, mime_type, payload_bin, md5, sha1, sha256
+        )
+        self.assertTrue(decryption_key.to_ids)
+        self.assertEqual(decryption_key.type, 'text')
+        self.assertEqual(decryption_key.object_relation, 'decryption_key')
+        self.assertEqual(decryption_key.value, 'infected')
+        self.assertEqual(
+            decryption_key.uuid,
+            uuid5(UUIDv4, f'{indicator.id} - decryption_key - infected')
+        )
+
+    def test_stix21_bundle_with_as_indicators(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_as_indicators()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator1, indicator2 = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 2)
+        asn_object, as_attribute = misp_content
+        self._check_asn_indicator_object(indicator1, asn_object)
+        self._check_as_indicator_attribute(indicator2, as_attribute)
+
     def test_stix21_bundle_with_domain_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3766,6 +3808,32 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(len(misp_content), 1)
         self._check_domain_indicator_attribute(indicator, misp_content[0])
 
+    def test_stix21_bundle_with_domain_ip_indicators(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_indicators()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator1, indicator2 = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 2)
+        domain_ip_object1, domain_ip_object2 = misp_content
+        self._check_domain_ip_indicator_object(indicator1, domain_ip_object1)
+        self._check_domain_ip_indicator_object(indicator2, domain_ip_object2)
+
+    def test_stix21_bundle_with_directory_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_directory_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_directory_indicator(indicator, misp_content[0])
+
     def test_stix21_bundle_with_email_address_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3777,6 +3845,32 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_email_address_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_email_message_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_email_message_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_file_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_file_indicators()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, file_indicator, file_pe_indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 4)
+        file_object, *file_pe_objects = misp_content
+        self._check_file_indicator(file_indicator, file_object)
+        self._check_file_pe_indicator(file_pe_indicator, *file_pe_objects)
 
     def test_stix21_bundle_with_ip_address_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_indicator()
