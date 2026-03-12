@@ -3908,6 +3908,60 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(len(misp_content), 1)
         self._check_mutex_indicator(indicator, misp_content[0])
 
+    def test_stix21_bundle_with_network_traffic_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_indicators()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, traffic_indicator, socket_indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 2)
+        network_traffic, network_socket = misp_content
+        self._check_network_traffic_indicator(traffic_indicator, network_traffic)
+        self._check_network_socket_indicator(socket_indicator, network_socket)
+
+    def test_stix21_bundle_with_process_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_process_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_process_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_registry_key_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_registry_key_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, regkey_indicator, regkey_value_indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 4)
+        regkey_object, *regkey_value_objects = misp_content
+        self._check_registry_key_indicator(regkey_indicator, regkey_object)
+        self._check_registry_key_value_indicator(
+            regkey_value_indicator, *regkey_value_objects
+        )
+
+    def test_stix21_bundle_with_software_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_software_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_software_indicator(indicator, misp_content[0])
+
     def test_stix21_bundle_with_url_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_url_indicator()
         self.parser.load_stix_bundle(bundle)
@@ -3919,3 +3973,27 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_url_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_user_account_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_user_account_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_user_account_indicator(indicator, misp_content[0])
+
+    def test_stix21_bundle_with_x509_indicator(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(len(misp_content), 1)
+        self._check_x509_indicator(indicator, misp_content[0])
