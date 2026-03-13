@@ -40,12 +40,16 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     __cluster_to_stix_object = {
         'country': 'location',
         'region': 'location',
+        'stix-2.0-acs-marking': 'marking-definition',
+        'stix-2.1-acs-marking': 'marking-definition',
         'stix-2.1-location': 'location',
         **MISPtoSTIX2Mapping.cluster_to_stix_object()
     }
     __galaxy_types_mapping = {
         'country': '_parse_location_{}_galaxy',
         'region': '_parse_location_{}_galaxy',
+        'stix-2.0-acs-marking': '_parse_acs_marking_{}_galaxy',
+        'stix-2.1-acs-marking': '_parse_acs_marking_{}_galaxy',
         'stix-2.1-location': '_parse_location_{}_galaxy',
         **MISPtoSTIX2Mapping.galaxy_types_mapping()
     }
@@ -63,18 +67,13 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'location': {
-                'administrative_area': True, 'created': True,
-                'modified': True, 'region': True
-            },
+            'location': {'administrative_area': True, 'region': True},
             'malware': {
                 'architecture_execution_envs': False, 'capabilities': False,
-                'created': True, 'first_seen': True, 'last_seen': True,
-                'implementation_languages': False, 'modified': True
+                'implementation_languages': False
             },
             'threat-actor': {
-                'created': True, 'first_seen': True, 'goals': False,
-                'last_seen': True, 'modified': True, 'resource_level': True,
+                'goals': False, 'resource_level': True,
                 'personal_motivations': False, 'primary_motivation': True,
                 'roles': False, 'secondary_motivations': False,
                 'sophistication': True
@@ -83,7 +82,7 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         }
     )
     __location_meta_mapping = Mapping(
-        country='_parse_country_meta_field',
+        country='_parse_country_meta_field'
     )
     __malware_sample_additional_observable_values = Mapping(
         mime_type="application/zip",
@@ -102,14 +101,17 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     )
 
     # STIX 2.1 specific MISP OBJECTS MAPPING
-    __objects_mapping = {
-        'annotation': '_populate_objects_to_parse',
-        'geolocation': '_parse_geolocation_object',
-        'sigma': '_parse_sigma_object',
-        'suricata': '_parse_suricata_object',
-        'yara': '_parse_yara_object',
-        **MISPtoSTIX2Mapping.objects_mapping()
-    }
+    __objects_mapping = Mapping(
+        **{
+            'annotation': '_populate_objects_to_parse',
+            'geolocation': '_parse_geolocation_object',
+            'malware-analysis': '_parse_malware_analysis_object',
+            'sigma': '_parse_sigma_object',
+            'suricata': '_parse_suricata_object',
+            'yara': '_parse_yara_object',
+            **MISPtoSTIX2Mapping.objects_mapping()
+        }
+    )
     __annotation_data_fields = (
         'attachment',
     )
@@ -202,6 +204,30 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         'fullpath',
         'malware-sample',
         'path'
+    )
+    __malware_analysis_object_mapping = Mapping(
+        analysis_definition_version='analysis_definition_version',
+        analysis_engine_version='analysis_engine_version',
+        configuration_version='configuration_version',
+        end_time='analysis_ended',
+        module='module',
+        product='product',
+        result='result',
+        result_name='result_name',
+        start_time='analysis_started',
+        submitted_time='submitted',
+        version='version'
+    )
+    __malware_object_mapping = Mapping(
+        alias='aliases',
+        architecture_execution_env='architecture_execution_envs',
+        capability='capabilities',
+        first_seen='first_seen',
+        implementation_language='implementation_languages',
+        is_family='is_family',
+        last_seen='last_seen',
+        malware_type='malware_types',
+        **MISPtoSTIX2Mapping.malware_object_mapping()
     )
     __netflow_uuid_fields = (
         'dst-as',
@@ -418,6 +444,14 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def location_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__location_meta_mapping.get(field)
+
+    @classmethod
+    def malware_analysis_object_mapping(cls) -> dict:
+        return cls.__malware_analysis_object_mapping
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
 
     @classmethod
     def malware_sample_additional_observable_values(cls) -> dict:

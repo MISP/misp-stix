@@ -8,11 +8,16 @@ from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from pymisp import MISPAttribute
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
 from ._test_stix import TestSTIX
 
 _DEFAULT_ORGNAME = 'MISP'
+_ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
+_MISP_OBJECT_EXCLUSION_LIST = (
+    'distribution', 'sharing_group_id', 'template_uuid', 'template_version'
+)
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
@@ -70,10 +75,34 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
     def _check_stix2_results_export(self, to_test_file, reference_file):
         with open(to_test_file, 'rt', encoding='utf-8') as f:
-            to_test = json.loads(f.read())
+            to_test = json.load(f)
         with open(reference_file, 'rt', encoding='utf-8') as f:
-            reference = json.loads(f.read())
-        self.assertEqual(reference['objects'], to_test['objects'])
+            reference = json.load(f)
+        reference_objects = reference['objects']
+        objects_to_test = to_test['objects']
+        self.assertEqual(len(reference_objects), len(objects_to_test))
+        for reference_object, object_to_test in zip(reference_objects, objects_to_test):
+            if reference_object['type'] == 'relationship':
+                self.assertEqual(reference_object['source_ref'], object_to_test['source_ref'])
+                self.assertEqual(reference_object['target_ref'], object_to_test['target_ref'])
+                self.assertEqual(
+                    reference_object['relationship_type'], object_to_test['relationship_type']
+                )
+                continue
+            if reference_object['type'] in ('grouping', 'report'):
+                for key, value in reference_object.items():
+                    if key == 'object_refs':
+                        for index, object_ref in enumerate(value):
+                            if object_ref.startswith('relationship--'):
+                                self.assertTrue(
+                                    object_to_test[key][index].startswith('relationship--')
+                                )
+                                continue
+                            self.assertEqual(object_ref, object_to_test[key][index])
+                        continue
+                    self.assertEqual(value, object_to_test[key])
+                continue
+            self.assertEqual(reference_object, object_to_test)
 
 
 class TestSTIX2Export(TestSTIX):
@@ -92,6 +121,42 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
+    def _check_account_indicator_objects(self, misp_objects, patterns):
+        gitlab_object, telegram_object = misp_objects
+        gitlab_pattern, telegram_pattern = patterns
+        gitlab_id = gitlab_object.attributes[0].value
+        account_type, user_id = gitlab_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'gitlab'")
+        self.assertEqual(user_id, f"user-account:user_id = '{gitlab_id}'")
+        telegram_id = telegram_object.attributes[0].value
+        account_type, user_id = telegram_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'telegram'")
+        self.assertEqual(user_id, f"user-account:user_id = '{telegram_id}'")
+
+    def _check_account_with_attachment_indicator_objects(self, misp_objects, patterns):
+        facebook_account, github_user, parler_account, reddit_account, twitter_account = misp_objects
+        facebook_pattern, github_pattern, parler_pattern, reddit_pattern, twitter_pattern = patterns
+        account_id = facebook_account.attributes[0].value
+        account_type, user_id = facebook_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'facebook'")
+        self.assertEqual(user_id, f"user-account:user_id = '{account_id}'")
+        github_id = github_user.attributes[0].value
+        account_type, user_id = github_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'github'")
+        self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
+        parler_id = parler_account.attributes[0].value
+        account_type, user_id = parler_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'parler'")
+        self.assertEqual(user_id, f"user-account:user_id = '{parler_id}'")
+        reddit_id = reddit_account.attributes[0].value
+        account_type, user_id = reddit_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'reddit'")
+        self.assertEqual(user_id, f"user-account:user_id = '{reddit_id}'")
+        _id = twitter_account.attributes[0].value
+        account_type, user_id = twitter_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'twitter'")
+        self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
+
     def _check_attack_pattern_meta_fields(self, stix_object, meta):
         external_ref, *external_refs = stix_object.external_references
         self.assertEqual(external_ref.external_id, meta['external_id'])
@@ -107,7 +172,7 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self.assertEqual(attack_pattern.created_by_ref, identity_id)
         self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
-        self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
+        self._check_object_labels(misp_object, attack_pattern.labels)
         timestamp = misp_object['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
@@ -117,19 +182,15 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(attack_pattern.name, name)
         self.assertEqual(attack_pattern.description, summary)
         self._check_external_reference(
-            attack_pattern.external_references[0],
-            'capec',
-            f'CAPEC-{id_}'
+            attack_pattern.external_references[0], 'capec', f'CAPEC-{id_}'
         )
         self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
         self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
-        self.assertEqual(attack_pattern.x_misp_solutions, solution.replace("'", "\\'"))
+        self.assertEqual(attack_pattern.x_misp_solutions, solution)
 
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
-            campaign.id,
-            f"campaign--{attribute['uuid']}",
-            object_ref
+            campaign.id, f"campaign--{attribute['uuid']}", object_ref
         )
         self.assertEqual(campaign.type, 'campaign')
         self.assertEqual(campaign.created_by_ref, identity_id)
@@ -147,11 +208,7 @@ class TestSTIX2Export(TestSTIX):
         self._check_indicator_time_features(indicator, attribute['timestamp'])
 
     def _check_attribute_labels(self, attribute, labels):
-        if attribute.get('to_ids'):
-            type_label, category_label, ids_label = labels
-            self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
-        else:
-            type_label, category_label = labels
+        type_label, category_label = labels
         self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
         self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
 
@@ -162,9 +219,7 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_attribute_vulnerability_features(self, vulnerability, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
-            vulnerability.id,
-            f"vulnerability--{attribute['uuid']}",
-            object_ref
+            vulnerability.id, f"vulnerability--{attribute['uuid']}", object_ref
         )
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
@@ -201,8 +256,7 @@ class TestSTIX2Export(TestSTIX):
         for attribute in attributes:
             self.assertEqual(
                 getattr(
-                    course_of_action,
-                    f"x_misp_{attribute['object_relation']}"
+                    course_of_action, f"x_misp_{attribute['object_relation']}"
                 ),
                 attribute['value']
             )
@@ -232,9 +286,7 @@ class TestSTIX2Export(TestSTIX):
     def _check_employee_object(self, employee, misp_object, employee_ref, identity_id):
         self.assertEqual(employee.type, 'identity')
         self._assert_multiple_equal(
-            employee.id,
-            employee_ref,
-            f"identity--{misp_object['uuid']}"
+            employee.id, employee_ref, f"identity--{misp_object['uuid']}"
         )
         self.assertEqual(employee.identity_class, 'individual')
         timestamp = misp_object['timestamp']
@@ -251,6 +303,94 @@ class TestSTIX2Export(TestSTIX):
             f"{email['object_relation']}: {email['value']}"
         )
         return employee_type['value']
+
+    def _check_event_with_escaped_characters(
+            self, indicators, initial_attributes, attributes, misp_objects):
+        (invalid_AS, _, invalid_domain, invalid_domain_ip, *_, invalid_md5,
+         _, invalid_hostname, invalid_hostname_port, invalid_http_method,
+         invalid_ip, invalid_ip_port, _, _, _, invalid_port, _, _,
+         invalid_size, _, _, invalid_x509_md5) = initial_attributes
+        (_, _, domain_ip, _, _, ip_port, _, network_connection,
+         network_socket, *_) = misp_objects
+        validation_errors = self.parser.warnings.get('misp event', [])
+        self.assertEqual(len(validation_errors), 17)
+        connection_src_ip, connection_dst_ip = network_connection['Attribute']
+        error_messages = list(
+            self._check_validation_errors(
+                validation_errors,
+                [invalid_AS], [invalid_domain], [invalid_domain_ip],
+                [invalid_md5], [invalid_hostname], [invalid_hostname_port],
+                [invalid_http_method], [invalid_ip], [invalid_ip_port],
+                [invalid_port], [invalid_size], [invalid_x509_md5],
+                [domain_ip['Attribute'][0], domain_ip['uuid'], domain_ip['name']],
+                [ip_port['Attribute'][2], ip_port['uuid'], ip_port['name']],
+                [connection_src_ip, network_connection['uuid'], network_connection['name']],
+                [connection_dst_ip, network_connection['uuid'], network_connection['name']],
+                [network_socket['Attribute'][1], network_socket['uuid'], network_socket['name']]
+            )
+        )
+        if error_messages:
+            dont, attr, messages = (
+                ("s don't ", 'attributes', 'messages')
+                if len(error_messages) > 1 else
+                (" doesn't ", 'attribute', 'message')
+            )
+            message = (
+                f'Validation error message{dont} properly describe the {attr} '
+                f'that failed validation in the following {messages}'
+            )
+            self.fail(self._formatMessage('\n'.join(['\n', *error_messages]), message))
+        misp_objects = self.parser._misp_event.objects
+        (attachment, email, email_attachment, email_body, email_dst,
+         email_header, email_reply_to, email_src, email_subject,
+         email_x_mailer, filename, filename_md5, mac_address, malware_sample,
+         mutex, regkey, regkey_value, url, user_agent) = attributes
+        (asn, credential, domain_ip, email_object, file_object, ip_port,
+         mutex_object, _, network_socket, pe, _, process, registry_key,
+         url_object, user_account, x509) = misp_objects
+        (attachment_indicator, email_indicator, email_attachment_indicator,
+         email_body_indicator, email_dst_indicator, email_header_indicator,
+         email_reply_to_indicator, email_src_indicator, email_subject_indicator,
+         email_x_mailer_indicator, filename_indicator, filename_md5_indicator,
+         mac_address_indicator, malware_sample_indicator, mutex_indicator,
+         regkey_indicator, regkey_value_indicator, url_indicator,
+         user_agent_indicator, asn_indicator, credential_indicator,
+         email_object_indicator, file_indicator, ip_port_indicator,
+         mutex_object_indicator, network_socket_indicator, process_indicator,
+         registry_key_indicator, url_object_indicator, user_account_indicator,
+         x509_indicator, pe_indicator) = indicators
+        self.assertIn(attachment.uuid, attachment_indicator.id)
+        self.assertIn(email.uuid, email_indicator.id)
+        self.assertIn(email_attachment.uuid, email_attachment_indicator.id)
+        self.assertIn(email_body.uuid, email_body_indicator.id)
+        self.assertIn(email_dst.uuid, email_dst_indicator.id)
+        self.assertIn(email_header.uuid, email_header_indicator.id)
+        self.assertIn(email_reply_to.uuid, email_reply_to_indicator.id)
+        self.assertIn(email_src.uuid, email_src_indicator.id)
+        self.assertIn(email_subject.uuid, email_subject_indicator.id)
+        self.assertIn(email_x_mailer.uuid, email_x_mailer_indicator.id)
+        self.assertIn(filename.uuid, filename_indicator.id)
+        self.assertIn(filename_md5.uuid, filename_md5_indicator.id)
+        self.assertIn(mac_address.uuid, mac_address_indicator.id)
+        self.assertIn(malware_sample.uuid, malware_sample_indicator.id)
+        self.assertIn(mutex.uuid, mutex_indicator.id)
+        self.assertIn(regkey.uuid, regkey_indicator.id)
+        self.assertIn(regkey_value.uuid, regkey_value_indicator.id)
+        self.assertIn(url.uuid, url_indicator.id)
+        self.assertIn(user_agent.uuid, user_agent_indicator.id)
+        self.assertIn(asn.uuid, asn_indicator.id)
+        self.assertIn(credential.uuid, credential_indicator.id)
+        self.assertIn(email_object.uuid, email_object_indicator.id)
+        self.assertIn(file_object.uuid, file_indicator.id)
+        self.assertIn(ip_port.uuid, ip_port_indicator.id)
+        self.assertIn(mutex_object.uuid, mutex_object_indicator.id)
+        self.assertIn(network_socket.uuid, network_socket_indicator.id)
+        self.assertIn(process.uuid, process_indicator.id)
+        self.assertIn(registry_key.uuid, registry_key_indicator.id)
+        self.assertIn(url_object.uuid, url_object_indicator.id)
+        self.assertIn(user_account.uuid, user_account_indicator.id)
+        self.assertIn(x509.uuid, x509_indicator.id)
+        self.assertIn(pe.uuid, pe_indicator.id)
 
     def _check_external_reference(self, reference, source_name, value):
         self.assertEqual(reference.source_name, source_name)
@@ -411,37 +551,33 @@ class TestSTIX2Export(TestSTIX):
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
         self._check_killchain(indicator.kill_chain_phases[0], misp_object['meta-category'])
-        self._check_object_labels(misp_object, indicator.labels, to_ids=True)
+        self._check_object_labels(misp_object, indicator.labels)
         self._check_indicator_time_features(indicator, misp_object['timestamp'])
 
-    def _check_object_labels(self, misp_object, labels, to_ids=None):
-        if to_ids is not None:
-            name_label, category_label, ids_label = labels
-            self.assertEqual(ids_label, f'misp:to_ids="{to_ids}"')
-        else:
-            name_label, category_label = labels
+    def _check_object_labels(self, misp_object, labels):
+        name_label, category_label = labels
         self.assertEqual(name_label, f'misp:name="{misp_object["name"]}"')
         self.assertEqual(category_label, f'misp:meta-category="{misp_object["meta-category"]}"')
 
     def _check_object_observable_features(self, observed_data, misp_object, identity_id, object_ref):
         self._check_observable_features(observed_data, identity_id, object_ref, misp_object['uuid'])
-        self._check_object_labels(misp_object, observed_data.labels, to_ids=False)
+        self._check_object_labels(misp_object, observed_data.labels)
         self._check_observable_time_features(observed_data, misp_object['timestamp'])
 
     def _check_object_vulnerability_features(self, vulnerability, misp_object, identity_id, object_ref):
         self._assert_multiple_equal(
-            vulnerability.id,
-            f"vulnerability--{misp_object['uuid']}",
-            object_ref
+            vulnerability.id, f"vulnerability--{misp_object['uuid']}", object_ref
         )
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, vulnerability.labels, to_ids=False)
+        self._check_object_labels(misp_object, vulnerability.labels)
         timestamp = misp_object['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
-        cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
+        cve, cvss, summary, created, published, references1, references2 = (
+            attribute.value for attribute in misp_object.attributes
+        )
         self.assertEqual(vulnerability.name, cve)
         self.assertEqual(vulnerability.description, summary)
         timestamp = misp_object['timestamp']
@@ -479,7 +615,9 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(observed_data.last_observed, timestamp)
 
     def _check_pe_and_section_observable(self, extension, pe, section):
-        _type, compilation, entrypoint, original, internal, desc, version, lang, prod_name, prod_version, company, copyright, sections, imphash, impfuzzy = (attribute['value'] for attribute in pe['Attribute'])
+        (_type, compilation, entrypoint, original, internal, desc, version,
+         lang, prod_name, prod_version, company, _copyright, sections, imphash,
+         impfuzzy) = (attribute['value'] for attribute in pe['Attribute'])
         self.assertEqual(extension.pe_type, _type)
         self.assertEqual(extension.imphash, imphash)
         self.assertEqual(extension.number_of_sections, int(sections))
@@ -491,11 +629,13 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(extension.x_misp_impfuzzy, impfuzzy)
         self.assertEqual(extension.x_misp_internal_filename, internal)
         self.assertEqual(extension.x_misp_lang_id, lang)
-        self.assertEqual(extension.x_misp_legal_copyright, copyright)
+        self.assertEqual(extension.x_misp_legal_copyright, _copyright)
         self.assertEqual(extension.x_misp_original_filename, original)
         self.assertEqual(extension.x_misp_product_name, prod_name)
         self.assertEqual(extension.x_misp_product_version, prod_version)
-        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (attribute['value'] for attribute in section['Attribute'])
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
         section = extension.sections[0]
         self.assertEqual(section.name, name)
         self.assertEqual(section.size, int(size))
@@ -508,30 +648,22 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(hashes['ssdeep' if 'ssdeep' in hashes else 'SSDEEP'], ssdeep)
 
     def _check_pe_and_section_pattern(self, pattern, pe, section):
-        _type, _compilation, _entrypoint, _original, _internal, _desc, _version, _lang, _prod_name, _prod_version, _company, _copyright, _sections, _imphash, _impfuzzy = (attribute['value'] for attribute in pe['Attribute'])
-        imphash_, sections_, type_, entrypoint_, compilation_, original_, internal_, desc_, version_, lang_, prod_name_, prod_version_, company_, copyright_, impfuzzy_ = pattern[:15]
+        _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
+            attribute['value'] for attribute in pe['Attribute']
+        )
+        (imphash_, type_, original_, internal_, impfuzzy_,
+         name_, md5_, sha1_, sha256_, sha512_, ssdeep_) = pattern
         prefix = "file:extensions.'windows-pebinary-ext'"
         self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
-        self.assertEqual(sections_, f"{prefix}.number_of_sections = '{_sections}'")
         self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
-        self.assertEqual(entrypoint_, f"{prefix}.optional_header.address_of_entry_point = '{_entrypoint}'")
-        self.assertEqual(compilation_, f"{prefix}.x_misp_compilation_timestamp = '{_compilation}'")
         self.assertEqual(original_, f"{prefix}.x_misp_original_filename = '{_original}'")
         self.assertEqual(internal_, f"{prefix}.x_misp_internal_filename = '{_internal}'")
-        self.assertEqual(desc_, f"{prefix}.x_misp_file_description = '{_desc}'")
-        self.assertEqual(version_, f"{prefix}.x_misp_file_version = '{_version}'")
-        self.assertEqual(lang_, f"{prefix}.x_misp_lang_id = '{_lang}'")
-        self.assertEqual(prod_name_, f"{prefix}.x_misp_product_name = '{_prod_name}'")
-        self.assertEqual(prod_version_, f"{prefix}.x_misp_product_version = '{_prod_version}'")
-        self.assertEqual(company_, f"{prefix}.x_misp_company_name = '{_company}'")
-        self.assertEqual(copyright_, f"{prefix}.x_misp_legal_copyright = '{_copyright}'")
         self.assertEqual(impfuzzy_, f"{prefix}.x_misp_impfuzzy = '{_impfuzzy}'")
-        _name, _size, _entropy, _md5, _sha1, _sha256, _sha512, _ssdeep = (attribute['value'] for attribute in section['Attribute'])
-        entropy_, name_, size_, md5_, sha1_, sha256_, sha512_, ssdeep_ = pattern[15:]
+        _name, *_, _md5, _sha1, _sha256, _sha512, _ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
         prefix = f"{prefix}.sections[0]"
-        self.assertEqual(entropy_, f"{prefix}.entropy = '{_entropy}'")
         self.assertEqual(name_, f"{prefix}.name = '{_name}'")
-        self.assertEqual(size_, f"{prefix}.size = '{_size}'")
         self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
         self.assertEqual(sha1_, f"{prefix}.hashes.SHA1 = '{_sha1}'")
         self.assertEqual(sha256_, f"{prefix}.hashes.SHA256 = '{_sha256}'")
@@ -586,16 +718,18 @@ class TestSTIX2Export(TestSTIX):
         )
         return report.object_refs
 
-    def _check_sighting_features(self, stix_sighting, misp_sighting, object_id, identity_id):
+    def _check_sighting_features(
+            self, stix_sighting, misp_sighting, object_id, identity_id, observed_data_id=None):
         self.assertEqual(stix_sighting.type, 'sighting')
         self.assertEqual(stix_sighting.id, f"sighting--{misp_sighting['uuid']}")
         self._assert_multiple_equal(
-            stix_sighting.created,
-            stix_sighting.modified,
+            stix_sighting.created, stix_sighting.modified,
             self._datetime_from_timestamp(misp_sighting['date_sighting'])
         )
         self.assertEqual(stix_sighting.sighting_of_ref, object_id)
         self.assertEqual(stix_sighting.where_sighted_refs, [identity_id])
+        if observed_data_id is not None:
+            self.assertEqual(stix_sighting.observed_data_refs, [observed_data_id])
 
     def _check_threat_actor_meta_fields(self, stix_object, meta):
         self.assertEqual(stix_object.aliases, meta['synonyms'])
@@ -631,6 +765,20 @@ class TestSTIX2Export(TestSTIX):
                 killchain_name, *_, phase_name = killchain.split(':')
                 self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
                 self.assertEqual(killchain_phase.phase_name, phase_name)
+
+    def _check_validation_errors(self, error_messages, *fields_to_check):
+        for values in fields_to_check:
+            attribute, *object_fields = values
+            to_check = (attribute['uuid'], attribute['value'], *object_fields)
+            for error_message in error_messages:
+                if all(field in error_message for field in to_check):
+                    break
+            else:
+                message = f"Attribute with UUID ({attribute['uuid']}) and value ({attribute['value']})"
+                if object_fields:
+                    object_uuid, object_name = object_fields
+                    message += f' within {object_name} MISP object with UUID ({object_uuid})'
+                yield message
 
     def _check_vulnerability_meta_fields(self, stix_object, meta):
         if meta.get('aliases') is not None:
@@ -669,6 +817,22 @@ class TestSTIX2Export(TestSTIX):
             self._populate_galaxies_documentation(galaxy, **kwargs)
 
     @staticmethod
+    def _populate_attribute(attribute, exclude=('disable_correlation')):
+        if isinstance(attribute, MISPAttribute):
+            attribute = json.loads(attribute.to_json())
+        for key, value in attribute.items():
+            if key not in exclude:
+                yield key, value
+
+    def _populate_object(self, misp_object, exclude=_MISP_OBJECT_EXCLUSION_LIST):
+        for key, value in json.loads(misp_object.to_json()).items():
+            if key == 'Attribute':
+                yield key, [dict(self._populate_attribute(attribute)) for attribute in value]
+                continue
+            if key not in exclude:
+                yield key, value
+
+    @staticmethod
     def _reassemble_pattern(pattern):
         reassembled = []
         middle = False
@@ -702,7 +866,7 @@ class TestSTIX2Export(TestSTIX):
     def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
         attribute_type = attribute['type']
         category = attribute['category']
-        custom_type = f"x-misp-attribute"
+        custom_type = 'x-misp-attribute'
         self.assertEqual(custom_object.type, custom_type)
         self._assert_multiple_equal(
             custom_object.id,
@@ -712,8 +876,6 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(custom_object.created_by_ref, identity_id)
         self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
         self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
-        if attribute.get('to_ids', False):
-            self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
         self.assertEqual(custom_object.x_misp_type, attribute_type)
         self.assertEqual(custom_object.x_misp_category, category)
         if attribute.get('comment'):
@@ -753,34 +915,24 @@ class TestSTIX2Export(TestSTIX):
                     data = b64encode(data.getvalue()).decode()
                 self.assertEqual(custom_attribute['data'], data)
 
-    def _sanitize_documentation(self, documentation):
-        if isinstance(documentation, list):
-            return [self._sanitize_documentation(value) for value in documentation]
-        sanitized = {}
-        for key, value in documentation.items():
-            if key == 'to_ids':
-                continue
-            sanitized[key] = self._sanitize_documentation(value) if isinstance(value, (dict, list)) else value
-        return sanitized
+    def _sanitise_pattern_value(self, value):
+        sanitised = self._sanitise_registry_key_value(value)
+        return sanitised.replace("'", "\\'").replace('"', '\\\\"')
 
-    def _sanitize_pattern_value(self, value):
-        sanitized = self._sanitize_registry_key_value(value)
-        return sanitized.replace("'", "\\'").replace('"', '\\\\"')
+    def _sanitise_registry_key_value(self, value: str) -> str:
+        sanitised = self._sanitise_value(value.strip()).replace('\\', '\\\\')
+        if '%' not in sanitised or '\\\\%' in sanitised:
+            return sanitised
+        if '\\%' in sanitised:
+            return sanitised.replace('\\%', '\\\\%')
+        return sanitised.replace('%', '\\\\%')
 
-    def _sanitize_registry_key_value(self, value: str) -> str:
-        sanitized = self._sanitize_value(value.strip()).replace('\\', '\\\\')
-        if '%' not in sanitized or '\\\\%' in sanitized:
-            return sanitized
-        if '\\%' in sanitized:
-            return sanitized.replace('\\%', '\\\\%')
-        return sanitized.replace('%', '\\\\%')
-
-    def _sanitize_value(self, value):
+    def _sanitise_value(self, value):
         for character in ('"', "'"):
             if value.startswith(character):
-                return self._sanitize_value(value[1:])
+                return self._sanitise_value(value[1:])
             if value.endswith(character):
-                return self._sanitize_value(value[:-1])
+                return self._sanitise_value(value[:-1])
         return value
 
 
@@ -791,36 +943,42 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         attribute_type = attribute['type']
-        if 'MISP' not in self._attributes_v20[attribute_type]:
-            self._attributes_v20[attribute_type]['MISP'] = self._sanitize_documentation(attribute)
-        for object_type, stix_object in kwargs.items():
-            documented = json.loads(stix_object.serialize())
-            feature = object_type.replace('_', ' ').title()
-            self._attributes_v20[attribute_type]['STIX'][feature] = documented
+        self._attributes_v20[attribute_type]['MISP'] = dict(
+            self._populate_attribute(attribute, exclude=_ATTRIBUTE_EXCLUSION_LIST)
+        )
+        stix_objects = kwargs['stix']
+        if isinstance(stix_objects, list):
+            self._attributes_v20[attribute_type]['STIX'] = [
+                json.loads(obj.serialize()) for obj in stix_objects
+            ]
+            return
+        self._attributes_v20[attribute_type]['STIX'] = json.loads(stix_objects.serialize())
 
     def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
         if name is None:
             name = galaxy['name']
-        if 'MISP' not in self._galaxies_v20[name]:
-            self._galaxies_v20[name]['MISP'] = galaxy
+        self._galaxies_v20[name]['MISP'] = json.loads(galaxy.to_json())
         if summary is not None:
             self._galaxies_v20['summary'][name] = summary
-        for object_type, stix_object in kwargs.items():
-            documented = json.loads(stix_object.serialize())
-            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-            self._galaxies_v20[name]['STIX'][feature] = documented
+        self._galaxies_v20[name]['STIX'] = json.loads(kwargs['stix'].serialize())
 
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
             name = misp_object['name']
-        if 'MISP' not in self._objects_v20[name]:
-            self._objects_v20[name]['MISP'] = self._sanitize_documentation(misp_object)
+        self._objects_v20[name]['MISP'] = (
+            [dict(self._populate_object(obj)) for obj in misp_object]
+            if isinstance(misp_object, list) else
+            dict(self._populate_object(misp_object))
+        )
         if summary is not None:
             self._objects_v20['summary'][name] = summary
-        for object_type, stix_object in kwargs.items():
-            documented = json.loads(stix_object.serialize())
-            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-            self._objects_v20[name]['STIX'][feature] = documented
+        stix_objects = kwargs['stix']
+        if isinstance(stix_objects, list):
+            self._objects_v20[name]['STIX'] = [
+                json.loads(obj.serialize()) for obj in stix_objects
+            ]
+            return
+        self._objects_v20[name]['STIX'] = json.loads(stix_objects.serialize())
 
 
 class TestSTIX21Export(TestSTIX2Export):
@@ -830,40 +988,39 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
-        if 'MISP' not in self._attributes_v21[feature]:
-            self._attributes_v21[feature]['MISP'] = self._sanitize_documentation(attribute)
-        if 'observed_data' in kwargs:
-            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self._attributes_v21[feature]['STIX']['Observed Data'] = documented
-        else:
-            for object_type, stix_object in kwargs.items():
-                documented = json.loads(stix_object.serialize())
-                self._attributes_v21[feature]['STIX'][object_type.capitalize()] = documented
+        self._attributes_v21[feature]['MISP'] = dict(
+            self._populate_attribute(attribute, exclude=_ATTRIBUTE_EXCLUSION_LIST)
+        )
+        stix_objects = kwargs['stix']
+        if isinstance(stix_objects, list):
+            self._attributes_v21[feature]['STIX'] = [
+                json.loads(obj.serialize()) for obj in stix_objects
+            ]
+            return
+        self._attributes_v21[feature]['STIX'] = json.loads(stix_objects.serialize())
 
     def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
         if name is None:
             name = galaxy['name']
-        if 'MISP' not in self._galaxies_v21[name]:
-            self._galaxies_v21[name]['MISP'] = galaxy
+        self._galaxies_v21[name]['MISP'] = json.loads(galaxy.to_json())
         if summary is not None:
             self._galaxies_v21['summary'][name] = summary
-        for object_type, stix_object in kwargs.items():
-            documented = json.loads(stix_object.serialize())
-            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-            self._galaxies_v21[name]['STIX'][feature] = documented
+        self._galaxies_v21[name]['STIX'] = json.loads(kwargs['stix'].serialize())
 
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
             name = misp_object['name']
-        if 'MISP' not in self._objects_v21[name]:
-            self._objects_v21[name]['MISP'] = self._sanitize_documentation(misp_object)
+        self._objects_v21[name]['MISP'] = (
+            [dict(self._populate_object(obj)) for obj in misp_object]
+            if isinstance(misp_object, list) else
+            dict(self._populate_object(misp_object))
+        )
         if summary is not None:
             self._objects_v21['summary'][name] = summary
-        if 'observed_data' in kwargs:
-            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self._objects_v21[name]['STIX']['Observed Data'] = documented
-        else:
-            for object_type, stix_object in kwargs.items():
-                documented = json.loads(stix_object.serialize())
-                feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-                self._objects_v21[name]['STIX'][feature] = documented
+        stix_objects = kwargs['stix']
+        if isinstance(stix_objects, list):
+            self._objects_v21[name]['STIX'] = [
+                json.loads(obj.serialize()) for obj in stix_objects
+            ]
+            return
+        self._objects_v21[name]['STIX'] = json.loads(stix_objects.serialize())

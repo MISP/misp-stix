@@ -70,6 +70,9 @@ _OBSERVABLE_TYPING = Union[
     X509Certificate
 ]
 
+_BUNDLE_TYPING = Union[
+    Bundle_v20, Bundle_v21
+]
 _DATA_LAYER_TYPING = Union[
     MISPAttribute, MISPEvent, MISPEventReport, MISPObject
 ]
@@ -95,6 +98,10 @@ _SDO_TYPING = Union[
 ]
 _SIGHTING_TYPING = Union[
     Sighting_v20, Sighting_v21
+]
+_STIX_OBJECT_TYPING = Union[
+    _OBSERVABLE_TYPING, _GROUPING_REPORT_TYPING,
+    _MARKING_DEFINITION_TYPING, _SDO_TYPING, _SIGHTING_TYPING
 ]
 
 
@@ -134,34 +141,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def load_stix_bundle(self, bundle: Bundle_v20 | Bundle_v21,
                          invalid_objects: Optional[dict] = {}):
         self.__invalid_objects = invalid_objects
-        self._identifier = bundle.id
+        self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
-        n_report = 0
-        for stix_object in bundle.objects:
-            try:
-                object_type = stix_object.type
-            except AttributeError:
-                object_type = stix_object['type']
-            if object_type in ('grouping', 'report'):
-                n_report += 1
-            feature = self._mapping.stix_object_loading_mapping(object_type)
-            if feature is None:
-                self._add_error(
-                    f'Unable to load STIX object type: {object_type}'
-                )
-                continue
-            if hasattr(stix_object, 'created_by_ref'):
-                self._creators.add(stix_object.created_by_ref)
-            try:
-                getattr(self, feature)(stix_object)
-            except MarkingDefinitionLoadingError as marking_definition_id:
-                self._add_error(
-                    'Error whil parsing the Marking Definition '
-                    f'object with id {marking_definition_id}'
-                )
-            except AttributeError as exception:
-                self._critical_error(exception)
-        self.__n_report = 2 if n_report >= 2 else n_report
+        self._load_stix_bundle(bundle)
+        self._set_indicator_references()
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
@@ -172,9 +155,35 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         del bundle
         self.parse_stix_bundle(**kwargs)
 
-    def _parse_stix_bundle(self):
+    def _load_stix_object(self, stix_object: _STIX_OBJECT_TYPING):
+        object_type = stix_object['type']
+        feature = self._mapping.stix_object_loading_mapping(object_type)
+        if feature is None:
+            self._add_error(
+                f'Unable to load STIX object type: {object_type}'
+            )
+            return
+        if hasattr(stix_object, 'created_by_ref'):
+            self._creators.add(stix_object.created_by_ref)
         try:
-            feature = self._mapping.bundle_to_misp_mapping(str(self.__n_report))
+            getattr(self, feature)(stix_object)
+        except MarkingDefinitionLoadingError as marking_definition_id:
+            self._add_error(
+                'Error whil parsing the Marking Definition '
+                f'object with id {marking_definition_id}'
+            )
+        except AttributeError as exception:
+            self._critical_error(exception)
+
+    def _parse_stix_bundle(self):
+        n_reports = sum(
+            len(getattr(self, feature, {}))
+            for feature in ('_report', '_grouping')
+        )
+        try:
+            feature = self._mapping.bundle_to_misp_mapping(
+                str(2 if n_reports >= 2 else n_reports)
+            )
         except AttributeError:
             sys.exit(
                 'No STIX content loaded, please run `load_stix_content` first.'
@@ -203,8 +212,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def generic_info_field(self) -> str:
         if self.event_title is not None:
             return self.event_title
-        message = f'STIX {self.stix_version} Bundle ({self._identifier})'
+        message = f'STIX {self.stix_version} Bundle ({self.identifier})'
         return f'{message} and converted with the MISP-STIX import feature.'
+
+    @property
+    def indicator_references(self) -> dict:
+        return getattr(self, '_indicator_references', {})
 
     @property
     def invalid_objects(self) -> dict:
@@ -388,20 +401,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     return getattr(self, feature)[object_ref]
             raise ObjectRefLoadingError(object_ref)
 
-    def _handle_unparsed_content(self):
-        if hasattr(self, '_observed_data_parser'):
-            if hasattr(self.observed_data_parser, '_observable_relationships'):
-                self.observed_data_parser.parse_relationships()
-        if hasattr(self, '_relationship'):
-            if hasattr(self, '_sighting'):
-                self._parse_relationships_and_sightings()
-            else:
-                self._parse_relationships()
-        elif hasattr(self, '_sighting'):
-            self._parse_sightings()
-        else:
-            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
-
     def _handle_object(self, object_type: str, object_ref: str):
         feature = self._mapping.stix_to_misp_mapping(object_type)
         if feature is None:
@@ -439,32 +438,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 f'{object_ref}: {pattern_type}'
             )
 
-    def _handle_misp_event_tags(
-            self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
-        self._event_tags = set()
-        for marking in self._handle_tags_from_stix_fields(stix_object):
-            if isinstance(marking, str):
-                misp_event.add_tag(marking)
-                self.event_tags.add(marking)
-                continue
-            if not self.galaxies_as_tags:
-                clusters = defaultdict(list)
-                for cluster in marking['cluster']:
-                    clusters[cluster.type].append(cluster)
-                    self.event_tags.add(cluster.uuid)
-                for galaxy in self._aggregate_galaxy_clusters(clusters):
-                    misp_event.add_galaxy(galaxy)
-            if marking.get('tags'):
-                for tag in marking['tags']:
-                    self.event_tags.add(tag)
-                    misp_event.add_tag(tag)
-        if hasattr(stix_object, 'labels'):
-            labels = (
-                label for label in stix_object.labels
-                if label.lower() != 'threat-report'
-            )
-            for label in labels:
-                misp_event.add_tag(label)
+    def _handle_unparsed_content(self):
+        if hasattr(self, '_observed_data_parser'):
+            if hasattr(self.observed_data_parser, '_observable_relationships'):
+                self.observed_data_parser.parse_relationships()
+        if hasattr(self, '_relationship'):
+            if hasattr(self, '_sighting'):
+                self._parse_relationships_and_sightings()
+            else:
+                self._parse_relationships()
+        elif hasattr(self, '_sighting'):
+            self._parse_sightings()
+        else:
+            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
         misp_event = self._create_misp_event(grouping)
@@ -531,11 +517,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
-        for cluster in self._clusters.values():
+        for cluster_id, cluster in self._clusters.items():
             if self.misp_event.uuid not in cluster['used']:
                 continue
             if not cluster['used'][self.misp_event.uuid]:
+                if cluster_id in getattr(self, '_marking_definition', {}):
+                    for tag in self._marking_definition[cluster_id]:
+                        if tag not in self.event_tags:
+                            self.misp_event.add_tag(tag)
+                            self.event_tags.add(tag)
                 misp_cluster = cluster['cluster']
+                if isinstance(misp_cluster, list):
+                    for cluster in misp_cluster:
+                        clusters[cluster.type].append(cluster)
+                    continue
                 clusters[misp_cluster.type].append(misp_cluster)
         if clusters:
             for galaxy in self._aggregate_galaxy_clusters(clusters):
@@ -593,22 +588,122 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                   MARKING DEFINITIONS PARSING METHODS.                   #
     ############################################################################
 
+    def _add_markings_to_misp_attribute(
+            self, attribute: MISPAttribute, stix_object: _SDO_TYPING):
+        for tags in self._handle_tags_from_stix_fields(attribute, stix_object):
+            if isinstance(tags, str):
+                if tags not in self.event_tags:
+                    attribute.add_tag(tags)
+                continue
+            for tag in tags:
+                if tag not in self.event_tags:
+                    attribute.add_tag(tag)
+
+    def _add_markings_to_misp_event(
+            self, misp_event: MISPEvent, stix_object: _SDO_TYPING):
+        for tags in self._handle_tags_from_stix_fields(misp_event, stix_object):
+            if isinstance(tags, str):
+                misp_event.add_tag(tags)
+                self.event_tags.add(tags)
+                continue
+            for tag in tags:
+                self.event_tags.add(tag)
+                misp_event.add_tag(tag)
+
+    def _add_markings_to_misp_object(
+            self, misp_object: MISPObject, stix_object: _SDO_TYPING):
+        for tags in self._handle_tags_from_stix_fields(misp_object, stix_object):
+            if isinstance(tags, str):
+                if tags not in self.event_tags:
+                    for attribute in misp_object.attributes:
+                        attribute.add_tag(tags)
+                continue
+            for tag in tags:
+                if tag not in self.event_tags:
+                    for attribute in misp_object.attributes:
+                        attribute.add_tag(tag)
+
+    def _handle_attribute_marking_clusters(
+            self, misp_attribute: MISPAttribute, *marking_refs: tuple[str]):
+        clusters = defaultdict(list)
+        for marking_ref in marking_refs:
+            cluster_storage = self._clusters[marking_ref]
+            for cluster in cluster_storage['cluster']:
+                if cluster.uuid not in self.event_tags:
+                    clusters[cluster.type].append(cluster)
+            cluster_storage['used'][self.misp_event.uuid] = True
+        for galaxy in self._aggregate_galaxy_clusters(clusters):
+            misp_attribute.add_galaxy(galaxy)
+
+    def _handle_event_marking_clusters(
+            self, misp_event: MISPEvent, *marking_refs: tuple[str]):
+        clusters = defaultdict(list)
+        for marking_ref in marking_refs:
+            cluster_storage = self._clusters[marking_ref]
+            for cluster in cluster_storage['cluster']:
+                clusters[cluster.type].append(cluster)
+                self.event_tags.add(cluster.uuid)
+            cluster_storage['used'][misp_event.uuid] = True
+        for galaxy in self._aggregate_galaxy_clusters(clusters):
+            misp_event.add_galaxy(galaxy)
+
+    def _handle_object_marking_clusters(
+            self, misp_object: MISPObject, *marking_refs: tuple[str]):
+        clusters = defaultdict(list)
+        for marking_ref in marking_refs:
+            cluster_storage = self._clusters[marking_ref]
+            for cluster in cluster_storage['cluster']:
+                if cluster.uuid not in self.event_tags:
+                    clusters[cluster.type].append(cluster)
+            cluster_storage['used'][self.misp_event.uuid] = True
+        for galaxy in self._aggregate_galaxy_clusters(clusters):
+            for attribute in misp_object.attributes:
+                attribute.add_galaxy(galaxy)
+
+    def _handle_tags_from_stix_fields(
+            self, misp_layer: MISPAttribute | MISPEvent | MISPObject,
+            stix_object: _SDO_TYPING) -> Iterator[str]:
+        if hasattr(stix_object, 'confidence'):
+            yield self._parse_confidence_level(stix_object.confidence)
+        if hasattr(stix_object, 'object_marking_refs'):
+            cluster_ids = []
+            for marking_ref in stix_object.object_marking_refs:
+                try:
+                    marking_definition = self._get_stix_object(marking_ref)
+                    if marking_ref in self._clusters:
+                        cluster_ids.append(marking_ref)
+                except ObjectTypeLoadingError as error:
+                    if self._is_tlp_marking(marking_ref):
+                        yield self._get_stix_object(marking_ref)
+                    else:
+                        self._object_type_loading_error(error)
+                    continue
+                except ObjectRefLoadingError as error:
+                    if self._is_tlp_marking(marking_ref):
+                        yield self._get_stix_object(marking_ref)
+                    else:
+                        self._object_ref_loading_error(error)
+                    continue
+                yield marking_definition
+            if cluster_ids:
+                to_call = self._mapping.marking_cluster_handling(
+                    misp_layer.__class__.__name__
+                )
+                getattr(self, to_call)(misp_layer, *cluster_ids)
+
     def _parse_acs_access_privilege(
-            self, extension_definition: dict, privilege: dict,
+            self, tags: list, privilege: dict,
             privilege_action: str) -> Iterator[str, str]:
         rule_effect = privilege['rule_effect']
         yield 'rule_effect', rule_effect
         if rule_effect == 'permit':
-            extension_definition['tags'].append(
-                f'acs-marking:privilege_action="{privilege_action}"'
-            )
+            tags.append(f'acs-marking:privilege_action="{privilege_action}"')
         for field, scope in privilege['privilege_scope'].items():
             yield f'privilege_scope.{field}', scope
 
     def _parse_acs_marking_definition(
-            self, extension_definition: dict,
-            marking_definition: _MARKING_DEFINITION_TYPING,
-            identifier: str, version: str):
+            self, tags: list, marking_definition: _MARKING_DEFINITION_TYPING,
+            identifier: str, version: str) -> MISPGalaxyCluster:
         extension = marking_definition.extensions[identifier]
         galaxy_type = f'stix-{version}-acs-marking'
         name = f'STIX {version} ACS Marking'
@@ -616,10 +711,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._galaxies[galaxy_type] = {
                 'namespace': 'stix', 'type': galaxy_type,
                 'version': ''.join(version.split('.')),
-                'uuid': self._create_v5_uuid(name), 'name': name,
+                'uuid': identifier.split('--')[1], 'name': name,
                 'description': (
-                    f'STIX {version} Marking Definition extension'
-                    ' to support ACS Markings'
+                    f'STIX {version} Marking Definition '
+                    'extension to support ACS Markings'
                 )
             }
         meta = {
@@ -633,13 +728,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     if field in self._mapping.marking_vocabularies_fields():
                         if isinstance(subvalues, list):
                             for subvalue in subvalues:
-                                extension_definition['tags'].append(
-                                    f'acs-marking:{field}="{subvalue}"'
-                                )
+                                tags.append(f'acs-marking:{field}="{subvalue}"')
                         else:
-                            extension_definition['tags'].append(
-                                f'acs-marking:{field}="{subvalues}"'
-                            )
+                            tags.append(f'acs-marking:{field}="{subvalues}"')
                     meta[f'{key}.{field}'] = subvalues
                 continue
             if key == 'access_privilege':
@@ -648,7 +739,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     privilege_action = privilege['privilege_action']
                     meta[f'{key}.privilege_action'] = privilege_action
                     entries = self._parse_acs_access_privilege(
-                        extension_definition, privilege, privilege_action
+                        tags, privilege, privilege_action
                     )
                     for field, value in dict(entries).items():
                         meta[f'{key}.{field}'] = value
@@ -658,7 +749,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     privilege_action = privilege['privilege_action']
                     privileges[privilege_action] = dict(
                         self._parse_acs_access_privilege(
-                            extension_definition, privilege, privilege_action
+                            tags, privilege, privilege_action
                         )
                     )
                 meta[f'{key}.privilege_action'] = list(privileges.keys())
@@ -672,27 +763,26 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     for field, subvalue in values[0].items():
                         meta[f'{key}.{field}'] = subvalue
                     continue
+                further_sharing = defaultdict(list)
                 for sharing in values:
-                    feature = f"{key}.{sharing['rule_effect']}"
-                    meta[f"{feature}.sharing_scope"] = sharing['sharing_scope']
+                    feature = f"{key}.{sharing['rule_effect']}.sharing_scope"
+                    further_sharing[feature].extend(sharing['sharing_scope'])
+                meta.update(further_sharing)
                 continue
             if key != 'extension_type':
                 meta[key] = values
-        galaxy_cluster = self._create_misp_galaxy_cluster(
+        return self._create_misp_galaxy_cluster(
             collection_uuid=self._create_v5_uuid(name),
             meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
+            uuid=marking_definition.id.split('--')[1],
             value=extension.get('name', extension['identifier']),
             source=(
                 self._handle_creator(marking_definition.created_by_ref)
                 if hasattr(marking_definition, 'created_by_ref') else
                 extension['responsible_entity_custodian']
-            ),
-            uuid=self._create_v5_uuid(
-                f'{marking_definition.id} - {identifier}'
             )
         )
-        extension_definition['cluster'].append(galaxy_cluster)
 
     def _parse_marking_definition(
             self, marking_definition: _MARKING_DEFINITION_TYPING) -> Union[dict, str]:
@@ -706,18 +796,26 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # should be TLP 2.0 definition
             return marking_definition.name.lower()
         if hasattr(marking_definition, 'extensions'):
-            extension_definition = defaultdict(list)
+            clusters = []
+            tags = []
             version = getattr(marking_definition, 'spec_version', '2.0')
             for identifier in marking_definition.extensions.keys():
                 feature = self._mapping.marking_extension_mapping(identifier)
                 if feature is None:
+                    self._unknown_marking_definition_extension_error(identifier)
                     continue
-                getattr(self, f'_parse_{feature}_marking_definition')(
-                    extension_definition,
-                    marking_definition, identifier, version
+                to_call = f'_parse_{feature}_marking_definition'
+                clusters.append(
+                    getattr(self, to_call)(
+                        tags, marking_definition, identifier, version
+                    )
                 )
-            if extension_definition:
-                return extension_definition
+            if clusters:
+                self._clusters[marking_definition.id] = {
+                    'used': {}, 'cluster': clusters
+                }
+            if tags:
+                return tags
         raise MarkingDefinitionLoadingError(marking_definition.id)
 
     ############################################################################
@@ -799,15 +897,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid, relationship_type = relationship
-            if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]
+            referenced_id, relationship_type = relationship
+            referenced_uuid = self._sanitise_uuid(referenced_id)
+            if referenced_uuid == misp_object.uuid:
+                continue
+            if referenced_id in self._clusters:
+                cluster = self._clusters[referenced_id]
                 clusters[cluster['cluster']['type']].append(cluster['cluster'])
                 cluster['used'][self.misp_event.uuid] = True
             else:
-                misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid), relationship_type
-                )
+                misp_object.add_reference(referenced_uuid, relationship_type)
         if clusters:
             for galaxy in self._aggregate_galaxy_clusters(clusters):
                 for attribute in misp_object.attributes:
@@ -815,17 +914,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_object_relationships_as_tag_names(self, misp_object: MISPObject):
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid, relationship_type = relationship
-            if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]
+            referenced_id, relationship_type = relationship
+            referenced_uuid = self._sanitise_uuid(referenced_id)
+            if referenced_uuid == misp_object.uuid:
+                continue
+            if referenced_id in self._clusters:
+                cluster = self._clusters[referenced_id]
                 for attribute in misp_object.attributes:
                     for tag in cluster['tag_names']:
                         attribute.add_tag(tag)
                 cluster['used'][self.misp_event.uuid] = True
             else:
-                misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid), relationship_type
-                )
+                misp_object.add_reference(referenced_uuid, relationship_type)
 
     def _parse_relationships(self):
         for attribute in self.misp_event.attributes:
@@ -927,64 +1027,27 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
         data_layer.add_opinion(**opinion)
 
-    def _add_misp_attribute(self, attribute: dict,
-                            stix_object: _SDO_TYPING) -> MISPAttribute:
-        misp_attribute = MISPAttribute()
-        misp_attribute.from_dict(**attribute)
+    def _add_misp_attribute(
+            self, attribute: dict, stix_object: _SDO_TYPING) -> MISPAttribute:
+        misp_attribute = self.misp_event.add_attribute(**attribute)
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
                 self._add_analyst_data(misp_attribute, reference)
-        for marking in self._handle_tags_from_stix_fields(stix_object):
-            if isinstance(marking, str):
-                if marking in self.event_tags:
-                    continue
-                misp_attribute.add_tag(marking)
-                continue
-            if not self.galaxies_as_tags:
-                clusters = defaultdict(list)
-                for cluster in marking['cluster']:
-                    if cluster.uuid not in self.event_tags:
-                        clusters[cluster.type].append(cluster)
-                for galaxy in self._aggregate_galaxy_clusters(clusters):
-                    misp_attribute.add_galaxy(galaxy)
-            if marking.get('tags'):
-                for tag in marking['tags']:
-                    if tag not in self.event_tags:
-                        misp_attribute.add_tag(tag)
-        return self.misp_event.add_attribute(**misp_attribute)
+        self._add_markings_to_misp_attribute(misp_attribute, stix_object)
+        return misp_attribute
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
         if stix_object.id in self._analyst_data:
             for reference in self._analyst_data[stix_object.id]:
                 self._add_analyst_data(misp_object, reference)
-        for marking in self._handle_tags_from_stix_fields(stix_object):
-            if isinstance(marking, str):
-                if marking in self.event_tags:
-                    continue
-                for attribute in misp_object.attributes:
-                    attribute.add_tag(marking)
-                continue
-            if not self.galaxies_as_tags:
-                clusters = defaultdict(list)
-                for cluster in marking['cluster']:
-                    if cluster.uuid not in self.event_tags:
-                        clusters[cluster.type].append(cluster)
-                for galaxy in self._aggregate_galaxy_clusters(clusters):
-                    for attribute in misp_object.attributes:
-                        attribute.add_galaxy(galaxy)
-            if marking.get('tags'):
-                for tag in marking['tags']:
-                    if tag in self.event_tags:
-                        continue
-                    for attribute in misp_object.attributes:
-                        attribute.add_tag(tag)
+        self._add_markings_to_misp_object(misp_object, stix_object)
         return self.misp_event.add_object(misp_object)
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         event_args = {
-            'uuid': self._identifier.split('--')[1],
+            'uuid': self.identifier.split('--')[1],
             'info': self.generic_info_field,
             'distribution': self.distribution
         }
@@ -1026,7 +1089,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         elif hasattr(stix_object, 'created_by_ref'):
             producer = self._handle_creator(stix_object.created_by_ref)
             misp_event.add_tag(f'misp-galaxy:producer="{producer}"')
-        self._handle_misp_event_tags(misp_event, stix_object)
+        self._event_tags = set()
+        self._add_markings_to_misp_event(misp_event, stix_object)
+        if hasattr(stix_object, 'labels'):
+            labels = (
+                label for label in stix_object.labels
+                if label.lower() != 'threat-report'
+            )
+            for label in labels:
+                misp_event.add_tag(label)
         return misp_event
 
     @staticmethod
@@ -1035,27 +1106,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         cluster.from_dict(**cluster_args)
         cluster.parse_meta_as_elements()
         return cluster
-
-    def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
-        if hasattr(stix_object, 'confidence'):
-            yield self._parse_confidence_level(stix_object.confidence)
-        if hasattr(stix_object, 'object_marking_refs'):
-            for marking_ref in stix_object.object_marking_refs:
-                try:
-                    marking_definition = self._get_stix_object(marking_ref)
-                except ObjectTypeLoadingError as error:
-                    if self._is_tlp_marking(marking_ref):
-                        yield self._get_stix_object(marking_ref)
-                    else:
-                        self._object_type_loading_error(error)
-                    continue
-                except ObjectRefLoadingError as error:
-                    if self._is_tlp_marking(marking_ref):
-                        yield self._get_stix_object(marking_ref)
-                    else:
-                        self._object_ref_loading_error(error)
-                    continue
-                yield marking_definition
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -1113,6 +1163,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _object_type_loading_error(self, object_type: str):
         self._add_error(f'Error loading the STIX object of type {object_type}')
+
+    def _unknown_marking_definition_extension_error(self, identifier: str):
+        self._add_error(
+            f'Unknown STIX Marking Definition extension: {identifier}'
+        )
 
     def _unknown_network_protocol_warning(
             self, protocol: str, object_id: str,

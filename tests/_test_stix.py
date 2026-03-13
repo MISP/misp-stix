@@ -69,15 +69,13 @@ class TestSTIX21(TestSTIX):
             return cls.__hash_types_mapping[hash_type]
         return hash_type.lower() if hash_type.isupper() else hash_type.upper()
 
-    def _check_grouping_features(self, grouping, event, identity_id):
-        timestamp = event['timestamp']
-        if not isinstance(timestamp, datetime):
-            timestamp = self._datetime_from_timestamp(timestamp)
+    def _check_grouping_features(self, grouping, identity_id):
+        event = self.parser._misp_event
         self.assertEqual(grouping.type, 'grouping')
-        self.assertEqual(grouping.id, f"grouping--{event['uuid']}")
+        self.assertEqual(grouping.id, f"grouping--{event.uuid}")
         self.assertEqual(grouping.created_by_ref, identity_id)
         self.assertEqual(grouping.labels, self._labels)
-        self.assertEqual(grouping.name, event['info'])
-        self.assertEqual(grouping.created, timestamp)
-        self.assertEqual(grouping.modified, timestamp)
+        self.assertEqual(grouping.name, event.info)
+        self.assertEqual(grouping.created, event.timestamp)
+        self.assertEqual(grouping.modified, event.timestamp)
         return grouping.object_refs

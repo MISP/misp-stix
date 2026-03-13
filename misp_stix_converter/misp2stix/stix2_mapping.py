@@ -3,6 +3,7 @@
 
 from ..misp_stix_mapping import Mapping
 from .stix_mapping import MISPtoSTIXMapping
+from pymisp.abstract import describe_types
 from typing import Union
 
 
@@ -115,6 +116,28 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
                 'identity': 'targets',
                 'location': 'targets'
             }
+        }
+    )
+    __known_relationships = Mapping(
+        **{
+            'malware': {
+                'executable-on': ('operating_system_refs', True),
+                'sample-of': ('sample_refs', True)
+            },
+            'malware-analysis': {
+                'analyses': ('sample_ref', False),
+                'captured': ('analysis_sco_refs', True),
+                'hosted-by': ('operating_system_ref', False),
+                'installs': ('installed_software_refs', True),
+                'vm-hosted-by': ('host_vm_ref', False)
+            }
+        }
+    )
+    __to_ids_default_mapping = Mapping(
+        **{
+            attribute_type: bool(sane_default['to_ids'])
+            for attribute_type, sane_default
+            in describe_types['sane_defaults'].items()
         }
     )
 
@@ -234,24 +257,52 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'Technique ID': '_parse_external_id'
         }
     )
+    __acs_marking_meta_mapping = Mapping(
+        authority_reference=False,
+        caveat=False,
+        classification=True,
+        classification_reason=True,
+        classified_by=True,
+        classified_on=True,
+        compilation_reason=True,
+        create_date_time=True,
+        declass_date=True,
+        declass_event=True,
+        declass_exemption=True,
+        declass_period=True,
+        derived_from=True,
+        disposition_date=True,
+        disposition_process=True,
+        entity=False,
+        formal_determination=False,
+        identifier=True,
+        logical_authority_category=False,
+        name=True,
+        permitted_nationalities=False,
+        permitted_organizations=False,
+        policy_reference=True,
+        privilege_action=True,
+        released_by=True,
+        released_on=True,
+        responsible_entity_custodian=True,
+        responsible_entity_originator=True,
+        rule_effect=True,
+        sci_controls=False,
+        sensitivity=False,
+        shareability=False,
+        sharing_scope=False
+    )
     __campaign_meta_mapping = Mapping(
         synonyms='_parse_synonyms_meta_field'
     )
     __generic_meta_mapping = Mapping(
         **{
-            'attack-pattern': {'created': True, 'modified': True},
-            'campaign': {
-                'created': True, 'first_seen': True, 'last_seen': True,
-                'modified': True, 'objective': True
-            },
-            'course-of-action': {'created': True, 'modified': True},
+            'campaign': {'objective': True},
             'intrusion-set': {
-                'created': True, 'first_seen': True, 'goals': False,
-                'last_seen': True, 'modified': True, 'primary_motivation': True,
+                'goals': False, 'primary_motivation': True,
                 'resource_level': True, 'secondary_motivations': False
             },
-            'tool': {'created': True, 'modified': True, 'tool_version': True},
-            'vulnerability': {'created': True, 'modified': True}
+            'tool': {'tool_version': True}
         }
     )
     __intrusion_set_meta_mapping = Mapping(
@@ -277,17 +328,15 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __tool_meta_mapping = Mapping(
         **{
-            'labels': '_parse_tool_types',
             'kill_chain': '_parse_kill_chain',
+            'labels': '_parse_tool_types',
             'synonyms': '_parse_synonyms_21_meta_field',
             'tool_types': '_parse_tool_types',
             'type': '_parse_tool_types'
         }
     )
     __vulnerability_meta_mapping = Mapping(
-        **{
-            'aliases': '_parse_external_references'
-        }
+        aliases='_parse_external_references'
     )
 
     # MISP OBJECTS MAPPING
@@ -315,6 +364,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'ip|port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
             'lnk': '_parse_lnk_object',
+            'malware': '_parse_malware_object',
             'mutex': '_parse_mutex_object',
             'netflow': '_parse_netflow_object',
             'network-connection': '_parse_network_connection_object',
@@ -650,6 +700,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'size-in-bytes',
         *__lnk_hash_types
     )
+    __malware_object_mapping = Mapping(
+        description='description',
+        name='name'
+    )
+    __malware_single_fields = (
+        'description', 'first_seen', 'is_family', 'last_seen', 'name'
+    )
     __netflow_object_mapping = Mapping(
         features={
             'src-port': 'src_port',
@@ -907,6 +964,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
 
     @classmethod
+    def acs_marking_meta_mapping(cls, field: str) -> bool:
+        return cls.__acs_marking_meta_mapping.get(field, True)
+
+    @classmethod
     def address_family_enum_list(cls) -> tuple:
         return cls.__address_family_enum_list
 
@@ -1115,6 +1176,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         return cls.__ip_port_single_fields
 
     @classmethod
+    def known_relationships(cls, field: str) -> Union[dict, None]:
+        return cls.__known_relationships.get(field)
+
+    @classmethod
     def legal_entity_contact_info_fields(cls) -> tuple:
         return cls.__legal_entity_contact_info_fields
 
@@ -1153,6 +1218,14 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def malware_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__malware_meta_mapping.get(field)
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
+
+    @classmethod
+    def malware_single_fields(cls) -> tuple:
+        return cls.__malware_single_fields
 
     @classmethod
     def misp_identity_args(cls) -> dict:
@@ -1297,6 +1370,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def tool_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__tool_meta_mapping.get(field)
+
+    @classmethod
+    def to_ids_default_value(cls, attribute_type: str) -> bool:
+        return cls.__to_ids_default_mapping.get(attribute_type, False)
 
     @classmethod
     def twitter_account_data_fields(cls) -> tuple:

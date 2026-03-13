@@ -79,6 +79,15 @@ class STIX2Mapping:
     __domain_family_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'domain-family'}
     )
+    __dst_hostname_attribute = Mapping(
+        **{'type': 'hostname', 'object_relation': 'dst_hostname'}
+    )
+    __dst_ip_attribute = Mapping(
+        **{'type': 'ip-dst', 'object_relation': 'dst_ip'}
+    )
+    __dst_mac_attribute = Mapping(
+        **{'type': 'mac-address', 'object_relation': 'dst_mac'}
+    )
     __dst_port_attribute = Mapping(
         **{'type': 'port', 'object_relation': 'dst-port'}
     )
@@ -144,6 +153,15 @@ class STIX2Mapping:
     )
     __last_packet_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'last-packet-seen'}
+    )
+    __layer3_protocol_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'layer3-protocol'}
+    )
+    __layer4_protocol_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'layer4-protocol'}
+    )
+    __layer7_protocol_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'layer7-protocol'}
     )
     __md5_attribute = Mapping(
         **{'type': 'md5', 'object_relation': 'md5'}
@@ -223,11 +241,23 @@ class STIX2Mapping:
     __snort_attribute = Mapping(
         **{'type': 'snort', 'object_relation': 'suricata'}
     )
+    __src_hostname_attribute = Mapping(
+        **{'type': 'hostname', 'object_relation': 'src_hostname'}
+    )
+    __src_ip_attribute = Mapping(
+        **{'type': 'ip-src', 'object_relation': 'src_ip'}
+    )
+    __src_mac_attribute = Mapping(
+        **{'type': 'mac-address', 'object_relation': 'src_mac'}
+    )
     __src_port_attribute = Mapping(
         **{'type': 'port', 'object_relation': 'src-port'}
     )
     __ssdeep_attribute = Mapping(
         **{'type': 'ssdeep', 'object_relation': 'ssdeep'}
+    )
+    __state_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'state'}
     )
     __subnet_announced_attribute = Mapping(
         **{'type': 'ip-src', 'object_relation': 'subnet-announced'}
@@ -304,6 +334,31 @@ class STIX2Mapping:
     __password_last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
 
     # MISP OBJECTS MAPPING
+    __email_additional_header_fields_mapping = Mapping(
+        **{
+            'Reply-To': __reply_to_attribute,
+            'X-Mailer': __x_mailer_attribute,
+            'X-Originating-IP': __received_header_ip_attribute
+        }
+    )
+    __artifact_object_mapping = Mapping(
+        decryption_key={'type': 'text', 'object_relation': 'decryption_key'},
+        encyption_algorithm={
+            'type': 'text', 'object_relation': 'encryption_algorithm'
+        },
+        mime_type={'type': 'mime-type', 'object_relation': 'mime_type'},
+        url=__url_attribute
+    )
+    __directory_object_mapping = Mapping(
+        accessed=__access_time_attribute,
+        atime=__access_time_attribute,
+        created=__creation_time_attribute,
+        ctime=__creation_time_attribute,
+        modified=__modification_time_attribute,
+        mtime=__modification_time_attribute,
+        path=__path_attribute,
+        path_enc={"type": "text", "object_relation": "path-encoding"},
+    )
     __email_object_mapping = Mapping(
         body=__email_body_attribute,
         date=__send_date_attribute,
@@ -314,10 +369,15 @@ class STIX2Mapping:
     __file_hashes = Mapping(
         **{
             'MD5': __md5_attribute,
+            'SHA1': __sha1_attribute,
             'SHA-1': __sha1_attribute,
+            'SHA256': __sha256_attribute,
             'SHA-256': __sha256_attribute,
+            'SHA512': __sha512_attribute,
             'SHA-512': __sha512_attribute,
+            'SHA3256': __sha3_256_attribute,
             'SHA3-256': __sha3_256_attribute,
+            'SHA3512': __sha3_512_attribute,
             'SHA3-512': __sha3_512_attribute,
             'SSDEEP': __ssdeep_attribute,
             'ssdeep': __ssdeep_attribute,
@@ -335,16 +395,6 @@ class STIX2Mapping:
         name=__filename_attribute,
         name_enc=__file_encoding_attribute,
         size=__size_in_bytes_attribute
-    )
-    __network_connection_object_mapping = Mapping(
-        src_port=__src_port_attribute,
-        dst_port=__dst_port_attribute,
-        start=__first_packet_seen_attribute,
-        end=__last_packet_seen_attribute,
-        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-bytes-count'},
-        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-bytes-count'},
-        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
-        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'}
     )
     __network_socket_extension_mapping = Mapping(
         address_family=__address_family_attribute,
@@ -388,7 +438,7 @@ class STIX2Mapping:
         modified=__last_modified_attribute,
         modified_time=__last_modified_attribute
     )
-    __registry_key_values_mapping = Mapping(
+    __registry_key_values_object_mapping = Mapping(
         data=__data_attribute,
         data_type=__data_type_attribute,
         name=__name_attribute
@@ -416,6 +466,13 @@ class STIX2Mapping:
         credential_last_changed=__password_last_changed_attribute,
         password_last_changed=__password_last_changed_attribute
     )
+    __x509_hashes_mapping = Mapping(
+        **{
+            'MD5': __x509_md5_attribute,
+            'SHA-1': __x509_sha1_attribute,
+            'SHA-256': __x509_sha256_attribute
+        }
+    )
     __x509_object_mapping = Mapping(
         is_self_signed={'type': 'boolean', 'object_relation': 'self_signed'},
         issuer={'type': 'text', 'object_relation': 'issuer'},
@@ -442,6 +499,10 @@ class STIX2Mapping:
         return cls.__access_time_attribute
 
     @classmethod
+    def email_additional_header_fields_mapping(cls) -> dict:
+        return cls.__email_additional_header_fields_mapping
+
+    @classmethod
     def address_family_attribute(cls) -> dict:
         return cls.__address_family_attribute
 
@@ -452,6 +513,10 @@ class STIX2Mapping:
     @classmethod
     def args_attribute(cls) -> dict:
         return cls.__args_attribute
+
+    @classmethod
+    def artifact_object_mapping(cls) -> dict:
+        return cls.__artifact_object_mapping
 
     @classmethod
     def asn_attribute(cls) -> dict:
@@ -510,12 +575,28 @@ class STIX2Mapping:
         return cls.__description_attribute
 
     @classmethod
+    def directory_object_mapping(cls) -> dict:
+        return cls.__directory_object_mapping
+
+    @classmethod
     def domain_attribute(cls) -> dict:
         return cls.__domain_attribute
 
     @classmethod
     def domain_family_attribute(cls) -> dict:
         return cls.__domain_family_attribute
+
+    @classmethod
+    def dst_hostname_attribute(cls) -> dict:
+        return cls.__dst_hostname_attribute
+
+    @classmethod
+    def dst_ip_attribute(cls) -> dict:
+        return cls.__dst_ip_attribute
+
+    @classmethod
+    def dst_mac_attribute(cls) -> dict:
+        return cls.__dst_mac_attribute
 
     @classmethod
     def dst_port_attribute(cls) -> dict:
@@ -614,6 +695,18 @@ class STIX2Mapping:
         return cls.__last_packet_seen_attribute
 
     @classmethod
+    def layer3_protocol_attribute(cls) -> dict:
+        return cls.__layer3_protocol_attribute
+
+    @classmethod
+    def layer4_protocol_attribute(cls) -> dict:
+        return cls.__layer4_protocol_attribute
+
+    @classmethod
+    def layer7_protocol_attribute(cls) -> dict:
+        return cls.__layer7_protocol_attribute
+
+    @classmethod
     def md5_attribute(cls) -> dict:
         return cls.__md5_attribute
 
@@ -638,10 +731,6 @@ class STIX2Mapping:
         return cls.__name_attribute
 
     @classmethod
-    def network_connection_object_mapping(cls) -> dict:
-        return cls.__network_connection_object_mapping
-
-    @classmethod
     def network_socket_extension_mapping(cls) -> dict:
         return cls.__network_socket_extension_mapping
 
@@ -661,7 +750,7 @@ class STIX2Mapping:
     def path_attribute(cls) -> dict:
         return cls.__path_attribute
 
-    @staticmethod
+    @classmethod
     def payload_bin_attribute(cls) -> dict:
         return cls.__payload_bin_attribute
 
@@ -698,8 +787,8 @@ class STIX2Mapping:
         return cls.__registry_key_object_mapping
 
     @classmethod
-    def registry_key_values_mapping(cls) -> dict:
-        return cls.__registry_key_values_mapping
+    def registry_key_values_object_mapping(cls) -> dict:
+        return cls.__registry_key_values_object_mapping
 
     @classmethod
     def reply_to_attribute(cls) -> dict:
@@ -750,12 +839,28 @@ class STIX2Mapping:
         return cls.__snort_attribute
 
     @classmethod
+    def src_hostname_attribute(cls) -> dict:
+        return cls.__src_hostname_attribute
+
+    @classmethod
+    def src_ip_attribute(cls) -> dict:
+        return cls.__src_ip_attribute
+
+    @classmethod
+    def src_mac_attribute(cls) -> dict:
+        return cls.__src_mac_attribute
+
+    @classmethod
     def src_port_attribute(cls) -> dict:
         return cls.__src_port_attribute
 
     @classmethod
     def ssdeep_attribute(cls) -> dict:
         return cls.__ssdeep_attribute
+
+    @classmethod
+    def state_attribute(cls) -> dict:
+        return cls.__state_attribute
 
     @classmethod
     def subnet_announced_attribute(cls) -> dict:
@@ -770,7 +875,7 @@ class STIX2Mapping:
         return cls.__text_attribute
 
     @classmethod
-    def timeline_mapping(cls, field: str) -> Union[tuple, None]:
+    def timeline_mapping(cls, field: str) -> tuple | None:
         return cls.__timeline_mapping.get(field)
 
     @classmethod
@@ -828,6 +933,10 @@ class STIX2Mapping:
     @classmethod
     def x509_md5_attribute(cls) -> dict:
         return cls.__x509_md5_attribute
+
+    @classmethod
+    def x509_hashes_mapping(cls, field: str) -> dict | None:
+        return cls.__x509_hashes_mapping.get(field)
 
     @classmethod
     def x509_object_mapping(cls) -> dict:
@@ -911,16 +1020,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     )
 
     # MISP OBJECTS MAPPING
-    __directory_object_mapping = Mapping(
-        accessed=STIX2Mapping.access_time_attribute(),
-        atime=STIX2Mapping.access_time_attribute(),
-        created=STIX2Mapping.creation_time_attribute(),
-        ctime=STIX2Mapping.creation_time_attribute(),
-        modified=STIX2Mapping.modification_time_attribute(),
-        mtime=STIX2Mapping.modification_time_attribute(),
-        path=STIX2Mapping.path_attribute(),
-        path_enc={'type': 'text', 'object_relation': 'path-encoding'}
-    )
     __process_object_mapping = Mapping(
         command_line=STIX2Mapping.command_line_attribute(),
         created=STIX2Mapping.creation_time_attribute(),
@@ -937,10 +1036,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         vendor=STIX2Mapping.vendor_attribute(),
         version=STIX2Mapping.version_attribute()
     )
-
-    @classmethod
-    def directory_object_mapping(cls) -> dict:
-        return cls.__directory_object_mapping
 
     @classmethod
     def file_hashes_mapping(cls, field: str) -> Union[dict, None]:
@@ -1002,6 +1097,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __last_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'last-seen'}
     )
+    __malware_sample_attribute = Mapping(
+        **{'type': 'malware-sample', 'object_relation': 'malware-sample'}
+    )
     __parent_command_line_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-command-line'}
     )
@@ -1037,9 +1135,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     )
     __src_as_attribute = Mapping(
         **{'type': 'AS', 'object_relation': 'src-as'}
-    )
-    __state_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'state'}
     )
     __tcp_flags_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'tcp-flags'}
@@ -1259,13 +1354,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         **STIX2Mapping.file_hashes(),
         AUTHENTIHASH=__authentihash_attribute,
         IMPHASH=STIX2Mapping.imphash_attribute(),
-        SHA1=STIX2Mapping.sha1_attribute(),
         SHA224=__sha224_attribute,
-        SHA256=STIX2Mapping.sha256_attribute(),
         SHA3224=__sha3_224_attribute,
         SHA3384=__sha3_384_attribute,
         SHA384=__sha384_attribute,
-        SHA512=STIX2Mapping.sha512_attribute(),
         TELFHASH=__telfhash_attribute,
         VHASH=__vhash_attribute
     )
@@ -1278,7 +1370,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_fullpath=__fullpath_attribute,
         x_misp_path=STIX2Mapping.path_attribute(),
         x_misp_pattern_in_file=__pattern_in_file_attribute,
-        x_misp_state=__state_attribute,
+        x_misp_state=STIX2Mapping.state_attribute(),
         x_misp_text=STIX2Mapping.text_attribute()
     )
     __github_user_object_mapping = Mapping(
@@ -1369,7 +1461,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_lnk_working_directory={'type': 'text', 'object_relation': 'lnk-working-directory'},
         x_misp_machine_identifier={'type': 'text', 'object_relation': 'machine-identifier'},
         x_misp_pattern_in_file=__pattern_in_file_attribute,
-        x_misp_state=__state_attribute,
+        x_misp_state=STIX2Mapping.state_attribute(),
         x_misp_text=STIX2Mapping.text_attribute()
     )
     __mutex_object_mapping = Mapping(
@@ -1393,7 +1485,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_ip_version={'type': 'counter', 'object_relation': 'ip_version'}
     )
     __network_connection_object_mapping = Mapping(
-        **STIX2Mapping.network_connection_object_mapping(),
+        src_port=STIX2Mapping.src_port_attribute(),
+        dst_port=STIX2Mapping.dst_port_attribute(),
+        start=STIX2Mapping.first_packet_seen_attribute(),
+        end=STIX2Mapping.last_packet_seen_attribute(),
+        src_byte_count={"type": "size-in-bytes", "object_relation": "src-bytes-count"},
+        dst_byte_count={"type": "size-in-bytes", "object_relation": "dst-bytes-count"},
+        src_packets={"type": "counter", "object_relation": "src-packets-count"},
+        dst_packets={"type": "counter", "object_relation": "dst-packets-count"},
         x_misp_community_id=__community_id_attribute,
         x_misp_hostname_dst=STIX2Mapping.hostname_dst_attribute(),
         x_misp_hostname_src=STIX2Mapping.hostname_src_attribute()
@@ -1702,6 +1801,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return cls.__lnk_object_mapping
 
     @classmethod
+    def malware_sample_attribute(cls) -> dict:
+        return cls.__malware_sample_attribute
+
+    @classmethod
     def mutex_object_mapping(cls) -> dict:
         return cls.__mutex_object_mapping
 
@@ -1792,10 +1895,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def src_as_attribute(cls) -> dict:
         return cls.__src_as_attribute
-
-    @classmethod
-    def state_attribute(cls) -> dict:
-        return cls.__state_attribute
 
     @classmethod
     def tcp_flags_attribute(cls) -> dict:

@@ -12,14 +12,24 @@ from .converters import (
     ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, STIX2ObservableObjectConverter)
 from .importparser import ExternalSTIXtoMISPParser
-from .stix2_to_misp import STIX2toMISPParser, _OBSERVABLE_TYPING
+from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPObject
+from stix2.v20.observables import (
+    _Extension as Extension_v20, _STIXBase20 as STIXBase_v20)
 from stix2.v20.sro import Sighting as Sighting_v20
+from stix2.v21.observables import (
+    _Extension as Extension_v21, _STIXBase21 as STIXBase_v21)
 from stix2.v21.sdo import Note, Opinion
 from stix2.v21.sro import Sighting as Sighting_v21
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 
+_EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
+_OBSERVABLE_FIELDS_TO_SKIP = (
+    'defanged', 'granular_markings', 'id', 'object_marking_refs',
+    'spec_version', 'type'
+)
+_SDO_STORAGE_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
 _SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
 
 
@@ -53,6 +63,44 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         )
         self._set_organisation_uuid(organisation_uuid)
         self._parse_stix_bundle()
+
+    def _extract_object_refs(self, stix_object) -> Iterator[str]:
+        for field, value in stix_object.items():
+            if field.endswith('_ref') or field.endswith('_refs'):
+                if isinstance(value, list):
+                    yield from value
+                    continue
+                yield value
+                continue
+            if field == 'extensions':
+                for extension in value.values():
+                    yield from self._extract_object_refs(extension)
+
+    def _load_stix_bundle(self, bundle: _BUNDLE_TYPING):
+        stix_objects, object_refs = self._partition_stix_objects(bundle.objects)
+        standalone_objects = {}
+        for stix_object in stix_objects:
+            object_id = stix_object['id']
+            if object_id not in object_refs:
+                standalone_objects[object_id] = None
+            self._load_stix_object(stix_object)
+        if standalone_objects:
+            self.__standalone_object_refs = tuple(standalone_objects)
+
+    def _partition_stix_objects(self, stix_objects: list) -> tuple[list]:
+        partitioned = []
+        object_refs = set()
+        for stix_object in stix_objects:
+            if stix_object['type'] in ('grouping', 'report'):
+                self._load_stix_object(stix_object)
+                object_refs.update(stix_object.object_refs)
+                if hasattr(stix_object, 'object_marking_refs'):
+                    object_refs.update(stix_object.object_marking_refs)
+                continue
+            partitioned.append(stix_object)
+            if stix_object['type'] not in ('relationship', 'sighting'):
+                object_refs.update(self._extract_object_refs(stix_object))
+        return partitioned, object_refs
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -123,6 +171,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         if not hasattr(self, '_observed_data_parser'):
             self._observed_data_parser = ExternalSTIX2ObservedDataConverter(self)
         return self._observed_data_parser
+
+    @property
+    def standalone_object_refs(self) -> tuple:
+        return self.__standalone_object_refs
 
     @property
     def threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
@@ -206,6 +258,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     if self.misp_event.uuid not in observable['used']:
                         observable['used'][self.misp_event.uuid] = False
                 continue
+            if object_type == 'marking-definition':
+                if object_ref in self._clusters:
+                    cluster = self._clusters[object_ref]
+                    if cluster['used'].get(self.misp_event.uuid) is None:
+                        cluster['used'][self.misp_event.uuid] = False
+                continue
             try:
                 self._handle_object(object_type, object_ref)
             except UnknownStixObjectTypeError as error:
@@ -225,6 +283,30 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                         attribute.add_sighting(misp_sighting)
 
     def _handle_unparsed_content(self):
+        if hasattr(self, 'standalone_object_refs'):
+            for object_ref in self.standalone_object_refs:
+                object_type = object_ref.split('--')[0]
+                if object_type in ('relationship', 'sighting'):
+                    continue
+                if object_type in self._mapping.observable_object_types():
+                    observable = self._observable[object_ref]
+                    if observable['used'].get(self.misp_event.uuid) is None:
+                        observable['used'][self.misp_event.uuid] = False
+                    continue
+                if object_type == 'marking-definition':
+                    markings = self._marking_definition.get(object_ref)
+                    if isinstance(markings, str):
+                        self.misp_event.add_tag(markings)
+                        continue
+                    for marking in markings:
+                        self.misp_event.add_tag(marking)
+                        continue
+                    if object_ref in self._clusters:
+                        cluster = self._clusters[object_ref]
+                        if cluster['used'].get(self.misp_event.uuid) is None:
+                            cluster['used'][self.misp_event.uuid] = False
+                    continue
+                self._handle_object(object_type, object_ref)
         if not hasattr(self, '_observable'):
             return super()._handle_unparsed_content()
         unparsed_content = defaultdict(list)
@@ -262,3 +344,111 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             for observable in self._observable.values():
                 observable['used'][self.misp_event.uuid] = False
         super()._parse_loaded_features()
+
+    ############################################################################
+    #       METHODS TO LINK INDICATORS AND OBSERVABLES WITH SIMILAR DATA       #
+    ############################################################################
+
+    def _check_observable_types_match(
+            self, observable_type: str, indicator_type: str) -> bool:
+        if observable_type == indicator_type:
+            return True
+        obs_types = self._mapping.related_observable_types(observable_type)
+        return indicator_type in obs_types
+
+    def _fetch_indicator_reference(
+            self, observable: _OBSERVABLE_TYPING) -> Iterator[str]:
+        observable_references = tuple(
+            self._fetch_observable_references(observable)
+        )
+        for indicator_id, patterns in self._indicator_references.items():
+            for obs_type, values in patterns.items():
+                if not self._check_observable_types_match(observable.type, obs_type):
+                    continue
+                if not any(ref in values for ref in observable_references):
+                    continue
+                yield indicator_id
+
+    def _fetch_observable_references(
+            self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
+        for key, values in observable.items():
+            if key in _OBSERVABLE_FIELDS_TO_SKIP:
+                continue
+            if isinstance(values, dict):
+                yield from self._fetch_observable_references(values)
+                continue
+            if isinstance(values, list):
+                for value in values:
+                    if isinstance(value, _EXTENSION_TYPES):
+                        yield from self._fetch_observable_references(value)
+                        continue
+                    yield value
+                continue
+            if isinstance(values, _EXTENSION_TYPES):
+                yield from self._fetch_observable_references(values)
+                continue
+            yield values
+
+    def _set_indicator_references(self):
+        score = 0
+        for feature, count in _SDO_STORAGE_FIELDS.items():
+            if getattr(self, feature, []):
+                score += count
+        if score in (0, 1, 2, 4, 6):
+            return
+        pattern_parser = self.indicator_parser._compile_stix_pattern
+        self._indicator_references = {
+            indicator_id: {obs_type: tuple(val[-1] for val in pattern)}
+            for indicator_id, indicator in self._indicator.items()
+            for obs_type, pattern in pattern_parser(indicator).comparisons.items()
+        }
+        if score in (3, 7):
+            for observable_id, observable in self._observable.items():
+                indicator_references = set(
+                    self._fetch_indicator_reference(observable['observable'])
+                )
+                if not indicator_references:
+                    continue
+                for indicator_reference in indicator_references:
+                    indicator = self._indicator[indicator_reference]
+                    if not isinstance(indicator, dict):
+                        self._indicator[indicator_reference] = {
+                            'indicator': indicator,
+                            'observable_ref': set()
+                        }
+                        indicator = self._indicator[indicator_reference]
+                    indicator['observable_ref'].add(observable_id)
+                    if 'indicator_ref' not in observable:
+                        observable['indicator_ref'] = {indicator_reference}
+                        continue
+                    observable['indicator_ref'].add(indicator_reference)
+        if score >= 5:
+            for observed_id, observed_data in self._observed_data.items():
+                if not hasattr(observed_data, 'objects'):
+                    continue
+                indicator_refs = defaultdict(set)
+                for observable_id, observable in observed_data.objects.items():
+                    indicator_references = set(
+                        self._fetch_indicator_reference(observable)
+                    )
+                    if not indicator_references:
+                        continue
+                    for indicator_reference in indicator_references:
+                        indicator_refs[observable_id].add(indicator_reference)
+                        indicator = self._indicator[indicator_reference]
+                        if not isinstance(indicator, dict):
+                            self._indicator[indicator_reference] = {
+                                'indicator': indicator,
+                                'observable_ref': {observed_id}
+                            }
+                            continue
+                        indicator['observable_ref'].add(observed_id)
+                if indicator_refs:
+                    if not isinstance(observed_data, dict):
+                        self._observed_data[observed_id] = {
+                            'indicator_refs': indicator_refs,
+                            'observed_data': observed_data
+                        }
+                        continue
+                    for observable_id, refs in indicator_refs.items():
+                        observed_data['indicator_refs'][observable_id].update(refs)

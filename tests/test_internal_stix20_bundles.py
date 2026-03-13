@@ -18,16 +18,9 @@ _ACCOUNT_INDICATOR_OBJECTS = [
         "pattern": "[user-account:account_type = 'gitlab' AND user-account:user_id = '1234567890' AND user-account:display_name = 'John Doe' AND user-account:account_login = 'j0hnd0e']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"gitlab-user\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="gitlab-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -38,16 +31,9 @@ _ACCOUNT_INDICATOR_OBJECTS = [
         "pattern": "[user-account:account_type = 'telegram' AND user-account:user_id = '1234567890' AND user-account:account_login = 'T3l3gr4mUs3r' AND user-account:x_misp_phone = '0112233445' AND user-account:x_misp_phone = '0556677889']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"telegram-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="telegram-account"', 'misp:meta-category="misc"']
     }
 ]
 _ACCOUNT_OBSERVABLE_OBJECTS = [
@@ -69,11 +55,29 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
                 "display_name": "John Doe"
             }
         },
-        "labels": [
-            "misp:name=\"gitlab-user\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="gitlab-user"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'gitlab' AND user-account:user_id = '1234567890']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="gitlab-user"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--746d942a-8a4a-482c-8bb2-88137bb9ef72",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+        "target_ref": "observed-data--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b"
     },
     {
         "type": "observed-data",
@@ -90,17 +94,32 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
                 "user_id": "1234567890",
                 "account_login": "T3l3gr4mUs3r",
                 "account_type": "telegram",
-                "x_misp_phone": [
-                    "0112233445",
-                    "0556677889"
-                ]
+                "x_misp_phone": ["0112233445", "0556677889"]
             }
         },
-        "labels": [
-            "misp:name=\"telegram-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="telegram-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7ecc4537-89cd-4f17-8027-6e0f70710c53",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'telegram' AND user-account:user_id = '1234567890']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="telegram-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--f8117c4c-1a27-48e2-9df4-bbce247b3783",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--7ecc4537-89cd-4f17-8027-6e0f70710c53",
+        "target_ref": "observed-data--7ecc4537-89cd-4f17-8027-6e0f70710c53"
     }
 ]
 _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
@@ -112,16 +131,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"facebook-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="facebook-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -131,16 +143,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"github-user\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="github-user"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -150,16 +155,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"parler-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="parler-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -169,16 +167,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"reddit-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="reddit-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -188,16 +179,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"twitter-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="twitter-account"', 'misp:meta-category="misc"']
     },
     {
         "type": "indicator",
@@ -207,16 +191,9 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"user-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="user-account"', 'misp:meta-category="misc"']
     }
 ]
 _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
@@ -236,16 +213,32 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "account_login": "octocat",
                 "account_type": "facebook",
                 "x_misp_link": "https://facebook.com/octocat",
-                "x_misp_user_avatar": {
-                    "value": "octocat.png",
-                }
+                "x_misp_user_avatar": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            "misp:name=\"facebook-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="facebook-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'facebook' AND user-account:user_id = '1392781243']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="facebook-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--7db8539b-3a18-4ba3-9fac-d38d3aa03bdd",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+        "target_ref": "observed-data--7d8ac653-b65c-42a6-8420-ddc71d65f50d"
     },
     {
         "type": "observed-data",
@@ -264,16 +257,32 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "account_type": "github",
                 "display_name": "Octo Cat",
                 "x_misp_organisation": "GitHub",
-                "x_misp_profile_image": {
-                    "value": "octocat.png"
-                }
+                "x_misp_profile_image": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            "misp:name=\"github-user\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="github-user"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5177abbd-c437-4acb-9173-eee371ad24da",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'github' AND user-account:user_id = '1']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="github-user"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--d88cf4b1-e4ed-46c6-9a2d-af8bafda3e8a",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5177abbd-c437-4acb-9173-eee371ad24da",
+        "target_ref": "observed-data--5177abbd-c437-4acb-9173-eee371ad24da"
     },
     {
         "type": "observed-data",
@@ -291,16 +300,32 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "account_login": "ParlerOctocat",
                 "account_type": "parler",
                 "x_misp_human": False,
-                "x_misp_profile_photo": {
-                    "value": "octocat.png"
-                }
+                "x_misp_profile_photo": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            "misp:name=\"parler-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="parler-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'parler' AND user-account:user_id = '42']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="parler-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--2bb5818f-2e44-43a2-b0de-1d69516b48cb",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
+        "target_ref": "observed-data--7b0698a0-209a-4da0-a5c5-cfc4734f3af2"
     },
     {
         "type": "observed-data",
@@ -317,17 +342,33 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "user_id": "666",
                 "account_login": "RedditOctocat",
                 "account_type": "reddit",
-                "x_misp_account_avatar": {
-                    "value": "octocat.png"
-                },
+                "x_misp_account_avatar": {"value": "octocat.png"},
                 "x_misp_description": "Reddit account of the OctoCat"
             }
         },
-        "labels": [
-            "misp:name=\"reddit-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="reddit-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--43d3eff0-fabc-4663-9493-fad3a1eed0d5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'reddit' AND user-account:user_id = '666']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="reddit-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--601caace-838b-470d-b5b7-9e0bf59782e8",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--43d3eff0-fabc-4663-9493-fad3a1eed0d5",
+        "target_ref": "observed-data--43d3eff0-fabc-4663-9493-fad3a1eed0d5"
     },
     {
         "type": "observed-data",
@@ -346,16 +387,32 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "account_type": "twitter",
                 "display_name": "Octo Cat",
                 "x_misp_followers": "666",
-                "x_misp_profile_image": {
-                    "value": "octocat.png",
-                }
+                "x_misp_profile_image": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            "misp:name=\"twitter-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="twitter-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'twitter' AND user-account:user_id = '1357111317']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="twitter-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--c24d40c6-edda-4cb4-9afe-75b63789b974",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+        "target_ref": "observed-data--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb"
     },
     {
         "type": "observed-data",
@@ -377,24 +434,37 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
                 "extensions": {
                     "unix-account-ext": {
                         "gid": 2004,
-                        "groups": [
-                            "viktor-fan",
-                            "donald-fan"
-                        ],
+                        "groups": ["viktor-fan", "donald-fan"],
                         "home_dir": "/home/iglocska"
                     }
                 },
                 "x_misp_password": "P4ssw0rd1234!",
-                "x_misp_user_avatar": {
-                    "value": "octocat.png",
-                }
+                "x_misp_user_avatar": {"value": "octocat.png"}
             }
         },
-        "labels": [
-            "misp:name=\"user-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="user-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5d234f25-539c-4d12-bf93-2c46a964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_login = 'iglocska']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="user-account"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--127637c9-7a83-4e0c-8d1f-666ad1cc3fa2",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5d234f25-539c-4d12-bf93-2c46a964451a",
+        "target_ref": "observed-data--5d234f25-539c-4d12-bf93-2c46a964451a"
     }
 ]
 _ANALYST_DATA_SAMPLES = [
@@ -407,16 +477,9 @@ _ANALYST_DATA_SAMPLES = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '194.78.89.250']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "x-misp-analyst-opinion",
@@ -438,22 +501,10 @@ _ANALYST_DATA_SAMPLES = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "network-traffic",
-                "dst_ref": "1",
-                "protocols": [
-                    "tcp"
-                ]
-            },
-            "1": {
-                "type": "ipv4-addr",
-                "value": "8.8.8.8"
-            }
+            "0": {"type": "network-traffic", "dst_ref": "1", "protocols": ["tcp"]},
+            "1": {"type": "ipv4-addr", "value": "8.8.8.8"}
         },
-        "labels": [
-            "misp:type=\"ip-dst\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
     },
     {
         "type": "x-misp-analyst-note",
@@ -474,16 +525,9 @@ _ANALYST_DATA_SAMPLES = [
         "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip')]",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "file"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
         ],
-        "labels": [
-            "misp:name=\"file\"",
-            "misp:meta-category=\"file\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
     {
         "type": "x-misp-analyst-opinion",
@@ -511,9 +555,7 @@ _ANALYST_DATA_SAMPLES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2024-06-11T11:34:42.000Z",
         "modified": "2024-06-11T11:34:42.000Z",
-        "object_refs": [
-            "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"
-        ],
+        "object_refs": ["indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"],
         "x_misp_content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
         "x_misp_name": "Summary of the case"
     },
@@ -546,41 +588,52 @@ _ANDROID_APP_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"android-app\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="android-app"', 'misp:meta-category="file"']
 }
-_ANDROID_APP_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--02782ed5-b27f-4abc-8bae-efebe13a46dd",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "software",
-            "name": "Facebook",
-            "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
-            "x_misp_domain": "facebook.com"
-        }
+_ANDROID_APP_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "software",
+                "name": "Facebook",
+                "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
+                "x_misp_domain": "facebook.com"
+            }
+        },
+        "labels": ['misp:name="android-app"', 'misp:meta-category="file"']
     },
-    "labels": [
-        "misp:name=\"android-app\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="android-app"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--083173fd-5fce-4b13-b413-bf10aa781ee5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+        "target_ref": "observed-data--02782ed5-b27f-4abc-8bae-efebe13a46dd"
+    }
+]
 _AS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -590,37 +643,46 @@ _AS_INDICATOR_ATTRIBUTE = {
     "pattern": "[autonomous-system:number = '174']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"AS\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="AS"', 'misp:category="Network activity"']
 }
-_AS_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "autonomous-system",
-            "number": 174
-        }
+_AS_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {"0": {"type": "autonomous-system", "number": 174}},
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
     },
-    "labels": [
-        "misp:type=\"AS\"",
-        "misp:category=\"Network activity\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[autonomous-system:number = '174']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _ASN_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5b23c82b-6508-4bdc-b580-045b0a00020f",
@@ -630,43 +692,53 @@ _ASN_INDICATOR_OBJECT = {
     "pattern": "[autonomous-system:number = '66642' AND autonomous-system:name = 'AS name' AND autonomous-system:x_misp_subnet_announced = '1.2.3.4' AND autonomous-system:x_misp_subnet_announced = '8.8.8.8']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"asn\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="asn"', 'misp:meta-category="network"']
 }
-_ASN_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "autonomous-system",
-            "number": 66642,
-            "name": "AS name",
-            "x_misp_subnet_announced": [
-                "1.2.3.4",
-                "8.8.8.8"
-            ]
-        }
+_ASN_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "autonomous-system",
+                "number": 66642,
+                "name": "AS name",
+                "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
+            }
+        },
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"asn\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[autonomous-system:number = '66642']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--36414951-fe93-4021-8234-9d7fae390de9",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "target_ref": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f"
+    }
+]
 _ATTACHMENT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -676,42 +748,52 @@ _ATTACHMENT_INDICATOR_ATTRIBUTE = {
     "pattern": "[file:name = 'attachment.test' AND file:content_ref.payload_bin = 'ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"attachment\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
 }
-_ATTACHMENT_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "file",
-            "name": "attachment.test",
-            "content_ref": "1"
+_ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {"type": "file", "name": "attachment.test", "content_ref": "1"},
+            "1": {
+                "type": "artifact",
+                "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+            }
         },
-        "1": {
-            "type": "artifact",
-            "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
-        }
+        "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"attachment\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:name = 'attachment.test' AND file:content_ref.payload_bin = 'ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _ATTACK_PATTERN_GALAXY = {
     "type": "attack-pattern",
     "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
@@ -720,32 +802,18 @@ _ATTACK_PATTERN_GALAXY = {
     "name": "Access Token Manipulation",
     "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "mitre-attack",
-            "phase_name": "defense-evasion"
-        },
-        {
-            "kill_chain_name": "mitre-attack",
-            "phase_name": "privilege-escalation"
-        }
+        {"kill_chain_name": "mitre-attack", "phase_name": "defense-evasion"},
+        {"kill_chain_name": "mitre-attack", "phase_name": "privilege-escalation"}
     ],
     "labels": [
-        "misp:galaxy-name=\"Attack Pattern\"",
-        "misp:galaxy-type=\"mitre-attack-pattern\""
+        'misp:galaxy-name="Attack Pattern"',
+        'misp:galaxy-type="mitre-attack-pattern"'
     ],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "T1134"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/techniques/T1134"
-        }
+        {"source_name": "mitre-attack", "external_id": "T1134"},
+        {"source_name": "url", "url": "https://attack.mitre.org/techniques/T1134"}
     ],
-    "x_misp_mitre_platforms": [
-        "Windows"
-    ]
+    "x_misp_mitre_platforms": ["Windows"]
 }
 _ATTACK_PATTERN_OBJECT = {
     "type": "attack-pattern",
@@ -756,27 +824,12 @@ _ATTACK_PATTERN_OBJECT = {
     "name": "Buffer Overflow in Local Command-Line Utilities",
     "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "vulnerability"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
     ],
-    "labels": [
-        "misp:name=\"attack-pattern\"",
-        "misp:meta-category=\"vulnerability\"",
-        "misp:to_ids=\"False\""
-    ],
-    "external_references": [
-        {
-            "source_name": "capec",
-            "external_id": "CAPEC-9"
-        }
-    ],
+    "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+    "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
     "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-    "x_misp_related_weakness": [
-        "CWE-118",
-        "CWE-120"
-    ],
+    "x_misp_related_weakness": ["CWE-118", "CWE-120"],
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
 _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
@@ -789,8 +842,8 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "name": "Automated Exfiltration Mitigation",
         "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
-            "misp:galaxy-name=\"Course of Action\"",
-            "misp:galaxy-type=\"mitre-course-of-action\""
+            'misp:galaxy-name="Course of Action"',
+            'misp:galaxy-type="mitre-course-of-action"'
         ]
     },
     {
@@ -803,16 +856,9 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "pattern": "[domain-name:value = 'circl.lu']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "malware",
@@ -821,10 +867,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-        "labels": [
-            "misp:galaxy-name=\"Malware\"",
-            "misp:galaxy-type=\"mitre-malware\""
-        ]
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"']
     },
     {
         "type": "relationship",
@@ -862,10 +905,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "MISP-STIX-Converter test event",
         "published": "2020-10-25T16:22:00Z",
-        "labels": [
-            "Threat-Report",
-            "misp:tool=\"MISP-STIX-Converter\""
-        ],
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"'],
         "object_refs": [
             "attack-pattern--00000000-0000-0000-0000-000000000000",
             "course-of-action--11111111-1111-1111-1111-111111111111",
@@ -895,14 +935,11 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "name": "Access Token Manipulation",
         "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
         "labels": [
-            "misp:galaxy-name=\"Attack Pattern\"",
-            "misp:galaxy-type=\"mitre-attack-pattern\""
+            'misp:galaxy-name="Attack Pattern"',
+            'misp:galaxy-type="mitre-attack-pattern"'
         ],
         "external_references": [
-            {
-                "source_name": "mitre-attack",
-                "external_id": "T1134"
-            }
+            {"source_name": "mitre-attack", "external_id": "T1134"}
         ],
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
     },
@@ -914,8 +951,8 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "name": "Automated Exfiltration Mitigation",
         "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
-            "misp:galaxy-name=\"Course of Action\"",
-            "misp:galaxy-type=\"mitre-course-of-action\""
+            'misp:galaxy-name="Course of Action"',
+            'misp:galaxy-type="mitre-course-of-action"'
         ],
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
     },
@@ -929,16 +966,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "pattern": "[domain-name:value = 'circl.lu']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "malware",
@@ -947,10 +977,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-        "labels": [
-            "misp:galaxy-name=\"Malware\"",
-            "misp:galaxy-type=\"mitre-malware\""
-        ],
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"'],
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
     },
     {
@@ -979,22 +1006,10 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Buffer Overflow in Local Command-Line Utilities",
         "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
-        "labels": [
-            "misp:name=\"attack-pattern\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
-        ],
-        "external_references": [
-            {
-                "source_name": "capec",
-                "external_id": "CAPEC-9"
-            }
-        ],
+        "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+        "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
         "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-        "x_misp_related_weakness": [
-            "CWE-118",
-            "CWE-120"
-        ],
+        "x_misp_related_weakness": ["CWE-118", "CWE-120"],
         "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
     },
     {
@@ -1011,17 +1026,10 @@ _BUNDLE_WITH_INVALID_UUIDS = [
                 "type": "autonomous-system",
                 "number": 66642,
                 "name": "AS name",
-                "x_misp_subnet_announced": [
-                    "1.2.3.4",
-                    "8.8.8.8"
-                ]
+                "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            "misp:name=\"asn\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "x-misp-object",
@@ -1029,10 +1037,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"btc-wallet\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "uuid": "66666666-1111-1111-1111-666666666666",
@@ -1071,11 +1076,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
         "description": "Block communication between the PIVY agents and the C2 Server",
-        "labels": [
-            "misp:name=\"course-of-action\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
         "x_misp_cost": "Low",
         "x_misp_efficacy": "High",
         "x_misp_impact": "Low",
@@ -1092,16 +1093,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"ip-port\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
     },
     {
         "type": "vulnerability",
@@ -1111,16 +1105,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "CVE-2021-29921",
         "description": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string.",
-        "labels": [
-            "misp:name=\"vulnerability\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
         "external_references": [
-            {
-                "source_name": "cve",
-                "external_id": "CVE-2021-29921"
-            }
+            {"source_name": "cve", "external_id": "CVE-2021-29921"}
         ]
     },
     {
@@ -1183,10 +1170,7 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "name": "MISP-STIX-Converter test event with autonomous systems",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "Threat-Report",
-            "misp:tool=\"MISP-STIX-Converter\""
-        ],
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"'],
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "id": "report--e2e6a6ea-f69b-4d93-8564-f51d67cafe51",
         "type": "report",
@@ -1194,6 +1178,8 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "object_refs": [
             "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
             "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "indicator--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "relationship--600e528a-1967-4489-a604-a04af707490c",
             "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
             "relationship--a950cb91-1a8a-4c3a-ad73-3e2e38a39070"
         ]
@@ -1212,46 +1198,50 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
                 "type": "autonomous-system",
                 "number": 66642,
                 "name": "AS name",
-                "x_misp_subnet_announced": [
-                    "1.2.3.4",
-                    "8.8.8.8"
-                ]
+                "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            "misp:name=\"asn\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
         "type": "observed-data",
-        "labels": [
-            "misp:type=\"AS\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"'],
         "number_observed": 1,
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "first_observed": "2020-10-25T16:22:00Z",
         "last_observed": "2020-10-25T16:22:00Z",
-        "objects": {
-            "0": {
-                "number": 66642,
-                "type": "autonomous-system"
-            }
-        }
+        "objects": {"0": {"number": 66642, "type": "autonomous-system"}}
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[autonomous-system:number = '174']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+        "target_ref": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
     },
     {
         "name": "MISP-STIX-Converter test event with domains",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "Threat-Report",
-            "misp:tool=\"MISP-STIX-Converter\""
-        ],
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"'],
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "id": "report--d402185f-c129-4f65-8678-43edb2cee1cf",
         "type": "report",
@@ -1272,30 +1262,16 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"domain-ip\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
         "type": "indicator",
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ],
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"'],
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "pattern": "[domain-name:value = 'circl.lu']",
@@ -1311,10 +1287,7 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-        "labels": [
-            "misp:galaxy-name=\"Malware\"",
-            "misp:galaxy-type=\"mitre-malware\""
-        ]
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"']
     },
     {
         "type": "relationship",
@@ -1350,51 +1323,51 @@ _BUNDLE_WITH_NO_REPORT = [
                 "type": "autonomous-system",
                 "number": 66642,
                 "name": "AS name",
-                "x_misp_subnet_announced": [
-                    "1.2.3.4",
-                    "8.8.8.8"
-                ]
+                "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            "misp:name=\"asn\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[autonomous-system:number = '66642']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--36414951-fe93-4021-8234-9d7fae390de9",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "target_ref": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f"
     },
     {
         "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
         "type": "observed-data",
-        "labels": [
-            "misp:type=\"AS\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"'],
         "number_observed": 1,
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "first_observed": "2020-10-25T16:22:00Z",
         "last_observed": "2020-10-25T16:22:00Z",
-        "objects": {
-            "0": {
-                "number": 66642,
-                "type": "autonomous-system"
-            }
-        }
+        "objects": {"0": {"number": 66642, "type": "autonomous-system"}}
     },
     {
         "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
         "type": "indicator",
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ],
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"'],
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "pattern": "[domain-name:value = 'circl.lu']",
@@ -1412,16 +1385,9 @@ _BUNDLE_WITH_NO_REPORT = [
         "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"domain-ip\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "type": "malware",
@@ -1430,10 +1396,7 @@ _BUNDLE_WITH_NO_REPORT = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-        "labels": [
-            "misp:galaxy-name=\"Malware\"",
-            "misp:galaxy-type=\"mitre-malware\""
-        ]
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"']
     },
     {
         "type": "relationship",
@@ -1507,10 +1470,7 @@ _BUNDLE_WITH_SIGHTINGS = [
             "sighting--ec0c6809-9ccb-4201-bc47-d5ffc5ecaa88",
             "x-misp-opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d"
         ],
-        "labels": [
-            "Threat-Report",
-            "misp:tool=\"MISP-STIX-Converter\""
-        ]
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"']
     },
     {
         "type": "observed-data",
@@ -1521,16 +1481,8 @@ _BUNDLE_WITH_SIGHTINGS = [
         "first_observed": "2020-10-25T16:22:00Z",
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
-        "objects": {
-            "0": {
-                "type": "autonomous-system",
-                "number": 174
-            }
-        },
-        "labels": [
-            "misp:type=\"AS\"",
-            "misp:category=\"Network activity\""
-        ]
+        "objects": {"0": {"type": "autonomous-system", "number": 174}},
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
     },
     {
         "type": "sighting",
@@ -1538,9 +1490,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:05.000Z",
         "modified": "2020-10-25T16:22:05.000Z",
         "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "where_sighted_refs": [
-            "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"
-        ]
+        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"]
     },
     {
         "type": "sighting",
@@ -1548,9 +1498,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:30.000Z",
         "modified": "2020-10-25T16:22:30.000Z",
         "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "where_sighted_refs": [
-            "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"
-        ]
+        "where_sighted_refs": ["identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"]
     },
     {
         "type": "x-misp-opinion",
@@ -1584,16 +1532,9 @@ _BUNDLE_WITH_SIGHTINGS = [
         "pattern": "[domain-name:value = 'circl.lu']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"domain\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
     {
         "type": "sighting",
@@ -1601,9 +1542,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:05.000Z",
         "modified": "2020-10-25T16:22:05.000Z",
         "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
-        "where_sighted_refs": [
-            "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"
-        ]
+        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"]
     },
     {
         "type": "x-misp-opinion",
@@ -1622,9 +1561,7 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:20.000Z",
         "modified": "2020-10-25T16:22:20.000Z",
         "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
-        "where_sighted_refs": [
-            "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90"
-        ]
+        "where_sighted_refs": ["identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90"]
     },
     {
         "type": "x-misp-opinion",
@@ -1645,10 +1582,7 @@ _CAMPAIGN_NAME_ATTRIBUTE = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "MartyMcFly",
-    "labels": [
-        "misp:type=\"campaign-name\"",
-        "misp:category=\"Attribution\""
-    ]
+    "labels": ['misp:type="campaign-name"', 'misp:category="Attribution"']
 }
 _COURSE_OF_ACTION_GALAXY = {
     "type": "course-of-action",
@@ -1658,22 +1592,16 @@ _COURSE_OF_ACTION_GALAXY = {
     "name": "Automated Exfiltration Mitigation",
     "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
     "labels": [
-        "misp:galaxy-name=\"Course of Action\"",
-        "misp:galaxy-type=\"mitre-course-of-action\""
+        'misp:galaxy-name="Course of Action"',
+        'misp:galaxy-type="mitre-course-of-action"'
     ],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "T1020"
-        },
+        {"source_name": "mitre-attack", "external_id": "T1020"},
         {
             "source_name": "url",
             "url": "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm"
         },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/mitigations/T1020"
-        }
+        {"source_name": "url", "url": "https://attack.mitre.org/mitigations/T1020"}
     ]
 }
 _COURSE_OF_ACTION_OBJECT = {
@@ -1684,11 +1612,7 @@ _COURSE_OF_ACTION_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
     "description": "Block communication between the PIVY agents and the C2 Server",
-    "labels": [
-        "misp:name=\"course-of-action\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
     "x_misp_cost": "Low",
     "x_misp_efficacy": "High",
     "x_misp_impact": "Low",
@@ -1704,46 +1628,55 @@ _CPE_ASSET_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[software:cpe = 'cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*' AND software:languages = 'ENG' AND software:name = 'Word' AND software:vendor = 'Microsoft' AND software:version = '2002' AND software:x_misp_description = 'Microsoft Word is a word processing software developed by Microsoft.']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"cpe-asset\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="cpe-asset"', 'misp:meta-category="misc"']
 }
-_CPE_ASSET_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--3f53a829-6307-4006-b7a2-ff53dace4159",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "software",
-            "name": "Word",
-            "cpe": "cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*",
-            "languages": [
-                "ENG"
-            ],
-            "vendor": "Microsoft",
-            "version": "2002",
-            "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
-        }
+_CPE_ASSET_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3f53a829-6307-4006-b7a2-ff53dace4159",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "software",
+                "name": "Word",
+                "cpe": "cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*",
+                "languages": ["ENG"],
+                "vendor": "Microsoft",
+                "version": "2002",
+                "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
+            }
+        },
+        "labels": ['misp:name="cpe-asset"', 'misp:meta-category="misc"']
     },
-    "labels": [
-        "misp:name=\"cpe-asset\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--3f53a829-6307-4006-b7a2-ff53dace4159",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[software:cpe = 'cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="cpe-asset"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--ea9e373b-57f1-46bd-9b65-aa845865817b",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--3f53a829-6307-4006-b7a2-ff53dace4159",
+        "target_ref": "observed-data--3f53a829-6307-4006-b7a2-ff53dace4159"
+    }
+]
 _CREDENTIAL_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5b1f9378-46d4-494b-a4c1-044e0a00020f",
@@ -1752,45 +1685,56 @@ _CREDENTIAL_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[user-account:user_id = 'misp' AND user-account:x_misp_text = 'MISP default credentials' AND user-account:x_misp_password = 'Password1234' AND user-account:x_misp_type = 'password' AND user-account:x_misp_origin = 'malware-analysis' AND user-account:x_misp_format = 'clear-text' AND user-account:x_misp_notification = 'victim-notified']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"credential\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="credential"', 'misp:meta-category="misc"']
 }
-_CREDENTIAL_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "user-account",
-            "user_id": "misp",
-            "x_misp_format": "clear-text",
-            "x_misp_notification": "victim-notified",
-            "x_misp_origin": "malware-analysis",
-            "x_misp_password": "Password1234",
-            "x_misp_text": "MISP default credentials",
-            "x_misp_type": "password"
-        }
+_CREDENTIAL_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "misp",
+                "x_misp_format": "clear-text",
+                "x_misp_notification": "victim-notified",
+                "x_misp_origin": "malware-analysis",
+                "x_misp_password": "Password1234",
+                "x_misp_text": "MISP default credentials",
+                "x_misp_type": "password"
+            }
+        },
+        "labels": ['misp:name="credential"', 'misp:meta-category="misc"']
     },
-    "labels": [
-        "misp:name=\"credential\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:x_misp_text = 'MISP default credentials']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="credential"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--49fd4899-8273-4e23-9e70-d92c507fb3bf",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+        "target_ref": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f"
+    }
+]
 _CUSTOM_ATTRIBUTES = [
     {
         "type": "x-misp-attribute",
@@ -1798,11 +1742,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"btc\"",
-            "misp:category=\"Financial fraud\"",
-            "misp:to_ids=\"True\""
-        ],
+        "labels": ['misp:type="btc"', 'misp:category="Financial fraud"'],
         "x_misp_category": "Financial fraud",
         "x_misp_comment": "Btc test attribute",
         "x_misp_type": "btc",
@@ -1814,11 +1754,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"iban\"",
-            "misp:category=\"Financial fraud\"",
-            "misp:to_ids=\"True\""
-        ],
+        "labels": ['misp:type="iban"', 'misp:category="Financial fraud"'],
         "x_misp_category": "Financial fraud",
         "x_misp_comment": "IBAN test attribute",
         "x_misp_type": "iban",
@@ -1830,10 +1766,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"http-method\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="http-method"', 'misp:category="Network activity"'],
         "x_misp_category": "Network activity",
         "x_misp_type": "http-method",
         "x_misp_value": "POST"
@@ -1844,10 +1777,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"port\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="port"', 'misp:category="Network activity"'],
         "x_misp_category": "Network activity",
         "x_misp_type": "port",
         "x_misp_value": "8443"
@@ -1858,10 +1788,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"size-in-bytes\"",
-            "misp:category=\"Other\""
-        ],
+        "labels": ['misp:type="size-in-bytes"', 'misp:category="Other"'],
         "x_misp_category": "Other",
         "x_misp_type": "size-in-bytes",
         "x_misp_value": "1234"
@@ -1872,10 +1799,7 @@ _CUSTOM_ATTRIBUTES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:type=\"user-agent\"",
-            "misp:category=\"Network activity\""
-        ],
+        "labels": ['misp:type="user-agent"', 'misp:category="Network activity"'],
         "x_misp_category": "Network activity",
         "x_misp_comment": "User-agent test attribute",
         "x_misp_type": "user-agent",
@@ -1887,10 +1811,7 @@ _CUSTOM_GALAXY = {
     "id": "x-misp-galaxy-cluster--24430dc6-9c27-4b3c-a5e7-6dda478fffa0",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "labels": [
-        "misp:galaxy-name=\"Tea Matrix\"",
-        "misp:galaxy-type=\"tea-matrix\""
-    ],
+    "labels": ['misp:galaxy-name="Tea Matrix"', 'misp:galaxy-type="tea-matrix"'],
     "x_misp_description": "Milk in tea",
     "x_misp_name": "Tea Matrix",
     "x_misp_type": "tea-matrix",
@@ -1903,10 +1824,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"bank-account\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "type": "iban",
@@ -1961,10 +1879,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"btc-wallet\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "type": "btc",
@@ -2001,10 +1916,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"person\"",
-            "misp:meta-category=\"misc\""
-        ],
+        "labels": ['misp:name="person"', 'misp:meta-category="misc"'],
         "x_misp_attributes": [
             {
                 "type": "first-name",
@@ -2046,10 +1958,7 @@ _CUSTOM_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"report\"",
-            "misp:meta-category=\"misc\""
-        ],
+        "labels": ['misp:name="report"', 'misp:meta-category="misc"'],
         "x_misp_attributes": [
             {
                 "type": "text",
@@ -2085,37 +1994,47 @@ _DOMAIN_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"domain\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="domain"', 'misp:category="Network activity"']
 }
-_DOMAIN_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "domain-name",
-            "value": "circl.lu"
-        }
+_DOMAIN_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {"0": {"type": "domain-name", "value": "circl.lu"}},
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
     },
-    "labels": [
-        "misp:type=\"domain\"",
-        "misp:category=\"Network activity\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _DOMAIN_IP_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -2126,16 +2045,9 @@ _DOMAIN_IP_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"domain|ip\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="domain|ip"', 'misp:category="Network activity"']
 }
 _DOMAIN_IP_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -2146,48 +2058,14 @@ _DOMAIN_IP_INDICATOR_OBJECT = {
     "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"domain-ip\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
 }
-_DOMAIN_IP_OBSERVABLE_ATTRIBUTE ={
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "domain-name",
-            "value": "circl.lu",
-            "resolves_to_refs": [
-                "1"
-            ]
-        },
-        "1": {
-            "type": "ipv4-addr",
-            "value": "149.13.33.14"
-        }
-    },
-    "labels": [
-        "misp:type=\"domain|ip\"",
-        "misp:category=\"Network activity\""
-    ]
-}
-_DOMAIN_IP_OBSERVABLE_OBJECTS = [
+_DOMAIN_IP_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "observed-data",
-        "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
@@ -2196,36 +2074,39 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
         "number_observed": 1,
         "objects": {
             "0": {
-                "type": "ipv4-addr",
-                "value": "149.13.33.14"
-            },
-            "1": {
-                "type": "ipv4-addr",
-                "value": "185.194.93.14"
-            },
-            "2": {
-                "type": "domain-name",
-                "value": "misp-project.org",
-                "resolves_to_refs": [
-                    "0",
-                    "1"
-                ]
-            },
-            "3": {
                 "type": "domain-name",
                 "value": "circl.lu",
-                "resolves_to_refs": [
-                    "0",
-                    "1"
-                ]
-            }
+                "resolves_to_refs": ["1"]
+            },
+            "1": {"type": "ipv4-addr", "value": "149.13.33.14"}
         },
-        "labels": [
-            "misp:name=\"domain-ip\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:type="domain|ip"', 'misp:category="Network activity"']
     },
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain|ip test attribute",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="domain|ip"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
+_DOMAIN_IP_OBSERVABLE_OBJECTS = [
     {
         "type": "observed-data",
         "id": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd",
@@ -2236,25 +2117,85 @@ _DOMAIN_IP_OBSERVABLE_OBJECTS = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "1": {
-                "type": "ipv4-addr",
-                "value": "149.13.33.14"
-            },
             "0": {
                 "type": "domain-name",
                 "value": "circl.lu",
-                "resolves_to_refs": [
-                    "1"
-                ],
+                "resolves_to_refs": ["1"],
                 "x_misp_hostname": "circl.lu",
                 "x_misp_port": "8443"
+            },
+            "1": {"type": "ipv4-addr", "value": "149.13.33.14"}
+        },
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--5d2dcfac-c0c1-418c-af91-028b8776bdee",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "target_ref": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {"type": "ipv4-addr", "value": "149.13.33.14"},
+            "1": {"type": "ipv4-addr", "value": "185.194.93.14"},
+            "2": {
+                "type": "domain-name",
+                "value": "misp-project.org",
+                "resolves_to_refs": ["0", "1"]
+            },
+            "3": {
+                "type": "domain-name",
+                "value": "circl.lu",
+                "resolves_to_refs": ["0", "1"]
             }
         },
-        "labels": [
-            "misp:name=\"domain-ip\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--52285aa9-410f-4382-8474-28a7d424075f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+        "target_ref": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
     }
 ]
 _EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE = {
@@ -2267,47 +2208,59 @@ _EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:body_multipart[*].body_raw_ref.name = 'email_attachment.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-attachment\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-attachment"', 'misp:category="Payload delivery"']
 }
-_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": True,
-            "body_multipart": [
-                {
-                    "body_raw_ref": "1",
-                    "content_disposition": "attachment; filename='email_attachment.test'"
-                }
-            ]
+_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": True,
+                "body_multipart": [
+                    {
+                        "body_raw_ref": "1",
+                        "content_disposition": "attachment; filename='email_attachment.test'"
+                    }
+                ]
+            },
+            "1": {"type": "file", "name": "email_attachment.test"}
         },
-        "1": {
-            "type": "file",
-            "name": "email_attachment.test"
-        }
+        "labels": ['misp:type="email-attachment"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-attachment\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Email attachment test attribute",
+        "pattern": "[email-message:body_multipart[*].body_raw_ref.name = 'email_attachment.test']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-attachment"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _EMAIL_BODY_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -2317,38 +2270,52 @@ _EMAIL_BODY_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:body = 'Email body test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-body\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-body"', 'misp:category="Payload delivery"']
 }
-_EMAIL_BODY_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": False,
-            "body": "Email body test"
-        }
+_EMAIL_BODY_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": False,
+                "body": "Email body test"
+            }
+        },
+        "labels": ['misp:type="email-body"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-body\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:body = 'Email body test']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-body"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _EMAIL_DESTINATION_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
@@ -2359,44 +2326,50 @@ _EMAIL_DESTINATION_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:to_refs[*].value = 'dst@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-dst\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-dst"', 'misp:category="Payload delivery"']
 }
-_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": False,
-            "to_refs": [
-                "1"
-            ]
+_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {"type": "email-message", "is_multipart": False, "to_refs": ["1"]},
+            "1": {"type": "email-addr", "value": "dst@email.test"}
         },
-        "1": {
-            "type": "email-addr",
-            "value": "dst@email.test"
-        }
+        "labels": ['misp:type="email-dst"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-dst\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination email address test attribute",
+        "pattern": "[email-message:to_refs[*].value = 'dst@email.test']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-dst"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+    }
+]
 _EMAIL_HEADER_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -2406,40 +2379,54 @@ _EMAIL_HEADER_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:received_lines = 'from mail.example.com ([198.51.100.3]) by smtp.gmail.com']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-header\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-header"', 'misp:category="Payload delivery"']
 }
-_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": False,
-            "received_lines": [
-                "from mail.example.com ([198.51.100.3]) by smtp.gmail.com"
-            ]
-        }
+_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": False,
+                "received_lines": [
+                    "from mail.example.com ([198.51.100.3]) by smtp.gmail.com"
+                ]
+            }
+        },
+        "labels": ['misp:type="email-header"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-header\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:received_lines = 'from mail.example.com ([198.51.100.3]) by smtp.gmail.com']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-header"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _EMAIL_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -2449,16 +2436,9 @@ _EMAIL_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-addr:value = 'address@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email"', 'misp:category="Payload delivery"']
 }
 _EMAIL_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -2469,120 +2449,136 @@ _EMAIL_INDICATOR_OBJECT = {
     "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[0].display_name = 'Diana Prince' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary' AND email-message:x_misp_message_id = '25']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"email\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="email"', 'misp:meta-category="network"']
 }
-_EMAIL_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-addr",
-            "value": "address@email.test"
-        }
+_EMAIL_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {"0": {"type": "email-addr", "value": "address@email.test"}},
+        "labels": ['misp:type="email"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
-_EMAIL_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": True,
-            "from_ref": "1",
-            "to_refs": [
-                "2"
-            ],
-            "cc_refs": [
-                "3",
-                "4"
-            ],
-            "bcc_refs": [
-                "5"
-            ],
-            "subject": "Email test subject",
-            "additional_header_fields": {
-                "Reply-To": "reply-to@email.test",
-                "X-Mailer": "x-mailer-test"
-            },
-            "body_multipart": [
-                {
-                    "body_raw_ref": "6",
-                    "content_disposition": "attachment; filename='attachment1.file'"
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-addr:value = 'address@email.test']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
+_EMAIL_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": True,
+                "from_ref": "1",
+                "to_refs": ["2"],
+                "cc_refs": ["3", "4"],
+                "bcc_refs": ["5"],
+                "subject": "Email test subject",
+                "additional_header_fields": {
+                    "Reply-To": "reply-to@email.test",
+                    "X-Mailer": "x-mailer-test"
                 },
-                {
-                    "body_raw_ref": "7",
-                    "content_disposition": "attachment; filename='attachment2.file'"
-                }
-            ],
-            "x_misp_message_id": "25",
-            "x_misp_mime_boundary": "Test mime boundary",
-            "x_misp_user_agent": "Test user agent"
+                "body_multipart": [
+                    {
+                        "body_raw_ref": "6",
+                        "content_disposition": "attachment; filename='attachment1.file'"
+                    },
+                    {
+                        "body_raw_ref": "7",
+                        "content_disposition": "attachment; filename='attachment2.file'"
+                    }
+                ],
+                "x_misp_message_id": "25",
+                "x_misp_mime_boundary": "Test mime boundary",
+                "x_misp_user_agent": "Test user agent"
+            },
+            "1": {
+                "type": "email-addr",
+                "value": "donald.duck@disney.com",
+                "display_name": "Donald Duck"
+            },
+            "2": {
+                "type": "email-addr",
+                "value": "jdoe@random.org",
+                "display_name": "John Doe"
+            },
+            "3": {
+                "type": "email-addr",
+                "value": "diana.prince@dc.us",
+                "display_name": "Diana Prince"
+            },
+            "4": {
+                "type": "email-addr",
+                "value": "marie.curie@nobel.fr",
+                "display_name": "Marie Curie"
+            },
+            "5": {
+                "type": "email-addr",
+                "value": "jfk@gov.us",
+                "display_name": "John Fitzgerald Kennedy"
+            },
+            "6": {"type": "file", "name": "attachment1.file"},
+            "7": {"type": "file", "name": "attachment2.file"}
         },
-        "1": {
-            "type": "email-addr",
-            "value": "donald.duck@disney.com",
-            "display_name": "Donald Duck"
-        },
-        "2": {
-            "type": "email-addr",
-            "value": "jdoe@random.org",
-            "display_name": "John Doe"
-        },
-        "3": {
-            "type": "email-addr",
-            "value": "diana.prince@dc.us",
-            "display_name": "Diana Prince"
-        },
-        "4": {
-            "type": "email-addr",
-            "value": "marie.curie@nobel.fr",
-            "display_name": "Marie Curie"
-        },
-        "5": {
-            "type": "email-addr",
-            "value": "jfk@gov.us",
-            "display_name": "John Fitzgerald Kennedy"
-        },
-        "6": {
-            "type": "file",
-            "name": "attachment1.file"
-        },
-        "7": {
-            "type": "file",
-            "name": "attachment2.file"
-        }
+        "labels": ['misp:name="email"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"email\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="email"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--dd033127-0059-4994-9c1d-5a9b3830fcd9",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+        "target_ref": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a"
+    }
+]
 _EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
@@ -2592,40 +2588,52 @@ _EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:additional_header_fields.reply_to = 'reply-to@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-reply-to\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-reply-to"', 'misp:category="Payload delivery"']
 }
-_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": False,
-            "additional_header_fields": {
-                "Reply-To": "reply-to@email.test"
+_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": False,
+                "additional_header_fields": {"Reply-To": "reply-to@email.test"}
             }
-        }
+        },
+        "labels": ['misp:type="email-reply-to"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-reply-to\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:additional_header_fields.reply_to = 'reply-to@email.test']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-reply-to"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "target_ref": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+    }
+]
 _EMAIL_SOURCE_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -2636,42 +2644,50 @@ _EMAIL_SOURCE_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:from_ref.value = 'src@email.test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-src\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-src"', 'misp:category="Payload delivery"']
 }
-_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": False,
-            "from_ref": "1"
+_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {"type": "email-message", "is_multipart": False, "from_ref": "1"},
+            "1": {"type": "email-addr", "value": "src@email.test"}
         },
-        "1": {
-            "type": "email-addr",
-            "value": "src@email.test"
-        }
+        "labels": ['misp:type="email-src"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-src\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source email address test attribute",
+        "pattern": "[email-message:from_ref.value = 'src@email.test']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-src"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _EMAIL_SUBJECT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
@@ -2681,38 +2697,52 @@ _EMAIL_SUBJECT_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:subject = 'Test Subject']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-subject\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-subject"', 'misp:category="Payload delivery"']
 }
-_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": False,
-            "subject": "Test Subject"
-        }
+_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": False,
+                "subject": "Test Subject"
+            }
+        },
+        "labels": ['misp:type="email-subject"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-subject\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:subject = 'Test Subject']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-subject"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+    }
+]
 _EMAIL_X_MAILER_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--f09d8496-e2ba-4250-878a-bec9b85c7e96",
@@ -2722,40 +2752,52 @@ _EMAIL_X_MAILER_INDICATOR_ATTRIBUTE = {
     "pattern": "[email-message:additional_header_fields.x_mailer = 'Email X-Mailer test']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"email-x-mailer\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="email-x-mailer"', 'misp:category="Payload delivery"']
 }
-_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--f09d8496-e2ba-4250-878a-bec9b85c7e96",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "email-message",
-            "is_multipart": False,
-            "additional_header_fields": {
-                "X-Mailer": "Email X-Mailer test"
+_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": False,
+                "additional_header_fields": {"X-Mailer": "Email X-Mailer test"}
             }
-        }
+        },
+        "labels": ['misp:type="email-x-mailer"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"email-x-mailer\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:additional_header_fields.x_mailer = 'Email X-Mailer test']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="email-x-mailer"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--f6ca586b-8e47-4457-b8f4-28b3f258d9de",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+        "target_ref": "observed-data--f09d8496-e2ba-4250-878a-bec9b85c7e96"
+    }
+]
 _EMPLOYEE_OBJECT = {
     "type": "identity",
     "id": "identity--685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
@@ -2766,11 +2808,7 @@ _EMPLOYEE_OBJECT = {
     "description": "John Doe is known",
     "identity_class": "individual",
     "contact_information": "email-address: jdoe@email.com",
-    "labels": [
-        "misp:name=\"employee\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="employee"', 'misp:meta-category="misc"'],
     "x_misp_employee_type": "Supervisor"
 }
 _EVENT_REPORT = [
@@ -2782,14 +2820,11 @@ _EVENT_REPORT = [
         "name": "DNS Server",
         "description": "Adversaries may compromise third-party DNS servers that can be used during targeting.",
         "labels": [
-            "misp:galaxy-name=\"Attack Pattern\"",
-            "misp:galaxy-type=\"mitre-attack-pattern\""
+            'misp:galaxy-name="Attack Pattern"',
+            'misp:galaxy-type="mitre-attack-pattern"'
         ],
         "external_references": [
-            {
-                "source_name": "mitre-attack",
-                "external_id": "T1584.002"
-            },
+            {"source_name": "mitre-attack", "external_id": "T1584.002"},
             {
                 "source_name": "url",
                 "url": "https://attack.mitre.org/techniques/T1584/002"
@@ -2805,16 +2840,9 @@ _EVENT_REPORT = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "observed-data",
@@ -2826,20 +2854,13 @@ _EVENT_REPORT = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "file",
-                "name": "google_screenshot.png",
-                "content_ref": "1"
-            },
+            "0": {"type": "file", "name": "google_screenshot.png", "content_ref": "1"},
             "1": {
                 "type": "artifact",
                 "payload_bin": "iVBORw0KGgoAAAANSUhEUgAAAgkAAAAzCAYAAAAdHJsaAAAABHNCSVQICAgIfAhkiAAAABl0RVh0U29mdHdhcmUAZ25vbWUtc2NyZWVuc2hvdO8Dvz4AABpmSURBVHic7Z3pb1xXlth/99XOWlgkq1hcRIkl7ou1WLYkS7It2S3b3U5j3En3jDEz3bMAQYAgwADzDyRfEwRIvkwDQTrdSLqRyQTTSzzt8b7Istu2LEu2LIkSRYqbuBZZLJK1L+/lA0nxVbFIVnEploz7A+oDi7fevee9+84999x7zxH0nNSQSCQSiUQiyUHZ7wZIJBKJRCIpT6SRIJFIJBKJJC/SSJBIJBKJRJIXaSRIJBKJRCLJi3G/GyCRSCSS7WKg8/lX+dN2E2LTcipDl3/NL25GkDvVJcVQnJFgjUFNFBwpMKmAgKQJlmwwVwHJzbtp2SHlKW++bfJ8KxGY7G4avVV4nDZsJgMikyIajxKcm2V8LkJCjkoSySNLAUZCBpqmoSsA3gQbmquaAaZq4HY9TFp2tZG7i5RHyiPZMQY7/s5unuo+TJvHtqEiURMLDA7c4+qtfvrmknIWK5E8YohN4ySYInBmAJoSRVzSAPcPwhUvpHfewF1FyoOUR7IzBPb6Hr5/4RjdlcYtXNxraGqc8Ttf8NtPBpmRz2lXEUIgxPonUX3ku/y7p7wYALncINkuG3sSjBG4cAdqMzn/EBCzQMwAqGBPgEXV/T8Dh4fBosGlWlApD6Q8K0h5JNvFQE37WX5y/jDVhvX/1dDIpDNgMGLMGbOEYuVAZzut1+8zsyiHqd1E0zQ0LfeeClR5myW7wAZGggY9QzkKW8BEPVyvg3n9z1TwBuHxUfCm137fOAbtLrhj3aOmF4OUR8oj2RkCR/NpfnzhMNW6M1GaGmWs/w5X7o5yP7DIUkoFYcBW4cBXf4DOw4c55q/BLs9RSSSPJPlfXfM8tEd1XwgY9cMHB3IU9solAh54txNm9NOLDHRNQ54ZR8mR8kh5JDtCOFv5o/Ot1Og0RmZplNd/8zt+9sENvp4ILRsIAFqGWGSB4YFbvPn27/mv/3iJyw8i5PqIJBJJ+ZPfSPCGwKz7O2OH6x42XczKVMB1b3aZigWoKgOfl5RHyiPZAVa6Tz1Oh21tDUGLj/PG7z/k88BWmxE14nNDvP366/zqy2kicjlIInmkyG8kVMazd5UvVkK4gKsFK0G/50wkwVEGWkHKs4yUR7INlJpOnm2xrT0iLcnA559yJVTEvVajDFy9xtdhacRJJI8SefYkaCtn0nXEzJvP6lZRTRATYF0trIFRZX99wFKeh0h5JEVj4FB3Gz7ddEJdvMelu+GS7ZJXTHZ8Pg++SgdOixGFDMl4lOD8HA9mFojs0jpGSepRrHjrajlQ7cJpUdDSCRZDQUYnZplPPaoGlMDsqMqKlUEmSTSyxEwgwHgo8WguNQkjDncNjTUuKu0WrEYFLZ0iGl0iMDvHZCjGTh7Z3vc3E9UNBzjsdVBBkmBggnsTS1nzKoO1Cv9BH3UOMyIVZWZynMHZWNZBsTxGgoBkjoPBoC7P9La8IVqOflYgsd8KW8qzhpRHUiSGWnqbK3QuR5XAwCBjJdD6lupmzp7o5Qm/B+cGj1VNLjEy0MelL+8yGN5eo0pSj2Kn5ejjXDzqp8GmrDs6qqWWGLz5Ja9fHWZWO8iP/uo5jphW6l64yc/+z1XGys1Jptg40N7D070ttHs3ipWhEg2Oc+2rr/iof47YI2AHGR11HD/SzROtjdTbDRsc89VIhmfpH7jH598MMlxEn9j9/mbl8Zd/xA8OLl8sM32Vn76zwImLZznts2a9u+GJb/i/b11nKG7A0/4Urz7dQq1Z6GRMMzd4hb9/v5/pFUsh/3OdrwAtvOYCdkWXFya2aqslCnZdL8jYIVgG25qlPMtIeSRFolTX46/QqUktwsBoaI9PmpppfOwcf/LUQaq2sPkUsxN/90maW1u5eukD/nlgqYhwGaWpR1jruPDieZ5tsG6YLEeYnLQef5Z/7XPxy7cWCpZgvzC5/bz4/GmerLVskQBIoaK6iXPPNXK07Sv+4d0bjMRL1MhiERaaHnuKf3myGY9py8KYHV56j3np6e3m8muv8c70Vm9Fifq10cOzLx3jMU9uHBMFR8MRXj2/xM9v1fDqhVY86x6ekZqW07waXuCnf5gmxUZ7EgI1ENZd3joPB1NbtEyDlkD2zG7cC5ECBdtLpDxIeSTbwV7rzT7ymJ7jwdxemggG6o4+x0/Orlek6XiY6ZkADwIhFpNqlqNJmKt54vkX+UGrvcCsdSWqx1DN2Ref43yOgaBpGaKLISYCQQLh5Io9LKhoOMYfP9WArSAZ9gezt5c/e+UZTuYYCJqaYjE0z8TMLFOhCPGsbqLgbDrOj793jKYtB+B9QNjpfua7/NXZ9QbCslxBxqeX+8R8LJ1lJAuDFceWQV9L1a/BUNPMEY+RTCzE6MQ0k+GU7pqCiuYn+IvnOqhRQE0sMT4xxYMF/ZKQQk1HJ+0rMuX3JGSc8HUVnA0uz+5EGp4cgFgrTOV7wiocGoEjut1mcTdcry5QrD1GyiPlkWwDBU+1K2s2oi2GmN3DpQaT7yg/PFWH3nmRCN7n/U+u8+X40loeCMWCr7mbF8700uZcdgkLxcFjz5xlZOYdrmwRsKk09RhoPHGO5xvMuk2fKab7r/HPVwcYWlxV3goVNYc4d+4kZxtsuDvacZdpWhLh8PPKSyc4bFtzUWfCk3z+5dd8NjDDfHJt+FRMDg619fKdkx002QQCgcV3hB89NcNPP5qgfBwKRg48eYF/1e1mTdtoJIIjfHLtFteGZ1nI2nygYK300tnRxbneQ9Sa118xl1L169W2R0ev8D/e6luObqpU0PXMS7za5Vo2NIQVZ4VGfOIav3jjBhNJAAv+My/xk6NVGAFhqafdZ+DWaAYDtY3/IW89oUogDL7ksuI2JMEfgNoEVKTAHoeqCDTNwfFh6Fpa80tE3fBhC4TKyPUr5ZHySIrERHPPMXrca/c1MzvIB/1BtvLzbAvh5OTzT3Oscm3NPhX4hl++9hnfzCezV5+0DJH5KW7eX6TKfxCfZXnQEkYHjdYg14YWNnbPlqge4WjjB8+143k4c0wxcf1dfv7xMIGEfi6qkYqFGBwYJ+Hz05YT7lpLzHDt5gTFBaoU2OraONW0OgPVCI328dXMDp6cqODohec571vNOKkRm7zBr/7pE76YDBPPZDdQU5OEAg+4MRTG4z+I17xsKFg9VaSH7zFcJhsUTL7j/PkFP5UPb3qGuf5P+Pkb17k9GyWxznGmkU5EmBof5mrfBDGXF8vsAP0LG8iz5/3NSH17D12VK++pFuHqhx/z1WqH0VLMzRto62lYk1GLcu3SR3w5v9rmDAvzgsO9B6hSAKGghYa5NhnfLMGTAb7pgNAEPD4NzgyIDNQHlj/5SFphsB5uerOPppUFUh4pj6QohAW7LXtKm4nHSe5RdYqnjSfr1gZITQ3y8aWvGN7k2arhYV7/uBH/d9tWFKDAfriT3s/H+GKD45alqUdQ29GJXzfLTAdu8psvpjeeQWdCfHbpK7r++BT+MnTJG309nG+2Prxvavg+v3vrOkOxzX+XXhjkn/7QSPPFwzgECKWKE90+Pr48uTfGZjEIO0ee6KRWN7+IT1zjf38wyGwBq2pqPMCnb7+J2bhx4VL161W0zDzjwez2aEtBphMaTSvvs6bO8yCQ7RLUoiGmYxp+hwAElU47gtBWyxwKjB2A17vhjnPzuPhpC9z3wWBVGStsKY+UR1I4RsxZ0wiNVDqzR0cfFXz+pqyNVKmxPq4Etl7biI/e5qpun4Qw+ug+aCW/x75E9YhKOv1u3ZaZFPdu3GVmi4FHWxzk85FEGSZhMtHSdVgXcTPNyPXr9G1hIKwSHe7n5sPBTeA81ERDGTj+lEo/TxwwZQ3gn37St+VzyiZDckO3Van6tY5EhKV11leMpaiuV8UjLOSW0WIsxdaekaXChpmtUkUrSeh4AD1zurPoG2BMQOfIcvnRRviijjJadFpGyiPlkRSOUDDkKHJV3Ux7Cly9L/K3T9dtHKlCDXHpN6/xbiDnOsJKU51+/0OGseEHhe1D1RboH1nkgse9Musx0FjvwXh7bP1MtUT1CGstzbodn1pmhrtj8QIG/yRDozOkW5soK2eCwUunboDS0tPcuF9ErIzMHCMzaU45lwdkxe6h0SEY2ddkXwJn0wHq9KHGp+5xbTc35paqX+t/lkyuV4VailhSXyaRR12miOvKCJMJi9jMSDCH4dl74NM1Z7EK+rwwZYeocdkd7IhCwxx0zYJNW/7u0ChUR+FdP0TKZAeOlEfKIykOTSWToy8VZY+mf6ISn1sXP0ANMz5b6IxaJRCYI4mb1fRe5qoq3GKMwLrkiKWpR3G7s2aP2uIcUwV6vOJzQYJqU1YAq/1GqfTSYNWF5V6YZbwoozzDwlIMjZVZu7BT7RQUudFilzHQ4KvWGbQqM2OTu9ukUvVrHVo6Qzr3/1qGtG7PiJbJV0Ylo08dajBgYCMjQcThbD/4Vn0oAkaa4VMv2bsmjBByLX/ue+CZe1C7UsA5C+ds8E79/qfvlfJIefYNgd3np8dr2dpNiMbixAB9wcJP+u8tGVJZTREYjRsFl9khxgpcukEILcL8UuEPMrMUZkEF68rAqlRU4BSsV6Ylqsdgt2PXVaNGln9XCFokwpIGvoJbtfcoLlfWUVil5ij/9t8c3f4FhQWbeZ8NelFBjUu/STTNTHBpd9VHqfq1Hk3NI4NGlhNQzVdGzS6jbGYkHBqDBp12WKjLo7BziDvh8iF4eZCHZo9nEg55YGifHWdSHinPviFw+4/y8vHKAs45Zxi8NMKdYLo81qS1OOF4dkuMFgsmNno0Gonpft79bHxNVmGn7WgHzdbNBwRhNpOlS7Vklnt0y6YmctynOdcrdT1msynbmEomC946oyWTxMuiA6xhtlq3WJsuFoHBsN9GgoUKfXwDLU54l09clKq/Zf8ovwxaIWWygjQsHzRbr7dEAtpDuoQ7Ctz1ba6wV4lVw6B17W+RBn+ogB/uIVKeNaQ8kqJIs7iU7RoVKzOZjUgE7vPx9W/4aPXz1SAPChkdFSVbGamZ4uL9q2pWeaEYUPK1s0T1CJH9paZpRRh+xZQtDYbczSnfChSMekNFy5De7RggperXe8h649C0BNW6LqraYKbQmZmAKRd067L6eZbA4N06xO5eIeXRIeWRFIPG3PwiKhUP120VVyXVBpaDtOwmue7PFVdnwShKVnlNzaDmG2lLVE86k90BhcGIkcJsXxQDxjLbWpPJ2pyiEb3zHv/pgweP+GumrqzTr9xsYcC426lfStWv95D1RoIjnh3qVjNBtIgeG13J4Lf6E2MSLEB0B63cCVKebKQ8JUZl/LPf8u8/2+92bAeNcGCWkFZHzaoeNVXT6Fa4U8gh8mJqynGxC2HGZgYKPGInLBas+i82cNmXqp5ULE6KNQUrbFYqBAUtI6yWLSeS8ThpVuURmCxmjDzitriWIJqVat6K07a7N75U/W0vWe9DMuU+dlFY2t5V1pVVwbiPzjMpTzZSHkkRZOYmsyPjKZUcbrTv/ubFdJTFLG1qp8pZuIvb4HRQqSuuRqMs5esGJapHXVpiXmdHKS63LsbA5iiuSqp34QbnLlqIHVxTXVzMksfgqlyOzPcoo0WZW9Tv/zHirXEWnCOhIErVr/eQ9a3N5HwlkstHzQrFliJbgyiQ3kezWMqTjZRHUgzpaW6P6M/3KzS2+fHu9i3WFpgO6ZLbKA4aPYWcCFluk9dbgz6EfnI+RChfNypRPerCLJOJtX8IS3bchI0ReHzeXfAkaKRzAl+ZTLlZAQtHXZhlQi+Puw6//VF/zzJMTgezEhvVHqjHtZtilapf7yHre+2q+/ZhiTh4CnUqaeAJZyvtlGUbEfFUaAhAa87Hs40gnmUhjwHPwTZOdLXrPm085rMV/9KWhTzftucj2Zg0g30DWSFqDZ4Ozh4y7643QYszNrWo6woGmvwHsBfyW1FJ+yGXTpllmJgM5F//L1U9mQAD47rse4qLnjbP1icElCp6WtzFrVtvQCwa1bVN4K7cwSw5M8PdsbVNrMLg5fHOql1pZ+Hsoh4FQGNx7AFT+r5d186J9fmTt0+p+tsesv5uxBzZaXvJQFuAgp6CIQItOYvBs85tLFxloGsYTg/pPsPQvI2QemUhj5nmI6d55fyZrM8Lra7iX9qykOfb9nwkm5GZ6ePyqO6Ug7Bz7OyTdOxqPmOV6aEx9MHuTAe6OOnZehiyHuzmCZ0vX0vPcHt0o+iGpaonyb3+EdbC7Auqux7nSfdmb7zA1XqUkwV5HLYmMxfUhRcW2BoP0LTtc4wpBvqGdLNYBd+Rk5yu3o6ZIDBsa4v+LurRFdSFIa4+WDPmhFLFU2e6snI5bM1mGx5L1d/2jvW3QquA4Zy33zsBxxY3V9wiBSeGwKUTQTPCfffutHS7SHmWkfJItosW5canXzOc1C06uNr44cun6HJuoewMJiwFjiPq7D2+mErrFHY1Z88f45Bl498o9kO8fK5F5yLWiA7d4ZtNkuCUqp7E2C0+C6y5/IW5josvnqI775q0oKL+GH9y7iC75cXXlia4F1xzdSvOFi4ezXZfF0Nq8iYf6PJKCHMdF797jserCrU8DLjq23np5T/iT3v2YF/LdtAi3Lh6JytXg6Xhcf7suRY8BYglTFUcP3+RFzZJRFGq/rZX5EkVLSBkAv88a8HDNagNQo0KESvEdG+9yIBvDk4PwqEcP+9sI1yvLG4jGgAqHJ4CZ067Zj0wscmdzUs5yGOiob2bzsrsjhSfHuCzsUiRlysHeb5tz0eyFVp8lqFIFb1+N5YVxWW0e+ntaqbBAqlknEg8uRLqVWCyVdLc2s2LF05ytFIXpVGLM9J3l/vRfA8pyfSCme6O2ocDpcHuo+egk9RCkJklXVpdxYLP/xivvHCSHtfa9bXkNO+8d43hTZ1aJapHizMxZ6C9vY5Vu8Bg89DbcYg6q4KiGDBb7XhrGzh6/CSvnGmh1iRIz80yY6nAsZr5d1upogESBFUvJ5pdK0cqDbga/HRUmxDCiK3CQZXLSfXKp8qUZiG2WSCvFNNTMXytq2mfQbFU0dnRTIM5TXgpzGIiJwGYYqbaW09XZy8vnD/Hy8eaOVRpJjzWx/XpYvOJ7qYeXUONBJg0NPJYw+pRXwVbzUGO+6swJCPML8Vy0kULzA4PHd3H+cHF05yqNxEYuMWdjVJF73l/y04VrUUmuHJnJueAVyFlDNS19dK94u3SolNcvT29wRJZogo+qYPzkzrFrULjxPInZYKYEYQKtmT+3eSR6uVrlEOIXCnP+mtIeSRFoRHqv8yvLAZ+fObAw0FPmCrpPHaazmOgaSrpdAZVMWA2KHlnisn5SUbDGz+k1NRX/PqKl7885WP1NJqlpoXvfb+FF+JLzC7GSQkTrkoXLnN2HZoa4dblj7lSwM6uktUz8zX/8FElf32++eEudWFx033sJN3H1pfXUrN8dPk23pefoW7HC/4ai/1XeKfVw79oWk7OJISZupYjfL9lfen08GX+4xuDm+ZJ08KD/PZNG7bvncBvWzYUhMlF5/GzdB4/QzIWZj4cJ6kasFgtOO0VWI2iPLwGG5Jm7Iv3+bXtIj/sdq+oIIGlupnnvtPMBTXJ0mKYxUQaTTFhtztwV5jW3PAFWCel6m97wcY+kukmeL8JwnmKmFLgioEzkUdhC5itg3dactaa9xkpzwpSHsl2STP5zfv8tzduMBhR1+lGIRRMJhOWPAaCpiUYv/0J//13n9O/6RnxNBPX3+N/fTpGKGdvidHqpK7WS5PXTWWuIk3Nc/2Dt/l1f7hAO7FU9agE737Ez966yXB0/T3LKhmb5vKb7/HhTM5sXtuBc0xd5It33uPt0ciubXhLzNzkl7+9xKdTsZztPwKzzYnP66XJV01tpR1bHgNBy8QIRcts45AW4fZHb/CLPwwzm7P/WihmXO5qDvhqafJWUa03EAAtkyC85WbpUvW33WfzVZdAPfy+CtqnoDUIrk26maZA0A1362HIXp4uXymPlEeyQ1QWRq/xP/9+gI6eXk53NdPsNm+4y11NLjE6NMCVG3e4NZsoUNElefD1e/zdAz9nT/TyRHMNjg0q0FJhRgbv8NGXfdxbLHbgKVU9KqHhq/x84h4dnR0c9dfTVOPEYVbQ0gkW54MMjwxy5dYw4zEVDEp26N1MZkcDvJYI8PHr/49+fzunOg5x2OfGbTNhEIXtD85HemGYN343wbXDnZzpaaW73vUwCVE+1GSYiYkJ7o2McHNwkplEGbr8tARjX3/I3w3WcfxIN0+0NVJfsVFCM41UeJb+gQE+/2aAoU28Y2uUqr/tLoKekwWqV205TW9VDOwpMGmgCUgZIWyFoB1ij1J0DSlPefNtk+fbioLVVU2jp5Iapw2r0YBQ08RjEYLzQcZnF9nppFExO6ir9eBz23FYjBi0DMl4jPlQkLGZecK7NEUuVT1bISo6+Is/f4qWlQEkM/E5/+W1PjZc8i4DDBYHPm81tS4HDosRo6KSSqSIxpaYDYaYWYhSjnbBpggjzqoaGqpduO1WrEaBmk4Ri4aZmZ1lMhQjtYNnUi79bSuKMBIkEolEstcY6p7kb17poUoAaET63uU/fzhe8vPxEglstidBIpFIJCVGUNNYpzv6pjKRFRVQIikt0kiQSCSScsFcz+nO6od7PLT0NH1jpQ+gI5GsIo0EiUQi2SuEkxPPPsN3Outwb5UB3VjJ8fNnOPHQjaARHuzblwA6Eskq2w7SKZFIJJKtEFTUNPNs92GePhfmwegY98ZnGJsNMR+Jk8goWO1O6uubONbbTrvbtBZAJzbG21cebBq3QCLZa6SRIJFIJCVAMTk42NLFwZauLctqiQCX3v6Yr6UXQbLPSCNBIpFI9gyVZFpFI38Eynzllybv8ualL7kxL88zSPYfeQRSIpFI9hJhotJbR0uDlwPeGmrdTqocNmxmI0ZUUqk4iwsLTE5PcndwiNuTYbaRdF0i2ROkkSCRSCQSiSQv8nSDRCKRSCSSvEgjQSKRSCQSSV6kkSCRSCQSiSQv/x8i/Ja3OdLlpgAAAABJRU5ErkJggg=="
             }
         },
-        "labels": [
-            "misp:type=\"attachment\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="attachment"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -2850,16 +2871,9 @@ _EVENT_REPORT = [
         "pattern": "[domain-name:value = 'google.com' AND domain-name:resolves_to_refs[*].value = '8.8.8.8']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"domain-ip\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
     },
     {
         "type": "x-misp-event-report",
@@ -2872,7 +2886,7 @@ _EVENT_REPORT = [
             "observed-data--f715be9f-845f-4d8c-8dce-852b353b3488",
             "indicator--f91abf56-b017-462a-849f-d03ae0187498"
         ],
-        "x_misp_content": "This Event showcases a @[object](f91abf56-b017-462a-849f-d03ae0187498) MISP Object with its @[attribute](7ef43014-e2d6-4a13-b8fd-129fe4009310) value (also reported in a single attribute @[attribute](f9b286a9-3ed6-4ace-a60c-a5fe6529a783)) and the corresponding @[attribute](07a4c4aa-7380-44b5-82d4-06628ee3afba), contextualised with a @[tag](misp-galaxy:mitre-attack-pattern=\"DNS Server - T1584.002\") Galaxy Cluster.\r\n\r\nThe event is also illustrated with the screenshot picturing the case we have here: @![attribute](f715be9f-845f-4d8c-8dce-852b353b3488)\r\n\r\nThe information here is public, as the @[tag](tlp:clear) tag indicates.\r\n",
+        "x_misp_content": 'This Event showcases a @[object](f91abf56-b017-462a-849f-d03ae0187498) MISP Object with its @[attribute](7ef43014-e2d6-4a13-b8fd-129fe4009310) value (also reported in a single attribute @[attribute](f9b286a9-3ed6-4ace-a60c-a5fe6529a783)) and the corresponding @[attribute](07a4c4aa-7380-44b5-82d4-06628ee3afba), contextualised with a @[tag](misp-galaxy:mitre-attack-pattern="DNS Server - T1584.002") Galaxy Cluster.\r\n\r\nThe event is also illustrated with the screenshot picturing the case we have here: @![attribute](f715be9f-845f-4d8c-8dce-852b353b3488)\r\n\r\nThe information here is public, as the @[tag](tlp:clear) tag indicates.\r\n',
         "x_misp_name": "EventReport Test"
     },
     {
@@ -2889,9 +2903,7 @@ _EVENT_REPORT = [
         "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
         "created": "2017-01-20T00:00:00.000Z",
         "definition_type": "tlp",
-        "definition": {
-            "tlp": "white"
-        }
+        "definition": {"tlp": "white"}
     }
 ]
 _FILE_AND_PE_INDICATOR_OBJECT = {
@@ -2902,81 +2914,90 @@ _FILE_AND_PE_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"file\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="file"', 'misp:meta-category="file"']
 }
-_FILE_AND_PE_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5ac47782-e1b8-40b6-96b4-02510a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "file",
-            "hashes": {
-                "MD5": "b2a5abfeef9e36964281a31e17b57c97",
-                "SHA-1": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
-                "SHA-256": "3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8"
-            },
-            "size": 1234,
-            "name": "oui",
-            "extensions": {
-                "windows-pebinary-ext": {
-                    "pe_type": "exe",
-                    "imphash": "23ea835ab4b9017c74dfb023d2301c99",
-                    "number_of_sections": 8,
-                    "optional_header": {
-                        "address_of_entry_point": 5369222868
-                    },
-                    "sections": [
-                        {
-                            "name": ".rsrc",
-                            "size": 305152,
-                            "entropy": 7.836462238824369,
-                            "hashes": {
-                                "MD5": "8a2a5fc2ce56b3b04d58539a95390600",
-                                "SHA-1": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf",
-                                "SHA-256": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b",
-                                "SHA-512": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f",
-                                "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
+_FILE_AND_PE_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                    "SHA-1": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
+                    "SHA-256": "3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8"
+                },
+                "size": 1234,
+                "name": "oui",
+                "extensions": {
+                    "windows-pebinary-ext": {
+                        "pe_type": "exe",
+                        "imphash": "23ea835ab4b9017c74dfb023d2301c99",
+                        "number_of_sections": 8,
+                        "optional_header": {"address_of_entry_point": 5369222868},
+                        "sections": [
+                            {
+                                "name": ".rsrc",
+                                "size": 305152,
+                                "entropy": 7.836462238824369,
+                                "hashes": {
+                                    "MD5": "8a2a5fc2ce56b3b04d58539a95390600",
+                                    "SHA-1": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf",
+                                    "SHA-256": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b",
+                                    "SHA-512": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f",
+                                    "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
+                                }
                             }
-                        }
-                    ],
-                    "x_misp_company_name": "Simoe Tatham",
-                    "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
-                    "x_misp_file_description": "SSH, Telnet and Rlogin client",
-                    "x_misp_file_version": "Release 0.71 (with embedded help)",
-                    "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                    "x_misp_internal_filename": "PuTTy",
-                    "x_misp_lang_id": "080904B0",
-                    "x_misp_legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
-                    "x_misp_original_filename": "PuTTy",
-                    "x_misp_product_name": "PuTTy suite",
-                    "x_misp_product_version": "Release 0.71"
-                }
-            },
-            "x_misp_entropy": "1.234"
-        }
+                        ],
+                        "x_misp_company_name": "Simoe Tatham",
+                        "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
+                        "x_misp_file_description": "SSH, Telnet and Rlogin client",
+                        "x_misp_file_version": "Release 0.71 (with embedded help)",
+                        "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
+                        "x_misp_internal_filename": "PuTTy",
+                        "x_misp_lang_id": "080904B0",
+                        "x_misp_legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
+                        "x_misp_original_filename": "PuTTy",
+                        "x_misp_product_name": "PuTTy suite",
+                        "x_misp_product_version": "Release 0.71"
+                    }
+                },
+                "x_misp_entropy": "1.234"
+            }
+        },
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
-    "labels": [
-        "misp:name=\"file\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--381d4bb0-d07c-4128-8880-eede3c7825f5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "target_ref": "observed-data--5ac47782-e1b8-40b6-96b4-02510a00020f"
+    }
+]
 _FILE_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
@@ -2984,64 +3005,71 @@ _FILE_INDICATOR_OBJECT = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"file\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="file"', 'misp:meta-category="file"']
 }
-_FILE_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "file",
-            "hashes": {
-                "MD5": "8764605c6f388c89096b534d33565802",
-                "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
-                "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+_FILE_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802",
+                    "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                    "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                },
+                "size": 35,
+                "name": "oui",
+                "name_enc": "UTF-8",
+                "created": "2021-10-25T16:22:00Z",
+                "modified": "2022-10-25T16:22:00Z",
+                "parent_directory_ref": "1",
+                "content_ref": "2",
+                "x_misp_attachment": {
+                    "value": "non",
+                    "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                }
             },
-            "size": 35,
-            "name": "oui",
-            "name_enc": "UTF-8",
-            "parent_directory_ref": "1",
-            "content_ref": "2",
-            "x_misp_attachment": {
-                "value": "non",
-                "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+            "1": {"type": "directory", "path": "/var/www/MISP/app/files/scripts/tmp"},
+            "2": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"},
+                "x_misp_filename": "oui"
             }
         },
-        "1": {
-            "type": "directory",
-            "path": "/var/www/MISP/app/files/scripts/tmp"
-        },
-        "2": {
-            "type": "artifact",
-            "mime_type": "application/zip",
-            "hashes": {
-                "MD5": "8764605c6f388c89096b534d33565802"
-            },
-            "x_misp_filename": "oui"
-        }
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
     },
-    "labels": [
-        "misp:name=\"file\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--f9626c9a-ad6f-4351-9553-0a3dbffc46d6",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "target_ref": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a"
+    }
+]
 _FILENAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3052,37 +3080,47 @@ _FILENAME_INDICATOR_ATTRIBUTE = {
     "pattern": "[file:name = 'test_file_name']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"filename\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="filename"', 'misp:category="Payload delivery"']
 }
-_FILENAME_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "file",
-            "name": "test_file_name"
-        }
+_FILENAME_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {"0": {"type": "file", "name": "test_file_name"}},
+        "labels": ['misp:type="filename"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"filename\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename test attribute",
+        "pattern": "[file:name = 'test_file_name']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3093,16 +3131,9 @@ _GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
     "pattern": "[user-account:account_type = 'github' AND user-account:account_login = 'chrisr3d']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Social network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Social network"}
     ],
-    "labels": [
-        "misp:type=\"github-username\"",
-        "misp:category=\"Social network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="github-username"', 'misp:category="Social network"']
 }
 _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
     {
@@ -3115,16 +3146,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|md5\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3136,16 +3160,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha1\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3157,16 +3174,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha224\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3178,16 +3188,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3199,16 +3202,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha384\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3220,16 +3216,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha512\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3241,16 +3230,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename7' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|ssdeep\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3262,15 +3244,11 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename8' AND file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"filename|authentihash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="filename|authentihash"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -3283,16 +3261,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename9' AND file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|imphash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3304,15 +3275,25 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename10' AND file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/224 test attribute",
+        "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"filename|pehash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="filename|sha512/224"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -3325,16 +3306,26 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename11' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"filename|sha512/256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="filename|sha512/256"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-224 test attribute",
+        "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3346,16 +3337,37 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename12' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|sha3-256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-384 test attribute",
+        "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-512 test attribute",
+        "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3367,16 +3379,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename14' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|tlsh\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3388,16 +3393,9 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:name = 'filename15' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"filename|vhash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="filename|vhash"', 'misp:category="Payload delivery"']
     }
 ]
 _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
@@ -3413,16 +3411,34 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "MD5": "b2a5abfeef9e36964281a31e17b57c97"
-                },
+                "hashes": {"MD5": "b2a5abfeef9e36964281a31e17b57c97"},
                 "name": "filename1"
             }
         },
-        "labels": [
-            "misp:type=\"filename|md5\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|md5"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|md5 test attribute",
+        "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|md5"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
     },
     {
         "type": "observed-data",
@@ -3436,16 +3452,34 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
-                },
+                "hashes": {"SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"},
                 "name": "filename2"
             }
         },
-        "labels": [
-            "misp:type=\"filename|sha1\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|sha1"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha1 test attribute",
+        "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha1"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--fa05ec41-b6ee-4072-a3be-06970eca319a",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "target_ref": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
     },
     {
         "type": "observed-data",
@@ -3465,10 +3499,30 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename3"
             }
         },
-        "labels": [
-            "misp:type=\"filename|sha224\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|sha224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha224 test attribute",
+        "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--aea91422-ae58-40c0-815c-e9160fb552a4",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "target_ref": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb"
     },
     {
         "type": "observed-data",
@@ -3488,10 +3542,30 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename4"
             }
         },
-        "labels": [
-            "misp:type=\"filename|sha256\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|sha256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha256 test attribute",
+        "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--40d6c7e0-1e8c-4fe0-8650-f0a959bc878b",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "target_ref": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf"
     },
     {
         "type": "observed-data",
@@ -3511,10 +3585,30 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename5"
             }
         },
-        "labels": [
-            "misp:type=\"filename|sha384\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|sha384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha384 test attribute",
+        "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--61ef6c1d-f504-4d0d-94af-6a745270dce5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "target_ref": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f"
     },
     {
         "type": "observed-data",
@@ -3534,10 +3628,30 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename6"
             }
         },
-        "labels": [
-            "misp:type=\"filename|sha512\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|sha512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512 test attribute",
+        "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--9dd12c5c-cafb-4087-86ac-98a91cd8eff7",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "target_ref": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
     },
     {
         "type": "observed-data",
@@ -3557,10 +3671,30 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "name": "filename7"
             }
         },
-        "labels": [
-            "misp:type=\"filename|ssdeep\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|ssdeep"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|ssdeep test attribute",
+        "pattern": "[file:name = 'filename7' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|ssdeep"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--6170abd7-7ddc-4e22-9cdb-30880b463973",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "target_ref": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff"
     },
     {
         "type": "observed-data",
@@ -3581,9 +3715,35 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
             }
         },
         "labels": [
-            "misp:type=\"filename|authentihash\"",
-            "misp:category=\"Payload delivery\""
+            'misp:type="filename|authentihash"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|authentihash test attribute",
+        "pattern": "[file:name = 'filename8' AND file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": [
+            'misp:type="filename|authentihash"',
+            'misp:category="Payload delivery"'
+        ]
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     },
     {
         "type": "observed-data",
@@ -3597,16 +3757,34 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
-                },
+                "hashes": {"IMPHASH": "68f013d7437aa653a8a98a05807afeb1"},
                 "name": "filename9"
             }
         },
-        "labels": [
-            "misp:type=\"filename|imphash\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|imphash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|imphash test attribute",
+        "pattern": "[file:name = 'filename9' AND file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|imphash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
     },
     {
         "type": "observed-data",
@@ -3620,16 +3798,83 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
-                },
+                "hashes": {"PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"},
                 "name": "filename10"
             }
         },
+        "labels": ['misp:type="filename|pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|pehash test attribute",
+        "pattern": "[file:name = 'filename10' AND file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "target_ref": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+                },
+                "name": "filename11"
+            }
+        },
         "labels": [
-            "misp:type=\"filename|pehash\"",
-            "misp:category=\"Payload delivery\""
+            'misp:type="filename|sha512/224"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/224 test attribute",
+        "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": [
+            'misp:type="filename|sha512/224"',
+            'misp:category="Payload delivery"'
+        ]
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--7ac97cac-bedc-4c6e-b2ee-d72358493da1",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "target_ref": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
     },
     {
         "type": "observed-data",
@@ -3646,13 +3891,82 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "hashes": {
                     "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
                 },
-                "name": "filename11"
+                "name": "filename12"
             }
         },
         "labels": [
-            "misp:type=\"filename|sha512/256\"",
-            "misp:category=\"Payload delivery\""
+            'misp:type="filename|sha512/256"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/256 test attribute",
+        "pattern": "[file:name = 'filename12' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": [
+            'misp:type="filename|sha512/256"',
+            'misp:category="Payload delivery"'
+        ]
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--59b95b7e-504d-4fa4-a072-c675498292f5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "target_ref": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "SHA3-224": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc"
+                },
+                "name": "filename15"
+            }
+        },
+        "labels": ['misp:type="filename|sha3-224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-224 test attribute",
+        "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--5415bd6a-5127-4b74-9a26-e0d38952af1c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "target_ref": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
     },
     {
         "type": "observed-data",
@@ -3669,13 +3983,119 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "hashes": {
                     "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
                 },
-                "name": "filename12"
+                "name": "filename16"
             }
         },
-        "labels": [
-            "misp:type=\"filename|sha3-256\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-256 test attribute",
+        "pattern": "[file:name = 'filename16' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--9ecc7f6c-75c7-4663-baea-a4e5d0e30a35",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "target_ref": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+                },
+                "name": "filename17"
+            }
+        },
+        "labels": ['misp:type="filename|sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-384 test attribute",
+        "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--3b8187c2-a105-452f-88ee-f34bd860782f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "target_ref": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
+                },
+                "name": "filename18"
+            }
+        },
+        "labels": ['misp:type="filename|sha3-512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-512 test attribute",
+        "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|sha3-512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--f5e0f1d6-2154-45ec-8697-f6231c217133",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "target_ref": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460"
     },
     {
         "type": "observed-data",
@@ -3692,13 +4112,33 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
                 "hashes": {
                     "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
                 },
-                "name": "filename14"
+                "name": "filename13"
             }
         },
-        "labels": [
-            "misp:type=\"filename|tlsh\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|tlsh"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|tlsh test attribute",
+        "pattern": "[file:name = 'filename13' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|tlsh"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--388e22d6-85b7-4189-8b89-589cdd931ecf",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "target_ref": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b"
     },
     {
         "type": "observed-data",
@@ -3712,16 +4152,34 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "VHASH": "115056655d15151138z66hz1021z55z66z3"
-                },
-                "name": "filename15"
+                "hashes": {"VHASH": "115056655d15151138z66hz1021z55z66z3"},
+                "name": "filename14"
             }
         },
-        "labels": [
-            "misp:type=\"filename|vhash\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="filename|vhash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|vhash test attribute",
+        "pattern": "[file:name = 'filename14' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="filename|vhash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--f7455a6c-4a23-40a2-82f5-a2191822ed59",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "target_ref": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
     }
 ]
 _HASH_INDICATOR_ATTRIBUTES = [
@@ -3735,16 +4193,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"md5\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="md5"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3756,16 +4207,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha1\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha1"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3777,16 +4221,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha224\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3798,16 +4235,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha256"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3819,16 +4249,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha384\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha384"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3840,16 +4263,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha512\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3861,16 +4277,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"ssdeep\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ssdeep"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3882,16 +4291,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"authentihash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="authentihash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3903,16 +4305,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"imphash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="imphash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3924,16 +4319,23 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"pehash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/224 test attribute",
+        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha512/224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3945,16 +4347,23 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha512/256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha512/256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-224 test attribute",
+        "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-224"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3966,16 +4375,37 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"sha3-256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-384 test attribute",
+        "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-512 test attribute",
+        "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-512"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -3987,16 +4417,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"telfhash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="telfhash"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4008,16 +4431,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"tlsh\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="tlsh"', 'misp:category="Payload delivery"']
     },
     {
         "type": "indicator",
@@ -4029,16 +4445,9 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "pattern": "[file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
-        "labels": [
-            "misp:type=\"vhash\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="vhash"', 'misp:category="Payload delivery"']
     }
 ]
 _HASH_OBSERVABLE_ATTRIBUTES = [
@@ -4052,17 +4461,32 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "file",
-                "hashes": {
-                    "MD5": "b2a5abfeef9e36964281a31e17b57c97"
-                }
-            }
+            "0": {"type": "file", "hashes": {"MD5": "b2a5abfeef9e36964281a31e17b57c97"}}
         },
-        "labels": [
-            "misp:type=\"md5\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="md5"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "MD5 test attribute",
+        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="md5"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
     },
     {
         "type": "observed-data",
@@ -4076,15 +4500,33 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
-                }
+                "hashes": {"SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"}
             }
         },
-        "labels": [
-            "misp:type=\"sha1\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha1"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA1 test attribute",
+        "pattern": "[file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha1"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--fa05ec41-b6ee-4072-a3be-06970eca319a",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "target_ref": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
     },
     {
         "type": "observed-data",
@@ -4103,10 +4545,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"sha224\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA224 test attribute",
+        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--aea91422-ae58-40c0-815c-e9160fb552a4",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "target_ref": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb"
     },
     {
         "type": "observed-data",
@@ -4125,10 +4587,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"sha256\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA256 test attribute",
+        "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--40d6c7e0-1e8c-4fe0-8650-f0a959bc878b",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "target_ref": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf"
     },
     {
         "type": "observed-data",
@@ -4147,10 +4629,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"sha384\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA384 test attribute",
+        "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--61ef6c1d-f504-4d0d-94af-6a745270dce5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "target_ref": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f"
     },
     {
         "type": "observed-data",
@@ -4169,10 +4671,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"sha512\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512 test attribute",
+        "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--9dd12c5c-cafb-4087-86ac-98a91cd8eff7",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "target_ref": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
     },
     {
         "type": "observed-data",
@@ -4191,10 +4713,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"ssdeep\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="ssdeep"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SSDEEP test attribute",
+        "pattern": "[file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="ssdeep"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--6170abd7-7ddc-4e22-9cdb-30880b463973",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "target_ref": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff"
     },
     {
         "type": "observed-data",
@@ -4213,10 +4755,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"authentihash\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="authentihash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "AUTHENTIHASH test attribute",
+        "pattern": "[file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="authentihash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     },
     {
         "type": "observed-data",
@@ -4230,15 +4792,33 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
-                }
+                "hashes": {"IMPHASH": "68f013d7437aa653a8a98a05807afeb1"}
             }
         },
-        "labels": [
-            "misp:type=\"imphash\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="imphash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "IMPHASH test attribute",
+        "pattern": "[file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="imphash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
     },
     {
         "type": "observed-data",
@@ -4252,15 +4832,75 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
+                "hashes": {"PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"}
+            }
+        },
+        "labels": ['misp:type="pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "PEHASH test attribute",
+        "pattern": "[file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="pehash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "target_ref": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
                 "hashes": {
-                    "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+                    "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
                 }
             }
         },
-        "labels": [
-            "misp:type=\"pehash\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha512/224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/224 test attribute",
+        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha512/224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--7ac97cac-bedc-4c6e-b2ee-d72358493da1",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "target_ref": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
     },
     {
         "type": "observed-data",
@@ -4279,10 +4919,72 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"sha512/256\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha512/256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/256 test attribute",
+        "pattern": "[file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha512/256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--59b95b7e-504d-4fa4-a072-c675498292f5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "target_ref": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "SHA3-224": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc"
+                }
+            }
+        },
+        "labels": ['misp:type="sha3-224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-224 test attribute",
+        "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-224"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--5415bd6a-5127-4b74-9a26-e0d38952af1c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "target_ref": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
     },
     {
         "type": "observed-data",
@@ -4301,10 +5003,114 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"sha3-256\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-256 test attribute",
+        "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-256"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--9ecc7f6c-75c7-4663-baea-a4e5d0e30a35",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "target_ref": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+                }
+            }
+        },
+        "labels": ['misp:type="sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-384 test attribute",
+        "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-384"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--3b8187c2-a105-452f-88ee-f34bd860782f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "target_ref": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
+                }
+            }
+        },
+        "labels": ['misp:type="sha3-512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-512 test attribute",
+        "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="sha3-512"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--f5e0f1d6-2154-45ec-8697-f6231c217133",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "target_ref": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460"
     },
     {
         "type": "observed-data",
@@ -4323,10 +5129,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"telfhash\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="telfhash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "TELFHASH test attribute",
+        "pattern": "[file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="telfhash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--65a745c4-8c12-45cd-9127-330f6cd0f812",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
+        "target_ref": "observed-data--4846cade-2492-4e7d-856e-2afcd282455b"
     },
     {
         "type": "observed-data",
@@ -4345,10 +5171,30 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
                 }
             }
         },
-        "labels": [
-            "misp:type=\"tlsh\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="tlsh"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "TLSH test attribute",
+        "pattern": "[file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="tlsh"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--388e22d6-85b7-4189-8b89-589cdd931ecf",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "target_ref": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b"
     },
     {
         "type": "observed-data",
@@ -4362,15 +5208,33 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "file",
-                "hashes": {
-                    "VHASH": "115056655d15151138z66hz1021z55z66z3"
-                }
+                "hashes": {"VHASH": "115056655d15151138z66hz1021z55z66z3"}
             }
         },
-        "labels": [
-            "misp:type=\"vhash\"",
-            "misp:category=\"Payload delivery\""
-        ]
+        "labels": ['misp:type="vhash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "VHASH test attribute",
+        "pattern": "[file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="vhash"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--f7455a6c-4a23-40a2-82f5-a2191822ed59",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "target_ref": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
     }
 ]
 _HOSTNAME_INDICATOR_ATTRIBUTE = {
@@ -4383,37 +5247,47 @@ _HOSTNAME_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"hostname\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="hostname"', 'misp:category="Network activity"']
 }
-_HOSTNAME_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "domain-name",
-            "value": "circl.lu"
-        }
+_HOSTNAME_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {"0": {"type": "domain-name", "value": "circl.lu"}},
+        "labels": ['misp:type="hostname"', 'misp:category="Network activity"']
     },
-    "labels": [
-        "misp:type=\"hostname\"",
-        "misp:category=\"Network activity\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Hostname test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="hostname"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _HOSTNAME_PORT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4424,45 +5298,55 @@ _HOSTNAME_PORT_INDICATOR_ATTRIBUTE = {
     "pattern": "[domain-name:value = 'circl.lu' AND network-traffic:dst_port = '8443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"hostname|port\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="hostname|port"', 'misp:category="Network activity"']
 }
-_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "domain-name",
-            "value": "circl.lu"
+_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {"type": "domain-name", "value": "circl.lu"},
+            "1": {
+                "type": "network-traffic",
+                "dst_ref": "0",
+                "dst_port": 8443,
+                "protocols": ["tcp"]
+            }
         },
-        "1": {
-            "type": "network-traffic",
-            "dst_ref": "0",
-            "dst_port": 8443,
-            "protocols": [
-                "tcp"
-            ]
-        }
+        "labels": ['misp:type="hostname|port"', 'misp:category="Network activity"']
     },
-    "labels": [
-        "misp:type=\"hostname|port\"",
-        "misp:category=\"Network activity\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Hostname|port test attribute",
+        "pattern": "[domain-name:value = 'circl.lu' AND network-traffic:dst_port = '8443']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="hostname|port"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _HTTP_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -4473,16 +5357,9 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:extensions.'http-request-ext'.request_method = 'POST']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"http-method\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="http-method"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -4494,16 +5371,9 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"user-agent\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="user-agent"', 'misp:category="Network activity"']
     }
 ]
 _HTTP_REQUEST_INDICATOR_OBJECT = {
@@ -4515,69 +5385,71 @@ _HTTP_REQUEST_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_method = 'POST' AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_header.'Content-Type' = 'JSON' AND network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"http-request\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="http-request"', 'misp:meta-category="network"']
 }
-_HTTP_REQUEST_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "network-traffic",
-            "src_ref": "1",
-            "dst_ref": "2",
-            "protocols": [
-                "tcp",
-                "http"
-            ],
-            "extensions": {
-                "http-request-ext": {
-                    "request_method": "POST",
-                    "request_value": "/projects/internships/",
-                    "request_header": {
-                        "Content-Type": "JSON",
-                        "User-Agent": "Mozilla Firefox"
+_HTTP_REQUEST_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "dst_ref": "2",
+                "protocols": ["tcp", "http"],
+                "extensions": {
+                    "http-request-ext": {
+                        "request_method": "POST",
+                        "request_value": "/projects/internships/",
+                        "request_header": {
+                            "Content-Type": "JSON",
+                            "User-Agent": "Mozilla Firefox"
+                        }
                     }
-                }
+                },
+                "x_misp_url": "http://circl.lu/projects/internships/"
             },
-            "x_misp_url": "http://circl.lu/projects/internships/"
+            "1": {"type": "ipv4-addr", "value": "8.8.8.8"},
+            "2": {"type": "ipv4-addr", "value": "149.13.33.14"},
+            "3": {
+                "type": "domain-name",
+                "value": "circl.lu",
+                "resolves_to_refs": ["2"]
+            }
         },
-        "1": {
-            "type": "ipv4-addr",
-            "value": "8.8.8.8"
-        },
-        "2": {
-            "type": "ipv4-addr",
-            "value": "149.13.33.14"
-        },
-        "3": {
-            "type": "domain-name",
-            "value": "circl.lu",
-            "resolves_to_refs": [
-                "2"
-            ]
-        }
+        "labels": ['misp:name="http-request"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"http-request\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="http-request"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--3071c6a2-fdb1-453c-b603-e4d6b9017ccc",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+        "target_ref": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9"
+    }
+]
 _IDENTITY_OBJECT = {
     "type": "identity",
     "id": "identity--a54e32af-5569-4949-b1fe-ad75054cde45",
@@ -4588,11 +5460,7 @@ _IDENTITY_OBJECT = {
     "description": "Unknown person",
     "identity_class": "individual",
     "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
-    "labels": [
-        "misp:name=\"identity\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="identity"', 'misp:meta-category="misc"'],
     "x_misp_roles": "Placeholder name"
 }
 _IMAGE_INDICATOR_OBJECT = {
@@ -4602,47 +5470,57 @@ _IMAGE_INDICATOR_OBJECT = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"image\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="image"', 'misp:meta-category="file"']
 }
-_IMAGE_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--939b2f03-c487-4f62-a90e-cab7acfee294",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "file",
-            "name": "STIX.png",
-            "content_ref": "1",
-            "x_misp_image_text": "STIX"
+_IMAGE_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--939b2f03-c487-4f62-a90e-cab7acfee294",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "name": "STIX.png",
+                "content_ref": "1",
+                "x_misp_image_text": "STIX"
+            },
+            "1": {
+                "type": "artifact",
+                "mime_type": "image/png",
+                "x_misp_filename": "STIX.png",
+                "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+            }
         },
-        "1": {
-            "type": "artifact",
-            "mime_type": "image/png",
-            "x_misp_filename": "STIX.png",
-            "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
-        }
+        "labels": ['misp:name="image"', 'misp:meta-category="file"']
     },
-    "labels": [
-        "misp:name=\"image\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--939b2f03-c487-4f62-a90e-cab7acfee294",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="image"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--d90dbb2f-9511-43c1-86e4-80d4cf7c5b57",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--939b2f03-c487-4f62-a90e-cab7acfee294",
+        "target_ref": "observed-data--939b2f03-c487-4f62-a90e-cab7acfee294"
+    }
+]
 _INTRUSION_SET_GALAXY = {
     "type": "intrusion-set",
     "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
@@ -4651,18 +5529,12 @@ _INTRUSION_SET_GALAXY = {
     "name": "APT16",
     "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
     "labels": [
-        "misp:galaxy-name=\"Intrusion Set\"",
-        "misp:galaxy-type=\"mitre-intrusion-set\""
+        'misp:galaxy-name="Intrusion Set"',
+        'misp:galaxy-type="mitre-intrusion-set"'
     ],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "G0023"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/groups/G0023"
-        },
+        {"source_name": "mitre-attack", "external_id": "G0023"},
+        {"source_name": "url", "url": "https://attack.mitre.org/groups/G0023"},
         {
             "source_name": "url",
             "url": "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
@@ -4677,26 +5549,14 @@ _INTRUSION_SET_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Bobcat Breakin",
     "description": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first.",
-    "aliases": [
-        "Zookeeper"
-    ],
+    "aliases": ["Zookeeper"],
     "first_seen": "2016-04-06T20:03:48Z",
     "last_seen": "2017-05-15T21:05:06Z",
-    "goals": [
-        "acquisition-theft",
-        "harassment",
-        "damage"
-    ],
+    "goals": ["acquisition-theft", "harassment", "damage"],
     "resource_level": "organization",
     "primary_motivation": "organizational gain",
-    "secondary_motivations": [
-        "personal gain"
-    ],
-    "labels": [
-        "misp:name=\"intrusion-set\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ]
+    "secondary_motivations": ["personal gain"],
+    "labels": ['misp:name="intrusion-set"', 'misp:meta-category="misc"']
 }
 _IP_INDICATOR_ATTRIBUTES = [
     {
@@ -4709,16 +5569,9 @@ _IP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -4730,16 +5583,9 @@ _IP_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-dst\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
     }
 ]
 _IP_OBSERVABLE_ATTRIBUTES = [
@@ -4753,22 +5599,33 @@ _IP_OBSERVABLE_ATTRIBUTES = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "network-traffic",
-                "src_ref": "1",
-                "protocols": [
-                    "tcp"
-                ]
-            },
-            "1": {
-                "type": "ipv4-addr",
-                "value": "1.2.3.4"
-            }
+            "0": {"type": "network-traffic", "src_ref": "1", "protocols": ["tcp"]},
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"}
         },
-        "labels": [
-            "misp:type=\"ip-src\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source IP test attribute",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     },
     {
         "type": "observed-data",
@@ -4780,22 +5637,33 @@ _IP_OBSERVABLE_ATTRIBUTES = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "network-traffic",
-                "dst_ref": "1",
-                "protocols": [
-                    "tcp"
-                ]
-            },
-            "1": {
-                "type": "ipv4-addr",
-                "value": "5.6.7.8"
-            }
+            "0": {"type": "network-traffic", "dst_ref": "1", "protocols": ["tcp"]},
+            "1": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "labels": [
-            "misp:type=\"ip-dst\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination IP test attribute",
+        "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
     }
 ]
 _IP_PORT_INDICATOR_ATTRIBUTES = [
@@ -4809,16 +5677,9 @@ _IP_PORT_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_port = '1234']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-src|port\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-src|port"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -4830,16 +5691,9 @@ _IP_PORT_INDICATOR_ATTRIBUTES = [
         "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"ip-dst|port\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="ip-dst|port"', 'misp:category="Network activity"']
     }
 ]
 _IP_PORT_INDICATOR_OBJECT = {
@@ -4851,16 +5705,9 @@ _IP_PORT_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"ip-port\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
 }
 _IP_PORT_OBSERVABLE_ATTRIBUTES = [
     {
@@ -4877,19 +5724,34 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
                 "type": "network-traffic",
                 "src_ref": "1",
                 "src_port": 1234,
-                "protocols": [
-                    "tcp"
-                ]
+                "protocols": ["tcp"]
             },
-            "1": {
-                "type": "ipv4-addr",
-                "value": "1.2.3.4"
-            }
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"}
         },
-        "labels": [
-            "misp:type=\"ip-src|port\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="ip-src|port"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source IP | Port test attribute",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_port = '1234']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="ip-src|port"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     },
     {
         "type": "observed-data",
@@ -4905,52 +5767,82 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
                 "type": "network-traffic",
                 "dst_ref": "1",
                 "dst_port": 5678,
-                "protocols": [
-                    "tcp"
-                ]
+                "protocols": ["tcp"]
             },
-            "1": {
-                "type": "ipv4-addr",
-                "value": "5.6.7.8"
-            }
+            "1": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "labels": [
-            "misp:type=\"ip-dst|port\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="ip-dst|port"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination IP | Port test attribute",
+        "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="ip-dst|port"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
     }
 ]
-_IP_PORT_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5ac47edc-31e4-4402-a7b6-040d0a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "network-traffic",
-            "start": "2020-10-25T16:22:00Z",
-            "dst_ref": "1",
-            "dst_port": 443,
-            "protocols": [
-                "ipv4"
-            ],
-            "x_misp_domain": "circl.lu"
+_IP_PORT_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "start": "2020-10-25T16:22:00Z",
+                "dst_ref": "1",
+                "dst_port": 443,
+                "protocols": ["ipv4"],
+                "x_misp_domain": "circl.lu"
+            },
+            "1": {"type": "ipv4-addr", "value": "149.13.33.14"}
         },
-        "1": {
-            "type": "ipv4-addr",
-            "value": "149.13.33.14"
-        }
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"ip-port\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--37dd31ee-24a7-4a7c-9704-aecef00e7082",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "target_ref": "observed-data--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    }
+]
 _LEGAL_ENTITY_OBJECT = {
     "type": "identity",
     "id": "identity--0d55ba1f-c3ff-4b91-8a09-8713576e178b",
@@ -4960,19 +5852,11 @@ _LEGAL_ENTITY_OBJECT = {
     "name": "Umbrella Corporation",
     "description": "The Umbrella Corporation is an international pharmaceutical company.",
     "identity_class": "organization",
-    "sectors": [
-        "Pharmaceutical"
-    ],
+    "sectors": ["Pharmaceutical"],
     "contact_information": "phone-number: 1234567890 / website: https://umbrella.org",
-    "labels": [
-        "misp:name=\"legal-entity\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="legal-entity"', 'misp:meta-category="misc"'],
     "x_misp_registration_number": "11223344556677889900",
-    "x_misp_logo": {
-        "value": "umbrella_logo"
-    }
+    "x_misp_logo": {"value": "umbrella_logo"}
 }
 _LNK_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -4981,62 +5865,69 @@ _LNK_INDICATOR_OBJECT = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"lnk\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="lnk"', 'misp:meta-category="file"']
 }
-_LNK_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "file",
-            "hashes": {
-                "MD5": "8764605c6f388c89096b534d33565802",
-                "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
-                "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+_LNK_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802",
+                    "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                    "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                },
+                "size": 35,
+                "name": "oui",
+                "created": "2017-10-01T08:00:00Z",
+                "modified": "2020-10-25T16:22:00Z",
+                "accessed": "2021-01-01T00:00:00Z",
+                "parent_directory_ref": "1",
+                "content_ref": "2"
             },
-            "size": 35,
-            "name": "oui",
-            "parent_directory_ref": "1",
-            "content_ref": "2",
-            "accessed": "2021-01-01T00:00:00Z",
-            "created": "2017-10-01T08:00:00Z",
-            "modified": "2020-10-25T16:22:00Z"
+            "1": {"type": "directory", "path": "/var/www/MISP/app/files/scripts/tmp"},
+            "2": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
+                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"},
+                "x_misp_filename": "oui"
+            }
         },
-        "1": {
-            "type": "directory",
-            "path": "/var/www/MISP/app/files/scripts/tmp"
-        },
-        "2": {
-            "type": "artifact",
-            "mime_type": "application/zip",
-            "hashes": {
-                "MD5": "8764605c6f388c89096b534d33565802"
-            },
-            "x_misp_filename": "oui"
-        }
+        "labels": ['misp:name="lnk"', 'misp:meta-category="file"']
     },
-    "labels": [
-        "misp:name=\"lnk\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="lnk"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--464aa205-829e-4b75-9758-c6ebaea487c6",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+        "target_ref": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7"
+    }
+]
 _MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -5046,37 +5937,46 @@ _MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
     "pattern": "[mac-addr:value = '12:34:56:78:90:AB']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"mac-address\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="mac-address"', 'misp:category="Payload delivery"']
 }
-_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "mac-addr",
-            "value": "12:34:56:78:90:ab"
-        }
+_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {"0": {"type": "mac-addr", "value": "12:34:56:78:90:ab"}},
+        "labels": ['misp:type="mac-address"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"mac-address\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[mac-addr:value = '12:34:56:78:90:ab']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="mac-address"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _MALWARE_GALAXY = {
     "type": "malware",
     "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
@@ -5084,27 +5984,16 @@ _MALWARE_GALAXY = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "BISCUIT",
     "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-    "labels": [
-        "misp:galaxy-name=\"Malware\"",
-        "misp:galaxy-type=\"mitre-malware\""
-    ],
+    "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"'],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "S0017"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/software/S0017"
-        },
+        {"source_name": "mitre-attack", "external_id": "S0017"},
+        {"source_name": "url", "url": "https://attack.mitre.org/software/S0017"},
         {
             "source_name": "url",
             "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
         }
     ],
-    "x_misp_mitre_platforms": [
-        "Windows"
-    ]
+    "x_misp_mitre_platforms": ["Windows"]
 }
 _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
@@ -5115,45 +6004,54 @@ _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "description": "Malware Sample test attribute",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Payload delivery"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
     ],
-    "labels": [
-        "misp:type=\"malware-sample\"",
-        "misp:category=\"Payload delivery\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="malware-sample"', 'misp:category="Payload delivery"']
 }
-_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "file",
-            "hashes": {
-                "MD5": "8764605c6f388c89096b534d33565802"
+_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"},
+                "name": "oui",
+                "content_ref": "1"
             },
-            "name": "oui",
-            "content_ref": "1"
+            "1": {"type": "artifact", "mime_type": "application/zip"}
         },
-        "1": {
-            "type": "artifact",
-            "mime_type": "application/zip"
-        }
+        "labels": ['misp:type="malware-sample"', 'misp:category="Payload delivery"']
     },
-    "labels": [
-        "misp:type=\"malware-sample\"",
-        "misp:category=\"Payload delivery\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Malware Sample test attribute",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": ['misp:type="malware-sample"', 'misp:category="Payload delivery"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _MUTEX_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -5164,16 +6062,9 @@ _MUTEX_INDICATOR_ATTRIBUTE = {
     "pattern": "[mutex:name = 'MutexTest']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Artifacts dropped"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Artifacts dropped"}
     ],
-    "labels": [
-        "misp:type=\"mutex\"",
-        "misp:category=\"Artifacts dropped\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="mutex"', 'misp:category="Artifacts dropped"']
 }
 _MUTEX_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -5183,61 +6074,89 @@ _MUTEX_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[mutex:name = 'MutexTest' AND mutex:x_misp_description = 'Test mutex on unix' AND mutex:x_misp_operating_system = 'Unix']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"mutex\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="mutex"', 'misp:meta-category="misc"']
 }
-_MUTEX_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "mutex",
-            "name": "MutexTest"
-        }
+_MUTEX_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {"0": {"type": "mutex", "name": "MutexTest"}},
+        "labels": ['misp:type="mutex"', 'misp:category="Artifacts dropped"']
     },
-    "labels": [
-        "misp:type=\"mutex\"",
-        "misp:category=\"Artifacts dropped\""
-    ]
-}
-_MUTEX_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--b0f55591-6a63-4fbd-a169-064e64738d95",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "mutex",
-            "name": "MutexTest",
-            "x_misp_description": "Test mutex on unix",
-            "x_misp_operating_system": "Unix"
-        }
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Mutex test attribute",
+        "pattern": "[mutex:name = 'MutexTest']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Artifacts dropped"}
+        ],
+        "labels": ['misp:type="mutex"', 'misp:category="Artifacts dropped"']
     },
-    "labels": [
-        "misp:name=\"mutex\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
+_MUTEX_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--b0f55591-6a63-4fbd-a169-064e64738d95",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "mutex",
+                "name": "MutexTest",
+                "x_misp_description": "Test mutex on unix",
+                "x_misp_operating_system": "Unix"
+            }
+        },
+        "labels": ['misp:name="mutex"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--b0f55591-6a63-4fbd-a169-064e64738d95",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[mutex:name = 'MutexTest']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="mutex"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--20389086-0cc2-45d4-b7a9-f4d367e49dc5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--b0f55591-6a63-4fbd-a169-064e64738d95",
+        "target_ref": "observed-data--b0f55591-6a63-4fbd-a169-064e64738d95"
+    }
+]
 _NETFLOW_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
@@ -5247,73 +6166,61 @@ _NETFLOW_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_ref.belongs_to_refs[0].number = '1234') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_ref.belongs_to_refs[0].number = '5678') AND network-traffic:protocols[0] = 'ip' AND network-traffic:src_port = '80' AND network-traffic:dst_port = '8080' AND network-traffic:start = '2020-10-25T16:22:00Z' AND network-traffic:extensions.'tcp-ext'.src_flags_hex = '00000002']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"netflow\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="netflow"', 'misp:meta-category="network"']
 }
-_NETFLOW_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "network-traffic",
-            "start": "2020-10-25T16:22:00Z",
-            "src_ref": "1",
-            "dst_ref": "3",
-            "src_port": 80,
-            "dst_port": 8080,
-            "protocols": [
-                "ip",
-                "tcp"
-            ],
-            "extensions": {
-                "tcp-ext": {
-                    "src_flags_hex": "00000002"
-                }
-            }
+_NETFLOW_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "start": "2020-10-25T16:22:00Z",
+                "src_ref": "1",
+                "dst_ref": "3",
+                "src_port": 80,
+                "dst_port": 8080,
+                "protocols": ["ip", "tcp"],
+                "extensions": {"tcp-ext": {"src_flags_hex": "00000002"}}
+            },
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4", "belongs_to_refs": ["2"]},
+            "2": {"type": "autonomous-system", "number": 1234},
+            "3": {"type": "ipv4-addr", "value": "5.6.7.8", "belongs_to_refs": ["4"]},
+            "4": {"type": "autonomous-system", "number": 5678}
         },
-        "1": {
-            "type": "ipv4-addr",
-            "value": "1.2.3.4",
-            "belongs_to_refs": [
-                "2"
-            ]
-        },
-        "2": {
-            "type": "autonomous-system",
-            "number": 1234
-        },
-        "3": {
-            "type": "ipv4-addr",
-            "value": "5.6.7.8",
-            "belongs_to_refs": [
-                "4"
-            ]
-        },
-        "4": {
-            "type": "autonomous-system",
-            "number": 5678
-        }
+        "labels": ['misp:name="netflow"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"netflow\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="netflow"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--b0d20387-14e3-40ae-a170-58db0dd99bc6",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+        "target_ref": "observed-data--419eb5a9-d232-4aa1-864e-2f4d7270a8f9"
+    }
+]
 _NETWORK_CONNECTION_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5afacc53-c0b0-4825-a6ee-03c80a00020f",
@@ -5323,55 +6230,58 @@ _NETWORK_CONNECTION_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'ip' AND network-traffic:protocols[1] = 'tcp' AND network-traffic:protocols[2] = 'http']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"network-connection\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="network-connection"', 'misp:meta-category="network"']
 }
-_NETWORK_CONNECTION_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5afacc53-c0b0-4825-a6ee-03c80a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "network-traffic",
-            "src_ref": "1",
-            "dst_ref": "2",
-            "src_port": 8080,
-            "dst_port": 8080,
-            "protocols": [
-                "ip",
-                "tcp",
-                "http"
-            ],
-            "x_misp_hostname_dst": "circl.lu"
+_NETWORK_CONNECTION_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5afacc53-c0b0-4825-a6ee-03c80a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "dst_ref": "2",
+                "src_port": 8080,
+                "dst_port": 8080,
+                "protocols": ["ip", "tcp", "http"],
+                "x_misp_hostname_dst": "circl.lu"
+            },
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
+            "2": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "1": {
-            "type": "ipv4-addr",
-            "value": "1.2.3.4"
-        },
-        "2": {
-            "type": "ipv4-addr",
-            "value": "5.6.7.8"
-        }
+        "labels": ['misp:name="network-connection"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"network-connection\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5afacc53-c0b0-4825-a6ee-03c80a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="network-connection"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--7a706d93-4c0b-4084-bbee-552515ffac59",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5afacc53-c0b0-4825-a6ee-03c80a00020f",
+        "target_ref": "observed-data--5afacc53-c0b0-4825-a6ee-03c80a00020f"
+    }
+]
 _NETWORK_SOCKET_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
@@ -5381,61 +6291,66 @@ _NETWORK_SOCKET_INDICATOR_OBJECT = {
     "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.protocol_family = 'PF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"network-socket\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
 }
-_NETWORK_SOCKET_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "network-traffic",
-            "src_ref": "1",
-            "dst_ref": "2",
-            "src_port": 8080,
-            "dst_port": 8080,
-            "protocols": [
-                "tcp"
-            ],
-            "extensions": {
-                "socket-ext": {
-                    "address_family": "AF_INET",
-                    "is_listening": True,
-                    "protocol_family": "PF_INET",
-                    "socket_type": "SOCK_RAW"
-                }
+_NETWORK_SOCKET_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "dst_ref": "2",
+                "src_port": 8080,
+                "dst_port": 8080,
+                "protocols": ["tcp"],
+                "extensions": {
+                    "socket-ext": {
+                        "address_family": "AF_INET",
+                        "is_listening": True,
+                        "protocol_family": "PF_INET",
+                        "socket_type": "SOCK_RAW"
+                    }
+                },
+                "x_misp_hostname_dst": "circl.lu"
             },
-            "x_misp_hostname_dst": "circl.lu"
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
+            "2": {"type": "ipv4-addr", "value": "5.6.7.8"}
         },
-        "1": {
-            "type": "ipv4-addr",
-            "value": "1.2.3.4"
-        },
-        "2": {
-            "type": "ipv4-addr",
-            "value": "5.6.7.8"
-        }
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"network-socket\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--bc5e3b34-b274-4ef7-b082-ee286c87ce84",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
+    }
+]
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
@@ -5445,14 +6360,8 @@ _NEWS_AGENCY_OBJECT = {
     "name": "Agence France-Presse",
     "identity_class": "organization",
     "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: (33)0140414646; (1)2024140600",
-    "labels": [
-        "misp:name=\"news-agency\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
-    "x_misp_attachment": {
-        "value": "AFP_logo.png"
-    },
+    "labels": ['misp:name="news-agency"', 'misp:meta-category="misc"'],
+    "x_misp_attachment": {"value": "AFP_logo.png"},
     "x_misp_link": "https://www.afp.com/"
 }
 _OBJECTS_WITH_REFERENCES = [
@@ -5465,28 +6374,16 @@ _OBJECTS_WITH_REFERENCES = [
         "name": "Buffer Overflow in Local Command-Line Utilities",
         "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "vulnerability"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
         ],
         "labels": [
-            "misp:name=\"attack-pattern\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
+            'misp:name="attack-pattern"',
+            'misp:meta-category="vulnerability"'
         ],
-        "external_references": [
-            {
-                "source_name": "capec",
-                "external_id": "CAPEC-9"
-            }
-        ],
+        "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
         "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-        "x_misp_related_weakness": [
-            "CWE-118",
-            "CWE-120"
-        ],
-        "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
+        "x_misp_related_weakness": ["CWE-118", "CWE-120"],
+        "x_misp_solutions": "Carefully review the service's implementation before making it available to users."
     },
     {
         "type": "observed-data",
@@ -5502,17 +6399,10 @@ _OBJECTS_WITH_REFERENCES = [
                 "type": "autonomous-system",
                 "number": 66642,
                 "name": "AS name",
-                "x_misp_subnet_announced": [
-                    "1.2.3.4",
-                    "8.8.8.8"
-                ]
+                "x_misp_subnet_announced": ["1.2.3.4", "8.8.8.8"]
             }
         },
-        "labels": [
-            "misp:name=\"asn\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
     },
     {
         "type": "x-misp-object",
@@ -5520,10 +6410,7 @@ _OBJECTS_WITH_REFERENCES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:name=\"btc-wallet\"",
-            "misp:meta-category=\"financial\""
-        ],
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
         "x_misp_attributes": [
             {
                 "type": "btc",
@@ -5531,21 +6418,9 @@ _OBJECTS_WITH_REFERENCES = [
                 "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
                 "to_ids": True
             },
-            {
-                "type": "float",
-                "object_relation": "balance_BTC",
-                "value": "2.25036953"
-            },
-            {
-                "type": "float",
-                "object_relation": "BTC_received",
-                "value": "3.35036953"
-            },
-            {
-                "type": "float",
-                "object_relation": "BTC_sent",
-                "value": "1.1"
-            }
+            {"type": "float", "object_relation": "balance_BTC", "value": "2.25036953"},
+            {"type": "float", "object_relation": "BTC_received", "value": "3.35036953"},
+            {"type": "float", "object_relation": "BTC_sent", "value": "1.1"}
         ],
         "x_misp_meta_category": "financial",
         "x_misp_name": "btc-wallet"
@@ -5558,11 +6433,7 @@ _OBJECTS_WITH_REFERENCES = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
         "description": "Block communication between the PIVY agents and the C2 Server",
-        "labels": [
-            "misp:name=\"course-of-action\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
         "x_misp_cost": "Low",
         "x_misp_efficacy": "High",
         "x_misp_impact": "Low",
@@ -5579,16 +6450,9 @@ _OBJECTS_WITH_REFERENCES = [
         "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "network"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
         ],
-        "labels": [
-            "misp:name=\"ip-port\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
     },
     {
         "type": "vulnerability",
@@ -5598,16 +6462,9 @@ _OBJECTS_WITH_REFERENCES = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "CVE-2021-29921",
         "description": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string.",
-        "labels": [
-            "misp:name=\"vulnerability\"",
-            "misp:meta-category=\"vulnerability\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
         "external_references": [
-            {
-                "source_name": "cve",
-                "external_id": "CVE-2021-29921"
-            }
+            {"source_name": "cve", "external_id": "CVE-2021-29921"}
         ]
     },
     {
@@ -5675,11 +6532,7 @@ _ORGANIZATION_OBJECT = {
     "description": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents.",
     "identity_class": "organization",
     "contact_information": "address: 16, bd d'Avranches, L-1160 Luxembourg / e-mail: info@circl.lu / phone-number: (+352) 247 88444",
-    "labels": [
-        "misp:name=\"organization\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="organization"', 'misp:meta-category="misc"'],
     "x_misp_alias": "CIRCL",
     "x_misp_role": "national CERT"
 }
@@ -5692,11 +6545,7 @@ _PERSON_OBJECT = {
     "name": "John Smith",
     "identity_class": "individual",
     "contact_information": "phone-number: 0123456789",
-    "labels": [
-        "misp:name=\"person\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="person"', 'misp:meta-category="misc"'],
     "x_misp_nationality": "USA",
     "x_misp_passport_number": "ABA9875413",
     "x_misp_role": "Guru"
@@ -5710,16 +6559,9 @@ _PORT_INDICATOR_ATTRIBUTE = {
     "pattern": "[network-traffic:dst_port = '8443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Network activity"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
     ],
-    "labels": [
-        "misp:type=\"port\"",
-        "misp:category=\"Network activity\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="port"', 'misp:category="Network activity"']
 }
 _PROCESS_INDICATOR_OBJECT = {
     "type": "indicator",
@@ -5729,66 +6571,66 @@ _PROCESS_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[process:name = 'TestProcess' AND process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.binary_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:is_hidden = 'True' AND process:x_misp_port = '1234']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "misc"
-        }
-    ],
-    "labels": [
-        "misp:name=\"process\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="process"', 'misp:meta-category="misc"']
 }
-_PROCESS_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5e39776a-b284-40b3-8079-22fea964451a",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "process",
-            "pid": 2510,
-            "name": "TestProcess",
-            "binary_ref": "4",
-            "parent_ref": "1",
-            "child_refs": [
-                "3"
-            ],
-            "is_hidden": True,
-            "x_misp_port": "1234"
+_PROCESS_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e39776a-b284-40b3-8079-22fea964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "process",
+                "is_hidden": True,
+                "pid": 2510,
+                "name": "TestProcess",
+                "binary_ref": "4",
+                "parent_ref": "1",
+                "child_refs": ["3"],
+                "x_misp_port": "1234"
+            },
+            "1": {
+                "type": "process",
+                "pid": 2107,
+                "name": "Friends_From_H",
+                "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
+                "binary_ref": "2"
+            },
+            "2": {"type": "file", "name": "parent_process.exe"},
+            "3": {"type": "process", "pid": 1401},
+            "4": {"type": "file", "name": "test_process.exe"}
         },
-        "1": {
-            "type": "process",
-            "pid": 2107,
-            "name": "Friends_From_H",
-            "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
-            "binary_ref": "2"
-        },
-        "2": {
-            "type": "file",
-            "name": "parent_process.exe"
-        },
-        "3": {
-            "type": "process",
-            "pid": 1401
-        },
-        "4": {
-            "type": "file",
-            "name": "test_process.exe"
-        }
+        "labels": ['misp:name="process"', 'misp:meta-category="misc"']
     },
-    "labels": [
-        "misp:name=\"process\"",
-        "misp:meta-category=\"misc\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5e39776a-b284-40b3-8079-22fea964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.binary_ref.name = 'parent_process.exe']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="process"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--74004798-7758-4553-90fe-60cbb722dc62",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5e39776a-b284-40b3-8079-22fea964451a",
+        "target_ref": "observed-data--5e39776a-b284-40b3-8079-22fea964451a"
+    }
+]
 _REGISTRY_KEY_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
@@ -5797,48 +6639,59 @@ _REGISTRY_KEY_INDICATOR_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:modified = '2020-10-25T16:22:00Z']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "file"
-        }
-    ],
-    "labels": [
-        "misp:name=\"registry-key\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
 }
-_REGISTRY_KEY_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "windows-registry-key",
-            "key": "hkey_local_machine\\system\\bar\\foo",
-            "values": [
-                {
-                    "name": "RegistryName",
-                    "data": "%DATA%\\qwertyuiop",
-                    "data_type": "REG_SZ"
-                }
-            ],
-            "x_misp_hive": "hklm",
-            "modified": "2020-10-25T16:22:00Z"
-        }
+_REGISTRY_KEY_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "windows-registry-key",
+                "key": "hkey_local_machine\\system\\bar\\foo",
+                "values": [
+                    {
+                        "name": "RegistryName",
+                        "data": "%DATA%\\qwertyuiop",
+                        "data_type": "REG_SZ"
+                    }
+                ],
+                "modified": "2020-10-25T16:22:00Z",
+                "x_misp_hive": "hklm"
+            }
+        },
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
     },
-    "labels": [
-        "misp:name=\"registry-key\"",
-        "misp:meta-category=\"file\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0ec23b58-fbd1-4dbb-be28-6a48d4677410",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
+    }
+]
 _REGKEY_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -5849,37 +6702,49 @@ _REGKEY_INDICATOR_ATTRIBUTE = {
     "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Persistence mechanism"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
     ],
-    "labels": [
-        "misp:type=\"regkey\"",
-        "misp:category=\"Persistence mechanism\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="regkey"', 'misp:category="Persistence mechanism"']
 }
-_REGKEY_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "windows-registry-key",
-            "key": "HKLM\\Software\\mthjk"
-        }
+_REGKEY_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {"type": "windows-registry-key", "key": "HKLM\\Software\\mthjk"}
+        },
+        "labels": ['misp:type="regkey"', 'misp:category="Persistence mechanism"']
     },
-    "labels": [
-        "misp:type=\"regkey\"",
-        "misp:category=\"Persistence mechanism\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Regkey test attribute",
+        "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
+        ],
+        "labels": ['misp:type="regkey"', 'misp:category="Persistence mechanism"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _REGKEY_VALUE_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -5890,43 +6755,53 @@ _REGKEY_VALUE_INDICATOR_ATTRIBUTE = {
     "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '\\\\%DATA\\\\%\\\\1234567890']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Persistence mechanism"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
     ],
-    "labels": [
-        "misp:type=\"regkey|value\"",
-        "misp:category=\"Persistence mechanism\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:type="regkey|value"', 'misp:category="Persistence mechanism"']
 }
-_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE = {
-    "type": "observed-data",
-    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "windows-registry-key",
-            "key": "HKLM\\Software\\mthjk",
-            "values": [
-                {
-                    "name": "",
-                    "data": "%DATA%\\1234567890"
-                }
-            ]
-        }
+_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "windows-registry-key",
+                "key": "HKLM\\Software\\mthjk",
+                "values": [{"name": "", "data": "%DATA%\\1234567890"}]
+            }
+        },
+        "labels": ['misp:type="regkey|value"', 'misp:category="Persistence mechanism"']
     },
-    "labels": [
-        "misp:type=\"regkey|value\"",
-        "misp:category=\"Persistence mechanism\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Regkey | value test attribute",
+        "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '\\\\%DATA\\\\%\\\\1234567890']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Persistence mechanism"}
+        ],
+        "labels": ['misp:type="regkey|value"', 'misp:category="Persistence mechanism"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+]
 _SIZE_IN_BYTES_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -5935,17 +6810,8 @@ _SIZE_IN_BYTES_INDICATOR_ATTRIBUTE = {
     "modified": "2020-10-25T16:22:00.000Z",
     "pattern": "[file:size = '1234']",
     "valid_from": "2020-10-25T16:22:00Z",
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "Other"
-        }
-    ],
-    "labels": [
-        "misp:type=\"size-in-bytes\"",
-        "misp:category=\"Other\"",
-        "misp:to_ids=\"True\""
-    ]
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "Other"}],
+    "labels": ['misp:type="size-in-bytes"', 'misp:category="Other"']
 }
 _SCRIPT_OBJECTS = [
     {
@@ -5957,19 +6823,10 @@ _SCRIPT_OBJECTS = [
         "name": "infected.py",
         "description": "A script that infects command line shells",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"script\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
-        "implementation_languages": [
-            "Python"
-        ],
+        "labels": ['misp:name="script"', 'misp:meta-category="misc"'],
+        "implementation_languages": ["Python"],
         "x_misp_script": "print('You are infected')",
         "x_misp_script_as_attachment": {
             "value": "infected.py",
@@ -5986,16 +6843,9 @@ _SCRIPT_OBJECTS = [
         "name": "hello.py",
         "description": "A peaceful script",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
-        "labels": [
-            "misp:name=\"script\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ],
+        "labels": ['misp:name="script"', 'misp:meta-category="misc"'],
         "x_misp_language": "Python",
         "x_misp_script": "print('Hello World')",
         "x_misp_script_as_attachment": {
@@ -6013,10 +6863,7 @@ _SECTOR_GALAXY = {
     "name": "IT - Security",
     "description": "Activity sectors",
     "identity_class": "class",
-    "labels": [
-        "misp:galaxy-name=\"Sector\"",
-        "misp:galaxy-type=\"sector\""
-    ]
+    "labels": ['misp:galaxy-name="Sector"', 'misp:galaxy-type="sector"']
 }
 _THREAT_ACTOR_GALAXY = {
     "type": "threat-actor",
@@ -6025,16 +6872,9 @@ _THREAT_ACTOR_GALAXY = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Cutting Kitten",
     "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
-    "aliases": [
-        "Ghambar"
-    ],
-    "labels": [
-        "misp:galaxy-name=\"Threat Actor\"",
-        "misp:galaxy-type=\"threat-actor\""
-    ],
-    "x_misp_cfr_type_of_incident": [
-        "Denial of service"
-    ]
+    "aliases": ["Ghambar"],
+    "labels": ['misp:galaxy-name="Threat Actor"', 'misp:galaxy-type="threat-actor"'],
+    "x_misp_cfr_type_of_incident": ["Denial of service"]
 }
 _TOOL_GALAXY = {
     "type": "tool",
@@ -6043,30 +6883,17 @@ _TOOL_GALAXY = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "cmd",
     "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
-    "labels": [
-        "misp:galaxy-name=\"Tool\"",
-        "misp:galaxy-type=\"mitre-tool\""
-    ],
+    "labels": ['misp:galaxy-name="Tool"', 'misp:galaxy-type="mitre-tool"'],
     "external_references": [
-        {
-            "source_name": "mitre-attack",
-            "external_id": "S0106"
-        },
-        {
-            "source_name": "url",
-            "url": "https://attack.mitre.org/software/S0106"
-        },
+        {"source_name": "mitre-attack", "external_id": "S0106"},
+        {"source_name": "url", "url": "https://attack.mitre.org/software/S0106"},
         {
             "source_name": "url",
             "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
         }
     ],
-    "x_misp_mitre_platforms": [
-        "Windows"
-    ],
-    "x_misp_synonyms": [
-        "cmd.exe"
-    ]
+    "x_misp_mitre_platforms": ["Windows"],
+    "x_misp_synonyms": ["cmd.exe"]
 }
 _URL_INDICATOR_ATTRIBUTES = [
     {
@@ -6079,16 +6906,9 @@ _URL_INDICATOR_ATTRIBUTES = [
         "pattern": "[url:value = 'https://misp-project.org/download/']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "External analysis"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "External analysis"}
         ],
-        "labels": [
-            "misp:type=\"link\"",
-            "misp:category=\"External analysis\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="link"', 'misp:category="External analysis"']
     },
     {
         "type": "indicator",
@@ -6100,16 +6920,9 @@ _URL_INDICATOR_ATTRIBUTES = [
         "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"uri\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="uri"', 'misp:category="Network activity"']
     },
     {
         "type": "indicator",
@@ -6121,16 +6934,9 @@ _URL_INDICATOR_ATTRIBUTES = [
         "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Network activity"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
         ],
-        "labels": [
-            "misp:type=\"url\"",
-            "misp:category=\"Network activity\"",
-            "misp:to_ids=\"True\""
-        ]
+        "labels": ['misp:type="url"', 'misp:category="Network activity"']
     }
 ]
 _URL_INDICATOR_OBJECT = {
@@ -6142,16 +6948,9 @@ _URL_INDICATOR_OBJECT = {
     "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14' AND url:x_misp_port = '443']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"url\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="url"', 'misp:meta-category="network"']
 }
 _URL_OBSERVABLE_ATTRIBUTES = [
     {
@@ -6164,15 +6963,32 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "url",
-                "value": "https://misp-project.org/download/"
-            }
+            "0": {"type": "url", "value": "https://misp-project.org/download/"}
         },
-        "labels": [
-            "misp:type=\"link\"",
-            "misp:category=\"External analysis\""
-        ]
+        "labels": ['misp:type="link"', 'misp:category="External analysis"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Link test attribute",
+        "pattern": "[url:value = 'https://misp-project.org/download/']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "External analysis"}
+        ],
+        "labels": ['misp:type="link"', 'misp:category="External analysis"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     },
     {
         "type": "observed-data",
@@ -6189,10 +7005,30 @@ _URL_OBSERVABLE_ATTRIBUTES = [
                 "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova"
             }
         },
-        "labels": [
-            "misp:type=\"uri\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="uri"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URI test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="uri"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
     },
     {
         "type": "observed-data",
@@ -6204,42 +7040,79 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "objects": {
-            "0": {
-                "type": "url",
-                "value": "https://vm.misp-project.org/latest/"
-            }
+            "0": {"type": "url", "value": "https://vm.misp-project.org/latest/"}
         },
-        "labels": [
-            "misp:type=\"url\"",
-            "misp:category=\"Network activity\""
-        ]
+        "labels": ['misp:type="url"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URL test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="url"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
     }
 ]
-_URL_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5ac347ca-dac4-4562-9775-04120a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "url",
-            "value": "https://www.circl.lu/team",
-            "x_misp_domain": "circl.lu",
-            "x_misp_host": "www.circl.lu",
-            "x_misp_ip": "149.13.33.14",
-            "x_misp_port": "443"
-        }
+_URL_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac347ca-dac4-4562-9775-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "url",
+                "value": "https://www.circl.lu/team",
+                "x_misp_domain": "circl.lu",
+                "x_misp_host": "www.circl.lu",
+                "x_misp_ip": "149.13.33.14",
+                "x_misp_port": "443"
+            }
+        },
+        "labels": ['misp:name="url"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"url\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5ac347ca-dac4-4562-9775-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="url"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--9c435f8e-5d9c-4f84-9650-6bb3355ae28a",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac347ca-dac4-4562-9775-04120a00020f",
+        "target_ref": "observed-data--5ac347ca-dac4-4562-9775-04120a00020f"
+    }
+]
 _VULNERABILITY_ATTRIBUTE = {
     "type": "vulnerability",
     "id": "vulnerability--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -6247,17 +7120,8 @@ _VULNERABILITY_ATTRIBUTE = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "CVE-2017-11774",
-    "labels": [
-        "misp:type=\"vulnerability\"",
-        "misp:category=\"External analysis\"",
-        "misp:to_ids=\"True\""
-    ],
-    "external_references": [
-        {
-            "source_name": "cve",
-            "external_id": "CVE-2017-11774"
-        }
-    ]
+    "labels": ['misp:type="vulnerability"', 'misp:category="External analysis"'],
+    "external_references": [{"source_name": "cve", "external_id": "CVE-2017-11774"}]
 }
 _VULNERABILITY_GALAXY = {
     "type": "vulnerability",
@@ -6267,15 +7131,10 @@ _VULNERABILITY_GALAXY = {
     "name": "Ghost",
     "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
     "labels": [
-        "misp:galaxy-name=\"Branded Vulnerability\"",
-        "misp:galaxy-type=\"branded-vulnerability\""
+        'misp:galaxy-name="Branded Vulnerability"',
+        'misp:galaxy-type="branded-vulnerability"'
     ],
-    "external_references": [
-        {
-            "source_name": "cve",
-            "external_id": "CVE-2015-0235"
-        }
-    ]
+    "external_references": [{"source_name": "cve", "external_id": "CVE-2015-0235"}]
 }
 _VULNERABILITY_OBJECT = {
     "type": "vulnerability",
@@ -6285,20 +7144,10 @@ _VULNERABILITY_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "CVE-2017-11774",
     "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
-    "labels": [
-        "misp:name=\"vulnerability\"",
-        "misp:meta-category=\"vulnerability\"",
-        "misp:to_ids=\"False\""
-    ],
+    "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
     "external_references": [
-        {
-            "source_name": "cve",
-            "external_id": "CVE-2017-11774"
-        },
-        {
-            "source_name": "url",
-            "url": "http://www.securityfocus.com/bid/101098"
-        },
+        {"source_name": "cve", "external_id": "CVE-2017-11774"},
+        {"source_name": "url", "url": "http://www.securityfocus.com/bid/101098"},
         {
             "source_name": "url",
             "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
@@ -6319,15 +7168,11 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "pattern": "[x509-certificate:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"x509-fingerprint-md5\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="x509-fingerprint-md5"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -6340,15 +7185,11 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "pattern": "[x509-certificate:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"x509-fingerprint-sha1\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="x509-fingerprint-sha1"',
+            'misp:category="Payload delivery"'
         ]
     },
     {
@@ -6361,15 +7202,11 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "pattern": "[x509-certificate:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "Payload delivery"
-            }
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
         ],
         "labels": [
-            "misp:type=\"x509-fingerprint-sha256\"",
-            "misp:category=\"Payload delivery\"",
-            "misp:to_ids=\"True\""
+            'misp:type="x509-fingerprint-sha256"',
+            'misp:category="Payload delivery"'
         ]
     }
 ]
@@ -6386,15 +7223,39 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "x509-certificate",
-                "hashes": {
-                    "MD5": "8764605c6f388c89096b534d33565802"
-                }
+                "hashes": {"MD5": "8764605c6f388c89096b534d33565802"}
             }
         },
         "labels": [
-            "misp:type=\"x509-fingerprint-md5\"",
-            "misp:category=\"Payload delivery\""
+            'misp:type="x509-fingerprint-md5"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "X509 MD5 fingerprint test attribute",
+        "pattern": "[x509-certificate:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": [
+            'misp:type="x509-fingerprint-md5"',
+            'misp:category="Payload delivery"'
+        ]
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     },
     {
         "type": "observed-data",
@@ -6408,15 +7269,39 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         "objects": {
             "0": {
                 "type": "x509-certificate",
-                "hashes": {
-                    "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86"
-                }
+                "hashes": {"SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86"}
             }
         },
         "labels": [
-            "misp:type=\"x509-fingerprint-sha1\"",
-            "misp:category=\"Payload delivery\""
+            'misp:type="x509-fingerprint-sha1"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "X509 SHA1 fingerprint test attribute",
+        "pattern": "[x509-certificate:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": [
+            'misp:type="x509-fingerprint-sha1"',
+            'misp:category="Payload delivery"'
+        ]
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
     },
     {
         "type": "observed-data",
@@ -6436,9 +7321,35 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
             }
         },
         "labels": [
-            "misp:type=\"x509-fingerprint-sha256\"",
-            "misp:category=\"Payload delivery\""
+            'misp:type="x509-fingerprint-sha256"',
+            'misp:category="Payload delivery"'
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "X509 SHA256 fingerprint test attribute",
+        "pattern": "[x509-certificate:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
+        ],
+        "labels": [
+            'misp:type="x509-fingerprint-sha256"',
+            'misp:category="Payload delivery"'
+        ]
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
     }
 ]
 _X509_INDICATOR_OBJECT = {
@@ -6450,52 +7361,65 @@ _X509_INDICATOR_OBJECT = {
     "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "network"
-        }
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
     ],
-    "labels": [
-        "misp:name=\"x509\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"True\""
-    ]
+    "labels": ['misp:name="x509"', 'misp:meta-category="network"']
 }
-_X509_OBSERVABLE_OBJECT = {
-    "type": "observed-data",
-    "id": "observed-data--5ac3444e-145c-4749-8467-02550a00020f",
-    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-    "created": "2020-10-25T16:22:00.000Z",
-    "modified": "2020-10-25T16:22:00.000Z",
-    "first_observed": "2020-10-25T16:22:00Z",
-    "last_observed": "2020-10-25T16:22:00Z",
-    "number_observed": 1,
-    "objects": {
-        "0": {
-            "type": "x509-certificate",
-            "hashes": {
-                "MD5": "b2a5abfeef9e36964281a31e17b57c97",
-                "SHA-1": "5898fc860300e228dcd54c0b1045b5fa0dcda502"
-            },
-            "version": "1",
-            "serial_number": "1234567890",
-            "signature_algorithm": "SHA1_WITH_RSA_ENCRYPTION",
-            "issuer": "Issuer Name",
-            "validity_not_before": "2020-01-01T00:00:00Z",
-            "validity_not_after": "2021-01-01T00:00:00Z",
-            "subject": "CertificateSubject",
-            "subject_public_key_algorithm": "PublicKeyAlgorithm",
-            "subject_public_key_modulus": "C5",
-            "subject_public_key_exponent": 2,
-            "x_misp_pem": "RawCertificateInPEMFormat"
-        }
+_X509_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac3444e-145c-4749-8467-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "x509-certificate",
+                "hashes": {
+                    "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                    "SHA-1": "5898fc860300e228dcd54c0b1045b5fa0dcda502"
+                },
+                "version": "1",
+                "serial_number": "1234567890",
+                "signature_algorithm": "SHA1_WITH_RSA_ENCRYPTION",
+                "issuer": "Issuer Name",
+                "validity_not_before": "2020-01-01T00:00:00Z",
+                "validity_not_after": "2021-01-01T00:00:00Z",
+                "subject": "CertificateSubject",
+                "subject_public_key_algorithm": "PublicKeyAlgorithm",
+                "subject_public_key_modulus": "C5",
+                "subject_public_key_exponent": 2,
+                "x_misp_pem": "RawCertificateInPEMFormat"
+            }
+        },
+        "labels": ['misp:name="x509"', 'misp:meta-category="network"']
     },
-    "labels": [
-        "misp:name=\"x509\"",
-        "misp:meta-category=\"network\"",
-        "misp:to_ids=\"False\""
-    ]
-}
+    {
+        "type": "indicator",
+        "id": "indicator--5ac3444e-145c-4749-8467-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="x509"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--ef692888-dc5d-4f5c-85c2-b9a13f2ea85e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac3444e-145c-4749-8467-02550a00020f",
+        "target_ref": "observed-data--5ac3444e-145c-4749-8467-02550a00020f"
+    }
+]
 
 
 class TestInternalSTIX20Bundles(TestSTIX2Bundles):
@@ -6543,12 +7467,20 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     ############################################################################
 
     @classmethod
+    def get_bundle_with_AS_attribute(cls):
+        return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_AS_indicator_attribute(cls):
         return cls.__assemble_bundle(_AS_INDICATOR_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_AS_observable_attribute(cls):
-        return cls.__assemble_bundle(_AS_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_AS_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_attachment_attribute(cls):
+        return cls.__assemble_bundle(*_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_attachment_indicator_attribute(cls):
@@ -6556,7 +7488,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_attachment_observable_attribute(cls):
-        return cls.__assemble_bundle(_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_ATTACHMENT_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_campaign_name_attribute(cls):
@@ -6571,16 +7503,28 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_DOMAIN_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_domain_ip_attribute(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_domain_ip_indicator_attribute(cls):
         return cls.__assemble_bundle(_DOMAIN_IP_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_domain_attribute(cls):
+        return cls.__assemble_bundle(*_DOMAIN_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_domain_ip_observable_attribute(cls):
-        return cls.__assemble_bundle(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_domain_observable_attribute(cls):
-        return cls.__assemble_bundle(_DOMAIN_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_DOMAIN_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_attachment_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_attachment_indicator_attribute(cls):
@@ -6588,7 +7532,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_attachment_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_body_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_BODY_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_body_indicator_attribute(cls):
@@ -6596,7 +7548,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_body_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_BODY_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_BODY_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_destination_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_destination_indicator_attribute(cls):
@@ -6604,7 +7560,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_destination_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_header_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_header_indicator_attribute(cls):
@@ -6612,7 +7572,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_header_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_email_indicator_attribute(cls):
@@ -6620,7 +7580,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_reply_to_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_reply_to_indicator_attribute(cls):
@@ -6628,7 +7592,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_reply_to_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_source_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_source_indicator_attribute(cls):
@@ -6636,7 +7604,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_source_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_subject_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_subject_indicator_attribute(cls):
@@ -6644,7 +7616,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_subject_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_email_x_mailer_attribute(cls):
+        return cls.__assemble_bundle(*_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_email_x_mailer_indicator_attribute(cls):
@@ -6652,7 +7628,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_x_mailer_observable_attribute(cls):
-        return cls.__assemble_bundle(_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_filename_attribute(cls):
+        return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_filename_indicator_attribute(cls):
@@ -6660,7 +7640,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_filename_observable_attribute(cls):
-        return cls.__assemble_bundle(_FILENAME_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_FILENAME_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_galaxy_embedded_in_attribute(cls):
@@ -6671,12 +7651,20 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_GITHUB_USERNAME_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_hash_composite_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):
         return cls.__assemble_bundle(*_HASH_COMPOSITE_INDICATOR_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_hash_composite_observable_attributes(cls):
-        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_hash_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_hash_indicator_attributes(cls):
@@ -6684,7 +7672,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hash_observable_attributes(cls):
-        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_hostname_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hostname_indicator_attribute(cls):
@@ -6692,7 +7684,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hostname_observable_attribute(cls):
-        return cls.__assemble_bundle(_HOSTNAME_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_HOSTNAME_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_hostname_port_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hostname_port_indicator_attribute(cls):
@@ -6700,11 +7696,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_hostname_port_observable_attribute(cls):
-        return cls.__assemble_bundle(_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_http_indicator_attributes(cls):
         return cls.__assemble_bundle(*_HTTP_INDICATOR_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_attributes(cls):
+        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_ip_indicator_attributes(cls):
@@ -6712,7 +7712,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_ip_observable_attributes(cls):
-        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_ip_port_attributes(cls):
+        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_ip_port_indicator_attributes(cls):
@@ -6720,7 +7724,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_ip_port_observable_attributes(cls):
-        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES[::3])
+
+    @classmethod
+    def get_bundle_with_mac_address_attribute(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_mac_address_indicator_attribute(cls):
@@ -6728,7 +7736,22 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mac_address_observable_attribute(cls):
-        return cls.__assemble_bundle(_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_malware_sample_attribute(cls):
+        observed_data, indicator, relationship = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            data = b64encode(f.read()).decode()
+        observed_data['objects']['1']['payload_bin'] = data
+        pattern = [
+            f"file:content_ref.payload_bin = '{data}'",
+            "file:name = 'oui'",
+            "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+            "file:content_ref.mime_type = 'application/zip'"
+        ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
 
     @classmethod
     def get_bundle_with_malware_sample_indicator_attribute(cls):
@@ -6745,10 +7768,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_malware_sample_observable_attribute(cls):
-        observed_data = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        observed_data = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE[0])
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
-            observed_data['objects']['1']['payload_bin'] = b64encode(f.read()).decode()
+            data = b64encode(f.read()).decode()
+        observed_data['objects']['1']['payload_bin'] = data
         return cls.__assemble_bundle(observed_data)
+
+    @classmethod
+    def get_bundle_with_mutex_attribute(cls):
+        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_mutex_indicator_attribute(cls):
@@ -6756,11 +7784,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mutex_observable_attribute(cls):
-        return cls.__assemble_bundle(_MUTEX_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_MUTEX_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_port_indicator_attribute(cls):
         return cls.__assemble_bundle(_PORT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_regkey_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_regkey_indicator_attribute(cls):
@@ -6768,7 +7800,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_regkey_observable_attribute(cls):
-        return cls.__assemble_bundle(_REGKEY_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_REGKEY_OBSERVABLE_ATTRIBUTE[0]))
+
+    @classmethod
+    def get_bundle_with_regkey_value_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_regkey_value_indicator_attribute(cls):
@@ -6776,11 +7812,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_regkey_value_observable_attribute(cls):
-        return cls.__assemble_bundle(_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE)
+        return cls.__assemble_bundle(deepcopy(_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
     def get_bundle_with_size_in_bytes_indicator_attribute(cls):
         return cls.__assemble_bundle(_SIZE_IN_BYTES_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_url_attributes(cls):
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_url_indicator_attributes(cls):
@@ -6788,11 +7828,15 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_url_observable_attributes(cls):
-        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES[::3])
 
     @classmethod
     def get_bundle_with_vulnerability_attribute(cls):
         return cls.__assemble_bundle(_VULNERABILITY_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_x509_fingerprint_attributes(cls):
+        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_x509_fingerprint_indicator_attributes(cls):
@@ -6800,7 +7844,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_x509_fingerprint_observable_attributes(cls):
-        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
+        return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES[::3])
 
     ############################################################################
     #                              EVENTS SAMPLES                              #
@@ -6997,7 +8041,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
             'x_misp_profile_image',
             'x_misp_user_avatar'
         )
-        for observed_data, feature in zip(observables, features):
+        for observed_data, feature in zip(observables[::3], features):
             observed_data['objects']['0'][feature]['data'] = data
         return cls.__assemble_bundle(*observables)
 
@@ -7007,7 +8051,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_android_app_observable_object(cls):
-        return cls.__assemble_bundle(_ANDROID_APP_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_ANDROID_APP_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_asn_indicator_object(cls):
@@ -7015,7 +8059,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_asn_observable_object(cls):
-        return cls.__assemble_bundle(_ASN_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_ASN_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_attack_pattern_object(cls):
@@ -7031,7 +8075,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_cpe_asset_observable_object(cls):
-        return cls.__assemble_bundle(_CPE_ASSET_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_CPE_ASSET_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_credential_indicator_object(cls):
@@ -7039,7 +8083,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_credential_observable_object(cls):
-        return cls.__assemble_bundle(_CREDENTIAL_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_CREDENTIAL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_custom_objects(cls):
@@ -7059,7 +8103,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_email_observable_object(cls):
-        return cls.__assemble_bundle(_EMAIL_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_employee_object(cls):
@@ -7071,7 +8115,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_file_and_pe_observable_object(cls):
-        return cls.__assemble_bundle(_FILE_AND_PE_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_FILE_AND_PE_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_file_indicator_object(cls):
@@ -7097,10 +8141,22 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_file_observable_object(cls):
-        observed_data = deepcopy(_FILE_OBSERVABLE_OBJECT)
+        observed_data, indicator, relationship = deepcopy(_FILE_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
-            observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
-        return cls.__assemble_bundle(observed_data)
+            data = b64encode(f.read()).decode()
+        observed_data['objects']['2']['payload_bin'] = data
+        pattern = [
+            "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+            "file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
+            "file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
+            "file:name = 'oui'",
+            f"(file:content_ref.payload_bin = '{data}'",
+            "file:content_ref.x_misp_filename = 'oui'",
+            "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+            "file:content_ref.mime_type = 'application/zip')"
+        ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
 
     @classmethod
     def get_bundle_with_http_request_indicator_object(cls):
@@ -7108,7 +8164,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_http_request_observable_object(cls):
-        return cls.__assemble_bundle(_HTTP_REQUEST_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_HTTP_REQUEST_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_identity_object(cls):
@@ -7131,10 +8187,19 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_image_observable_object(cls):
-        observed_data = deepcopy(_IMAGE_OBSERVABLE_OBJECT)
+        observed_data, indicator, relationship = deepcopy(_IMAGE_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
-            observed_data['objects']['1']['payload_bin'] = b64encode(f.read()).decode()
-        return cls.__assemble_bundle(observed_data)
+            data = b64encode(f.read()).decode()
+        observed_data['objects']['1']['payload_bin'] = data
+        pattern = [
+            "file:name = 'STIX.png'",
+            f"file:content_ref.payload_bin = '{data}'",
+            "file:content_ref.mime_type = 'image/png'",
+            "file:content_ref.x_misp_filename = 'STIX.png'",
+            "file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png'"
+        ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
 
     @classmethod
     def get_bundle_with_intrusion_set_object(cls):
@@ -7146,7 +8211,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_ip_port_observable_object(cls):
-        return cls.__assemble_bundle(_IP_PORT_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_legal_entity_object(cls):
@@ -7179,10 +8244,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_lnk_observable_object(cls):
-        observed_data = deepcopy(_LNK_OBSERVABLE_OBJECT)
+        observed_data, indicator, relationship = deepcopy(_LNK_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
-        return cls.__assemble_bundle(observed_data)
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
 
     @classmethod
     def get_bundle_with_mutex_indicator_object(cls):
@@ -7190,7 +8255,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_mutex_observable_object(cls):
-        return cls.__assemble_bundle(_MUTEX_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_netflow_indicator_object(cls):
@@ -7198,7 +8263,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_netflow_observable_object(cls):
-        return cls.__assemble_bundle(_NETFLOW_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_NETFLOW_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_network_connection_indicator_object(cls):
@@ -7206,7 +8271,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_network_connection_observable_object(cls):
-        return cls.__assemble_bundle(_NETWORK_CONNECTION_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_NETWORK_CONNECTION_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_network_socket_indicator_object(cls):
@@ -7214,7 +8279,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_network_socket_observable_object(cls):
-        return cls.__assemble_bundle(_NETWORK_SOCKET_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_news_agency_object(cls):
@@ -7241,7 +8306,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_process_observable_object(cls):
-        return cls.__assemble_bundle(_PROCESS_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_PROCESS_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_registry_key_indicator_object(cls):
@@ -7249,7 +8314,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_registry_key_observable_object(cls):
-        return cls.__assemble_bundle(_REGISTRY_KEY_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_REGISTRY_KEY_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_script_objects(cls):
@@ -7261,7 +8326,7 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_url_observable_object(cls):
-        return cls.__assemble_bundle(_URL_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
@@ -7273,4 +8338,4 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
 
     @classmethod
     def get_bundle_with_x509_observable_object(cls):
-        return cls.__assemble_bundle(_X509_OBSERVABLE_OBJECT)
+        return cls.__assemble_bundle(*_X509_OBSERVABLE_OBJECT)

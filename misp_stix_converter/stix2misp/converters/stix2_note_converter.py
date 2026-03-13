@@ -6,7 +6,7 @@ from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
 from pymisp import MISPEventReport
 from stix2.v21 import Note
-from typing import TYPE_CHECKING
+from typing import Any, Iterator, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
@@ -70,3 +70,19 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
             uuid=self.main_parser._sanitise_uuid(note.id)
         )
         self.main_parser._add_event_report(event_report, note.id)
+
+    def _populate_object_attributes_with_data(self, mapping: dict, values: Any,
+                                              object_id: str) -> Iterator[dict]:
+        if isinstance(values, list):
+            for value in values:
+                yield self._populate_object_attribute_with_data(
+                    value, mapping, uuid=self.main_parser._create_v5_uuid(
+                        f"{object_id} - {mapping['object_relation']} - {value}"
+                    )
+                )
+        else:
+            yield self._populate_object_attribute_with_data(
+                values, mapping, uuid=self.main_parser._create_v5_uuid(
+                    f"{object_id} - {mapping['object_relation']} - {values}"
+                )
+            )

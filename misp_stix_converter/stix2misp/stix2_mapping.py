@@ -16,6 +16,13 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             '2': '_parse_bundle_with_multiple_reports'
         }
     )
+    __marking_cluster_handling = Mapping(
+        **{
+            'MISPAttribute': '_handle_attribute_marking_clusters',
+            'MISPEvent': '_handle_event_marking_clusters',
+            'MISPObject': '_handle_object_marking_clusters'
+        }
+    )
     __marking_extension_mapping = Mapping(
         **{
             'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce': 'acs'
@@ -26,28 +33,17 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         'sensitivity', 'shareability'
     )
     __object_type_refs_to_skip = (
-        'marking-definition', 'opinion', 'relationship',
-        'sighting', 'x-misp-opinion'
+        'opinion', 'relationship', 'sighting', 'x-misp-opinion'
     )
     __observable_object_types = (
-        'network-traffic',
-        'file',
-        'email-message',
-        'artifact',
-        'autonomous-system',
-        'directory',
-        'domain-name',
-        'email-addr',
-        'ipv4-addr',
-        'ipv6-addr',
-        'mac-addr',
-        'mutex',
-        'process',
-        'software',
-        'url',
-        'user-account',
+        # Some observable types that should be handled first
+        'network-traffic', 'email-message', 'process', 'file',
         'windows-registry-key',
-        'x509-certificate'
+        # The other observable types, referenced by the first ones
+        # or that we can handle with no specific order
+        'artifact', 'autonomous-system', 'directory', 'domain-name',
+        'email-addr', 'ipv4-addr', 'ipv6-addr', 'mac-addr', 'mutex',
+        'software', 'url', 'user-account', 'x509-certificate'
     )
     __stix_object_loading_mapping = Mapping(
         **{
@@ -170,6 +166,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def identity_references(cls, identity_id: str) -> Union[str, None]:
         return cls.__identity_references.get(identity_id)
+
+    @classmethod
+    def marking_cluster_handling(cls, field: str) -> Union[str, None]:
+        return cls.__marking_cluster_handling.get(field)
 
     @classmethod
     def marking_extension_mapping(cls, field: str) -> Union[str, None]:

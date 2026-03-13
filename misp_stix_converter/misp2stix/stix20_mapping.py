@@ -19,8 +19,16 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     __attribute_types_mapping = MISPtoSTIX2Mapping.attribute_types_mapping()
 
     # STIX 2.0 specific GALAXIES MAPPING
-    __cluster_to_stix_object = dict(MISPtoSTIX2Mapping.cluster_to_stix_object())
-    __galaxy_types_mapping = dict(MISPtoSTIX2Mapping.galaxy_types_mapping())
+    __cluster_to_stix_object = {
+        'stix-2.0-acs-marking': 'marking-definition',
+        'stix-2.1-acs-marking': 'marking-definition',
+        **MISPtoSTIX2Mapping.cluster_to_stix_object()
+    }
+    __galaxy_types_mapping = {
+        'stix-2.0-acs-marking': '_parse_acs_marking_{}_galaxy',
+        'stix-2.1-acs-marking': '_parse_acs_marking_{}_galaxy',
+        **MISPtoSTIX2Mapping.galaxy_types_mapping()
+    }
     for galaxy_type in MISPtoSTIX2Mapping.generic_galaxy_types():
         for version in ('2.0', '2.1'):
             key = f'stix-{version}-{galaxy_type}'
@@ -34,11 +42,9 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     )
     __generic_meta_mapping = Mapping(
         **{
-            'malware': {'created': True, 'modified': True},
             'threat-actor': {
-                'created': True, 'goals': False, 'modified': True,
-                'personal_motivations': False, 'primary_motivation': True,
-                'resource_level': True, 'roles': False,
+                'goals': False, 'personal_motivations': False, 'roles': False,
+                'primary_motivation': True, 'resource_level': True,
                 'secondary_motivations': False, 'sophistication': True
             },
             **MISPtoSTIX2Mapping.generic_meta_mapping()
@@ -87,6 +93,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
             'lnk-creation-time': 'created',
             'lnk-modification-time': 'modified'
         }
+    )
+    __malware_object_mapping = Mapping(
+        malware_type='labels',
+        **MISPtoSTIX2Mapping.malware_object_mapping()
     )
     __network_socket_mapping = Mapping(
         features={
@@ -221,6 +231,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def lnk_time_fields(cls) -> dict:
         return cls.__lnk_time_fields
+
+    @classmethod
+    def malware_object_mapping(cls) -> dict:
+        return cls.__malware_object_mapping
 
     @classmethod
     def malware_sample_additional_observable_values(cls) -> dict:
