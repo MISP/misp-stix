@@ -42,7 +42,7 @@ misp_stix_converter = 'misp_stix_converter:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pymisp = "^2.5.4"
+pymisp = "^2.5.33"
 stix = "^1.2.0"
 cybox = "^2.1.0"
 mixbox = "^1.0.3"
