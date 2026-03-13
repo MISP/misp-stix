@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "misp-stix"
-version = "2026.2.12"
+version = "2026.3.13"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
@@ -11,7 +11,7 @@ readme = "README.md"
 
 classifiers = [
     'License :: OSI Approved :: BSD License',
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Operating System :: POSIX :: Linux',
     'Intended Audience :: Science/Research',
