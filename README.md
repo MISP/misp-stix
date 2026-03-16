@@ -13,11 +13,14 @@ The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in 
 
 ## Features
 
-- MISP standard format conversion to STIX 1.x (1.1.1 and 1.2)
-- MISP standard format conversion to STIX 2.x (2.0 and 2.1)
-- Maps [MISP Objects](https://github.com/MISP/misp-objects) and [MISP galaxies](https://github.com/misp/misp-galaxy) with [respective semantically similar objects](https://github.com/MISP/misp-stix/tree/main/documentation)
-- STIX to MISP standard format
-- Provides an extendable library for mapping and facilitate extension
+- **Bidirectional conversion** — Full support for MISP to STIX 1.x (1.1.1 and 1.2), STIX 2.x (2.0 and 2.1), and back to MISP standard format.
+- **Indicator-Observable fingerprinting** — Matches STIX Indicators with their corresponding Observable objects using content fingerprinting, preserving the `to_ids` flag accurately during round-trip conversions.
+- **Dual export for detection-ready attributes** — Attributes with `to_ids=True` produce both an Indicator (with a STIX pattern) and an Observed Data object, linked by a Relationship, so downstream tools can use whichever representation they support.
+- **Broad object type coverage** — [MISP Objects](https://github.com/MISP/misp-objects) and [MISP Galaxies](https://github.com/misp/misp-galaxy) are mapped to [semantically similar STIX objects](https://github.com/MISP/misp-stix/tree/main/documentation), including artifact, malware, malware-analysis, http-request, network traffic, and more.
+- **ACS Marking support** — Round-trip conversion of ACS (Access Control System) marking definitions between STIX 2.1 Marking Definitions and MISP Galaxy Clusters.
+- **Comprehensive pattern parsing** — Parses STIX 2.x indicator patterns covering x509 certificates, processes, Windows registry keys, email messages, domain-IP pairs, AS numbers, network traffic, PE extensions, and other object types.
+- **Internal vs External import** — Higher fidelity reconstruction for MISP-generated STIX content (recognises `x-misp-*` custom objects), with heuristic matching for third-party STIX data.
+- **Extendable mapping library** — Provides a modular mapping architecture to facilitate extension and customisation.
 
 This library is used by the [MISP core software](https://github.com/MISP/MISP) to perform STIX conversion and serving as a useful tool for anyone looking for a clean way of converting between the MISP standard format and various STIX versions (1.1.1, 1.2, 2.0, 2.1).
 
@@ -327,8 +330,8 @@ You can find there all the different cases illustrated with examples.
 misp-stix is released under a BSD 2-Clause "Simplified" License allow easy reuse with other libraries.
 
 ~~~
-Copyright 2019-2025 Christian Studer
-Copyright 2019-2025 CIRCL - Computer Incident Response Center Luxembourg c/o "security made in Lëtzebuerg" (SMILE) g.i.e.
+Copyright 2019-2026 Christian Studer
+Copyright 2019-2026 CIRCL - Computer Incident Response Center Luxembourg c/o LHC g.i.e.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
