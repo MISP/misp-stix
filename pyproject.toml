@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "misp-stix"
-version = "2025.11.12"
+version = "2026.3.13"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
@@ -11,7 +11,7 @@ readme = "README.md"
 
 classifiers = [
     'License :: OSI Approved :: BSD License',
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Operating System :: POSIX :: Linux',
     'Intended Audience :: Science/Research',
@@ -42,15 +42,15 @@ misp_stix_converter = 'misp_stix_converter:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pymisp = "^2.5.4"
+pymisp = "^2.5.33"
 stix = "^1.2.0"
 cybox = "^2.1.0"
-misp-lib-stix2="^3.0.1"
 mixbox = "^1.0.3"
 maec = "^4.1.0"
 stix-edh = "1.0.3"
 setuptools = "*"
 pycountry = "^24.6.1"
+stix2 = "^3.0.2"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^3.8.3"
