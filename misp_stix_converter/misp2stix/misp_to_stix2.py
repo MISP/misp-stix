@@ -16,7 +16,9 @@ from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
     MISPNote, MISPObject, MISPOpinion)
 from pymisp.exceptions import PyMISPError
-from pymisp.tools import validate_attribute, validate_attributes, validate_event
+from pymisp.tools import (
+    validate_attribute, validate_attributes, validate_event, validate_object,
+    validate_objects)
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -102,7 +104,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if self.relationships:
             self._handle_relationships()
 
-    def parse_misp_attributes(self, attributes: MISPAttribute | dict):
+    def parse_misp_attributes(self, attributes: list):
         self._results_handling_method = '_append_SDO_without_refs'
         self._set_identifier('attributes collection')
         if not self.__initiated:
@@ -132,16 +134,56 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._initiate_events_parsing()
         self._parse_misp_event(misp_event)
 
+    def parse_misp_object(self, misp_object: MISPObject | dict):
+        self._results_handling_method = '_append_SDO_without_refs'
+        self._set_identifier('objects collection')
+        if not self.__initiated:
+            self._initiate_attributes_parsing()
+        else:
+            self.__relationships = []
+        if 'Object' in misp_object:
+            misp_object = misp_object['Object']
+        errors = defaultdict(list)
+        if isinstance(misp_object, list):
+            for obj in validate_objects(misp_object, errors):
+                self._resolve_object(obj)
+        else:
+            self._resolve_object(validate_object(misp_object, errors))
+        if errors:
+            self._handle_validation_errors(errors)
+        if self.relationships:
+            self._handle_relationships()
+
+    def parse_misp_objects(self, misp_objects: list):
+        self._results_handling_method = '_append_SDO_without_refs'
+        self._set_identifier('objects collection')
+        if not self.__initiated:
+            self._initiate_attributes_parsing()
+        else:
+            self.__relationships = []
+        errors = defaultdict(list)
+        for misp_object in misp_objects:
+            if 'Object' in misp_object:
+                misp_object = misp_object['Object']
+            self._resolve_object(validate_object(misp_object, errors))
+        if errors:
+            self._handle_validation_errors(errors)
+        if self.relationships:
+            self._handle_relationships()
+
     def _parse_json_content(self, json_content: dict | list):
         self._results_handling_method = '_append_SDO'
         if 'response' in json_content:
             json_content = json_content['response']
             if isinstance(json_content, list):
-                if not self.__initiated:
-                    self._initiate_events_parsing()
-                for event in json_content:
-                    self._parse_misp_event(event)
-                    self.__index = len(self.stix_objects)
+                if all('Object' in content for content in json_content):
+                    self.parse_misp_objects(json_content)
+                else:
+                    if not self.__initiated:
+                        self._initiate_events_parsing()
+                    for event in json_content:
+                        self._parse_misp_event(event)
+                        self.__index = len(self.stix_objects)
             else:
                 self.parse_misp_attributes(json_content)
         else:
@@ -152,8 +194,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             else:
                 if 'Event' in json_content or 'info' in json_content:
                     self.parse_misp_event(json_content)
+                elif 'Object' in json_content:
+                    self.parse_misp_object(json_content)
                 else:
-                    self.parse_misp_attributes(json_content)
+                    self.parse_misp_attribute(json_content)
 
     def _parse_misp_event(self, misp_event: MISPEvent | dict):
         self._misp_event = validate_event(
@@ -1321,18 +1365,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     #                      MISP OBJECTS PARSING FUNCTIONS                      #
     ############################################################################
 
+    def _resolve_object(self, misp_object: MISPObject | dict):
+        try:
+            object_name = misp_object['name']
+            to_call = self._mapping.objects_mapping(object_name)
+            if to_call is not None:
+                getattr(self, to_call)(misp_object)
+            else:
+                self._parse_custom_object(misp_object)
+                self._object_not_mapped_warning(object_name)
+        except Exception as exception:
+            self._object_error(misp_object, exception)
+
     def _resolve_objects(self):
         for misp_object in self._misp_event['Object']:
-            try:
-                object_name = misp_object['name']
-                to_call = self._mapping.objects_mapping(object_name)
-                if to_call is not None:
-                    getattr(self, to_call)(misp_object)
-                else:
-                    self._parse_custom_object(misp_object)
-                    self._object_not_mapped_warning(object_name)
-            except Exception as exception:
-                self._object_error(misp_object, exception)
+            self._resolve_object(misp_object)
 
     def _extract_indicator_object_attributes(self, attributes: list) -> dict:
         return {

@@ -1,0 +1,257 @@
+{
+    "type": "bundle",
+    "id": "bundle--c1bc67e0-634f-4858-96f0-136370687d88",
+    "objects": [
+        {
+            "type": "identity",
+            "spec_version": "2.1",
+            "id": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2015-09-14T15:40:21.000Z",
+            "modified": "2015-09-14T15:40:21.000Z",
+            "name": "MISP",
+            "identity_class": "organization"
+        },
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
+                "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+                "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46"
+            ],
+            "labels": [
+                "misp:name=\"email\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
+            "is_multipart": false,
+            "from_ref": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+            "to_refs": [
+                "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46"
+            ],
+            "message_id": "<1234567890@foo.bar>",
+            "subject": "Email test subject"
+        },
+        {
+            "type": "email-addr",
+            "spec_version": "2.1",
+            "id": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+            "value": "donald.duck@disney.com"
+        },
+        {
+            "type": "email-addr",
+            "spec_version": "2.1",
+            "id": "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+            "value": "jdoe@random.org"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[email-message:from_ref.value = 'donald.duck@disney.com']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "network"
+                }
+            ],
+            "labels": [
+                "misp:name=\"email\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+                "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+            ],
+            "labels": [
+                "misp:name=\"file\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "hashes": {
+                "MD5": "8764605c6f388c89096b534d33565802",
+                "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+            },
+            "size": 35,
+            "name": "oui",
+            "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        },
+        {
+            "type": "directory",
+            "spec_version": "2.1",
+            "id": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "path": "/var/www/MISP/app/files/scripts/tmp"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "file"
+                }
+            ],
+            "labels": [
+                "misp:name=\"file\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--0a936557-847e-5016-ad92-c772d85cd447",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+            "target_ref": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a"
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--84a09ac4-d222-57f1-9fab-f36595b47888",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "target_ref": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a"
+        },
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+                "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:name=\"domain-ip\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "value": "149.13.33.14"
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "circl.lu",
+            "resolves_to_refs": [
+                "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+            ]
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "network"
+                }
+            ],
+            "labels": [
+                "misp:name=\"domain-ip\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f"
+            ],
+            "labels": [
+                "misp:name=\"credential\"",
+                "misp:meta-category=\"misc\""
+            ]
+        },
+        {
+            "type": "user-account",
+            "spec_version": "2.1",
+            "id": "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+            "user_id": "misp",
+            "credential": "Password1234",
+            "x_misp_format": "clear-text",
+            "x_misp_notification": "victim-notified",
+            "x_misp_origin": "malware-analysis",
+            "x_misp_text": "MISP default credentials",
+            "x_misp_type": "password"
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--74f723bb-92e6-5f35-9041-324978af36e2",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+            "target_ref": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
+        }
+    ]
+}

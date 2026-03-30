@@ -5041,6 +5041,28 @@ class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
         )
         self._check_stix2_results_export(output_file, reference_file)
 
+    def test_objects_collection(self):
+        name = 'test_objects_collection'
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix20.json'
+        input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', single_output=True,
+                output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', in_memory=True,
+                single_output=True, output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+
     def test_events_collection(self):
         name = 'test_events_collection'
         output_file = self._current_path / f'{name}.json.out'

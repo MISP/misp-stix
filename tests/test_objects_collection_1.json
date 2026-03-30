@@ -1,0 +1,116 @@
+{
+    "response": [
+        {
+            "Object": {
+                "name": "email",
+                "meta-category": "network",
+                "description": "Email object describing an email with meta-information",
+                "uuid": "5e396622-2a54-4c8d-b61d-159da964451a",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "f5ec3603-e3d0-42d7-a372-14c1c137699b",
+                        "type": "email-src",
+                        "object_relation": "from",
+                        "value": "donald.duck@disney.com",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+                        "type": "email-dst",
+                        "object_relation": "to",
+                        "value": "jdoe@random.org",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
+                        "type": "email-subject",
+                        "object_relation": "subject",
+                        "value": "Email test subject",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "2e55fd78-1c58-4472-bb5b-7583e7cffc97",
+                        "type": "email-message-id",
+                        "object_relation": "message-id",
+                        "value": "<1234567890@foo.bar>",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": false
+                    }
+                ]
+            }
+        },
+        {
+            "Object": {
+                "name": "file",
+                "meta-category": "file",
+                "description": "File object describing a file with meta-information",
+                "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "a0921e21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "filename",
+                        "object_relation": "filename",
+                        "value": "oui",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "b1ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "md5",
+                        "object_relation": "md5",
+                        "value": "8764605c6f388c89096b534d33565802",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "c2ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "sha1",
+                        "object_relation": "sha1",
+                        "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "d3ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "sha256",
+                        "object_relation": "sha256",
+                        "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                        "category": "Payload delivery",
+                        "timestamp": "1603642920",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "e4ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "size-in-bytes",
+                        "object_relation": "size-in-bytes",
+                        "value": "35",
+                        "category": "Other",
+                        "timestamp": "1603642920",
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                        "type": "text",
+                        "object_relation": "path",
+                        "value": "/var/www/MISP/app/files/scripts/tmp",
+                        "category": "Other",
+                        "timestamp": "1603642920",
+                        "to_ids": false
+                    }
+                ]
+            }
+        }
+    ]
+}
