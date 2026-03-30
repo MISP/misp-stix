@@ -1,0 +1,217 @@
+{
+    "type": "bundle",
+    "id": "bundle--0521e594-7595-4992-86af-266e996e3f49",
+    "spec_version": "2.0",
+    "objects": [
+        {
+            "type": "identity",
+            "id": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2015-09-14T15:40:21.000Z",
+            "modified": "2015-09-14T15:40:21.000Z",
+            "name": "MISP",
+            "identity_class": "organization"
+        },
+        {
+            "type": "observed-data",
+            "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "1": {
+                    "type": "email-addr",
+                    "value": "donald.duck@disney.com"
+                },
+                "2": {
+                    "type": "email-addr",
+                    "value": "jdoe@random.org"
+                },
+                "0": {
+                    "type": "email-message",
+                    "is_multipart": false,
+                    "from_ref": "1",
+                    "to_refs": [
+                        "2"
+                    ],
+                    "subject": "Email test subject",
+                    "x_misp_message_id": "<1234567890@foo.bar>"
+                }
+            },
+            "labels": [
+                "misp:name=\"email\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "indicator",
+            "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[email-message:from_ref.value = 'donald.duck@disney.com']",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "network"
+                }
+            ],
+            "labels": [
+                "misp:name=\"email\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "observed-data",
+            "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "1": {
+                    "type": "directory",
+                    "path": "/var/www/MISP/app/files/scripts/tmp"
+                },
+                "0": {
+                    "type": "file",
+                    "hashes": {
+                        "MD5": "8764605c6f388c89096b534d33565802",
+                        "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                        "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                    },
+                    "size": 35,
+                    "name": "oui",
+                    "parent_directory_ref": "1"
+                }
+            },
+            "labels": [
+                "misp:name=\"file\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "indicator",
+            "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui']",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "file"
+                }
+            ],
+            "labels": [
+                "misp:name=\"file\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--0a936557-847e-5016-ad92-c772d85cd447",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+            "target_ref": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a"
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--84a09ac4-d222-57f1-9fab-f36595b47888",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "target_ref": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a"
+        },
+        {
+            "type": "observed-data",
+            "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "0": {
+                    "type": "ipv4-addr",
+                    "value": "149.13.33.14"
+                },
+                "1": {
+                    "type": "domain-name",
+                    "value": "circl.lu",
+                    "resolves_to_refs": [
+                        "0"
+                    ]
+                }
+            },
+            "labels": [
+                "misp:name=\"domain-ip\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "indicator",
+            "id": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "network"
+                }
+            ],
+            "labels": [
+                "misp:name=\"domain-ip\"",
+                "misp:meta-category=\"network\""
+            ]
+        },
+        {
+            "type": "observed-data",
+            "id": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "0": {
+                    "type": "user-account",
+                    "user_id": "misp",
+                    "x_misp_format": "clear-text",
+                    "x_misp_notification": "victim-notified",
+                    "x_misp_origin": "malware-analysis",
+                    "x_misp_password": "Password1234",
+                    "x_misp_text": "MISP default credentials",
+                    "x_misp_type": "password"
+                }
+            },
+            "labels": [
+                "misp:name=\"credential\"",
+                "misp:meta-category=\"misc\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--74f723bb-92e6-5f35-9041-324978af36e2",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
+            "target_ref": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
+        }
+    ]
+}
