@@ -138,7 +138,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._results_handling_method = '_append_SDO_without_refs'
         self._set_identifier('objects collection')
         if not self.__initiated:
-            self._initiate_attributes_parsing()
+            self._initiate_objects_parsing()
         else:
             self.__relationships = []
         if 'Object' in misp_object:
@@ -158,7 +158,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._results_handling_method = '_append_SDO_without_refs'
         self._set_identifier('objects collection')
         if not self.__initiated:
-            self._initiate_attributes_parsing()
+            self._initiate_objects_parsing()
         else:
             self.__relationships = []
         errors = defaultdict(list)
@@ -318,6 +318,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _initiate_feed_parsing(self):
         self.__objects = []
+        self.__relationships = []
+        self.__initiated = True
+
+    def _initiate_objects_parsing(self):
+        self._objects_to_parse = defaultdict(dict)
+        self.__objects = []
+        self.__object_refs = []
         self.__relationships = []
         self.__initiated = True
 
