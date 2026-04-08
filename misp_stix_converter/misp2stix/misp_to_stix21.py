@@ -109,11 +109,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self, event_report: MISPEventReport | dict) -> Note:
         timestamp = self._parse_timestamp_value(event_report)
         note_args = {
-            'id': f"note--{event_report['uuid']}",
-            'created': timestamp, 'modified': timestamp,
-            'created_by_ref': self.identity_id,
-            'content': event_report['content'],
-            'abstract': event_report['name'],
+            'id': f"note--{event_report['uuid']}", 'created': timestamp,
+            'modified': timestamp, 'content': event_report['content'],
+            'abstract': event_report['name'], **self.shared_args,
             'labels': ['misp:data-layer="Event Report"']
         }
         references = set(self._parse_event_report_references(event_report))
@@ -126,13 +124,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         note_args = {
-            'id': f"note--{self._misp_event['uuid']}",
-            'created': timestamp, 'modified': timestamp,
-            'created_by_ref': self.identity_id, 'object_refs': [object_id],
-            'content': (
+            'id': f"note--{self._misp_event['uuid']}", 'created': timestamp,
+            'modified': timestamp, 'object_refs': [object_id],
+            **self.shared_args, 'content': (
                 'This MISP Event is empty and contains '
                 'no attribute, object, galaxy or tag.'
-            )
+            ),
         }
         self._append_SDO(self._create_note(note_args))
 
@@ -720,9 +717,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         timestamp = self._parse_timestamp_value(misp_object)
         note_args = {
             'id': note_id, 'created': timestamp, 'modified': timestamp,
-            'created_by_ref': self.identity_id, 'interoperability': True,
             'labels': self._create_object_labels(misp_object),
-            'object_refs': list(object_refs)
+            'object_refs': list(object_refs), **self.shared_args
         }
         markings = self._handle_object_tags_and_galaxies(
             misp_object, note_args
@@ -988,8 +984,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         timestamp = self._parse_timestamp_value(misp_object)
         location_args = {
             'id': location_id, 'created': timestamp, 'modified': timestamp,
-            'created_by_ref': self.identity_id, 'interoperability': True,
-            'labels': self._create_object_labels(misp_object)
+            'labels': self._create_object_labels(misp_object),
+            **self.shared_args
         }
         if misp_object.get('comment'):
             location_args['description'] = misp_object['comment']
@@ -1746,12 +1742,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             identity_args['allow_custom'] = True
         return Identity(**identity_args)
 
-    def _create_identity_object(self, orgname: str) -> Identity:
+    def _create_identity_object(
+            self, identity_id: str, orgname: str) -> Identity:
         identity_args = {
-            'type': 'identity', 'id': self.identity_id,
+            'type': 'identity', 'id': identity_id, 'name': orgname,
             'created': self.event_timestamp, 'modified': self.event_timestamp,
-            'name': orgname, 'identity_class': 'organization',
-            'interoperability': True
+            'identity_class': 'organization', 'interoperability': True
         }
         return self._create_identity(identity_args)
 

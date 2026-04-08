@@ -271,8 +271,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         note_args = {
             'id': f"x-misp-event-report--{event_report['uuid']}",
             'created': timestamp, 'modified': timestamp,
-            'created_by_ref': self.identity_id,
-            'x_misp_content': event_report['content']
+            'x_misp_content': event_report['content'], **self.shared_args
         }
         if event_report.get('name'):
             note_args['x_misp_name'] = event_report['name']
@@ -288,9 +287,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         custom_args = {
             'id': f"{object_type}--{self._misp_event['uuid']}",
             'created': timestamp, 'modified': timestamp,
-            'created_by_ref': self.identity_id,
-            'x_misp_event_note': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.',
-            'object_ref': object_id, 'interoperability': True
+            'object_ref': object_id, **self.shared_args, 'x_misp_event_note': (
+                'This MISP Event is empty and contains '
+                'no attribute, object, galaxy or tag.'
+            )
         }
         self._append_SDO(CustomNote(**custom_args))
 
@@ -1451,9 +1451,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             identity_args['allow_custom'] = True
         return Identity(**identity_args)
 
-    def _create_identity_object(self, orgname: str) -> Identity:
+    def _create_identity_object(
+            self, identity_id: str, orgname: str) -> Identity:
         identity_args = {
-            'type': 'identity', 'id': self.identity_id, 'name': orgname,
+            'type': 'identity', 'id': identity_id, 'name': orgname,
             'created': self.event_timestamp, 'modified': self.event_timestamp,
             'identity_class': 'organization', 'interoperability': True
         }
