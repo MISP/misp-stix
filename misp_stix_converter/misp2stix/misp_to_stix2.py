@@ -151,6 +151,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._resolve_object(validate_object(misp_object, errors))
         if errors:
             self._handle_validation_errors(errors)
+        if self._objects_to_parse:
+            self._resolve_objects_to_parse()
         if self.relationships:
             self._handle_relationships()
 
@@ -168,6 +170,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._resolve_object(validate_object(misp_object, errors))
         if errors:
             self._handle_validation_errors(errors)
+        if self._objects_to_parse:
+            self._resolve_objects_to_parse()
         if self.relationships:
             self._handle_relationships()
 
