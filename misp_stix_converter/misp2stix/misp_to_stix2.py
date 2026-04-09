@@ -17,8 +17,7 @@ from pymisp import (
     MISPNote, MISPObject, MISPOpinion)
 from pymisp.exceptions import PyMISPError
 from pymisp.tools import (
-    validate_attribute, validate_attributes, validate_event, validate_object,
-    validate_objects)
+    validate_attribute, validate_event, validate_object, validate_objects)
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -113,15 +112,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._initiate_attributes_parsing()
         else:
             self.__relationships = []
+        event = (
+            attributes.get('Event', {}) if isinstance(attributes, dict) else {}
+        )
         if 'Attribute' in attributes:
             if 'Galaxy' in attributes:
                 self._parse_event_galaxies(attributes['Galaxy'])
             attributes = attributes['Attribute']
-        errors = defaultdict(list)
-        for attribute in validate_attributes(attributes, errors):
+        for attribute in attributes:
+            if attribute.get('Attribute') is not None:
+                attribute = attribute['Attribute']
+            self._bind_shared_args(
+                self._handle_identity_from_feed(attribute.get('Event', event))
+            )
+            try:
+                attribute = validate_attribute(attribute)
+            except PyMISPError as exception:
+                self._validation_errors(str(exception))
             self._resolve_attribute(attribute)
-        if errors:
-            self._handle_validation_errors(errors)
         if self._markings:
             for marking in self._markings.values():
                 if not marking['used']:
@@ -143,13 +151,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._initiate_objects_parsing()
         else:
             self.__relationships = []
+        event = misp_object.get('Event', {})
         if 'Object' in misp_object:
             misp_object = misp_object['Object']
         errors = defaultdict(list)
         if isinstance(misp_object, list):
             for obj in validate_objects(misp_object, errors):
+                self._bind_shared_args(
+                    self._handle_identity_from_feed(obj.get('Event', event))
+                )
                 self._resolve_object(obj)
         else:
+            self._bind_shared_args(self._handle_identity_from_feed(event))
             self._resolve_object(validate_object(misp_object, errors))
         if errors:
             self._handle_validation_errors(errors)
@@ -169,6 +182,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for misp_object in misp_objects:
             if 'Object' in misp_object:
                 misp_object = misp_object['Object']
+            self._bind_shared_args(
+                self._handle_identity_from_feed(misp_object.get('Event', {}))
+            )
             self._resolve_object(validate_object(misp_object, errors))
         if errors:
             self._handle_validation_errors(errors)
