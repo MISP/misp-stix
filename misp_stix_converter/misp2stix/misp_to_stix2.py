@@ -17,8 +17,7 @@ from pymisp import (
     MISPNote, MISPObject, MISPOpinion)
 from pymisp.exceptions import PyMISPError
 from pymisp.tools import (
-    validate_attribute, validate_attributes, validate_event, validate_object,
-    validate_objects)
+    validate_attribute, validate_event, validate_object, validate_objects)
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -94,7 +93,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if not self.__initiated:
             self._initiate_feed_parsing()
         self.__relationships = []
-        self._handle_identity_from_feed(attribute.get('Event', {}))
+        self._bind_shared_args(
+            self._handle_identity_from_feed(attribute.get('Event', {}))
+        )
         try:
             misp_attribute = validate_attribute(attribute)
         except PyMISPError as exception:
@@ -111,15 +112,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._initiate_attributes_parsing()
         else:
             self.__relationships = []
+        event = (
+            attributes.get('Event', {}) if isinstance(attributes, dict) else {}
+        )
         if 'Attribute' in attributes:
             if 'Galaxy' in attributes:
                 self._parse_event_galaxies(attributes['Galaxy'])
             attributes = attributes['Attribute']
-        errors = defaultdict(list)
-        for attribute in validate_attributes(attributes, errors):
+        for attribute in attributes:
+            if attribute.get('Attribute') is not None:
+                attribute = attribute['Attribute']
+            self._bind_shared_args(
+                self._handle_identity_from_feed(attribute.get('Event', event))
+            )
+            try:
+                attribute = validate_attribute(attribute)
+            except PyMISPError as exception:
+                self._validation_errors(str(exception))
             self._resolve_attribute(attribute)
-        if errors:
-            self._handle_validation_errors(errors)
         if self._markings:
             for marking in self._markings.values():
                 if not marking['used']:
@@ -138,19 +148,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._results_handling_method = '_append_SDO_without_refs'
         self._set_identifier('objects collection')
         if not self.__initiated:
-            self._initiate_attributes_parsing()
+            self._initiate_objects_parsing()
         else:
             self.__relationships = []
+        event = misp_object.get('Event', {})
         if 'Object' in misp_object:
             misp_object = misp_object['Object']
         errors = defaultdict(list)
         if isinstance(misp_object, list):
             for obj in validate_objects(misp_object, errors):
+                self._bind_shared_args(
+                    self._handle_identity_from_feed(obj.get('Event', event))
+                )
                 self._resolve_object(obj)
         else:
+            self._bind_shared_args(self._handle_identity_from_feed(event))
             self._resolve_object(validate_object(misp_object, errors))
         if errors:
             self._handle_validation_errors(errors)
+        if self._objects_to_parse:
+            self._resolve_objects_to_parse()
         if self.relationships:
             self._handle_relationships()
 
@@ -158,16 +175,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._results_handling_method = '_append_SDO_without_refs'
         self._set_identifier('objects collection')
         if not self.__initiated:
-            self._initiate_attributes_parsing()
+            self._initiate_objects_parsing()
         else:
             self.__relationships = []
         errors = defaultdict(list)
         for misp_object in misp_objects:
             if 'Object' in misp_object:
                 misp_object = misp_object['Object']
+            self._bind_shared_args(
+                self._handle_identity_from_feed(misp_object.get('Event', {}))
+            )
             self._resolve_object(validate_object(misp_object, errors))
         if errors:
             self._handle_validation_errors(errors)
+        if self._objects_to_parse:
+            self._resolve_objects_to_parse()
         if self.relationships:
             self._handle_relationships()
 
@@ -209,7 +231,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self.__event_timestamp = self._handle_event_timestamp()
         self.__object_refs = []
         self.__relationships = []
-        self._handle_identity_from_event()
+        self._bind_shared_args(self._handle_identity_from_event())
         if self._misp_event.get('EventReport'):
             self._id_parsing_function = {
                 'attribute': '_define_stix_object_id_from_attribute',
@@ -260,13 +282,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if self._objects_to_parse:
                 self._resolve_objects_to_parse()
 
-    def _handle_default_identity(self):
-        misp_identity_args = self._mapping.misp_identity_args()
-        self.__identity_id = misp_identity_args['id']
-        if self.identity_id not in self.unique_ids:
-            identity = self._create_identity(misp_identity_args)
-            self._append_SDO_without_refs(identity)
-            self.unique_ids[self.identity_id] = self.identity_id
+    def _bind_shared_args(self, identity_id: str | None):
+        shared_args = {'interoperability': True}
+        if identity_id is not None:
+            shared_args['created_by_ref'] = identity_id
+        self.__shared_args = shared_args
 
     def _handle_event_timestamp(self) -> datetime:
         event_timestamp = self._misp_event.get('timestamp')
@@ -274,41 +294,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return self._datetime_from_timestamp(event_timestamp)
         return datetime.now(UTC)
 
-    def _handle_identity_from_event(self) -> str:
+    def _handle_identity_from_event(self) -> str | None:
         orgc = self._misp_event.get('Orgc', {})
         if any(orgc.get(feature) is None for feature in ('name', 'uuid')):
             if not orgc:
                 self._missing_orgc_error()
             else:
                 self._missing_orgc_field_error(orgc)
-            self._handle_default_identity()
-        else:
-            self.__identity_id = f"identity--{orgc['uuid']}"
-            if self.identity_id not in self.unique_ids:
-                self.unique_ids[self.identity_id] = self.identity_id
-                identity = self._create_identity_object(orgc['name'])
-                self._append_SDO_without_refs(identity)
-                self.__index += 1
+            return None
+        identity_id = f"identity--{orgc['uuid']}"
+        if identity_id not in self.unique_ids:
+            self.unique_ids[identity_id] = identity_id
+            identity = self._create_identity_object(identity_id, orgc['name'])
+            self._append_SDO_without_refs(identity)
+            self.__index += 1
+        return identity_id
 
-    def _handle_identity_from_feed(self, event: dict) -> str:
+    def _handle_identity_from_feed(self, event: dict) -> str | None:
         if 'Orgc' in event:
-            self.__identity_id = f"identity--{event['Orgc']['uuid']}"
-            if self.identity_id not in self.unique_ids:
+            identity_id = f"identity--{event['Orgc']['uuid']}"
+            if identity_id not in self.unique_ids:
                 identity_args = {
                     'type': 'identity', 'identity_class': 'organization',
-                    'id': self.identity_id, 'name': event['Orgc']['name']
+                    'id': identity_id, 'name': event['Orgc']['name']
                 }
                 identity = self._create_identity(identity_args)
                 self._append_SDO_without_refs(identity)
-                self.unique_ids[self.identity_id] = self.identity_id
-        else:
-            self._handle_default_identity()
+                self.unique_ids[identity_id] = identity_id
+            return identity_id
 
     def _initiate_attributes_parsing(self):
         self.__objects = []
         self.__object_refs = []
         self.__relationships = []
-        self._handle_default_identity()
         self.__initiated = True
 
     def _initiate_events_parsing(self):
@@ -318,6 +336,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _initiate_feed_parsing(self):
         self.__objects = []
+        self.__relationships = []
+        self.__initiated = True
+
+    def _initiate_objects_parsing(self):
+        self._objects_to_parse = defaultdict(dict)
+        self.__objects = []
+        self.__object_refs = []
         self.__relationships = []
         self.__initiated = True
 
@@ -356,10 +381,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return self.__objects
 
     @property
-    def identity_id(self) -> str:
-        return self.__identity_id
-
-    @property
     def interoperability(self) -> bool:
         return self.__interoperability
 
@@ -370,6 +391,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @property
     def relationships(self) -> list:
         return self.__relationships
+
+    @property
+    def shared_args(self) -> dict:
+        return self.__shared_args
 
     @property
     def stix_objects(self) -> list:
@@ -397,13 +422,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _generate_report_from_event(self):
         report_args = {
-            'name': self._misp_event.get(
-                'info',
-                f'MISP Event exported to STIX {self._version} with misp-stix.'
-            ),
             'created': self.event_timestamp, 'modified': self.event_timestamp,
             'labels': ['Threat-Report','misp:tool="MISP-STIX-Converter"'],
-            'created_by_ref': self.identity_id, 'interoperability': True
+            **self.shared_args, 'name': self._misp_event.get(
+                'info',
+                f'MISP Event exported to STIX {self._version} with misp-stix.'
+            )
         }
         markings = self._handle_event_tags_and_galaxies()
         if markings:
@@ -620,11 +644,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'attribute', 'indicator', attribute
         )
         indicator_arguments = {
-            'id': indicator_id, 'created_by_ref': self.identity_id,
-            'type': 'indicator', 'labels': self._create_labels(attribute),
+            'id': indicator_id, 'type': 'indicator',
+            'labels': self._create_labels(attribute), 'pattern': pattern,
             'kill_chain_phases': self._create_killchain(attribute['category']),
-            'interoperability': True, 'pattern': pattern, **kwargs,
-            **self._handle_indicator_time_fields(attribute)
+            **self._handle_indicator_time_fields(attribute),
+            **self.shared_args, **kwargs
         }
         if attribute.get('comment'):
             indicator_arguments['description'] = attribute['comment']
@@ -645,10 +669,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         observable_args = {
             'id': observable_id, 'type': 'observed-data',
-            'labels': self._create_labels(attribute),
-            'number_observed': 1, 'created_by_ref': self.identity_id,
-            'allow_custom': True, 'interoperability': True,
-            **self._handle_observable_time_fields(attribute)
+            'labels': self._create_labels(attribute), 'number_observed': 1,
+            'allow_custom': True, **self.shared_args,
+            **self._handle_observable_time_fields(attribute),
         }
         markings = self._handle_attribute_tags_and_galaxies(
             attribute, observable_args
@@ -736,9 +759,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         timestamp = self._parse_timestamp_value(attribute)
         campaign_args = {
             'id': campaign_id, 'type': 'campaign', 'name': attribute['value'],
-            'created_by_ref': self.identity_id, 'created': timestamp,
-            'modified': timestamp, 'labels': self._create_labels(attribute),
-            'interoperability': True
+            'created': timestamp, 'modified': timestamp,
+            'labels': self._create_labels(attribute), **self.shared_args
         }
         markings = self._handle_attribute_tags_and_galaxies(
             attribute, campaign_args
@@ -757,13 +779,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         timestamp = self._parse_timestamp_value(attribute)
         custom_args = {
-            'id': custom_id, 'created': timestamp, 'modified': timestamp,
-            'labels': self._create_labels(attribute),
-            'created_by_ref': self.identity_id,
-            'x_misp_value': attribute['value'],
-            'x_misp_type': attribute['type'],
-            'x_misp_category': attribute['category'],
-            'interoperability': True
+            'id': custom_id, 'labels': self._create_labels(attribute),
+            'x_misp_value': attribute['value'], 'created': timestamp,
+            'x_misp_type': attribute['type'], 'modified': timestamp,
+            'x_misp_category': attribute['category'], **self.shared_args
         }
         if attribute.get('comment'):
             custom_args['x_misp_comment'] = attribute['comment']
@@ -1322,9 +1341,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         vulnerability_args = {
             'id': vulnerability_id, 'type': 'vulnerability',
             'name': attribute['value'], 'created': timestamp,
-            'modified': timestamp, 'created_by_ref': self.identity_id,
-            'labels': self._create_labels(attribute), 'interoperability': True,
-            'external_references': [
+            'modified': timestamp,'labels': self._create_labels(attribute),
+            **self.shared_args, 'external_references': [
                 self._get_vulnerability_references(attribute['value'])
             ]
         }
@@ -1465,9 +1483,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         timestamp = self._parse_timestamp_value(misp_object)
         object_args.update(
             {
-                'id': object_id, 'type': object_type,
-                'created_by_ref': self.identity_id, 'created': timestamp,
-                'modified': timestamp, 'interoperability': True,
+                'id': object_id, 'type': object_type, **self.shared_args,
+                'created': timestamp, 'modified': timestamp,
                 'labels': self._create_object_labels(misp_object)
             }
         )
@@ -1507,11 +1524,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         indicator_args = {
             'id': indicator_id, 'type': 'indicator',
+            'pattern': f'[{" AND ".join(pattern)}]', 'allow_custom': True,
             'labels': self._create_object_labels(misp_object),
-            'created_by_ref': self.identity_id, 'allow_custom': True,
-            'pattern': f'[{" AND ".join(pattern)}]', 'interoperability': True,
             **self._handle_indicator_time_fields(misp_object),
-            'kill_chain_phases': self._create_killchain(
+            **self.shared_args, 'kill_chain_phases': self._create_killchain(
                 misp_object['meta-category']
             )
         }
@@ -1530,9 +1546,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable_args = {
             'id': observable_id, 'type': 'observed-data',
             'labels': self._create_object_labels(misp_object),
-            'number_observed': 1, 'created_by_ref': self.identity_id,
-            'allow_custom': True, 'interoperability': True,
-            **self._handle_observable_time_fields(misp_object)
+            'number_observed': 1, 'allow_custom': True, **self.shared_args,
+            **self._handle_observable_time_fields(misp_object),
         }
         markings = self._handle_object_tags_and_galaxies(
             misp_object, observable_args
@@ -1880,10 +1895,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         custom_args = {
             'id': custom_id, 'created': timestamp, 'modified': timestamp,
             'labels': self._create_object_labels(misp_object),
-            'created_by_ref': self.identity_id, 'interoperability': True,
-            'x_misp_name': misp_object['name'],
             'x_misp_meta_category': misp_object['meta-category'],
-            'x_misp_attributes': [
+            'x_misp_name': misp_object['name'],
+            **self.shared_args, 'x_misp_attributes': [
                 self._parse_custom_object_attribute(attribute)
                 for attribute in misp_object['Attribute']
             ]
@@ -4236,8 +4250,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         timestamp = self._parse_timestamp_value(misp_object)
         identity_args = {
             'id': identity_id, 'created': timestamp, 'modified': timestamp,
-            'created_by_ref': self.identity_id,
-            'identity_class': identity_class, 'interoperability': True,
+            'identity_class': identity_class, **self.shared_args,
             'labels': self._create_object_labels(misp_object)
         }
         markings = self._handle_object_tags_and_galaxies(
@@ -4800,9 +4813,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         indicator_args.update(
             {
-                'id': indicator_id, 'type': 'indicator', 'allow_custom': True,
+                'id': indicator_id, 'type': 'indicator',
                 'labels': self._create_object_labels(misp_object),
-                'created_by_ref': self.identity_id, 'interoperability': True,
+                'allow_custom': True, **self.shared_args,
                 **self._handle_indicator_time_fields(misp_object),
                 'kill_chain_phases': self._create_killchain(
                     misp_object['meta-category']
