@@ -55,14 +55,6 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'attack-pattern', 'campaign', 'course-of-action', 'intrusion-set',
         'malware', 'threat-actor', 'tool', 'vulnerability'
     )
-    __misp_identity_args = Mapping(
-        id='identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
-        type='identity',
-        identity_class='organization',
-        name='MISP',
-        created='2015-09-14T15:40:21Z',
-        modified='2015-09-14T15:40:21Z'
-    )
     __relationship_specs = Mapping(
         **{
             'attack-pattern': {
@@ -1226,10 +1218,6 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def malware_single_fields(cls) -> tuple:
         return cls.__malware_single_fields
-
-    @classmethod
-    def misp_identity_args(cls) -> dict:
-        return cls.__misp_identity_args
 
     @classmethod
     def netflow_object_mapping(cls, field: str) -> Union[dict, None]:
