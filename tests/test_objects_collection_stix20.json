@@ -4,17 +4,8 @@
     "spec_version": "2.0",
     "objects": [
         {
-            "type": "identity",
-            "id": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
-            "created": "2015-09-14T15:40:21.000Z",
-            "modified": "2015-09-14T15:40:21.000Z",
-            "name": "MISP",
-            "identity_class": "organization"
-        },
-        {
             "type": "observed-data",
             "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "first_observed": "2020-10-25T16:22:00Z",
@@ -48,7 +39,6 @@
         {
             "type": "indicator",
             "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "pattern": "[email-message:from_ref.value = 'donald.duck@disney.com']",
@@ -67,7 +57,6 @@
         {
             "type": "observed-data",
             "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "first_observed": "2020-10-25T16:22:00Z",
@@ -98,7 +87,6 @@
         {
             "type": "indicator",
             "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui']",
@@ -135,7 +123,6 @@
         {
             "type": "observed-data",
             "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "first_observed": "2020-10-25T16:22:00Z",
@@ -162,7 +149,6 @@
         {
             "type": "indicator",
             "id": "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
@@ -181,7 +167,6 @@
         {
             "type": "observed-data",
             "id": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f",
-            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "first_observed": "2020-10-25T16:22:00Z",
