@@ -1,4 +1,4 @@
-__version__ = '2026.3.30'
+__version__ = '2026.4.9'
 
 import argparse
 from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser  # noqa
