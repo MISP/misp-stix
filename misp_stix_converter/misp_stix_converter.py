@@ -553,7 +553,7 @@ def misp_collection_to_stix2(
                 f.write('\n    ]\n}')
             traceback.update(_generate_traceback(debug, parser, name))
         else:
-            name.remove()
+            name.unlink(missing_ok=True)
         return traceback
     output_names = []
     for filename in input_files:
