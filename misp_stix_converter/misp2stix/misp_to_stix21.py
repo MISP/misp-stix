@@ -774,6 +774,37 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         user_object = UserAccount(**credential_args)
         return self._handle_object_observable(misp_object, [user_object])
 
+    def _parse_crs_rule_object(self, misp_object: MISPObject | dict):
+        indicator_args = {}
+        custom_fields = defaultdict(list)
+        references = []
+        for attribute in misp_object["Attribute"]:
+            relation = attribute["object_relation"]
+            value = attribute["value"]
+            if relation == "reference":
+                reference = {"source_name": "url", "url": value}
+                if attribute.get("comment"):
+                    reference["description"] = attribute["comment"]
+                references.append(reference)
+                continue
+            feature = self._mapping.crs_rule_object_mapping(relation)
+            if feature is not None:
+                if relation == "raw-rule":
+                    indicator_args["pattern_type"] = "crs"
+                indicator_args[feature] = value
+            else:
+                custom_fields[f"x_misp_{relation.replace('-', '_')}"].append(value)
+        if references:
+            indicator_args["external_references"] = references
+        if custom_fields:
+            indicator_args.update(
+                {
+                    key: value[0] if len(value) == 1 else value
+                    for key, value in custom_fields.items()
+                }
+            )
+        self._handle_patterning_object_indicator(misp_object, indicator_args)
+
     def _parse_directory_ref(
             self, file_args: dict, objects: list, value: str, uuid: str):
         directory_id = self._parse_stix_object_id(
@@ -1314,6 +1345,39 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(misp_object, *stix_objects)
 
+    def _parse_nova_rule_object(self, misp_object: MISPObject | dict):
+        indicator_args = {}
+        custom_fields = defaultdict(list)
+        references = []
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation == 'reference':
+                reference = {'source_name': 'url', 'url': value}
+                if attribute.get('comment'):
+                    reference['description'] = attribute['comment']
+                references.append(reference)
+                continue
+            feature = self._mapping.nova_rule_object_mapping(relation)
+            if feature is not None:
+                if relation == 'raw-rule':
+                    indicator_args['pattern_type'] = 'nova'
+                indicator_args[feature] = value
+            else:
+                custom_fields[
+                    f"x_misp_{relation.replace('-', '_')}"
+                ].append(value)
+        if references:
+            indicator_args['external_references'] = references
+        if custom_fields:
+            indicator_args.update(
+                {
+                    key: value[0] if len(value) == 1 else value
+                    for key, value in custom_fields.items()
+                }
+            )
+        self._handle_patterning_object_indicator(misp_object, indicator_args)
+
     def _parse_process_object(self, misp_object: MISPObject | dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],
@@ -1494,6 +1558,36 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         x509_certificate = X509Certificate(**x509_args)
         return self._handle_object_observable(misp_object, [x509_certificate])
+
+    def _parse_wazuh_rule_object(self, misp_object: MISPObject | dict):
+        indicator_args = {}
+        custom_fields = defaultdict(list)
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation == 'reference':
+                reference = {'source_name': 'url', 'url': value}
+                if attribute.get('comment'):
+                    reference['description'] = attribute['comment']
+                indicator_args['external_references'] = [reference]
+                continue
+            feature = self._mapping.wazuh_rule_object_mapping(relation)
+            if feature is not None:
+                if relation == 'wazuh-rule':
+                    indicator_args['pattern_type'] = 'wazuh'
+                indicator_args[feature] = value
+            else:
+                custom_fields[
+                    f"x_misp_{relation.replace('-', '_')}"
+                ].append(value)
+        if custom_fields:
+            indicator_args.update(
+                {
+                    key: value[0] if len(value) == 1 else value
+                    for key, value in custom_fields.items()
+                }
+            )
+        self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     def _parse_yara_object(self, misp_object: MISPObject | dict):
         indicator_args = {}

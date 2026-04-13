@@ -106,8 +106,11 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             'annotation': '_populate_objects_to_parse',
             'geolocation': '_parse_geolocation_object',
             'malware-analysis': '_parse_malware_analysis_object',
+            'nova-rule': '_parse_nova_rule_object',
+            'owasp-crs-rule': '_parse_crs_rule_object',
             'sigma': '_parse_sigma_object',
             'suricata': '_parse_suricata_object',
+            'wazuh-rule': '_parse_wazuh_rule_object',
             'yara': '_parse_yara_object',
             **MISPtoSTIX2Mapping.objects_mapping()
         }
@@ -122,6 +125,13 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     __credential_object_mapping = Mapping(
         password='credential',
         username='user_id'
+    )
+    __crs_rule_object_mapping = Mapping(
+        **{
+            'message': 'description',
+            'raw-rule': 'pattern',
+            'rule-id': 'name'
+        }
     )
     __email_object_mapping = Mapping(
         **{
@@ -262,6 +272,13 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         'ip-dst',
         'ip-src'
     )
+    __nova_rule_object_mapping = Mapping(
+        **{
+            'description': 'description',
+            'raw-rule': 'pattern',
+            'rule-name': 'name'
+        }
+    )
     __organization_object_mapping = Mapping(
         description='description',
         name='name',
@@ -348,6 +365,14 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             'password_last_changed': 'credential_last_changed'
         }
     )
+    __wazuh_rule_object_mapping = Mapping(
+        **{
+            'comment': 'description',
+            'version': 'pattern_version',
+            'wazuh-rule': 'pattern',
+            'rule-id': 'name'
+        }
+    )
     __yara_object_mapping = Mapping(
         **{
             'comment': 'description',
@@ -386,8 +411,8 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         return cls.__credential_object_mapping
 
     @classmethod
-    def cluster_to_stix_object(cls, field: str) -> Union[str, None]:
-        return cls.__cluster_to_stix_object.get(field)
+    def crs_rule_object_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__crs_rule_object_mapping.get(field)
 
     @classmethod
     def email_object_mapping(cls) -> dict:
@@ -478,6 +503,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         return cls.__network_traffic_uuid_fields
 
     @classmethod
+    def nova_rule_object_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__nova_rule_object_mapping.get(field)
+
+    @classmethod
     def objects_mapping(cls, field: str) -> Union[str, None]:
         return cls.__objects_mapping.get(field)
 
@@ -524,6 +553,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def user_account_object_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__user_account_object_mapping.get(field)
+
+    @classmethod
+    def wazuh_rule_object_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__wazuh_rule_object_mapping.get(field)
 
     @classmethod
     def yara_object_mapping(cls, field: str) -> Union[str, None]:
