@@ -399,8 +399,8 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         return cls.__attribute_types_mapping.get(field)
 
     @classmethod
-    def cluster_to_stix_object(cls) -> dict:
-        return cls.__cluster_to_stix_object
+    def cluster_to_stix_object(cls, field: str) -> dict | None:
+        return cls.__cluster_to_stix_object.get(field)
 
     @classmethod
     def confidence_tags(cls, field: str) -> Union[int, None]:
