@@ -4381,6 +4381,56 @@
             }
         }
     },
+    "nova-rule": {
+        "MISP": {
+            "name": "nova-rule",
+            "meta-category": "detection",
+            "description": "NOVA prompt detection rule metadata and logic for a single NOVA rule.",
+            "uuid": "cb44774d-ce45-411b-b6fb-9f0278edd25c",
+            "Attribute": [
+                {
+                    "uuid": "426a7d82-4f15-4411-b9ff-6ced24df09bf",
+                    "object_relation": "raw-rule",
+                    "value": "rule MultimodalInjection\n{\n    meta:\n        description = \"Detects multimodal prompt injection attempts\"\n        author = \"@fr0gger_\"\n        version = \"1.0\"\n        category = \"suspicious_patterns/cross_modal\"\n        reference = \"LLM01:2025 Prompt Injection\"\n        uuid = \"520b23d8-54c0-4ade-b8a7-cdc1a90c0def\"\n        date = \"2026-02-21\"\n        severity = \"high\"\n\n    keywords:\n        $image_process = /process (this|the) image|analyze (this|the) image|look at (this|the) image/i\n        $hidden_content = /hidden (text|content|message|instruction)/i\n        $watermark = /watermark|embedded text|text in image/i\n        $multimodal = /multimodal|cross-modal|multiple formats/i\n\n    semantics:\n        $hidden_in_media = \"instructions hidden in the image\" (0.4)\n        $cross_modal_attack = \"combine text and image instructions\" (0.4)\n\n    llm:\n        $image_injection = \"Does this prompt involve processing images that might contain hidden instructions or malicious content?\" (0.3)\n\n    condition:\n        (keywords.$image_process and (keywords.$hidden_content or keywords.$watermark)) or\n        keywords.$multimodal or\n        semantics.$hidden_in_media or\n        semantics.$cross_modal_attack or\n        llm.$image_injection\n}",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "45a97c82-f65d-465e-a005-8b2155fe801e",
+                    "object_relation": "rule-name",
+                    "value": "MultimodalInjection",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--cb44774d-ce45-411b-b6fb-9f0278edd25c",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "MultimodalInjection",
+            "pattern": "rule MultimodalInjection\n{\n    meta:\n        description = \"Detects multimodal prompt injection attempts\"\n        author = \"@fr0gger_\"\n        version = \"1.0\"\n        category = \"suspicious_patterns/cross_modal\"\n        reference = \"LLM01:2025 Prompt Injection\"\n        uuid = \"520b23d8-54c0-4ade-b8a7-cdc1a90c0def\"\n        date = \"2026-02-21\"\n        severity = \"high\"\n\n    keywords:\n        $image_process = /process (this|the) image|analyze (this|the) image|look at (this|the) image/i\n        $hidden_content = /hidden (text|content|message|instruction)/i\n        $watermark = /watermark|embedded text|text in image/i\n        $multimodal = /multimodal|cross-modal|multiple formats/i\n\n    semantics:\n        $hidden_in_media = \"instructions hidden in the image\" (0.4)\n        $cross_modal_attack = \"combine text and image instructions\" (0.4)\n\n    llm:\n        $image_injection = \"Does this prompt involve processing images that might contain hidden instructions or malicious content?\" (0.3)\n\n    condition:\n        (keywords.$image_process and (keywords.$hidden_content or keywords.$watermark)) or\n        keywords.$multimodal or\n        semantics.$hidden_in_media or\n        semantics.$cross_modal_attack or\n        llm.$image_injection\n}",
+            "pattern_type": "nova",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "detection"
+                }
+            ],
+            "labels": [
+                "misp:name=\"nova-rule\"",
+                "misp:meta-category=\"detection\""
+            ]
+        }
+    },
     "organization": {
         "MISP": {
             "name": "organization",
@@ -4466,6 +4516,56 @@
                 "misp:meta-category=\"misc\""
             ],
             "x_misp_alias": "CIRCL"
+        }
+    },
+    "owasp-crs-rule": {
+        "MISP": {
+            "name": "owasp-crs-rule",
+            "meta-category": "network",
+            "description": "OWASP Core Rule Set (CRS) rule metadata for a WAF detection rule.",
+            "uuid": "3b80a1ad-f1f6-4565-bdbd-909d5bc93048",
+            "Attribute": [
+                {
+                    "uuid": "a70883d8-0bc9-4ed5-a91a-e4b40601e0d0",
+                    "object_relation": "rule-id",
+                    "value": "CRS Rule 901500",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "a87681ff-fc0d-42a8-99a4-53981017641c",
+                    "object_relation": "raw-rule",
+                    "value": "SecRule TX:detection_paranoia_level \"@lt %{tx.blocking_paranoia_level}\"      \"id:901500,     phase:1,     deny,     status:500,     t:none,     log,     msg:'Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting',     tag:'OWASP_CRS',     ver:'OWASP_CRS/4.26.0-dev'\"",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--3b80a1ad-f1f6-4565-bdbd-909d5bc93048",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "CRS Rule 901500",
+            "pattern": "SecRule TX:detection_paranoia_level \"@lt %{tx.blocking_paranoia_level}\"      \"id:901500,     phase:1,     deny,     status:500,     t:none,     log,     msg:'Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting',     tag:'OWASP_CRS',     ver:'OWASP_CRS/4.26.0-dev'\"",
+            "pattern_type": "crs",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "network"
+                }
+            ],
+            "labels": [
+                "misp:name=\"owasp-crs-rule\"",
+                "misp:meta-category=\"network\""
+            ]
         }
     },
     "parler-account": {
@@ -6156,6 +6256,56 @@
             "x_misp_created": "2017-10-13T07:29:00Z",
             "x_misp_cvss_score": "6.8",
             "x_misp_published": "2017-10-13T07:29:00Z"
+        }
+    },
+    "wazuh-rule": {
+        "MISP": {
+            "name": "wazuh-rule",
+            "uuid": "a86a1736-90fc-48fa-8e72-8735cac0e14a",
+            "Attribute": [
+                {
+                    "uuid": "50ccd990-9627-481c-bf4f-89dd97408b6e",
+                    "object_relation": "wazuh-rule",
+                    "value": "<rule id=\"200996\" level=\"12\">\n    <decoded_as>json</decoded_as>\n    <field name=\"cluster.name\">\\.+</field>\n    <field name=\"level\">^ERROR$</field>\n    <description>Wazuh-Indexer Cluster Logs - Level: ERROR</description>\n    <options>no_full_log</options>\n  </rule>",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "9189aefe-3f83-48e8-abae-ea7cd8ea5867",
+                    "object_relation": "rule-id",
+                    "value": "Wazuh-Indexer Cluster Logs - Level: ERROR",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920",
+            "meta-category": "misc",
+            "description": "An object describing a Wazuh XML rule using common fields from the official Wazuh rule syntax."
+        },
+        "STIX": {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--a86a1736-90fc-48fa-8e72-8735cac0e14a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Wazuh-Indexer Cluster Logs - Level: ERROR",
+            "pattern": "<rule id=\"200996\" level=\"12\">\n    <decoded_as>json</decoded_as>\n    <field name=\"cluster.name\">\\.+</field>\n    <field name=\"level\">^ERROR$</field>\n    <description>Wazuh-Indexer Cluster Logs - Level: ERROR</description>\n    <options>no_full_log</options>\n  </rule>",
+            "pattern_type": "wazuh",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "misc"
+                }
+            ],
+            "labels": [
+                "misp:name=\"wazuh-rule\"",
+                "misp:meta-category=\"misc\""
+            ]
         }
     },
     "x509": {
