@@ -4137,17 +4137,28 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _test_event_with_patterning_language_objects(self, event):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
-        sigma, suricata, yara = self.parser._misp_event.objects
+        crs, nova, sigma, suricata, wazuh, yara = self.parser._misp_event.objects
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
-        identity, grouping, sigma_indicator, suricata_indicator, yara_indicator = stix_objects
+        (identity, grouping, crs_indicator, nova_indicator, sigma_indicator,
+         suricata_indicator, wazuh_indicator, yara_indicator) = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        sigma_ref, suricata_ref, yara_ref = self._check_grouping_features(
+        crs_ref, nova_ref, sigma_ref, suricata_ref, wazuh_ref, yara_ref = self._check_grouping_features(
             grouping, identity_id
         )
+        self._check_object_indicator_features(crs_indicator, crs, identity_id, crs_ref)
+        rule_id, rule = crs['Attribute']
+        self.assertEqual(crs_indicator.pattern, rule['value'])
+        self.assertEqual(crs_indicator.pattern_type, 'crs')
+        self.assertEqual(crs_indicator.name, rule_id['value'])
+        self._check_object_indicator_features(nova_indicator, nova, identity_id, nova_ref)
+        rule, name = nova['Attribute']
+        self.assertEqual(nova_indicator.pattern, rule['value'])
+        self.assertEqual(nova_indicator.pattern_type, 'nova')
+        self.assertEqual(nova_indicator.name, name['value'])
         self._check_object_indicator_features(sigma_indicator, sigma, identity_id, sigma_ref)
         rule, context, reference, name, comment = sigma['Attribute']
         self.assertEqual(sigma_indicator.pattern, rule['value'])
@@ -4161,6 +4172,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(suricata_indicator.pattern_version, version['value'])
         self.assertEqual(suricata_indicator.description, comment['value'])
         self.assertEqual(suricata_indicator.external_references[0].url, ref['value'])
+        self._check_object_indicator_features(wazuh_indicator, wazuh, identity_id, wazuh_ref)
+        rule, rule_id = wazuh['Attribute']
+        self.assertEqual(wazuh_indicator.pattern, rule['value'])
+        self.assertEqual(wazuh_indicator.pattern_type, 'wazuh')
+        self.assertEqual(wazuh_indicator.name, rule_id['value'])
         self._check_object_indicator_features(yara_indicator, yara, identity_id, yara_ref)
         rule, version, comment, name = yara['Attribute']
         self.assertEqual(yara_indicator.pattern, rule['value'])

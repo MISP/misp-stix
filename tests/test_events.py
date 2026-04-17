@@ -3024,6 +3024,52 @@ _TEST_ORGANIZATION_OBJECT = {
 
 _TEST_PATTERNING_LANGUAGE_OBJECTS = [
     {
+        "uuid": "3b80a1ad-f1f6-4565-bdbd-909d5bc93048",
+        "meta-category": "network",
+        "description": "OWASP Core Rule Set (CRS) rule metadata for a WAF detection rule.",
+        "name": "owasp-crs-rule",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "a70883d8-0bc9-4ed5-a91a-e4b40601e0d0",
+                "object_relation": "rule-id",
+                "value": "CRS Rule 901500",
+                "type": "text",
+                "category": "Other"
+            },
+            {
+                "uuid": "a87681ff-fc0d-42a8-99a4-53981017641c",
+                "object_relation": "raw-rule",
+                "value": "SecRule TX:detection_paranoia_level \"@lt %{tx.blocking_paranoia_level}\"      \"id:901500,     phase:1,     deny,     status:500,     t:none,     log,     msg:'Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting',     tag:'OWASP_CRS',     ver:'OWASP_CRS/4.26.0-dev'\"",
+                "type": "text",
+                "category": "Other"
+            }
+        ]
+    },
+    {
+        "uuid": "cb44774d-ce45-411b-b6fb-9f0278edd25c",
+        "meta-category": "detection",
+        "description": "NOVA prompt detection rule metadata and logic for a single NOVA rule.",
+        "name": "nova-rule",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "426a7d82-4f15-4411-b9ff-6ced24df09bf",
+                "object_relation": "raw-rule",
+                "value": "rule MultimodalInjection\n{\n    meta:\n        description = \"Detects multimodal prompt injection attempts\"\n        author = \"@fr0gger_\"\n        version = \"1.0\"\n        category = \"suspicious_patterns/cross_modal\"\n        reference = \"LLM01:2025 Prompt Injection\"\n        uuid = \"520b23d8-54c0-4ade-b8a7-cdc1a90c0def\"\n        date = \"2026-02-21\"\n        severity = \"high\"\n\n    keywords:\n        $image_process = /process (this|the) image|analyze (this|the) image|look at (this|the) image/i\n        $hidden_content = /hidden (text|content|message|instruction)/i\n        $watermark = /watermark|embedded text|text in image/i\n        $multimodal = /multimodal|cross-modal|multiple formats/i\n\n    semantics:\n        $hidden_in_media = \"instructions hidden in the image\" (0.4)\n        $cross_modal_attack = \"combine text and image instructions\" (0.4)\n\n    llm:\n        $image_injection = \"Does this prompt involve processing images that might contain hidden instructions or malicious content?\" (0.3)\n\n    condition:\n        (keywords.$image_process and (keywords.$hidden_content or keywords.$watermark)) or\n        keywords.$multimodal or\n        semantics.$hidden_in_media or\n        semantics.$cross_modal_attack or\n        llm.$image_injection\n}",
+                "type": "text",
+                "category": "Other"
+            },
+            {
+                "uuid": "45a97c82-f65d-465e-a005-8b2155fe801e",
+                "object_relation": "rule-name",
+                "value": "MultimodalInjection",
+                "type": "text",
+                "category": "Other"
+            }
+        ]
+    },
+    {
         "uuid": "c8c418e3-b61c-4d40-a1fc-b10cec6585d7",
         "meta-category": "misc",
         "description": "An object describing a Sigma rule (or a Sigma rule name).",
@@ -3083,6 +3129,29 @@ _TEST_PATTERNING_LANGUAGE_OBJECTS = [
                 "type": "link",
                 "object_relation": "ref",
                 "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html"
+            }
+        ]
+    },
+    {
+        "uuid": "a86a1736-90fc-48fa-8e72-8735cac0e14a",
+        "meta-category": "misc",
+        "description": "An object describing a Wazuh XML rule using common fields from the official Wazuh rule syntax.",
+        "name": "wazuh-rule",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "50ccd990-9627-481c-bf4f-89dd97408b6e",
+                "object_relation": "wazuh-rule",
+                "value": "<rule id=\"200996\" level=\"12\">\n    <decoded_as>json</decoded_as>\n    <field name=\"cluster.name\">\\.+</field>\n    <field name=\"level\">^ERROR$</field>\n    <description>Wazuh-Indexer Cluster Logs - Level: ERROR</description>\n    <options>no_full_log</options>\n  </rule>",
+                "type": "text",
+                "category": "Other"
+            },
+            {
+                "uuid": "9189aefe-3f83-48e8-abae-ea7cd8ea5867",
+                "object_relation": "rule-id",
+                "value": "Wazuh-Indexer Cluster Logs - Level: ERROR",
+                "type": "text",
+                "category": "Other"
             }
         ]
     },
