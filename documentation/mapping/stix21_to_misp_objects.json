@@ -2046,7 +2046,7 @@
                 "meta-category": "misc",
                 "template_uuid": "a27e98c9-9b0e-414c-8076-d201e039ca09",
                 "description": "Credential describes one or more credential(s) including password(s), api key(s) or decryption key(s).",
-                "template_version": "4",
+                "template_version": "5",
                 "uuid": "5b1f9378-46d4-494b-a4c1-044e0a00020f",
                 "Attribute": [
                     {
@@ -2146,7 +2146,7 @@
                 "meta-category": "misc",
                 "template_uuid": "a27e98c9-9b0e-414c-8076-d201e039ca09",
                 "description": "Credential describes one or more credential(s) including password(s), api key(s) or decryption key(s).",
-                "template_version": "4",
+                "template_version": "5",
                 "uuid": "5b1f9378-46d4-494b-a4c1-044e0a00020f",
                 "Attribute": [
                     {
@@ -3700,7 +3700,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "ecaafcba-a2e6-4a9a-ba7e-80213515dc4e",
+                        "uuid": "0406148f-800f-41ce-898f-d08d84d2b8de",
                         "object_relation": "accuracy-radius",
                         "value": 1.0,
                         "type": "float",
@@ -5840,7 +5840,7 @@
                 "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
                 "Attribute": [
                     {
-                        "uuid": "8ec0ab7e-3449-4f80-b9fc-9c4d3c8a8423",
+                        "uuid": "48834651-84e1-41fa-907a-5c9d83ac7331",
                         "object_relation": "ip-src",
                         "value": "1.2.3.4",
                         "type": "ip-src",
@@ -5849,7 +5849,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "39d975bd-e88e-4232-9018-4cb2ff5dfb2b",
+                        "uuid": "35e021ff-838b-40c5-b13d-8ede93621555",
                         "object_relation": "ip-dst",
                         "value": "5.6.7.8",
                         "type": "ip-dst",
@@ -5858,7 +5858,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "0e5ab13c-f669-474f-a032-bf4aa4f2015f",
+                        "uuid": "b962daa4-91a7-4564-ad60-1024a5b33501",
                         "object_relation": "hostname-dst",
                         "value": "circl.lu",
                         "type": "hostname",
@@ -5885,7 +5885,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "386bfbce-f91c-49a4-b1dc-c1c13fbe0eab",
+                        "uuid": "f0b74451-0ffb-49f9-858f-7fa4e35a3f12",
                         "object_relation": "layer3-protocol",
                         "value": "IP",
                         "type": "text",
@@ -5894,7 +5894,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "cfe9a3cb-719b-4861-8bf9-3ead3f2470ad",
+                        "uuid": "03f3dc71-c9c5-4039-9326-81192fe20ecc",
                         "object_relation": "layer4-protocol",
                         "value": "TCP",
                         "type": "text",
@@ -5903,7 +5903,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "158bde1d-a913-4dd7-bf33-ab9b898b8314",
+                        "uuid": "aac99b3e-82a2-4131-aed0-b6ac27fc2b5d",
                         "object_relation": "layer7-protocol",
                         "value": "HTTP",
                         "type": "text",
@@ -6122,7 +6122,7 @@
                 "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
                 "Attribute": [
                     {
-                        "uuid": "d1a91a72-06c6-4e3e-9e72-d4ad3a00a386",
+                        "uuid": "e4d37041-752f-4ebf-824c-ed6565be8f4c",
                         "object_relation": "ip-src",
                         "value": "1.2.3.4",
                         "type": "ip-src",
@@ -6131,7 +6131,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "11606837-1238-4073-a880-1b573e63d94b",
+                        "uuid": "9be3565a-9757-4c32-a89b-a457bd86fb42",
                         "object_relation": "ip-dst",
                         "value": "5.6.7.8",
                         "type": "ip-dst",
@@ -6140,7 +6140,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "efb2965a-34b4-4bc9-a2a0-8c27359e53d9",
+                        "uuid": "f71d34df-d038-40a9-aea8-f4fcb4f28744",
                         "object_relation": "hostname-dst",
                         "value": "circl.lu",
                         "type": "hostname",
@@ -6522,6 +6522,10 @@
         "Indicator": {
             "MISP": {
                 "name": "nova-rule",
+                "meta-category": "detection",
+                "template_uuid": "3c4669ee-c659-40c7-93ea-d4149bded584",
+                "description": "NOVA prompt detection rule metadata and logic for a single NOVA rule.",
+                "template_version": "1",
                 "uuid": "cb44774d-ce45-411b-b6fb-9f0278edd25c",
                 "Attribute": [
                     {
@@ -6529,7 +6533,7 @@
                         "object_relation": "raw-rule",
                         "value": "rule MultimodalInjection\n{\n    meta:\n        description = \"Detects multimodal prompt injection attempts\"\n        author = \"@fr0gger_\"\n        version = \"1.0\"\n        category = \"suspicious_patterns/cross_modal\"\n        reference = \"LLM01:2025 Prompt Injection\"\n        uuid = \"520b23d8-54c0-4ade-b8a7-cdc1a90c0def\"\n        date = \"2026-02-21\"\n        severity = \"high\"\n\n    keywords:\n        $image_process = /process (this|the) image|analyze (this|the) image|look at (this|the) image/i\n        $hidden_content = /hidden (text|content|message|instruction)/i\n        $watermark = /watermark|embedded text|text in image/i\n        $multimodal = /multimodal|cross-modal|multiple formats/i\n\n    semantics:\n        $hidden_in_media = \"instructions hidden in the image\" (0.4)\n        $cross_modal_attack = \"combine text and image instructions\" (0.4)\n\n    llm:\n        $image_injection = \"Does this prompt involve processing images that might contain hidden instructions or malicious content?\" (0.3)\n\n    condition:\n        (keywords.$image_process and (keywords.$hidden_content or keywords.$watermark)) or\n        keywords.$multimodal or\n        semantics.$hidden_in_media or\n        semantics.$cross_modal_attack or\n        llm.$image_injection\n}",
                         "type": "text",
-                        "disable_correlation": false,
+                        "disable_correlation": true,
                         "to_ids": false,
                         "category": "Other"
                     },
@@ -6538,7 +6542,7 @@
                         "object_relation": "rule-name",
                         "value": "MultimodalInjection",
                         "type": "text",
-                        "disable_correlation": false,
+                        "disable_correlation": true,
                         "to_ids": false,
                         "category": "Other"
                     }
@@ -6675,6 +6679,10 @@
         "Indicator": {
             "MISP": {
                 "name": "owasp-crs-rule",
+                "meta-category": "network",
+                "template_uuid": "8f0a7d9a-7b5d-4d6e-9d7b-2b2d9d9d1001",
+                "description": "OWASP Core Rule Set (CRS) rule metadata for a WAF detection rule.",
+                "template_version": "1",
                 "uuid": "3b80a1ad-f1f6-4565-bdbd-909d5bc93048",
                 "Attribute": [
                     {
@@ -6682,7 +6690,7 @@
                         "object_relation": "raw-rule",
                         "value": "SecRule TX:detection_paranoia_level \"@lt %{tx.blocking_paranoia_level}\"      \"id:901500,     phase:1,     deny,     status:500,     t:none,     log,     msg:'Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting',     tag:'OWASP_CRS',     ver:'OWASP_CRS/4.26.0-dev'\"",
                         "type": "text",
-                        "disable_correlation": false,
+                        "disable_correlation": true,
                         "to_ids": false,
                         "category": "Other"
                     },
@@ -6691,7 +6699,7 @@
                         "object_relation": "rule-id",
                         "value": "CRS Rule 901500",
                         "type": "text",
-                        "disable_correlation": false,
+                        "disable_correlation": true,
                         "to_ids": false,
                         "category": "Other"
                     }
@@ -7805,7 +7813,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "0f44c6ba-a61f-4e75-bc05-5ff218b6232a",
+                        "uuid": "24965b24-69ef-4ad1-8473-0de33e966f40",
                         "object_relation": "reference",
                         "value": "https://www.us-cert.gov/ncas/alerts/TA17-293A",
                         "type": "link",
@@ -7864,7 +7872,7 @@
                         "uuid": "6f022ca3-67c4-573b-97a0-c7c5037acb41",
                         "object_relation": "suricata",
                         "value": "alert http any 443 -> 8.8.8.8 any",
-                        "type": "snort",
+                        "type": "suricata",
                         "disable_correlation": false,
                         "to_ids": true,
                         "category": "Network activity"
@@ -7888,7 +7896,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "57acacfb-53e4-4772-9168-927d809817fa",
+                        "uuid": "0429bc02-f56b-46d3-b1b7-4d88ecffed7d",
                         "object_relation": "ref",
                         "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html",
                         "type": "link",
@@ -7910,7 +7918,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "To rule them all",
                 "pattern": "alert http any 443 -> 8.8.8.8 any",
-                "pattern_type": "snort",
+                "pattern_type": "suricata",
                 "pattern_version": "3.1.6",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
@@ -8890,7 +8898,7 @@
                 "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
                 "Attribute": [
                     {
-                        "uuid": "a69f8da4-b70c-40e7-bf1a-b510b391da58",
+                        "uuid": "db04ca03-6cf7-4e37-bcb6-26c629afa184",
                         "object_relation": "id",
                         "value": "CVE-2017-11774",
                         "type": "vulnerability",
@@ -8899,7 +8907,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "c270eab2-9694-458b-84f9-903e5507b423",
+                        "uuid": "c1dd4226-09ca-41f9-a2fc-88fa673bfc6d",
                         "object_relation": "references",
                         "value": "http://www.securityfocus.com/bid/101098",
                         "type": "link",
@@ -8908,7 +8916,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "818f753b-b697-4fd5-b74b-c3dc8cd7e841",
+                        "uuid": "a8382dc2-f436-48df-894c-6e3255361760",
                         "object_relation": "references",
                         "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774",
                         "type": "link",
@@ -8994,6 +9002,10 @@
         "Indicator": {
             "MISP": {
                 "name": "wazuh-rule",
+                "meta-category": "misc",
+                "template_uuid": "5150952e-4a21-4011-aa20-204b6459e657",
+                "description": "An object describing a Wazuh XML rule using common fields from the official Wazuh rule syntax.",
+                "template_version": "1",
                 "uuid": "a86a1736-90fc-48fa-8e72-8735cac0e14a",
                 "Attribute": [
                     {
@@ -9001,7 +9013,7 @@
                         "object_relation": "wazuh-rule",
                         "value": "<rule id=\"200996\" level=\"12\">\n    <decoded_as>json</decoded_as>\n    <field name=\"cluster.name\">\\.+</field>\n    <field name=\"level\">^ERROR$</field>\n    <description>Wazuh-Indexer Cluster Logs - Level: ERROR</description>\n    <options>no_full_log</options>\n  </rule>",
                         "type": "text",
-                        "disable_correlation": false,
+                        "disable_correlation": true,
                         "to_ids": false,
                         "category": "Other"
                     },
@@ -9010,7 +9022,7 @@
                         "object_relation": "rule-id",
                         "value": "Wazuh-Indexer Cluster Logs - Level: ERROR",
                         "type": "text",
-                        "disable_correlation": false,
+                        "disable_correlation": true,
                         "to_ids": false,
                         "category": "Other"
                     }
@@ -9050,11 +9062,11 @@
                 "meta-category": "network",
                 "template_uuid": "d1ab756a-26b5-4349-9f43-765630f0911c",
                 "description": "x509 object describing a X.509 certificate",
-                "template_version": "13",
+                "template_version": "14",
                 "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
                 "Attribute": [
                     {
-                        "uuid": "8a12a7ba-96e6-41f4-ae0f-67aafdcd1802",
+                        "uuid": "12d7acfd-8e98-4287-9755-71fd4521f924",
                         "object_relation": "x509-fingerprint-md5",
                         "value": "b2a5abfeef9e36964281a31e17b57c97",
                         "type": "x509-fingerprint-md5",
@@ -9063,7 +9075,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "793ea3fe-c693-4e25-83ba-1b3d933478f0",
+                        "uuid": "ee57efb7-015e-4dae-80aa-d7fe34c9c887",
                         "object_relation": "x509-fingerprint-sha1",
                         "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
                         "type": "x509-fingerprint-sha1",
@@ -9072,7 +9084,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "a631da42-18f3-4d52-8871-fae6921de951",
+                        "uuid": "9adbc44e-8a97-460b-83ca-e95b15d40ce6",
                         "object_relation": "issuer",
                         "value": "Issuer Name",
                         "type": "text",
@@ -9081,7 +9093,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "d0a2a9fc-91ee-49d6-aab3-759a5d63868a",
+                        "uuid": "a5db49a0-813b-4631-90c7-bbc80d3064b2",
                         "object_relation": "pubkey-info-algorithm",
                         "value": "PublicKeyAlgorithm",
                         "type": "text",
@@ -9090,7 +9102,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "92094fc6-a884-4b30-ba79-1727111176d5",
+                        "uuid": "a0df580c-d002-47f5-a32a-4439e0551c76",
                         "object_relation": "pubkey-info-exponent",
                         "value": "2",
                         "type": "text",
@@ -9099,7 +9111,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "7fe95008-0040-408d-8669-01e0d4ce22af",
+                        "uuid": "9c5569c9-1f07-466c-a17d-3ddbdddf759a",
                         "object_relation": "pubkey-info-modulus",
                         "value": "C5",
                         "type": "text",
@@ -9108,7 +9120,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "a392ad93-a711-41f6-a7d3-dffa84e2e0d1",
+                        "uuid": "9c03f43a-6fd8-4614-8119-554a2679159d",
                         "object_relation": "serial-number",
                         "value": "1234567890",
                         "type": "text",
@@ -9117,7 +9129,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "7fc8d01f-bca1-4df3-80a4-e61f57e2df63",
+                        "uuid": "d1638c0d-a997-4f40-b820-ddbd3f11c78b",
                         "object_relation": "signature_algorithm",
                         "value": "SHA1_WITH_RSA_ENCRYPTION",
                         "type": "text",
@@ -9126,7 +9138,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "3710e9da-c688-4bb3-92ac-230d3ebe2930",
+                        "uuid": "d1d44830-5fed-4f8e-b8c6-0200d080fc8c",
                         "object_relation": "subject",
                         "value": "CertificateSubject",
                         "type": "text",
@@ -9135,7 +9147,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "6eab6004-c1b7-4c5f-8286-d2cd607c2a91",
+                        "uuid": "1c13dd47-7035-433c-b538-2244c758bce7",
                         "object_relation": "version",
                         "value": "1",
                         "type": "text",
@@ -9144,7 +9156,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "4d7549d4-311e-4c27-a527-f50793c378f8",
+                        "uuid": "bec72ba4-fa88-46f4-be0e-c4286c9ea03b",
                         "object_relation": "validity-not-after",
                         "value": "2021-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -9153,7 +9165,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "f2acd957-4210-4659-802b-cbc424f6a7c0",
+                        "uuid": "fe47410a-c651-4cde-a56b-258d335c4232",
                         "object_relation": "validity-not-before",
                         "value": "2020-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -9162,7 +9174,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "ab88c67f-9c2e-4c0f-b654-95aaf73dd0ee",
+                        "uuid": "ed6cfbcf-dbd7-4e91-828e-cb5b2ca6bd50",
                         "object_relation": "pem",
                         "value": "RawCertificateInPEMFormat",
                         "type": "text",
@@ -9204,7 +9216,7 @@
                 "meta-category": "network",
                 "template_uuid": "d1ab756a-26b5-4349-9f43-765630f0911c",
                 "description": "x509 object describing a X.509 certificate",
-                "template_version": "13",
+                "template_version": "14",
                 "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
                 "Attribute": [
                     {
@@ -9412,8 +9424,8 @@
                 "name": "yara",
                 "meta-category": "misc",
                 "template_uuid": "b5acf82e-ecca-4868-82fe-9dbdf4d808c3",
-                "description": "An object describing a YARA rule (or a YARA rule name) along with its version.",
-                "template_version": "7",
+                "description": "An object describing a YARA rule (or a YARA rule name), its supported YARA version, and optional test-sample hashes. Test samples are true-positive by default; set false-positive=true when needed.",
+                "template_version": "9",
                 "uuid": "cafdd27e-c3e2-4f7a-88b4-4c1c98f18be7",
                 "Attribute": [
                     {

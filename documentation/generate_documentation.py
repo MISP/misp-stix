@@ -171,7 +171,6 @@ class DocumentationGenerator():
                 _attributes_to_stix20_summary_=attributes_summary,
                 _objects_to_stix20_summary_=objects_summary
             )
-            print(self._misp_to_stix20)
 
     def _generate_misp_to_stix21_documentation(self):
         # Attributes documentation
@@ -248,8 +247,8 @@ class DocumentationGenerator():
 
     def _parse_stix2_table_line(self, attribute_type, mapping, format):
         misp_blob = self._parse_json_documentation(mapping['MISP'], 'MISP')
-        stix_blob = '\n'.join(self._parse_json_documentation(stix_mapping, feature, n=6) for feature, stix_mapping in mapping['STIX'].items())
-        return f'- {attribute_type}\n{misp_blob}\n  - STIX\n{stix_blob}\n'
+        stix_blob = self._parse_json_documentation(mapping['STIX'], 'STIX')
+        return f'- {attribute_type}\n{misp_blob}\n{stix_blob}\n'
 
     def _parse_stix2_custom_table_line(self, attribute_type, mapping, format):
         misp_blob = self._parse_json_documentation(mapping['MISP'], 'MISP')

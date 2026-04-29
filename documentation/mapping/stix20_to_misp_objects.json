@@ -5420,7 +5420,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "271acc9f-d791-47a2-bcc7-d14e399df482",
+                        "uuid": "7c94c027-6754-4e22-afaf-1a891c31c6c5",
                         "object_relation": "layer3-protocol",
                         "value": "IP",
                         "type": "text",
@@ -5429,7 +5429,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "8a594e9d-0ae7-4ac1-99de-8b7d267b6009",
+                        "uuid": "d9f79a71-af6a-4499-bfa8-3999c14fdf86",
                         "object_relation": "layer4-protocol",
                         "value": "TCP",
                         "type": "text",
@@ -5438,7 +5438,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "aea7582b-a611-4948-a6ca-10d5ee60a81f",
+                        "uuid": "fcd93482-7fd3-4806-b6a0-03039f4a6360",
                         "object_relation": "layer7-protocol",
                         "value": "HTTP",
                         "type": "text",
@@ -5640,7 +5640,7 @@
                 "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
                 "Attribute": [
                     {
-                        "uuid": "9557fb73-dfcc-4262-933d-93aa00accdcd",
+                        "uuid": "a2e366fd-aea9-47e8-9fa0-c84502a0675f",
                         "object_relation": "ip-src",
                         "value": "1.2.3.4",
                         "type": "ip-src",
@@ -5649,7 +5649,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "f4219cf3-c5c3-45f1-a3bd-00b14e3ab99f",
+                        "uuid": "13ec33a8-8683-4d12-a9b4-ec80d41398ff",
                         "object_relation": "ip-dst",
                         "value": "5.6.7.8",
                         "type": "ip-dst",
@@ -5658,7 +5658,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "01dce45c-8dc7-42a9-bb83-9d65ec8a407b",
+                        "uuid": "9a4bd4f0-a5d6-48f4-9dfa-58def40fc6e0",
                         "object_relation": "hostname-dst",
                         "value": "circl.lu",
                         "type": "hostname",
@@ -8004,7 +8004,7 @@
                 "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
                 "Attribute": [
                     {
-                        "uuid": "07c6f904-8615-4070-bbc4-6dac133a08b6",
+                        "uuid": "c01863b9-ca4b-4a75-9222-aec46c7005a0",
                         "object_relation": "id",
                         "value": "CVE-2017-11774",
                         "type": "vulnerability",
@@ -8013,7 +8013,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "f4f3a41c-ca1d-4e5b-8102-b7048459a090",
+                        "uuid": "c0b9231c-4cee-4a63-94f0-7a4de0d0de70",
                         "object_relation": "references",
                         "value": "http://www.securityfocus.com/bid/101098",
                         "type": "link",
@@ -8022,7 +8022,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "eb77d3e2-52cb-4480-be12-9e6517642acd",
+                        "uuid": "2b0946b4-82b1-4004-ab01-b69aabc21aab",
                         "object_relation": "references",
                         "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774",
                         "type": "link",
@@ -8110,11 +8110,11 @@
                 "meta-category": "network",
                 "template_uuid": "d1ab756a-26b5-4349-9f43-765630f0911c",
                 "description": "x509 object describing a X.509 certificate",
-                "template_version": "13",
+                "template_version": "14",
                 "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
                 "Attribute": [
                     {
-                        "uuid": "62a4b790-3549-4313-afdc-a93235dc0bbb",
+                        "uuid": "2653a5e5-2afd-432b-b318-8539212f12ea",
                         "object_relation": "x509-fingerprint-md5",
                         "value": "b2a5abfeef9e36964281a31e17b57c97",
                         "type": "x509-fingerprint-md5",
@@ -8123,7 +8123,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "93c9e99b-d51b-400f-8530-6b70fd9f28c7",
+                        "uuid": "2c9bdf5c-72b2-4c69-88fc-75a0feb41553",
                         "object_relation": "x509-fingerprint-sha1",
                         "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
                         "type": "x509-fingerprint-sha1",
@@ -8132,7 +8132,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "048b28a2-66c0-430d-8c81-4f8ba0ea9147",
+                        "uuid": "75659ca0-739d-436c-a8e8-584abc6c659d",
                         "object_relation": "issuer",
                         "value": "Issuer Name",
                         "type": "text",
@@ -8141,7 +8141,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "2eec915b-73f2-43ed-a1f3-40b5d81a5d44",
+                        "uuid": "4e757d88-4b4a-455b-b6e7-03527cfbc6ed",
                         "object_relation": "pubkey-info-algorithm",
                         "value": "PublicKeyAlgorithm",
                         "type": "text",
@@ -8150,7 +8150,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "7f94d3b5-d5df-479d-b553-268d32843da7",
+                        "uuid": "4090f967-bd6d-4391-ad27-d4e34e6b0727",
                         "object_relation": "pubkey-info-exponent",
                         "value": "2",
                         "type": "text",
@@ -8159,7 +8159,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "4eb8ce37-3390-45ae-8638-853c515dc0af",
+                        "uuid": "491e17c9-8870-4dc1-af82-13b06c177c38",
                         "object_relation": "pubkey-info-modulus",
                         "value": "C5",
                         "type": "text",
@@ -8168,7 +8168,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "5b1fb36c-9c0a-4c14-aca2-e3b8c7a35f7f",
+                        "uuid": "bf74a29f-980c-475f-92a6-6e412a28c695",
                         "object_relation": "serial-number",
                         "value": "1234567890",
                         "type": "text",
@@ -8177,7 +8177,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "966bedd1-62ee-4445-a125-3ef1e772519f",
+                        "uuid": "747d3ae6-ff9e-4bf5-a170-2bd78ddef88e",
                         "object_relation": "signature_algorithm",
                         "value": "SHA1_WITH_RSA_ENCRYPTION",
                         "type": "text",
@@ -8186,7 +8186,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "797e45da-e9a7-414f-94d0-114d8b47115e",
+                        "uuid": "716bb6ad-129d-47e3-a0ba-fd1732c46764",
                         "object_relation": "subject",
                         "value": "CertificateSubject",
                         "type": "text",
@@ -8195,7 +8195,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "bd7bec90-785d-46bc-814a-012c543c1cb8",
+                        "uuid": "915865e9-425a-4bae-9ae2-e1a69f5d9334",
                         "object_relation": "version",
                         "value": "1",
                         "type": "text",
@@ -8204,7 +8204,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "ee5812ec-0060-48cb-a47a-dd048ae9d1ea",
+                        "uuid": "44e55f0e-6fff-40d1-967b-81998ff039cc",
                         "object_relation": "validity-not-after",
                         "value": "2021-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -8213,7 +8213,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "bba01b7c-3b75-4a2d-8c41-3eeb6e7cc84a",
+                        "uuid": "1e44aeae-9abf-4095-92a2-3dcd946a3e15",
                         "object_relation": "validity-not-before",
                         "value": "2020-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -8222,7 +8222,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "f7452b6f-0040-4b5f-ae6d-73b5282df91c",
+                        "uuid": "60ee3341-8ecf-42ad-a8f2-aa66f93257c0",
                         "object_relation": "pem",
                         "value": "RawCertificateInPEMFormat",
                         "type": "text",
@@ -8261,7 +8261,7 @@
                 "meta-category": "network",
                 "template_uuid": "d1ab756a-26b5-4349-9f43-765630f0911c",
                 "description": "x509 object describing a X.509 certificate",
-                "template_version": "13",
+                "template_version": "14",
                 "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
                 "Attribute": [
                     {

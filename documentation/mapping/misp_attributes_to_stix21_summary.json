@@ -67,6 +67,7 @@
     "size-in-bytes": "**Indicator**",
     "snort": "**Indicator**",
     "ssdeep": "File Object and IoCs described in Indicator (pattern)",
+    "suricata": "**Indicator**",
     "telfhash": "File Object and IoCs described in Indicator (pattern)",
     "tlsh": "File Object and IoCs described in Indicator (pattern)",
     "uri": "Url Object and IoCs described in Indicator (pattern)",

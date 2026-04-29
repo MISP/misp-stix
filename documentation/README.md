@@ -242,81 +242,81 @@ When another object type is mentioned in bold, it means the corresponding attrib
 
 | MISP Attribute type | STIX Object type / Observable Object type |
 | -- | -- |
-| AS | Autonomous System Object |
-| attachment | Artifact & File Objects |
-| authentihash | File Object |
+| AS |  Object and IoCs described in Indicator (pattern) |
+| attachment |  Object and IoCs described in Indicator (pattern) |
+| authentihash |  Object and IoCs described in Indicator (pattern) |
 | campaign-name | **Campaign** |
-| domain | Domain Name Object |
-| domain\|ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Address Object |
-| email-attachment | Email Message & File Objects |
-| email-body | Email Message Object |
-| email-dst | Email Address & Email Message Objects |
-| email-header | Email Message Object |
-| email-reply-to | Email Message Object |
-| email-src | Email Address & Email Message Objects |
-| email-subject | Email Message Object |
-| email-x-mailer | Email Message Object |
-| filename | File Object |
-| filename\|authentihash | File Object |
-| filename\|imphash | File Object |
-| filename\|md5 | File Object |
-| filename\|pehash | File Object |
-| filename\|sha1 | File Object |
-| filename\|sha224 | File Object |
-| filename\|sha256 | File Object |
-| filename\|sha3-224 | File Object |
-| filename\|sha3-256 | File Object |
-| filename\|sha3-384 | File Object |
-| filename\|sha3-512 | File Object |
-| filename\|sha384 | File Object |
-| filename\|sha512 | File Object |
-| filename\|sha512/224 | File Object |
-| filename\|sha512/256 | File Object |
-| filename\|ssdeep | File Object |
-| filename\|tlsh | File Object |
-| filename\|vhash | File Object |
-| github-username | User Account Object (pattern) / Custom Object |
-| hostname | Domain Name Object |
-| hostname\|port | Domain Name & Network Traffic Objects |
-| http-method | Network Traffic Object (pattern) / Custom Object |
-| imphash | File Object |
-| ip-dst | IPv4/IPv6 Address & Network Traffic Objects |
-| ip-dst\|port | IPv4/IPv6 Address & Network Traffic Objects |
-| ip-src | IPv4/IPv6 Address & Network Traffic Objects |
-| ip-src\|port | IPv4/IPv6 Address & Network Traffic Objects |
-| link | URL Object |
-| mac-address | Mac Address Object |
-| malware-sample | Artifact & File Objects |
-| md5 | File Object |
-| mutex | Mutex Object |
-| pehash | File Object |
-| port | Network Traffic Object (pattern) / Custom Object |
-| regkey | Windows Registry Key Object |
-| regkey\|value | Windows Registry Key Object |
-| sha1 | File Object |
-| sha224 | File Object |
-| sha256 | File Object |
-| sha3-224 | File Object |
-| sha3-256 | File Object |
-| sha3-384 | File Object |
-| sha3-512 | File Object |
-| sha384 | File Object |
-| sha512 | File Object |
-| sha512/224 | File Object |
-| sha512/256 | File Object |
-| size-in-bytes | File Object (pattern) / Custom Object |
-| ssdeep | File Object |
-| telfhash | File Object |
-| tlsh | File Object |
-| uri | URL Object |
-| url | URL Object |
-| user-agent | Network Traffic Object (pattern) / Custom Object |
-| vhash | File Object |
+| domain |  Object and IoCs described in Indicator (pattern) |
+| domain\|ip |  Object and IoCs described in Indicator (pattern) |
+| email |  Object and IoCs described in Indicator (pattern) |
+| email-attachment |  Object and IoCs described in Indicator (pattern) |
+| email-body |  Object and IoCs described in Indicator (pattern) |
+| email-dst |  Object and IoCs described in Indicator (pattern) |
+| email-header |  Object and IoCs described in Indicator (pattern) |
+| email-reply-to |  Object and IoCs described in Indicator (pattern) |
+| email-src |  Object and IoCs described in Indicator (pattern) |
+| email-subject |  Object and IoCs described in Indicator (pattern) |
+| email-x-mailer |  Object and IoCs described in Indicator (pattern) |
+| filename |  Object and IoCs described in Indicator (pattern) |
+| filename\|authentihash |  Object and IoCs described in Indicator (pattern) |
+| filename\|imphash |  Object and IoCs described in Indicator (pattern) |
+| filename\|md5 |  Object and IoCs described in Indicator (pattern) |
+| filename\|pehash |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha1 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha224 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha256 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-224 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-256 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-384 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-512 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha384 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha512 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha512/224 |  Object and IoCs described in Indicator (pattern) |
+| filename\|sha512/256 |  Object and IoCs described in Indicator (pattern) |
+| filename\|ssdeep |  Object and IoCs described in Indicator (pattern) |
+| filename\|tlsh |  Object and IoCs described in Indicator (pattern) |
+| filename\|vhash |  Object and IoCs described in Indicator (pattern) |
+| github-username | **Indicator** |
+| hostname |  Object and IoCs described in Indicator (pattern) |
+| hostname\|port |  Object and IoCs described in Indicator (pattern) |
+| http-method | **Indicator** |
+| imphash |  Object and IoCs described in Indicator (pattern) |
+| ip-dst |  Object and IoCs described in Indicator (pattern) |
+| ip-dst\|port |  Object and IoCs described in Indicator (pattern) |
+| ip-src |  Object and IoCs described in Indicator (pattern) |
+| ip-src\|port |  Object and IoCs described in Indicator (pattern) |
+| link |  Object and IoCs described in Indicator (pattern) |
+| mac-address |  Object and IoCs described in Indicator (pattern) |
+| malware-sample |  Object and IoCs described in Indicator (pattern) |
+| md5 |  Object and IoCs described in Indicator (pattern) |
+| mutex |  Object and IoCs described in Indicator (pattern) |
+| pehash |  Object and IoCs described in Indicator (pattern) |
+| port | **Indicator** |
+| regkey |  Object and IoCs described in Indicator (pattern) |
+| regkey\|value |  Object and IoCs described in Indicator (pattern) |
+| sha1 |  Object and IoCs described in Indicator (pattern) |
+| sha224 |  Object and IoCs described in Indicator (pattern) |
+| sha256 |  Object and IoCs described in Indicator (pattern) |
+| sha3-224 |  Object and IoCs described in Indicator (pattern) |
+| sha3-256 |  Object and IoCs described in Indicator (pattern) |
+| sha3-384 |  Object and IoCs described in Indicator (pattern) |
+| sha3-512 |  Object and IoCs described in Indicator (pattern) |
+| sha384 |  Object and IoCs described in Indicator (pattern) |
+| sha512 |  Object and IoCs described in Indicator (pattern) |
+| sha512/224 |  Object and IoCs described in Indicator (pattern) |
+| sha512/256 |  Object and IoCs described in Indicator (pattern) |
+| size-in-bytes | **Indicator** |
+| ssdeep |  Object and IoCs described in Indicator (pattern) |
+| telfhash |  Object and IoCs described in Indicator (pattern) |
+| tlsh |  Object and IoCs described in Indicator (pattern) |
+| uri |  Object and IoCs described in Indicator (pattern) |
+| url |  Object and IoCs described in Indicator (pattern) |
+| user-agent | **Indicator** |
+| vhash |  Object and IoCs described in Indicator (pattern) |
 | vulnerability | **Vulnerability** |
-| x509-fingerprint-md5 | X509 Certificate Object |
-| x509-fingerprint-sha1 | X509 Certificate Object |
-| x509-fingerprint-sha256 | X509 Certificate Object |
+| x509-fingerprint-md5 |  Object and IoCs described in Indicator (pattern) |
+| x509-fingerprint-sha1 |  Object and IoCs described in Indicator (pattern) |
+| x509-fingerprint-sha256 |  Object and IoCs described in Indicator (pattern) |
 
 ##### Detailed mapping
 
@@ -330,48 +330,48 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | -- | -- |
 | Script object where state is "Malicious" | **Malware** |
 | Script object where state is not "Malicious" | **Tool** |
-| android-app | Software Object |
-| asn | Autonomous System Object |
-| attack-pattern | **Attack Pattern** |
-| course-of-action | **Course of Action** |
-| cpe-asset | Software Object |
-| credential | User Account Object |
-| domain-ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Address & Email Message & File Objects |
-| email with display names | Email Address & Email Message Objects |
+| android-app |  Object and IoCs described in Indicator (pattern) |
+| asn |  Object and IoCs described in Indicator (pattern) |
+| attack-pattern | **Attack-pattern** |
+| course-of-action | **Course-of-action** |
+| cpe-asset |  Object and IoCs described in Indicator (pattern) |
+| credential |  Object and IoCs described in Indicator (pattern) |
+| domain-ip |  Object and IoCs described in Indicator (pattern) |
+| email |  Object and IoCs described in Indicator (pattern) |
+| email with display names |  Object and IoCs described in Indicator (pattern) |
 | employee | **Identity** |
-| facebook-account | User Account Object |
+| facebook-account |  Object and IoCs described in Indicator (pattern) |
 | file | File Object (potential references to Artifact & Directory Objects) |
 | file with references to pe & pe-section(s) | File Object with a Windows PE binary extension |
-| github-user | User Account Object |
-| gitlab-user | User Account Object |
-| http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
+| github-user |  Object and IoCs described in Indicator (pattern) |
+| gitlab-user |  Object and IoCs described in Indicator (pattern) |
+| http-request |  Object and IoCs described in Indicator (pattern) |
 | identity | **Identity** |
-| image | Artifact & File Objects |
-| intrusion-set | **Intrusion Set** |
-| ip-port | IPv4/IPv6 Address & Network Traffic Objects |
+| image |  Object and IoCs described in Indicator (pattern) |
+| intrusion-set | **Intrusion-set** |
+| ip-port |  Object and IoCs described in Indicator (pattern) |
 | legal-entity | **Identity** |
-| lnk | Artifact & Directory & File Objects |
-| mutex | Mutex Object |
-| netflow | Autonomous System & IPv4/IPv6 Address & Network Traffic Objects |
+| lnk |  Object and IoCs described in Indicator (pattern) |
+| mutex |  Object and IoCs described in Indicator (pattern) |
+| netflow |  Object and IoCs described in Indicator (pattern) |
 | network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
 | network-socket | Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects |
 | news-agency | **Identity** |
 | organization | **Identity** |
-| parler-account | User Account Object |
+| parler-account |  Object and IoCs described in Indicator (pattern) |
 | pe | Windows PE binary extension within a File Object |
 | pe & pe-sections | Windows PE binary extension within a File Object |
 | pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
 | person | **Identity** |
 | process | Process Objects (potential reference to File Objects) |
-| reddit-account | User Account Object |
-| registry-key | Windows Registry Key Object |
-| telegram-account | User Account Object |
-| twitter-account | User Account Object |
-| url | URL Object |
-| user-account | User Account Object |
+| reddit-account |  Object and IoCs described in Indicator (pattern) |
+| registry-key |  Object and IoCs described in Indicator (pattern) |
+| telegram-account |  Object and IoCs described in Indicator (pattern) |
+| twitter-account |  Object and IoCs described in Indicator (pattern) |
+| url |  Object and IoCs described in Indicator (pattern) |
+| user-account |  Object and IoCs described in Indicator (pattern) |
 | vulnerability | **Vulnerability** |
-| x509 | X509 Certificate Object |
+| x509 |  Object and IoCs described in Indicator (pattern) |
 
 ##### Detailed mapping
 
@@ -423,84 +423,85 @@ When another object type is mentioned in bold, it means the corresponding attrib
 
 | MISP Attribute type | STIX Object type / Observable Object type |
 | -- | -- |
-| AS | Autonomous System Object |
-| attachment | Artifact & File Objects |
-| authentihash | File Object |
+| AS | Autonomous System Object and IoCs described in Indicator (pattern) |
+| attachment | Artifact & File Objects and IoCs described in Indicator (pattern) |
+| authentihash | File Object and IoCs described in Indicator (pattern) |
 | campaign-name | **Campaign** |
-| domain | Domain Name Object |
-| domain\|ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Address Object |
-| email-attachment | Email Message & File Objects |
-| email-body | Email Message Object |
-| email-dst | Email Address & Email Message Objects |
-| email-header | Email Message Object |
-| email-message-id | Email Message Object |
-| email-reply-to | Email Message Object |
-| email-src | Email Address & Email Message Objects |
-| email-subject | Email Message Object |
-| email-x-mailer | Email Message Object |
-| filename | File Object |
-| filename\|authentihash | File Object |
-| filename\|imphash | File Object |
-| filename\|md5 | File Object |
-| filename\|pehash | File Object |
-| filename\|sha1 | File Object |
-| filename\|sha224 | File Object |
-| filename\|sha256 | File Object |
-| filename\|sha3-224 | File Object |
-| filename\|sha3-256 | File Object |
-| filename\|sha3-384 | File Object |
-| filename\|sha3-512 | File Object |
-| filename\|sha384 | File Object |
-| filename\|sha512 | File Object |
-| filename\|sha512/224 | File Object |
-| filename\|sha512/256 | File Object |
-| filename\|ssdeep | File Object |
-| filename\|tlsh | File Object |
-| filename\|vhash | File Object |
-| github-username | User Account Object |
-| hostname | Domain Name Object |
-| hostname\|port | Domain Name & Network Traffic Objects |
-| http-method | Network Traffic Object (pattern) / Custom Object |
-| imphash | File Object |
-| ip-dst | IPv4/IPv6 Address & Network Traffic Objects |
-| ip-dst\|port | IPv4/IPv6 Address & Network Traffic Objects |
-| ip-src | IPv4/IPv6 Address & Network Traffic Objects |
-| ip-src\|port | IPv4/IPv6 Address & Network Traffic Objects |
-| link | URL Object |
-| mac-address | Mac Address Object |
-| malware-sample | Artifact & File Objects |
-| md5 | File Object |
-| mutex | Mutex Object |
-| pehash | File Object |
-| port | Network Traffic Object (pattern) / Custom Object |
-| regkey | Windows Registry Key Object |
-| regkey\|value | Windows Registry Key Object |
-| sha1 | File Object |
-| sha224 | File Object |
-| sha256 | File Object |
-| sha3-224 | File Object |
-| sha3-256 | File Object |
-| sha3-384 | File Object |
-| sha3-512 | File Object |
-| sha384 | File Object |
-| sha512 | File Object |
-| sha512/224 | File Object |
-| sha512/256 | File Object |
+| domain | Domain Name Object and IoCs described in Indicator (pattern) |
+| domain\|ip | Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) |
+| email | Email Addr Object and IoCs described in Indicator (pattern) |
+| email-attachment | Email Message & File Objects and IoCs described in Indicator (pattern) |
+| email-body | Email Message Object and IoCs described in Indicator (pattern) |
+| email-dst | Email Addr & Email Message Objects and IoCs described in Indicator (pattern) |
+| email-header | Email Message Object and IoCs described in Indicator (pattern) |
+| email-message-id | Email Message Object and IoCs described in Indicator (pattern) |
+| email-reply-to | Email Message Object and IoCs described in Indicator (pattern) |
+| email-src | Email Addr & Email Message Objects and IoCs described in Indicator (pattern) |
+| email-subject | Email Message Object and IoCs described in Indicator (pattern) |
+| email-x-mailer | Email Message Object and IoCs described in Indicator (pattern) |
+| filename | File Object and IoCs described in Indicator (pattern) |
+| filename\|authentihash | File Object and IoCs described in Indicator (pattern) |
+| filename\|imphash | File Object and IoCs described in Indicator (pattern) |
+| filename\|md5 | File Object and IoCs described in Indicator (pattern) |
+| filename\|pehash | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha1 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha224 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha256 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-224 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-256 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-384 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha3-512 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha384 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha512 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha512/224 | File Object and IoCs described in Indicator (pattern) |
+| filename\|sha512/256 | File Object and IoCs described in Indicator (pattern) |
+| filename\|ssdeep | File Object and IoCs described in Indicator (pattern) |
+| filename\|tlsh | File Object and IoCs described in Indicator (pattern) |
+| filename\|vhash | File Object and IoCs described in Indicator (pattern) |
+| github-username | User Account Object and IoCs described in Indicator (pattern) |
+| hostname | Domain Name Object and IoCs described in Indicator (pattern) |
+| hostname\|port | Domain Name & Network Traffic Objects and IoCs described in Indicator (pattern) |
+| http-method | **Indicator** |
+| imphash | File Object and IoCs described in Indicator (pattern) |
+| ip-dst | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
+| ip-dst\|port | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
+| ip-src | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
+| ip-src\|port | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
+| link | Url Object and IoCs described in Indicator (pattern) |
+| mac-address | Mac Addr Object and IoCs described in Indicator (pattern) |
+| malware-sample | Artifact & File Objects and IoCs described in Indicator (pattern) |
+| md5 | File Object and IoCs described in Indicator (pattern) |
+| mutex | Mutex Object and IoCs described in Indicator (pattern) |
+| pehash | File Object and IoCs described in Indicator (pattern) |
+| port | **Indicator** |
+| regkey | Windows Registry Key Object and IoCs described in Indicator (pattern) |
+| regkey\|value | Windows Registry Key Object and IoCs described in Indicator (pattern) |
+| sha1 | File Object and IoCs described in Indicator (pattern) |
+| sha224 | File Object and IoCs described in Indicator (pattern) |
+| sha256 | File Object and IoCs described in Indicator (pattern) |
+| sha3-224 | File Object and IoCs described in Indicator (pattern) |
+| sha3-256 | File Object and IoCs described in Indicator (pattern) |
+| sha3-384 | File Object and IoCs described in Indicator (pattern) |
+| sha3-512 | File Object and IoCs described in Indicator (pattern) |
+| sha384 | File Object and IoCs described in Indicator (pattern) |
+| sha512 | File Object and IoCs described in Indicator (pattern) |
+| sha512/224 | File Object and IoCs described in Indicator (pattern) |
+| sha512/256 | File Object and IoCs described in Indicator (pattern) |
 | sigma | **Indicator** |
-| size-in-bytes | File Object (pattern) / Custom Object |
+| size-in-bytes | **Indicator** |
 | snort | **Indicator** |
-| ssdeep | File Object |
-| telfhash | File Object |
-| tlsh | File Object |
-| uri | URL Object |
-| url | URL Object |
-| user-agent | Network Traffic Object (pattern) / Custom Object |
-| vhash | File Object |
+| ssdeep | File Object and IoCs described in Indicator (pattern) |
+| suricata | **Indicator** |
+| telfhash | File Object and IoCs described in Indicator (pattern) |
+| tlsh | File Object and IoCs described in Indicator (pattern) |
+| uri | Url Object and IoCs described in Indicator (pattern) |
+| url | Url Object and IoCs described in Indicator (pattern) |
+| user-agent | **Indicator** |
+| vhash | File Object and IoCs described in Indicator (pattern) |
 | vulnerability | **Vulnerability** |
-| x509-fingerprint-md5 | X509 Certificate Object |
-| x509-fingerprint-sha1 | X509 Certificate Object |
-| x509-fingerprint-sha256 | X509 Certificate Object |
+| x509-fingerprint-md5 | X509 Certificate Object and IoCs described in Indicator (pattern) |
+| x509-fingerprint-sha1 | X509 Certificate Object and IoCs described in Indicator (pattern) |
+| x509-fingerprint-sha256 | X509 Certificate Object and IoCs described in Indicator (pattern) |
 | yara | **Indicator** |
 
 ##### Detailed mapping
@@ -515,54 +516,57 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | -- | -- |
 | Script object where state is "Malicious" | **Malware** |
 | Script object where state is not "Malicious" | **Tool** |
-| android-app | Software Object |
-| annotation | **Note** |
-| asn | Autonomous System Object |
-| attack-pattern | **Attack Pattern** |
-| course-of-action | **Course of Action** |
-| cpe-asset | Software Object |
-| credential | User Account Object |
-| domain-ip | Domain Name & IPv4/IPv6 Address Objects |
+| android-app | Software Object and IoCs described in Indicator (pattern) |
+| annotation | **Note** with references to the annotated objects |
+| asn | Autonomous System Object and IoCs described in Indicator (pattern) |
+| attack-pattern | **Attack-pattern** |
+| course-of-action | **Course-of-action** |
+| cpe-asset | Software Object and IoCs described in Indicator (pattern) |
+| credential | User Account Object and IoCs described in Indicator (pattern) |
+| domain-ip | Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) |
 | domain-ip with the perfect domain & ip matching | A tuple of IPv4/IPv6 Address & Network Objects for each associated domain & ip |
-| email | Email Address & Email Message & File Objects |
-| email with display names | Email Address & Email Message & Observed Data Objects |
+| email | Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) |
+| email with display names | Email Addr & Email Message Objects and IoCs described in Indicator (pattern) |
 | employee | **Identity** |
-| facebook-account | User Account Object |
+| facebook-account | User Account Object and IoCs described in Indicator (pattern) |
 | file | File Object (potential references to Artifact & Directory Objects) |
 | file with references to pe & pe-section | File Object with a windows pebinary extension |
 | file with references to pe & pe-section(s) | File Object with a Windows PE binary extension |
 | geolocation | **Location** |
-| github-user | User Account Object |
-| gitlab-user | User Account Object |
-| http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
+| github-user | User Account Object and IoCs described in Indicator (pattern) |
+| gitlab-user | User Account Object and IoCs described in Indicator (pattern) |
+| http-request | Domain Name & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
 | identity | **Identity** |
-| image | Artifact & File Objects |
-| intrusion-set | **Intrusion Set** |
-| ip-port | IPv4/IPv6 Address & Network Traffic Objects |
+| image | Artifact & File Objects and IoCs described in Indicator (pattern) |
+| intrusion-set | **Intrusion-set** |
+| ip-port | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
 | legal-entity | **Identity** |
-| lnk | Artifact & Directory & File Objects |
-| mutex | Mutex Object |
-| netflow | Autonomous System & IPv4/IPv6 Address & Network Traffic Objects |
+| lnk | Artifact & Directory & File Objects and IoCs described in Indicator (pattern) |
+| mutex | Mutex Object and IoCs described in Indicator (pattern) |
+| netflow | Autonomous System & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
 | network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
 | network-socket | Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects |
 | news-agency | **Identity** |
+| nova-rule | **Indicator** |
 | organization | **Identity** |
-| parler-account | User Account Object |
+| owasp-crs-rule | **Indicator** |
+| parler-account | User Account Object and IoCs described in Indicator (pattern) |
 | pe | Windows PE binary extension within a File Object |
 | pe & pe-sections | Windows PE binary extension within a File Object |
 | pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
 | person | **Identity** |
 | process | Process Objects (potential reference to File Objects) |
-| reddit-account | User Account Object |
-| registry-key | Windows Registry Key Object |
+| reddit-account | User Account Object and IoCs described in Indicator (pattern) |
+| registry-key | Windows Registry Key Object and IoCs described in Indicator (pattern) |
 | sigma | **Indicator** |
 | suricata | **Indicator** |
-| telegram-account | User Account Object |
-| twitter-account | User Account Object |
-| url | URL Object |
-| user-account | User Account Object |
+| telegram-account | User Account Object and IoCs described in Indicator (pattern) |
+| twitter-account | User Account Object and IoCs described in Indicator (pattern) |
+| url | Url Object and IoCs described in Indicator (pattern) |
+| user-account | User Account Object and IoCs described in Indicator (pattern) |
 | vulnerability | **Vulnerability** |
-| x509 | X509 Certificate Object |
+| wazuh-rule | **Indicator** |
+| x509 | X509 Certificate Object and IoCs described in Indicator (pattern) |
 | yara | **Indicator** |
 
 ##### Detailed mapping

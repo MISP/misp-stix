@@ -5584,7 +5584,7 @@
                     "uuid": "ec2bcad8-a900-57b8-a3ec-4c04ee471b83",
                     "object_relation": "suricata",
                     "value": "alert http any 443 -> 8.8.8.8 any",
-                    "type": "snort",
+                    "type": "suricata",
                     "to_ids": true,
                     "category": "Network activity"
                 },
@@ -5624,7 +5624,7 @@
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "To rule them all",
             "pattern": "alert http any 443 -> 8.8.8.8 any",
-            "pattern_type": "snort",
+            "pattern_type": "suricata",
             "pattern_version": "3.1.6",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
