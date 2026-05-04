@@ -1401,7 +1401,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha1 test attribute",
-            "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+            "pattern": "[file:name = 'filename2' AND file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1471,7 +1471,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha224 test attribute",
-            "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern": "[file:name = 'filename3' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1541,7 +1541,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha256 test attribute",
-            "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+            "pattern": "[file:name = 'filename4' AND file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1611,7 +1611,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha3-224 test attribute",
-            "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+            "pattern": "[file:name = 'filename15' AND file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1681,7 +1681,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha3-256 test attribute",
-            "pattern": "[file:name = 'filename16' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+            "pattern": "[file:name = 'filename16' AND file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1751,7 +1751,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha3-384 test attribute",
-            "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+            "pattern": "[file:name = 'filename17' AND file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1821,7 +1821,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha3-512 test attribute",
-            "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+            "pattern": "[file:name = 'filename18' AND file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1891,7 +1891,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha384 test attribute",
-            "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+            "pattern": "[file:name = 'filename5' AND file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -1961,7 +1961,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha512 test attribute",
-            "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+            "pattern": "[file:name = 'filename6' AND file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -2031,7 +2031,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha512/224 test attribute",
-            "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern": "[file:name = 'filename11' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -2101,7 +2101,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "Filename|sha512/256 test attribute",
-            "pattern": "[file:name = 'filename12' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+            "pattern": "[file:name = 'filename12' AND file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -3550,7 +3550,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA1 test attribute",
-            "pattern": "[file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+            "pattern": "[file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -3619,7 +3619,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA224 test attribute",
-            "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -3688,7 +3688,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA256 test attribute",
-            "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+            "pattern": "[file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -3757,7 +3757,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA3-224 test attribute",
-            "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+            "pattern": "[file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -3826,7 +3826,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA3-256 test attribute",
-            "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+            "pattern": "[file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -3895,7 +3895,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA3-384 test attribute",
-            "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+            "pattern": "[file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -3964,7 +3964,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA3-512 test attribute",
-            "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+            "pattern": "[file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -4033,7 +4033,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA384 test attribute",
-            "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+            "pattern": "[file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -4102,7 +4102,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA512 test attribute",
-            "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+            "pattern": "[file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -4171,7 +4171,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA512/224 test attribute",
-            "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -4240,7 +4240,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "SHA512/256 test attribute",
-            "pattern": "[file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+            "pattern": "[file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -4892,7 +4892,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "X509 SHA1 fingerprint test attribute",
-            "pattern": "[x509-certificate:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
+            "pattern": "[x509-certificate:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
@@ -4961,7 +4961,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "description": "X509 SHA256 fingerprint test attribute",
-            "pattern": "[x509-certificate:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+            "pattern": "[x509-certificate:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
             "valid_from": "2020-10-25T16:22:00Z",
             "kill_chain_phases": [
                 {
