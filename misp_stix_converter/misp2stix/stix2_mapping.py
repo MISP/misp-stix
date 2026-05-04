@@ -38,6 +38,14 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'vhash'
     )
     __hash_attribute_types = __pe_section_hash_types + __hash_attribute_types
+    __hash_pattern_mapping = Mapping(
+        **{
+            'SHA1':   'SHA-1',   'SHA224': 'SHA-224', 'SHA256': 'SHA-256',
+            'SHA384': 'SHA-384', 'SHA512': 'SHA-512',
+            'SHA3224': 'SHA3-224', 'SHA3256': 'SHA3-256',
+            'SHA3384': 'SHA3-384', 'SHA3512': 'SHA3-512',
+        }
+    )
     __source_names = (
         'ATTACK',
         'NIST Mobile Threat Catalogue',
@@ -1122,6 +1130,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def hash_attribute_types(cls) -> tuple:
         return cls.__hash_attribute_types
+
+    @classmethod
+    def hash_pattern_mapping(cls, field: str) -> str:
+        return cls.__hash_pattern_mapping.get(field, field)
 
     @classmethod
     def http_request_object_mapping(cls, field: str) -> Union[dict, None]:
