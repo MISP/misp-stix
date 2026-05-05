@@ -2912,7 +2912,7 @@ _FILE_AND_PE_INDICATOR_OBJECT = {
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+    "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
     "labels": ['misp:name="file"', 'misp:meta-category="file"']
@@ -2981,7 +2981,7 @@ _FILE_AND_PE_OBSERVABLE_OBJECT = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
@@ -3157,7 +3157,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha1 test attribute",
-        "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern": "[file:name = 'filename2' AND file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3171,7 +3171,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha224 test attribute",
-        "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:name = 'filename3' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3185,7 +3185,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha256 test attribute",
-        "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern": "[file:name = 'filename4' AND file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3199,7 +3199,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha384 test attribute",
-        "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern": "[file:name = 'filename5' AND file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3213,7 +3213,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha512 test attribute",
-        "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern": "[file:name = 'filename6' AND file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3286,7 +3286,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha512/224 test attribute",
-        "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:name = 'filename11' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3303,7 +3303,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha512/256 test attribute",
-        "pattern": "[file:name = 'filename11' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern": "[file:name = 'filename11' AND file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3320,7 +3320,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-224 test attribute",
-        "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern": "[file:name = 'filename15' AND file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3334,7 +3334,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-256 test attribute",
-        "pattern": "[file:name = 'filename12' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern": "[file:name = 'filename12' AND file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3348,7 +3348,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-384 test attribute",
-        "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern": "[file:name = 'filename17' AND file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3362,7 +3362,7 @@ _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-512 test attribute",
-        "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern": "[file:name = 'filename18' AND file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3465,7 +3465,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha1 test attribute",
-        "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern": "[file:name = 'filename2' AND file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3508,7 +3508,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha224 test attribute",
-        "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:name = 'filename3' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3551,7 +3551,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha256 test attribute",
-        "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern": "[file:name = 'filename4' AND file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3594,7 +3594,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha384 test attribute",
-        "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern": "[file:name = 'filename5' AND file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3637,7 +3637,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha512 test attribute",
-        "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern": "[file:name = 'filename6' AND file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3857,7 +3857,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha512/224 test attribute",
-        "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:name = 'filename11' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3906,7 +3906,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha512/256 test attribute",
-        "pattern": "[file:name = 'filename12' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern": "[file:name = 'filename12' AND file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3952,7 +3952,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-224 test attribute",
-        "pattern": "[file:name = 'filename15' AND file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern": "[file:name = 'filename15' AND file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -3995,7 +3995,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-256 test attribute",
-        "pattern": "[file:name = 'filename16' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern": "[file:name = 'filename16' AND file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4038,7 +4038,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-384 test attribute",
-        "pattern": "[file:name = 'filename17' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern": "[file:name = 'filename17' AND file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4081,7 +4081,7 @@ _HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "Filename|sha3-512 test attribute",
-        "pattern": "[file:name = 'filename18' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern": "[file:name = 'filename18' AND file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4204,7 +4204,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA1 test attribute",
-        "pattern": "[file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern": "[file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4218,7 +4218,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA224 test attribute",
-        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4232,7 +4232,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA256 test attribute",
-        "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern": "[file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4246,7 +4246,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA384 test attribute",
-        "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern": "[file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4260,7 +4260,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA512 test attribute",
-        "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern": "[file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4330,7 +4330,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA512/224 test attribute",
-        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4344,7 +4344,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA512/256 test attribute",
-        "pattern": "[file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern": "[file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4358,7 +4358,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-224 test attribute",
-        "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern": "[file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4372,7 +4372,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-256 test attribute",
-        "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern": "[file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4386,7 +4386,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-384 test attribute",
-        "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern": "[file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4400,7 +4400,7 @@ _HASH_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-512 test attribute",
-        "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern": "[file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4512,7 +4512,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA1 test attribute",
-        "pattern": "[file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern": "[file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4554,7 +4554,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA224 test attribute",
-        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4596,7 +4596,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA256 test attribute",
-        "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern": "[file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4638,7 +4638,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA384 test attribute",
-        "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern": "[file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4680,7 +4680,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA512 test attribute",
-        "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern": "[file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4886,7 +4886,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA512/224 test attribute",
-        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4928,7 +4928,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA512/256 test attribute",
-        "pattern": "[file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern": "[file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -4970,7 +4970,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-224 test attribute",
-        "pattern": "[file:hashes.SHA3224 = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern": "[file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -5012,7 +5012,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-256 test attribute",
-        "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern": "[file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -5054,7 +5054,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-384 test attribute",
-        "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern": "[file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -5096,7 +5096,7 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "SHA3-512 test attribute",
-        "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern": "[file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -5911,7 +5911,7 @@ _LNK_OBSERVABLE_OBJECT = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip')]",
+        "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip')]",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "file"}
@@ -7182,7 +7182,7 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "X509 SHA1 fingerprint test attribute",
-        "pattern": "[x509-certificate:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
+        "pattern": "[x509-certificate:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -7199,7 +7199,7 @@ _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "X509 SHA256 fingerprint test attribute",
-        "pattern": "[x509-certificate:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+        "pattern": "[x509-certificate:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -7284,7 +7284,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "X509 SHA1 fingerprint test attribute",
-        "pattern": "[x509-certificate:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
+        "pattern": "[x509-certificate:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -7332,7 +7332,7 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "description": "X509 SHA256 fingerprint test attribute",
-        "pattern": "[x509-certificate:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+        "pattern": "[x509-certificate:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "Payload delivery"}
@@ -7358,7 +7358,7 @@ _X509_INDICATOR_OBJECT = {
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
+    "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
         {"kill_chain_name": "misp-category", "phase_name": "network"}
@@ -7403,7 +7403,7 @@ _X509_OBSERVABLE_OBJECT = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name']",
+        "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name']",
         "valid_from": "2020-10-25T16:22:00Z",
         "kill_chain_phases": [
             {"kill_chain_name": "misp-category", "phase_name": "network"}
@@ -8123,8 +8123,8 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             pattern = [
                 "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
-                "file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
-                "file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
+                "file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
+                "file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
                 "file:name = 'oui'",
                 "file:name_enc = 'UTF-8'",
                 "file:size = '35'",
@@ -8147,8 +8147,8 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         observed_data['objects']['2']['payload_bin'] = data
         pattern = [
             "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
-            "file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
-            "file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
+            "file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
+            "file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
             "file:name = 'oui'",
             f"(file:content_ref.payload_bin = '{data}'",
             "file:content_ref.x_misp_filename = 'oui'",
@@ -8228,8 +8228,8 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
                 "file:name = 'oui'",
                 "file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp'",
                 "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
-                "file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
-                "file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
+                "file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
+                "file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
                 f"(file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
                 "file:content_ref.x_misp_filename = 'oui'",
                 "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",

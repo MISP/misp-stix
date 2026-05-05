@@ -1763,10 +1763,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         for attribute, indicator in zip(attributes, indicators):
             pattern = self._check_indicator_attribute(attribute, indicator)
             identifier, value = pattern[1:-1].split(' = ')
-            self.assertEqual(
-                attribute.type,
-                f"x509-fingerprint-{self.hash_types_mapping(identifier.split('.')[-1])}"
-            )
+            hash_type = self.hash_types_mapping(identifier.split('.')[-1].strip("'"))
+            self.assertEqual(attribute.type, f'x509-fingerprint-{hash_type}')
             self.assertEqual(attribute.value, value.strip("'"))
             self.assertTrue(attribute.to_ids)
             self._populate_documentation(
