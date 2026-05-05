@@ -22,6 +22,13 @@ Thus, it gives a detailed description of the inputs and outputs that are to expe
         * [Attributes to STIX 2.1](#Attributes-to-STIX-21-mapping)
         * [Objects to STIX 2.1](#Objects-to-STIX-21-mapping)
         * [Galaxies to STIX 2.1](#Galaxies-to-STIX-21-mapping)
+* [STIX to MISP](#STIX-to-MISP)
+    * [STIX 2.0 to MISP](#STIX-20-to-MISP)
+        * [Attributes from STIX 2.0](#Attributes-from-STIX-20)
+        * [Objects from STIX 2.0](#Objects-from-STIX-20)
+    * [STIX 2.1 to MISP](#STIX-21-to-MISP)
+        * [Attributes from STIX 2.1](#Attributes-from-STIX-21)
+        * [Objects from STIX 2.1](#Objects-from-STIX-21)
 * [Future improvements](#Future-Improvements)
 
 ## Introduction
