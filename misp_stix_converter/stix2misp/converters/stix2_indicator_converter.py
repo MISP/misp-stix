@@ -330,7 +330,9 @@ class ExternalSTIX2IndicatorMapping(
         **{
             'hashes.MD5': STIX2Mapping.x509_md5_attribute(),
             'hashes.SHA1': STIX2Mapping.x509_sha1_attribute(),
+            "hashes.'SHA-1'": STIX2Mapping.x509_sha1_attribute(),
             'hashes.SHA256': STIX2Mapping.x509_sha256_attribute(),
+            "hashes.'SHA-256'": STIX2Mapping.x509_sha256_attribute(),
             **STIX2Mapping.x509_object_mapping()
         }
     )
@@ -1420,14 +1422,23 @@ class InternalSTIX2IndicatorMapping(
             'hashes.IMPHASH': STIX2Mapping.imphash_attribute(),
             'hashes.MD5': STIX2Mapping.md5_attribute(),
             'hashes.SHA1': STIX2Mapping.sha1_attribute(),
+            "hashes.'SHA-1'": STIX2Mapping.sha1_attribute(),
             'hashes.SHA224': InternalSTIX2Mapping.sha224_attribute(),
+            "hashes.'SHA-224'": InternalSTIX2Mapping.sha224_attribute(),
             'hashes.SHA256': STIX2Mapping.sha256_attribute(),
+            "hashes.'SHA-256'": STIX2Mapping.sha256_attribute(),
             'hashes.SHA3224': InternalSTIX2Mapping.sha3_224_attribute(),
+            "hashes.'SHA3-224'": InternalSTIX2Mapping.sha3_224_attribute(),
             'hashes.SHA3256': STIX2Mapping.sha3_256_attribute(),
+            "hashes.'SHA3-256'": STIX2Mapping.sha3_256_attribute(),
             'hashes.SHA3384': InternalSTIX2Mapping.sha3_384_attribute(),
+            "hashes.'SHA3-384'": InternalSTIX2Mapping.sha3_384_attribute(),
             'hashes.SHA3512': STIX2Mapping.sha3_512_attribute(),
+            "hashes.'SHA3-512'": STIX2Mapping.sha3_512_attribute(),
             'hashes.SHA384': InternalSTIX2Mapping.sha384_attribute(),
+            "hashes.'SHA-384'": InternalSTIX2Mapping.sha384_attribute(),
             'hashes.SHA512': STIX2Mapping.sha512_attribute(),
+            "hashes.'SHA-512'": STIX2Mapping.sha512_attribute(),
             'hashes.SSDEEP': STIX2Mapping.ssdeep_attribute(),
             'hashes.TELFHASH': InternalSTIX2Mapping.telfhash_attribute(),
             'hashes.TLSH': STIX2Mapping.tlsh_attribute(),
@@ -1459,10 +1470,15 @@ class InternalSTIX2IndicatorMapping(
         **{
             'hashes.MD5': STIX2Mapping.md5_attribute(),
             'hashes.SHA1': STIX2Mapping.sha1_attribute(),
+            "hashes.'SHA-1'": STIX2Mapping.sha1_attribute(),
             'hashes.SHA224': InternalSTIX2Mapping.sha224_attribute(),
+            "hashes.'SHA-224'": InternalSTIX2Mapping.sha224_attribute(),
             'hashes.SHA256': STIX2Mapping.sha256_attribute(),
+            "hashes.'SHA-256'": STIX2Mapping.sha256_attribute(),
             'hashes.SHA384': InternalSTIX2Mapping.sha384_attribute(),
+            "hashes.'SHA-384'": InternalSTIX2Mapping.sha384_attribute(),
             'hashes.SHA512': STIX2Mapping.sha512_attribute(),
+            "hashes.'SHA-512'": STIX2Mapping.sha512_attribute(),
             'hashes.SSDEEP': STIX2Mapping.ssdeep_attribute(),
             'hashes.TLSH': STIX2Mapping.tlsh_attribute(),
             'parent_directory_ref.path': STIX2Mapping.path_attribute(),
@@ -1506,7 +1522,9 @@ class InternalSTIX2IndicatorMapping(
         **{
             'hashes.MD5': STIX2Mapping.x509_md5_attribute(),
             'hashes.SHA1': STIX2Mapping.x509_sha1_attribute(),
+            "hashes.'SHA-1'": STIX2Mapping.x509_sha1_attribute(),
             'hashes.SHA256': STIX2Mapping.x509_sha256_attribute(),
+            "hashes.'SHA-256'": STIX2Mapping.x509_sha256_attribute(),
             **InternalSTIX2Mapping.x509_object_mapping()
         }
     )
@@ -1958,7 +1976,7 @@ class InternalSTIX2IndicatorConverter(
                         )
                     )
                     continue
-                mapping = self._mapping.file_hashes_mapping(feature)
+                mapping = self._mapping.file_hashes_mapping(feature.strip("'"))
                 section_object.add_attribute(
                     **mapping, value=value, to_ids=True,
                     uuid=self.main_parser._create_v5_uuid(

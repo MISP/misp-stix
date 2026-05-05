@@ -454,7 +454,9 @@ class STIX2Mapping:
     __x509_hashes_mapping = Mapping(
         **{
             'MD5': __x509_md5_attribute,
+            'SHA1': __x509_sha1_attribute,
             'SHA-1': __x509_sha1_attribute,
+            'SHA256': __x509_sha256_attribute,
             'SHA-256': __x509_sha256_attribute
         }
     )
