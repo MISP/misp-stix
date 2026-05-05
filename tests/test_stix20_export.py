@@ -443,11 +443,11 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
 
     def _check_hash_composite_indicator_attribute(self, attribute, indicator):
         filename, hash_value = attribute['value'].split('|')
-        hash_type = attribute['type'].split('|')[1]
-        if '/' in hash_type:
-            hash_type = f"SHA{hash_type.split('/')[1]}"
+        hash_type = self.parser._mapping.hash_pattern_mapping(
+            self.parser._define_hash_type(attribute['type'].split('|')[1])
+        )
         filename_pattern = f"file:name = '{filename}'"
-        hash_pattern = f"file:hashes.{hash_type.replace('-', '').upper()} = '{hash_value}'"
+        hash_pattern = f"file:hashes.{self.parser._quote_segment(hash_type)} = '{hash_value}'"
         self.assertEqual(indicator.pattern, f"[{filename_pattern} AND {hash_pattern}]")
 
     def _check_hash_composite_observable_attribute(self, attribute, observed_data):
@@ -459,12 +459,12 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
         self.assertEqual(observable_object.hashes[hash_type], hash_value)
 
     def _check_hash_indicator_attribute(self, attribute, indicator):
-        hash_type = attribute['type']
-        if '/' in hash_type:
-            hash_type = f"SHA{hash_type.split('/')[1]}"
+        hash_type = self.parser._mapping.hash_pattern_mapping(
+            self.parser._define_hash_type(attribute['type'])
+        )
         self.assertEqual(
             indicator.pattern,
-            f"[file:hashes.{hash_type.replace('-', '').upper()} = '{attribute['value']}']"
+            f"[file:hashes.{self.parser._quote_segment(hash_type)} = '{attribute['value']}']"
         )
 
     def _check_hash_observable_attribute(self, attribute, observed_data):
@@ -1486,10 +1486,12 @@ class TestSTIX20JSONAttributesExport(TestSTIX20AttributesExport):
         stix_objects = self._run_indicators_tests(event['Event'])
         for attribute, objects, relationshp in zip(*stix_objects):
             observed_data, indicator = objects
-            hash_type = attribute['type'].split('-')[-1].upper()
+            hash_type = self.parser._mapping.hash_pattern_mapping(
+                attribute['type'].split('-')[-1].upper()
+            )
             self.assertEqual(
                 indicator.pattern,
-                f"[x509-certificate:hashes.{hash_type} = '{attribute['value']}']"
+                f"[x509-certificate:hashes.{self.parser._quote_segment(hash_type)} = '{attribute['value']}']"
             )
             self._check_x509_fingerprint_observable_attribute(attribute, observed_data)
             self._populate_documentation(
@@ -1924,11 +1926,13 @@ class TestSTIX20MISPAttributesExport(TestSTIX20AttributesExport):
         stix_objects = self._run_indicators_tests(misp_event)
         for attribute, objects, _ in zip(*stix_objects):
             observed_data, indicator = objects
-            hash_type = attribute['type'].split('-')[-1].upper()
+            hash_type = self.parser._mapping.hash_pattern_mapping(
+                attribute['type'].split('-')[-1].upper()
+            )
             self._check_x509_fingerprint_observable_attribute(attribute, observed_data)
             self.assertEqual(
                 indicator.pattern,
-                f"[x509-certificate:hashes.{hash_type} = '{attribute['value']}']"
+                f"[x509-certificate:hashes.{self.parser._quote_segment(hash_type)} = '{attribute['value']}']"
             )
 
     def test_event_with_x509_fingerprint_observable_attributes(self):
@@ -2961,8 +2965,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         pattern = pattern[1:-1].split(' AND ')
         md5_, sha1_, sha256_, name_ = pattern[:4]
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
-        self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
-        self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
+        self.assertEqual(sha1_, f"file:hashes.'SHA-1' = '{_sha1}'")
+        self.assertEqual(sha256_, f"file:hashes.'SHA-256' = '{_sha256}'")
         self.assertEqual(name_, f"file:name = '{_filename}'")
         self._check_pe_and_section_pattern(pattern[4:], pe, section)
 
@@ -2976,8 +2980,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         _malware_sample, _filename, _md5, _sha1, _sha256, *_ = misp_object.attributes
         md5_, sha1_, sha256_, filename_, malware_sample_ = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5.value}'")
-        self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1.value}'")
-        self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256.value}'")
+        self.assertEqual(sha1_, f"file:hashes.'SHA-1' = '{_sha1.value}'")
+        self.assertEqual(sha256_, f"file:hashes.'SHA-256' = '{_sha256.value}'")
         self.assertEqual(filename_, f"file:name = '{_filename.value}'")
         ms_data, ms_filename, ms_md5, mime_type = malware_sample_.split(' AND ')
         data = _malware_sample.data
@@ -3110,8 +3114,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         name, md5_pattern, sha1_pattern, sha256_pattern, artifact = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(name, f"file:name = '{filename.value}'")
         self.assertEqual(md5_pattern, f"file:hashes.MD5 = '{md5.value}'")
-        self.assertEqual(sha1_pattern, f"file:hashes.SHA1 = '{sha1.value}'")
-        self.assertEqual(sha256_pattern, f"file:hashes.SHA256 = '{sha256.value}'")
+        self.assertEqual(sha1_pattern, f"file:hashes.'SHA-1' = '{sha1.value}'")
+        self.assertEqual(sha256_pattern, f"file:hashes.'SHA-256' = '{sha256.value}'")
         ms_data, ms_filename, ms_md5, mime_type = artifact.split(' AND ')
         data = malware_sample.data
         if not isinstance(data, str):
@@ -3402,7 +3406,7 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         _issuer, *_, _md5, _sha1 = (attribute['value'] for attribute in misp_object.attributes)
         md5_, sha1_, issuer_ = pattern[1:-1].split(' AND ')
         self.assertEqual(md5_, f"x509-certificate:hashes.MD5 = '{_md5}'")
-        self.assertEqual(sha1_, f"x509-certificate:hashes.SHA1 = '{_sha1}'")
+        self.assertEqual(sha1_, f"x509-certificate:hashes.'SHA-1' = '{_sha1}'")
         self.assertEqual(issuer_, f"x509-certificate:issuer = '{_issuer}'")
 
     def _test_event_with_x509_observable_object(self, event):

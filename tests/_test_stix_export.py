@@ -665,9 +665,9 @@ class TestSTIX2Export(TestSTIX):
         prefix = f"{prefix}.sections[0]"
         self.assertEqual(name_, f"{prefix}.name = '{_name}'")
         self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
-        self.assertEqual(sha1_, f"{prefix}.hashes.SHA1 = '{_sha1}'")
-        self.assertEqual(sha256_, f"{prefix}.hashes.SHA256 = '{_sha256}'")
-        self.assertEqual(sha512_, f"{prefix}.hashes.SHA512 = '{_sha512}'")
+        self.assertEqual(sha1_, f"{prefix}.hashes.'SHA-1' = '{_sha1}'")
+        self.assertEqual(sha256_, f"{prefix}.hashes.'SHA-256' = '{_sha256}'")
+        self.assertEqual(sha512_, f"{prefix}.hashes.'SHA-512' = '{_sha512}'")
         self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
 
     def _check_person_object(self, identity, misp_object, person_ref, identity_id):

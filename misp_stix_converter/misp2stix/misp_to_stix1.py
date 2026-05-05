@@ -100,6 +100,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def stix_package(self) -> STIXPackage:
         return self._stix_package
 
+    def _optional_timestamp(self, data: dict) -> datetime | None:
+        timestamp = data.get('timestamp')
+        if timestamp is None:
+            return None
+        return self._datetime_from_timestamp(timestamp)
+
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
@@ -154,7 +160,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _handle_exploit_target(self, attribute: dict, stix_object: Union[Vulnerability, Weakness], stix_type: str):
         attribute_uuid = attribute['uuid']
         ttp = self._create_ttp(attribute)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._optional_timestamp(attribute)
         exploit_target = ExploitTarget(timestamp=timestamp)
         exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{attribute_uuid}"
         if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
@@ -199,10 +205,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute(attribute, observable)
 
     def _parse_campaign_name_attribute(self, attribute: dict):
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._optional_timestamp(attribute)
         campaign = Campaign(timestamp=timestamp)
         campaign.id_ = f"{self._orgname_id}:Campaign-{attribute['uuid']}"
-        campaign.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        campaign.title = f"{attribute.get('category', 'Other')}: {attribute['value']} (MISP Attribute)"
         if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
             campaign.description = attribute['comment']
         names = Names()
@@ -514,7 +520,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('comment') and attribute['comment'] == 'Imported from STIX header description':
             self._header_comment.append(attribute['value'])
         else:
-            self._add_journal_entry(f"Attribute ({attribute['category']} - {attribute['type']}): {attribute['value']}")
+            self._add_journal_entry(f"Attribute ({attribute.get('category', 'Other')} - {attribute['type']}): {attribute['value']}")
 
     def _parse_user_agent_attribute(self, attribute: dict):
         http_client_request = HTTPClientRequest()
@@ -806,7 +812,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         ciq_identity = CIQIdentity3_0Instance()
         ciq_identity.specification = identity_spec
         ciq_identity.id_ = f"{self._orgname_id}:Identity-{attribute['uuid']}"
-        ciq_identity.name = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        ciq_identity.name = f"{attribute.get('category', 'Other')}: {attribute['value']} (MISP Attribute)"
         return ciq_identity
 
     def _create_course_of_action_from_galaxy(self, cluster: dict) -> CourseOfAction:
@@ -849,11 +855,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return observable
 
     def _create_indicator_from_attribute(self, attribute: dict) -> Indicator:
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._optional_timestamp(attribute)
         indicator = Indicator(timestamp=timestamp)
         indicator.id_ = f"{self._orgname_id}:Indicator-{attribute['uuid']}"
         indicator.producer = self._producer
-        indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        indicator.title = f"{attribute.get('category', 'Other')}: {attribute['value']} (MISP Attribute)"
         indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
         indicator.add_indicator_type(self._set_indicator_type(attribute['type']))
         indicator.add_valid_time_position(ValidTime())
@@ -983,12 +989,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return threat_actor
 
     def _create_ttp(self, attribute: dict) -> TTP:
-        ttp = TTP(timestamp=self._datetime_from_timestamp(attribute['timestamp']))
+        ttp = TTP(timestamp=self._optional_timestamp(attribute))
         ttp.id_ = f"{self._orgname_id}:TTP-{attribute['uuid']}"
         if attribute.get('Tag'):
             tags = tuple(tag['name'] for tag in attribute['Tag'])
             ttp.handling = self._set_handling(tags)
-        ttp.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        ttp.title = f"{attribute.get('category', 'Other')}: {attribute['value']} (MISP Attribute)"
         return ttp
 
     def _create_ttp_from_galaxy(self, galaxy_name: str, uuid: str) -> TTP:
@@ -1202,15 +1208,18 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     ################################################################################
 
     def _create_incident(self) -> Incident:
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        incident_id = f"{self._orgname_id}:Incident-{self._misp_event['uuid']}"
-        incident = Incident(
-            id_ = incident_id,
-            title = self._misp_event['info'],
-            timestamp = timestamp
-        )
+        incident_args = {
+            'id_': f"{self._orgname_id}:Incident-{self._misp_event['uuid']}",
+            'title': self._misp_event['info']
+        }
+        if self._misp_event.get('timestamp'):
+            incident_args['timestamp'] = self._datetime_from_timestamp(
+                self._misp_event['timestamp']
+            )
+        incident = Incident(**incident_args)
         incident_time = Time()
-        incident_time.incident_discovery = self._handle_date_value()
+        if self._misp_event.get('date'):
+            incident_time.incident_discovery = self._handle_date_value()
         if self._is_published():
             incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         incident.time = incident_time
@@ -1250,17 +1259,18 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     ################################################################################
 
     def _handle_attribute(self, attribute: dict, observable: Observable):
+        category = attribute.get('category', 'Other')
         if attribute.get('to_ids', False):
             indicator = self._handle_attribute_indicator(attribute, observable)
             related_indicator = RelatedIndicator(
                 indicator,
-                relationship=attribute['category']
+                relationship=category
             )
             self._incident.related_indicators.append(related_indicator)
         else:
             related_observable = RelatedObservable(
                 observable,
-                relationship=attribute['category']
+                relationship=category
             )
             self._incident.related_observables.append(related_observable)
 
@@ -1271,7 +1281,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _handle_test_mechanism(self, attribute: dict, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
         indicator = self._create_indicator_from_attribute(attribute)
         indicator.add_test_mechanism(test_mechanism)
-        related_indicator = RelatedIndicator(indicator, relationship=attribute['category'])
+        related_indicator = RelatedIndicator(indicator, relationship=attribute.get('category', 'Other'))
         self._incident.related_indicators.append(related_indicator)
 
     ################################################################################
@@ -1453,7 +1463,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         related_ttp = self._create_related_ttp(
             ttp.id_,
             misp_object['name'],
-            timestamp=self._datetime_from_timestamp(misp_object['timestamp'])
+            timestamp=self._optional_timestamp(misp_object)
         )
         self._incident.add_leveraged_ttps(related_ttp)
         self._contextualised_data.add(misp_object['uuid'])
@@ -1507,7 +1517,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             course_of_action.handling = self._set_handling(tags)
         coa_taken = self._create_coa_taken(
             course_of_action.id_,
-            timestamp=self._datetime_from_timestamp(misp_object['timestamp'])
+            timestamp=self._optional_timestamp(misp_object)
         )
         self._incident.add_coa_taken(coa_taken)
         self._stix_package.add_course_of_action(course_of_action)
@@ -2019,7 +2029,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
-        exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
         exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
@@ -2035,7 +2045,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
-        exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
         exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
         exploit_target.add_weakness(weakness)
         ttp.add_exploit_target(exploit_target)
@@ -2252,7 +2262,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return coa_taken
 
     def _create_indicator_from_object(self, misp_object: dict) -> Indicator:
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = self._optional_timestamp(misp_object)
         indicator = Indicator(timestamp=timestamp)
         indicator.id_ = f"{self._orgname_id}:Indicator-{misp_object['uuid']}"
         indicator.producer = self._producer
@@ -2273,16 +2283,21 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return related_ta
 
     def _create_stix_package(self) -> STIXPackage:
-        package_id = f"{self._orgname_id}:STIXPackage-{self._misp_event['uuid']}"
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        stix_package = STIXPackage(id_=package_id, timestamp=timestamp)
+        package_args = {
+            'id_': f"{self._orgname_id}:STIXPackage-{self._misp_event['uuid']}"
+        }
+        if self._misp_event.get('timestamp') is not None:
+            package_args['timestamp'] = self._datetime_from_timestamp(
+                self._misp_event['timestamp']
+            )
+        stix_package = STIXPackage(**package_args)
         stix_package.version = self._version
         return stix_package
 
     def _create_ttp_from_object(self, misp_object: dict) -> TTP:
-        ttp = TTP(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        ttp = TTP(timestamp=self._optional_timestamp(misp_object))
         ttp.id_ = f"{self._orgname_id}:TTP-{misp_object['uuid']}"
-        ttp.title = f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)"
+        ttp.title = f"{misp_object.get('meta-category', 'misc')}: {misp_object['name']} (MISP Object)"
         return ttp
 
     def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:

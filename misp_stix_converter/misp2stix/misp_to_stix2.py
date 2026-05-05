@@ -53,6 +53,7 @@ _object_attributes_fields = ('type', 'object_relation', 'value')
 _observed_data_time_fields = ('first_observed', 'last_observed')
 _sdo_time_fields = ('created', 'modified', *_misp_time_fields)
 _special_characters = (' ', '.')
+_KEYWORD_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 
 _MISP_DATA_LAYER = Union[
     dict, MISPAttribute, MISPEventReport, MISPObject
@@ -1363,7 +1364,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         stix_objects = [observed_data]
         to_ids = self._mapping.to_ids_default_value(attribute['type'])
         if attribute.get('to_ids', to_ids):
-            hash_type = attribute['type'].split('-')[-1].upper()
+            hash_type = self._mapping.hash_pattern_mapping(
+                attribute['type'].split('-')[-1].upper()
+            )
             value = ''.join(
                 character for character in attribute['value']
                 if character.isalnum()
@@ -1371,7 +1374,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if not self._check_hash_value(hash_type, value):
                 raise InvalidHashValueError()
             indicator = self._handle_attribute_indicator(
-                attribute, f"[x509-certificate:hashes.{hash_type} = '{value}']"
+                attribute,
+                f"[x509-certificate:hashes.{self._quote_segment(hash_type)} = '{value}']"
             )
             self._parse_indicator_relationship(
                 indicator.id, observed_data.id, indicator.modified
@@ -2209,7 +2213,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if attributes.get(key):
                     for value in attributes.pop(key):
                         patterns.append(
-                            f"{prefix}:{extension}.'{feature}' = '{value}'"
+                            f"{prefix}:{extension}.{self._quote_segment(feature)} = '{value}'"
                         )
             if attributes:
                 patterns.extend(
@@ -3118,8 +3122,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 )
             for attribute_type in self._mapping.x509_hash_fields():
                 if attributes.get(attribute_type):
-                    hash_type = self._define_hash_type(
-                        attribute_type.split('-')[-1]
+                    hash_type = self._mapping.hash_pattern_mapping(
+                        self._define_hash_type(attribute_type.split('-')[-1])
                     )
                     valid_hash = self._check_hash_value(
                         hash_type, attributes[attribute_type]
@@ -3127,7 +3131,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     if valid_hash:
                         value = attributes.pop(attribute_type)
                         pattern.append(
-                            f"{prefix}:hashes.{hash_type} = '{value}'"
+                            f"{prefix}:hashes.{self._quote_segment(hash_type)} = '{value}'"
                         )
                     else:
                         self._invalid_object_hash_value_error(
@@ -4787,10 +4791,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _create_hash_pattern(self, attribute_type: str, value: str,
                              prefix: Optional[str] = 'file:hashes') -> str:
         value = value.strip('"').strip("'").strip('\\')
-        hash_type = self._define_hash_type(attribute_type)
+        hash_type = self._mapping.hash_pattern_mapping(
+            self._define_hash_type(attribute_type)
+        )
         if not self._check_hash_value(hash_type, value):
             raise InvalidHashValueError()
-        return f"{prefix}.{hash_type} = '{value}'"
+        return f"{prefix}.{self._quote_segment(hash_type)} = '{value}'"
 
     def _create_ip_pattern(self, ip_type: str, value: str) -> str:
         address_type = self._define_address_type(value)
@@ -5123,6 +5129,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if strict and '-' in key:
             return key.replace('-', '_')
         return key
+
+    @staticmethod
+    def _quote_segment(segment: str) -> str:
+        if _KEYWORD_RE.match(segment):
+            return segment
+        escaped = segment.replace('\\', '\\\\').replace("'", "\\'")
+        return f"'{escaped}'"
 
     def _sanitise_registry_key_value(self, value: str) -> str:
         sanitized = value.strip().replace('\\', '\\\\')
