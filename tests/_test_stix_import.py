@@ -11,10 +11,34 @@ from misp_stix_converter import (
 from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
 from .update_documentation import (
-    AttributesDocumentationUpdater, ObjectsDocumentationUpdater)
+    AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
+    ObjectsDocumentationUpdater)
 
 PATTERNS = ('_ATTRIBUTES', '_OBJECTS')
 UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
+_EXT_GALAXY_SUMMARY_MAPPING_V20 = {
+    'attack-pattern': 'STIX 2.0 Attack Pattern (stix-2.0-attack-pattern)',
+    'campaign': 'STIX 2.0 Campaign (stix-2.0-campaign)',
+    'course-of-action': 'STIX 2.0 Course of Action (stix-2.0-course-of-action)',
+    'intrusion-set': 'STIX 2.0 Intrusion Set (stix-2.0-intrusion-set)',
+    'malware': 'STIX 2.0 Malware (stix-2.0-malware)',
+    'threat-actor': 'STIX 2.0 Threat Actor (stix-2.0-threat-actor)',
+    'tool': 'STIX 2.0 Tool (stix-2.0-tool)',
+    'vulnerability': 'STIX 2.0 Vulnerability (stix-2.0-vulnerability)',
+}
+
+_EXT_GALAXY_SUMMARY_MAPPING_V21 = {
+    'attack-pattern': 'STIX 2.1 Attack Pattern (stix-2.1-attack-pattern)',
+    'campaign': 'STIX 2.1 Campaign (stix-2.1-campaign)',
+    'course-of-action': 'STIX 2.1 Course of Action (stix-2.1-course-of-action)',
+    'intrusion-set': 'STIX 2.1 Intrusion Set (stix-2.1-intrusion-set)',
+    'location': 'STIX 2.1 Location (stix-2.1-location)',
+    'malware': 'STIX 2.1 Malware (stix-2.1-malware)',
+    'threat-actor': 'STIX 2.1 Threat Actor (stix-2.1-threat-actor)',
+    'tool': 'STIX 2.1 Tool (stix-2.1-tool)',
+    'vulnerability': 'STIX 2.1 Vulnerability (stix-2.1-vulnerability)',
+}
 
 class TestSTIX2Bundles:
     @staticmethod
@@ -148,6 +172,9 @@ class TestSTIX20Import(TestSTIX2Import):
     _attributes_v20 = defaultdict(dict)
     _objects_v20 = defaultdict(dict)
     _galaxies_v20 = defaultdict(dict)
+    _ext_galaxies_v20 = defaultdict(dict)
+    _ext_attributes_v20 = defaultdict(dict)
+    _ext_objects_v20 = defaultdict(dict)
 
     @classmethod
     def tearDownClass(self):
@@ -163,6 +190,71 @@ class TestSTIX20Import(TestSTIX2Import):
             'import'
         )
         objects_documentation.check_import_mapping('stix20')
+        if self._ext_galaxies_v20:
+            ext_galaxies_documentation = GalaxiesDocumentationUpdater(
+                'stix20_to_misp_external_galaxies',
+                dict(self._ext_galaxies_v20),
+                'import'
+            )
+            ext_galaxies_documentation.check_import_galaxy_mapping()
+        if self._ext_attributes_v20:
+            ext_attributes_documentation = AttributesDocumentationUpdater(
+                'stix20_to_misp_external_attributes',
+                self._ext_attributes_v20,
+                'import'
+            )
+            ext_attributes_documentation.check_import_mapping('stix20')
+        if self._ext_objects_v20:
+            ext_objects_documentation = ObjectsDocumentationUpdater(
+                'stix20_to_misp_external_objects',
+                self._ext_objects_v20,
+                'import'
+            )
+            ext_objects_documentation.check_import_mapping('stix20')
+
+    def _populate_external_galaxy_documentation(self, **kwargs):
+        galaxy = kwargs.pop('galaxy')
+        stix_name, stix_object = next(iter(kwargs.items()))
+        stix_type = stix_object.type
+        self._ext_galaxies_v20[stix_type] = {
+            'MISP': json.loads(galaxy.to_json()),
+            'STIX': json.loads(stix_object.serialize())
+        }
+        self._ext_galaxies_v20['summary'][stix_type] = _EXT_GALAXY_SUMMARY_MAPPING_V20.get(
+            stix_type, stix_type
+        )
+
+    def _populate_ext_indicator_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._ext_attributes_v20[name]['Indicator'] = {
+                'MISP': json.loads(kwargs['attribute'].to_json()),
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._ext_objects_v20[name]['Indicator'] = {
+                'MISP': json.loads(kwargs['misp_object'].to_json()),
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+            if 'summary' in kwargs:
+                self._ext_objects_v20['summary'][name] = kwargs['summary']
+
+    def _populate_ext_observed_data_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._ext_attributes_v20[name]['Observed Data'] = {
+                'MISP': json.loads(kwargs['attribute'].to_json()),
+                'STIX': self._handle_observed_data_documentation(kwargs['observed_data'])
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._ext_objects_v20[name]['Observed Data'] = {
+                'MISP': json.loads(kwargs['misp_object'].to_json()),
+                'STIX': self._handle_observed_data_documentation(kwargs['observed_data'])
+            }
+            if 'summary' in kwargs:
+                self._ext_objects_v20['summary'][name] = kwargs['summary']
 
     @staticmethod
     def _handle_observed_data_documentation(observed_data):
@@ -259,6 +351,9 @@ class TestSTIX21Import(TestSTIX2Import):
     _attributes_v21 = defaultdict(dict)
     _objects_v21 = defaultdict(dict)
     _galaxies_v21 = defaultdict(dict)
+    _ext_galaxies_v21 = defaultdict(dict)
+    _ext_attributes_v21 = defaultdict(dict)
+    _ext_objects_v21 = defaultdict(dict)
 
     __opinion_mapping = {
         'strongly-disagree': 0,
@@ -285,6 +380,27 @@ class TestSTIX21Import(TestSTIX2Import):
             'import'
         )
         objects_documentation.check_import_mapping('stix21')
+        if self._ext_galaxies_v21:
+            ext_galaxies_documentation = GalaxiesDocumentationUpdater(
+                'stix21_to_misp_external_galaxies',
+                dict(self._ext_galaxies_v21),
+                'import'
+            )
+            ext_galaxies_documentation.check_import_galaxy_mapping()
+        if self._ext_attributes_v21:
+            ext_attributes_documentation = AttributesDocumentationUpdater(
+                'stix21_to_misp_external_attributes',
+                self._ext_attributes_v21,
+                'import'
+            )
+            ext_attributes_documentation.check_import_mapping('stix21')
+        if self._ext_objects_v21:
+            ext_objects_documentation = ObjectsDocumentationUpdater(
+                'stix21_to_misp_external_objects',
+                self._ext_objects_v21,
+                'import'
+            )
+            ext_objects_documentation.check_import_mapping('stix21')
 
     def _check_misp_note(self, misp_note, stix_note):
         self.assertEqual(misp_note.uuid, stix_note.id.split('--')[1])
@@ -399,6 +515,67 @@ class TestSTIX21Import(TestSTIX2Import):
                 'MISP': kwargs['misp_object'],
                 'STIX': json.loads(kwargs['vulnerability'].serialize())
             }
+
+    def _populate_external_galaxy_documentation(self, **kwargs):
+        galaxy = kwargs.pop('galaxy')
+        stix_name, stix_object = next(iter(kwargs.items()))
+        stix_type = stix_object.type
+        self._ext_galaxies_v21[stix_type] = {
+            'MISP': json.loads(galaxy.to_json()),
+            'STIX': json.loads(stix_object.serialize())
+        }
+        self._ext_galaxies_v21['summary'][stix_type] = _EXT_GALAXY_SUMMARY_MAPPING_V21.get(
+            stix_type, stix_type
+        )
+
+    def _populate_ext_indicator_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._ext_attributes_v21[name]['Indicator'] = {
+                'MISP': json.loads(kwargs['attribute'].to_json()),
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._ext_objects_v21[name]['Indicator'] = {
+                'MISP': json.loads(kwargs['misp_object'].to_json()),
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+            if 'summary' in kwargs:
+                self._ext_objects_v21['summary'][name] = kwargs['summary']
+
+    def _populate_ext_observed_data_documentation(self, **kwargs):
+        observables = [json.loads(o.serialize()) for o in kwargs['observed_data']]
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._ext_attributes_v21[name]['Observed Data'] = {
+                'MISP': json.loads(kwargs['attribute'].to_json()),
+                'STIX': observables
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._ext_objects_v21[name]['Observed Data'] = {
+                'MISP': json.loads(kwargs['misp_object'].to_json()),
+                'STIX': observables
+            }
+            if 'summary' in kwargs:
+                self._ext_objects_v21['summary'][name] = kwargs['summary']
+
+    def _populate_ext_observable_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._ext_attributes_v21[name]['Observable'] = {
+                'MISP': json.loads(kwargs['attribute'].to_json()),
+                'STIX': json.loads(kwargs['observable'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._ext_objects_v21[name]['Observable'] = {
+                'MISP': json.loads(kwargs['misp_object'].to_json()),
+                'STIX': json.loads(kwargs['observable'].serialize())
+            }
+            if 'summary' in kwargs:
+                self._ext_objects_v21['summary'][name] = kwargs['summary']
 
 
 class TestExternalSTIX2Import(TestSTIX2Import):
