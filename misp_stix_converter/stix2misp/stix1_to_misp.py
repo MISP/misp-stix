@@ -644,13 +644,6 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 yield from self._resolve_galaxy(names, default_value)
 
     def _resolve_galaxy(self, galaxy_name: str, default_value: str) -> list:
-        if galaxy_name in self.synonyms_mapping:
-            return self.synonyms_mapping[galaxy_name]
-        for identifier in galaxy_name.split(' - '):
-            if identifier[0].isalpha() and any(character.isdecimal() for character in identifier[1:]):
-                for name, tag_names in self.synonyms_mapping.items():
-                    if identifier in name:
-                        return tag_names
         return [f'misp-galaxy:{default_value}="{galaxy_name}"']
 
     ############################################################################

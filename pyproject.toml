@@ -29,8 +29,7 @@ packages = [
 ]
 
 include = [
-    "misp_stix_converter/data/cti",
-    "misp_stix_converter/data/misp-galaxy"
+    "misp_stix_converter/data/cti"
 ]
 
 [tool.poetry.urls]
