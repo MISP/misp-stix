@@ -2077,6 +2077,21 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
 
+    def test_stix21_bundle_with_stix_galaxy(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_stix_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, stix_galaxy = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        galaxy = event.galaxies[0]
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, 'stix-2.1-malware')
+        self.assertEqual(cluster.value, stix_galaxy.x_misp_value)
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.uuid}"', tag_names)
+        self.assertNotIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+
     def test_stix21_bundle_with_galaxy_embedded_in_attribute(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_galaxy_embedded_in_attribute()
         self.parser.load_stix_bundle(bundle)

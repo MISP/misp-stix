@@ -1817,6 +1817,17 @@ _CUSTOM_GALAXY = {
     "x_misp_type": "tea-matrix",
     "x_misp_value": "Milk in tea"
 }
+_STIX_MALWARE_GALAXY = {
+    "type": "x-misp-galaxy-cluster",
+    "id": "x-misp-galaxy-cluster--a8b9c0d1-e2f3-4567-89ab-cdef01234567",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:galaxy-name="STIX 2.0 Malware"', 'misp:galaxy-type="stix-2.0-malware"'],
+    "x_misp_description": "AsyncRAT is a remote access tool.",
+    "x_misp_name": "STIX 2.0 Malware",
+    "x_misp_type": "stix-2.0-malware",
+    "x_misp_value": "AsyncRAT"
+}
 _CUSTOM_OBJECTS = [
     {
         "type": "x-misp-object",
@@ -7924,6 +7935,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_custom_galaxy(cls):
         return cls.__assemble_bundle(_CUSTOM_GALAXY)
+
+    @classmethod
+    def get_bundle_with_stix_galaxy(cls):
+        return cls.__assemble_bundle(_STIX_MALWARE_GALAXY)
 
     @classmethod
     def get_bundle_with_intrusion_set_galaxy(cls):
