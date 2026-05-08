@@ -1727,6 +1727,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertIn(
             f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names
         )
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], attack_pattern=attack_pattern
+        )
 
     def test_stix20_bundle_with_course_of_action_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_course_of_action_galaxy()
@@ -1740,6 +1743,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], course_of_action=course_of_action
+        )
 
     def test_stix20_bundle_with_custom_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy()
@@ -1818,6 +1824,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], intrusion_set=intrusion_set
+        )
 
     def test_stix20_bundle_with_malware_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_malware_galaxy()
@@ -1831,6 +1840,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], malware=malware
+        )
 
     def test_stix20_bundle_with_sector_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_sector_galaxy()
@@ -1844,6 +1856,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], identity=identity
+        )
 
     def test_stix20_bundle_with_threat_actor_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy()
@@ -1857,6 +1872,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], threat_actor=threat_actor
+        )
 
     def test_stix20_bundle_with_tool_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_tool_galaxy()
@@ -1870,6 +1888,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], tool=tool
+        )
 
     def test_stix20_bundle_with_vulnerability_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_vulnerability_galaxy()
@@ -1883,6 +1904,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], vulnerability=vulnerability
+        )
 
     ############################################################################
     #                        MISP OBJECTS IMPORT TESTS.                        #

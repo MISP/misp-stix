@@ -17,6 +17,17 @@ from .update_documentation import (
 PATTERNS = ('_ATTRIBUTES', '_OBJECTS')
 UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
+_GALAXY_SUMMARY_MAPPING = {
+    'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
+    'course-of-action': 'Course of Action (mitre-course-of-action)',
+    'identity': 'Sector (sector)',
+    'intrusion-set': 'Intrusion Set (mitre-intrusion-set)',
+    'malware': 'Malware (mitre-malware)',
+    'threat-actor': 'Threat Actor (threat-actor)',
+    'tool': 'Tool (mitre-tool)',
+    'vulnerability': 'Branded Vulnerability (branded-vulnerability)',
+}
+
 _EXT_GALAXY_SUMMARY_MAPPING_V20 = {
     'attack-pattern': 'STIX 2.0 Attack Pattern (stix-2.0-attack-pattern)',
     'campaign': 'STIX 2.0 Campaign (stix-2.0-campaign)',
@@ -190,6 +201,13 @@ class TestSTIX20Import(TestSTIX2Import):
             'import'
         )
         objects_documentation.check_import_mapping('stix20')
+        if self._galaxies_v20:
+            galaxies_documentation = GalaxiesDocumentationUpdater(
+                'stix20_to_misp_galaxies',
+                dict(self._galaxies_v20),
+                'import'
+            )
+            galaxies_documentation.check_import_galaxy_mapping()
         if self._ext_galaxies_v20:
             ext_galaxies_documentation = GalaxiesDocumentationUpdater(
                 'stix20_to_misp_external_galaxies',
@@ -211,6 +229,18 @@ class TestSTIX20Import(TestSTIX2Import):
                 'import'
             )
             ext_objects_documentation.check_import_mapping('stix20')
+
+    def _populate_galaxy_documentation(self, **kwargs):
+        galaxy = kwargs.pop('galaxy')
+        stix_name, stix_object = next(iter(kwargs.items()))
+        stix_type = stix_object.type
+        self._galaxies_v20[stix_type] = {
+            'MISP': json.loads(galaxy.to_json()),
+            'STIX': json.loads(stix_object.serialize())
+        }
+        self._galaxies_v20['summary'][stix_type] = _GALAXY_SUMMARY_MAPPING.get(
+            stix_type, stix_type
+        )
 
     def _populate_external_galaxy_documentation(self, **kwargs):
         galaxy = kwargs.pop('galaxy')
@@ -380,6 +410,13 @@ class TestSTIX21Import(TestSTIX2Import):
             'import'
         )
         objects_documentation.check_import_mapping('stix21')
+        if self._galaxies_v21:
+            galaxies_documentation = GalaxiesDocumentationUpdater(
+                'stix21_to_misp_galaxies',
+                dict(self._galaxies_v21),
+                'import'
+            )
+            galaxies_documentation.check_import_galaxy_mapping()
         if self._ext_galaxies_v21:
             ext_galaxies_documentation = GalaxiesDocumentationUpdater(
                 'stix21_to_misp_external_galaxies',
@@ -401,6 +438,18 @@ class TestSTIX21Import(TestSTIX2Import):
                 'import'
             )
             ext_objects_documentation.check_import_mapping('stix21')
+
+    def _populate_galaxy_documentation(self, **kwargs):
+        galaxy = kwargs.pop('galaxy')
+        stix_name, stix_object = next(iter(kwargs.items()))
+        stix_type = stix_object.type
+        self._galaxies_v21[stix_type] = {
+            'MISP': json.loads(galaxy.to_json()),
+            'STIX': json.loads(stix_object.serialize())
+        }
+        self._galaxies_v21['summary'][stix_type] = _GALAXY_SUMMARY_MAPPING.get(
+            stix_type, stix_type
+        )
 
     def _check_misp_note(self, misp_note, stix_note):
         self.assertEqual(misp_note.uuid, stix_note.id.split('--')[1])
