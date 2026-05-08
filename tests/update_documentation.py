@@ -198,8 +198,8 @@ class DocumentationUpdater:
     def _pattern_types(self, pattern):
         types = set()
         for part in pattern[1:-1].split(' AND '):
-            types.add(self._observable_type(part.split(':')[0]))
-        return f"{' & '.join(types)} {'Objects' if len(types) > 1 else 'Object'} (pattern)"
+            types.add(self._observable_type(part.lstrip('(').split(':')[0]))
+        return f"{' & '.join(sorted(types))} {'Objects' if len(types) > 1 else 'Object'} (pattern)"
 
     def _replace_data(self, name, misp_mapping, stix_mapping):
         data = misp_mapping['data']
