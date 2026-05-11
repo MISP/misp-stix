@@ -28,10 +28,6 @@ packages = [
     { include = "misp_stix_converter" }
 ]
 
-include = [
-    "misp_stix_converter/data/cti"
-]
-
 [tool.poetry.urls]
 "Source" = "https://github.com/MISP/misp-stix"
 "Bug Tracker" = "https://github.com/MISP/misp-stix/issues"

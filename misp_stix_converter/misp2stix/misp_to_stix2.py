@@ -36,7 +36,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from typing import Iterator, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 try:
     from datetime import UTC
@@ -76,12 +76,12 @@ class InvalidHashValueError(Exception):
 
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
-    def __init__(self, interoperability: bool):
+    def __init__(self, use_cti_uuids: bool):
         super().__init__()
         self.__ids: dict = {}
         self.__index = 0
         self.__initiated = False
-        self.__interoperability = interoperability
+        self.__use_cti_uuids = use_cti_uuids
         self._id_parsing_function = {
             'attribute': '_define_stix_object_id',
             'object': '_define_stix_object_id'
@@ -382,8 +382,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return self.__objects
 
     @property
-    def interoperability(self) -> bool:
-        return self.__interoperability
+    def use_cti_uuids(self) -> bool:
+        return self.__use_cti_uuids
 
     @property
     def object_refs(self) -> list:
@@ -459,52 +459,28 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return report
         return self._handle_unpublished_report(report_args)
 
-    def _generate_galaxies_catalog(self):
+    def _load_cti_uuid_catalog(self):
         current_path = Path(os.path.dirname(os.path.realpath(__file__)))
-        cti_path = current_path.parent / 'data' / 'cti'
-        self._galaxies_catalog = defaultdict(lambda: defaultdict(list))
-        self._identities = {}
-        for filename in cti_path.glob('*/*.json'):
-            with open(filename, 'rt', encoding='utf-8') as f:
-                bundle = json.loads(f.read())
-            for stix_object in bundle['objects']:
-                if stix_object['type'] == 'identity':
-                    object_id = stix_object['id']
-                    not_unique = (
-                        object_id not in self.unique_ids or
-                        object_id not in self._identities
-                    )
-                    if not_unique:
-                        self._identities[object_id] = stix_object
-                    continue
-                if not stix_object.get('name'):
-                    continue
-                name = stix_object['name']
-                object_type = stix_object['type']
-                object_id = stix_object['id']
-                if object_id not in self._get_object_ids(name, object_type):
-                    self._galaxies_catalog[name][object_type].append(
-                        stix_object
-                    )
-                if not stix_object.get('external_references'):
-                    continue
-                mapping = self._mapping.source_names()
-                for reference in stix_object['external_references']:
-                    if reference['source_name'] in mapping:
-                        ext_id = reference['external_id']
-                        object_ids = self._get_object_ids(ext_id, object_type)
-                        if object_id not in object_ids:
-                            self._galaxies_catalog[ext_id][object_type].append(
-                                stix_object
-                            )
-                        break
+        catalog_path = current_path.parent / 'data' / 'cti_uuid_catalog.json'
+        with open(catalog_path, 'rt', encoding='utf-8') as f:
+            self._cti_uuid_catalog = json.loads(f.read())
 
-    def _get_object_ids(
-            self, name: str, object_type: str) -> Iterator[str]:
-        return (
-            stix_object['id'] for stix_object
-            in self._galaxies_catalog[name][object_type]
-        )
+    def _lookup_cti_uuid(
+            self, catalog: dict, value: str,
+            meta: dict | None, object_type: str) -> str | None:
+        by_name = catalog['by_name']
+        by_ext_id = catalog['by_ext_id']
+        if object_type in by_name.get(value, {}):
+            return by_name[value][object_type]
+        if ' - ' in value:
+            for part in value.split(' - '):
+                if object_type in by_name.get(part, {}):
+                    return by_name[part][object_type]
+        if meta:
+            for ext_id in meta.get('external_id', []):
+                if object_type in by_ext_id.get(ext_id, {}):
+                    return by_ext_id[ext_id][object_type]
+        return None
 
     def _handle_analyst_data(self, *stix_objects: tuple[_STIX_OBJECT_TYPING],
                              data_layer: _MISP_DATA_LAYER = None):
@@ -3310,56 +3286,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     #                        GALAXIES PARSING FUNCTIONS                        #
     ############################################################################
 
-    def _check_external_references(
-            self, references: list, values: list, feature: str) -> bool:
-        for reference in references:
-            to_return = (
-                reference['source_name'] in self._mapping.source_names()
-                and reference[feature] in values
-            )
-            if to_return:
-                return True
-        return False
-
-    def _check_galaxy_matching(
-            self, cluster: dict, *args: Tuple[str, str]) -> Union[str, None]:
-        if self._check_galaxy_name(*args):
-            return self._fetch_galaxy_matching_by_name(*args)
-        if cluster.get('meta') is not None:
-            meta = cluster['meta']
-            key = 'external_id'
-            for key, feature in zip((key, 'refs'), (key, 'url')):
-                if meta.get(key) is None:
-                    continue
-                if self._check_galaxy_references(meta[key], feature, *args):
-                    return self._fetch_galaxy_matching_by_reference(
-                        meta[key], feature, *args
-                    )
-
-    def _check_galaxy_name(self, name: str, object_type: str) -> bool:
-        names = 0
-        for stix_object in self._galaxies_catalog[name][object_type]:
-            if stix_object['name'] == name:
-                names += 1
-        return names == 1
-
-    def _check_galaxy_references(self, values: str, feature: str, name: str,
-                                 object_type: str) -> bool:
-        numbers = 0
-        for stix_object in self._galaxies_catalog[name][object_type]:
-            to_continue = (
-                stix_object['name'] != name
-                or not stix_object.get('external_references')
-            )
-            if to_continue:
-                continue
-            has_reference = self._check_external_references(
-                stix_object['external_references'], values, feature
-            )
-            if has_reference:
-                numbers += 1
-        return numbers == 1
-
     def _define_source_name(self, value: str) -> str:
         id_mapping = self._mapping.external_id_to_source_name
         for prefix, source_name in id_mapping().items():
@@ -3370,30 +3296,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if value.isnumeric():
             return 'WASC'
         return 'mitre-attack'
-
-    def _fetch_galaxy_matching_by_name(
-            self, name: str, object_type: str) -> Union[str, None]:
-        for stix_object in self._galaxies_catalog[name][object_type]:
-            if stix_object['name'] == name:
-                self._handle_galaxy_matching(object_type, stix_object)
-                return stix_object['id']
-
-    def _fetch_galaxy_matching_by_reference(
-            self, values: list, feature: str, name: str,
-            object_type: str) -> Union[str, None]:
-        for stix_object in self._galaxies_catalog[name][object_type]:
-            to_continue = (
-                stix_object['name'] != name
-                or not stix_object.get('external_references')
-            )
-            if to_continue:
-                continue
-            has_reference = self._check_external_references(
-                stix_object['external_references'], values, feature
-            )
-            if has_reference:
-                self._handle_galaxy_matching(object_type, stix_object)
-                return stix_object['id']
 
     def _handle_attribute_galaxy_relationships(
             self, source_id: str, target_ids: list, timestamp: datetime):
@@ -3424,20 +3326,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             references.append(external_id)
         return references
 
-    def _handle_galaxy_matching(self, object_type: str, stix_object: dict):
-        identity_id = stix_object['created_by_ref']
-        if identity_id not in self.unique_ids:
-            identity = self._create_identity(self._identities[identity_id])
-            self.stix_objects.insert(0, identity)
-            self.__index += 1
-            self.unique_ids[identity_id] = identity_id
-        stix_object['allow_custom'] = True
-        self._append_SDO_without_refs(
-            getattr(self, f"_create_{object_type.replace('-', '_')}")(
-                stix_object
-            )
-        )
-
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             if object_ref not in self.object_refs:
@@ -3464,33 +3352,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if object_id in self.unique_ids:
             object_refs.append(self.unique_ids[object_id])
             return True
-        if self.interoperability:
+        if self.use_cti_uuids:
             object_type = self._mapping.cluster_to_stix_object(cluster['type'])
-            value = cluster['value']
-            try:
-                in_catalog = value in self._galaxies_catalog
-            except AttributeError:
-                self._generate_galaxies_catalog()
-                in_catalog = value in self._galaxies_catalog
-            if in_catalog:
-                if object_type in self._galaxies_catalog[value]:
-                    args = (value, object_type)
-                    stix_object_id = self._check_galaxy_matching(cluster, *args)
-                    if stix_object_id is not None:
-                        object_refs.append(stix_object_id)
-                        self.unique_ids[object_id] = stix_object_id
-                        return True
+            if object_type is None:
                 return False
-            if ' - ' in value:
-                for part in value.split(' - '):
-                    if object_type in self._galaxies_catalog.get(part, {}):
-                        stix_object_id = self._check_galaxy_matching(
-                            cluster, part, object_type
-                        )
-                        if stix_object_id is not None:
-                            object_refs.append(stix_object_id)
-                            self.unique_ids[object_id] = stix_object_id
-                            return True
+            try:
+                catalog = self._cti_uuid_catalog
+            except AttributeError:
+                self._load_cti_uuid_catalog()
+                catalog = self._cti_uuid_catalog
+            stix_id = self._lookup_cti_uuid(
+                catalog, cluster['value'], cluster.get('meta'), object_type
+            )
+            if stix_id is not None:
+                object_refs.append(stix_id)
+                self.unique_ids[object_id] = stix_id
+                return True
         return False
 
     def _parse_acs_definition_fields(

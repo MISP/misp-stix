@@ -260,8 +260,8 @@ class CustomOpinion:
 
 
 class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
-    def __init__(self, interoperability=False):
-        super().__init__(interoperability)
+    def __init__(self, use_cti_uuids=False):
+        super().__init__(use_cti_uuids)
         self._version = '2.0'
         self._mapping = MISPtoSTIX20Mapping
 
