@@ -210,21 +210,21 @@ class TestSTIX20Import(TestSTIX2Import):
             galaxies_documentation.check_import_galaxy_mapping()
         if self._ext_galaxies_v20:
             ext_galaxies_documentation = GalaxiesDocumentationUpdater(
-                'stix20_to_misp_external_galaxies',
+                'external_stix20_to_misp_galaxies',
                 dict(self._ext_galaxies_v20),
                 'import'
             )
             ext_galaxies_documentation.check_import_galaxy_mapping()
         if self._ext_attributes_v20:
             ext_attributes_documentation = AttributesDocumentationUpdater(
-                'stix20_to_misp_external_attributes',
+                'external_stix20_to_misp_attributes',
                 self._ext_attributes_v20,
                 'import'
             )
             ext_attributes_documentation.check_import_mapping('stix20')
         if self._ext_objects_v20:
             ext_objects_documentation = ObjectsDocumentationUpdater(
-                'stix20_to_misp_external_objects',
+                'external_stix20_to_misp_objects',
                 self._ext_objects_v20,
                 'import'
             )
@@ -419,21 +419,21 @@ class TestSTIX21Import(TestSTIX2Import):
             galaxies_documentation.check_import_galaxy_mapping()
         if self._ext_galaxies_v21:
             ext_galaxies_documentation = GalaxiesDocumentationUpdater(
-                'stix21_to_misp_external_galaxies',
+                'external_stix21_to_misp_galaxies',
                 dict(self._ext_galaxies_v21),
                 'import'
             )
             ext_galaxies_documentation.check_import_galaxy_mapping()
         if self._ext_attributes_v21:
             ext_attributes_documentation = AttributesDocumentationUpdater(
-                'stix21_to_misp_external_attributes',
+                'external_stix21_to_misp_attributes',
                 self._ext_attributes_v21,
                 'import'
             )
             ext_attributes_documentation.check_import_mapping('stix21')
         if self._ext_objects_v21:
             ext_objects_documentation = ObjectsDocumentationUpdater(
-                'stix21_to_misp_external_objects',
+                'external_stix21_to_misp_objects',
                 self._ext_objects_v21,
                 'import'
             )
