@@ -38,3 +38,53 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 ##### Detailed mapping
 
 The detailed mapping for MISP objects, with explanations and examples, is available [here](stix20_to_misp_objects.md)
+
+#### Galaxies from STIX 2.0 (Internal)
+
+##### Summary
+
+| STIX Object type | MISP Galaxy |
+| -- | -- |
+{_galaxies_from_stix20_summary_}
+
+##### Detailed mapping
+
+The detailed mapping for MISP galaxies from internal STIX 2.0 bundles, with explanations and examples, is available [here](stix20_to_misp_galaxies.md)
+
+#### Attributes from External STIX 2.0
+
+##### Summary
+
+| MISP Attribute type | STIX Object type |
+| -- | -- |
+{_external_attributes_from_stix20_summary_}
+
+##### Detailed mapping
+
+The detailed mapping for attributes from external STIX 2.0 bundles, with explanations and examples, is available [here](external_stix20_to_misp_attributes.md)
+
+#### Objects from External STIX 2.0
+
+##### Summary
+
+| MISP Object name | STIX Object type |
+| -- | -- |
+{_external_objects_from_stix20_summary_}
+
+##### Detailed mapping
+
+The detailed mapping for MISP objects from external STIX 2.0 bundles, with explanations and examples, is available [here](external_stix20_to_misp_objects.md)
+
+#### Galaxies from External STIX 2.0
+
+SDOs in STIX 2.0 bundles produced by third-party tools are imported as new MISP Galaxy Clusters with galaxy type `stix-2.0-{{object-type}}`.
+
+##### Summary
+
+| STIX Object type | MISP Galaxy |
+| -- | -- |
+{_external_galaxies_from_stix20_summary_}
+
+##### Detailed mapping
+
+The detailed mapping for MISP galaxies from external STIX 2.0 bundles, with explanations and examples, is available [here](external_stix20_to_misp_galaxies.md)
