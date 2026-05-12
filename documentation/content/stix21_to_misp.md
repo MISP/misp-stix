@@ -39,7 +39,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 The detailed mapping for MISP objects, with explanations and examples, is available [here](stix21_to_misp_objects.md)
 
-#### Galaxies from STIX 2.1 (Internal)
+#### Galaxies from STIX 2.1
 
 ##### Summary
 
@@ -49,7 +49,7 @@ The detailed mapping for MISP objects, with explanations and examples, is availa
 
 ##### Detailed mapping
 
-The detailed mapping for MISP galaxies from internal STIX 2.1 bundles, with explanations and examples, is available [here](stix21_to_misp_galaxies.md)
+The detailed mapping for MISP galaxies from STIX 2.1 bundles, with explanations and examples, is available [here](stix21_to_misp_galaxies.md)
 
 #### Attributes from External STIX 2.1
 
