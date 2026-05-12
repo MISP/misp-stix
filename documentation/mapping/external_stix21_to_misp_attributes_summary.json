@@ -1,0 +1,10 @@
+{
+    "AS": "Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "domain": "Domain Name Object and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) / **Observable**",
+    "email": "Email Addr Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "email-dst": "Email Address Object (pattern) / Custom Object",
+    "ip-dst": "Ipv4 Addr Object and IoCs described in Indicator (pattern) (observable) / IPv4/IPv6 Address Object (pattern) / **Observable**",
+    "mac-address": "Mac Addr Object and IoCs described in Indicator (pattern) (observable) / Mac Address Object (pattern) / **Observable**",
+    "mutex": "Mutex Object and IoCs described in Indicator (pattern) (observable) / Mutex Object (pattern) / **Observable**",
+    "url": "Url Object and IoCs described in Indicator (pattern) (observable) / URL Object (pattern) / **Observable**"
+}

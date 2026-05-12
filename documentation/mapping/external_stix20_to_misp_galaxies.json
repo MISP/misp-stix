@@ -1,0 +1,634 @@
+{
+    "attack-pattern": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "external_id",
+                            "value": "CAPEC-163"
+                        },
+                        {
+                            "key": "kill_chain",
+                            "value": "mandiant-attack-lifecycle-model:initial-compromise"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "external_id": "CAPEC-163",
+                        "kill_chain": [
+                            "mandiant-attack-lifecycle-model:initial-compromise"
+                        ]
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "ef6eb51e-e601-5d4f-8aad-124c4f5507b0",
+                    "value": "Spear Phishing Attack Pattern used by admin@338",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "2d018cbb-4236-53c8-aeba-0aa1b51e636e",
+                    "type": "stix-2.0-attack-pattern",
+                    "description": "The preferred attack vector used by admin@338 is spear-phishing emails. Using content that is relevant to the target, these emails are designed to entice the target to open an attachment that contains the malicious PIVY server code."
+                }
+            ],
+            "description": "Attack Patterns are a type of TTP that describe ways that adversaries attempt to compromise targets. Attack Patterns are used to help categorize attacks, generalize specific attacks to the patterns that they follow, and provide detailed information about how attacks are performed.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "2d018cbb-4236-53c8-aeba-0aa1b51e636e",
+            "version": "20",
+            "icon": "map",
+            "type": "stix-2.0-attack-pattern",
+            "name": "STIX 2.0 Attack Pattern"
+        },
+        "STIX": {
+            "type": "attack-pattern",
+            "id": "attack-pattern--19da6e1c-69a8-4c2f-886d-d620d09d3b5a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Spear Phishing Attack Pattern used by admin@338",
+            "description": "The preferred attack vector used by admin@338 is spear-phishing emails. Using content that is relevant to the target, these emails are designed to entice the target to open an attachment that contains the malicious PIVY server code.",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "mandiant-attack-lifecycle-model",
+                    "phase_name": "initial-compromise"
+                }
+            ],
+            "external_references": [
+                {
+                    "source_name": "capec",
+                    "description": "spear phishing",
+                    "external_id": "CAPEC-163"
+                }
+            ]
+        }
+    },
+    "campaign": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "first_seen",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "synonyms",
+                            "value": "Doppelganger"
+                        },
+                        {
+                            "key": "objective",
+                            "value": "manipulation"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "first_seen": "2020-10-25T16:22:00Z",
+                        "synonyms": [
+                            "Doppelganger"
+                        ],
+                        "objective": "manipulation"
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "0dd0896b-8834-5025-a4d4-c0f4bbf7d403",
+                    "value": "RRN",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "93edca62-86ed-5c91-b7a1-924cbe767db4",
+                    "type": "stix-2.0-campaign",
+                    "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors."
+                }
+            ],
+            "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "93edca62-86ed-5c91-b7a1-924cbe767db4",
+            "version": "20",
+            "icon": "user-secret",
+            "type": "stix-2.0-campaign",
+            "name": "STIX 2.0 Campaign"
+        },
+        "STIX": {
+            "type": "campaign",
+            "id": "campaign--752c225d-d6f6-4456-9130-d9580fd4007b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "RRN",
+            "description": "Active since 2008, this campaign mostly targets the financial services industry, though we have also seen activity in the telecom, government, and defense sectors.",
+            "aliases": [
+                "Doppelganger"
+            ],
+            "first_seen": "2020-10-25T16:22:00Z",
+            "objective": "manipulation"
+        }
+    },
+    "course-of-action": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "refs",
+                            "value": "https://github.com/fireeye/chopshop"
+                        },
+                        {
+                            "key": "refs",
+                            "value": "https://github.com/fireeye/pycommands"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "refs": [
+                            "https://github.com/fireeye/chopshop",
+                            "https://github.com/fireeye/pycommands"
+                        ]
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "47b461bd-0d5a-5cbc-96de-31515356f087",
+                    "value": "Analyze with FireEye Calamine Toolset",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "517debfb-57bd-5553-8409-4f4f87cabec9",
+                    "type": "stix-2.0-course-of-action",
+                    "description": "Calamine is a set of free tools to help organizations detect and examine Poison Ivy infections on their systems. The package includes these components: PIVY callback-decoding tool (ChopShop Module) and PIVY memory-decoding tool (PIVY PyCommand Script)."
+                }
+            ],
+            "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "517debfb-57bd-5553-8409-4f4f87cabec9",
+            "version": "20",
+            "icon": "link",
+            "type": "stix-2.0-course-of-action",
+            "name": "STIX 2.0 Course of Action"
+        },
+        "STIX": {
+            "type": "course-of-action",
+            "id": "course-of-action--70b3d5f6-374b-4488-8688-729b6eedac5b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Analyze with FireEye Calamine Toolset",
+            "description": "Calamine is a set of free tools to help organizations detect and examine Poison Ivy infections on their systems. The package includes these components: PIVY callback-decoding tool (ChopShop Module) and PIVY memory-decoding tool (PIVY PyCommand Script).",
+            "external_references": [
+                {
+                    "source_name": "Calamine ChopShop Module",
+                    "description": "The FireEye Poison Ivy decoder checks the beginning of each TCP session for possible PIVY challengeresponse sequences. If found, the module will try to validate the response using one or more passwords supplied as arguments.",
+                    "url": "https://github.com/fireeye/chopshop"
+                },
+                {
+                    "source_name": "Calamine PyCommand Script",
+                    "description": "Helps locate the PIVY password.",
+                    "url": "https://github.com/fireeye/pycommands"
+                }
+            ]
+        }
+    },
+    "intrusion-set": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "first_seen",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "synonyms",
+                            "value": "Comment Crew"
+                        },
+                        {
+                            "key": "synonyms",
+                            "value": "Comment Group"
+                        },
+                        {
+                            "key": "synonyms",
+                            "value": "Shady Rat"
+                        },
+                        {
+                            "key": "goals",
+                            "value": "Gather information on victims"
+                        },
+                        {
+                            "key": "primary_motivation",
+                            "value": "organizational-gain"
+                        },
+                        {
+                            "key": "resource_level",
+                            "value": "government"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "first_seen": "2020-10-25T16:22:00Z",
+                        "synonyms": [
+                            "Comment Crew",
+                            "Comment Group",
+                            "Shady Rat"
+                        ],
+                        "goals": [
+                            "Gather information on victims"
+                        ],
+                        "primary_motivation": "organizational-gain",
+                        "resource_level": "government"
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "86ddf25a-5c34-52c8-a9c3-07a06f3cc5d3",
+                    "value": "APT1",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "cee0019c-b23c-54a1-a9ef-343fe27ce4e8",
+                    "type": "stix-2.0-intrusion-set",
+                    "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006."
+                }
+            ],
+            "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "cee0019c-b23c-54a1-a9ef-343fe27ce4e8",
+            "version": "20",
+            "icon": "user-secret",
+            "type": "stix-2.0-intrusion-set",
+            "name": "STIX 2.0 Intrusion Set"
+        },
+        "STIX": {
+            "type": "intrusion-set",
+            "id": "intrusion-set--da1065ce-972c-4605-8755-9cd1074e3b5a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "APT1",
+            "description": "APT1 is a single organization of operators that has conducted a cyber espionage campaign against a broad range of victims since at least 2006.",
+            "aliases": [
+                "Comment Crew",
+                "Comment Group",
+                "Shady Rat"
+            ],
+            "first_seen": "2020-10-25T16:22:00Z",
+            "goals": [
+                "Gather information on victims"
+            ],
+            "resource_level": "government",
+            "primary_motivation": "organizational-gain"
+        }
+    },
+    "malware": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "labels",
+                            "value": "backdoor"
+                        },
+                        {
+                            "key": "labels",
+                            "value": "dropper"
+                        },
+                        {
+                            "key": "labels",
+                            "value": "remote-access-trojan"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "labels": [
+                            "backdoor",
+                            "dropper",
+                            "remote-access-trojan"
+                        ]
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "d7ec91c0-e001-5992-9258-b0147fc71014",
+                    "value": "MANITSME",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "17676fb9-d799-5a6e-9acb-e7c27b00c2a4",
+                    "type": "stix-2.0-malware",
+                    "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files."
+                }
+            ],
+            "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "17676fb9-d799-5a6e-9acb-e7c27b00c2a4",
+            "version": "20",
+            "icon": "optin-monster",
+            "type": "stix-2.0-malware",
+            "name": "STIX 2.0 Malware"
+        },
+        "STIX": {
+            "type": "malware",
+            "id": "malware--2485b844-4efe-4343-84c8-eb33312dd56f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "MANITSME",
+            "description": "This malware will beacon out at random intervals to the remote attacker. The attacker can run programs, execute arbitrary commands, and easily upload and download files.",
+            "labels": [
+                "backdoor",
+                "dropper",
+                "remote-access-trojan"
+            ]
+        }
+    },
+    "threat-actor": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "synonyms",
+                            "value": "Greenfield"
+                        },
+                        {
+                            "key": "synonyms",
+                            "value": "JackWang"
+                        },
+                        {
+                            "key": "synonyms",
+                            "value": "Wang Dong"
+                        },
+                        {
+                            "key": "primary_motivation",
+                            "value": "organizational-gain"
+                        },
+                        {
+                            "key": "resource_level",
+                            "value": "government"
+                        },
+                        {
+                            "key": "roles",
+                            "value": "malware-author"
+                        },
+                        {
+                            "key": "roles",
+                            "value": "agent"
+                        },
+                        {
+                            "key": "roles",
+                            "value": "infrastructure-operator"
+                        },
+                        {
+                            "key": "labels",
+                            "value": "nation-state"
+                        },
+                        {
+                            "key": "labels",
+                            "value": "spy"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "synonyms": [
+                            "Greenfield",
+                            "JackWang",
+                            "Wang Dong"
+                        ],
+                        "primary_motivation": "organizational-gain",
+                        "resource_level": "government",
+                        "roles": [
+                            "malware-author",
+                            "agent",
+                            "infrastructure-operator"
+                        ],
+                        "labels": [
+                            "nation-state",
+                            "spy"
+                        ]
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "68f82328-1545-54eb-9f75-bfc6967c172c",
+                    "value": "Ugly Gorilla",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "5c3ddbe1-8c31-5599-a89d-2d3a6a56cbd7",
+                    "type": "stix-2.0-threat-actor",
+                    "description": "Ugly gorilla"
+                }
+            ],
+            "description": "Threat Actors are actual individuals, groups, or organizations believed to be operating with malicious intent. A Threat Actor is not an Intrusion Set but may support or be affiliated with various Intrusion Sets, groups, or organizations over time.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "5c3ddbe1-8c31-5599-a89d-2d3a6a56cbd7",
+            "version": "20",
+            "icon": "user-secret",
+            "type": "stix-2.0-threat-actor",
+            "name": "STIX 2.0 Threat Actor"
+        },
+        "STIX": {
+            "type": "threat-actor",
+            "id": "threat-actor--6d179234-61fc-40c4-ae86-3d53308d8e65",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Ugly Gorilla",
+            "aliases": [
+                "Greenfield",
+                "JackWang",
+                "Wang Dong"
+            ],
+            "roles": [
+                "malware-author",
+                "agent",
+                "infrastructure-operator"
+            ],
+            "resource_level": "government",
+            "primary_motivation": "organizational-gain",
+            "labels": [
+                "nation-state",
+                "spy"
+            ]
+        }
+    },
+    "tool": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "kill_chain",
+                            "value": "mandiant-attack-lifecycle-model:escalate-privileges"
+                        },
+                        {
+                            "key": "labels",
+                            "value": "credential-exploitation"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "kill_chain": [
+                            "mandiant-attack-lifecycle-model:escalate-privileges"
+                        ],
+                        "labels": [
+                            "credential-exploitation"
+                        ]
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "217ddd14-44cd-5366-a5db-3682cec9feb6",
+                    "value": "cachedump",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "e4044312-16ad-5796-8db5-a9a17959180c",
+                    "type": "stix-2.0-tool",
+                    "description": "This program extracts cached password hashes from a system’s registry."
+                }
+            ],
+            "description": "Tools are legitimate software that can be used by threat actors to perform attacks. Knowing how and when threat actors use such tools can be important for understanding how campaigns are executed. Unlike malware, these tools or software packages are often found on a system and have legitimate purposes for power users, system administrators, network administrators, or even normal users.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "e4044312-16ad-5796-8db5-a9a17959180c",
+            "version": "20",
+            "icon": "gavel",
+            "type": "stix-2.0-tool",
+            "name": "STIX 2.0 Tool"
+        },
+        "STIX": {
+            "type": "tool",
+            "id": "tool--ce45f721-af14-4fc0-938c-000c16186418",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "cachedump",
+            "description": "This program extracts cached password hashes from a system’s registry.",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "mandiant-attack-lifecycle-model",
+                    "phase_name": "escalate-privileges"
+                }
+            ],
+            "labels": [
+                "credential-exploitation"
+            ]
+        }
+    },
+    "vulnerability": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2020-10-25T16:22:00Z"
+                        },
+                        {
+                            "key": "external_id",
+                            "value": "CVE-2012-0158"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2020-10-25T16:22:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "external_id": "CVE-2012-0158"
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "bb3e1fa5-7ccd-5b9e-b5da-b1981d0b39ac",
+                    "value": "CVE-2012-0158",
+                    "source": "MISP-Project",
+                    "version": "20",
+                    "collection_uuid": "9130fa43-2d0a-55a0-92ef-08d066ec4460",
+                    "type": "stix-2.0-vulnerability",
+                    "description": "Weaponized Microsoft Word document used by admin@338"
+                }
+            ],
+            "description": "A Vulnerability is a weakness or defect in the requirements, designs, or implementations of the computational logic (e.g., code) found in software and some hardware components (e.g., firmware) that can be directly exploited to negatively impact the confidentiality, integrity, or availability of that system.",
+            "namespace": "stix",
+            "distribution": "0",
+            "uuid": "9130fa43-2d0a-55a0-92ef-08d066ec4460",
+            "version": "20",
+            "icon": "bug",
+            "type": "stix-2.0-vulnerability",
+            "name": "STIX 2.0 Vulnerability"
+        },
+        "STIX": {
+            "type": "vulnerability",
+            "id": "vulnerability--c7cab3fb-0822-43a5-b1ba-c9bab34361a2",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "CVE-2012-0158",
+            "description": "Weaponized Microsoft Word document used by admin@338",
+            "external_references": [
+                {
+                    "source_name": "cve",
+                    "external_id": "CVE-2012-0158"
+                }
+            ]
+        }
+    }
+}

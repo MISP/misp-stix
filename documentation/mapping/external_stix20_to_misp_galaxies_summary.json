@@ -1,0 +1,10 @@
+{
+    "attack-pattern": "STIX 2.0 Attack Pattern (stix-2.0-attack-pattern)",
+    "campaign": "STIX 2.0 Campaign (stix-2.0-campaign)",
+    "course-of-action": "STIX 2.0 Course of Action (stix-2.0-course-of-action)",
+    "intrusion-set": "STIX 2.0 Intrusion Set (stix-2.0-intrusion-set)",
+    "malware": "STIX 2.0 Malware (stix-2.0-malware)",
+    "threat-actor": "STIX 2.0 Threat Actor (stix-2.0-threat-actor)",
+    "tool": "STIX 2.0 Tool (stix-2.0-tool)",
+    "vulnerability": "STIX 2.0 Vulnerability (stix-2.0-vulnerability)"
+}
