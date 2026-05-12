@@ -358,9 +358,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
                 misp_galaxy.add_galaxy_cluster(**cluster)
-                attribute.add_tag(
-                    f'misp-galaxy:{cluster.type}="{cluster.value}"'
-                )
+                attribute.add_tag(self._galaxy_cluster_tag(cluster))
             attribute.add_galaxy(misp_galaxy)
 
     def _add_event_galaxies(self, galaxies: dict):
@@ -369,16 +367,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
                 misp_galaxy.add_galaxy_cluster(**cluster)
-                self.misp_event.add_tag(
-                    f'misp-galaxy:{cluster.type}="{cluster.value}"'
-                )
+                self.misp_event.add_tag(self._galaxy_cluster_tag(cluster))
             self.misp_event.add_galaxy(misp_galaxy)
 
     def _add_galaxy_tags(self, misp_layer, misp_galaxy):
         for cluster in misp_galaxy.clusters:
-            misp_layer.add_tag(
-                f'misp-galaxy:{cluster.type}="{cluster.value}"'
-            )
+            misp_layer.add_tag(self._galaxy_cluster_tag(cluster))
+
+    @staticmethod
+    def _galaxy_cluster_tag(cluster) -> str:
+        tag_value = cluster.uuid if cluster.type.startswith('stix-') else cluster.value
+        return f'misp-galaxy:{cluster.type}="{tag_value}"'
 
     def _add_object_galaxies(self, misp_object: MISPObject, galaxies: dict):
         for galaxy in self._aggregate_galaxy_clusters(galaxies):
