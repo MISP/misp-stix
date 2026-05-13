@@ -738,6 +738,9 @@
         "Bumblebee": {
             "malware": "malware--04378e79-4387-468a-a8f7-f974b8254e44"
         },
+        "BRICKSTORM": {
+            "malware": "malware--0450ed20-e9a7-4799-b601-2f2710300796"
+        },
         "MURKYTOP": {
             "malware": "malware--049ff071-0b3c-4712-95d2-d21c6aa54501"
         },
@@ -782,6 +785,9 @@
         },
         "DOGCALL": {
             "malware": "malware--0852567d-7958-4f4b-8947-4f840ec8d57d"
+        },
+        "IronWind": {
+            "malware": "malware--089aa00a-99ac-46b4-9cf8-4224d463566d"
         },
         "Downdelph": {
             "malware": "malware--08d20cd2-f084-45ee-8558-fa6ef5a18519"
@@ -879,6 +885,9 @@
         "PS1": {
             "malware": "malware--13183cdf-280b-46be-913a-5c6df47831e7"
         },
+        "HeartCrypt": {
+            "malware": "malware--148f947c-aabd-4ba8-b6a3-22b296855119"
+        },
         "Ursnif": {
             "malware": "malware--1492d0f8-7e14-4af3-9239-bc3fe10d3407"
         },
@@ -902,6 +911,9 @@
         },
         "POWERSOURCE": {
             "malware": "malware--17e919aa-4a49-445c-b103-dbb8df9e7351"
+        },
+        "Tsundere Botnet": {
+            "malware": "malware--18f5f8c6-bba5-4aba-93e7-3539fe565883"
         },
         "LITTLELAMB.WOOLTEA": {
             "malware": "malware--19256855-65e9-48f2-8b74-9f3d0a994428"
@@ -971,6 +983,9 @@
         },
         "AuditCred": {
             "malware": "malware--24b4ce59-eaac-4c8b-8634-9b093b7ccd92"
+        },
+        "ROAMINGHOUSE": {
+            "malware": "malware--251f1715-fc97-4487-b939-5c8823ef7a39"
         },
         "Lurid": {
             "malware": "malware--251fbae2-78f6-4de7-84f6-194c727a64ad"
@@ -1056,6 +1071,9 @@
         "EnvyScout": {
             "malware": "malware--2f8229dc-da94-41c6-89ba-b5b6c32f6b7d"
         },
+        "MirrorStealer": {
+            "malware": "malware--2f851d4a-18cc-4d7f-9408-b10ef02ee936"
+        },
         "SslMM": {
             "malware": "malware--2fb26586-2b53-4b9a-ad4f-2b3bcb9a2421"
         },
@@ -1101,6 +1119,9 @@
         "DUSTTRAP": {
             "malware": "malware--33139388-de0c-49ff-862a-041c315b142d"
         },
+        "DynoWiper": {
+            "malware": "malware--34057cb6-0a56-48a3-92e5-3af1357808da"
+        },
         "Turian": {
             "malware": "malware--350f12cf-fd3b-4dad-b323-14b943090df4"
         },
@@ -1131,6 +1152,9 @@
         },
         "PUBLOAD": {
             "malware": "malware--3824852d-1957-4712-9da0-38143723c060"
+        },
+        "SystemBC": {
+            "malware": "malware--39643fb9-00c1-4a45-85e5-801a3f2665d1"
         },
         "Gootloader": {
             "malware": "malware--396c18b9-26fb-4435-8589-fb856502e4c4"
@@ -1321,6 +1345,9 @@
         "Conti": {
             "malware": "malware--4dea7d8e-af94-4bfb-afe4-7ff54f59308b"
         },
+        "SameCoin": {
+            "malware": "malware--4e164a21-3fbe-4aaa-be69-2513fdba90f7"
+        },
         "Raspberry Robin": {
             "malware": "malware--4e385fa6-ebe0-43fc-9ccf-5b51b5dc4d79"
         },
@@ -1351,6 +1378,9 @@
         "Siloscape": {
             "malware": "malware--4fbd565b-bf55-4ac7-80b4-b183a7b64b9c"
         },
+        "RustyWater": {
+            "malware": "malware--50be4e81-db74-41a2-a9aa-423314082bea"
+        },
         "BlackCat": {
             "malware": "malware--50c44c34-3abb-48ae-9433-a2337de5b0bc"
         },
@@ -1368,6 +1398,9 @@
         },
         "Nightdoor": {
             "malware": "malware--51f78dfc-52f9-424e-8753-bb4246188313"
+        },
+        "HTTPTroy": {
+            "malware": "malware--52b52f72-88e6-4847-88d6-da3b9e4a4f71"
         },
         "MarkiRAT": {
             "malware": "malware--532c6004-b1e8-415b-9516-f7c14ba783b1"
@@ -1591,6 +1624,9 @@
         "MultiLayer Wiper": {
             "malware": "malware--663d7dee-5a47-459e-a5ef-e850a94a8ee5"
         },
+        "NOOPLDR": {
+            "malware": "malware--66637cd6-ae68-4bcd-af82-32f70a854175"
+        },
         "S-Type": {
             "malware": "malware--66b1dcde-17a0-4c7b-95fa-b08d430c2131"
         },
@@ -1650,6 +1686,9 @@
         },
         "Clambling": {
             "malware": "malware--6e95feb1-78ee-48d3-b421-4d76663b5c49"
+        },
+        "PureCrypter": {
+            "malware": "malware--6f22487c-dbbf-4a5b-85ca-a8c85e8f2f80"
         },
         "Akira": {
             "malware": "malware--6f6b2353-4b39-40ce-9d6d-d00b7a61e656",
@@ -1734,11 +1773,17 @@
         "Chaes": {
             "malware": "malware--77e0ecf7-ca91-4c06-8012-8e728986a87a"
         },
+        "LODEINFO": {
+            "malware": "malware--7908f855-5b5b-4d6a-acbc-af6b45ec27ad"
+        },
         "Briba": {
             "malware": "malware--79499993-a8d6-45eb-b343-bf58dea5bdde"
         },
         "CharmPower": {
             "malware": "malware--7acb15b6-fe2c-4319-b136-6ab36ff0b2d4"
+        },
+        "MuddyViper": {
+            "malware": "malware--7b92e996-b535-4159-be16-3c3aee4edf54"
         },
         "TYPEFRAME": {
             "malware": "malware--7ba0fc46-197d-466d-8b9f-f1c64d5d81e5"
@@ -1751,6 +1796,9 @@
         },
         "P8RAT": {
             "malware": "malware--7c58fff0-d206-4db1-96b1-e3a9e0e320b9"
+        },
+        "Fooder": {
+            "malware": "malware--7c8865dc-1bf9-49ce-b5f2-f15abde0909a"
         },
         "VIRTUALPIE": {
             "malware": "malware--7cc63f0f-f24f-4cda-9e9f-61bde1d52297"
@@ -1779,6 +1827,9 @@
         "Sys10": {
             "malware": "malware--7f8730af-f683-423f-9ee1-5f6875a80481"
         },
+        "LP-Notes": {
+            "malware": "malware--7fbf1f1e-cbd8-4060-8e3b-7ca0e56ce3fe"
+        },
         "pngdowner": {
             "malware": "malware--800bdfba-6d66-480f-9f45-15845c05cb5d"
         },
@@ -1787,6 +1838,9 @@
         },
         "BendyBear": {
             "malware": "malware--805480f1-6caa-4a67-8ca9-b2b39650d986"
+        },
+        "GlassWorm": {
+            "malware": "malware--809bc57b-4d4c-43de-b698-448334ed8185"
         },
         "Uroburos": {
             "malware": "malware--80a014ba-3fef-4768-990b-37d8bd10d7f4"
@@ -1960,6 +2014,9 @@
         "BlackByte Ransomware": {
             "malware": "malware--9454bb5d-3bdb-40f9-a878-b5fb446ded3d"
         },
+        "PHPsert": {
+            "malware": "malware--9491a623-5861-4d0a-9958-8c05d0d17442"
+        },
         "SodaMaster": {
             "malware": "malware--94d6d788-07bb-4dcc-b62f-e02626b00108"
         },
@@ -1995,6 +2052,9 @@
         },
         "ZxxZ": {
             "malware": "malware--97cfbdc6-504d-41e9-a46c-78a9f806ff0d"
+        },
+        "Caminho": {
+            "malware": "malware--97da6467-c9c5-4eb0-84d4-1234e937e534"
         },
         "Tarrask": {
             "malware": "malware--988976ff-beeb-4fb5-b07d-ca7437ea66e8"
@@ -2049,6 +2109,9 @@
         },
         "MoonWind": {
             "malware": "malware--9ea525fa-b0a9-4dde-84f2-bcea0137b3c1"
+        },
+        "HiddenFace": {
+            "malware": "malware--9edc41d1-a13d-4acf-b400-d47fb2f6809d"
         },
         "CorKLOG": {
             "malware": "malware--9fd4e24b-3b12-4c7c-925f-226e2e3c3758"
@@ -2237,6 +2300,9 @@
         "Carbon": {
             "malware": "malware--b7e9880a-7a7c-4162-bddb-e28e8ef2bf1f"
         },
+        "TRAILBLAZE": {
+            "malware": "malware--b82b9e25-e37b-4f7c-b1f0-2c2eea4f4be9"
+        },
         "LoJax": {
             "malware": "malware--b865dded-0553-4962-a44b-6fe7863effed"
         },
@@ -2275,6 +2341,9 @@
         },
         "FakeM": {
             "malware": "malware--bb3c1098-d654-4620-bf40-694386d28921"
+        },
+        "AshTag": {
+            "malware": "malware--bb6f2a5c-dbc9-45b0-bd3f-a0b7849959c2"
         },
         "Carberp": {
             "malware": "malware--bbcd7a02-ef24-4171-ac94-a93540173b94"
@@ -2331,6 +2400,9 @@
         "PowGoop": {
             "malware": "malware--c19d19ae-dd58-4584-8469-966bbeaa80e3"
         },
+        "ANELLDR": {
+            "malware": "malware--c21edbd1-a0a4-4c3c-9b22-4a49634186c3"
+        },
         "Kwampirs": {
             "malware": "malware--c2417bab-3189-4d4d-9d60-96de2cdaf0ab"
         },
@@ -2348,6 +2420,9 @@
         },
         "Proton": {
             "malware": "malware--c541efb4-e7b1-4ad6-9da8-b4e113f5dd42"
+        },
+        "LAMEHUG": {
+            "malware": "malware--c55e0410-842d-4365-a2c8-26c0330f85b8"
         },
         "Trojan.Mebromi": {
             "malware": "malware--c5e9cb46-aced-466c-85ea-7db5572ad9ec"
@@ -2372,6 +2447,9 @@
         },
         "STEADYPULSE": {
             "malware": "malware--ca0fead6-5277-427a-825b-42ff1fbe476e"
+        },
+        "PHASEJAM": {
+            "malware": "malware--ca3f5123-b853-45ef-83cb-1d1bca22e03f"
         },
         "Clop": {
             "malware": "malware--cad3ba95-8c89-4146-ab10-08daa813f9de"
@@ -2429,6 +2507,9 @@
         },
         "Penquin": {
             "malware": "malware--d18cb958-f4ad-4fb3-bb4f-e8994d206550"
+        },
+        "SPAWNCHIMERA": {
+            "malware": "malware--d1974f35-0e06-478e-bc74-7530545d814b"
         },
         "BabyShark": {
             "malware": "malware--d1b7830a-fced-4be3-a99c-f495af9d9e1b"
@@ -2511,6 +2592,9 @@
         "IceApple": {
             "malware": "malware--dd889a55-fb2c-4ec7-8e9f-c399939a49e1"
         },
+        "Shai-Hulud": {
+            "malware": "malware--de376fb9-1093-4f59-8d13-aed61042701d"
+        },
         "JPIN": {
             "malware": "malware--de6cb631-52f6-4169-a73b-7965390b0c30"
         },
@@ -2537,6 +2621,9 @@
         },
         "HTTPBrowser": {
             "malware": "malware--e066bf86-9cfb-407a-9d25-26fd5d91e360"
+        },
+        "BRUSHFIRE": {
+            "malware": "malware--e110c9c6-7691-4bcb-874d-3d83a63c06c2"
         },
         "Mis-Type": {
             "malware": "malware--e1161124-f22e-487f-9d5f-ed8efc8dcd61"
@@ -2574,6 +2661,9 @@
         },
         "MirageFox": {
             "malware": "malware--e3cedcfe-6515-4348-af65-7f2c4157bf0d"
+        },
+        "LazyWiper": {
+            "malware": "malware--e4160979-b9bc-4f58-acbe-1d921ebbc122"
         },
         "DownPaper": {
             "malware": "malware--e48df773-7c95-4a4c-ba70-ea3d15900148"
@@ -2617,6 +2707,9 @@
         "BADNEWS": {
             "malware": "malware--e9595678-d269-469e-ae6b-75e49259de63"
         },
+        "DRYHOOK": {
+            "malware": "malware--e9c72c02-b55a-4852-b2eb-c7031d215414"
+        },
         "Linfo": {
             "malware": "malware--e9e9bfe2-76f4-4870-a2a1-b7af89808613"
         },
@@ -2635,8 +2728,14 @@
         "QakBot": {
             "malware": "malware--edc5e045-5401-42bb-ad92-52b5b2ee0de9"
         },
+        "DOWNIISSA": {
+            "malware": "malware--eddb863e-fc77-41c1-86e9-5210d6d58b88"
+        },
         "SYSCON": {
             "malware": "malware--edf5aee2-9b1c-4252-8e64-25b12f14c8b3"
+        },
+        "Crocodilus": {
+            "malware": "malware--eed7b988-0279-4c4f-bfa9-d81f5444a04b"
         },
         "CookieMiner": {
             "malware": "malware--eedc01d5-95e6-4d21-bcd4-1121b1df4586"
@@ -2795,6 +2894,9 @@
         "BloodHound": {
             "tool": "tool--066b057c-944e-4cfc-b654-e3dfba04b926"
         },
+        "Diskpart": {
+            "tool": "tool--080f872e-f1a3-4d42-bb00-9eb55949f6a9"
+        },
         "certutil": {
             "tool": "tool--0a68f1f1-da74-4d28-8d9a-696c082706cc"
         },
@@ -2819,6 +2921,9 @@
         "Pacu": {
             "tool": "tool--1b3b8f96-43b1-4460-8e02-1f53d7802fb9"
         },
+        "evilginx2": {
+            "tool": "tool--1eb9627d-a661-4db6-bf53-41b7dcc63087"
+        },
         "Windows Credential Editor": {
             "tool": "tool--242f3da3-4425-4d11-8f5c-b842886da966"
         },
@@ -2833,6 +2938,9 @@
         },
         "Tasklist": {
             "tool": "tool--2e45723a-31da-4a7e-aaa6-e01998a6788f"
+        },
+        "DCRAT": {
+            "tool": "tool--2f481072-e9f8-4452-be00-d1d7e43c2edc"
         },
         "ngrok": {
             "tool": "tool--2f7f03bb-f367-4a5a-ad9b-310a12a48906"
@@ -2905,6 +3013,9 @@
         },
         "Brute Ratel C4": {
             "tool": "tool--75d8b521-6b6a-42ff-8af3-d97e20ce12a5"
+        },
+        "TruffleHog": {
+            "tool": "tool--76f8a686-3157-481f-9af6-e8558883a8d6"
         },
         "Peirates": {
             "tool": "tool--79dd477a-8226-4b3d-ad15-28623675f221"
@@ -3068,6 +3179,9 @@
         "Windows Management Instrumentation": {
             "attack-pattern": "attack-pattern--01a5a209-b94c-450b-b7f9-946497d91055"
         },
+        "Exploitation for Defense Impairment": {
+            "attack-pattern": "attack-pattern--01c9b54f-c04e-41ba-b0c3-cfe784b3a463"
+        },
         "Malicious Shell Modification": {
             "attack-pattern": "attack-pattern--01df3350-ce05-4bdf-bdf8-0a919a66d4a8"
         },
@@ -3101,7 +3215,7 @@
         "File/Path Exclusions": {
             "attack-pattern": "attack-pattern--09b008a9-b4eb-462a-a751-a0eb58050cd9"
         },
-        "Linux and Mac File and Directory Permissions Modification": {
+        "Linux and Mac Permissions": {
             "attack-pattern": "attack-pattern--09b130a2-a77e-4af0-a361-f46f9aad1345"
         },
         "Password Guessing": {
@@ -3164,6 +3278,9 @@
         "JavaScript": {
             "attack-pattern": "attack-pattern--0f4a0c76-ab2d-4cb0-85d3-3f0efb8cba0d"
         },
+        "Modify or Spoof Tool UI": {
+            "attack-pattern": "attack-pattern--0ff4bd68-aebb-4039-9e00-9f92c705edf4"
+        },
         "Lifecycle-Triggered Deletion": {
             "attack-pattern": "attack-pattern--1001e0d6-ee09-4dfc-aa90-e9320ffc8fe4"
         },
@@ -3184,6 +3301,12 @@
         },
         "Sudo and Sudo Caching": {
             "attack-pattern": "attack-pattern--1365fe3b-0f50-455d-b4da-266ce31c23b0"
+        },
+        "Disable or Modify Windows Event Log": {
+            "attack-pattern": "attack-pattern--1411e6b8-80a6-4465-9909-54eaa9c67ce0"
+        },
+        "Query Public AI Services": {
+            "attack-pattern": "attack-pattern--143122a8-fcda-4dd7-aded-5b9387d9c2d6"
         },
         "Archive via Custom Method": {
             "attack-pattern": "attack-pattern--143c0cbb-a297-4142-9624-87ffc778980b"
@@ -3281,6 +3404,9 @@
         "Identify Business Tempo": {
             "attack-pattern": "attack-pattern--2339cf19-8f1e-48f7-8a91-0262ba547b6f"
         },
+        "Disable or Modify Linux Audit System Log": {
+            "attack-pattern": "attack-pattern--23d69d00-80c4-42ff-9dac-dbd0459dad75"
+        },
         "Publish/Subscribe Protocols": {
             "attack-pattern": "attack-pattern--241f9ea8-f6ae-4f38-92f5-cef5b7e539dd"
         },
@@ -3299,11 +3425,11 @@
         "Browser Extensions": {
             "attack-pattern": "attack-pattern--278716b1-61ce-4a74-8d17-891d0c494101"
         },
-        "Safe Mode Boot": {
-            "attack-pattern": "attack-pattern--28170e17-8384-415c-8486-2e6b294cb803"
-        },
         "TFTP Boot": {
             "attack-pattern": "attack-pattern--28abec6c-4443-4b03-8206-07f2e264a6b4"
+        },
+        "Windows Host Firewall": {
+            "attack-pattern": "attack-pattern--291ede6c-1473-454c-b614-5ac5ea63c987"
         },
         "Windows Service": {
             "attack-pattern": "attack-pattern--2959d63f-73fd-46a1-abd2-109d7dcede32"
@@ -3316,9 +3442,6 @@
         },
         "Vulnerabilities": {
             "attack-pattern": "attack-pattern--2b5aa86b-a0df-4382-848d-30abea443327"
-        },
-        "Clear Linux or Mac System Logs": {
-            "attack-pattern": "attack-pattern--2bce5b30-7014-4a5d-ade7-12913fe6ac36"
         },
         "Application or System Exploitation": {
             "attack-pattern": "attack-pattern--2bee5ffb-7a7a-4119-b1f2-158151b19ac0"
@@ -3380,11 +3503,14 @@
         "Network Topology": {
             "attack-pattern": "attack-pattern--34ab90a3-05f6-4259-8f21-621081fdaba5"
         },
-        "Windows File and Directory Permissions Modification": {
+        "Windows Permissions": {
             "attack-pattern": "attack-pattern--34e793de-0274-4982-9c1a-246ed1c19dee"
         },
         "Add-ins": {
             "attack-pattern": "attack-pattern--34f1d81d-fe88-4f97-bd3b-a3164536255d"
+        },
+        "Disable or Modify Cloud Log": {
+            "attack-pattern": "attack-pattern--34ff60a3-a3f8-42e4-bed0-af9a2cb563d7"
         },
         "Transport Agent": {
             "attack-pattern": "attack-pattern--35187df2-31ed-43b6-a1f5-2f1d3d58d3f1"
@@ -3472,6 +3598,9 @@
         },
         "Thread Execution Hijacking": {
             "attack-pattern": "attack-pattern--41d9846c-f6af-4302-a654-24bba2729bc6"
+        },
+        "Social Engineering": {
+            "attack-pattern": "attack-pattern--41e4d77a-6275-4976-9e35-785985598519"
         },
         "Multilayer Encryption": {
             "attack-pattern": "attack-pattern--428ca9f8-0e33-442a-be87-f869cb4cf73e"
@@ -3584,9 +3713,6 @@
         "Gather Victim Identity Information": {
             "attack-pattern": "attack-pattern--5282dd9a-d26d-4e16-88b7-7c0f4553daf4"
         },
-        "Disable or Modify System Firewall": {
-            "attack-pattern": "attack-pattern--5372c5fe-f424-4def-bcd5-d3a8e770f07b"
-        },
         "Browser Session Hijacking": {
             "attack-pattern": "attack-pattern--544b0346-29ad-41e1-a808-501bb4193f47"
         },
@@ -3656,10 +3782,7 @@
         "Communication Through Removable Media": {
             "attack-pattern": "attack-pattern--64196062-5210-42c3-9a02-563a0d1797ef"
         },
-        "Clear Windows Event Logs": {
-            "attack-pattern": "attack-pattern--6495ae23-3ab4-43c5-a94f-5638a2c31fd2"
-        },
-        "LLMNR/NBT-NS Poisoning and SMB Relay": {
+        "Name Resolution Poisoning and SMB Relay": {
             "attack-pattern": "attack-pattern--650c784b-7504-4df7-ab2c-4ea882384d1e"
         },
         "File and Directory Permissions Modification": {
@@ -3694,6 +3817,9 @@
         },
         "Email Addresses": {
             "attack-pattern": "attack-pattern--69f897fd-12a9-4c89-ad6a-46d2f3c38262"
+        },
+        "Written Content": {
+            "attack-pattern": "attack-pattern--6a6f9892-c46a-46db-b331-c09a99200fcf"
         },
         "Redundant Access": {
             "attack-pattern": "attack-pattern--6aabc5ec-eae6-422c-8311-38d45ee9838a"
@@ -3851,9 +3977,6 @@
         "Shell History": {
             "attack-pattern": "attack-pattern--8187bd2a-866f-4457-9009-86b0ddedffa3"
         },
-        "Downgrade Attack": {
-            "attack-pattern": "attack-pattern--824add00-99a1-4b15-9a2d-6c5683b7b497"
-        },
         "XPC Services": {
             "attack-pattern": "attack-pattern--8252f135-ed26-4ce1-ae61-f26e94429a19"
         },
@@ -3919,6 +4042,9 @@
         },
         "Exfiltration Over Asymmetric Encrypted Non-C2 Protocol": {
             "attack-pattern": "attack-pattern--8e350c1d-ac79-4b5c-bd4e-7476d7e84ec5"
+        },
+        "Audio-Visual Content": {
+            "attack-pattern": "attack-pattern--8f452cb4-cbf4-4522-8b11-448787be95c4"
         },
         "Impair Command History Logging": {
             "attack-pattern": "attack-pattern--8f504411-cb96-4dac-a537-8d2bb7679c59"
@@ -4004,6 +4130,9 @@
         "Delay Execution": {
             "attack-pattern": "attack-pattern--a1df809c-7d0e-459f-8fe5-25474bab770b"
         },
+        "Network Device Firewall": {
+            "attack-pattern": "attack-pattern--a29aa77c-a88d-4f19-bab9-7751941b2e2d"
+        },
         "Tool": {
             "attack-pattern": "attack-pattern--a2fdce72-04b2-409a-ac10-cc1695f4fce0"
         },
@@ -4070,6 +4199,9 @@
         "Invalid Code Signature": {
             "attack-pattern": "attack-pattern--b4b7458f-81f2-4d38-84be-1c5ba0167a52"
         },
+        "Generate Content": {
+            "attack-pattern": "attack-pattern--b512fb8a-18dd-4bfc-bbad-acbaaeb7dde3"
+        },
         "Run Virtual Instance": {
             "attack-pattern": "attack-pattern--b5327dd1-6bf9-4785-a199-25bcbd1f4a9d"
         },
@@ -4084,6 +4216,9 @@
         },
         "Forced Authentication": {
             "attack-pattern": "attack-pattern--b77cf5f3-6060-475d-bd60-40ccbf28fdc2"
+        },
+        "Prevent Command History Logging": {
+            "attack-pattern": "attack-pattern--b831f51c-d22f-4724-bbab-60d056bd1150"
         },
         "Firmware": {
             "attack-pattern": "attack-pattern--b85f6ce5-81e8-4f36-aff2-3df9d02a9c9d"
@@ -4180,9 +4315,6 @@
         },
         "MSBuild": {
             "attack-pattern": "attack-pattern--c92e3d68-2349-49e4-a341-7edca2deff96"
-        },
-        "Impersonation": {
-            "attack-pattern": "attack-pattern--c9e0c59e-162e-40a4-b8b1-78fab4329ada"
         },
         "Modify Cloud Compute Configurations": {
             "attack-pattern": "attack-pattern--ca00366b-83a1-4c7b-a0ce-8ff950a7c87f"
@@ -4331,9 +4463,6 @@
         "XDG Autostart Entries": {
             "attack-pattern": "attack-pattern--e0232cb0-ded5-4c2e-9dc7-2893142a5c11"
         },
-        "Email Spoofing": {
-            "attack-pattern": "attack-pattern--e1c2db92-7ae3-4e6a-90b4-157c1c1565cb"
-        },
         "Cloud Service Discovery": {
             "attack-pattern": "attack-pattern--e24fcba8-2557-4442-a139-1ee2f2e784db"
         },
@@ -4373,6 +4502,9 @@
         "TCC Manipulation": {
             "attack-pattern": "attack-pattern--e8a0a025-3601-4755-abfb-8d08283329fb"
         },
+        "Invisible Unicode": {
+            "attack-pattern": "attack-pattern--e9b75bb0-b5ec-42c8-b728-f4f424d9c39e"
+        },
         "Power Settings": {
             "attack-pattern": "attack-pattern--ea071aa0-8f17-416f-ab0d-2bab7e79003d"
         },
@@ -4411,6 +4543,9 @@
         },
         "NTDS": {
             "attack-pattern": "attack-pattern--edf91964-b26e-4b4a-9600-ccacd7d7df24"
+        },
+        "Cloud Firewall": {
+            "attack-pattern": "attack-pattern--ee474564-64be-4b83-a958-53f238f49b01"
         },
         "SNMP (MIB Dump)": {
             "attack-pattern": "attack-pattern--ee7ff928-801c-4f34-8a99-3df965e581a5"
@@ -4496,7 +4631,7 @@
         "Wi-Fi Networks": {
             "attack-pattern": "attack-pattern--fde016f6-211a-41c8-a4ab-301f1e419c62"
         },
-        "Exploitation for Defense Evasion": {
+        "Exploitation for Stealth": {
             "attack-pattern": "attack-pattern--fe926152-f431-4baf-956c-4ad3cb0bf23b"
         },
         "Trusted Developer Utilities Proxy Execution": {
@@ -4558,17 +4693,26 @@
         "WIRTE": {
             "intrusion-set": "intrusion-set--f8cb7b36-62ef-4488-8a6d-a7033e3271c1"
         },
+        "Star Blizzard": {
+            "intrusion-set": "intrusion-set--9b36c218-4d80-4ec6-a68d-cc2886bbe410"
+        },
         "ArcaneDoor": {
             "campaign": "campaign--a543ef15-91ea-4aa9-9c10-267d56e1ee82"
         },
         "Dragonfly": {
             "intrusion-set": "intrusion-set--1c63d4ec-0a75-4daa-b1df-0d11af3d3cc1"
         },
+        "APT-C-36": {
+            "intrusion-set": "intrusion-set--c4d50cdf-87ce-407d-86d8-862883485842"
+        },
         "OilRig": {
             "intrusion-set": "intrusion-set--4ca1929c-7d64-4aab-b849-badbfc0c760d"
         },
         "Equation": {
             "intrusion-set": "intrusion-set--96e239be-ad99-49eb-b127-3007b8c1bec9"
+        },
+        "2025 Poland Wiper Attacks": {
+            "campaign": "campaign--a6aba167-5ada-4812-9da1-912c0e73335d"
         },
         "Fox Kitten": {
             "intrusion-set": "intrusion-set--c21dd6f1-1364-4a70-a1f7-783080ec34ee"
@@ -4611,6 +4755,9 @@
         },
         "Earth Lusca": {
             "intrusion-set": "intrusion-set--cc613a49-9bfa-4e22-98d1-15ffbb03f034"
+        },
+        "Kimsuky": {
+            "intrusion-set": "intrusion-set--0ec2f388-bf0f-4b5c-97b1-fc736d26c25f"
         },
         "Operation CuckooBees": {
             "campaign": "campaign--93c23946-49af-41f4-ac03-40f9ffc7419b"
@@ -4663,6 +4810,9 @@
         },
         "HEXANE": {
             "intrusion-set": "intrusion-set--f29b7c5e-2439-42ad-a86f-9f8984fafae3"
+        },
+        "Salesforce Data Exfiltration": {
+            "campaign": "campaign--9cea8bec-07c5-422b-84b8-99d3128ce570"
         },
         "Darkhotel": {
             "intrusion-set": "intrusion-set--9e729a7e-0dd6-4097-95bf-db8d64911383"
@@ -4730,9 +4880,6 @@
         "BackdoorDiplomacy": {
             "intrusion-set": "intrusion-set--9735c036-8ebe-47e9-9c77-b0ae656dab93"
         },
-        "Kimsuky": {
-            "intrusion-set": "intrusion-set--0ec2f388-bf0f-4b5c-97b1-fc736d26c25f"
-        },
         "Leviathan": {
             "intrusion-set": "intrusion-set--7113eaa5-ba79-4fb3-b68a-398ee9cd698e"
         },
@@ -4741,6 +4888,9 @@
         },
         "Ajax Security Team": {
             "intrusion-set": "intrusion-set--fa19de15-6169-428d-9cd6-3ca3d56075b7"
+        },
+        "Anthropic AI-orchestrated Campaign": {
+            "campaign": "campaign--590cd5b0-2421-4158-84a2-db13b5db02a3"
         },
         "Mustang Panda": {
             "intrusion-set": "intrusion-set--420ac20b-f2b9-42b8-aa1a-6d4b72895ca4"
@@ -4753,6 +4903,9 @@
         },
         "Chimera": {
             "intrusion-set": "intrusion-set--8c1f0187-0826-4320-bddc-5f326cfcfe2c"
+        },
+        "Operation AkaiRy\u016b": {
+            "campaign": "campaign--8a7c55ea-f363-4a03-b4c5-fa3fdb132d8f"
         },
         "TA2541": {
             "intrusion-set": "intrusion-set--467271fd-47c0-4e90-a3f9-d84f5cf790d0"
@@ -4806,11 +4959,20 @@
         "Stealth Falcon": {
             "intrusion-set": "intrusion-set--894aab42-3371-47b1-8859-a4a074c804c8"
         },
+        "MirrorFace": {
+            "intrusion-set": "intrusion-set--8cf6e33b-b6ef-4a1f-a77c-0ecdde93161f"
+        },
         "DarkVishnya": {
             "intrusion-set": "intrusion-set--813636db-3939-4a45-bea9-6113e970c029"
         },
+        "Quad7 Activity": {
+            "campaign": "campaign--e7511089-1076-4a3b-984d-1a0a8afe31e9"
+        },
         "APT37": {
             "intrusion-set": "intrusion-set--4a2ce82e-1a74-468a-a6fb-bbead541383c"
+        },
+        "VOID MANTICORE": {
+            "intrusion-set": "intrusion-set--ebd7ce77-c9ba-4fba-bb28-58296ac66559"
         },
         "Threat Group-1314": {
             "intrusion-set": "intrusion-set--d519164e-f5fa-4b8c-a1fb-cf0172ad0983"
@@ -4847,6 +5009,9 @@
         },
         "Rocke": {
             "intrusion-set": "intrusion-set--44102191-3a31-45f8-acbe-34bdb441d5ad"
+        },
+        "Operation Digital Eye": {
+            "campaign": "campaign--75ea699b-bff5-4541-b9b7-df4996c9db3c"
         },
         "RedEcho": {
             "intrusion-set": "intrusion-set--2c40f629-6cf9-4f75-af32-9a98caec24ae"
@@ -4914,6 +5079,9 @@
         "Threat Group-3390": {
             "intrusion-set": "intrusion-set--fb366179-766c-4a4a-afa1-52bff1fd601c"
         },
+        "Salt Typhoon": {
+            "intrusion-set": "intrusion-set--1c3dcf91-b859-4aae-a09c-ae26dc8b6390"
+        },
         "APT28 Nearest Neighbor Campaign": {
             "campaign": "campaign--a010610e-22cb-437e-bfde-b78861bdca7a"
         },
@@ -4949,9 +5117,6 @@
         },
         "Water Curupira Pikabot Distribution": {
             "campaign": "campaign--57541e3b-657e-463a-a4ab-ca08d7ea9965"
-        },
-        "Salt Typhoon": {
-            "intrusion-set": "intrusion-set--1c3dcf91-b859-4aae-a09c-ae26dc8b6390"
         },
         "ShadowRay": {
             "campaign": "campaign--57899965-b171-48ed-bbb4-8faffa3d836a"
@@ -5004,14 +5169,8 @@
         "Mofang": {
             "intrusion-set": "intrusion-set--88489675-d216-4884-a98f-49a89fcc1643"
         },
-        "Quad7 Activity": {
-            "campaign": "campaign--e7511089-1076-4a3b-984d-1a0a8afe31e9"
-        },
         "HomeLand Justice": {
             "campaign": "campaign--7e21077d-2589-43a7-a5f9-490061289526"
-        },
-        "Salesforce Data Exfiltration": {
-            "campaign": "campaign--9cea8bec-07c5-422b-84b8-99d3128ce570"
         },
         "SharePoint ToolShell Exploitation": {
             "campaign": "campaign--1a0576df-df21-4775-843e-844d8a58a94b"
@@ -5100,9 +5259,6 @@
         "KV Botnet Activity": {
             "campaign": "campaign--0c259854-4044-4f6c-ac49-118d484b3e3b"
         },
-        "APT-C-36": {
-            "intrusion-set": "intrusion-set--c4d50cdf-87ce-407d-86d8-862883485842"
-        },
         "The White Company": {
             "intrusion-set": "intrusion-set--6688d679-ccdb-4f12-abf6-c7545dd767a4"
         },
@@ -5120,9 +5276,6 @@
         },
         "CopyKittens": {
             "intrusion-set": "intrusion-set--dcd81c6e-ebf7-4a16-93e0-9a97fa49c88a"
-        },
-        "Star Blizzard": {
-            "intrusion-set": "intrusion-set--9b36c218-4d80-4ec6-a68d-cc2886bbe410"
         },
         "Thrip": {
             "intrusion-set": "intrusion-set--d69e568e-9ac8-4c08-b32c-d93b43ba9172"
@@ -5334,11 +5487,20 @@
         "Program Upload": {
             "attack-pattern": "attack-pattern--3067b85e-271e-4bc5-81ad-ab1a81d411e3"
         },
+        "Block Operational Technology Message": {
+            "attack-pattern": "attack-pattern--338f4364-2269-4f70-9079-b20384b16628"
+        },
         "Transient Cyber Asset": {
             "attack-pattern": "attack-pattern--35392fb4-a31d-4c6a-b9f2-1c65b7f5e6b9"
         },
+        "Siemens Project File Format": {
+            "attack-pattern": "attack-pattern--354ca909-b54d-4c41-b597-9c296b344a43"
+        },
         "Manipulate I/O Image": {
             "attack-pattern": "attack-pattern--36e9f5bc-ac13-4da4-a2f4-01f4877d9004"
+        },
+        "Insecure Credentials": {
+            "attack-pattern": "attack-pattern--3e9b182e-e493-49e1-9a9b-bd0dfcd34a7c"
         },
         "Block Reporting Message": {
             "attack-pattern": "attack-pattern--3f1f4ccb-9be2-4ff8-8f69-dd972221169b"
@@ -5355,11 +5517,20 @@
         "I/O Image": {
             "attack-pattern": "attack-pattern--53a48c74-0025-45f4-b04a-baa853df8204"
         },
+        "Serial COM": {
+            "attack-pattern": "attack-pattern--55e7e5c1-3760-4451-bae0-e79b29f452c5"
+        },
         "Denial of View": {
             "attack-pattern": "attack-pattern--56ddc820-6cfb-407f-850b-52c035d123ac"
         },
+        "Program Append": {
+            "attack-pattern": "attack-pattern--574d5bfb-9a7a-4b28-ab5c-743ac704c135"
+        },
         "Execution through API": {
             "attack-pattern": "attack-pattern--5a2610f6-9fff-41e1-bc27-575ca20383d4"
+        },
+        "Port Scan": {
+            "attack-pattern": "attack-pattern--5d24bb1d-4487-4923-ae3a-8e679092ac7a"
         },
         "Serial Connection Enumeration": {
             "attack-pattern": "attack-pattern--5f3da2f3-91c8-4d8b-a02f-bf43a11def55"
@@ -5367,23 +5538,35 @@
         "Loss of Safety": {
             "attack-pattern": "attack-pattern--5fa00fdd-4a55-4191-94a0-564181d7fec2"
         },
+        "Ethernet": {
+            "attack-pattern": "attack-pattern--6008c1f0-1b68-4614-8f5b-a547436b8855"
+        },
         "Loss of Productivity and Revenue": {
             "attack-pattern": "attack-pattern--63b6942d-8359-4506-bfb3-cf87aa8120ee"
+        },
+        "Multicast Discovery": {
+            "attack-pattern": "attack-pattern--64bbc1b2-101f-4322-af1d-0c9cc25cef91"
+        },
+        "Wi-Fi": {
+            "attack-pattern": "attack-pattern--71f2d49e-65dd-4fb6-a4cc-0d2b19d427fa"
         },
         "Location Identification": {
             "attack-pattern": "attack-pattern--7374ab87-0782-41f8-b415-678c0950bb2a"
         },
+        "Download All": {
+            "attack-pattern": "attack-pattern--77015a55-eef8-4f71-a071-b152f82ec1ef"
+        },
         "Autorun Image": {
             "attack-pattern": "attack-pattern--77d9c726-b53e-481d-8bcc-1068aebfbb9d"
+        },
+        "Modify Firmware": {
+            "attack-pattern": "attack-pattern--7b4c0e19-a9b0-4a74-a196-b38c07b79f20"
         },
         "Damage to Property": {
             "attack-pattern": "attack-pattern--83ebd22f-b401-4d59-8219-2294172cf916"
         },
         "Spoof Reporting Message": {
             "attack-pattern": "attack-pattern--8535b71e-3c12-4258-a4ab-40257a1becc4"
-        },
-        "Default Credentials": {
-            "attack-pattern": "attack-pattern--8bb4538f-f16f-49f0-a431-70b5444c7349"
         },
         "Brute Force I/O": {
             "attack-pattern": "attack-pattern--8e7089d3-fba2-44f8-94a8-9a79c53920c4"
@@ -5418,8 +5601,8 @@
         "Program Download": {
             "attack-pattern": "attack-pattern--be69c571-d746-4b1f-bdd0-c0c9817e9068"
         },
-        "Hardcoded Credentials": {
-            "attack-pattern": "attack-pattern--c9a8d958-fcdb-40d2-af4c-461c8031651a"
+        "Broadcast Discovery": {
+            "attack-pattern": "attack-pattern--c55f0be5-044e-4577-8095-65b37680d28c"
         },
         "Engineering Workstation Compromise": {
             "attack-pattern": "attack-pattern--d614a9cf-18eb-4800-81e4-ab8ddf0baa73"
@@ -5427,11 +5610,17 @@
         "Connection Proxy": {
             "attack-pattern": "attack-pattern--d67adac8-e3b9-44f9-9e6d-6c2a7d69dbe4"
         },
+        "Online Edit": {
+            "attack-pattern": "attack-pattern--d85a6ee9-820c-4adf-8a64-2392ee70c83c"
+        },
         "Standard Application Layer Protocol": {
             "attack-pattern": "attack-pattern--e076cca8-2f08-45c9-aff7-ea5ac798b387"
         },
         "Modify Control Logic": {
             "attack-pattern": "attack-pattern--e0d74479-86d2-465d-bf36-903ebecef43e"
+        },
+        "Unauthorized Message": {
+            "attack-pattern": "attack-pattern--e17cdc00-8b58-4e5f-9d50-4cad1592c4c3"
         },
         "I/O Module Discovery": {
             "attack-pattern": "attack-pattern--e2994b6a-122b-4043-b654-7411c5198ec0"
@@ -5448,23 +5637,23 @@
         "Network Connection Enumeration": {
             "attack-pattern": "attack-pattern--ea0c980c-5cf0-43a7-a049-59c4c207566e"
         },
-        "Module Firmware": {
-            "attack-pattern": "attack-pattern--efbf7888-f61b-4572-9c80-7e2965c60707"
-        },
         "Internet Accessible Device": {
             "attack-pattern": "attack-pattern--f8df6b57-14bc-425f-9a91-6f59f6799307"
         },
         "Change Credential": {
             "attack-pattern": "attack-pattern--fab8fc7d-f27f-4fbb-9de6-44740aade05f"
         },
+        "Block Communications": {
+            "attack-pattern": "attack-pattern--fbb67c2d-37c3-49ee-86e3-bf234cc48ca9"
+        },
         "Modify Program": {
             "attack-pattern": "attack-pattern--fc5fda7e-6b2c-4457-b036-759896a2efa2"
         },
-        "ALLANITE": {
-            "intrusion-set": "intrusion-set--190242d7-73fc-4738-af68-20162f7a5aae"
-        },
         "Maroochy Water Breach": {
             "campaign": "campaign--70cab19e-1745-425e-b3db-c02cd5ff157a"
+        },
+        "ALLANITE": {
+            "intrusion-set": "intrusion-set--190242d7-73fc-4738-af68-20162f7a5aae"
         },
         "Unitronics Defacement Campaign": {
             "campaign": "campaign--8fda050f-470d-4401-994e-35c1a6c301de"
@@ -5625,6 +5814,9 @@
         "DoubleAgent": {
             "malware": "malware--3d6c4389-3489-40a3-beda-c56e650b6f68"
         },
+        "DocSwap": {
+            "malware": "malware--3dbef387-12df-4547-9dd3-075c7ffec9e3"
+        },
         "Twitoor": {
             "malware": "malware--41e3fd01-7b83-471f-835d-d2b1dc9a770c"
         },
@@ -5684,6 +5876,9 @@
         },
         "ViceLeaker": {
             "malware": "malware--6fcaf9b0-b509-4644-9f93-556222c81ed2"
+        },
+        "VajraSpy": {
+            "malware": "malware--8205a875-3ed5-4be2-ab9b-14a7d29431d0"
         },
         "FlyTrap": {
             "malware": "malware--8338393c-cb2e-4ee6-b944-34672499c785"
@@ -12070,6 +12265,9 @@
         "S1039": {
             "malware": "malware--04378e79-4387-468a-a8f7-f974b8254e44"
         },
+        "S9015": {
+            "malware": "malware--0450ed20-e9a7-4799-b601-2f2710300796"
+        },
         "S0233": {
             "malware": "malware--049ff071-0b3c-4712-95d2-d21c6aa54501"
         },
@@ -12117,6 +12315,9 @@
         },
         "S0603": {
             "malware": "malware--088f1d6e-0783-47c6-9923-9c79b2af43d4"
+        },
+        "S9029": {
+            "malware": "malware--089aa00a-99ac-46b4-9cf8-4224d463566d"
         },
         "S0134": {
             "malware": "malware--08d20cd2-f084-45ee-8558-fa6ef5a18519"
@@ -12214,6 +12415,9 @@
         "S0613": {
             "malware": "malware--13183cdf-280b-46be-913a-5c6df47831e7"
         },
+        "S9018": {
+            "malware": "malware--148f947c-aabd-4ba8-b6a3-22b296855119"
+        },
         "S0386": {
             "malware": "malware--1492d0f8-7e14-4af3-9239-bc3fe10d3407"
         },
@@ -12237,6 +12441,9 @@
         },
         "S0145": {
             "malware": "malware--17e919aa-4a49-445c-b103-dbb8df9e7351"
+        },
+        "S9034": {
+            "malware": "malware--18f5f8c6-bba5-4aba-93e7-3539fe565883"
         },
         "S1121": {
             "malware": "malware--19256855-65e9-48f2-8b74-9f3d0a994428"
@@ -12306,6 +12513,9 @@
         },
         "S0347": {
             "malware": "malware--24b4ce59-eaac-4c8b-8634-9b093b7ccd92"
+        },
+        "S9026": {
+            "malware": "malware--251f1715-fc97-4487-b939-5c8823ef7a39"
         },
         "S0010": {
             "malware": "malware--251fbae2-78f6-4de7-84f6-194c727a64ad"
@@ -12394,6 +12604,9 @@
         "S0634": {
             "malware": "malware--2f8229dc-da94-41c6-89ba-b5b6c32f6b7d"
         },
+        "S9022": {
+            "malware": "malware--2f851d4a-18cc-4d7f-9408-b10ef02ee936"
+        },
         "S0058": {
             "malware": "malware--2fb26586-2b53-4b9a-ad4f-2b3bcb9a2421"
         },
@@ -12439,6 +12652,9 @@
         "S1159": {
             "malware": "malware--33139388-de0c-49ff-862a-041c315b142d"
         },
+        "S9038": {
+            "malware": "malware--34057cb6-0a56-48a3-92e5-3af1357808da"
+        },
         "S0647": {
             "malware": "malware--350f12cf-fd3b-4dad-b323-14b943090df4"
         },
@@ -12468,6 +12684,9 @@
         },
         "S1228": {
             "malware": "malware--3824852d-1957-4712-9da0-38143723c060"
+        },
+        "S9001": {
+            "malware": "malware--39643fb9-00c1-4a45-85e5-801a3f2665d1"
         },
         "S1138": {
             "malware": "malware--396c18b9-26fb-4435-8589-fb856502e4c4"
@@ -12658,6 +12877,9 @@
         "S0575": {
             "malware": "malware--4dea7d8e-af94-4bfb-afe4-7ff54f59308b"
         },
+        "S9030": {
+            "malware": "malware--4e164a21-3fbe-4aaa-be69-2513fdba90f7"
+        },
         "S1130": {
             "malware": "malware--4e385fa6-ebe0-43fc-9ccf-5b51b5dc4d79"
         },
@@ -12688,6 +12910,9 @@
         "S0623": {
             "malware": "malware--4fbd565b-bf55-4ac7-80b4-b183a7b64b9c"
         },
+        "S9037": {
+            "malware": "malware--50be4e81-db74-41a2-a9aa-423314082bea"
+        },
         "S1068": {
             "malware": "malware--50c44c34-3abb-48ae-9433-a2337de5b0bc"
         },
@@ -12705,6 +12930,9 @@
         },
         "S1147": {
             "malware": "malware--51f78dfc-52f9-424e-8753-bb4246188313"
+        },
+        "S9007": {
+            "malware": "malware--52b52f72-88e6-4847-88d6-da3b9e4a4f71"
         },
         "S0652": {
             "malware": "malware--532c6004-b1e8-415b-9516-f7c14ba783b1"
@@ -12931,6 +13159,9 @@
         "S1135": {
             "malware": "malware--663d7dee-5a47-459e-a5ef-e850a94a8ee5"
         },
+        "S9025": {
+            "malware": "malware--66637cd6-ae68-4bcd-af82-32f70a854175"
+        },
         "S0085": {
             "malware": "malware--66b1dcde-17a0-4c7b-95fa-b08d430c2131"
         },
@@ -12990,6 +13221,9 @@
         },
         "S0660": {
             "malware": "malware--6e95feb1-78ee-48d3-b421-4d76663b5c49"
+        },
+        "S9019": {
+            "malware": "malware--6f22487c-dbbf-4a5b-85ca-a8c85e8f2f80"
         },
         "S1129": {
             "malware": "malware--6f6b2353-4b39-40ce-9d6d-d00b7a61e656"
@@ -13072,11 +13306,17 @@
         "S0631": {
             "malware": "malware--77e0ecf7-ca91-4c06-8012-8e728986a87a"
         },
+        "S9020": {
+            "malware": "malware--7908f855-5b5b-4d6a-acbc-af6b45ec27ad"
+        },
         "S0204": {
             "malware": "malware--79499993-a8d6-45eb-b343-bf58dea5bdde"
         },
         "S0674": {
             "malware": "malware--7acb15b6-fe2c-4319-b136-6ab36ff0b2d4"
+        },
+        "S9032": {
+            "malware": "malware--7b92e996-b535-4159-be16-3c3aee4edf54"
         },
         "S0263": {
             "malware": "malware--7ba0fc46-197d-466d-8b9f-f1c64d5d81e5"
@@ -13089,6 +13329,9 @@
         },
         "S0626": {
             "malware": "malware--7c58fff0-d206-4db1-96b1-e3a9e0e320b9"
+        },
+        "S9033": {
+            "malware": "malware--7c8865dc-1bf9-49ce-b5f2-f15abde0909a"
         },
         "S1218": {
             "malware": "malware--7cc63f0f-f24f-4cda-9e9f-61bde1d52297"
@@ -13117,6 +13360,9 @@
         "S0060": {
             "malware": "malware--7f8730af-f683-423f-9ee1-5f6875a80481"
         },
+        "S9036": {
+            "malware": "malware--7fbf1f1e-cbd8-4060-8e3b-7ca0e56ce3fe"
+        },
         "S0067": {
             "malware": "malware--800bdfba-6d66-480f-9f45-15845c05cb5d"
         },
@@ -13125,6 +13371,9 @@
         },
         "S0574": {
             "malware": "malware--805480f1-6caa-4a67-8ca9-b2b39650d986"
+        },
+        "S9010": {
+            "malware": "malware--809bc57b-4d4c-43de-b698-448334ed8185"
         },
         "S0022": {
             "malware": "malware--80a014ba-3fef-4768-990b-37d8bd10d7f4"
@@ -13297,6 +13546,9 @@
         "S1180": {
             "malware": "malware--9454bb5d-3bdb-40f9-a878-b5fb446ded3d"
         },
+        "S9028": {
+            "malware": "malware--9491a623-5861-4d0a-9958-8c05d0d17442"
+        },
         "S0627": {
             "malware": "malware--94d6d788-07bb-4dcc-b62f-e02626b00108"
         },
@@ -13332,6 +13584,9 @@
         },
         "S1013": {
             "malware": "malware--97cfbdc6-504d-41e9-a46c-78a9f806ff0d"
+        },
+        "S9016": {
+            "malware": "malware--97da6467-c9c5-4eb0-84d4-1234e937e534"
         },
         "S1011": {
             "malware": "malware--988976ff-beeb-4fb5-b07d-ca7437ea66e8"
@@ -13386,6 +13641,9 @@
         },
         "S0149": {
             "malware": "malware--9ea525fa-b0a9-4dde-84f2-bcea0137b3c1"
+        },
+        "S9023": {
+            "malware": "malware--9edc41d1-a13d-4acf-b400-d47fb2f6809d"
         },
         "S1235": {
             "malware": "malware--9fd4e24b-3b12-4c7c-925f-226e2e3c3758"
@@ -13573,6 +13831,9 @@
         "S0335": {
             "malware": "malware--b7e9880a-7a7c-4162-bddb-e28e8ef2bf1f"
         },
+        "S9012": {
+            "malware": "malware--b82b9e25-e37b-4f7c-b1f0-2c2eea4f4be9"
+        },
         "S0397": {
             "malware": "malware--b865dded-0553-4962-a44b-6fe7863effed"
         },
@@ -13611,6 +13872,9 @@
         },
         "S0076": {
             "malware": "malware--bb3c1098-d654-4620-bf40-694386d28921"
+        },
+        "S9031": {
+            "malware": "malware--bb6f2a5c-dbc9-45b0-bd3f-a0b7849959c2"
         },
         "S0484": {
             "malware": "malware--bbcd7a02-ef24-4171-ac94-a93540173b94"
@@ -13666,6 +13930,9 @@
         "S1046": {
             "malware": "malware--c19d19ae-dd58-4584-8469-966bbeaa80e3"
         },
+        "S9027": {
+            "malware": "malware--c21edbd1-a0a4-4c3c-9b22-4a49634186c3"
+        },
         "S0236": {
             "malware": "malware--c2417bab-3189-4d4d-9d60-96de2cdaf0ab"
         },
@@ -13683,6 +13950,9 @@
         },
         "S0279": {
             "malware": "malware--c541efb4-e7b1-4ad6-9da8-b4e113f5dd42"
+        },
+        "S9035": {
+            "malware": "malware--c55e0410-842d-4365-a2c8-26c0330f85b8"
         },
         "S0001": {
             "malware": "malware--c5e9cb46-aced-466c-85ea-7db5572ad9ec"
@@ -13707,6 +13977,9 @@
         },
         "S1112": {
             "malware": "malware--ca0fead6-5277-427a-825b-42ff1fbe476e"
+        },
+        "S9014": {
+            "malware": "malware--ca3f5123-b853-45ef-83cb-1d1bca22e03f"
         },
         "S0611": {
             "malware": "malware--cad3ba95-8c89-4146-ab10-08daa813f9de"
@@ -13764,6 +14037,9 @@
         },
         "S0587": {
             "malware": "malware--d18cb958-f4ad-4fb3-bb4f-e8994d206550"
+        },
+        "S9024": {
+            "malware": "malware--d1974f35-0e06-478e-bc74-7530545d814b"
         },
         "S0414": {
             "malware": "malware--d1b7830a-fced-4be3-a99c-f495af9d9e1b"
@@ -13846,6 +14122,9 @@
         "S1022": {
             "malware": "malware--dd889a55-fb2c-4ec7-8e9f-c399939a49e1"
         },
+        "S9008": {
+            "malware": "malware--de376fb9-1093-4f59-8d13-aed61042701d"
+        },
         "S0201": {
             "malware": "malware--de6cb631-52f6-4169-a73b-7965390b0c30"
         },
@@ -13872,6 +14151,9 @@
         },
         "S0070": {
             "malware": "malware--e066bf86-9cfb-407a-9d25-26fd5d91e360"
+        },
+        "S9011": {
+            "malware": "malware--e110c9c6-7691-4bcb-874d-3d83a63c06c2"
         },
         "S0084": {
             "malware": "malware--e1161124-f22e-487f-9d5f-ed8efc8dcd61"
@@ -13911,6 +14193,9 @@
         },
         "S0604": {
             "malware": "malware--e401d4fe-f0c9-44f0-98e6-f93487678808"
+        },
+        "S9039": {
+            "malware": "malware--e4160979-b9bc-4f58-acbe-1d921ebbc122"
         },
         "S0186": {
             "malware": "malware--e48df773-7c95-4a4c-ba70-ea3d15900148"
@@ -13954,6 +14239,9 @@
         "S0128": {
             "malware": "malware--e9595678-d269-469e-ae6b-75e49259de63"
         },
+        "S9013": {
+            "malware": "malware--e9c72c02-b55a-4852-b2eb-c7031d215414"
+        },
         "S0211": {
             "malware": "malware--e9e9bfe2-76f4-4870-a2a1-b7af89808613"
         },
@@ -13972,8 +14260,14 @@
         "S0650": {
             "malware": "malware--edc5e045-5401-42bb-ad92-52b5b2ee0de9"
         },
+        "S9021": {
+            "malware": "malware--eddb863e-fc77-41c1-86e9-5210d6d58b88"
+        },
         "S0464": {
             "malware": "malware--edf5aee2-9b1c-4252-8e64-25b12f14c8b3"
+        },
+        "S9004": {
+            "malware": "malware--eed7b988-0279-4c4f-bfa9-d81f5444a04b"
         },
         "S0492": {
             "malware": "malware--eedc01d5-95e6-4d21-bcd4-1121b1df4586"
@@ -14131,6 +14425,9 @@
         "S0521": {
             "tool": "tool--066b057c-944e-4cfc-b654-e3dfba04b926"
         },
+        "S9002": {
+            "tool": "tool--080f872e-f1a3-4d42-bb00-9eb55949f6a9"
+        },
         "S0160": {
             "tool": "tool--0a68f1f1-da74-4d28-8d9a-696c082706cc"
         },
@@ -14155,6 +14452,9 @@
         "S1091": {
             "tool": "tool--1b3b8f96-43b1-4460-8e02-1f53d7802fb9"
         },
+        "S9003": {
+            "tool": "tool--1eb9627d-a661-4db6-bf53-41b7dcc63087"
+        },
         "S0005": {
             "tool": "tool--242f3da3-4425-4d11-8f5c-b842886da966"
         },
@@ -14169,6 +14469,9 @@
         },
         "S0057": {
             "tool": "tool--2e45723a-31da-4a7e-aaa6-e01998a6788f"
+        },
+        "S9017": {
+            "tool": "tool--2f481072-e9f8-4452-be00-d1d7e43c2edc"
         },
         "S0508": {
             "tool": "tool--2f7f03bb-f367-4a5a-ad9b-310a12a48906"
@@ -14241,6 +14544,9 @@
         },
         "S1063": {
             "tool": "tool--75d8b521-6b6a-42ff-8af3-d97e20ce12a5"
+        },
+        "S9009": {
+            "tool": "tool--76f8a686-3157-481f-9af6-e8558883a8d6"
         },
         "S0683": {
             "tool": "tool--79dd477a-8226-4b3d-ad15-28623675f221"
@@ -14407,6 +14713,9 @@
         "T1047": {
             "attack-pattern": "attack-pattern--01a5a209-b94c-450b-b7f9-946497d91055"
         },
+        "T1687": {
+            "attack-pattern": "attack-pattern--01c9b54f-c04e-41ba-b0c3-cfe784b3a463"
+        },
         "T1027.011": {
             "attack-pattern": "attack-pattern--02c5abff-30bf-4703-ab92-1f6072fae939"
         },
@@ -14503,6 +14812,9 @@
         "T1059.007": {
             "attack-pattern": "attack-pattern--0f4a0c76-ab2d-4cb0-85d3-3f0efb8cba0d"
         },
+        "T1685.003": {
+            "attack-pattern": "attack-pattern--0ff4bd68-aebb-4039-9e00-9f92c705edf4"
+        },
         "T1590.002": {
             "attack-pattern": "attack-pattern--0ff59227-8aa8-4c09-bf1f-925605bd07ea"
         },
@@ -14541,6 +14853,12 @@
         },
         "T1548.003": {
             "attack-pattern": "attack-pattern--1365fe3b-0f50-455d-b4da-266ce31c23b0"
+        },
+        "T1685.001": {
+            "attack-pattern": "attack-pattern--1411e6b8-80a6-4465-9909-54eaa9c67ce0"
+        },
+        "T1682": {
+            "attack-pattern": "attack-pattern--143122a8-fcda-4dd7-aded-5b9387d9c2d6"
         },
         "T1560.003": {
             "attack-pattern": "attack-pattern--143c0cbb-a297-4142-9624-87ffc778980b"
@@ -14671,6 +14989,9 @@
         "T1591.003": {
             "attack-pattern": "attack-pattern--2339cf19-8f1e-48f7-8a91-0262ba547b6f"
         },
+        "T1685.004": {
+            "attack-pattern": "attack-pattern--23d69d00-80c4-42ff-9dac-dbd0459dad75"
+        },
         "T1071.005": {
             "attack-pattern": "attack-pattern--241f9ea8-f6ae-4f38-92f5-cef5b7e539dd"
         },
@@ -14706,6 +15027,9 @@
         },
         "T1542.005": {
             "attack-pattern": "attack-pattern--28abec6c-4443-4b03-8206-07f2e264a6b4"
+        },
+        "T1686.003": {
+            "attack-pattern": "attack-pattern--291ede6c-1473-454c-b614-5ac5ea63c987"
         },
         "T1543.003": {
             "attack-pattern": "attack-pattern--2959d63f-73fd-46a1-abd2-109d7dcede32"
@@ -14767,6 +15091,9 @@
         "T1574.001": {
             "attack-pattern": "attack-pattern--2fee9321-3e71-4cf4-af24-d4d40d355b34"
         },
+        "T1689": {
+            "attack-pattern": "attack-pattern--30904c16-39f9-41c6-b01a-500eb8878442"
+        },
         "T1003.007": {
             "attack-pattern": "attack-pattern--3120b9fa-23b8-4500-ae73-09494f607b7d"
         },
@@ -14811,6 +15138,9 @@
         },
         "T1137.006": {
             "attack-pattern": "attack-pattern--34f1d81d-fe88-4f97-bd3b-a3164536255d"
+        },
+        "T1685.002": {
+            "attack-pattern": "attack-pattern--34ff60a3-a3f8-42e4-bed0-af9a2cb563d7"
         },
         "T1505.002": {
             "attack-pattern": "attack-pattern--35187df2-31ed-43b6-a1f5-2f1d3d58d3f1"
@@ -14913,6 +15243,9 @@
         },
         "T1055.003": {
             "attack-pattern": "attack-pattern--41d9846c-f6af-4302-a654-24bba2729bc6"
+        },
+        "T1684": {
+            "attack-pattern": "attack-pattern--41e4d77a-6275-4976-9e35-785985598519"
         },
         "T1546.011": {
             "attack-pattern": "attack-pattern--42fe883a-21ea-4cfb-b94a-78b6476dcc83"
@@ -15100,6 +15433,9 @@
         "T1484.001": {
             "attack-pattern": "attack-pattern--5d2be8b9-d24c-4e98-83bf-2f5f79477163"
         },
+        "T1685.006": {
+            "attack-pattern": "attack-pattern--5e29d64d-2b14-4f92-875e-4c9c498e213c"
+        },
         "T1552.004": {
             "attack-pattern": "attack-pattern--60b508a1-6a5e-46b1-821a-9f7b78752abf"
         },
@@ -15193,6 +15529,9 @@
         "T1598.004": {
             "attack-pattern": "attack-pattern--6a5d222a-a7e0-4656-b110-782c33098289"
         },
+        "T1683.001": {
+            "attack-pattern": "attack-pattern--6a6f9892-c46a-46db-b331-c09a99200fcf"
+        },
         "T1003.005": {
             "attack-pattern": "attack-pattern--6add2ab5-2711-4e9d-87c8-7a0be8531530"
         },
@@ -15252,6 +15591,9 @@
         },
         "T1562.006": {
             "attack-pattern": "attack-pattern--74d2a63f-3c7b-4852-92da-02d8fbab16da"
+        },
+        "T1685.005": {
+            "attack-pattern": "attack-pattern--75b9a4d2-d4e2-4ca1-9aab-1badd9e05fd0"
         },
         "T1136.002": {
             "attack-pattern": "attack-pattern--7610cada-1499-41a4-b3dd-46467b68d177"
@@ -15457,6 +15799,9 @@
         "T1087.004": {
             "attack-pattern": "attack-pattern--8f104855-e5b7-4077-b1f5-bc3103b41abe"
         },
+        "T1683.002": {
+            "attack-pattern": "attack-pattern--8f452cb4-cbf4-4522-8b11-448787be95c4"
+        },
         "T1562.003": {
             "attack-pattern": "attack-pattern--8f504411-cb96-4dac-a537-8d2bb7679c59"
         },
@@ -15561,6 +15906,9 @@
         },
         "T1056.002": {
             "attack-pattern": "attack-pattern--a2029942-0a85-4947-b23c-ca434698171d"
+        },
+        "T1686.002": {
+            "attack-pattern": "attack-pattern--a29aa77c-a88d-4f19-bab9-7751941b2e2d"
         },
         "T1588.002": {
             "attack-pattern": "attack-pattern--a2fdce72-04b2-409a-ac10-cc1695f4fce0"
@@ -15670,6 +16018,9 @@
         "T1036.001": {
             "attack-pattern": "attack-pattern--b4b7458f-81f2-4d38-84be-1c5ba0167a52"
         },
+        "T1683": {
+            "attack-pattern": "attack-pattern--b512fb8a-18dd-4bfc-bbad-acbaaeb7dde3"
+        },
         "T1564.006": {
             "attack-pattern": "attack-pattern--b5327dd1-6bf9-4785-a199-25bcbd1f4a9d"
         },
@@ -15687,6 +16038,9 @@
         },
         "T1599": {
             "attack-pattern": "attack-pattern--b8017880-4b1e-42de-ad10-ae7ac6705166"
+        },
+        "T1690": {
+            "attack-pattern": "attack-pattern--b831f51c-d22f-4724-bbab-60d056bd1150"
         },
         "T1553": {
             "attack-pattern": "attack-pattern--b83e166d-13d7-4b52-8677-dff90c548fd7"
@@ -15720,6 +16074,9 @@
         },
         "T1587.004": {
             "attack-pattern": "attack-pattern--bbc3cba7-84ae-410d-b18b-16750731dfa2"
+        },
+        "T1685": {
+            "attack-pattern": "attack-pattern--bbde9781-60aa-4b8a-a911-895b0c1b3872"
         },
         "T1593.001": {
             "attack-pattern": "attack-pattern--bbe5b322-e2af-4a5e-9625-a4e62bf84ed3"
@@ -15814,6 +16171,9 @@
         "T1027.004": {
             "attack-pattern": "attack-pattern--c726e0a2-a57a-4b7b-a973-d0f013246617"
         },
+        "T1688": {
+            "attack-pattern": "attack-pattern--c7660f19-f8c5-4ae3-a5e5-24381c270376"
+        },
         "T1614": {
             "attack-pattern": "attack-pattern--c877e33f-1df6-40d6-b1e7-ce70f16f4979"
         },
@@ -15861,6 +16221,9 @@
         },
         "T1598": {
             "attack-pattern": "attack-pattern--cca0ccb6-a068-4574-a722-b1556f86833a"
+        },
+        "T1684.001": {
+            "attack-pattern": "attack-pattern--cd92d2b8-ce43-4666-9472-f1b4b9f4f8be"
         },
         "T1585": {
             "attack-pattern": "attack-pattern--cdfc5f0a-9bb9-4352-b896-553cfa2d8fd8"
@@ -16051,6 +16414,9 @@
         "T1548.006": {
             "attack-pattern": "attack-pattern--e8a0a025-3601-4755-abfb-8d08283329fb"
         },
+        "T1027.018": {
+            "attack-pattern": "attack-pattern--e9b75bb0-b5ec-42c8-b728-f4f424d9c39e"
+        },
         "T1055.008": {
             "attack-pattern": "attack-pattern--ea016b56-ae0e-47fe-967a-cc0ad51af67f"
         },
@@ -16096,8 +16462,14 @@
         "T1003.003": {
             "attack-pattern": "attack-pattern--edf91964-b26e-4b4a-9600-ccacd7d7df24"
         },
+        "T1686.001": {
+            "attack-pattern": "attack-pattern--ee474564-64be-4b83-a958-53f238f49b01"
+        },
         "T1602.001": {
             "attack-pattern": "attack-pattern--ee7ff928-801c-4f34-8a99-3df965e581a5"
+        },
+        "T1686": {
+            "attack-pattern": "attack-pattern--eec096b8-c207-43df-b6c1-11523861e452"
         },
         "T1001.002": {
             "attack-pattern": "attack-pattern--eec23884-3fa1-4d8a-ac50-6f104d51e235"
@@ -16201,6 +16573,9 @@
         "T1601.002": {
             "attack-pattern": "attack-pattern--fc74ba38-dc98-461f-8611-b3dbf9978e3d"
         },
+        "T1684.002": {
+            "attack-pattern": "attack-pattern--fcf5bccf-be7a-48ff-b7a7-8d6019279301"
+        },
         "T1078.003": {
             "attack-pattern": "attack-pattern--fdc47f44-dd32-4b99-af5f-209f556f63c2"
         },
@@ -16261,6 +16636,9 @@
         "G0090": {
             "intrusion-set": "intrusion-set--f8cb7b36-62ef-4488-8a6d-a7033e3271c1"
         },
+        "G1033": {
+            "intrusion-set": "intrusion-set--9b36c218-4d80-4ec6-a68d-cc2886bbe410"
+        },
         "C0007": {
             "campaign": "campaign--8d2bc130-89fe-466e-a4f9-6bce6129c2b8"
         },
@@ -16270,11 +16648,17 @@
         "G0035": {
             "intrusion-set": "intrusion-set--1c63d4ec-0a75-4daa-b1df-0d11af3d3cc1"
         },
+        "G0099": {
+            "intrusion-set": "intrusion-set--c4d50cdf-87ce-407d-86d8-862883485842"
+        },
         "G0049": {
             "intrusion-set": "intrusion-set--4ca1929c-7d64-4aab-b849-badbfc0c760d"
         },
         "G0020": {
             "intrusion-set": "intrusion-set--96e239be-ad99-49eb-b127-3007b8c1bec9"
+        },
+        "C0063": {
+            "campaign": "campaign--a6aba167-5ada-4812-9da1-912c0e73335d"
         },
         "G0117": {
             "intrusion-set": "intrusion-set--c21dd6f1-1364-4a70-a1f7-783080ec34ee"
@@ -16317,6 +16701,9 @@
         },
         "G1006": {
             "intrusion-set": "intrusion-set--cc613a49-9bfa-4e22-98d1-15ffbb03f034"
+        },
+        "G0094": {
+            "intrusion-set": "intrusion-set--0ec2f388-bf0f-4b5c-97b1-fc736d26c25f"
         },
         "C0012": {
             "campaign": "campaign--93c23946-49af-41f4-ac03-40f9ffc7419b"
@@ -16368,6 +16755,9 @@
         },
         "G1001": {
             "intrusion-set": "intrusion-set--f29b7c5e-2439-42ad-a86f-9f8984fafae3"
+        },
+        "C0059": {
+            "campaign": "campaign--9cea8bec-07c5-422b-84b8-99d3128ce570"
         },
         "G0012": {
             "intrusion-set": "intrusion-set--9e729a7e-0dd6-4097-95bf-db8d64911383"
@@ -16435,9 +16825,6 @@
         "G0135": {
             "intrusion-set": "intrusion-set--9735c036-8ebe-47e9-9c77-b0ae656dab93"
         },
-        "G0094": {
-            "intrusion-set": "intrusion-set--0ec2f388-bf0f-4b5c-97b1-fc736d26c25f"
-        },
         "G0065": {
             "intrusion-set": "intrusion-set--7113eaa5-ba79-4fb3-b68a-398ee9cd698e"
         },
@@ -16446,6 +16833,9 @@
         },
         "G0130": {
             "intrusion-set": "intrusion-set--fa19de15-6169-428d-9cd6-3ca3d56075b7"
+        },
+        "C0062": {
+            "campaign": "campaign--590cd5b0-2421-4158-84a2-db13b5db02a3"
         },
         "G1024": {
             "intrusion-set": "intrusion-set--46bb06cb-f2d9-4b37-8c92-a27e224ad90d"
@@ -16461,6 +16851,9 @@
         },
         "G0114": {
             "intrusion-set": "intrusion-set--8c1f0187-0826-4320-bddc-5f326cfcfe2c"
+        },
+        "C0060": {
+            "campaign": "campaign--8a7c55ea-f363-4a03-b4c5-fa3fdb132d8f"
         },
         "G1018": {
             "intrusion-set": "intrusion-set--467271fd-47c0-4e90-a3f9-d84f5cf790d0"
@@ -16519,11 +16912,20 @@
         "G0038": {
             "intrusion-set": "intrusion-set--894aab42-3371-47b1-8859-a4a074c804c8"
         },
+        "G1054": {
+            "intrusion-set": "intrusion-set--8cf6e33b-b6ef-4a1f-a77c-0ecdde93161f"
+        },
         "G0105": {
             "intrusion-set": "intrusion-set--813636db-3939-4a45-bea9-6113e970c029"
         },
+        "C0055": {
+            "campaign": "campaign--e7511089-1076-4a3b-984d-1a0a8afe31e9"
+        },
         "G0067": {
             "intrusion-set": "intrusion-set--4a2ce82e-1a74-468a-a6fb-bbead541383c"
+        },
+        "G1055": {
+            "intrusion-set": "intrusion-set--ebd7ce77-c9ba-4fba-bb28-58296ac66559"
         },
         "G0028": {
             "intrusion-set": "intrusion-set--d519164e-f5fa-4b8c-a1fb-cf0172ad0983"
@@ -16560,6 +16962,9 @@
         },
         "G0106": {
             "intrusion-set": "intrusion-set--44102191-3a31-45f8-acbe-34bdb441d5ad"
+        },
+        "C0061": {
+            "campaign": "campaign--75ea699b-bff5-4541-b9b7-df4996c9db3c"
         },
         "G1042": {
             "intrusion-set": "intrusion-set--2c40f629-6cf9-4f75-af32-9a98caec24ae"
@@ -16636,6 +17041,9 @@
         "G0027": {
             "intrusion-set": "intrusion-set--fb366179-766c-4a4a-afa1-52bff1fd601c"
         },
+        "G1045": {
+            "intrusion-set": "intrusion-set--1c3dcf91-b859-4aae-a09c-ae26dc8b6390"
+        },
         "C0051": {
             "campaign": "campaign--a010610e-22cb-437e-bfde-b78861bdca7a"
         },
@@ -16674,9 +17082,6 @@
         },
         "C0037": {
             "campaign": "campaign--57541e3b-657e-463a-a4ab-ca08d7ea9965"
-        },
-        "G1045": {
-            "intrusion-set": "intrusion-set--1c3dcf91-b859-4aae-a09c-ae26dc8b6390"
         },
         "C0045": {
             "campaign": "campaign--57899965-b171-48ed-bbb4-8faffa3d836a"
@@ -16729,17 +17134,11 @@
         "G0103": {
             "intrusion-set": "intrusion-set--88489675-d216-4884-a98f-49a89fcc1643"
         },
-        "C0055": {
-            "campaign": "campaign--e7511089-1076-4a3b-984d-1a0a8afe31e9"
-        },
         "G0095": {
             "intrusion-set": "intrusion-set--38863958-a201-4ce1-9dbe-539b0b6804e0"
         },
         "C0038": {
             "campaign": "campaign--7e21077d-2589-43a7-a5f9-490061289526"
-        },
-        "C0059": {
-            "campaign": "campaign--9cea8bec-07c5-422b-84b8-99d3128ce570"
         },
         "C0058": {
             "campaign": "campaign--1a0576df-df21-4775-843e-844d8a58a94b"
@@ -16831,9 +17230,6 @@
         "C0035": {
             "campaign": "campaign--0c259854-4044-4f6c-ac49-118d484b3e3b"
         },
-        "G0099": {
-            "intrusion-set": "intrusion-set--c4d50cdf-87ce-407d-86d8-862883485842"
-        },
         "G0089": {
             "intrusion-set": "intrusion-set--6688d679-ccdb-4f12-abf6-c7545dd767a4"
         },
@@ -16851,9 +17247,6 @@
         },
         "G0052": {
             "intrusion-set": "intrusion-set--dcd81c6e-ebf7-4a16-93e0-9a97fa49c88a"
-        },
-        "G1033": {
-            "intrusion-set": "intrusion-set--9b36c218-4d80-4ec6-a68d-cc2886bbe410"
         },
         "G0076": {
             "intrusion-set": "intrusion-set--d69e568e-9ac8-4c08-b32c-d93b43ba9172"
@@ -17149,6 +17542,9 @@
         "T0829": {
             "attack-pattern": "attack-pattern--138979ba-0430-4de6-a128-2fc0b056ba36"
         },
+        "T1691.001": {
+            "attack-pattern": "attack-pattern--15ca2a99-2d3e-457f-b1d7-c52a1d5849c9"
+        },
         "T0800": {
             "attack-pattern": "attack-pattern--19a71d1e-6334-4233-8260-b749cae37953"
         },
@@ -17209,11 +17605,17 @@
         "T0819": {
             "attack-pattern": "attack-pattern--32632a95-6856-47b9-9ab7-fea5cd7dce00"
         },
+        "T1691": {
+            "attack-pattern": "attack-pattern--338f4364-2269-4f70-9079-b20384b16628"
+        },
         "T0811": {
             "attack-pattern": "attack-pattern--3405891b-16aa-4bd7-bd7c-733501f9b20f"
         },
         "T0864": {
             "attack-pattern": "attack-pattern--35392fb4-a31d-4c6a-b9f2-1c65b7f5e6b9"
+        },
+        "T0873.001": {
+            "attack-pattern": "attack-pattern--354ca909-b54d-4c41-b597-9c296b344a43"
         },
         "T0835": {
             "attack-pattern": "attack-pattern--36e9f5bc-ac13-4da4-a2f4-01f4877d9004"
@@ -17227,11 +17629,17 @@
         "T0802": {
             "attack-pattern": "attack-pattern--3de230d4-3e42-4041-b089-17e1128feded"
         },
+        "T1694": {
+            "attack-pattern": "attack-pattern--3e9b182e-e493-49e1-9a9b-bd0dfcd34a7c"
+        },
         "T0804": {
             "attack-pattern": "attack-pattern--3f1f4ccb-9be2-4ff8-8f69-dd972221169b"
         },
         "T0855": {
             "attack-pattern": "attack-pattern--40b300ba-f553-48bf-862e-9471b220d455"
+        },
+        "T1692.001": {
+            "attack-pattern": "attack-pattern--4344d1b8-968b-4697-9ab9-f9abe5f52265"
         },
         "T0809": {
             "attack-pattern": "attack-pattern--493832d9-cea6-4b63-abe7-9a65a6473675"
@@ -17242,6 +17650,9 @@
         "T0810": {
             "attack-pattern": "attack-pattern--50d3222f-7550-4a3c-94e1-78cb6c81d064"
         },
+        "T1692.002": {
+            "attack-pattern": "attack-pattern--527106b3-95a2-4ed2-bf89-db7f0e4d0da0"
+        },
         "T0841": {
             "attack-pattern": "attack-pattern--539d0484-fe95-485a-b654-86991c0d0d00"
         },
@@ -17251,11 +17662,23 @@
         "T0877": {
             "attack-pattern": "attack-pattern--53a48c74-0025-45f4-b04a-baa853df8204"
         },
+        "T1695.001": {
+            "attack-pattern": "attack-pattern--55e7e5c1-3760-4451-bae0-e79b29f452c5"
+        },
+        "T1694.001": {
+            "attack-pattern": "attack-pattern--5658ad88-7510-490e-a351-95d50b1bcd91"
+        },
         "T0815": {
             "attack-pattern": "attack-pattern--56ddc820-6cfb-407f-850b-52c035d123ac"
         },
+        "T0843.003": {
+            "attack-pattern": "attack-pattern--574d5bfb-9a7a-4b28-ab5c-743ac704c135"
+        },
         "T0871": {
             "attack-pattern": "attack-pattern--5a2610f6-9fff-41e1-bc27-575ca20383d4"
+        },
+        "T0846.001": {
+            "attack-pattern": "attack-pattern--5d24bb1d-4487-4923-ae3a-8e679092ac7a"
         },
         "T0862": {
             "attack-pattern": "attack-pattern--5e0f75da-e108-4688-a6de-a4f07cc2cbe3"
@@ -17266,20 +17689,47 @@
         "T0880": {
             "attack-pattern": "attack-pattern--5fa00fdd-4a55-4191-94a0-564181d7fec2"
         },
+        "T1695.002": {
+            "attack-pattern": "attack-pattern--6008c1f0-1b68-4614-8f5b-a547436b8855"
+        },
         "T0828": {
             "attack-pattern": "attack-pattern--63b6942d-8359-4506-bfb3-cf87aa8120ee"
         },
         "T0865": {
             "attack-pattern": "attack-pattern--648f995e-9c3a-41e4-aeee-98bb41037426"
         },
+        "T0846.003": {
+            "attack-pattern": "attack-pattern--64bbc1b2-101f-4322-af1d-0c9cc25cef91"
+        },
+        "T1693.001": {
+            "attack-pattern": "attack-pattern--68a9324d-a524-4766-a899-a026f68a33df"
+        },
+        "T1694.002": {
+            "attack-pattern": "attack-pattern--6b335943-c3af-430e-a135-ab09623bdc20"
+        },
+        "T1695.003": {
+            "attack-pattern": "attack-pattern--71f2d49e-65dd-4fb6-a4cc-0d2b19d427fa"
+        },
         "T0825": {
             "attack-pattern": "attack-pattern--7374ab87-0782-41f8-b415-678c0950bb2a"
+        },
+        "T1693.002": {
+            "attack-pattern": "attack-pattern--75587e49-ab7e-44df-9549-faeb1da57f39"
+        },
+        "T0843.001": {
+            "attack-pattern": "attack-pattern--77015a55-eef8-4f71-a071-b152f82ec1ef"
         },
         "T0895": {
             "attack-pattern": "attack-pattern--77d9c726-b53e-481d-8bcc-1068aebfbb9d"
         },
         "T0817": {
             "attack-pattern": "attack-pattern--7830cfcf-b268-4ac0-a69e-73c6affbae9a"
+        },
+        "T1691.002": {
+            "attack-pattern": "attack-pattern--7866bb5f-98ee-45c2-984c-8a328c5176b2"
+        },
+        "T1693": {
+            "attack-pattern": "attack-pattern--7b4c0e19-a9b0-4a74-a196-b38c07b79f20"
         },
         "T0879": {
             "attack-pattern": "attack-pattern--83ebd22f-b401-4d59-8219-2294172cf916"
@@ -17350,6 +17800,9 @@
         "T0847": {
             "attack-pattern": "attack-pattern--c267bbee-bb59-47fe-85e0-3ed210337c21"
         },
+        "T0846.002": {
+            "attack-pattern": "attack-pattern--c55f0be5-044e-4577-8095-65b37680d28c"
+        },
         "T0852": {
             "attack-pattern": "attack-pattern--c5e3cdbc-0387-4be9-8f83-ff5c0865f377"
         },
@@ -17371,11 +17824,17 @@
         "T0884": {
             "attack-pattern": "attack-pattern--d67adac8-e3b9-44f9-9e6d-6c2a7d69dbe4"
         },
+        "T0843.002": {
+            "attack-pattern": "attack-pattern--d85a6ee9-820c-4adf-8a64-2392ee70c83c"
+        },
         "T0869": {
             "attack-pattern": "attack-pattern--e076cca8-2f08-45c9-aff7-ea5ac798b387"
         },
         "T0833": {
             "attack-pattern": "attack-pattern--e0d74479-86d2-465d-bf36-903ebecef43e"
+        },
+        "T1692": {
+            "attack-pattern": "attack-pattern--e17cdc00-8b58-4e5f-9d50-4cad1592c4c3"
         },
         "T0886": {
             "attack-pattern": "attack-pattern--e1f9cdd2-9511-4fca-90d7-f3e92cfdd0bf"
@@ -17413,14 +17872,17 @@
         "T0892": {
             "attack-pattern": "attack-pattern--fab8fc7d-f27f-4fbb-9de6-44740aade05f"
         },
+        "T1695": {
+            "attack-pattern": "attack-pattern--fbb67c2d-37c3-49ee-86e3-bf234cc48ca9"
+        },
         "T0889": {
             "attack-pattern": "attack-pattern--fc5fda7e-6b2c-4457-b036-759896a2efa2"
         },
-        "G1000": {
-            "intrusion-set": "intrusion-set--190242d7-73fc-4738-af68-20162f7a5aae"
-        },
         "C0020": {
             "campaign": "campaign--70cab19e-1745-425e-b3db-c02cd5ff157a"
+        },
+        "G1000": {
+            "intrusion-set": "intrusion-set--190242d7-73fc-4738-af68-20162f7a5aae"
         },
         "C0031": {
             "campaign": "campaign--8fda050f-470d-4401-994e-35c1a6c301de"
@@ -17590,6 +18052,9 @@
         "S0550": {
             "malware": "malware--3d6c4389-3489-40a3-beda-c56e650b6f68"
         },
+        "S9005": {
+            "malware": "malware--3dbef387-12df-4547-9dd3-075c7ffec9e3"
+        },
         "S0302": {
             "malware": "malware--41e3fd01-7b83-471f-835d-d2b1dc9a770c"
         },
@@ -17649,6 +18114,9 @@
         },
         "S0418": {
             "malware": "malware--6fcaf9b0-b509-4644-9f93-556222c81ed2"
+        },
+        "S9006": {
+            "malware": "malware--8205a875-3ed5-4be2-ab9b-14a7d29431d0"
         },
         "S1093": {
             "malware": "malware--8338393c-cb2e-4ee6-b944-34672499c785"
