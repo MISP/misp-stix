@@ -1,8 +1,12 @@
+import re
 import unittest
 from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
 
 _qs = MISPtoSTIX2Parser._quote_segment
-_cn = MISPtoSTIX2Parser._canonical_hash_pattern_name
+
+
+def _cn(name: str) -> str:
+    return re.sub(r'^(SHA(?:3(?=\d{3}$))?)(\d+)$', r'\1-\2', name)
 
 
 class TestQuoteSegment(unittest.TestCase):
