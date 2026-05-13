@@ -1448,10 +1448,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         for attribute, indicator in zip(attributes, indicators):
             pattern = self._check_indicator_attribute(attribute, indicator)
             identifier, value = pattern[1:-1].split(' = ')
-            self.assertEqual(
-                attribute.type,
-                f"x509-fingerprint-{self.hash_types_mapping(identifier.split('.')[-1])}"
-            )
+            hash_type = self.hash_types_mapping(identifier.split('.')[-1].strip("'"))
+            self.assertEqual(attribute.type, f'x509-fingerprint-{hash_type}')
             self.assertEqual(attribute.value, value.strip("'"))
             self.assertTrue(attribute.to_ids)
             self._populate_documentation(
@@ -1594,8 +1592,12 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         indicator1_uuid = self._extract_uuid(indicator1.id)
         self.assertEqual(attribute.uuid, uuid5(UUIDv4, indicator1_uuid))
         self.assertIn(f'Original UUID was: {indicator1_uuid}', attribute.comment)
-        for tag, stix_object in zip(attribute.tags, (ap1, coa1)):
-            self.assertIn(stix_object.name, tag.name)
+        tag_names = {tag.name for tag in attribute.tags}
+        for stix_object in (ap1, coa1):
+            self.assertTrue(
+                any(stix_object.name in name for name in tag_names),
+                f'{stix_object.name!r} not found in any tag: {tag_names}'
+            )
         ap, asn, btc, coa, ip_port, vulnerability = self.parser.misp_event.objects
         ap_uuid = self._extract_uuid(ap2.id)
         self.assertEqual(ap.uuid, uuid5(UUIDv4, ap_uuid))
@@ -1718,7 +1720,16 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, attack_pattern = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_attack_pattern_galaxy(event.galaxies[0], attack_pattern)
+        galaxy = event.galaxies[0]
+        self._check_attack_pattern_galaxy(galaxy, attack_pattern)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(
+            f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names
+        )
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], attack_pattern=attack_pattern
+        )
 
     def test_stix20_bundle_with_course_of_action_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_course_of_action_galaxy()
@@ -1727,7 +1738,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, course_of_action = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_course_of_action_galaxy(event.galaxies[0], course_of_action)
+        galaxy = event.galaxies[0]
+        self._check_course_of_action_galaxy(galaxy, course_of_action)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], course_of_action=course_of_action
+        )
 
     def test_stix20_bundle_with_custom_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy()
@@ -1736,7 +1754,26 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, custom = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_custom_galaxy(event.galaxies[0], custom)
+        galaxy = event.galaxies[0]
+        self._check_custom_galaxy(galaxy, custom)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+
+    def test_stix20_bundle_with_stix_galaxy(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_stix_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, stix_galaxy = bundle.objects
+        self._check_misp_event_features(event, report)
+        galaxy = event.galaxies[0]
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, 'stix-2.0-malware')
+        self.assertEqual(cluster.value, stix_galaxy.x_misp_value)
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.uuid}"', tag_names)
+        self.assertNotIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
 
     def test_stix20_bundle_with_galaxy_embedded_in_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_galaxy_embedded_in_attribute()
@@ -1762,8 +1799,18 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 )
             else:
                 self.fail(f"Wrong MISP Galaxy type: {galaxy['type']}")
+        attr_tag_names = {tag.name for tag in attribute.tags}
+        for galaxy in attribute.galaxies:
+            cluster = galaxy.clusters[0]
+            self.assertIn(
+                f'misp-galaxy:{cluster.type}="{cluster.value}"', attr_tag_names
+            )
+        self.assertEqual(len(event.galaxies), 1)
         galaxy = event.galaxies[0]
         self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
+        cluster = galaxy.clusters[0]
+        event_tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', event_tag_names)
 
     def test_stix20_bundle_with_intrusion_set_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_intrusion_set_galaxy()
@@ -1772,7 +1819,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, intrusion_set = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_intrusion_set_galaxy(event.galaxies[0], intrusion_set)
+        galaxy = event.galaxies[0]
+        self._check_intrusion_set_galaxy(galaxy, intrusion_set)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], intrusion_set=intrusion_set
+        )
 
     def test_stix20_bundle_with_malware_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_malware_galaxy()
@@ -1781,7 +1835,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, malware = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_malware_galaxy(event.galaxies[0], malware)
+        galaxy = event.galaxies[0]
+        self._check_malware_galaxy(galaxy, malware)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], malware=malware
+        )
 
     def test_stix20_bundle_with_sector_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_sector_galaxy()
@@ -1790,7 +1851,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, identity = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_sector_galaxy(event.galaxies[0], identity)
+        galaxy = event.galaxies[0]
+        self._check_sector_galaxy(galaxy, identity)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], identity=identity
+        )
 
     def test_stix20_bundle_with_threat_actor_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy()
@@ -1799,7 +1867,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, threat_actor = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_threat_actor_galaxy(event.galaxies[0], threat_actor)
+        galaxy = event.galaxies[0]
+        self._check_threat_actor_galaxy(galaxy, threat_actor)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], threat_actor=threat_actor
+        )
 
     def test_stix20_bundle_with_tool_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_tool_galaxy()
@@ -1808,7 +1883,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, tool = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_tool_galaxy(event.galaxies[0], tool)
+        galaxy = event.galaxies[0]
+        self._check_tool_galaxy(galaxy, tool)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], tool=tool
+        )
 
     def test_stix20_bundle_with_vulnerability_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_vulnerability_galaxy()
@@ -1817,7 +1899,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, vulnerability = bundle.objects
         self._check_misp_event_features(event, report)
-        self._check_vulnerability_galaxy(event.galaxies[0], vulnerability)
+        galaxy = event.galaxies[0]
+        self._check_vulnerability_galaxy(galaxy, vulnerability)
+        cluster = galaxy.clusters[0]
+        tag_names = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+        self._populate_galaxy_documentation(
+            galaxy=event.galaxies[0], vulnerability=vulnerability
+        )
 
     ############################################################################
     #                        MISP OBJECTS IMPORT TESTS.                        #

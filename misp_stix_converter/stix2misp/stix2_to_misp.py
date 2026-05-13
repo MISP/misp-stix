@@ -6,10 +6,8 @@ import sys
 from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
     MarkingDefinitionLoadingError, ObjectRefLoadingError,
-    ObjectTypeLoadingError, SynonymsResourceJSONError,
-    UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
-    UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
-    UnknownAttributeTypeError, UnknownObjectNameError,
+    ObjectTypeLoadingError, UndefinedIndicatorError, UndefinedSTIXObjectError,
+    UndefinedObservableError, UnknownAttributeTypeError, UnknownObjectNameError,
     UnknownParsingFunctionError, UnknownPatternTypeError,
     UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
@@ -194,14 +192,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             sys.exit(
                 'No STIX content loaded, please run `load_stix_content` first.'
             )
-        try:
-            getattr(self, feature)()
-        except (
-            SynonymsResourceJSONError,
-            UnavailableGalaxyResourcesError,
-            UnavailableSynonymsResourceError
-        ) as error:
-            self._critical_error(error)
+        getattr(self, feature)()
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
@@ -550,8 +541,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     continue
                 clusters[misp_cluster.type].append(misp_cluster)
         if clusters:
-            for galaxy in self._aggregate_galaxy_clusters(clusters):
-                self.misp_event.add_galaxy(galaxy)
+            self._add_event_galaxies(clusters)
 
     def _parse_galaxies_as_tag_names(self):
         for tags in self._clusters.values():
@@ -878,8 +868,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     relationship_type, attribute.uuid, referenced_uuid
                 )
         if clusters:
-            for galaxy in self._aggregate_galaxy_clusters(clusters):
-                attribute.add_galaxy(galaxy)
+            self._add_attribute_galaxies(attribute, clusters)
 
     def _parse_attribute_relationships_as_tag_names(
             self, attribute: MISPAttribute):
@@ -925,9 +914,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             else:
                 misp_object.add_reference(referenced_uuid, relationship_type)
         if clusters:
-            for galaxy in self._aggregate_galaxy_clusters(clusters):
-                for attribute in misp_object.attributes:
-                    attribute.add_galaxy(galaxy)
+            self._add_object_galaxies(misp_object, clusters)
 
     def _parse_object_relationships_as_tag_names(self, misp_object: MISPObject):
         for relationship in self._relationship[misp_object.uuid]:

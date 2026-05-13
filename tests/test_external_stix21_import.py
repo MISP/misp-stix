@@ -204,6 +204,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             meta['kill_chain'],
             [f'{killchain.kill_chain_name}:{killchain.phase_name}']
         )
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], attack_pattern=event_ap
+        )
 
     def test_stix21_bundle_with_campaign_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_campaign_galaxy()
@@ -219,6 +222,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         self._check_galaxy_features(attribute.galaxies, attribute_campaign)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], campaign=event_campaign
+        )
 
     def test_stix21_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_course_of_action_galaxy()
@@ -239,6 +245,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         url, external_id = attribute_coa.external_references
         self.assertEqual(meta['refs'], [url.url])
         self.assertEqual(meta['external_id'], external_id.external_id)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], course_of_action=event_coa
+        )
 
     def test_stix21_bundle_with_intrusion_set_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_intrusion_set_galaxy()
@@ -259,6 +268,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(meta['synonyms'], attribute_is.aliases)
         self.assertEqual(meta['resource_level'], attribute_is.resource_level)
         self.assertEqual(meta['primary_motivation'], attribute_is.primary_motivation)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], intrusion_set=event_is
+        )
 
     def test_stix21_bundle_with_location_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_location_galaxy()
@@ -283,6 +295,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             attribute_location.administrative_area
         )
         self.assertEqual(region_meta['country'], attribute_location.country)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], location=event_location
+        )
 
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_malware_galaxy()
@@ -309,6 +324,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         meta = self._check_galaxy_features(attribute.galaxies, attribute_malware)
         self.assertEqual(meta['malware_types'], attribute_malware.malware_types)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], malware=event_malware
+        )
 
     def test_stix21_bundle_with_threat_actor_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
@@ -332,6 +350,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(meta['resource_level'], attribute_ta.resource_level)
         self.assertEqual(meta['primary_motivation'], attribute_ta.primary_motivation)
         self.assertEqual(meta['threat_actor_types'], attribute_ta.threat_actor_types)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], threat_actor=event_ta
+        )
 
     def test_stix21_bundle_with_tool_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_tool_galaxy()
@@ -361,6 +382,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(meta['tool_types'], attribute_tool.tool_types)
         self.assertEqual(meta['tool_version'], attribute_tool.tool_version)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], tool=event_tool
+        )
 
     def test_stix21_bundle_with_vulnerability_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_vulnerability_galaxy()
@@ -380,6 +404,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             meta['external_id'],
             attribute_vuln.external_references[0].external_id
+        )
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], vulnerability=event_vuln
         )
 
     ############################################################################
@@ -1319,6 +1346,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_artifact_with_url_fields(multiple2, artifact2, artifact2.id)
 
         self._check_artifact_object(single, od2, artifact3)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=[od2, artifact3]
+        )
 
     def test_stix21_bundle_with_artifact_observable(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_artifact_observables()
@@ -1336,6 +1366,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self.assertEqual(misp_object2.uuid, artifact2.id.split('--')[1])
         self._check_artifact_fields(misp_object2, artifact2, artifact2.id)
+        self._populate_ext_observable_documentation(
+            misp_object=misp_object2, observable=artifact2
+        )
 
     def test_stix21_bundle_with_as_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_as_objects()
@@ -1352,6 +1385,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self._check_as_attribute(m_attribute, od1, as2)
         self._check_as_attribute(s_attribute, od3, as4)
+        self._populate_ext_observed_data_documentation(
+            misp_object=s_object, observed_data=[od2, as3]
+        )
+        self._populate_ext_observed_data_documentation(
+            attribute=s_attribute, observed_data=[od3, as4]
+        )
 
     def test_stix21_bundle_with_as_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_as_observables()
@@ -1368,6 +1407,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.uuid, as2.id.split('--')[1])
         self.assertEqual(attribute.type, 'AS')
         self.assertEqual(attribute.value, f'AS{as2.number}')
+        self._populate_ext_observable_documentation(
+            misp_object=misp_object, observable=as1
+        )
+        self._populate_ext_observable_documentation(
+            attribute=attribute, observable=as2
+        )
 
     def test_stix21_bundle_with_directory_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_directory_objects()
@@ -1382,6 +1427,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_directory_object(referenced_directory, od1, directory2)
         self._check_directory_object(directory, od1, directory1)
         self._check_directory_object(single_directory, od2, directory3)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single_directory, observed_data=[od2, directory3]
+        )
 
         reference1 = directory.references[0]
         self._assert_multiple_equal(
@@ -1417,6 +1465,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             directory2.id.split('--')[1]
         )
         self._check_directory_fields(misp_object2, directory2)
+        self._populate_ext_observable_documentation(
+            misp_object=misp_object1, observable=directory1
+        )
 
     def test_stix21_bundle_with_domain_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
@@ -1430,6 +1481,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, domain_1, m_domain1, 'domain')
         self._check_generic_attribute(od1, domain_2, m_domain2, 'domain')
         self._check_generic_attribute(od2, domain_3, s_domain, 'domain')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_domain, observed_data=[od2, domain_3]
+        )
 
     def test_stix21_bundle_with_domain_observable(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_observable()
@@ -1441,6 +1495,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.uuid, domain.id.split('--')[1])
         self.assertEqual(attribute.type, 'domain')
         self.assertEqual(attribute.value, domain.value)
+        self._populate_ext_observable_documentation(
+            attribute=attribute, observable=domain
+        )
 
     def test_stix21_bundle_with_domain_ip_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_objects()
@@ -1476,6 +1533,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_domain_ip_fields(
             domain_ip_object, domain1, ipv4, ipv6,
             domain1.id, f'{domain1.id} - {ipv4.id}', f'{domain1.id} - {ipv6.id}'
+        )
+        self._populate_ext_observed_data_documentation(
+            misp_object=domain_ip_object, observed_data=[od2, domain1, ipv4, ipv6]
         )
 
     def test_stix21_bundle_with_domain_ip_observables(self):
@@ -1513,6 +1573,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         reference = domain_object.references[0]
         self.assertEqual(reference.referenced_uuid, domain_ip_object.uuid)
         self.assertEqual(reference.relationship_type, 'alias-of')
+        self._populate_ext_observable_documentation(
+            misp_object=domain_ip_object, observable=domain1
+        )
 
     def test_stix21_bundle_with_email_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_attributes()
@@ -1533,6 +1596,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             od2, sm_address, sm_display_name, ea3
         )
         self._check_email_address_attribute(od3, ss_address, ea4)
+        self._populate_ext_observed_data_documentation(
+            attribute=ss_address, observed_data=[od3, ea4]
+        )
 
     def test_stix21_bundle_with_email_address_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_observables()
@@ -1564,6 +1630,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self.assertEqual(email_address2.uuid, address2.id.split('--')[1])
         self.assertEqual(email_address2.value, address2.value)
+        self._populate_ext_observable_documentation(
+            attribute=email_address2, observable=address2
+        )
 
     def test_stix21_bundle_with_email_message_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_objects()
@@ -1586,6 +1655,10 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self._check_email_artifact_object(artifact_object, observed_data, artifact)
         self._check_email_file_object(file_object, observed_data, _file)
+        self._populate_ext_observed_data_documentation(
+            misp_object=email_object,
+            observed_data=[observed_data, message, ea1, ea2, ea3, artifact, _file]
+        )
 
     def test_stix21_bundle_with_email_message_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_observables()
@@ -1620,6 +1693,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(file_object.name, 'file')
         self.assertEqual(file_object.uuid, _file.id.split('--')[1])
         self._check_email_file_object_fields(file_object, _file)
+        self._populate_ext_observable_documentation(
+            misp_object=email_object, observable=message
+        )
 
     def test_stix21_bundle_with_file_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_file_objects()
@@ -1652,6 +1728,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_archive_object_references(archive, file_object1, directory_object)
 
         self._check_file_and_pe_objects(od3, file3, file_object2, pe_object, *sections)
+        self._populate_ext_observed_data_documentation(
+            misp_object=file_object1, observed_data=[od1, file1, directory, artifact]
+        )
 
     def test_stix21_bundle_with_file_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_file_observables()
@@ -1714,6 +1793,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self._check_pe_section_fields(
                 section, extension.sections[index], section_id
             )
+        self._populate_ext_observable_documentation(
+            misp_object=file_object1, observable=file1
+        )
 
     def test_stix21_bundle_with_ip_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_attributes()
@@ -1727,6 +1809,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, address_1, m_ip1, 'ip-dst')
         self._check_generic_attribute(od1, address_2, m_ip2, 'ip-dst')
         self._check_generic_attribute(od2, address_3, s_ip, 'ip-dst')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_ip, observed_data=[od2, address_3]
+        )
 
     def test_stix21_bundle_with_ip_address_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_observables()
@@ -1743,6 +1828,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self.assertEqual(ip_address2.uuid, address_1.id.split('--')[1])
         self.assertEqual(ip_address2.value, address_1.value)
+        self._populate_ext_observable_documentation(
+            attribute=ip_address2, observable=address_1
+        )
 
     def test_stix21_bundle_with_mac_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mac_address_attributes()
@@ -1756,6 +1844,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, address_1, m_mac1, 'mac-address')
         self._check_generic_attribute(od1, address_2, m_mac2, 'mac-address')
         self._check_generic_attribute(od2, address_3, s_mac, 'mac-address')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_mac, observed_data=[od2, address_3]
+        )
 
     def test_stix21_bundle_with_mac_address_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mac_address_observable()
@@ -1769,6 +1860,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(mac_address.type, 'mac-address')
         self.assertEqual(mac_address.uuid, address.id.split('--')[1])
         self.assertEqual(mac_address.value, address.value)
+        self._populate_ext_observable_documentation(
+            attribute=mac_address, observable=address
+        )
 
     def test_stix21_bundle_with_mutex_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mutex_attributes()
@@ -1782,6 +1876,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, mutex_1, m_mutex1, 'mutex', 'name')
         self._check_generic_attribute(od1, mutex_2, m_mutex2, 'mutex', 'name')
         self._check_generic_attribute(od2, mutex_3, s_mutex, 'mutex', 'name')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_mutex, observed_data=[od2, mutex_3]
+        )
 
     def test_stix21_bundle_with_mutex_observable(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mutex_observable()
@@ -1795,6 +1892,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(mutex_attribute.type, 'mutex')
         self.assertEqual(mutex_attribute.uuid, mutex.id.split('--')[1])
         self.assertEqual(mutex_attribute.value, mutex.name)
+        self._populate_ext_observable_documentation(
+            attribute=mutex_attribute, observable=mutex
+        )
 
     def test_stix21_bundle_with_network_traffic_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_objects()
@@ -1851,6 +1951,10 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             encapsulated2.relationship_type,
             'encapsulated-by'
         )
+        self._populate_ext_observed_data_documentation(
+            misp_object=nt_object1,
+            observed_data=[od1, nt1, ip1, ip2]
+        )
 
     def test_stix21_bundle_with_network_traffic_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_observables()
@@ -1886,6 +1990,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(encapsulated2.relationship_type, 'encapsulated-by')
         self.assertEqual(payload_ref.referenced_uuid, artifact_object.uuid)
         self.assertEqual(payload_ref.relationship_type, 'destination-sent')
+        self._populate_ext_observable_documentation(
+            misp_object=nt_object1, observable=nt1
+        )
 
     def _check_sigma_indicator_object(self, misp_object, indicator):
         self.assertEqual(misp_object.name, 'sigma')
@@ -1988,6 +2095,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_process_single_fields(single, process4)
 
         self._check_process_object_references(multiple, parent, child, image1, image2)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=[od2, process4]
+        )
 
     def test_stix21_bundle_with_process_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_process_observables()
@@ -2019,6 +2129,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_process_image_reference_fields(image2, file1)
 
         self._check_process_object_references(process, parent, child, image1, image2)
+        self._populate_ext_observable_documentation(
+            misp_object=process, observable=process1
+        )
 
     def test_stix21_bundle_with_registry_key_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_registry_key_objects()
@@ -2048,6 +2161,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self._check_registry_key_references(
             creator_user, multiple2, single, value1.uuid, value2.uuid
+        )
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=[od2, key3]
         )
 
     def test_stix21_bundle_with_registry_key_observables(self):
@@ -2093,6 +2209,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_registry_key_references(
             creator_user, regkey2, regkey3, value1.uuid, value2.uuid
         )
+        self._populate_ext_observable_documentation(
+            misp_object=regkey3, observable=key3
+        )
 
     def test_stix21_bundle_with_software_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_software_objects()
@@ -2110,6 +2229,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(single.name, 'software')
         self._check_misp_object_fields(single, od2, software3.id)
         self._check_software_with_swid_fields(single, software3)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=[od2, software3]
+        )
 
     def test_stix21_bundle_with_software_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_software_observables()
@@ -2129,6 +2251,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
         self.assertEqual(software_object2.uuid, software2.id.split('--')[1])
         self._check_software_with_swid_fields(software_object2, software2)
+        self._populate_ext_observable_documentation(
+            misp_object=software_object1, observable=software1
+        )
 
     def test_stix21_bundle_with_url_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_url_attributes()
@@ -2142,6 +2267,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, url_1, m_url1, 'url')
         self._check_generic_attribute(od1, url_2, m_url2, 'url')
         self._check_generic_attribute(od2, url_3, s_url, 'url')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_url, observed_data=[od2, url_3]
+        )
 
     def test_stix21_bundle_with_url_observable(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_url_observable()
@@ -2155,6 +2283,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(url_attribute.type, 'url')
         self.assertEqual(url_attribute.uuid, url.id.split('--')[1])
         self.assertEqual(url_attribute.value, url.value)
+        self._populate_ext_observable_documentation(
+            attribute=url_attribute, observable=url
+        )
 
     def test_stix21_bundle_with_user_account_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_user_account_objects()
@@ -2181,6 +2312,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_user_account_extension_fields(
             single.attributes[7:], user3.extensions['unix-account-ext'],
             user3.id
+        )
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=[od2, user3]
         )
 
     def test_stix21_bundle_with_user_account_observables(self):
@@ -2209,6 +2343,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_user_account_extension_fields(
             user_account3.attributes[7:], user3.extensions['unix-account-ext'],
             user3.id
+        )
+        self._populate_ext_observable_documentation(
+            misp_object=user_account1, observable=user1
         )
 
     def test_stix21_bundle_with_wrapped_objects(self):
@@ -2245,6 +2382,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_x509_object(multiple1, od1, cert3)
         self._check_x509_object(multiple2, od1, cert1)
         self._check_x509_object(single, od2, cert2)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=[od2, cert2]
+        )
 
     def test_stix21_bundle_with_x509_observable(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_observable()
@@ -2258,6 +2398,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(x509_object.name, 'x509')
         self.assertEqual(x509_object.uuid, certificate.id.split('--')[1])
         self._check_x509_fields(x509_object, certificate)
+        self._populate_ext_observable_documentation(
+            misp_object=x509_object, observable=certificate
+        )
 
     ############################################################################
     #                    OBSERVED DATA WITH INDICATOR TESTS                    #
@@ -3849,6 +3992,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             decryption_key.uuid,
             uuid5(UUIDv4, f'{indicator.id} - decryption_key - infected')
         )
+        self._populate_ext_indicator_documentation(
+            misp_object=artifact_object, indicator=indicator
+        )
 
     def test_stix21_bundle_with_as_indicators(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_as_indicators()
@@ -3863,6 +4009,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         asn_object, as_attribute = misp_content
         self._check_asn_indicator_object(indicator1, asn_object)
         self._check_as_indicator_attribute(indicator2, as_attribute)
+        self._populate_ext_indicator_documentation(
+            misp_object=asn_object, indicator=indicator1
+        )
+        self._populate_ext_indicator_documentation(
+            name='AS', attribute=as_attribute, indicator=indicator2
+        )
 
     def test_stix21_bundle_with_domain_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_indicator()
@@ -3875,6 +4027,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_domain_indicator_attribute(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_domain_ip_indicators(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_indicators()
@@ -3889,6 +4044,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         domain_ip_object1, domain_ip_object2 = misp_content
         self._check_domain_ip_indicator_object(indicator1, domain_ip_object1)
         self._check_domain_ip_indicator_object(indicator2, domain_ip_object2)
+        self._populate_ext_indicator_documentation(
+            misp_object=domain_ip_object1, indicator=indicator1
+        )
 
     def test_stix21_bundle_with_directory_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_directory_indicator()
@@ -3901,6 +4059,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_directory_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_email_address_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_indicator()
@@ -3913,6 +4074,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_email_address_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_email_message_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_indicator()
@@ -3925,6 +4089,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_email_message_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_file_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_file_indicators()
@@ -3939,6 +4106,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         file_object, *file_pe_objects = misp_content
         self._check_file_indicator(file_indicator, file_object)
         self._check_file_pe_indicator(file_pe_indicator, *file_pe_objects)
+        self._populate_ext_indicator_documentation(
+            misp_object=file_object, indicator=file_indicator
+        )
 
     def test_stix21_bundle_with_ip_address_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_indicator()
@@ -3951,6 +4121,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_ip_address_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_mac_address_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mac_address_indicator()
@@ -3963,6 +4136,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_mac_address_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_mutex_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_mutex_indicator()
@@ -3975,6 +4151,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_mutex_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_network_traffic_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_indicators()
@@ -3989,6 +4168,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         network_traffic, network_socket = misp_content
         self._check_network_traffic_indicator(traffic_indicator, network_traffic)
         self._check_network_socket_indicator(socket_indicator, network_socket)
+        self._populate_ext_indicator_documentation(
+            misp_object=network_traffic, indicator=traffic_indicator
+        )
+        self._populate_ext_indicator_documentation(
+            misp_object=network_socket, indicator=socket_indicator
+        )
 
     def test_stix21_bundle_with_process_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_process_indicator()
@@ -4001,6 +4186,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_process_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_registry_key_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_registry_key_indicator()
@@ -4017,6 +4205,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_registry_key_value_indicator(
             regkey_value_indicator, *regkey_value_objects
         )
+        self._populate_ext_indicator_documentation(
+            misp_object=regkey_object, indicator=regkey_indicator
+        )
 
     def test_stix21_bundle_with_software_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_software_indicator()
@@ -4029,6 +4220,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_software_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_url_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_url_indicator()
@@ -4041,6 +4235,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_url_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_user_account_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_user_account_indicator()
@@ -4053,6 +4250,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_user_account_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix21_bundle_with_x509_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_indicator()
@@ -4065,3 +4265,6 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(misp_content), 1)
         self._check_x509_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )

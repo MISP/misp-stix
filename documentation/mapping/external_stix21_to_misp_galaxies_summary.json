@@ -1,0 +1,11 @@
+{
+    "attack-pattern": "STIX 2.1 Attack Pattern (stix-2.1-attack-pattern)",
+    "campaign": "STIX 2.1 Campaign (stix-2.1-campaign)",
+    "course-of-action": "STIX 2.1 Course of Action (stix-2.1-course-of-action)",
+    "intrusion-set": "STIX 2.1 Intrusion Set (stix-2.1-intrusion-set)",
+    "location": "STIX 2.1 Location (stix-2.1-location)",
+    "malware": "STIX 2.1 Malware (stix-2.1-malware)",
+    "threat-actor": "STIX 2.1 Threat Actor (stix-2.1-threat-actor)",
+    "tool": "STIX 2.1 Tool (stix-2.1-tool)",
+    "vulnerability": "STIX 2.1 Vulnerability (stix-2.1-vulnerability)"
+}

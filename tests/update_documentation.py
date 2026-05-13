@@ -137,18 +137,19 @@ class DocumentationUpdater:
         )
 
     def _define_import_summary(self, stix_mapping):
+        _skip_types = frozenset(('indicator', 'observed-data', 'relationship'))
         types = []
         for stix_type, mapping in stix_mapping.items():
             stix_object = mapping['STIX']
             if stix_type == 'Indicator':
                 types.append(self._pattern_types(stix_object['pattern']))
             elif stix_type == 'Observed Data':
-                observables = (
-                    stix_object['objects'].values()
-                    if isinstance(stix_object, dict) else
-                    tuple(stix_object[0]['objects'].values())
-                    if 'objects' in stix_object[0] else stix_object[1:-2]
-                )
+                if isinstance(stix_object, dict):
+                    observables = stix_object['objects'].values()
+                elif 'objects' in stix_object[0]:
+                    observables = stix_object[0]['objects'].values()
+                else:
+                    observables = [o for o in stix_object[1:] if o['type'] not in _skip_types]
                 observable_types = (observable['type'] for observable in observables)
                 types.append(f"{self._observable_types(*observable_types)} (observable)")
             else:
@@ -197,8 +198,8 @@ class DocumentationUpdater:
     def _pattern_types(self, pattern):
         types = set()
         for part in pattern[1:-1].split(' AND '):
-            types.add(self._observable_type(part.split(':')[0]))
-        return f"{' & '.join(types)} {'Objects' if len(types) > 1 else 'Object'} (pattern)"
+            types.add(self._observable_type(part.lstrip('(').split(':')[0]))
+        return f"{' & '.join(sorted(types))} {'Objects' if len(types) > 1 else 'Object'} (pattern)"
 
     def _replace_data(self, name, misp_mapping, stix_mapping):
         data = misp_mapping['data']
@@ -231,6 +232,8 @@ class DocumentationUpdater:
         else:
             if mapping['type'] == 'indicator':
                 mapping['pattern'] = mapping['pattern'].replace(data, short_data)
+            elif mapping['type'] == 'artifact':
+                mapping['payload_bin'] = short_data
             else:
                 for index, observable in mapping['objects'].items():
                     if observable['type'] == 'artifact':
@@ -269,7 +272,11 @@ class AttributesDocumentationUpdater(DocumentationUpdater):
         return cls.__data_replacement
 
     def _check_data(self, attribute_type, mapping):
-        if 'data' in mapping['MISP'] and len(mapping['MISP']['data']) > 51:
+        if 'data' in mapping['MISP']:
+            data = mapping['MISP']['data']
+        else:
+            data = None
+        if data is not None and len(data) > 51:
             self._replace_data(attribute_type, mapping['MISP'], mapping['STIX'])
 
     def _load_attributes_mapping(self, attributes_mapping):
@@ -293,10 +300,48 @@ class GalaxiesDocumentationUpdater(DocumentationUpdater):
         self._declare_summary(galaxies_mapping.pop('summary', {}))
         self._declare_mapping(galaxies_mapping)
 
+    def check_import_galaxy_mapping(self):
+        if self._documentation != self.mapping_to_check:
+            for name, mapping in self.mapping_to_check.items():
+                if name not in self._documentation:
+                    self._documentation[name] = mapping
+                else:
+                    for key in ('MISP', 'STIX'):
+                        if mapping[key] != self._documentation[name].get(key):
+                            self._documentation[name][key] = mapping[key]
+                self._check_stix_import_galaxy_summary(name, mapping)
+            self._write_documentation()
+        else:
+            for name, mapping in self.mapping_to_check.items():
+                self._check_stix_import_galaxy_summary(name, mapping)
+        if self._summary_changed:
+            self._write_summary()
+
+    def _check_stix_import_galaxy_summary(self, name, mapping):
+        summary = (
+            self.summary_mapping[name] if name in self.summary_mapping
+            else self._define_import_galaxy_summary(mapping)
+        )
+        if name not in self._summary or self._summary[name] != summary:
+            self._summary[name] = summary
+            self._summary_changed = True
+
+    @staticmethod
+    def _define_import_galaxy_summary(mapping):
+        clusters = mapping.get('MISP', {}).get('GalaxyCluster', [{}])
+        if clusters:
+            galaxy_type = clusters[0].get('type', '')
+            galaxy_name = mapping.get('MISP', {}).get('name', '')
+            if galaxy_name and galaxy_type:
+                return f'{galaxy_name} ({galaxy_type})'
+        stix_type = mapping.get('STIX', {}).get('type', 'unknown')
+        return f'**{stix_type.replace("-", " ").title()}**'
+
 
 class ObjectsDocumentationUpdater(DocumentationUpdater):
     __data_replacement = {
         'annotation': '_replace_{}_annotation_data',
+        'artifact': '_replace_{}_file_data',
         'facebook-account': '_replace_{}_account_data',
         'file': '_replace_{}_file_data',
         'github-user': '_replace_{}_account_data',

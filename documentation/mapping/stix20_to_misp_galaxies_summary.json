@@ -1,0 +1,10 @@
+{
+    "attack-pattern": "Attack Pattern (mitre-attack-pattern)",
+    "course-of-action": "Course of Action (mitre-course-of-action)",
+    "identity": "Sector (sector)",
+    "intrusion-set": "Intrusion Set (mitre-intrusion-set)",
+    "malware": "Malware (mitre-malware)",
+    "threat-actor": "Threat Actor (threat-actor)",
+    "tool": "Tool (mitre-tool)",
+    "vulnerability": "Branded Vulnerability (branded-vulnerability)"
+}

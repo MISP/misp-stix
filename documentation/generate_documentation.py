@@ -8,7 +8,7 @@ from pathlib import Path
 class DocumentationGenerator():
     def __init__(self):
         current_path = Path(__file__).parent.resolve()
-        # content
+        # content - misp to stix
         self._introduction_filename = current_path / 'content/introduction.md'
         self._misp2stix_intro_filename = current_path / 'content/misp_to_stix_intro.md'
         self._misp_to_stix1_filename = current_path / 'content/misp_to_stix1.md'
@@ -23,7 +23,23 @@ class DocumentationGenerator():
         self._galaxies_to_stix1_content = current_path / 'content/galaxies_to_stix1_details.md'
         self._galaxies_to_stix20_content = current_path / 'content/galaxies_to_stix20_details.md'
         self._galaxies_to_stix21_content = current_path / 'content/galaxies_to_stix21_details.md'
-        # mapping
+        # content - stix to misp
+        self._stix2misp_intro_filename = current_path / 'content/stix_to_misp_intro.md'
+        self._stix20_to_misp_filename = current_path / 'content/stix20_to_misp.md'
+        self._stix21_to_misp_filename = current_path / 'content/stix21_to_misp.md'
+        self._attributes_from_stix20_content = current_path / 'content/attributes_from_stix20_details.md'
+        self._attributes_from_stix21_content = current_path / 'content/attributes_from_stix21_details.md'
+        self._objects_from_stix20_content = current_path / 'content/objects_from_stix20_details.md'
+        self._objects_from_stix21_content = current_path / 'content/objects_from_stix21_details.md'
+        self._galaxies_from_stix20_content = current_path / 'content/galaxies_from_stix20_details.md'
+        self._galaxies_from_stix21_content = current_path / 'content/galaxies_from_stix21_details.md'
+        self._galaxies_from_external_stix20_content = current_path / 'content/galaxies_from_external_stix20_details.md'
+        self._galaxies_from_external_stix21_content = current_path / 'content/galaxies_from_external_stix21_details.md'
+        self._attributes_from_external_stix20_content = current_path / 'content/attributes_from_external_stix20_details.md'
+        self._objects_from_external_stix20_content = current_path / 'content/objects_from_external_stix20_details.md'
+        self._attributes_from_external_stix21_content = current_path / 'content/attributes_from_external_stix21_details.md'
+        self._objects_from_external_stix21_content = current_path / 'content/objects_from_external_stix21_details.md'
+        # mapping - misp to stix
         self._misp_attributes_to_stix1_mapping = current_path / 'mapping/misp_attributes_to_stix1.json'
         self._misp_attributes_to_stix20_mapping = current_path / 'mapping/misp_attributes_to_stix20.json'
         self._misp_attributes_to_stix20_summary = current_path / 'mapping/misp_attributes_to_stix20_summary.json'
@@ -43,7 +59,32 @@ class DocumentationGenerator():
         self._misp_galaxies_to_stix1_mapping = current_path / 'mapping/misp_galaxies_to_stix1.json'
         self._misp_galaxies_to_stix20_mapping = current_path / 'mapping/misp_galaxies_to_stix20.json'
         self._misp_galaxies_to_stix21_mapping = current_path / 'mapping/misp_galaxies_to_stix21.json'
-        # documentation results
+        # mapping - stix to misp
+        self._stix20_to_misp_attributes_mapping = current_path / 'mapping/stix20_to_misp_attributes.json'
+        self._stix20_to_misp_attributes_summary = current_path / 'mapping/stix20_to_misp_attributes_summary.json'
+        self._stix20_to_misp_objects_mapping = current_path / 'mapping/stix20_to_misp_objects.json'
+        self._stix20_to_misp_objects_summary = current_path / 'mapping/stix20_to_misp_objects_summary.json'
+        self._stix20_to_misp_galaxies_mapping = current_path / 'mapping/stix20_to_misp_galaxies.json'
+        self._stix20_to_misp_galaxies_summary = current_path / 'mapping/stix20_to_misp_galaxies_summary.json'
+        self._external_stix20_to_misp_galaxies_mapping = current_path / 'mapping/external_stix20_to_misp_galaxies.json'
+        self._external_stix20_to_misp_galaxies_summary = current_path / 'mapping/external_stix20_to_misp_galaxies_summary.json'
+        self._external_stix20_to_misp_attributes_mapping = current_path / 'mapping/external_stix20_to_misp_attributes.json'
+        self._external_stix20_to_misp_attributes_summary = current_path / 'mapping/external_stix20_to_misp_attributes_summary.json'
+        self._external_stix20_to_misp_objects_mapping = current_path / 'mapping/external_stix20_to_misp_objects.json'
+        self._external_stix20_to_misp_objects_summary = current_path / 'mapping/external_stix20_to_misp_objects_summary.json'
+        self._stix21_to_misp_attributes_mapping = current_path / 'mapping/stix21_to_misp_attributes.json'
+        self._stix21_to_misp_attributes_summary = current_path / 'mapping/stix21_to_misp_attributes_summary.json'
+        self._stix21_to_misp_objects_mapping = current_path / 'mapping/stix21_to_misp_objects.json'
+        self._stix21_to_misp_objects_summary = current_path / 'mapping/stix21_to_misp_objects_summary.json'
+        self._stix21_to_misp_galaxies_mapping = current_path / 'mapping/stix21_to_misp_galaxies.json'
+        self._stix21_to_misp_galaxies_summary = current_path / 'mapping/stix21_to_misp_galaxies_summary.json'
+        self._external_stix21_to_misp_galaxies_mapping = current_path / 'mapping/external_stix21_to_misp_galaxies.json'
+        self._external_stix21_to_misp_galaxies_summary = current_path / 'mapping/external_stix21_to_misp_galaxies_summary.json'
+        self._external_stix21_to_misp_attributes_mapping = current_path / 'mapping/external_stix21_to_misp_attributes.json'
+        self._external_stix21_to_misp_attributes_summary = current_path / 'mapping/external_stix21_to_misp_attributes_summary.json'
+        self._external_stix21_to_misp_objects_mapping = current_path / 'mapping/external_stix21_to_misp_objects.json'
+        self._external_stix21_to_misp_objects_summary = current_path / 'mapping/external_stix21_to_misp_objects_summary.json'
+        # documentation results - misp to stix
         self._misp_attributes_to_stix1 = current_path / 'misp_attributes_to_stix1.md'
         self._misp_attributes_to_stix20 = current_path / 'misp_attributes_to_stix20.md'
         self._misp_attributes_to_stix21 = current_path / 'misp_attributes_to_stix21.md'
@@ -53,6 +94,19 @@ class DocumentationGenerator():
         self._misp_galaxies_to_stix1 = current_path / 'misp_galaxies_to_stix1.md'
         self._misp_galaxies_to_stix20 = current_path / 'misp_galaxies_to_stix20.md'
         self._misp_galaxies_to_stix21 = current_path / 'misp_galaxies_to_stix21.md'
+        # documentation results - stix to misp
+        self._stix20_to_misp_attributes = current_path / 'stix20_to_misp_attributes.md'
+        self._stix20_to_misp_objects = current_path / 'stix20_to_misp_objects.md'
+        self._stix20_to_misp_galaxies = current_path / 'stix20_to_misp_galaxies.md'
+        self._external_stix20_to_misp_galaxies = current_path / 'external_stix20_to_misp_galaxies.md'
+        self._external_stix20_to_misp_attributes = current_path / 'external_stix20_to_misp_attributes.md'
+        self._external_stix20_to_misp_objects = current_path / 'external_stix20_to_misp_objects.md'
+        self._stix21_to_misp_attributes = current_path / 'stix21_to_misp_attributes.md'
+        self._stix21_to_misp_objects = current_path / 'stix21_to_misp_objects.md'
+        self._stix21_to_misp_galaxies = current_path / 'stix21_to_misp_galaxies.md'
+        self._external_stix21_to_misp_galaxies = current_path / 'external_stix21_to_misp_galaxies.md'
+        self._external_stix21_to_misp_attributes = current_path / 'external_stix21_to_misp_attributes.md'
+        self._external_stix21_to_misp_objects = current_path / 'external_stix21_to_misp_objects.md'
         self._output_filename = current_path / 'README.md'
 
     def generate_documentation(self):
@@ -61,6 +115,9 @@ class DocumentationGenerator():
         self._generate_misp_to_stix1_documentation()
         self._generate_misp_to_stix20_documentation()
         self._generate_misp_to_stix21_documentation()
+        self._generate_stix_to_misp_introduction()
+        self._generate_stix20_to_misp_documentation()
+        self._generate_stix21_to_misp_documentation()
 
     def write_documentation(self):
         with open(self._output_filename, 'wt', encoding='utf-8') as f:
@@ -70,7 +127,10 @@ class DocumentationGenerator():
                     self._misp_to_stix_introduction,
                     self._misp_to_stix1,
                     self._misp_to_stix20,
-                    self._misp_to_stix21
+                    self._misp_to_stix21,
+                    self._stix_to_misp_introduction,
+                    self._stix20_to_misp,
+                    self._stix21_to_misp
                 ]
             ))
 
@@ -81,6 +141,10 @@ class DocumentationGenerator():
     def _generate_misp_to_stix_introduction(self):
         with open(self._misp2stix_intro_filename, 'rt', encoding='utf-8') as f:
             self._misp_to_stix_introduction = f.read()
+
+    def _generate_stix_to_misp_introduction(self):
+        with open(self._stix2misp_intro_filename, 'rt', encoding='utf-8') as f:
+            self._stix_to_misp_introduction = f.read()
 
     def _generate_misp_to_stix1_documentation(self):
         with open(self._misp_to_stix1_filename, 'rt', encoding='utf-8') as f:
@@ -221,6 +285,176 @@ class DocumentationGenerator():
                 _objects_to_stix21_summary_=objects_summary
             )
 
+    def _generate_stix20_to_misp_documentation(self):
+        data_format = 'json'
+        # Attributes documentation
+        with open(self._stix20_to_misp_attributes_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._stix20_to_misp_attributes_summary, 'rt', encoding='utf-8') as f:
+            attributes_summary = self._parse_summary(json.loads(f.read()))
+        attributes_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._attributes_from_stix20_content, 'rt', encoding='utf-8') as f:
+            attributes_doc = f.read().format(
+                _attributes_from_stix20_mapping_=attributes_mapping
+            )
+        with open(self._stix20_to_misp_attributes, 'wt', encoding='utf-8') as f:
+            f.write(attributes_doc)
+        # Objects documentation
+        with open(self._stix20_to_misp_objects_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._stix20_to_misp_objects_summary, 'rt', encoding='utf-8') as f:
+            objects_summary = self._parse_summary(json.loads(f.read()))
+        objects_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._objects_from_stix20_content, 'rt', encoding='utf-8') as f:
+            objects_doc = f.read().format(
+                _objects_from_stix20_mapping_=objects_mapping
+            )
+        with open(self._stix20_to_misp_objects, 'wt', encoding='utf-8') as f:
+            f.write(objects_doc)
+        # Internal galaxies documentation
+        with open(self._stix20_to_misp_galaxies_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._stix20_to_misp_galaxies_summary, 'rt', encoding='utf-8') as f:
+            galaxies_summary = self._parse_summary(json.loads(f.read()))
+        galaxies_mapping = self._parse_galaxy_import_mapping(mapping, data_format)
+        with open(self._galaxies_from_stix20_content, 'rt', encoding='utf-8') as f:
+            galaxies_doc = f.read().format(
+                _galaxies_from_stix20_mapping_=galaxies_mapping
+            )
+        with open(self._stix20_to_misp_galaxies, 'wt', encoding='utf-8') as f:
+            f.write(galaxies_doc)
+        # External galaxies documentation
+        with open(self._external_stix20_to_misp_galaxies_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._external_stix20_to_misp_galaxies_summary, 'rt', encoding='utf-8') as f:
+            ext_galaxies_summary = self._parse_summary(json.loads(f.read()))
+        ext_galaxies_mapping = self._parse_galaxy_import_mapping(mapping, data_format)
+        with open(self._galaxies_from_external_stix20_content, 'rt', encoding='utf-8') as f:
+            ext_galaxies_doc = f.read().format(
+                _external_galaxies_from_stix20_mapping_=ext_galaxies_mapping
+            )
+        with open(self._external_stix20_to_misp_galaxies, 'wt', encoding='utf-8') as f:
+            f.write(ext_galaxies_doc)
+        # External attributes documentation
+        with open(self._external_stix20_to_misp_attributes_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._external_stix20_to_misp_attributes_summary, 'rt', encoding='utf-8') as f:
+            ext_attributes_summary = self._parse_summary(json.loads(f.read()))
+        ext_attributes_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._attributes_from_external_stix20_content, 'rt', encoding='utf-8') as f:
+            ext_attributes_doc = f.read().format(
+                _external_attributes_from_stix20_mapping_=ext_attributes_mapping
+            )
+        with open(self._external_stix20_to_misp_attributes, 'wt', encoding='utf-8') as f:
+            f.write(ext_attributes_doc)
+        # External objects documentation
+        with open(self._external_stix20_to_misp_objects_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._external_stix20_to_misp_objects_summary, 'rt', encoding='utf-8') as f:
+            ext_objects_summary = self._parse_summary(json.loads(f.read()))
+        ext_objects_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._objects_from_external_stix20_content, 'rt', encoding='utf-8') as f:
+            ext_objects_doc = f.read().format(
+                _external_objects_from_stix20_mapping_=ext_objects_mapping
+            )
+        with open(self._external_stix20_to_misp_objects, 'wt', encoding='utf-8') as f:
+            f.write(ext_objects_doc)
+        # Formatting the STIX 2.0 to MISP summary
+        with open(self._stix20_to_misp_filename, 'rt', encoding='utf-8') as f:
+            self._stix20_to_misp = f.read().format(
+                _attributes_from_stix20_summary_=attributes_summary,
+                _objects_from_stix20_summary_=objects_summary,
+                _galaxies_from_stix20_summary_=galaxies_summary,
+                _external_galaxies_from_stix20_summary_=ext_galaxies_summary,
+                _external_attributes_from_stix20_summary_=ext_attributes_summary,
+                _external_objects_from_stix20_summary_=ext_objects_summary
+            )
+
+    def _generate_stix21_to_misp_documentation(self):
+        data_format = 'json'
+        # Attributes documentation
+        with open(self._stix21_to_misp_attributes_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._stix21_to_misp_attributes_summary, 'rt', encoding='utf-8') as f:
+            attributes_summary = self._parse_summary(json.loads(f.read()))
+        attributes_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._attributes_from_stix21_content, 'rt', encoding='utf-8') as f:
+            attributes_doc = f.read().format(
+                _attributes_from_stix21_mapping_=attributes_mapping
+            )
+        with open(self._stix21_to_misp_attributes, 'wt', encoding='utf-8') as f:
+            f.write(attributes_doc)
+        # Objects documentation
+        with open(self._stix21_to_misp_objects_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._stix21_to_misp_objects_summary, 'rt', encoding='utf-8') as f:
+            objects_summary = self._parse_summary(json.loads(f.read()))
+        objects_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._objects_from_stix21_content, 'rt', encoding='utf-8') as f:
+            objects_doc = f.read().format(
+                _objects_from_stix21_mapping_=objects_mapping
+            )
+        with open(self._stix21_to_misp_objects, 'wt', encoding='utf-8') as f:
+            f.write(objects_doc)
+        # Internal galaxies documentation
+        with open(self._stix21_to_misp_galaxies_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._stix21_to_misp_galaxies_summary, 'rt', encoding='utf-8') as f:
+            galaxies_summary = self._parse_summary(json.loads(f.read()))
+        galaxies_mapping = self._parse_galaxy_import_mapping(mapping, data_format)
+        with open(self._galaxies_from_stix21_content, 'rt', encoding='utf-8') as f:
+            galaxies_doc = f.read().format(
+                _galaxies_from_stix21_mapping_=galaxies_mapping
+            )
+        with open(self._stix21_to_misp_galaxies, 'wt', encoding='utf-8') as f:
+            f.write(galaxies_doc)
+        # External galaxies documentation
+        with open(self._external_stix21_to_misp_galaxies_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._external_stix21_to_misp_galaxies_summary, 'rt', encoding='utf-8') as f:
+            ext_galaxies_summary = self._parse_summary(json.loads(f.read()))
+        ext_galaxies_mapping = self._parse_galaxy_import_mapping(mapping, data_format)
+        with open(self._galaxies_from_external_stix21_content, 'rt', encoding='utf-8') as f:
+            ext_galaxies_doc = f.read().format(
+                _external_galaxies_from_stix21_mapping_=ext_galaxies_mapping
+            )
+        with open(self._external_stix21_to_misp_galaxies, 'wt', encoding='utf-8') as f:
+            f.write(ext_galaxies_doc)
+        # External attributes documentation
+        with open(self._external_stix21_to_misp_attributes_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._external_stix21_to_misp_attributes_summary, 'rt', encoding='utf-8') as f:
+            ext_attributes_summary = self._parse_summary(json.loads(f.read()))
+        ext_attributes_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._attributes_from_external_stix21_content, 'rt', encoding='utf-8') as f:
+            ext_attributes_doc = f.read().format(
+                _external_attributes_from_stix21_mapping_=ext_attributes_mapping
+            )
+        with open(self._external_stix21_to_misp_attributes, 'wt', encoding='utf-8') as f:
+            f.write(ext_attributes_doc)
+        # External objects documentation
+        with open(self._external_stix21_to_misp_objects_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        with open(self._external_stix21_to_misp_objects_summary, 'rt', encoding='utf-8') as f:
+            ext_objects_summary = self._parse_summary(json.loads(f.read()))
+        ext_objects_mapping = self._parse_import_mapping(mapping, data_format)
+        with open(self._objects_from_external_stix21_content, 'rt', encoding='utf-8') as f:
+            ext_objects_doc = f.read().format(
+                _external_objects_from_stix21_mapping_=ext_objects_mapping
+            )
+        with open(self._external_stix21_to_misp_objects, 'wt', encoding='utf-8') as f:
+            f.write(ext_objects_doc)
+        # Formatting the STIX 2.1 to MISP summary
+        with open(self._stix21_to_misp_filename, 'rt', encoding='utf-8') as f:
+            self._stix21_to_misp = f.read().format(
+                _attributes_from_stix21_summary_=attributes_summary,
+                _objects_from_stix21_summary_=objects_summary,
+                _galaxies_from_stix21_summary_=galaxies_summary,
+                _external_galaxies_from_stix21_summary_=ext_galaxies_summary,
+                _external_attributes_from_stix21_summary_=ext_attributes_summary,
+                _external_objects_from_stix21_summary_=ext_objects_summary
+            )
+
     def _parse_mapping(self, misp2stix_mapping, stix_type, data_format):
         table = []
         for attribute_type, mapping in misp2stix_mapping.items():
@@ -231,6 +465,18 @@ class DocumentationGenerator():
                     data_format
                 )
             )
+        return '\n'.join(table)
+
+    def _parse_import_mapping(self, stix2misp_mapping, data_format):
+        table = []
+        for name, stix_types in stix2misp_mapping.items():
+            table.append(self._parse_stix2_import_table_line(name, stix_types, data_format))
+        return '\n'.join(table)
+
+    def _parse_galaxy_import_mapping(self, galaxy_mapping, data_format):
+        table = []
+        for stix_type, mapping in galaxy_mapping.items():
+            table.append(self._parse_stix2_galaxy_import_table_line(stix_type, mapping, data_format))
         return '\n'.join(table)
 
     @staticmethod
@@ -255,11 +501,24 @@ class DocumentationGenerator():
         stix_blob = self._parse_json_documentation(mapping['STIX'], 'STIX')
         return f'- {attribute_type}\n{misp_blob}\n{stix_blob}\n'
 
+    def _parse_stix2_import_table_line(self, name, stix_types, data_format):
+        lines = [f'- {name}']
+        for stix_type, mapping in stix_types.items():
+            stix_blob = self._parse_json_documentation(mapping['STIX'], f'STIX - {stix_type}')
+            misp_blob = self._parse_json_documentation(mapping['MISP'], 'MISP')
+            lines.append(f'{stix_blob}\n{misp_blob}')
+        return '\n'.join(lines) + '\n'
+
+    def _parse_stix2_galaxy_import_table_line(self, stix_type, mapping, data_format):
+        stix_blob = self._parse_json_documentation(mapping['STIX'], 'STIX')
+        misp_blob = self._parse_json_documentation(mapping['MISP'], 'MISP')
+        return f'- {stix_type}\n{stix_blob}\n{misp_blob}\n'
+
     @staticmethod
     def _parse_summary(mapping):
         summary = []
         for attribute_type, feature in mapping.items():
-            sanitized = attribute_type.replace('|', '\|')
+            sanitized = attribute_type.replace('|', '\\|')
             summary.append(f"| {sanitized} | {feature} |")
         return '\n'.join(summary)
 

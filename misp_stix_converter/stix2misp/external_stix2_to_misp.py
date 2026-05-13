@@ -360,6 +360,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         super()._parse_loaded_features()
 
     ############################################################################
+    #                      MISP FEATURES CREATION METHODS                      #
+    ############################################################################
+
+    def _add_attribute_galaxies(self, attribute: MISPAttribute, galaxies: dict):
+        for galaxy in self._aggregate_galaxy_clusters(galaxies):
+            attribute.add_galaxy(galaxy)
+
+    def _add_event_galaxies(self, galaxies: dict):
+        for galaxy in self._aggregate_galaxy_clusters(galaxies):
+            self.misp_event.add_galaxy(galaxy)
+
+    def _add_object_galaxies(self, misp_object: MISPObject, galaxies: dict):
+        for galaxy in self._aggregate_galaxy_clusters(galaxies):
+            for attribute in misp_object.attributes:
+                attribute.add_galaxy(galaxy)
+
+    ############################################################################
     #       METHODS TO LINK INDICATORS AND OBSERVABLES WITH SIMILAR DATA       #
     ############################################################################
 

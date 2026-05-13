@@ -16,7 +16,7 @@ from .stix2_to_misp import (
     STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING, _SDO_TYPING)
 from collections import defaultdict
 from pymisp import (
-    MISPAttribute, MISPEvent, MISPEventReport, MISPObject, MISPSighting)
+    MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPObject, MISPSighting)
 from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21, Note, Opinion
@@ -351,6 +351,39 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ############################################################################
     #                      MISP FEATURES CREATION METHODS                      #
     ############################################################################
+
+    def _add_attribute_galaxies(self, attribute: MISPAttribute, galaxies: dict):
+        for galaxy_type, clusters in galaxies.items():
+            misp_galaxy = MISPGalaxy()
+            misp_galaxy.from_dict(**self._galaxies[galaxy_type])
+            for cluster in clusters:
+                misp_galaxy.add_galaxy_cluster(**cluster)
+                attribute.add_tag(self._galaxy_cluster_tag(cluster))
+            attribute.add_galaxy(misp_galaxy)
+
+    def _add_event_galaxies(self, galaxies: dict):
+        for galaxy_type, clusters in galaxies.items():
+            misp_galaxy = MISPGalaxy()
+            misp_galaxy.from_dict(**self._galaxies[galaxy_type])
+            for cluster in clusters:
+                misp_galaxy.add_galaxy_cluster(**cluster)
+                self.misp_event.add_tag(self._galaxy_cluster_tag(cluster))
+            self.misp_event.add_galaxy(misp_galaxy)
+
+    def _add_galaxy_tags(self, misp_layer, misp_galaxy):
+        for cluster in misp_galaxy.clusters:
+            misp_layer.add_tag(self._galaxy_cluster_tag(cluster))
+
+    @staticmethod
+    def _galaxy_cluster_tag(cluster) -> str:
+        tag_value = cluster.uuid if cluster.type.startswith('stix-') else cluster.value
+        return f'misp-galaxy:{cluster.type}="{tag_value}"'
+
+    def _add_object_galaxies(self, misp_object: MISPObject, galaxies: dict):
+        for galaxy in self._aggregate_galaxy_clusters(galaxies):
+            for attribute in misp_object.attributes:
+                attribute.add_galaxy(galaxy)
+                self._add_galaxy_tags(attribute, galaxy)
 
     def _add_event_report(
             self, event_report: MISPEventReport, stix_object_id: str):

@@ -157,10 +157,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                             )
                         elif vulnerability.title:
                             title = vulnerability.title
-                            if title in self.synonyms_mapping:
-                                galaxies.update(self.synonyms_mapping[title])
-                            else:
-                                galaxies.add(f'misp-galaxy:branded-vulnerability="{title}"')
+                            galaxies.add(f'misp-galaxy:branded-vulnerability="{title}"')
         if len(attributes) == 1:
             attributes[0].update(self._sanitise_attribute_uuid(ttp.id_))
         return attributes

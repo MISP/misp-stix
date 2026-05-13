@@ -73,6 +73,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             meta['kill_chain'],
             [f'{killchain.kill_chain_name}:{killchain.phase_name}']
         )
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], attack_pattern=event_ap
+        )
 
     def test_stix20_bundle_with_campaign_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_campaign_galaxy()
@@ -88,6 +91,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attribute = event.attributes[0]
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         self._check_galaxy_features(attribute.galaxies, attribute_campaign)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], campaign=event_campaign
+        )
 
     def test_stix20_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_course_of_action_galaxy()
@@ -108,6 +114,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         url, external_id = attribute_coa.external_references
         self.assertEqual(meta['refs'], [url.url])
         self.assertEqual(meta['external_id'], external_id.external_id)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], course_of_action=event_coa
+        )
 
     def test_stix20_bundle_with_intrusion_set_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_intrusion_set_galaxy()
@@ -128,6 +137,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(meta['synonyms'], attribute_is.aliases)
         self.assertEqual(meta['resource_level'], attribute_is.resource_level)
         self.assertEqual(meta['primary_motivation'], attribute_is.primary_motivation)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], intrusion_set=event_is
+        )
 
     def test_stix20_bundle_with_malware_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_malware_galaxy()
@@ -143,6 +155,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         meta = self._check_galaxy_features(attribute.galaxies, attribute_malware)
         self.assertEqual(meta['labels'], attribute_malware.labels)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], malware=event_malware
+        )
 
     def test_stix20_bundle_with_threat_actor_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy()
@@ -166,6 +181,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(meta['resource_level'], attribute_ta.resource_level)
         self.assertEqual(meta['primary_motivation'], attribute_ta.primary_motivation)
         self.assertEqual(meta['labels'], attribute_ta.labels)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], threat_actor=event_ta
+        )
 
     def test_stix20_bundle_with_tool_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_tool_galaxy()
@@ -194,6 +212,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             [f'{killchain.kill_chain_name}:{killchain.phase_name}']
         )
         self.assertEqual(meta['labels'], attribute_tool.labels)
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], tool=event_tool
+        )
 
     def test_stix20_bundle_with_vulnerability_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_vulnerability_galaxy()
@@ -213,6 +234,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(
             meta['external_id'],
             attribute_vuln.external_references[0].external_id
+        )
+        self._populate_external_galaxy_documentation(
+            galaxy=event.galaxies[0], vulnerability=event_vuln
         )
 
     ############################################################################
@@ -653,6 +677,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             multiple2, observed_data1.objects['1'], f'{observed_data1.id} - 1'
         )
         self._check_artifact_object(single, observed_data2)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_as_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_as_objects()
@@ -667,6 +694,12 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_as_object(s_object, observed_data2)
         self._check_as_attribute(m_attribute, observed_data1, '1')
         self._check_as_attribute(s_attribute, observed_data3)
+        self._populate_ext_observed_data_documentation(
+            misp_object=s_object, observed_data=observed_data2
+        )
+        self._populate_ext_observed_data_documentation(
+            attribute=s_attribute, observed_data=observed_data3
+        )
 
     def test_stix20_bundle_with_directory_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_directory_objects()
@@ -687,6 +720,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             uuid5(UUIDv4, f'{observed_data2.id} - 1')
         )
         self.assertEqual(reference.relationship_type, 'contains')
+        self._populate_ext_observed_data_documentation(
+            misp_object=single_directory, observed_data=observed_data1
+        )
 
     def test_stix20_bundle_with_domain_attributes(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
@@ -700,6 +736,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_generic_attribute(observed_data1, m_domain1, 'domain', '0')
         self._check_generic_attribute(observed_data1, m_domain2, 'domain', '1')
         self._check_generic_attribute(observed_data2, s_domain, 'domain')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_domain, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_domain_ip_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_ip_objects()
@@ -731,6 +770,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         resolving_reference = domain_object.references[0]
         self.assertEqual(resolving_reference.referenced_uuid, domain_ip_object.uuid)
         self.assertEqual(resolving_reference.relationship_type, 'alias-of')
+        self._populate_ext_observed_data_documentation(
+            misp_object=domain_ip_object, observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_email_address_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_email_address_attributes()
@@ -749,6 +791,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data2, sm_address, sm_display_name
         )
         self._check_email_address_attribute(observed_data3, ss_address)
+        self._populate_ext_observed_data_documentation(
+            attribute=ss_address, observed_data=observed_data3
+        )
 
     def test_stix20_bundle_with_email_message_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_email_message_objects()
@@ -769,6 +814,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(file_reference.relationship_type, 'contains')
         self._check_email_artifact_object(artifact_object, observed_data, '4')
         self._check_email_file_object(file_object, observed_data, '5')
+        self._populate_ext_observed_data_documentation(
+            misp_object=email_object, observed_data=observed_data
+        )
 
     def test_stix20_bundle_with_file_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_file_objects()
@@ -797,6 +845,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(artifact_reference.referenced_uuid, file2.uuid)
         self.assertEqual(artifact_reference.relationship_type, 'content-of')
         self._check_file_and_pe_objects(observed_data3, file3, pe, *sections)
+        self._populate_ext_observed_data_documentation(
+            misp_object=file1, observed_data=observed_data1
+        )
 
     def test_stix20_bundle_with_ip_address_attributes(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_ip_address_attributes()
@@ -810,6 +861,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_generic_attribute(observed_data1, m_ip1, 'ip-dst', '0')
         self._check_generic_attribute(observed_data1, m_ip2, 'ip-dst', '1')
         self._check_generic_attribute(observed_data2, s_ip, 'ip-dst')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_ip, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_mac_address_attributes(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_mac_address_attributes()
@@ -827,6 +881,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data1, m_mac2, 'mac-address', '1'
         )
         self._check_generic_attribute(observed_data2, s_mac, 'mac-address')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_mac, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_mutex_attributes(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_mutex_attributes()
@@ -845,6 +902,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         self._check_generic_attribute(
             observed_data2, s_mutex, 'mutex', feature='name'
+        )
+        self._populate_ext_observed_data_documentation(
+            attribute=s_mutex, observed_data=observed_data2
         )
 
     def test_stix20_bundle_with_network_traffic_objects(self):
@@ -896,6 +956,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             encapsulated2.relationship_type,
             'encapsulated-by'
         )
+        self._populate_ext_observed_data_documentation(
+            misp_object=nt1, observed_data=observed_data1
+        )
 
     def test_stix20_bundle_with_process_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_process_objects()
@@ -944,6 +1007,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_process_object_references(
             multiple, parent, child, image1, image2
         )
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_registry_key_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_registry_key_objects()
@@ -969,6 +1035,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(reference.referenced_uuid, multiple2.uuid)
         self.assertEqual(reference.relationship_type, 'creates')
         self._check_registry_key_object(single, observed_data2)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_software_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_software_objects()
@@ -985,6 +1054,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_software_with_swid_fields(
             single, observed_data2.objects['0'], observed_data2.id
         )
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_url_attributes(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_url_attributes()
@@ -998,6 +1070,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_generic_attribute(observed_data1, m_url1, 'url', '0')
         self._check_generic_attribute(observed_data1, m_url2, 'url', '1')
         self._check_generic_attribute(observed_data2, s_url, 'url')
+        self._populate_ext_observed_data_documentation(
+            attribute=s_url, observed_data=observed_data2
+        )
 
     def test_stix20_bundle_with_user_account_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_user_account_objects()
@@ -1049,6 +1124,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_user_account_extension_fields(
             single.attributes[7:], user_account.extensions['unix-account-ext'],
             observed_data2.id
+        )
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=observed_data2
         )
 
     def test_stix20_bundle_with_wrapped_observable_objects(self):
@@ -1626,6 +1704,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_x509_object(multiple1, observed_data1, '0')
         self._check_x509_object(multiple2, observed_data1, '1')
         self._check_x509_object(single, observed_data2)
+        self._populate_ext_observed_data_documentation(
+            misp_object=single, observed_data=observed_data2
+        )
 
     ############################################################################
     #            OBSERVED DATA WITH INLINE INDICATOR IMPORT TESTS              #
@@ -2757,6 +2838,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(artifact_object.timestamp, indicator.modified)
         self.assertEqual(len(artifact_object.attributes), 5)
         self._check_artifact_indicator(indicator, *artifact_object.attributes)
+        self._populate_ext_indicator_documentation(
+            misp_object=artifact_object, indicator=indicator
+        )
 
     def test_stix20_bundle_with_as_indicators(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_as_indicators()
@@ -2769,6 +2853,12 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         asn_object, as_attribute = misp_content
         self._check_asn_indicator_object(indicator1, asn_object)
         self._check_as_indicator_attribute(indicator2, as_attribute)
+        self._populate_ext_indicator_documentation(
+            misp_object=asn_object, indicator=indicator1
+        )
+        self._populate_ext_indicator_documentation(
+            attribute=as_attribute, indicator=indicator2
+        )
 
     def test_stix20_bundle_with_domain_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_indicator()
@@ -2779,6 +2869,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_domain_indicator_attribute(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_domain_ip_indicators(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_ip_indicators()
@@ -2791,6 +2884,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         domain_ip_object1, domain_ip_object2 = misp_content
         self._check_domain_ip_indicator_object(indicator1, domain_ip_object1)
         self._check_domain_ip_indicator_object(indicator2, domain_ip_object2)
+        self._populate_ext_indicator_documentation(
+            misp_object=domain_ip_object1, indicator=indicator1
+        )
 
     def test_stix20_bundle_with_directory_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_directory_indicator()
@@ -2801,6 +2897,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_directory_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_email_address_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_email_address_indicator()
@@ -2811,6 +2910,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_email_address_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_email_message_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_email_message_indicator()
@@ -2821,6 +2923,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_email_message_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_file_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_file_indicators()
@@ -2833,6 +2938,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         file_object, *file_pe_objects = misp_content
         self._check_file_indicator(file_indicator, file_object)
         self._check_file_pe_indicator(file_pe_indicator, *file_pe_objects)
+        self._populate_ext_indicator_documentation(
+            misp_object=file_object, indicator=file_indicator
+        )
 
     def test_stix20_bundle_with_ip_address_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_ip_address_indicator()
@@ -2843,6 +2951,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_ip_address_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_mac_address_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_mac_address_indicator()
@@ -2853,6 +2964,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_mac_address_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_mutex_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_mutex_indicator()
@@ -2863,6 +2977,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_mutex_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_network_traffic_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_network_traffic_indicators()
@@ -2875,6 +2992,12 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         network_traffic, network_socket = misp_content
         self._check_network_traffic_indicator(traffic_indicator, network_traffic)
         self._check_network_socket_indicator(socket_indicator, network_socket)
+        self._populate_ext_indicator_documentation(
+            misp_object=network_traffic, indicator=traffic_indicator
+        )
+        self._populate_ext_indicator_documentation(
+            misp_object=network_socket, indicator=socket_indicator
+        )
 
     def test_stix20_bundle_with_process_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_process_indicator()
@@ -2885,6 +3008,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_process_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_registry_key_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_registry_key_indicator()
@@ -2899,6 +3025,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_registry_key_value_indicator(
             regkey_value_indicator, *regkey_value_objects
         )
+        self._populate_ext_indicator_documentation(
+            misp_object=regkey_object, indicator=regkey_indicator
+        )
 
     def test_stix20_bundle_with_software_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_software_indicator()
@@ -2909,6 +3038,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_software_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_url_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_url_indicator()
@@ -2919,6 +3051,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_url_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            attribute=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_user_account_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_user_account_indicator()
@@ -2929,6 +3064,9 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_user_account_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )
 
     def test_stix20_bundle_with_x509_indicator(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_x509_indicator()
@@ -2939,3 +3077,6 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         misp_content = self._check_misp_event_features(event, report)
         self.assertEqual(len(misp_content), 1)
         self._check_x509_indicator(indicator, misp_content[0])
+        self._populate_ext_indicator_documentation(
+            misp_object=misp_content[0], indicator=indicator
+        )

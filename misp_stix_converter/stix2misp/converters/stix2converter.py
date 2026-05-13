@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from ._galaxy_definitions import GALAXY_DEFINITIONS
 from ..exceptions import UndefinedSTIXObjectError
 from abc import ABCMeta
 from collections import defaultdict
@@ -218,13 +219,6 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     #                         GALAXIES PARSING METHODS                         #
     ############################################################################
 
-    def _check_existing_galaxy_name(self, stix_object_name: str) -> Union[list, None]:
-        if stix_object_name in self.main_parser.synonyms_mapping:
-            return self.main_parser.synonyms_mapping[stix_object_name]
-        for name, tag_names in self.main_parser.synonyms_mapping.items():
-            if stix_object_name in name:
-                return tag_names
-
     def _create_cluster_args(
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
             description: Optional[str] = None,
@@ -342,14 +336,10 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: Union[str, None]) -> dict:
-        name = stix_object.name
-        tag_names = self._check_existing_galaxy_name(name)
-        if tag_names is None:
-            tag_names = [
-                f'misp-galaxy:{object_type or stix_object.type}="{name}"'
-            ]
         return {
-            'tag_names': tag_names,
+            'tag_names': [
+                f'misp-galaxy:{object_type or stix_object.type}="{stix_object.name}"'
+            ],
             'used': {self.event_uuid: False}
         }
 
@@ -404,8 +394,8 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str):
         self.main_parser._galaxies[galaxy_type] = (
-            self.main_parser.galaxy_definitions[galaxy_type]
-            if galaxy_type in self.main_parser.galaxy_definitions
+            GALAXY_DEFINITIONS[galaxy_type]
+            if galaxy_type in GALAXY_DEFINITIONS
             else {'type': galaxy_type, 'name': galaxy_name}
         )
 

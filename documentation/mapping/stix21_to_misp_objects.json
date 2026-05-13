@@ -212,9 +212,9 @@
                     "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                     "ObjectReference": [
                         {
-                            "uuid": "107fc556-59f3-4ac1-a26e-b6bd546008b4",
+                            "uuid": "d4bcd9e7-26dc-415a-af3e-4f9e82e4fc8a",
                             "object_uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
-                            "referenced_uuid": "468f41c6-61b7-499b-910e-5d96df9c2b07",
+                            "referenced_uuid": "b854fb9c-38a2-468c-bbef-dc29af117dfc",
                             "relationship_type": "includes"
                         }
                     ],
@@ -284,12 +284,12 @@
                     "template_uuid": "cf7adecc-d4f0-4e88-9d90-f978ee151a07",
                     "description": "Object describing a Portable Executable",
                     "template_version": "11",
-                    "uuid": "468f41c6-61b7-499b-910e-5d96df9c2b07",
+                    "uuid": "b854fb9c-38a2-468c-bbef-dc29af117dfc",
                     "ObjectReference": [
                         {
-                            "uuid": "076ec9e1-e7bd-430b-a79a-7334ff512c42",
-                            "object_uuid": "468f41c6-61b7-499b-910e-5d96df9c2b07",
-                            "referenced_uuid": "7fa660c4-63df-453f-96db-ed66f0a1072a",
+                            "uuid": "69e7fd03-ee53-49c5-9342-020ed2779346",
+                            "object_uuid": "b854fb9c-38a2-468c-bbef-dc29af117dfc",
+                            "referenced_uuid": "6cd1dacb-146b-4fe8-8037-898b14fc1169",
                             "relationship_type": "includes"
                         }
                     ],
@@ -440,7 +440,7 @@
                     "template_uuid": "198a17d2-a135-4b25-9a32-5aa4e632014a",
                     "description": "Object describing a section of a Portable Executable",
                     "template_version": "3",
-                    "uuid": "7fa660c4-63df-453f-96db-ed66f0a1072a",
+                    "uuid": "6cd1dacb-146b-4fe8-8037-898b14fc1169",
                     "Attribute": [
                         {
                             "uuid": "88272e26-8dc6-5fe2-bceb-ac782ffc0a0a",
@@ -527,7 +527,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright © 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+                "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright © 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -554,7 +554,7 @@
                     "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                     "ObjectReference": [
                         {
-                            "uuid": "753ae662-fcc0-47a0-80e2-5e492c5e78a8",
+                            "uuid": "af59a914-b995-4e0d-9016-589a96ec37e2",
                             "object_uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                             "referenced_uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                             "relationship_type": "includes"
@@ -633,7 +633,7 @@
                     "uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                     "ObjectReference": [
                         {
-                            "uuid": "f853e870-bfe7-4ec6-b605-7cef362fb514",
+                            "uuid": "6abe8234-01ec-4186-87f0-cb63bcc87579",
                             "object_uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                             "referenced_uuid": "fb7ddfd6-13c1-5ca6-bd1e-04efa3af3247",
                             "relationship_type": "includes"
@@ -1004,7 +1004,7 @@
                     },
                     {
                         "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo=",
-                        "uuid": "99e0affd-f2ca-4028-83a5-7e85c1a1b218",
+                        "uuid": "57b9d0e6-11f6-45d9-ad97-3ad0ff6e7d19",
                         "object_relation": "script-as-attachment",
                         "value": "infected.py",
                         "type": "attachment",
@@ -1106,7 +1106,7 @@
                     },
                     {
                         "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK",
-                        "uuid": "ea61fd05-5a8f-4803-a1e8-4fa49b340ccb",
+                        "uuid": "4bc7238b-f7ca-4a09-9332-a44536e4eb58",
                         "object_relation": "script-as-attachment",
                         "value": "hello.py",
                         "type": "attachment",
@@ -1330,13 +1330,13 @@
                 "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
                 "ObjectReference": [
                     {
-                        "uuid": "cbd9e6f1-3d76-4333-a3c7-fede8ee4a143",
+                        "uuid": "545a0e72-ea34-4169-8f45-a2d388d3fe61",
                         "object_uuid": "eb6592bb-675c-48f3-9272-157141196b93",
                         "referenced_uuid": "5ac47edc-31e4-4402-a7b6-040d0a00020f",
                         "relationship_type": "annotates"
                     },
                     {
-                        "uuid": "3f6a0d3b-eff9-41e0-b7a1-9f0dae5db617",
+                        "uuid": "2bfacc88-cfb9-4323-9c4e-0f63ad138643",
                         "object_uuid": "eb6592bb-675c-48f3-9272-157141196b93",
                         "referenced_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                         "relationship_type": "annotates"
@@ -1655,7 +1655,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "087a7ced-5e29-4791-a0de-27207f3e8159",
+                        "uuid": "1597bd8f-967e-4a1a-8905-56caa8d33a60",
                         "object_relation": "id",
                         "value": "9",
                         "type": "text",
@@ -3376,7 +3376,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.x_misp_filename = 'non')]",
+                "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.x_misp_filename = 'non')]",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -3580,7 +3580,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+                    "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -3700,7 +3700,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "0406148f-800f-41ce-898f-d08d84d2b8de",
+                        "uuid": "d0047f41-e8be-4484-b0bb-fdb7bf555400",
                         "object_relation": "accuracy-radius",
                         "value": 1.0,
                         "type": "float",
@@ -5119,7 +5119,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:atime = '2021-01-01T00:00:00Z' AND file:ctime = '2017-10-01T08:00:00Z' AND file:mtime = '2020-10-25T16:22:00Z' AND file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND file:size = '35']",
+                "pattern": "[file:atime = '2021-01-01T00:00:00Z' AND file:ctime = '2017-10-01T08:00:00Z' AND file:mtime = '2020-10-25T16:22:00Z' AND file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND file:size = '35']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -5309,7 +5309,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+                    "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -5840,7 +5840,7 @@
                 "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
                 "Attribute": [
                     {
-                        "uuid": "48834651-84e1-41fa-907a-5c9d83ac7331",
+                        "uuid": "ca52f6ec-c33a-4388-9a46-c961a7e47a1b",
                         "object_relation": "ip-src",
                         "value": "1.2.3.4",
                         "type": "ip-src",
@@ -5849,7 +5849,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "35e021ff-838b-40c5-b13d-8ede93621555",
+                        "uuid": "d0ec6654-3d57-4406-b8aa-1d306bf2b803",
                         "object_relation": "ip-dst",
                         "value": "5.6.7.8",
                         "type": "ip-dst",
@@ -5858,7 +5858,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "b962daa4-91a7-4564-ad60-1024a5b33501",
+                        "uuid": "7f565999-e576-47de-a204-8ed2f92b8850",
                         "object_relation": "hostname-dst",
                         "value": "circl.lu",
                         "type": "hostname",
@@ -5885,7 +5885,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "f0b74451-0ffb-49f9-858f-7fa4e35a3f12",
+                        "uuid": "deb5670a-bdad-4b2b-ab68-9bf7a20d3b02",
                         "object_relation": "layer3-protocol",
                         "value": "IP",
                         "type": "text",
@@ -5894,7 +5894,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "03f3dc71-c9c5-4039-9326-81192fe20ecc",
+                        "uuid": "be795182-ac91-4e1a-9bd6-fcd70791fd76",
                         "object_relation": "layer4-protocol",
                         "value": "TCP",
                         "type": "text",
@@ -5903,7 +5903,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "aac99b3e-82a2-4131-aed0-b6ac27fc2b5d",
+                        "uuid": "24c29c3f-a10d-4b69-9b7b-74e50691fc54",
                         "object_relation": "layer7-protocol",
                         "value": "HTTP",
                         "type": "text",
@@ -6122,7 +6122,7 @@
                 "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
                 "Attribute": [
                     {
-                        "uuid": "e4d37041-752f-4ebf-824c-ed6565be8f4c",
+                        "uuid": "9644335b-5d6f-4b20-9fcc-1b74cd82b5ce",
                         "object_relation": "ip-src",
                         "value": "1.2.3.4",
                         "type": "ip-src",
@@ -6131,7 +6131,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "9be3565a-9757-4c32-a89b-a457bd86fb42",
+                        "uuid": "a7f83d5c-cd12-4867-869a-de320286bb5c",
                         "object_relation": "ip-dst",
                         "value": "5.6.7.8",
                         "type": "ip-dst",
@@ -6140,7 +6140,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "f71d34df-d038-40a9-aea8-f4fcb4f28744",
+                        "uuid": "3f5350c1-f2f5-4066-9fd4-4e26815c566b",
                         "object_relation": "hostname-dst",
                         "value": "circl.lu",
                         "type": "hostname",
@@ -7813,7 +7813,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "24965b24-69ef-4ad1-8473-0de33e966f40",
+                        "uuid": "28dcadff-50b3-4b30-8978-91931c9e2eee",
                         "object_relation": "reference",
                         "value": "https://www.us-cert.gov/ncas/alerts/TA17-293A",
                         "type": "link",
@@ -7896,7 +7896,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "0429bc02-f56b-46d3-b1b7-4d88ecffed7d",
+                        "uuid": "e2b12023-6c6f-4e1a-96e0-d30cc9c09f27",
                         "object_relation": "ref",
                         "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html",
                         "type": "link",
@@ -8898,7 +8898,7 @@
                 "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
                 "Attribute": [
                     {
-                        "uuid": "db04ca03-6cf7-4e37-bcb6-26c629afa184",
+                        "uuid": "61f7240b-67df-48c2-93eb-81ada327a79d",
                         "object_relation": "id",
                         "value": "CVE-2017-11774",
                         "type": "vulnerability",
@@ -8907,7 +8907,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "c1dd4226-09ca-41f9-a2fc-88fa673bfc6d",
+                        "uuid": "6cd11c91-161e-45bc-9d05-274a89e50da4",
                         "object_relation": "references",
                         "value": "http://www.securityfocus.com/bid/101098",
                         "type": "link",
@@ -8916,7 +8916,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "a8382dc2-f436-48df-894c-6e3255361760",
+                        "uuid": "37750bba-0036-4e2a-bf9d-ba0433211e96",
                         "object_relation": "references",
                         "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774",
                         "type": "link",
@@ -9066,7 +9066,7 @@
                 "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
                 "Attribute": [
                     {
-                        "uuid": "12d7acfd-8e98-4287-9755-71fd4521f924",
+                        "uuid": "8dc819a2-b2b3-4cd1-992b-229d68a2eee5",
                         "object_relation": "x509-fingerprint-md5",
                         "value": "b2a5abfeef9e36964281a31e17b57c97",
                         "type": "x509-fingerprint-md5",
@@ -9075,7 +9075,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "ee57efb7-015e-4dae-80aa-d7fe34c9c887",
+                        "uuid": "f24e2058-fc09-430d-b5b5-39c686f0772d",
                         "object_relation": "x509-fingerprint-sha1",
                         "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
                         "type": "x509-fingerprint-sha1",
@@ -9084,7 +9084,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "9adbc44e-8a97-460b-83ca-e95b15d40ce6",
+                        "uuid": "19965d0a-f793-4f3a-89a2-cdac62d21ff9",
                         "object_relation": "issuer",
                         "value": "Issuer Name",
                         "type": "text",
@@ -9093,7 +9093,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "a5db49a0-813b-4631-90c7-bbc80d3064b2",
+                        "uuid": "bcb467e1-ef33-41b9-931a-ed4d5f7bf2ca",
                         "object_relation": "pubkey-info-algorithm",
                         "value": "PublicKeyAlgorithm",
                         "type": "text",
@@ -9102,7 +9102,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "a0df580c-d002-47f5-a32a-4439e0551c76",
+                        "uuid": "f15e9ac4-8843-4fa7-a344-587f1535daa7",
                         "object_relation": "pubkey-info-exponent",
                         "value": "2",
                         "type": "text",
@@ -9111,7 +9111,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "9c5569c9-1f07-466c-a17d-3ddbdddf759a",
+                        "uuid": "ce755ec4-251e-4e51-8267-ec8c54567b8e",
                         "object_relation": "pubkey-info-modulus",
                         "value": "C5",
                         "type": "text",
@@ -9120,7 +9120,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "9c03f43a-6fd8-4614-8119-554a2679159d",
+                        "uuid": "bd4e8a09-d384-4ded-8753-b9c81338bfb6",
                         "object_relation": "serial-number",
                         "value": "1234567890",
                         "type": "text",
@@ -9129,7 +9129,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "d1638c0d-a997-4f40-b820-ddbd3f11c78b",
+                        "uuid": "e951a70e-8175-44ae-b0b2-cb19cd93a9cb",
                         "object_relation": "signature_algorithm",
                         "value": "SHA1_WITH_RSA_ENCRYPTION",
                         "type": "text",
@@ -9138,7 +9138,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "d1d44830-5fed-4f8e-b8c6-0200d080fc8c",
+                        "uuid": "561ebca9-e924-4424-9008-be55dd34670a",
                         "object_relation": "subject",
                         "value": "CertificateSubject",
                         "type": "text",
@@ -9147,7 +9147,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "1c13dd47-7035-433c-b538-2244c758bce7",
+                        "uuid": "53079bd3-3804-4400-8c39-3490b9e4a227",
                         "object_relation": "version",
                         "value": "1",
                         "type": "text",
@@ -9156,7 +9156,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "bec72ba4-fa88-46f4-be0e-c4286c9ea03b",
+                        "uuid": "3c96db3e-66db-474a-97ba-cda57374a2d4",
                         "object_relation": "validity-not-after",
                         "value": "2021-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -9165,7 +9165,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "fe47410a-c651-4cde-a56b-258d335c4232",
+                        "uuid": "39e7a021-98fd-42d2-b9b9-86c46dc5cbc3",
                         "object_relation": "validity-not-before",
                         "value": "2020-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -9174,7 +9174,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "ed6cfbcf-dbd7-4e91-828e-cb5b2ca6bd50",
+                        "uuid": "23fa0c4f-11ba-458f-afd8-6eeff0969ef5",
                         "object_relation": "pem",
                         "value": "RawCertificateInPEMFormat",
                         "type": "text",
@@ -9194,7 +9194,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
+                "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -9390,7 +9390,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name']",
+                    "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name']",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",

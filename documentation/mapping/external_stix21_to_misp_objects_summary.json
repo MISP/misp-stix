@@ -1,0 +1,15 @@
+{
+    "artifact": "Artifact Object (pattern) / Artifact Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "asn": "Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "directory": "Directory Object (pattern) / Directory Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "domain-ip": "Domain Name Object (pattern) / Domain Name & Ipv4 Addr & Ipv6 Addr Objects and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "email": "Email Message Object (pattern) / Artifact & Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "file": "File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "network-socket": "Network Traffic Object (pattern) / Custom Object",
+    "network-traffic": "Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "process": "Process Object (pattern) / Process Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "registry-key": "Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "software": "Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "user-account": "User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) / **Observable**",
+    "x509": "X509 Certificate Object (pattern) / X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / **Observable**"
+}

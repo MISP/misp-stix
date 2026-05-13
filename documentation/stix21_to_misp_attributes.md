@@ -1,0 +1,8263 @@
+# STIX 2.1 to MISP Attributes mapping
+
+When importing STIX 2.1 content into MISP, `Indicator` objects are parsed to produce MISP attributes with the `to_ids` flag set, while `Observed Data` objects (together with their referenced SCOs) produce MISP attributes with the `to_ids` flag unset.
+
+For internally-generated STIX bundles (i.e. bundles produced by MISP), the mapping is a faithful round-trip: the original MISP attribute type and value are recovered from the STIX pattern or observable.
+
+For externally-generated STIX bundles, STIX objects are mapped to the closest MISP attribute type via heuristics.
+
+### Current mapping
+
+- AS
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[autonomous-system:number = '174']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"AS\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "AS",
+        "value": "AS174",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "autonomous-system--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"AS\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "autonomous-system",
+            "spec_version": "2.1",
+            "id": "autonomous-system--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "number": 174
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "AS",
+        "value": "AS174",
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- attachment
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:name = 'attachment.test' AND file:content_ref.payload_bin = 'ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"attachment\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK",
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "attachment",
+        "value": "attachment.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"attachment\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "name": "attachment.test",
+            "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        },
+        {
+            "type": "artifact",
+            "spec_version": "2.1",
+            "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK",
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "attachment",
+        "value": "attachment.test",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- authentihash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "AUTHENTIHASH test attribute",
+        "pattern": "[file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"authentihash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "authentihash",
+        "value": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "AUTHENTIHASH test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"authentihash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "hashes": {
+                "AUTHENTIHASH": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "AUTHENTIHASH test attribute",
+            "pattern": "[file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"authentihash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "authentihash",
+        "value": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- campaign-name
+  - STIX - Campaign
+    ```json
+    {
+        "type": "campaign",
+        "spec_version": "2.1",
+        "id": "campaign--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MartyMcFly",
+        "labels": [
+            "misp:type=\"campaign-name\"",
+            "misp:category=\"Attribution\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "campaign-name",
+        "value": "MartyMcFly",
+        "category": "Attribution",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- domain
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"domain\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "domain",
+        "value": "circl.lu",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Domain test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"domain\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "circl.lu"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Domain test attribute",
+            "pattern": "[domain-name:value = 'circl.lu']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"domain\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "domain",
+        "value": "circl.lu",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- domain|ip
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain|ip test attribute",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"domain|ip\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "domain|ip",
+        "value": "circl.lu|149.13.33.14",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Domain|ip test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"domain|ip\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "circl.lu",
+            "resolves_to_refs": [
+                "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "149.13.33.14"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Domain|ip test attribute",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"domain|ip\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "domain|ip",
+        "value": "circl.lu|149.13.33.14",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-addr:value = 'address@email.test']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email",
+        "value": "address@email.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"email\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-addr",
+            "spec_version": "2.1",
+            "id": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "address@email.test"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[email-addr:value = 'address@email.test']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"email\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email",
+        "value": "address@email.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-attachment
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Email attachment test attribute",
+        "pattern": "[email-message:body_multipart[*].body_raw_ref.name = 'email_attachment.test']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-attachment\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-attachment",
+        "value": "email_attachment.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Email attachment test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"email-attachment\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "is_multipart": true,
+            "body_multipart": [
+                {
+                    "body_raw_ref": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "content_disposition": "attachment; filename='email_attachment.test'"
+                }
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "name": "email_attachment.test"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Email attachment test attribute",
+            "pattern": "[email-message:body_multipart[*].body_raw_ref.name = 'email_attachment.test']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"email-attachment\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-attachment",
+        "value": "email_attachment.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-body
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:body = 'Email body test']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-body\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-body",
+        "value": "Email body test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"email-body\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "is_multipart": false,
+            "body": "Email body test"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-body",
+        "value": "Email body test",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-dst
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination email address test attribute",
+        "pattern": "[email-message:to_refs[*].value = 'dst@email.test']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-dst\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "email-dst",
+        "value": "dst@email.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Destination email address test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--518b4bcb-a86b-4783-9457-391d548b605b",
+                "email-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+            ],
+            "labels": [
+                "misp:type=\"email-dst\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--518b4bcb-a86b-4783-9457-391d548b605b",
+            "is_multipart": false,
+            "to_refs": [
+                "email-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+            ]
+        },
+        {
+            "type": "email-addr",
+            "spec_version": "2.1",
+            "id": "email-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "value": "dst@email.test"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Destination email address test attribute",
+            "pattern": "[email-message:to_refs[*].value = 'dst@email.test']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"email-dst\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "email-dst",
+        "value": "dst@email.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-header
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:received_lines = 'from mail.example.com ([198.51.100.3]) by smtp.gmail.com']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-header\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-header",
+        "value": "from mail.example.com ([198.51.100.3]) by smtp.gmail.com",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"email-header\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "is_multipart": false,
+            "received_lines": [
+                "from mail.example.com ([198.51.100.3]) by smtp.gmail.com"
+            ]
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-header",
+        "value": "from mail.example.com ([198.51.100.3]) by smtp.gmail.com",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-message-id
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f3745b11-2b82-4798-80ba-d32c506135ec",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:message_id = '1234']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-message-id\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f3745b11-2b82-4798-80ba-d32c506135ec",
+        "type": "email-message-id",
+        "value": "1234",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--f3745b11-2b82-4798-80ba-d32c506135ec",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--f3745b11-2b82-4798-80ba-d32c506135ec"
+            ],
+            "labels": [
+                "misp:type=\"email-message-id\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--f3745b11-2b82-4798-80ba-d32c506135ec",
+            "is_multipart": false,
+            "message_id": "1234"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f3745b11-2b82-4798-80ba-d32c506135ec",
+        "type": "email-message-id",
+        "value": "1234",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-reply-to
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:additional_header_fields.reply_to = 'reply-to@email.test']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-reply-to\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "email-reply-to",
+        "value": "reply-to@email.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+            ],
+            "labels": [
+                "misp:type=\"email-reply-to\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "is_multipart": false,
+            "additional_header_fields": {
+                "Reply-To": "reply-to@email.test"
+            }
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "email-reply-to",
+        "value": "reply-to@email.test",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-src
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source email address test attribute",
+        "pattern": "[email-message:from_ref.value = 'src@email.test']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-src\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-src",
+        "value": "src@email.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Source email address test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"email-src\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "is_multipart": false,
+            "from_ref": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        },
+        {
+            "type": "email-addr",
+            "spec_version": "2.1",
+            "id": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "src@email.test"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Source email address test attribute",
+            "pattern": "[email-message:from_ref.value = 'src@email.test']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"email-src\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-src",
+        "value": "src@email.test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-subject
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:subject = 'Test Subject']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-subject\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "email-subject",
+        "value": "Test Subject",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+            ],
+            "labels": [
+                "misp:type=\"email-subject\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "is_multipart": false,
+            "subject": "Test Subject"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "email-subject",
+        "value": "Test Subject",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- email-x-mailer
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[email-message:additional_header_fields.x_mailer = 'Email X-Mailer test']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"email-x-mailer\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f09d8496-e2ba-4250-878a-bec9b85c7e96",
+        "type": "email-x-mailer",
+        "value": "Email X-Mailer test",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-message--f09d8496-e2ba-4250-878a-bec9b85c7e96"
+            ],
+            "labels": [
+                "misp:type=\"email-x-mailer\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "email-message",
+            "spec_version": "2.1",
+            "id": "email-message--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+            "is_multipart": false,
+            "additional_header_fields": {
+                "X-Mailer": "Email X-Mailer test"
+            }
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f09d8496-e2ba-4250-878a-bec9b85c7e96",
+        "type": "email-x-mailer",
+        "value": "Email X-Mailer test",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename test attribute",
+        "pattern": "[file:name = 'test_file_name']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "filename",
+        "value": "test_file_name",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"filename\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "name": "test_file_name"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename test attribute",
+            "pattern": "[file:name = 'test_file_name']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "filename",
+        "value": "test_file_name",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|authentihash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|authentihash test attribute",
+        "pattern": "[file:name = 'filename8' AND file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|authentihash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "filename|authentihash",
+        "value": "filename8|b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|authentihash test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"filename|authentihash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "hashes": {
+                "AUTHENTIHASH": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc"
+            },
+            "name": "filename8"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|authentihash test attribute",
+            "pattern": "[file:name = 'filename8' AND file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|authentihash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "filename|authentihash",
+        "value": "filename8|b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|imphash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|imphash test attribute",
+        "pattern": "[file:name = 'filename9' AND file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|imphash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "filename|imphash",
+        "value": "filename9|68f013d7437aa653a8a98a05807afeb1",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|imphash test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--518b4bcb-a86b-4783-9457-391d548b605b"
+            ],
+            "labels": [
+                "misp:type=\"filename|imphash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--518b4bcb-a86b-4783-9457-391d548b605b",
+            "hashes": {
+                "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
+            },
+            "name": "filename9"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|imphash test attribute",
+            "pattern": "[file:name = 'filename9' AND file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|imphash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "filename|imphash",
+        "value": "filename9|68f013d7437aa653a8a98a05807afeb1",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|md5
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|md5 test attribute",
+        "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|md5\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "filename|md5",
+        "value": "filename1|b2a5abfeef9e36964281a31e17b57c97",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|md5 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+            ],
+            "labels": [
+                "misp:type=\"filename|md5\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "hashes": {
+                "MD5": "b2a5abfeef9e36964281a31e17b57c97"
+            },
+            "name": "filename1"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|md5 test attribute",
+            "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|md5\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "filename|md5",
+        "value": "filename1|b2a5abfeef9e36964281a31e17b57c97",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|pehash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|pehash test attribute",
+        "pattern": "[file:name = 'filename10' AND file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|pehash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "filename|pehash",
+        "value": "filename10|ffb7a38174aab4744cc4a509e34800aee9be8e57",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|pehash test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+            ],
+            "labels": [
+                "misp:type=\"filename|pehash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "hashes": {
+                "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+            },
+            "name": "filename10"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|pehash test attribute",
+            "pattern": "[file:name = 'filename10' AND file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|pehash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "target_ref": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "filename|pehash",
+        "value": "filename10|ffb7a38174aab4744cc4a509e34800aee9be8e57",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|sha1
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha1 test attribute",
+        "pattern": "[file:name = 'filename2' AND file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha1\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "type": "filename|sha1",
+        "value": "filename2|2920d5e6c579fce772e5506caf03af65579088bd",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha1 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha1\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "hashes": {
+                "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
+            },
+            "name": "filename2"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha1 test attribute",
+            "pattern": "[file:name = 'filename2' AND file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha1\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--fa05ec41-b6ee-4072-a3be-06970eca319a",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "target_ref": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "type": "filename|sha1",
+        "value": "filename2|2920d5e6c579fce772e5506caf03af65579088bd",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|sha224
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha224 test attribute",
+        "pattern": "[file:name = 'filename3' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
+        "type": "filename|sha224",
+        "value": "filename3|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha224 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--90bd7dae-b78c-4025-9073-568950c780fb"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--90bd7dae-b78c-4025-9073-568950c780fb",
+            "hashes": {
+                "SHA224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+            },
+            "name": "filename3"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha224 test attribute",
+            "pattern": "[file:name = 'filename3' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--aea91422-ae58-40c0-815c-e9160fb552a4",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+            "target_ref": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
+        "type": "filename|sha224",
+        "value": "filename3|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|sha256
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha256 test attribute",
+        "pattern": "[file:name = 'filename4' AND file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "type": "filename|sha256",
+        "value": "filename4|7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha256 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--2007ec09-8137-4a71-a3ce-6ef967bebacf"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "hashes": {
+                "SHA-256": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4"
+            },
+            "name": "filename4"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha256 test attribute",
+            "pattern": "[file:name = 'filename4' AND file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--40d6c7e0-1e8c-4fe0-8650-f0a959bc878b",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "target_ref": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "type": "filename|sha256",
+        "value": "filename4|7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|sha3-224
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "hashes": {
+                "SHA3224": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc"
+            },
+            "name": "filename15"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha3-224 test attribute",
+            "pattern": "[file:name = 'filename15' AND file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--5415bd6a-5127-4b74-9a26-e0d38952af1c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "target_ref": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "type": "filename|sha3-224",
+        "value": "filename15|47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-224 test attribute",
+        "pattern": "[file:name = 'filename15' AND file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha3-224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "type": "filename|sha3-224",
+        "value": "filename15|47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha3-224 test attribute"
+    }
+    ```
+
+- filename|sha3-256
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-256 test attribute",
+        "pattern": "[file:name = 'filename14' AND file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha3-256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "type": "filename|sha3-256",
+        "value": "filename14|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha3-256 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "hashes": {
+                "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+            },
+            "name": "filename16"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha3-256 test attribute",
+            "pattern": "[file:name = 'filename16' AND file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--9ecc7f6c-75c7-4663-baea-a4e5d0e30a35",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "target_ref": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "type": "filename|sha3-256",
+        "value": "filename16|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|sha3-384
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "hashes": {
+                "SHA3384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+            },
+            "name": "filename17"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha3-384 test attribute",
+            "pattern": "[file:name = 'filename17' AND file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--3b8187c2-a105-452f-88ee-f34bd860782f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "target_ref": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "type": "filename|sha3-384",
+        "value": "filename17|93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-384 test attribute",
+        "pattern": "[file:name = 'filename17' AND file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha3-384\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "type": "filename|sha3-384",
+        "value": "filename17|93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha3-384 test attribute"
+    }
+    ```
+
+- filename|sha3-512
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--7e5ec865-a97c-41ba-99ba-a21c006da460"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "hashes": {
+                "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
+            },
+            "name": "filename18"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha3-512 test attribute",
+            "pattern": "[file:name = 'filename18' AND file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha3-512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--f5e0f1d6-2154-45ec-8697-f6231c217133",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "target_ref": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "type": "filename|sha3-512",
+        "value": "filename18|fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-512 test attribute",
+        "pattern": "[file:name = 'filename18' AND file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha3-512\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "type": "filename|sha3-512",
+        "value": "filename18|fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha3-512 test attribute"
+    }
+    ```
+
+- filename|sha384
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha384 test attribute",
+        "pattern": "[file:name = 'filename5' AND file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha384\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "type": "filename|sha384",
+        "value": "filename5|ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha384 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--c8760340-85a9-4e40-bfde-522d66ef1e9f"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "hashes": {
+                "SHA384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
+            },
+            "name": "filename5"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha384 test attribute",
+            "pattern": "[file:name = 'filename5' AND file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--61ef6c1d-f504-4d0d-94af-6a745270dce5",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "target_ref": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "type": "filename|sha384",
+        "value": "filename5|ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|sha512
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512 test attribute",
+        "pattern": "[file:name = 'filename6' AND file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha512\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "type": "filename|sha512",
+        "value": "filename6|28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha512 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "hashes": {
+                "SHA-512": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe"
+            },
+            "name": "filename6"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha512 test attribute",
+            "pattern": "[file:name = 'filename6' AND file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--9dd12c5c-cafb-4087-86ac-98a91cd8eff7",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "target_ref": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "type": "filename|sha512",
+        "value": "filename6|28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|sha512/224
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha512/224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "hashes": {
+                "SHA224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+            },
+            "name": "filename11"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha512/224 test attribute",
+            "pattern": "[file:name = 'filename11' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha512/224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--7ac97cac-bedc-4c6e-b2ee-d72358493da1",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "target_ref": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "type": "filename|sha512/224",
+        "value": "filename11|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/224 test attribute",
+        "pattern": "[file:name = 'filename11' AND file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha512/224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "type": "filename|sha512/224",
+        "value": "filename11|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha512/224 test attribute"
+    }
+    ```
+
+- filename|sha512/256
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/256 test attribute",
+        "pattern": "[file:name = 'filename11' AND file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha512/256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "type": "filename|sha512/256",
+        "value": "filename11|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|sha512/256 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+            ],
+            "labels": [
+                "misp:type=\"filename|sha512/256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "hashes": {
+                "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
+            },
+            "name": "filename12"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|sha512/256 test attribute",
+            "pattern": "[file:name = 'filename12' AND file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|sha512/256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--59b95b7e-504d-4fa4-a072-c675498292f5",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "target_ref": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "type": "filename|sha512/256",
+        "value": "filename12|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|ssdeep
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|ssdeep test attribute",
+        "pattern": "[file:name = 'filename7' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|ssdeep\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "type": "filename|ssdeep",
+        "value": "filename7|96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|ssdeep test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--9060e814-a36f-45ab-84e5-66fc82dc7cff"
+            ],
+            "labels": [
+                "misp:type=\"filename|ssdeep\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "hashes": {
+                "SSDEEP": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi"
+            },
+            "name": "filename7"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|ssdeep test attribute",
+            "pattern": "[file:name = 'filename7' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|ssdeep\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--6170abd7-7ddc-4e22-9cdb-30880b463973",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "target_ref": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "type": "filename|ssdeep",
+        "value": "filename7|96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|tlsh
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|tlsh test attribute",
+        "pattern": "[file:name = 'filename12' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|tlsh\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
+        "type": "filename|tlsh",
+        "value": "filename12|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|tlsh test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--7467406e-88d3-4856-afc9-412459bc3c8b"
+            ],
+            "labels": [
+                "misp:type=\"filename|tlsh\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "hashes": {
+                "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+            },
+            "name": "filename13"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|tlsh test attribute",
+            "pattern": "[file:name = 'filename13' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|tlsh\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--388e22d6-85b7-4189-8b89-589cdd931ecf",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "target_ref": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
+        "type": "filename|tlsh",
+        "value": "filename13|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- filename|vhash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|vhash test attribute",
+        "pattern": "[file:name = 'filename13' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|vhash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "type": "filename|vhash",
+        "value": "filename13|115056655d15151138z66hz1021z55z66z3",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Filename|vhash test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
+            ],
+            "labels": [
+                "misp:type=\"filename|vhash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "hashes": {
+                "VHASH": "115056655d15151138z66hz1021z55z66z3"
+            },
+            "name": "filename14"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Filename|vhash test attribute",
+            "pattern": "[file:name = 'filename14' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"filename|vhash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--f7455a6c-4a23-40a2-82f5-a2191822ed59",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "target_ref": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "type": "filename|vhash",
+        "value": "filename14|115056655d15151138z66hz1021z55z66z3",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- github-username
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Github username test attribute",
+        "pattern": "[user-account:account_type = 'github' AND user-account:account_login = 'chrisr3d']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Social network"
+            }
+        ],
+        "labels": [
+            "misp:type=\"github-username\"",
+            "misp:category=\"Social network\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "github-username",
+        "value": "chrisr3d",
+        "category": "Social network",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Github username test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "user-account--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"github-username\"",
+                "misp:category=\"Social network\""
+            ]
+        },
+        {
+            "type": "user-account",
+            "spec_version": "2.1",
+            "id": "user-account--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "account_login": "chrisr3d",
+            "account_type": "github"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "github-username",
+        "value": "chrisr3d",
+        "category": "Social network",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- hostname
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Hostname test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"hostname\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "hostname",
+        "value": "circl.lu",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Hostname test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"hostname\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "circl.lu"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Hostname test attribute",
+            "pattern": "[domain-name:value = 'circl.lu']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"hostname\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "hostname",
+        "value": "circl.lu",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- hostname|port
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Hostname|port test attribute",
+        "pattern": "[domain-name:value = 'circl.lu' AND network-traffic:dst_port = '8443']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"hostname|port\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "hostname|port",
+        "value": "circl.lu|8443",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Hostname|port test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"hostname|port\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "circl.lu"
+        },
+        {
+            "type": "network-traffic",
+            "spec_version": "2.1",
+            "id": "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "dst_ref": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "dst_port": 8443,
+            "protocols": [
+                "tcp"
+            ]
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Hostname|port test attribute",
+            "pattern": "[domain-name:value = 'circl.lu' AND network-traffic:dst_port = '8443']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"hostname|port\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "hostname|port",
+        "value": "circl.lu|8443",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- http-method
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:extensions.'http-request-ext'.request_method = 'POST']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"http-method\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "http-method",
+        "value": "POST",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- imphash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "IMPHASH test attribute",
+        "pattern": "[file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"imphash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "imphash",
+        "value": "68f013d7437aa653a8a98a05807afeb1",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "IMPHASH test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--518b4bcb-a86b-4783-9457-391d548b605b"
+            ],
+            "labels": [
+                "misp:type=\"imphash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--518b4bcb-a86b-4783-9457-391d548b605b",
+            "hashes": {
+                "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "IMPHASH test attribute",
+            "pattern": "[file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"imphash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "imphash",
+        "value": "68f013d7437aa653a8a98a05807afeb1",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- ip-dst
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination IP test attribute",
+        "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-dst\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "ip-dst",
+        "value": "5.6.7.8",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Destination IP test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "network-traffic--518b4bcb-a86b-4783-9457-391d548b605b",
+                "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+            ],
+            "labels": [
+                "misp:type=\"ip-dst\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "network-traffic",
+            "spec_version": "2.1",
+            "id": "network-traffic--518b4bcb-a86b-4783-9457-391d548b605b",
+            "dst_ref": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "protocols": [
+                "tcp"
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "value": "5.6.7.8"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Destination IP test attribute",
+            "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"ip-dst\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "ip-dst",
+        "value": "5.6.7.8",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- ip-dst|port
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination IP | Port test attribute",
+        "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-dst|port\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "ip-dst|port",
+        "value": "5.6.7.8|5678",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Destination IP | Port test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "network-traffic--518b4bcb-a86b-4783-9457-391d548b605b",
+                "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+            ],
+            "labels": [
+                "misp:type=\"ip-dst|port\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "network-traffic",
+            "spec_version": "2.1",
+            "id": "network-traffic--518b4bcb-a86b-4783-9457-391d548b605b",
+            "dst_ref": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "dst_port": 5678,
+            "protocols": [
+                "tcp"
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "value": "5.6.7.8"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Destination IP | Port test attribute",
+            "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"ip-dst|port\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "ip-dst|port",
+        "value": "5.6.7.8|5678",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- ip-src
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source IP test attribute",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "ip-src",
+        "value": "1.2.3.4",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Source IP test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"ip-src\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "network-traffic",
+            "spec_version": "2.1",
+            "id": "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "protocols": [
+                "tcp"
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "1.2.3.4"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Source IP test attribute",
+            "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"ip-src\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "ip-src",
+        "value": "1.2.3.4",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- ip-src|port
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source IP | Port test attribute",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_port = '1234']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src|port\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "ip-src|port",
+        "value": "1.2.3.4|1234",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Source IP | Port test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"ip-src|port\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "network-traffic",
+            "spec_version": "2.1",
+            "id": "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "src_port": 1234,
+            "protocols": [
+                "tcp"
+            ]
+        },
+        {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "1.2.3.4"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Source IP | Port test attribute",
+            "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_port = '1234']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"ip-src|port\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "ip-src|port",
+        "value": "1.2.3.4|1234",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- link
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Link test attribute",
+        "pattern": "[url:value = 'https://misp-project.org/download/']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "External analysis"
+            }
+        ],
+        "labels": [
+            "misp:type=\"link\"",
+            "misp:category=\"External analysis\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "link",
+        "value": "https://misp-project.org/download/",
+        "category": "External analysis",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Link test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"link\"",
+                "misp:category=\"External analysis\""
+            ]
+        },
+        {
+            "type": "url",
+            "spec_version": "2.1",
+            "id": "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "https://misp-project.org/download/"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "link",
+        "value": "https://misp-project.org/download/",
+        "category": "External analysis",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- mac-address
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[mac-addr:value = '12:34:56:78:90:AB']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"mac-address\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "mac-address",
+        "value": "12:34:56:78:90:AB",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "mac-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"mac-address\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "mac-addr",
+            "spec_version": "2.1",
+            "id": "mac-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "value": "12:34:56:78:90:ab"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "mac-address",
+        "value": "12:34:56:78:90:ab",
+        "category": "Payload delivery",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- malware-sample
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Malware Sample test attribute",
+        "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"malware-sample\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "malware-sample",
+        "value": "oui|8764605c6f388c89096b534d33565802",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "malware_filename": "oui",
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Malware Sample test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"malware-sample\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "hashes": {
+                "MD5": "8764605c6f388c89096b534d33565802"
+            },
+            "name": "oui",
+            "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        },
+        {
+            "type": "artifact",
+            "spec_version": "2.1",
+            "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "mime_type": "application/zip",
+            "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
+            "encryption_algorithm": "mime-type-indicated",
+            "decryption_key": "infected"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Malware Sample test attribute",
+            "pattern": "[file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"malware-sample\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "malware-sample",
+        "value": "oui|8764605c6f388c89096b534d33565802",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "malware_filename": "oui",
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- md5
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "MD5 test attribute",
+        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"md5\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "md5",
+        "value": "b2a5abfeef9e36964281a31e17b57c97",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "MD5 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+            ],
+            "labels": [
+                "misp:type=\"md5\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "hashes": {
+                "MD5": "b2a5abfeef9e36964281a31e17b57c97"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "MD5 test attribute",
+            "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"md5\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "md5",
+        "value": "b2a5abfeef9e36964281a31e17b57c97",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- mutex
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Mutex test attribute",
+        "pattern": "[mutex:name = 'MutexTest']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Artifacts dropped"
+            }
+        ],
+        "labels": [
+            "misp:type=\"mutex\"",
+            "misp:category=\"Artifacts dropped\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "mutex",
+        "value": "MutexTest",
+        "category": "Artifacts dropped",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Mutex test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "mutex--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"mutex\"",
+                "misp:category=\"Artifacts dropped\""
+            ]
+        },
+        {
+            "type": "mutex",
+            "spec_version": "2.1",
+            "id": "mutex--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "name": "MutexTest"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Mutex test attribute",
+            "pattern": "[mutex:name = 'MutexTest']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Artifacts dropped"
+                }
+            ],
+            "labels": [
+                "misp:type=\"mutex\"",
+                "misp:category=\"Artifacts dropped\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "mutex",
+        "value": "MutexTest",
+        "category": "Artifacts dropped",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- pehash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "PEHASH test attribute",
+        "pattern": "[file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"pehash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "pehash",
+        "value": "ffb7a38174aab4744cc4a509e34800aee9be8e57",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "PEHASH test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+            ],
+            "labels": [
+                "misp:type=\"pehash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "hashes": {
+                "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "PEHASH test attribute",
+            "pattern": "[file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"pehash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--a3444188-4046-4544-95ca-11e0da5216ce",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "target_ref": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "pehash",
+        "value": "ffb7a38174aab4744cc4a509e34800aee9be8e57",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- port
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:dst_port = '8443']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"port\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "port",
+        "value": "8443",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- regkey
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Regkey test attribute",
+        "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Persistence mechanism"
+            }
+        ],
+        "labels": [
+            "misp:type=\"regkey\"",
+            "misp:category=\"Persistence mechanism\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "regkey",
+        "value": "HKLM\\\\Software\\\\mthjk",
+        "category": "Persistence mechanism",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Regkey test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"regkey\"",
+                "misp:category=\"Persistence mechanism\""
+            ]
+        },
+        {
+            "type": "windows-registry-key",
+            "spec_version": "2.1",
+            "id": "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "key": "HKLM\\Software\\mthjk"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Regkey test attribute",
+            "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Persistence mechanism"
+                }
+            ],
+            "labels": [
+                "misp:type=\"regkey\"",
+                "misp:category=\"Persistence mechanism\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "regkey",
+        "value": "HKLM\\Software\\mthjk",
+        "category": "Persistence mechanism",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- regkey|value
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Regkey | value test attribute",
+        "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '\\\\%DATA\\\\%\\\\1234567890']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Persistence mechanism"
+            }
+        ],
+        "labels": [
+            "misp:type=\"regkey|value\"",
+            "misp:category=\"Persistence mechanism\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "regkey|value",
+        "value": "HKLM\\\\Software\\\\mthjk|\\\\%DATA\\\\%\\\\1234567890",
+        "category": "Persistence mechanism",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Regkey | value test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"regkey|value\"",
+                "misp:category=\"Persistence mechanism\""
+            ]
+        },
+        {
+            "type": "windows-registry-key",
+            "spec_version": "2.1",
+            "id": "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "key": "HKLM\\Software\\mthjk",
+            "values": [
+                {
+                    "data": "%DATA%\\1234567890"
+                }
+            ]
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "Regkey | value test attribute",
+            "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '\\\\%DATA\\\\%\\\\1234567890']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Persistence mechanism"
+                }
+            ],
+            "labels": [
+                "misp:type=\"regkey|value\"",
+                "misp:category=\"Persistence mechanism\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "regkey|value",
+        "value": "HKLM\\Software\\mthjk|%DATA%\\1234567890",
+        "category": "Persistence mechanism",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sha1
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA1 test attribute",
+        "pattern": "[file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha1\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "type": "sha1",
+        "value": "2920d5e6c579fce772e5506caf03af65579088bd",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA1 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+            ],
+            "labels": [
+                "misp:type=\"sha1\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "hashes": {
+                "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA1 test attribute",
+            "pattern": "[file:hashes.'SHA-1' = '2920d5e6c579fce772e5506caf03af65579088bd']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha1\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--fa05ec41-b6ee-4072-a3be-06970eca319a",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "target_ref": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "type": "sha1",
+        "value": "2920d5e6c579fce772e5506caf03af65579088bd",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sha224
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA224 test attribute",
+        "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
+        "type": "sha224",
+        "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA224 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--90bd7dae-b78c-4025-9073-568950c780fb"
+            ],
+            "labels": [
+                "misp:type=\"sha224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--90bd7dae-b78c-4025-9073-568950c780fb",
+            "hashes": {
+                "SHA224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA224 test attribute",
+            "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--aea91422-ae58-40c0-815c-e9160fb552a4",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+            "target_ref": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
+        "type": "sha224",
+        "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sha256
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA256 test attribute",
+        "pattern": "[file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "type": "sha256",
+        "value": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA256 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--2007ec09-8137-4a71-a3ce-6ef967bebacf"
+            ],
+            "labels": [
+                "misp:type=\"sha256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "hashes": {
+                "SHA-256": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA256 test attribute",
+            "pattern": "[file:hashes.'SHA-256' = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--40d6c7e0-1e8c-4fe0-8650-f0a959bc878b",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "target_ref": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "type": "sha256",
+        "value": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sha3-224
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
+            ],
+            "labels": [
+                "misp:type=\"sha3-224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "hashes": {
+                "SHA3224": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA3-224 test attribute",
+            "pattern": "[file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha3-224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--5415bd6a-5127-4b74-9a26-e0d38952af1c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+            "target_ref": "observed-data--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "type": "sha3-224",
+        "value": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-224 test attribute",
+        "pattern": "[file:hashes.'SHA3-224' = '47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha3-224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "f750c3d9-b7c6-4054-9bb4-f9b0b74688c9",
+        "type": "sha3-224",
+        "value": "47d20efbf11c63c0b683560e61f7eb2eb314b68d9e714f8feeba0cfc",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA3-224 test attribute"
+    }
+    ```
+
+- sha3-256
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-256 test attribute",
+        "pattern": "[file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha3-256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "type": "sha3-256",
+        "value": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA3-256 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+            ],
+            "labels": [
+                "misp:type=\"sha3-256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "hashes": {
+                "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA3-256 test attribute",
+            "pattern": "[file:hashes.'SHA3-256' = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha3-256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--9ecc7f6c-75c7-4663-baea-a4e5d0e30a35",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+            "target_ref": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "type": "sha3-256",
+        "value": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sha3-384
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
+            ],
+            "labels": [
+                "misp:type=\"sha3-384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "hashes": {
+                "SHA3384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA3-384 test attribute",
+            "pattern": "[file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha3-384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--3b8187c2-a105-452f-88ee-f34bd860782f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+            "target_ref": "observed-data--0d40e61c-fafa-4b8c-b5d0-60d768f649a1"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "type": "sha3-384",
+        "value": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-384 test attribute",
+        "pattern": "[file:hashes.'SHA3-384' = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha3-384\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "0d40e61c-fafa-4b8c-b5d0-60d768f649a1",
+        "type": "sha3-384",
+        "value": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA3-384 test attribute"
+    }
+    ```
+
+- sha3-512
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--7e5ec865-a97c-41ba-99ba-a21c006da460"
+            ],
+            "labels": [
+                "misp:type=\"sha3-512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "hashes": {
+                "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA3-512 test attribute",
+            "pattern": "[file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha3-512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--f5e0f1d6-2154-45ec-8697-f6231c217133",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+            "target_ref": "observed-data--7e5ec865-a97c-41ba-99ba-a21c006da460"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "type": "sha3-512",
+        "value": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-512 test attribute",
+        "pattern": "[file:hashes.'SHA3-512' = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha3-512\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7e5ec865-a97c-41ba-99ba-a21c006da460",
+        "type": "sha3-512",
+        "value": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA3-512 test attribute"
+    }
+    ```
+
+- sha384
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA384 test attribute",
+        "pattern": "[file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha384\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "type": "sha384",
+        "value": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA384 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--c8760340-85a9-4e40-bfde-522d66ef1e9f"
+            ],
+            "labels": [
+                "misp:type=\"sha384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "hashes": {
+                "SHA384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA384 test attribute",
+            "pattern": "[file:hashes.'SHA-384' = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha384\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--61ef6c1d-f504-4d0d-94af-6a745270dce5",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+            "target_ref": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "type": "sha384",
+        "value": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sha512
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512 test attribute",
+        "pattern": "[file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha512\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "type": "sha512",
+        "value": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA512 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
+            ],
+            "labels": [
+                "misp:type=\"sha512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "hashes": {
+                "SHA-512": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA512 test attribute",
+            "pattern": "[file:hashes.'SHA-512' = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha512\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--9dd12c5c-cafb-4087-86ac-98a91cd8eff7",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+            "target_ref": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "type": "sha512",
+        "value": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sha512/224
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
+            ],
+            "labels": [
+                "misp:type=\"sha512/224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "hashes": {
+                "SHA224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA512/224 test attribute",
+            "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha512/224\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--7ac97cac-bedc-4c6e-b2ee-d72358493da1",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+            "target_ref": "observed-data--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "type": "sha512/224",
+        "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/224 test attribute",
+        "pattern": "[file:hashes.'SHA-224' = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha512/224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "bb8c9a01-55ba-4fac-9f2f-cdc31ed774a5",
+        "type": "sha512/224",
+        "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA512/224 test attribute"
+    }
+    ```
+
+- sha512/256
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/256 test attribute",
+        "pattern": "[file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha512/256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "type": "sha512/256",
+        "value": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SHA512/256 test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+            ],
+            "labels": [
+                "misp:type=\"sha512/256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "hashes": {
+                "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SHA512/256 test attribute",
+            "pattern": "[file:hashes.'SHA-256' = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"sha512/256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--59b95b7e-504d-4fa4-a072-c675498292f5",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+            "target_ref": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "type": "sha512/256",
+        "value": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- sigma
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Sigma test attribute",
+        "pattern": "[title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high]",
+        "pattern_type": "sigma",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Artifacts dropped"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sigma\"",
+            "misp:category=\"Artifacts dropped\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "sigma",
+        "value": "[title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high]",
+        "category": "Artifacts dropped",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Sigma test attribute"
+    }
+    ```
+
+- size-in-bytes
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:size = '1234']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Other"
+            }
+        ],
+        "labels": [
+            "misp:type=\"size-in-bytes\"",
+            "misp:category=\"Other\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "size-in-bytes",
+        "value": "1234",
+        "category": "Other",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- snort
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Snort test attribute",
+        "pattern": "[alert http any 443 -> 8.8.8.8 any]",
+        "pattern_type": "snort",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"snort\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "snort",
+        "value": "[alert http any 443 -> 8.8.8.8 any]",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Snort test attribute"
+    }
+    ```
+
+- ssdeep
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SSDEEP test attribute",
+        "pattern": "[file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ssdeep\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "type": "ssdeep",
+        "value": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "SSDEEP test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--9060e814-a36f-45ab-84e5-66fc82dc7cff"
+            ],
+            "labels": [
+                "misp:type=\"ssdeep\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "hashes": {
+                "SSDEEP": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "SSDEEP test attribute",
+            "pattern": "[file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"ssdeep\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--6170abd7-7ddc-4e22-9cdb-30880b463973",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+            "target_ref": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "type": "ssdeep",
+        "value": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- telfhash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "TELFHASH test attribute",
+        "pattern": "[file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"telfhash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "4846cade-2492-4e7d-856e-2afcd282455b",
+        "type": "telfhash",
+        "value": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "TELFHASH test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--4846cade-2492-4e7d-856e-2afcd282455b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--4846cade-2492-4e7d-856e-2afcd282455b"
+            ],
+            "labels": [
+                "misp:type=\"telfhash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--4846cade-2492-4e7d-856e-2afcd282455b",
+            "hashes": {
+                "TELFHASH": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "TELFHASH test attribute",
+            "pattern": "[file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"telfhash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--65a745c4-8c12-45cd-9127-330f6cd0f812",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
+            "target_ref": "observed-data--4846cade-2492-4e7d-856e-2afcd282455b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "4846cade-2492-4e7d-856e-2afcd282455b",
+        "type": "telfhash",
+        "value": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- tlsh
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "TLSH test attribute",
+        "pattern": "[file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"tlsh\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
+        "type": "tlsh",
+        "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "TLSH test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--7467406e-88d3-4856-afc9-412459bc3c8b"
+            ],
+            "labels": [
+                "misp:type=\"tlsh\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "hashes": {
+                "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "TLSH test attribute",
+            "pattern": "[file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"tlsh\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--388e22d6-85b7-4189-8b89-589cdd931ecf",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+            "target_ref": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
+        "type": "tlsh",
+        "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- uri
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URI test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"uri\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "uri",
+        "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "URI test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "url--518b4bcb-a86b-4783-9457-391d548b605b"
+            ],
+            "labels": [
+                "misp:type=\"uri\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "url",
+            "spec_version": "2.1",
+            "id": "url--518b4bcb-a86b-4783-9457-391d548b605b",
+            "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "URI test attribute",
+            "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"uri\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "uri",
+        "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- url
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URL test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"url\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "url",
+        "value": "https://vm.misp-project.org/latest/",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "URL test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "url--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+            ],
+            "labels": [
+                "misp:type=\"url\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "url",
+            "spec_version": "2.1",
+            "id": "url--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "value": "https://vm.misp-project.org/latest/"
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "URL test attribute",
+            "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "labels": [
+                "misp:type=\"url\"",
+                "misp:category=\"Network activity\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "url",
+        "value": "https://vm.misp-project.org/latest/",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- user-agent
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "User-agent test attribute",
+        "pattern": "[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"user-agent\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "user-agent",
+        "value": "Mozilla Firefox",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "User-agent test attribute"
+    }
+    ```
+
+- vhash
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "VHASH test attribute",
+        "pattern": "[file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"vhash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "type": "vhash",
+        "value": "115056655d15151138z66hz1021z55z66z3",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "VHASH test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
+            ],
+            "labels": [
+                "misp:type=\"vhash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "hashes": {
+                "VHASH": "115056655d15151138z66hz1021z55z66z3"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "VHASH test attribute",
+            "pattern": "[file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"vhash\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--f7455a6c-4a23-40a2-82f5-a2191822ed59",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+            "target_ref": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "type": "vhash",
+        "value": "115056655d15151138z66hz1021z55z66z3",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- vulnerability
+  - STIX - Vulnerability
+    ```json
+    {
+        "type": "vulnerability",
+        "spec_version": "2.1",
+        "id": "vulnerability--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "CVE-2017-11774",
+        "labels": [
+            "misp:type=\"vulnerability\"",
+            "misp:category=\"External analysis\"",
+            "misp:to_ids=\"True\""
+        ],
+        "external_references": [
+            {
+                "source_name": "cve",
+                "external_id": "CVE-2017-11774"
+            }
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "vulnerability",
+        "value": "CVE-2017-11774",
+        "category": "External analysis",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- x509-fingerprint-md5
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "X509 MD5 fingerprint test attribute",
+        "pattern": "[x509-certificate:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"x509-fingerprint-md5\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "x509-fingerprint-md5",
+        "value": "8764605c6f388c89096b534d33565802",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "X509 MD5 fingerprint test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "x509-certificate--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ],
+            "labels": [
+                "misp:type=\"x509-fingerprint-md5\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "x509-certificate",
+            "spec_version": "2.1",
+            "id": "x509-certificate--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "hashes": {
+                "MD5": "8764605c6f388c89096b534d33565802"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "X509 MD5 fingerprint test attribute",
+            "pattern": "[x509-certificate:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"x509-fingerprint-md5\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--600e528a-1967-4489-a604-a04af707490c",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "x509-fingerprint-md5",
+        "value": "8764605c6f388c89096b534d33565802",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- x509-fingerprint-sha1
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "X509 SHA1 fingerprint test attribute",
+        "pattern": "[x509-certificate:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"x509-fingerprint-sha1\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "x509-fingerprint-sha1",
+        "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "X509 SHA1 fingerprint test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "x509-certificate--518b4bcb-a86b-4783-9457-391d548b605b"
+            ],
+            "labels": [
+                "misp:type=\"x509-fingerprint-sha1\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "x509-certificate",
+            "spec_version": "2.1",
+            "id": "x509-certificate--518b4bcb-a86b-4783-9457-391d548b605b",
+            "hashes": {
+                "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "X509 SHA1 fingerprint test attribute",
+            "pattern": "[x509-certificate:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"x509-fingerprint-sha1\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--328c53d5-6441-4ee1-8546-83a089dc9291",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "target_ref": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "x509-fingerprint-sha1",
+        "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- x509-fingerprint-sha256
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "X509 SHA256 fingerprint test attribute",
+        "pattern": "[x509-certificate:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"x509-fingerprint-sha256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "x509-fingerprint-sha256",
+        "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "X509 SHA256 fingerprint test attribute"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "object_refs": [
+                "x509-certificate--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+            ],
+            "labels": [
+                "misp:type=\"x509-fingerprint-sha256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "x509-certificate",
+            "spec_version": "2.1",
+            "id": "x509-certificate--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "hashes": {
+                "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+            }
+        },
+        {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "description": "X509 SHA256 fingerprint test attribute",
+            "pattern": "[x509-certificate:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+            "pattern_type": "stix",
+            "pattern_version": "2.1",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "labels": [
+                "misp:type=\"x509-fingerprint-sha256\"",
+                "misp:category=\"Payload delivery\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "spec_version": "2.1",
+            "id": "relationship--0b488954-0d5a-4ea9-b3e0-23b8839ba94f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "target_ref": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "x509-fingerprint-sha256",
+        "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+        "category": "Payload delivery",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false
+    }
+    ```
+
+- yara
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Yara test attribute",
+        "pattern": "[rule torcryptomining { meta: description = \"Tor miner - broken UPX magic string\" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }]",
+        "pattern_type": "yara",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload installation"
+            }
+        ],
+        "labels": [
+            "misp:type=\"yara\"",
+            "misp:category=\"Payload installation\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "yara",
+        "value": "[rule torcryptomining { meta: description = \"Tor miner - broken UPX magic string\" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }]",
+        "category": "Payload installation",
+        "to_ids": true,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Yara test attribute"
+    }
+    ```
+
+
+## The other detailed mappings
+
+- [Objects mapping](stix21_to_misp_objects.md)

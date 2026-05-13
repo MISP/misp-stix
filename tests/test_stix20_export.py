@@ -4905,64 +4905,51 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
 
 class TestSTIX20ExportInteroperability(TestSTIX2Export):
     def setUp(self):
-        self.parser = MISPtoSTIX20Parser(interoperability=True)
+        self.parser = MISPtoSTIX20Parser(use_cti_uuids=True)
 
-    def _check_galaxy_object(self, stix_object, name, cluster_value):
-        self.assertEqual(stix_object.type, name)
-        name, reference = cluster_value.split(' - ')
-        self.assertEqual(stix_object.name, name)
-        try:
-            self.assertEqual(
-                stix_object.external_references[0].external_id, reference
-            )
-        except AssertionError:
-            self.assertEqual(stix_object.x_mitre_old_attack_id, reference)
-
-    def _run_galaxy_tests(self, event):
+    def _run_galaxy_tests(self, event, expected_stix_id):
         orgc = event['Orgc']
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self.parser.parse_misp_event(event)
-        mitre_identity, identity, report, stix_object = self.parser.stix_objects
+        identity, report = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_report_features(report, event, identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
-        self.assertEqual(stix_object.id, object_ref)
-        self.assertEqual(stix_object.created_by_ref, mitre_identity.id)
-        return stix_object
+        self.assertEqual(object_ref, expected_stix_id)
 
 
 class TestSTIX20JSONExportInteroperability(TestSTIX20ExportInteroperability):
     def test_attack_pattern(self):
         event = get_event_with_attack_pattern_galaxy()['Event']
-        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
-        attack_pattern = self._run_galaxy_tests(event)
-        self._check_galaxy_object(attack_pattern, 'attack-pattern', cluster_value)
+        self._run_galaxy_tests(
+            event, 'attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48'
+        )
 
     def test_course_of_action(self):
         event = get_event_with_course_of_action_galaxy()['Event']
-        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
-        course_of_action = self._run_galaxy_tests(event)
-        self._check_galaxy_object(course_of_action, 'course-of-action', cluster_value)
+        self._run_galaxy_tests(
+            event, 'course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294'
+        )
 
     def test_intrusion_set(self):
         event = get_event_with_intrusion_set_galaxy()['Event']
-        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
-        intrusion_set = self._run_galaxy_tests(event)
-        self._check_galaxy_object(intrusion_set, 'intrusion-set', cluster_value)
+        self._run_galaxy_tests(
+            event, 'intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70'
+        )
 
     def test_malware(self):
         event = get_event_with_malware_galaxy()['Event']
-        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
-        malware = self._run_galaxy_tests(event)
-        self._check_galaxy_object(malware, 'malware', cluster_value)
+        self._run_galaxy_tests(
+            event, 'malware--b8eb28e4-48a6-40ae-951a-328714f75eda'
+        )
 
     def test_tool(self):
         event = get_event_with_tool_galaxy()['Event']
-        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
-        tool = self._run_galaxy_tests(event)
-        self._check_galaxy_object(tool, 'tool', cluster_value)
+        self._run_galaxy_tests(
+            event, 'tool--bba595da-b73a-4354-aa6c-224d4de7cb4e'
+        )
 
 
 class TestSTIX20MISPExportInteroperability(TestSTIX20ExportInteroperability):
@@ -4970,55 +4957,40 @@ class TestSTIX20MISPExportInteroperability(TestSTIX20ExportInteroperability):
         event = get_event_with_attack_pattern_galaxy()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        attack_pattern = self._run_galaxy_tests(misp_event)
-        self._check_galaxy_object(
-            attack_pattern,
-            'attack-pattern',
-            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        self._run_galaxy_tests(
+            misp_event, 'attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48'
         )
 
     def test_course_of_action(self):
         event = get_event_with_course_of_action_galaxy()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        course_of_action = self._run_galaxy_tests(misp_event)
-        self._check_galaxy_object(
-            course_of_action,
-            'course-of-action',
-            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        self._run_galaxy_tests(
+            misp_event, 'course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294'
         )
 
     def test_intrusion_set(self):
         event = get_event_with_intrusion_set_galaxy()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        intrusion_set = self._run_galaxy_tests(misp_event)
-        self._check_galaxy_object(
-            intrusion_set,
-            'intrusion-set',
-            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        self._run_galaxy_tests(
+            misp_event, 'intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70'
         )
 
     def test_malware(self):
         event = get_event_with_malware_galaxy()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        malware = self._run_galaxy_tests(misp_event)
-        self._check_galaxy_object(
-            malware,
-            'malware',
-            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        self._run_galaxy_tests(
+            misp_event, 'malware--b8eb28e4-48a6-40ae-951a-328714f75eda'
         )
 
     def test_tool(self):
         event = get_event_with_tool_galaxy()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        tool = self._run_galaxy_tests(misp_event)
-        self._check_galaxy_object(
-            tool,
-            'tool',
-            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        self._run_galaxy_tests(
+            misp_event, 'tool--bba595da-b73a-4354-aa6c-224d4de7cb4e'
         )
 
 

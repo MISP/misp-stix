@@ -3,17 +3,12 @@
 import json
 import traceback
 from ..abstract import AbstractParser
-from .exceptions import UnavailableGalaxyResourcesError
 from abc import ABCMeta
-from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from typing import Optional, Union
 from uuid import UUID
-
-_DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 
 MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
 
@@ -151,14 +146,6 @@ class STIXtoMISPParser(AbstractParser):
         return self.__galaxies_as_tags
 
     @property
-    def galaxy_definitions(self) -> Path:
-        try:
-            return self.__galaxy_definitions
-        except AttributeError:
-            self.__get_galaxy_definitions()
-            return self.__galaxy_definitions
-
-    @property
     def galaxy_feature(self) -> str:
         return self.__galaxy_feature
 
@@ -195,14 +182,6 @@ class STIXtoMISPParser(AbstractParser):
     @property
     def single_event(self) -> bool:
         return self.__single_event
-
-    @property
-    def synonyms_mapping(self) -> dict:
-        try:
-            return self.__synonyms_mapping
-        except AttributeError:
-            self.__get_synonyms_mapping()
-            return self.__synonyms_mapping
 
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
@@ -258,87 +237,6 @@ class STIXtoMISPParser(AbstractParser):
             relationship['name']: relationship['opposite'] for relationship
             in relationships['values'] if 'opposite' in relationship
         }
-
-    ############################################################################
-    #          SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING METHODS.          #
-    ############################################################################
-
-    def __check_fingerprint(self):
-        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
-        if latest_fingerprint is not None:
-            fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
-            with open(fingerprint_path, 'wt', encoding='utf-8') as f:
-                f.write(latest_fingerprint)
-
-    def __galaxies_up_to_date(self) -> bool:
-        fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
-        if not fingerprint_path.exists():
-            return False
-        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
-        if latest_fingerprint is None:
-            return False
-        with open(fingerprint_path, 'rt', encoding='utf-8') as f:
-            fingerprint = f.read()
-        return fingerprint == latest_fingerprint
-
-    def __get_galaxy_definitions(self):
-        definitions_path = _DATA_PATH / 'galaxyDefinitions.json'
-        if not definitions_path.exists() or not self.__galaxies_up_to_date():
-            data_path = _DATA_PATH / 'misp-galaxy' / 'galaxies'
-            if not data_path.exists():
-                raise UnavailableGalaxyResourcesError(data_path)
-            definitions = {}
-            for filename in data_path.glob('*.json'):
-                galaxy_definition = _load_json_file(filename)
-                definitions[galaxy_definition['type']] = galaxy_definition
-            with open(definitions_path, 'wt', encoding='utf-8') as f:
-                f.write(json.dumps(definitions))
-            self.__check_fingerprint()
-        self.__galaxy_definitions = _load_json_file(definitions_path)
-
-    @staticmethod
-    def __get_misp_galaxy_fingerprint() -> Optional[str]:
-        galaxy_git = _DATA_PATH / 'misp-galaxy' / '.git'
-
-        if galaxy_git.is_file():
-            with open(galaxy_git, 'rt') as f:
-                git_file_content = f.read()
-                if git_file_content.startswith('gitdir:'):
-                    galaxy_git = (
-                        _DATA_PATH / 'misp-galaxy' /
-                        git_file_content.split(':')[1].strip()
-                    )
-                else:
-                    return None
-
-        head_file = galaxy_git / 'HEAD'
-        if head_file.is_file():
-            with open(head_file, 'rt') as f:
-                return f.read().strip()
-
-        return None
-
-    def __get_synonyms_mapping(self):
-        synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
-        if not synonyms_path.exists() or not self.__galaxies_up_to_date():
-            data_path = _DATA_PATH / 'misp-galaxy' / 'clusters'
-            if not data_path.exists():
-                raise UnavailableGalaxyResourcesError(data_path)
-            synonyms_mapping = defaultdict(list)
-            for filename in data_path.glob('*.json'):
-                cluster_definition = _load_json_file(filename)
-                cluster_type = f"misp-galaxy:{cluster_definition['type']}"
-                for cluster in cluster_definition['values']:
-                    value = cluster['value']
-                    tag_name = f'{cluster_type}="{value}"'
-                    synonyms_mapping[value].append(tag_name)
-                    if cluster.get('meta', {}).get('synonyms') is not None:
-                        for synonym in cluster['meta']['synonyms']:
-                            synonyms_mapping[synonym].append(tag_name)
-            with open(synonyms_path, 'wt', encoding='utf-8') as f:
-                f.write(json.dumps(synonyms_mapping))
-            self.__check_fingerprint()
-        self.__synonyms_mapping = _load_json_file(synonyms_path)
 
     ############################################################################
     #                     UUID SANITATION HANDLING METHODS                     #

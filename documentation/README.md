@@ -22,6 +22,21 @@ Thus, it gives a detailed description of the inputs and outputs that are to expe
         * [Attributes to STIX 2.1](#Attributes-to-STIX-21-mapping)
         * [Objects to STIX 2.1](#Objects-to-STIX-21-mapping)
         * [Galaxies to STIX 2.1](#Galaxies-to-STIX-21-mapping)
+* [STIX to MISP](#STIX-to-MISP)
+    * [STIX 2.0 to MISP](#STIX-20-to-MISP)
+        * [Attributes from STIX 2.0](#Attributes-from-STIX-20)
+        * [Objects from STIX 2.0](#Objects-from-STIX-20)
+        * [Galaxies from STIX 2.0](#Galaxies-from-STIX-20)
+        * [Attributes from External STIX 2.0](#Attributes-from-External-STIX-20)
+        * [Objects from External STIX 2.0](#Objects-from-External-STIX-20)
+        * [Galaxies from External STIX 2.0](#Galaxies-from-External-STIX-20)
+    * [STIX 2.1 to MISP](#STIX-21-to-MISP)
+        * [Attributes from STIX 2.1](#Attributes-from-STIX-21)
+        * [Objects from STIX 2.1](#Objects-from-STIX-21)
+        * [Galaxies from STIX 2.1](#Galaxies-from-STIX-21)
+        * [Attributes from External STIX 2.1](#Attributes-from-External-STIX-21)
+        * [Objects from External STIX 2.1](#Objects-from-External-STIX-21)
+        * [Galaxies from External STIX 2.1](#Galaxies-from-External-STIX-21)
 * [Future improvements](#Future-Improvements)
 
 ## Introduction
@@ -590,3 +605,509 @@ The detailed mapping for MISP objects, with explanations and examples, is availa
 ##### Detailed mapping
 
 The detailed mapping for galaxies, with explanations and examples, is available [here](misp_galaxies_to_stix21.md)
+
+
+## STIX to MISP
+
+When importing STIX 2.x content into MISP, the converter first determines the origin of the bundle to apply the appropriate parsing strategy:
+
+- **Internal**: The bundle was originally produced by MISP (detected via the `misp:tool="MISP-STIX-Converter"` label on the `Report` or `Grouping` object). The import performs a faithful round-trip, reconstructing MISP attributes, objects, and galaxy clusters from MISP-specific custom types (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`).
+
+- **External**: The bundle was produced by a third-party tool. Standard STIX SDOs and SCOs are mapped to MISP attributes, objects, and galaxies using heuristics. SDOs that represent threat intelligence concepts (`AttackPattern`, `Malware`, `ThreatActor`, etc.) are imported as new MISP Galaxy Clusters.
+
+Both use cases are documented for STIX 2.0 and STIX 2.1 in the sections below.
+
+### STIX 2.0 to MISP
+
+#### STIX 2.0 Bundles to MISP mapping
+
+##### Summary
+
+The import of STIX 2.0 content into MISP distinguishes between STIX bundles that were originally produced by MISP (internal) and those produced by third-party tools (external).
+
+| STIX object | MISP datastructure |
+| -- | -- |
+| `Report` | Event |
+| `Indicator` | Attribute or Object (`to_ids` flag set) |
+| `Observed Data` | Attribute or Object (`to_ids` flag unset) |
+| `AttackPattern`, `CourseOfAction`, `IntrusionSet`, `Malware`, `ThreatActor`, `Tool`, `Vulnerability` | Galaxy Cluster |
+
+#### Attributes from STIX 2.0
+
+##### Summary
+
+The following table mentions the STIX 2.0 object types from which the MISP attributes are imported.
+
+| MISP Attribute type | STIX Object type |
+| -- | -- |
+| AS | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
+| attachment | File Object (pattern) / Artifact & File Objects and IoCs described in Indicator (pattern) (observable) |
+| authentihash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| campaign-name | **Campaign** |
+| domain | Domain Name Object and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) |
+| domain\|ip | Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) |
+| email | Email Addr Object and IoCs described in Indicator (pattern) (observable) / Email Address Object (pattern) |
+| email-attachment | Email Message & File Objects and IoCs described in Indicator (pattern) (observable) / Email Message Object (pattern) |
+| email-body | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-dst | Email Addr & Email Message Objects and IoCs described in Indicator (pattern) (observable) / Email Message Object (pattern) |
+| email-header | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-reply-to | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-src | Email Addr & Email Message Objects and IoCs described in Indicator (pattern) (observable) / Email Message Object (pattern) |
+| email-subject | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-x-mailer | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| filename | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|authentihash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|imphash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|md5 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|pehash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha1 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha512/224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha512/256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|ssdeep | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|tlsh | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|vhash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| github-username | User Account Object (pattern) / Custom Object |
+| hostname | Domain Name Object and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) |
+| hostname\|port | Domain Name & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Domain Name & Network Traffic Objects (pattern) |
+| http-method | Network Traffic Object (pattern) / Custom Object |
+| imphash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| ip-dst | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| ip-dst\|port | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| ip-src | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| ip-src\|port | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| link | URL Object (pattern) / Url Object and IoCs described in Indicator (pattern) (observable) |
+| mac-address | Mac Address Object (pattern) / Mac Addr Object and IoCs described in Indicator (pattern) (observable) |
+| malware-sample | Artifact & File Objects and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| md5 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| mutex | Mutex Object and IoCs described in Indicator (pattern) (observable) / Mutex Object (pattern) |
+| pehash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| port | Network Traffic Object (pattern) / Custom Object |
+| regkey | Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) / Windows Registry Key Object (pattern) |
+| regkey\|value | Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) / Windows Registry Key Object (pattern) |
+| sha1 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha512/224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha512/256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| size-in-bytes | File Object (pattern) / Custom Object |
+| ssdeep | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| telfhash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| tlsh | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| uri | Url Object and IoCs described in Indicator (pattern) (observable) / URL Object (pattern) |
+| url | Url Object and IoCs described in Indicator (pattern) (observable) / URL Object (pattern) |
+| user-agent | Network Traffic Object (pattern) / Custom Object |
+| vhash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| vulnerability | **Vulnerability** |
+| x509-fingerprint-md5 | X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / X509 Certificate Object (pattern) |
+| x509-fingerprint-sha1 | X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / X509 Certificate Object (pattern) |
+| x509-fingerprint-sha256 | X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / X509 Certificate Object (pattern) |
+
+##### Detailed mapping
+
+The detailed mapping for attributes, with explanations and examples, is available [here](stix20_to_misp_attributes.md)
+
+#### Objects from STIX 2.0
+
+##### Summary
+
+| MISP Object name | STIX Object type |
+| -- | -- |
+| Domain-IP object (custom case) | Domain Name & IPv4/IPv6 Address Objects (observable) |
+| Domain-IP object (standard case) | Domain Name & IPv4/IPv6 Address Objects (observable) |
+| File object with a Windows PE binary extension | File object with a Windows PE binary extension |
+| Script object where state is "Malicious" | **Malware** |
+| Script object where state is not "Malicious" | **Tool** |
+| android-app | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
+| asn | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
+| attack-pattern | **Attack Pattern** |
+| course-of-action | **Course of Action** |
+| cpe-asset | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
+| credential | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) (observable) |
+| email | Email Message Object (pattern) / Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) |
+| employee | **Identity** |
+| facebook-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
+| github-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| gitlab-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| http-request | Network Traffic Object (pattern) / Domain Name & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| identity | **Identity** |
+| image | File Object (pattern) / Artifact & File Objects and IoCs described in Indicator (pattern) (observable) |
+| ip-port | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| legal-entity | **Identity** |
+| lnk | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
+| mutex | Mutex Object (pattern) / Mutex Object and IoCs described in Indicator (pattern) (observable) |
+| netflow | Network Traffic Object (pattern) / Autonomous System & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| network-connection | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| network-socket | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| news-agency | **Identity** |
+| organization | **Identity** |
+| parler-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| person | **Identity** |
+| process | Process Object (pattern) / File & Process Objects and IoCs described in Indicator (pattern) (observable) |
+| reddit-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) |
+| telegram-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| twitter-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| url | URL Object (pattern) / Url Object and IoCs described in Indicator (pattern) (observable) |
+| user-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| vulnerability | **Vulnerability** |
+| x509 | X509 Certificate Object (pattern) / X509 Certificate Object and IoCs described in Indicator (pattern) (observable) |
+
+##### Detailed mapping
+
+The detailed mapping for MISP objects, with explanations and examples, is available [here](stix20_to_misp_objects.md)
+
+#### Galaxies from STIX 2.0
+
+##### Summary
+
+| STIX Object type | MISP Galaxy |
+| -- | -- |
+| attack-pattern | Attack Pattern (mitre-attack-pattern) |
+| course-of-action | Course of Action (mitre-course-of-action) |
+| identity | Sector (sector) |
+| intrusion-set | Intrusion Set (mitre-intrusion-set) |
+| malware | Malware (mitre-malware) |
+| threat-actor | Threat Actor (threat-actor) |
+| tool | Tool (mitre-tool) |
+| vulnerability | Branded Vulnerability (branded-vulnerability) |
+
+##### Detailed mapping
+
+The detailed mapping for MISP galaxies from STIX 2.0 bundles, with explanations and examples, is available [here](stix20_to_misp_galaxies.md)
+
+#### Attributes from External STIX 2.0
+
+##### Summary
+
+| MISP Attribute type | STIX Object type |
+| -- | -- |
+| AS | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
+| domain | Domain Name Object and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) |
+| email | Email Addr Object and IoCs described in Indicator (pattern) (observable) |
+| email-dst | Email Address Object (pattern) / Custom Object |
+| ip-dst | Ipv4 Addr Object and IoCs described in Indicator (pattern) (observable) / IPv4/IPv6 Address Object (pattern) |
+| mac-address | Mac Addr Object and IoCs described in Indicator (pattern) (observable) / Mac Address Object (pattern) |
+| mutex | Mutex Object and IoCs described in Indicator (pattern) (observable) / Mutex Object (pattern) |
+| url | Url Object and IoCs described in Indicator (pattern) (observable) / URL Object (pattern) |
+
+##### Detailed mapping
+
+The detailed mapping for attributes from external STIX 2.0 bundles, with explanations and examples, is available [here](external_stix20_to_misp_attributes.md)
+
+#### Objects from External STIX 2.0
+
+##### Summary
+
+| MISP Object name | STIX Object type |
+| -- | -- |
+| artifact | Artifact Object (pattern) / Artifact Object and IoCs described in Indicator (pattern) (observable) |
+| asn | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
+| directory | Directory Object (pattern) / Directory Object and IoCs described in Indicator (pattern) (observable) |
+| domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr & Ipv6 Addr Objects and IoCs described in Indicator (pattern) (observable) |
+| email | Email Message Object (pattern) / Artifact & Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) |
+| file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
+| network-socket | Network Traffic Object (pattern) / Custom Object |
+| network-traffic | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| process | Process Object (pattern) / Process Object and IoCs described in Indicator (pattern) (observable) |
+| registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) |
+| software | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
+| user-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| x509 | X509 Certificate Object (pattern) / X509 Certificate Object and IoCs described in Indicator (pattern) (observable) |
+
+##### Detailed mapping
+
+The detailed mapping for MISP objects from external STIX 2.0 bundles, with explanations and examples, is available [here](external_stix20_to_misp_objects.md)
+
+#### Galaxies from External STIX 2.0
+
+SDOs in STIX 2.0 bundles produced by third-party tools are imported as new MISP Galaxy Clusters with galaxy type `stix-2.0-{object-type}`.
+
+##### Summary
+
+| STIX Object type | MISP Galaxy |
+| -- | -- |
+| attack-pattern | STIX 2.0 Attack Pattern (stix-2.0-attack-pattern) |
+| campaign | STIX 2.0 Campaign (stix-2.0-campaign) |
+| course-of-action | STIX 2.0 Course of Action (stix-2.0-course-of-action) |
+| intrusion-set | STIX 2.0 Intrusion Set (stix-2.0-intrusion-set) |
+| malware | STIX 2.0 Malware (stix-2.0-malware) |
+| threat-actor | STIX 2.0 Threat Actor (stix-2.0-threat-actor) |
+| tool | STIX 2.0 Tool (stix-2.0-tool) |
+| vulnerability | STIX 2.0 Vulnerability (stix-2.0-vulnerability) |
+
+##### Detailed mapping
+
+The detailed mapping for MISP galaxies from external STIX 2.0 bundles, with explanations and examples, is available [here](external_stix20_to_misp_galaxies.md)
+
+### STIX 2.1 to MISP
+
+#### STIX 2.1 Bundles to MISP mapping
+
+##### Summary
+
+The import of STIX 2.1 content into MISP distinguishes between STIX bundles that were originally produced by MISP (internal) and those produced by third-party tools (external).
+
+| STIX object | MISP datastructure |
+| -- | -- |
+| `Report` or `Grouping` | Event |
+| `Indicator` | Attribute or Object (`to_ids` flag set) |
+| `Observed Data` + SCOs | Attribute or Object (`to_ids` flag unset) |
+| `AttackPattern`, `CourseOfAction`, `IntrusionSet`, `Malware`, `ThreatActor`, `Tool`, `Vulnerability` | Galaxy Cluster |
+
+#### Attributes from STIX 2.1
+
+##### Summary
+
+The following table mentions the STIX 2.1 object types from which the MISP attributes are imported.
+
+| MISP Attribute type | STIX Object type |
+| -- | -- |
+| AS | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
+| attachment | File Object (pattern) / Artifact & File Objects and IoCs described in Indicator (pattern) (observable) |
+| authentihash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| campaign-name | **Campaign** |
+| domain | Domain Name Object and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) |
+| domain\|ip | Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) |
+| email | Email Addr Object and IoCs described in Indicator (pattern) (observable) / Email Address Object (pattern) |
+| email-attachment | Email Message & File Objects and IoCs described in Indicator (pattern) (observable) / Email Message Object (pattern) |
+| email-body | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-dst | Email Addr & Email Message Objects and IoCs described in Indicator (pattern) (observable) / Email Message Object (pattern) |
+| email-header | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-message-id | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-reply-to | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-src | Email Addr & Email Message Objects and IoCs described in Indicator (pattern) (observable) / Email Message Object (pattern) |
+| email-subject | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| email-x-mailer | Email Message Object (pattern) / Email Message Object and IoCs described in Indicator (pattern) (observable) |
+| filename | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|authentihash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|imphash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|md5 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|pehash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha1 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha3-512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha512/224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|sha512/256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|ssdeep | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|tlsh | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| filename\|vhash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| github-username | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| hostname | Domain Name Object and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) |
+| hostname\|port | Domain Name & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Domain Name & Network Traffic Objects (pattern) |
+| http-method | Network Traffic Object (pattern) / Custom Object |
+| imphash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| ip-dst | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| ip-dst\|port | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| ip-src | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| ip-src\|port | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
+| link | URL Object (pattern) / Url Object and IoCs described in Indicator (pattern) (observable) |
+| mac-address | Mac Address Object (pattern) / Mac Addr Object and IoCs described in Indicator (pattern) (observable) |
+| malware-sample | Artifact & File Objects and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| md5 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| mutex | Mutex Object and IoCs described in Indicator (pattern) (observable) / Mutex Object (pattern) |
+| pehash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| port | Network Traffic Object (pattern) / Custom Object |
+| regkey | Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) / Windows Registry Key Object (pattern) |
+| regkey\|value | Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) / Windows Registry Key Object (pattern) |
+| sha1 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha3-512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha384 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha512 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha512/224 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sha512/256 | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| sigma | **Indicator** |
+| size-in-bytes | File Object (pattern) / Custom Object |
+| snort | **Indicator** |
+| ssdeep | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| telfhash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| tlsh | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| uri | Url Object and IoCs described in Indicator (pattern) (observable) / URL Object (pattern) |
+| url | Url Object and IoCs described in Indicator (pattern) (observable) / URL Object (pattern) |
+| user-agent | Network Traffic Object (pattern) / Custom Object |
+| vhash | File Object and IoCs described in Indicator (pattern) (observable) / File Object (pattern) |
+| vulnerability | **Vulnerability** |
+| x509-fingerprint-md5 | X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / X509 Certificate Object (pattern) |
+| x509-fingerprint-sha1 | X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / X509 Certificate Object (pattern) |
+| x509-fingerprint-sha256 | X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / X509 Certificate Object (pattern) |
+| yara | **Indicator** |
+
+##### Detailed mapping
+
+The detailed mapping for attributes, with explanations and examples, is available [here](stix21_to_misp_attributes.md)
+
+#### Objects from STIX 2.1
+
+##### Summary
+
+| MISP Object name | STIX Object type |
+| -- | -- |
+| Domain-IP object (custom case) | Domain Name & IPv4/IPv6 Address Objects (observable) |
+| Domain-IP object (standard case) | Domain Name & IPv4/IPv6 Address Objects (observable) |
+| File object with a Windows PE binary extension | File object with a Windows PE binary extension |
+| Script object where state is "Malicious" | **Malware** |
+| Script object where state is not "Malicious" | **Tool** |
+| android-app | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
+| annotation | **Note** |
+| asn | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
+| attack-pattern | **Attack Pattern** |
+| course-of-action | **Course of Action** |
+| cpe-asset | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
+| credential | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) (observable) |
+| email | Email Message Object (pattern) / Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) |
+| employee | **Identity** |
+| facebook-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
+| geolocation | **Location** |
+| github-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| gitlab-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| http-request | Network Traffic Object (pattern) / Domain Name & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| identity | **Identity** |
+| image | File Object (pattern) / Artifact & File Objects and IoCs described in Indicator (pattern) (observable) |
+| ip-port | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| legal-entity | **Identity** |
+| lnk | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
+| mutex | Mutex Object (pattern) / Mutex Object and IoCs described in Indicator (pattern) (observable) |
+| netflow | Network Traffic Object (pattern) / Autonomous System & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| network-connection | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| network-socket | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
+| news-agency | **Identity** |
+| nova-rule | Ule Multimodalinjection
+{
+    Meta Object (pattern) / Custom Object |
+| organization | **Identity** |
+| owasp-crs-rule | Ecrule Tx Object (pattern) / Custom Object |
+| parler-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| person | **Identity** |
+| process | Process Object (pattern) / File & Process Objects and IoCs described in Indicator (pattern) (observable) |
+| reddit-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) |
+| sigma | **Indicator** |
+| suricata | **Indicator** |
+| telegram-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| twitter-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| url | URL Object (pattern) / Url Object and IoCs described in Indicator (pattern) (observable) |
+| user-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| vulnerability | **Vulnerability** |
+| wazuh-rule | Rule Id="200996" Level="12">
+    <Decoded_As>Json</Decoded_As>
+    <Field Name="Cluster.Name">\.+</Field>
+    <Field Name="Level">^Error$</Field>
+    <Description>Wazuh Indexer Cluster Logs   Level Object (pattern) / Custom Object |
+| x509 | X509 Certificate Object (pattern) / X509 Certificate Object and IoCs described in Indicator (pattern) (observable) |
+| yara | **Indicator** |
+
+##### Detailed mapping
+
+The detailed mapping for MISP objects, with explanations and examples, is available [here](stix21_to_misp_objects.md)
+
+#### Galaxies from STIX 2.1
+
+##### Summary
+
+| STIX Object type | MISP Galaxy |
+| -- | -- |
+| attack-pattern | Attack Pattern (mitre-attack-pattern) |
+| course-of-action | Course of Action (mitre-course-of-action) |
+| identity | Sector (sector) |
+| intrusion-set | Intrusion Set (mitre-intrusion-set) |
+| malware | Malware (mitre-malware) |
+| threat-actor | Threat Actor (threat-actor) |
+| tool | Tool (mitre-tool) |
+| vulnerability | Branded Vulnerability (branded-vulnerability) |
+
+##### Detailed mapping
+
+The detailed mapping for MISP galaxies from STIX 2.1 bundles, with explanations and examples, is available [here](stix21_to_misp_galaxies.md)
+
+#### Attributes from External STIX 2.1
+
+##### Summary
+
+| MISP Attribute type | STIX Object type |
+| -- | -- |
+| AS | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| domain | Domain Name Object and IoCs described in Indicator (pattern) (observable) / Domain Name Object (pattern) / **Observable** |
+| email | Email Addr Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| email-dst | Email Address Object (pattern) / Custom Object |
+| ip-dst | Ipv4 Addr Object and IoCs described in Indicator (pattern) (observable) / IPv4/IPv6 Address Object (pattern) / **Observable** |
+| mac-address | Mac Addr Object and IoCs described in Indicator (pattern) (observable) / Mac Address Object (pattern) / **Observable** |
+| mutex | Mutex Object and IoCs described in Indicator (pattern) (observable) / Mutex Object (pattern) / **Observable** |
+| url | Url Object and IoCs described in Indicator (pattern) (observable) / URL Object (pattern) / **Observable** |
+
+##### Detailed mapping
+
+The detailed mapping for attributes from external STIX 2.1 bundles, with explanations and examples, is available [here](external_stix21_to_misp_attributes.md)
+
+#### Objects from External STIX 2.1
+
+##### Summary
+
+| MISP Object name | STIX Object type |
+| -- | -- |
+| artifact | Artifact Object (pattern) / Artifact Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| asn | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| directory | Directory Object (pattern) / Directory Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr & Ipv6 Addr Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| email | Email Message Object (pattern) / Artifact & Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| network-socket | Network Traffic Object (pattern) / Custom Object |
+| network-traffic | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| process | Process Object (pattern) / Process Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| software | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| user-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| x509 | X509 Certificate Object (pattern) / X509 Certificate Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
+
+##### Detailed mapping
+
+The detailed mapping for MISP objects from external STIX 2.1 bundles, with explanations and examples, is available [here](external_stix21_to_misp_objects.md)
+
+#### Galaxies from External STIX 2.1
+
+SDOs in STIX 2.1 bundles produced by third-party tools are imported as new MISP Galaxy Clusters with galaxy type `stix-2.1-{object-type}`.
+
+##### Summary
+
+| STIX Object type | MISP Galaxy |
+| -- | -- |
+| attack-pattern | STIX 2.1 Attack Pattern (stix-2.1-attack-pattern) |
+| campaign | STIX 2.1 Campaign (stix-2.1-campaign) |
+| course-of-action | STIX 2.1 Course of Action (stix-2.1-course-of-action) |
+| intrusion-set | STIX 2.1 Intrusion Set (stix-2.1-intrusion-set) |
+| location | STIX 2.1 Location (stix-2.1-location) |
+| malware | STIX 2.1 Malware (stix-2.1-malware) |
+| threat-actor | STIX 2.1 Threat Actor (stix-2.1-threat-actor) |
+| tool | STIX 2.1 Tool (stix-2.1-tool) |
+| vulnerability | STIX 2.1 Vulnerability (stix-2.1-vulnerability) |
+
+##### Detailed mapping
+
+The detailed mapping for MISP galaxies from external STIX 2.1 bundles, with explanations and examples, is available [here](external_stix21_to_misp_galaxies.md)

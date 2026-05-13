@@ -1,0 +1,471 @@
+# External STIX 2.0 to MISP Attributes mapping
+
+When importing external STIX 2.0 content (bundles not produced by MISP) into MISP, `Indicator` objects are parsed to produce MISP attributes with the `to_ids` flag set, while `Observed Data` objects produce MISP attributes with the `to_ids` flag unset.
+
+External STIX objects are mapped to the closest MISP attribute type via heuristics.
+
+### Current mapping
+
+- AS
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--50e99804-b9b5-4ea9-9ea8-25dbdd0f19f9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious autonomous system",
+        "description": "Autonomous system associated with malicious activity.",
+        "pattern": "[autonomous-system:number = 666]",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "malicious-activity"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "50e99804-b9b5-4ea9-9ea8-25dbdd0f19f9",
+        "type": "AS",
+        "value": "AS666",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1729873320",
+        "disable_correlation": false,
+        "object_relation": "asn",
+        "comment": "Autonomous system associated with malicious activity."
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    {
+        "type": "observed-data",
+        "id": "observed-data--1bf81a4f-0e70-4a34-944b-7e46f67ff7a7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "autonomous-system",
+                "number": 50588
+            }
+        }
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "1bf81a4f-0e70-4a34-944b-7e46f67ff7a7",
+        "type": "AS",
+        "value": "AS50588",
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1606321320",
+        "first_seen": "2020-10-25T16:22:00+00:00",
+        "last_seen": "2020-11-25T16:22:00+00:00",
+        "disable_correlation": false,
+        "comment": "Observed Data ID: observed-data--1bf81a4f-0e70-4a34-944b-7e46f67ff7a7"
+    }
+    ```
+
+- domain
+  - STIX - Observed Data
+    ```json
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "domain-name",
+                "value": "misp-project.org"
+            }
+        }
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "type": "domain",
+        "value": "misp-project.org",
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Observed Data ID: observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d"
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--6fdbd93d-bda2-4a06-b5c7-fd13c3082d6e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Monitored domain",
+        "description": "Domain name under active threat investigation.",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "malicious-activity"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "6fdbd93d-bda2-4a06-b5c7-fd13c3082d6e",
+        "type": "domain",
+        "value": "circl.lu",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1729873320",
+        "disable_correlation": false,
+        "object_relation": "domain",
+        "comment": "Domain name under active threat investigation."
+    }
+    ```
+
+- email
+  - STIX - Observed Data
+    ```json
+    {
+        "type": "observed-data",
+        "id": "observed-data--1bf81a4f-0e70-4a34-944b-7e46f67ff7a7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-addr",
+                "value": "donald.duck@gmail.com"
+            }
+        }
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "1bf81a4f-0e70-4a34-944b-7e46f67ff7a7",
+        "type": "email",
+        "value": "donald.duck@gmail.com",
+        "category": "Social network",
+        "to_ids": false,
+        "timestamp": "1606321320",
+        "first_seen": "2020-10-25T16:22:00+00:00",
+        "last_seen": "2020-11-25T16:22:00+00:00",
+        "disable_correlation": false,
+        "comment": "Observed Data ID: observed-data--1bf81a4f-0e70-4a34-944b-7e46f67ff7a7"
+    }
+    ```
+
+- email-dst
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--36d4345a-5cad-400a-a0ab-5f0bc47b1584",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious email address",
+        "description": "Email address associated with phishing campaigns.",
+        "pattern": "[email-addr:value = 'john.doe@gmail.com' AND email-addr:display_name = 'John Doe']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "malicious-activity"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "36d4345a-5cad-400a-a0ab-5f0bc47b1584",
+        "type": "email-dst",
+        "value": "john.doe@gmail.com",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1729873320",
+        "disable_correlation": false,
+        "object_relation": "to",
+        "comment": "Email address associated with phishing campaigns."
+    }
+    ```
+
+- ip-dst
+  - STIX - Observed Data
+    ```json
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "ipv4-addr",
+                "value": "185.194.93.14"
+            }
+        }
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "type": "ip-dst",
+        "value": "185.194.93.14",
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Observed Data ID: observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d"
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--c43ea7e7-36fd-42f4-a554-4cf8eb20ac44",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Suspicious IP address",
+        "description": "IP address associated with known threat infrastructure.",
+        "pattern": "[ipv4-addr:value = '8.8.8.8']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "malicious-activity"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "c43ea7e7-36fd-42f4-a554-4cf8eb20ac44",
+        "type": "ip-dst",
+        "value": "8.8.8.8",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1729873320",
+        "disable_correlation": false,
+        "object_relation": "ip",
+        "comment": "IP address associated with known threat infrastructure."
+    }
+    ```
+
+- mac-address
+  - STIX - Observed Data
+    ```json
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "mac-addr",
+                "value": "ae:49:db:d4:d9:cf"
+            }
+        }
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "type": "mac-address",
+        "value": "ae:49:db:d4:d9:cf",
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Observed Data ID: observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d"
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--e947ce95-9ba7-4837-b191-a1357e50e292",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Monitored MAC address",
+        "description": "MAC address associated with a compromised device.",
+        "pattern": "[mac-addr:value = 'd2:fb:49:24:37:18']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "malicious-activity"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "e947ce95-9ba7-4837-b191-a1357e50e292",
+        "type": "mac-address",
+        "value": "d2:fb:49:24:37:18",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1729873320",
+        "disable_correlation": false,
+        "comment": "MAC address associated with a compromised device."
+    }
+    ```
+
+- mutex
+  - STIX - Observed Data
+    ```json
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "mutex",
+                "name": "sensitive_resource_lock"
+            }
+        }
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "type": "mutex",
+        "value": "sensitive_resource_lock",
+        "category": "Artifacts dropped",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Observed Data ID: observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d"
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--0cb1bfdf-a8db-4cfb-bc11-3e3842f9cd76",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Malware mutex indicator",
+        "description": "Mutex name used by known malware families.",
+        "pattern": "[mutex:name = 'shared_resource_lock']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "malicious-activity"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "0cb1bfdf-a8db-4cfb-bc11-3e3842f9cd76",
+        "type": "mutex",
+        "value": "shared_resource_lock",
+        "category": "Artifacts dropped",
+        "to_ids": true,
+        "timestamp": "1729873320",
+        "disable_correlation": false,
+        "comment": "Mutex name used by known malware families."
+    }
+    ```
+
+- url
+  - STIX - Observed Data
+    ```json
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "url",
+                "value": "https://misp-project.org/blog/"
+            }
+        }
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "type": "url",
+        "value": "https://misp-project.org/blog/",
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1603642920",
+        "disable_correlation": false,
+        "comment": "Observed Data ID: observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d"
+    }
+    ```
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--b068f6dd-59f1-4bd3-b2e1-66d8b870ec45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-10-25T16:22:00.000Z",
+        "modified": "2024-10-25T16:22:00.000Z",
+        "name": "Monitored URL",
+        "description": "URL associated with threat intelligence investigation.",
+        "pattern": "[url:value = 'https://circl.lu/team/']",
+        "valid_from": "2024-10-25T16:22:00Z",
+        "labels": [
+            "malicious-activity"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "uuid": "b068f6dd-59f1-4bd3-b2e1-66d8b870ec45",
+        "type": "url",
+        "value": "https://circl.lu/team/",
+        "category": "Network activity",
+        "to_ids": true,
+        "timestamp": "1729873320",
+        "disable_correlation": false,
+        "object_relation": "url",
+        "comment": "URL associated with threat intelligence investigation."
+    }
+    ```
+
+
+## The other detailed mappings
+
+- [External Objects mapping](external_stix20_to_misp_objects.md)
