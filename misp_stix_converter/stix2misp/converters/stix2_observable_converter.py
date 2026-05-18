@@ -334,6 +334,15 @@ class ExternalSTIX2ObservableMapping(
 
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
+    def __init__(self, main):
+        self._set_main_parser(main)
+        self._mapping = ExternalSTIX2ObservableMapping
+
+    def _get_observed_data_indicator_refs(
+            self, observed_data_id: str, object_id: str) -> set | None:
+        observed_data = self.main_parser._observed_data[observed_data_id]
+        return observed_data.get("indicator_refs", {}).get(object_id)
+
     def related_observable_types(self, field: str) -> list:
         return self.main_parser._mapping.related_observable_types(field)
 
@@ -995,6 +1004,10 @@ class InternalSTIX2ObservableMapping(
 
 class InternalSTIX2ObservableConverter(
         STIX2ObservableConverter, InternalSTIX2Converter):
+    def __init__(self, main):
+        self._set_main_parser(main)
+        self._mapping = InternalSTIX2ObservableMapping
+
     def _check_indicator_reference(
             self, object_id: str, *values: tuple[Any]) -> bool:
         indicator_references = self.indicator_references.get(object_id, [])

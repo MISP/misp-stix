@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2_observable_converter import (
     ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping)
@@ -38,7 +39,7 @@ _SINGLE_ATTRIBUTE_OBSERVABLE_TYPING = Union[
 ]
 
 
-class STIX2SampleObervableParser(metaclass=ABCMeta):
+class STIX2SampleObservableParser(metaclass=ABCMeta):
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable[object_ref]
 
@@ -51,7 +52,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         artifact_object = self._create_misp_object_from_observable(
             'artifact', artifact, *args
         )
-        attributes = self._parse_artifact_observable(
+        attributes = self._observables._parse_artifact_observable(
             artifact, indicator_ref=observable.get('indicator_ref')
         )
         for attribute in attributes:
@@ -70,7 +71,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         directory = observable['observable']
-        attributes = self._parse_generic_observable(
+        attributes = self._observables._parse_generic_observable(
             directory, 'directory',
             indicator_ref=observable.get('indicator_ref')
         )
@@ -110,7 +111,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
             'file', _file, *args
         )
         indicator_ref = observable.get('indicator_ref')
-        attributes = self._parse_file_observable(
+        attributes = self._observables._parse_file_observable(
             _file, indicator_ref=indicator_ref
         )
         for attribute in attributes:
@@ -168,7 +169,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         pe_object = self._create_misp_object('pe')
         object_id = f'{observable.id} - windows-pebinary-ext'
         pe_object.from_dict(uuid=self.main_parser._create_v5_uuid(object_id))
-        attributes = self._parse_pe_extension_observable(
+        attributes = self._observables._parse_pe_extension_observable(
             extension, object_id, indicator_ref=indicator_ref
         )
         for attribute in attributes:
@@ -181,7 +182,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
                 section_object.from_dict(
                     uuid=self.main_parser._create_v5_uuid(section_id)
                 )
-                attributes = self._parse_pe_section_observable(
+                attributes = self._observables._parse_pe_section_observable(
                     section, section_id, indicator_ref=indicator_ref
                 )
                 for attribute in attributes:
@@ -199,7 +200,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         software_object = self._create_misp_object_from_observable(
             'software', software, *args
         )
-        attributes = self._parse_generic_observable(
+        attributes = self._observables._parse_generic_observable(
             software, 'software',
             indicator_ref=observable.get('indicator_ref')
         )
@@ -214,10 +215,14 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
 
 
 class STIX2ObservableObjectConverter(
-        STIX2SampleObervableParser, ExternalSTIX2ObservableConverter):
+        STIX2SampleObservableParser, ExternalSTIX2ObservableConverter):
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
         self._mapping = ExternalSTIX2ObservableMapping
+
+    @property
+    def _observables(self):
+        return self
 
     def _create_misp_object_from_observable(
             self, name: str, observable: _OBSERVABLE_TYPING) -> MISPObject:
@@ -844,9 +849,13 @@ class STIX2ObservableObjectConverter(
         )
 
 
-class STIX2SampleObservableConverter(STIX2SampleObervableParser):
+class STIX2SampleObservableConverter(STIX2SampleObservableParser):
     def __init__(self, main: _MAIN_CONVERTER_TYPING):
         self._main_converter = main
+
+    @property
+    def _observables(self):
+        return self.main_parser._get_converter('observable')
 
     @property
     def main_parser(self) -> 'ExternalSTIX2toMISPParser':
@@ -867,14 +876,12 @@ class STIX2SampleObservableConverter(STIX2SampleObervableParser):
 
 
 class ExternalSTIX2SampleObservableConverter(
-        STIX2SampleObservableConverter, ExternalSTIX2ObservableConverter):
+        STIX2SampleObservableConverter, ExternalSTIX2Converter):
     def __init__(self, main: 'ExternalSTIX2MalwareConverter'):
         super().__init__(main)
-        self._mapping = ExternalSTIX2ObservableMapping
 
 
 class InternalSTIX2SampleObservableConverter(
-        STIX2SampleObservableConverter, InternalSTIX2ObservableConverter):
+        STIX2SampleObservableConverter, InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2MalwareConverter'):
         super().__init__(main)
-        self._mapping = InternalSTIX2ObservableMapping
