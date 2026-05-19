@@ -453,8 +453,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_unparsed_content(self):
         if 'observed-data' in self._converter_cache:
-            if hasattr(self.observed_data_parser, '_observable_relationships'):
-                self.observed_data_parser.parse_relationships()
+            observed_data_parser = self._get_converter('observed-data')
+            if hasattr(observed_data_parser, '_observable_relationships'):
+                observed_data_parser.parse_relationships()
         if hasattr(self, '_relationship'):
             if hasattr(self, '_sighting'):
                 self._parse_relationships_and_sightings()

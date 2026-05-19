@@ -27,7 +27,7 @@ from stix2.v21.observables import (
     WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
     WindowsRegistryValueType as WindowsRegistryValueType_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
-from typing import Iterator, Optional, TYPE_CHECKING, Union
+from typing import Iterator, NamedTuple, Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -47,6 +47,11 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
 ]
+class _ObservableMethods(NamedTuple):
+    v21: str
+    v20: str
+
+
 _WINDOWS_PE_BINARY_EXT_TYPING = Union[
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
 ]
@@ -110,25 +115,63 @@ class STIX2ObservedDataConverter(metaclass=ABCMeta):
 class ExternalSTIX2ObservedDataConverter(
         STIX2ObservedDataConverter, ExternalSTIX2Converter):
     _OBSERVABLE_DISPATCH = {
-        'artifact': '_parse_artifact_observable_object_refs',
-        'as': '_parse_as_observable_object_refs',
-        'asn': '_parse_asn_observable_object_refs',
-        'directory': '_parse_directory_observable_object_refs',
-        'domain': '_parse_domain_observable_object_refs',
-        'domain_ip': '_parse_domain_ip_observable_object_refs',
-        'email_address': '_parse_email_address_observable_object_refs',
-        'email_message': '_parse_email_message_observable_object_refs',
-        'file': '_parse_file_observable_object_refs',
-        'ip_address': '_parse_ip_address_observable_object_refs',
-        'mac_address': '_parse_mac_address_observable_object_refs',
-        'mutex': '_parse_mutex_observable_object_refs',
-        'network_traffic': '_parse_network_traffic_observable_object_refs',
-        'process': '_parse_process_observable_object_refs',
-        'registry_key': '_parse_registry_key_observable_object_refs',
-        'software': '_parse_software_observable_object_refs',
-        'url': '_parse_url_observable_object_refs',
-        'user_account': '_parse_user_account_observable_object_refs',
-        'x509': '_parse_x509_observable_object_refs',
+        'artifact': _ObservableMethods(
+            '_parse_artifact_observable_object_refs',
+            '_parse_artifact_observable_objects'),
+        'as': _ObservableMethods(
+            '_parse_as_observable_object_refs',
+            '_parse_as_observable_objects'),
+        'asn': _ObservableMethods(
+            '_parse_asn_observable_object_refs',
+            '_parse_asn_observable_objects'),
+        'directory': _ObservableMethods(
+            '_parse_directory_observable_object_refs',
+            '_parse_directory_observable_objects'),
+        'domain': _ObservableMethods(
+            '_parse_domain_observable_object_refs',
+            '_parse_domain_observable_objects'),
+        'domain_ip': _ObservableMethods(
+            '_parse_domain_ip_observable_object_refs',
+            '_parse_domain_ip_observable_objects'),
+        'email_address': _ObservableMethods(
+            '_parse_email_address_observable_object_refs',
+            '_parse_email_address_observable_objects'),
+        'email_message': _ObservableMethods(
+            '_parse_email_message_observable_object_refs',
+            '_parse_email_message_observable_objects'),
+        'file': _ObservableMethods(
+            '_parse_file_observable_object_refs',
+            '_parse_file_observable_objects'),
+        'ip_address': _ObservableMethods(
+            '_parse_ip_address_observable_object_refs',
+            '_parse_ip_address_observable_objects'),
+        'mac_address': _ObservableMethods(
+            '_parse_mac_address_observable_object_refs',
+            '_parse_mac_address_observable_objects'),
+        'mutex': _ObservableMethods(
+            '_parse_mutex_observable_object_refs',
+            '_parse_mutex_observable_objects'),
+        'network_traffic': _ObservableMethods(
+            '_parse_network_traffic_observable_object_refs',
+            '_parse_network_traffic_observable_objects'),
+        'process': _ObservableMethods(
+            '_parse_process_observable_object_refs',
+            '_parse_process_observable_objects'),
+        'registry_key': _ObservableMethods(
+            '_parse_registry_key_observable_object_refs',
+            '_parse_registry_key_observable_objects'),
+        'software': _ObservableMethods(
+            '_parse_software_observable_object_refs',
+            '_parse_software_observable_objects'),
+        'url': _ObservableMethods(
+            '_parse_url_observable_object_refs',
+            '_parse_url_observable_objects'),
+        'user_account': _ObservableMethods(
+            '_parse_user_account_observable_object_refs',
+            '_parse_user_account_observable_objects'),
+        'x509': _ObservableMethods(
+            '_parse_x509_observable_object_refs',
+            '_parse_x509_observable_objects'),
     }
 
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
@@ -313,13 +356,13 @@ class ExternalSTIX2ObservedDataConverter(
             if mapping is None:
                 self._observable_mapping_error(observed_data.id, object_type)
                 continue
-            method_name = self._OBSERVABLE_DISPATCH.get(mapping)
-            if method_name is None:
+            methods = self._OBSERVABLE_DISPATCH.get(mapping)
+            if methods is None:
                 self.main_parser._unknown_parsing_function_error(
                     f'_parse_{mapping}_observable_object_refs'
                 )
                 continue
-            getattr(self, method_name)(observed_data, object_ref)
+            getattr(self, methods.v21)(observed_data, object_ref)
 
     def _parse_multiple_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING):
@@ -346,14 +389,13 @@ class ExternalSTIX2ObservedDataConverter(
             object_type = '_'.join(sorted(observable_types))
             mapping = self._mapping.observable_mapping(object_type)
             if mapping is not None:
-                method_name = self._OBSERVABLE_DISPATCH.get(mapping)
-                if method_name is None:
+                methods = self._OBSERVABLE_DISPATCH.get(mapping)
+                if methods is None:
                     self.main_parser._unknown_parsing_function_error(
                         f'_parse_{mapping}_observable_objects'
                     )
                     continue
-                method_name = method_name.replace('_object_refs', '_objects')
-                getattr(self, method_name)(observed_data, observables)
+                getattr(self, methods.v20)(observed_data, observables)
                 observable_objects.update(observables)
                 continue
             if len(observable_types) == 1:
@@ -365,14 +407,13 @@ class ExternalSTIX2ObservedDataConverter(
             if mapping is None:
                 self._observable_mapping_error(observed_data.id, object_type)
                 continue
-            method_name = self._OBSERVABLE_DISPATCH.get(mapping)
-            if method_name is None:
+            methods = self._OBSERVABLE_DISPATCH.get(mapping)
+            if methods is None:
                 self.main_parser._unknown_parsing_function_error(
                     f'_parse_{mapping}_observable_objects'
                 )
                 continue
-            method_name = method_name.replace('_object_refs', '_objects')
-            getattr(self, method_name)(observed_data, observables)
+            getattr(self, methods.v20)(observed_data, observables)
             observable_objects.update(observables)
 
     def _reorder_object_refs(self, object_refs: list) -> Iterator[str]:

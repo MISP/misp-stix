@@ -70,70 +70,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._load_stix_object(stix_object)
 
     ############################################################################
-    #                                PROPERTIES                                #
-    ############################################################################
-
-    @property
-    def attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
-        return self._get_converter('attack-pattern')
-
-    @property
-    def campaign_parser(self) -> InternalSTIX2CampaignConverter:
-        return self._get_converter('campaign')
-
-    @property
-    def course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
-        return self._get_converter('course-of-action')
-
-    @property
-    def custom_object_parser(self) -> STIX2CustomObjectConverter:
-        return self._get_converter('x-misp-attribute')
-
-    @property
-    def identity_parser(self) -> InternalSTIX2IdentityConverter:
-        return self._get_converter('identity')
-
-    @property
-    def indicator_parser(self) -> InternalSTIX2IndicatorConverter:
-        return self._get_converter('indicator')
-
-    @property
-    def intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
-        return self._get_converter('intrusion-set')
-
-    @property
-    def location_parser(self) -> InternalSTIX2LocationConverter:
-        return self._get_converter('location')
-
-    @property
-    def malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
-        return self._get_converter('malware-analysis')
-
-    @property
-    def malware_parser(self) -> InternalSTIX2MalwareConverter:
-        return self._get_converter('malware')
-
-    @property
-    def note_parser(self) -> InternalSTIX2NoteConverter:
-        return self._get_converter('note')
-
-    @property
-    def observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
-        return self._get_converter('observed-data')
-
-    @property
-    def threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
-        return self._get_converter('threat-actor')
-
-    @property
-    def tool_parser(self) -> InternalSTIX2ToolConverter:
-        return self._get_converter('tool')
-
-    @property
-    def vulnerability_parser(self) -> InternalSTIX2VulnerabilityConverter:
-        return self._get_converter('vulnerability')
-
-    ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
 
@@ -375,7 +311,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_indicator_references(self):
         if not all(hasattr(self, field) for field in _STORAGE_VARIABLE_NAMES):
             return
-        pattern_parser = self.indicator_parser._compile_stix_pattern
+        pattern_parser = self._get_converter('indicator')._compile_stix_pattern
         self._indicator_references = {
             self._extract_uuid(indicator_id): tuple(val[-1] for val in pattern)
             for indicator_id, indicator in self._indicator.items()
