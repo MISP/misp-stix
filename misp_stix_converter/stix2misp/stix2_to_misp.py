@@ -219,6 +219,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._converter_cache[stix_type] = cls(self)
         return self._converter_cache[stix_type]
 
+    def _fetch_observable(self, object_ref: str) -> Optional[dict]:
+        return self._observable.get(object_ref)
+
+    def _has_observable(self, object_ref: str) -> bool:
+        return object_ref in self._observable
+
     ############################################################################
     #                                PROPERTIES                                #
     ############################################################################
