@@ -180,8 +180,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             if object_type in self._mapping.object_type_refs_to_skip():
                 continue
             if object_type in self._mapping.observable_object_types():
-                if self._observable.get(object_ref) is not None:
-                    observable = self._observable[object_ref]
+                if (observable := self._fetch_observable(object_ref)) is not None:
                     if self.misp_event.uuid not in observable['used']:
                         observable['used'][self.misp_event.uuid] = False
                 continue
@@ -218,9 +217,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 if object_type in ('extension-definition', 'relationship', 'sighting'):
                     continue
                 if object_type in self._mapping.observable_object_types():
-                    observable = self._observable[object_ref]
-                    if observable['used'].get(self.misp_event.uuid) is None:
-                        observable['used'][self.misp_event.uuid] = False
+                    if (observable := self._fetch_observable(object_ref)) is not None:
+                        if observable['used'].get(self.misp_event.uuid) is None:
+                            observable['used'][self.misp_event.uuid] = False
                     continue
                 if object_type == 'marking-definition':
                     markings = self._marking_definition.get(object_ref)
@@ -260,8 +259,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 continue
             to_call = f'_parse_{feature}_observable_object'
             for object_id in unparsed_content[observable_type]:
-                if self.misp_event.uuid in self._observable[object_id]['used']:
-                    if self._observable[object_id]['used'][self.misp_event.uuid]:
+                if (observable := self._fetch_observable(object_id)) is None:
+                    continue
+                if self.misp_event.uuid in observable['used']:
+                    if observable['used'][self.misp_event.uuid]:
                         continue
                 try:
                     getattr(self._get_converter('observable-object'), to_call)(object_id)
