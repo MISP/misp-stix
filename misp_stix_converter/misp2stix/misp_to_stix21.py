@@ -141,6 +141,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 marking_ids.append(self._markings[marking]['marking'].id)
                 continue
             marking_definition = self._mapping.tlp_markings(marking)
+            if marking_definition is None:
+                marking_definition = self._mapping.tlp2_markings(marking)
             if marking_definition is not None:
                 marking_id = marking_definition.id
                 if marking_id not in self.unique_ids:
