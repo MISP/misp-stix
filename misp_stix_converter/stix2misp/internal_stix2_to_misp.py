@@ -9,9 +9,9 @@ from .converters import (
     InternalSTIX2IndicatorConverter, InternalSTIX2IntrusionSetConverter,
     InternalSTIX2LocationConverter, InternalSTIX2MalwareAnalysisConverter,
     InternalSTIX2MalwareConverter, InternalSTIX2NoteConverter,
-    InternalSTIX2ObservedDataConverter, InternalSTIX2ThreatActorConverter,
-    InternalSTIX2ToolConverter, InternalSTIX2VulnerabilityConverter,
-    STIX2CustomObjectConverter)
+    InternalSTIX2ObservableConverter, InternalSTIX2ObservedDataConverter,
+    InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
+    InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING, _SDO_TYPING)
 from collections import defaultdict
@@ -35,25 +35,31 @@ _SIGHTING_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
+    _CONVERTER_CLASSES = {
+        'attack-pattern': InternalSTIX2AttackPatternConverter,
+        'campaign': InternalSTIX2CampaignConverter,
+        'course-of-action': InternalSTIX2CourseOfActionConverter,
+        'identity': InternalSTIX2IdentityConverter,
+        'indicator': InternalSTIX2IndicatorConverter,
+        'intrusion-set': InternalSTIX2IntrusionSetConverter,
+        'location': InternalSTIX2LocationConverter,
+        'malware': InternalSTIX2MalwareConverter,
+        'malware-analysis': InternalSTIX2MalwareAnalysisConverter,
+        'note': InternalSTIX2NoteConverter,
+        'observable': InternalSTIX2ObservableConverter,
+        'observed-data': InternalSTIX2ObservedDataConverter,
+        'threat-actor': InternalSTIX2ThreatActorConverter,
+        'tool': InternalSTIX2ToolConverter,
+        'vulnerability': InternalSTIX2VulnerabilityConverter,
+        'x-misp-attribute': STIX2CustomObjectConverter,
+        'x-misp-event-report': STIX2CustomObjectConverter,
+        'x-misp-galaxy-cluster': STIX2CustomObjectConverter,
+        'x-misp-object': STIX2CustomObjectConverter,
+    }
+
     def __init__(self):
         super().__init__()
         self._mapping = InternalSTIX2toMISPMapping
-        # parsers
-        self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
-        self._campaign_parser: InternalSTIX2CampaignConverter
-        self._course_of_action_parser: InternalSTIX2CourseOfActionConverter
-        self._custom_object_parser: STIX2CustomObjectConverter
-        self._identity_parser: InternalSTIX2IdentityConverter
-        self._indicator_parser: InternalSTIX2IndicatorConverter
-        self._intrusion_set_parser: InternalSTIX2IntrusionSetConverter
-        self._location_parser: InternalSTIX2LocationConverter
-        self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
-        self._malware_parser: InternalSTIX2MalwareConverter
-        self._note_parser: InternalSTIX2NoteConverter
-        self._observed_data_parser: InternalSTIX2ObservedDataConverter
-        self._threat_actor_parser: InternalSTIX2ThreatActorConverter
-        self._tool_parser: InternalSTIX2ToolConverter
-        self._vulnerability_parser: InternalSTIX2VulnerabilityConverter
 
     def parse_stix_bundle(self, **kwargs):
         self._set_parameters(**kwargs)
@@ -62,100 +68,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _load_stix_bundle(self, bundle: _BUNDLE_TYPING) -> int:
         for stix_object in bundle.objects:
             self._load_stix_object(stix_object)
-
-    ############################################################################
-    #                                PROPERTIES                                #
-    ############################################################################
-
-    @property
-    def attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
-        if not hasattr(self, '_attack_pattern_parser'):
-            self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
-        return self._attack_pattern_parser
-
-    @property
-    def campaign_parser(self) -> InternalSTIX2CampaignConverter:
-        if not hasattr(self, '_campaign_parser'):
-            self._campaign_parser = InternalSTIX2CampaignConverter(self)
-        return self._campaign_parser
-
-    @property
-    def course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
-        if not hasattr(self, '_course_of_action_parser'):
-            self._course_of_action_parser = InternalSTIX2CourseOfActionConverter(self)
-        return self._course_of_action_parser
-
-    @property
-    def custom_object_parser(self) -> STIX2CustomObjectConverter:
-        if not hasattr(self, '_custom_object_parser'):
-            self._custom_object_parser = STIX2CustomObjectConverter(self)
-        return self._custom_object_parser
-
-    @property
-    def identity_parser(self) -> InternalSTIX2IdentityConverter:
-        if not hasattr(self, '_identity_parser'):
-            self._identity_parser = InternalSTIX2IdentityConverter(self)
-        return self._identity_parser
-
-    @property
-    def indicator_parser(self) -> InternalSTIX2IndicatorConverter:
-        if not hasattr(self, '_indicator_parser'):
-            self._indicator_parser = InternalSTIX2IndicatorConverter(self)
-        return self._indicator_parser
-
-    @property
-    def intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
-        if not hasattr(self, '_intrusion_set_parser'):
-            self._intrusion_set_parser = InternalSTIX2IntrusionSetConverter(self)
-        return self._intrusion_set_parser
-
-    @property
-    def location_parser(self) -> InternalSTIX2LocationConverter:
-        if not hasattr(self, '_location_parser'):
-            self._location_parser = InternalSTIX2LocationConverter(self)
-        return self._location_parser
-
-    @property
-    def malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
-        if not hasattr(self, '_malware_analysis_parser'):
-            self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
-        return self._malware_analysis_parser
-
-    @property
-    def malware_parser(self) -> InternalSTIX2MalwareConverter:
-        if not hasattr(self, '_malware_parser'):
-            self._malware_parser = InternalSTIX2MalwareConverter(self)
-        return self._malware_parser
-
-    @property
-    def note_parser(self) -> InternalSTIX2NoteConverter:
-        if not hasattr(self, 'note_parser_'):
-            self._note_parser = InternalSTIX2NoteConverter(self)
-        return self._note_parser
-
-    @property
-    def observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
-        if not hasattr(self, '_observed_data_parser'):
-            self._observed_data_parser = InternalSTIX2ObservedDataConverter(self)
-        return self._observed_data_parser
-
-    @property
-    def threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
-        if not hasattr(self, '_threat_actor_parser'):
-            self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
-        return self._threat_actor_parser
-
-    @property
-    def tool_parser(self) -> InternalSTIX2ToolConverter:
-        if not hasattr(self, '_tool_parser'):
-            self._tool_parser = InternalSTIX2ToolConverter(self)
-        return self._tool_parser
-
-    @property
-    def vulnerability_parser(self) -> InternalSTIX2VulnerabilityConverter:
-        if not hasattr(self, '_vulnerability_parser'):
-            self._vulnerability_parser = InternalSTIX2VulnerabilityConverter(self)
-        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -399,7 +311,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_indicator_references(self):
         if not all(hasattr(self, field) for field in _STORAGE_VARIABLE_NAMES):
             return
-        pattern_parser = self.indicator_parser._compile_stix_pattern
+        pattern_parser = self._get_converter('indicator')._compile_stix_pattern
         self._indicator_references = {
             self._extract_uuid(indicator_id): tuple(val[-1] for val in pattern)
             for indicator_id, indicator in self._indicator.items()

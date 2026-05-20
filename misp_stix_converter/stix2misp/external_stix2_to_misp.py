@@ -8,9 +8,10 @@ from .converters import (
     ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IdentityConverter,
     ExternalSTIX2IndicatorConverter, ExternalSTIX2IntrusionSetConverter,
     ExternalSTIX2LocationConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2MalwareConverter, ExternalSTIX2ObservedDataConverter,
-    ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
-    ExternalSTIX2VulnerabilityConverter, STIX2ObservableObjectConverter)
+    ExternalSTIX2MalwareConverter, ExternalSTIX2ObservableConverter,
+    ExternalSTIX2ObservedDataConverter, ExternalSTIX2ThreatActorConverter,
+    ExternalSTIX2ToolConverter, ExternalSTIX2VulnerabilityConverter,
+    STIX2ObservableObjectConverter)
 from .importparser import ExternalSTIXtoMISPParser
 from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
 from collections import defaultdict
@@ -34,24 +35,27 @@ _SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
+    _CONVERTER_CLASSES = {
+        'attack-pattern': ExternalSTIX2AttackPatternConverter,
+        'campaign': ExternalSTIX2CampaignConverter,
+        'course-of-action': ExternalSTIX2CourseOfActionConverter,
+        'identity': ExternalSTIX2IdentityConverter,
+        'indicator': ExternalSTIX2IndicatorConverter,
+        'intrusion-set': ExternalSTIX2IntrusionSetConverter,
+        'location': ExternalSTIX2LocationConverter,
+        'malware': ExternalSTIX2MalwareConverter,
+        'malware-analysis': ExternalSTIX2MalwareAnalysisConverter,
+        'observable': ExternalSTIX2ObservableConverter,
+        'observable-object': STIX2ObservableObjectConverter,
+        'observed-data': ExternalSTIX2ObservedDataConverter,
+        'threat-actor': ExternalSTIX2ThreatActorConverter,
+        'tool': ExternalSTIX2ToolConverter,
+        'vulnerability': ExternalSTIX2VulnerabilityConverter,
+    }
+
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
-        # parsers
-        self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
-        self._campaign_parser: ExternalSTIX2CampaignConverter
-        self._course_of_action_parser: ExternalSTIX2CourseOfActionConverter
-        self._identity_parser: ExternalSTIX2IdentityConverter
-        self._indicator_parser: ExternalSTIX2IndicatorConverter
-        self._intrusion_set_parser: ExternalSTIX2IntrusionSetConverter
-        self._location_parser: ExternalSTIX2LocationConverter
-        self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
-        self._malware_parser: ExternalSTIX2MalwareConverter
-        self._observable_object_parser: STIX2ObservableObjectConverter
-        self._observed_data_parser: ExternalSTIX2ObservedDataConverter
-        self._threat_actor_parser: ExternalSTIX2ThreatActorConverter
-        self._tool_parser: ExternalSTIX2ToolConverter
-        self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
     def parse_stix_bundle(
             self, cluster_distribution: Optional[int] = 0,
@@ -114,92 +118,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     ############################################################################
 
     @property
-    def attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
-        if not hasattr(self, '_attack_pattern_parser'):
-            self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
-        return self._attack_pattern_parser
-
-    @property
-    def campaign_parser(self) -> ExternalSTIX2CampaignConverter:
-        if not hasattr(self, '_campaign_parser'):
-            self._campaign_parser = ExternalSTIX2CampaignConverter(self)
-        return self._campaign_parser
-
-    @property
-    def course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
-        if not hasattr(self, '_course_of_action_parser'):
-            self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
-        return self._course_of_action_parser
-
-    @property
-    def identity_parser(self) -> ExternalSTIX2IdentityConverter:
-        if not hasattr(self, '_identity_parser'):
-            self._identity_parser = ExternalSTIX2IdentityConverter(self)
-        return self._identity_parser
-
-    @property
-    def indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
-        if not hasattr(self, '_indicator_parser'):
-            self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
-        return self._indicator_parser
-
-    @property
-    def intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
-        if not hasattr(self, '_intrusion_set_parser'):
-            self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
-        return self._intrusion_set_parser
-
-    @property
-    def location_parser(self) -> ExternalSTIX2LocationConverter:
-        if not hasattr(self, '_location_parser'):
-            self._location_parser = ExternalSTIX2LocationConverter(self)
-        return self._location_parser
-
-    @property
-    def malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
-        if not hasattr(self, '_malware_analysis_parser'):
-            self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
-        return self._malware_analysis_parser
-
-    @property
-    def malware_parser(self) -> ExternalSTIX2MalwareConverter:
-        if not hasattr(self, '_malware_parser'):
-            self._malware_parser = ExternalSTIX2MalwareConverter(self)
-        return self._malware_parser
-
-    @property
-    def observable_object_parser(self) -> STIX2ObservableObjectConverter:
-        if not hasattr(self, '_observable_object_parser'):
-            self._observable_object_parser = STIX2ObservableObjectConverter(self)
-        return self._observable_object_parser
-
-    @property
-    def observed_data_parser(self) -> ExternalSTIX2ObservedDataConverter:
-        if not hasattr(self, '_observed_data_parser'):
-            self._observed_data_parser = ExternalSTIX2ObservedDataConverter(self)
-        return self._observed_data_parser
-
-    @property
     def standalone_object_refs(self) -> tuple:
         return self.__standalone_object_refs
-
-    @property
-    def threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
-        if not hasattr(self, '_threat_actor_parser'):
-            self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
-        return self._threat_actor_parser
-
-    @property
-    def tool_parser(self) -> ExternalSTIX2ToolConverter:
-        if not hasattr(self, '_tool_parser'):
-            self._tool_parser = ExternalSTIX2ToolConverter(self)
-        return self._tool_parser
-
-    @property
-    def vulnerability_parser(self) -> ExternalSTIX2VulnerabilityConverter:
-        if not hasattr(self, '_vulnerability_parser'):
-            self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
-        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -260,8 +180,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             if object_type in self._mapping.object_type_refs_to_skip():
                 continue
             if object_type in self._mapping.observable_object_types():
-                if self._observable.get(object_ref) is not None:
-                    observable = self._observable[object_ref]
+                if (observable := self._fetch_observable(object_ref)) is not None:
                     if self.misp_event.uuid not in observable['used']:
                         observable['used'][self.misp_event.uuid] = False
                 continue
@@ -298,9 +217,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 if object_type in ('extension-definition', 'relationship', 'sighting'):
                     continue
                 if object_type in self._mapping.observable_object_types():
-                    observable = self._observable[object_ref]
-                    if observable['used'].get(self.misp_event.uuid) is None:
-                        observable['used'][self.misp_event.uuid] = False
+                    if (observable := self._fetch_observable(object_ref)) is not None:
+                        if observable['used'].get(self.misp_event.uuid) is None:
+                            observable['used'][self.misp_event.uuid] = False
                     continue
                 if object_type == 'marking-definition':
                     markings = self._marking_definition.get(object_ref)
@@ -340,11 +259,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 continue
             to_call = f'_parse_{feature}_observable_object'
             for object_id in unparsed_content[observable_type]:
-                if self.misp_event.uuid in self._observable[object_id]['used']:
-                    if self._observable[object_id]['used'][self.misp_event.uuid]:
+                if (observable := self._fetch_observable(object_id)) is None:
+                    continue
+                if self.misp_event.uuid in observable['used']:
+                    if observable['used'][self.misp_event.uuid]:
                         continue
                 try:
-                    getattr(self.observable_object_parser, to_call)(object_id)
+                    getattr(self._get_converter('observable-object'), to_call)(object_id)
                 except Exception as exception:
                     _traceback = self._parse_traceback(exception)
                     self._add_error(
@@ -427,7 +348,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 score += count
         if score in (0, 1, 2, 4, 6):
             return
-        pattern_parser = self.indicator_parser._compile_stix_pattern
+        pattern_parser = self._get_converter('indicator')._compile_stix_pattern
         self._indicator_references = {
             indicator_id: {obs_type: tuple(val[-1] for val in pattern)}
             for indicator_id, indicator in self._indicator.items()

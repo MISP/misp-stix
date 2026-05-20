@@ -195,9 +195,6 @@ class STIX2ObservableConverter(STIX2Converter):
     def indicator_references(self) -> dict:
         return self.main_parser.indicator_references
 
-    def _fetch_observable(self, object_ref: str) -> dict:
-        return self.main_parser._observable.get(object_ref)
-
     def _handle_misp_object_storage(
             self, observable: dict, misp_object: MISPObject):
         observable['used'][self.event_uuid] = True
@@ -334,6 +331,15 @@ class ExternalSTIX2ObservableMapping(
 
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
+    def __init__(self, main):
+        self._set_main_parser(main)
+        self._mapping = ExternalSTIX2ObservableMapping
+
+    def _get_observed_data_indicator_refs(
+            self, observed_data_id: str, object_id: str) -> set | None:
+        observed_data = self.main_parser._observed_data[observed_data_id]
+        return observed_data.get("indicator_refs", {}).get(object_id)
+
     def related_observable_types(self, field: str) -> list:
         return self.main_parser._mapping.related_observable_types(field)
 
@@ -497,7 +503,7 @@ class ExternalSTIX2ObservableConverter(
             self, observable_object_id: str,
             observed_data_id: Optional[str] = None) -> set | None:
         try:
-            return self._fetch_observable(observable_object_id).get(
+            return self.main_parser._fetch_observable(observable_object_id).get(
                 'indicator_ref'
             )
         except AttributeError:
@@ -995,6 +1001,10 @@ class InternalSTIX2ObservableMapping(
 
 class InternalSTIX2ObservableConverter(
         STIX2ObservableConverter, InternalSTIX2Converter):
+    def __init__(self, main):
+        self._set_main_parser(main)
+        self._mapping = InternalSTIX2ObservableMapping
+
     def _check_indicator_reference(
             self, object_id: str, *values: tuple[Any]) -> bool:
         indicator_references = self.indicator_references.get(object_id, [])
