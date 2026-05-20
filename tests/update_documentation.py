@@ -7,10 +7,13 @@ from pathlib import Path
 _ROOT_PATH = Path(__file__).parents[1].resolve()
 _OBJECT_FEATURES = ('indicator', 'observed-data')
 _PATTERNING_TYPES = (
+    'crs',
+    'nova',
     'sigma',
     'snort',
     'suricata',
-    'yara'
+    'wazuh',
+    'yara',
 )
 _SUMMARY_MAPPING = {
     'email-addr': 'Email Address',
