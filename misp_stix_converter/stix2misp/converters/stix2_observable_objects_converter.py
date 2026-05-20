@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2_observable_converter import (
     ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping)
@@ -38,20 +39,19 @@ _SINGLE_ATTRIBUTE_OBSERVABLE_TYPING = Union[
 ]
 
 
-class STIX2SampleObervableParser(metaclass=ABCMeta):
-    def _fetch_observable(self, object_ref: str) -> dict:
-        return self.main_parser._observable[object_ref]
-
+class STIX2SampleObservableParser(metaclass=ABCMeta):
     def _parse_artifact_observable_object(
             self, artifact_ref: str, *args) -> MISPObject:
-        observable = self._fetch_observable(artifact_ref)
+        observable = self.main_parser._fetch_observable(artifact_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         artifact = observable['observable']
         artifact_object = self._create_misp_object_from_observable(
             'artifact', artifact, *args
         )
-        attributes = self._parse_artifact_observable(
+        attributes = self._observables._parse_artifact_observable(
             artifact, indicator_ref=observable.get('indicator_ref')
         )
         for attribute in attributes:
@@ -66,11 +66,13 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
     def _parse_directory_observable_object(
             self, directory_ref: str, *args,
             child: Optional[str] = None) -> _MISP_CONTENT_TYPING:
-        observable = self._fetch_observable(directory_ref)
+        observable = self.main_parser._fetch_observable(directory_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         directory = observable['observable']
-        attributes = self._parse_generic_observable(
+        attributes = self._observables._parse_generic_observable(
             directory, 'directory',
             indicator_ref=observable.get('indicator_ref')
         )
@@ -86,14 +88,14 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         observable['misp_object'] = misp_object
         if hasattr(directory, 'contains_refs'):
             for ref in directory.contains_refs:
-                if ref not in self.main_parser._observable:
+                if not self.main_parser._has_observable(ref):
                     self._missing_observable_object_error(
                         directory.id, ref, child=child
                     )
                     continue
                 feature = f"_parse_{ref.split('--')[0]}_observable_object"
                 referenced_object = (
-                    self._fetch_observable(child)['misp_object']
+                    self.main_parser._fetch_observable(child)['misp_object']
                     if child == ref else getattr(self, feature)(ref)
                 )
                 misp_object.add_reference(
@@ -102,7 +104,9 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         return misp_object
 
     def _parse_file_observable_object(self, file_ref: str, *args) -> MISPObject:
-        observable = self._fetch_observable(file_ref)
+        observable = self.main_parser._fetch_observable(file_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         _file = observable['observable']
@@ -110,7 +114,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
             'file', _file, *args
         )
         indicator_ref = observable.get('indicator_ref')
-        attributes = self._parse_file_observable(
+        attributes = self._observables._parse_file_observable(
             _file, indicator_ref=indicator_ref
         )
         for attribute in attributes:
@@ -141,7 +145,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
                 )
                 misp_object.add_reference(pe_object.uuid, 'includes')
         if hasattr(_file, 'parent_directory_ref'):
-            if _file.parent_directory_ref not in self.main_parser._observable:
+            if not self.main_parser._has_observable(_file.parent_directory_ref):
                 self._missing_observable_object_error(
                     _file.id, _file.parent_directory_ref
                 )
@@ -151,7 +155,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
                 )
                 misp_object.add_reference(parent_object.uuid, 'contained-in')
         if hasattr(_file, 'content_ref'):
-            if _file.content_ref not in self.main_parser._observable:
+            if not self.main_parser._has_observable(_file.content_ref):
                 self._missing_observable_object_error(
                     _file.id, _file.content_ref
                 )
@@ -168,7 +172,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
         pe_object = self._create_misp_object('pe')
         object_id = f'{observable.id} - windows-pebinary-ext'
         pe_object.from_dict(uuid=self.main_parser._create_v5_uuid(object_id))
-        attributes = self._parse_pe_extension_observable(
+        attributes = self._observables._parse_pe_extension_observable(
             extension, object_id, indicator_ref=indicator_ref
         )
         for attribute in attributes:
@@ -181,7 +185,7 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
                 section_object.from_dict(
                     uuid=self.main_parser._create_v5_uuid(section_id)
                 )
-                attributes = self._parse_pe_section_observable(
+                attributes = self._observables._parse_pe_section_observable(
                     section, section_id, indicator_ref=indicator_ref
                 )
                 for attribute in attributes:
@@ -192,14 +196,16 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
 
     def _parse_software_observable_object(
             self, software_ref: str, *args) -> MISPObject:
-        observable = self._fetch_observable(software_ref)
+        observable = self.main_parser._fetch_observable(software_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         software = observable['observable']
         software_object = self._create_misp_object_from_observable(
             'software', software, *args
         )
-        attributes = self._parse_generic_observable(
+        attributes = self._observables._parse_generic_observable(
             software, 'software',
             indicator_ref=observable.get('indicator_ref')
         )
@@ -214,10 +220,14 @@ class STIX2SampleObervableParser(metaclass=ABCMeta):
 
 
 class STIX2ObservableObjectConverter(
-        STIX2SampleObervableParser, ExternalSTIX2ObservableConverter):
+        STIX2SampleObservableParser, ExternalSTIX2ObservableConverter):
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
         self._mapping = ExternalSTIX2ObservableMapping
+
+    @property
+    def _observables(self):
+        return self
 
     def _create_misp_object_from_observable(
             self, name: str, observable: _OBSERVABLE_TYPING) -> MISPObject:
@@ -231,7 +241,9 @@ class STIX2ObservableObjectConverter(
         return misp_object
 
     def _parse_as_observable_object(self, as_ref: str) -> _MISP_CONTENT_TYPING:
-        observable = self._fetch_observable(as_ref)
+        observable = self.main_parser._fetch_observable(as_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable.get(
                 'misp_object', observable.get('misp_attribute')
@@ -281,7 +293,9 @@ class STIX2ObservableObjectConverter(
 
     def _parse_domain_observable_object(
             self, domain_ref: str) -> _MISP_CONTENT_TYPING:
-        observable = self._fetch_observable(domain_ref)
+        observable = self.main_parser._fetch_observable(domain_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable.get(
                 'misp_object', observable.get('misp_attribute')
@@ -314,7 +328,7 @@ class STIX2ObservableObjectConverter(
                         referenced_domain.uuid, 'alias-of'
                     )
                     continue
-                resolved_ip = self._fetch_observable(reference)
+                resolved_ip = self.main_parser._fetch_observable(reference)
                 ip_address = resolved_ip['observable']
                 misp_object.add_attribute(
                     **self._parse_ip_observable(
@@ -326,7 +340,7 @@ class STIX2ObservableObjectConverter(
                 resolved_ip['misp_object'] = misp_object
                 if hasattr(ip_address, 'resolves_to_refs'):
                     for referenced_mac in ip_address.resolves_to_refs:
-                        resolved_mac = self._fetch_observable(referenced_mac)
+                        resolved_mac = self.main_parser._fetch_observable(referenced_mac)
                         mac_address = resolved_mac['observable']
                         indicator_ref = resolved_mac.get('indicator_ref')
                         misp_attribute = self.main_parser._add_misp_attribute(
@@ -360,7 +374,9 @@ class STIX2ObservableObjectConverter(
 
     def _parse_email_address_observable_object(
             self, email_address_ref: str) -> _MISP_CONTENT_TYPING:
-        observable = self._fetch_observable(email_address_ref)
+        observable = self.main_parser._fetch_observable(email_address_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable.get(
                 'misp_attribute', observable.get('misp_object')
@@ -419,7 +435,9 @@ class STIX2ObservableObjectConverter(
 
     def _parse_email_message_observable_object(
             self, email_message_ref: str) -> MISPObject:
-        observable = self._fetch_observable(email_message_ref)
+        observable = self.main_parser._fetch_observable(email_message_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         email_message = observable['observable']
@@ -439,7 +457,7 @@ class STIX2ObservableObjectConverter(
         observable['misp_object'] = misp_object
         if hasattr(email_message, 'from_ref'):
             from_ref = email_message.from_ref
-            from_address = self._fetch_observable(from_ref)
+            from_address = self.main_parser._fetch_observable(from_ref)
             if from_address is None:
                 self._missing_observable_object_error(
                     email_message.id, from_ref
@@ -458,7 +476,7 @@ class STIX2ObservableObjectConverter(
             field = f'{feature}_refs'
             if hasattr(email_message, field):
                 for reference in getattr(email_message, field):
-                    email_address = self._fetch_observable(reference)
+                    email_address = self.main_parser._fetch_observable(reference)
                     if email_address is None:
                         self._missing_observable_object_error(
                             email_message.id, reference
@@ -491,7 +509,7 @@ class STIX2ObservableObjectConverter(
                     )
                     continue
                 body_raw_ref = multipart.body_raw_ref
-                if body_raw_ref not in self.main_parser._observable:
+                if not self.main_parser._has_observable(body_raw_ref):
                     self._missing_observable_object_error(
                         email_message.id, body_raw_ref
                     )
@@ -539,7 +557,9 @@ class STIX2ObservableObjectConverter(
 
     def _parse_ip_address_observable_object(
             self, ip_address_ref: str) -> _MISP_CONTENT_TYPING:
-        observable = self._fetch_observable(ip_address_ref)
+        observable = self.main_parser._fetch_observable(ip_address_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable.get(
                 'misp_attribute', observable.get('misp_object')
@@ -559,7 +579,9 @@ class STIX2ObservableObjectConverter(
 
     def _parse_mac_address_observable_object(
             self, mac_address_ref: str) -> MISPAttribute:
-        observable = self._fetch_observable(mac_address_ref)
+        observable = self.main_parser._fetch_observable(mac_address_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_attribute']
         mac_address = observable['observable']
@@ -576,7 +598,9 @@ class STIX2ObservableObjectConverter(
         return misp_attribute
 
     def _parse_mutex_observable_object(self, mutex_ref: str) -> MISPAttribute:
-        observable = self._fetch_observable(mutex_ref)
+        observable = self.main_parser._fetch_observable(mutex_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_attribute']
         mutex = observable['observable']
@@ -594,7 +618,9 @@ class STIX2ObservableObjectConverter(
 
     def _parse_network_traffic_observable_object(
             self, network_traffic_ref: str) -> MISPObject:
-        observable = self._fetch_observable(network_traffic_ref)
+        observable = self.main_parser._fetch_observable(network_traffic_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         network_traffic = observable['observable']
@@ -615,7 +641,7 @@ class STIX2ObservableObjectConverter(
         observable['misp_object'] = misp_object
         for asset, field in self.network_assets.items():
             if hasattr(network_traffic, f'{asset}_ref'):
-                referenced = self._fetch_observable(
+                referenced = self.main_parser._fetch_observable(
                     getattr(network_traffic, f'{asset}_ref')
                 )
                 referenced_observable = referenced['observable']
@@ -629,7 +655,7 @@ class STIX2ObservableObjectConverter(
                 self._handle_misp_object_storage(referenced, misp_object)
             if hasattr(network_traffic, f'{asset}_payload_ref'):
                 reference = getattr(network_traffic, f'{asset}_payload_ref')
-                if reference not in self.main_parser._observable:
+                if not self.main_parser._has_observable(reference):
                     self._missing_observable_object_error(
                         network_traffic.id, reference
                     )
@@ -638,7 +664,7 @@ class STIX2ObservableObjectConverter(
                 misp_object.add_reference(payload.uuid, f'{field}-sent')
         if hasattr(network_traffic, 'encapsulates_refs'):
             for reference in network_traffic.encapsulates_refs:
-                if reference not in self.main_parser._observable:
+                if not self.main_parser._has_observable(reference):
                     self._missing_observable_object_error(
                         network_traffic.id, reference
                     )
@@ -649,7 +675,7 @@ class STIX2ObservableObjectConverter(
                 misp_object.add_reference(referenced.uuid, 'encapsulates')
         if hasattr(network_traffic, 'encapsulated_by_ref'):
             reference = network_traffic.encapsulated_by_ref
-            if reference not in self.main_parser._observable:
+            if not self.main_parser._has_observable(reference):
                 self._missing_observable_object_error(
                     network_traffic.id, reference
                 )
@@ -661,7 +687,9 @@ class STIX2ObservableObjectConverter(
         return misp_object
 
     def _parse_process_observable_object(self, process_ref: str) -> MISPObject:
-        observable = self._fetch_observable(process_ref)
+        observable = self.main_parser._fetch_observable(process_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         process = observable['observable']
@@ -678,7 +706,7 @@ class STIX2ObservableObjectConverter(
         observable['misp_object'] = misp_object
         if hasattr(process, 'opened_connection_refs'):
             for reference in process.opened_connection_refs:
-                if reference not in self.main_parser._observable:
+                if not self.main_parser._has_observable(reference):
                     self._missing_observable_object_error(process.id, reference)
                     continue
                 network_object = self._parse_network_traffic_observable_object(
@@ -689,7 +717,7 @@ class STIX2ObservableObjectConverter(
                 )
         if hasattr(process, 'creator_user_ref'):
             creator_ref = process.creator_user_ref
-            if creator_ref not in self.main_parser._observable:
+            if not self.main_parser._has_observable(creator_ref):
                 self._missing_observable_object_error(process.id, creator_ref)
             else:
                 user_object = self._parse_user_account_observable_object(
@@ -698,7 +726,7 @@ class STIX2ObservableObjectConverter(
                 misp_object.add_reference(user_object.uuid, 'created-by')
         if hasattr(process, 'image_ref'):
             image_ref = process.image_ref
-            if image_ref not in self.main_parser._observable:
+            if not self.main_parser._has_observable(image_ref):
                 self._missing_observable_object_error(process.id, image_ref)
             else:
                 file_object = self._parse_file_observable_object(
@@ -707,7 +735,7 @@ class STIX2ObservableObjectConverter(
                 misp_object.add_reference(file_object.uuid, 'executes')
         if hasattr(process, 'parent_ref'):
             parent_ref = process.parent_ref
-            if parent_ref not in self.main_parser._observable:
+            if not self.main_parser._has_observable(parent_ref):
                 self._missing_observable_object_error(process.id, parent_ref)
             else:
                 parent_object = self._parse_process_observable_object(
@@ -716,7 +744,7 @@ class STIX2ObservableObjectConverter(
                 misp_object.add_reference(parent_object.uuid, 'child-of')
         if hasattr(process, 'child_refs'):
             for reference in process.child_refs:
-                if reference not in self.main_parser._observable:
+                if not self.main_parser._has_observable(reference):
                     self._missing_observable_object_error(process.id, reference)
                     continue
                 child_object = self._parse_process_observable_object(reference)
@@ -724,7 +752,9 @@ class STIX2ObservableObjectConverter(
         return misp_object
 
     def _parse_registry_key_observable_object(self, registry_key_ref: str):
-        observable = self._fetch_observable(registry_key_ref)
+        observable = self.main_parser._fetch_observable(registry_key_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         registry_key = observable['observable']
@@ -760,7 +790,7 @@ class STIX2ObservableObjectConverter(
                 self.main_parser._add_misp_object(value_object, registry_key)
         if hasattr(registry_key, 'creator_user_ref'):
             creator_ref = registry_key.creator_user_ref
-            if creator_ref not in self.main_parser._observable:
+            if not self.main_parser._has_observable(creator_ref):
                 self._missing_observable_object_error(
                     registry_key.id, creator_ref
                 )
@@ -772,7 +802,9 @@ class STIX2ObservableObjectConverter(
         return misp_object
 
     def _parse_url_observable_object(self, url_ref: str) -> MISPAttribute:
-        observable = self._fetch_observable(url_ref)
+        observable = self.main_parser._fetch_observable(url_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_attribute']
         url = observable['observable']
@@ -790,7 +822,9 @@ class STIX2ObservableObjectConverter(
 
     def _parse_user_account_observable_object(
             self, user_account_ref: str) -> MISPObject:
-        observable = self._fetch_observable(user_account_ref)
+        observable = self.main_parser._fetch_observable(user_account_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         user_account = observable['observable']
@@ -810,7 +844,9 @@ class STIX2ObservableObjectConverter(
         return misp_object
 
     def _parse_x509_observable_object(self, x509_ref: str) -> MISPObject:
-        observable = self._fetch_observable(x509_ref)
+        observable = self.main_parser._fetch_observable(x509_ref)
+        if observable is None:
+            return None
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         x509 = observable['observable']
@@ -844,9 +880,13 @@ class STIX2ObservableObjectConverter(
         )
 
 
-class STIX2SampleObservableConverter(STIX2SampleObervableParser):
+class STIX2SampleObservableConverter(STIX2SampleObservableParser):
     def __init__(self, main: _MAIN_CONVERTER_TYPING):
         self._main_converter = main
+
+    @property
+    def _observables(self):
+        return self.main_parser._get_converter('observable')
 
     @property
     def main_parser(self) -> 'ExternalSTIX2toMISPParser':
@@ -867,14 +907,12 @@ class STIX2SampleObservableConverter(STIX2SampleObervableParser):
 
 
 class ExternalSTIX2SampleObservableConverter(
-        STIX2SampleObservableConverter, ExternalSTIX2ObservableConverter):
+        STIX2SampleObservableConverter, ExternalSTIX2Converter):
     def __init__(self, main: 'ExternalSTIX2MalwareConverter'):
         super().__init__(main)
-        self._mapping = ExternalSTIX2ObservableMapping
 
 
 class InternalSTIX2SampleObservableConverter(
-        STIX2SampleObservableConverter, InternalSTIX2ObservableConverter):
+        STIX2SampleObservableConverter, InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2MalwareConverter'):
         super().__init__(main)
-        self._mapping = InternalSTIX2ObservableMapping

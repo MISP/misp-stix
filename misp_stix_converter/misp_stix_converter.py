@@ -48,193 +48,64 @@ _STIX2_valid_versions = ('2.0', '2.1')
 #                         MISP to STIX MAIN FUNCTIONS.                         #
 ################################################################################
 
-class AttributeCollectionHandler():
-    def __init__(self, return_format):
-        self.__return_format = return_format
-        self.__features = defaultdict(dict)
+_STIX1_feature_frames: dict[str, dict[str, tuple[str, str]]] = {
+    'campaigns': {
+        'xml': ('    <stix:Campaigns>\n', '    </stix:Campaigns>\n'),
+        'json': ('"campaigns": [', '], '),
+    },
+    'courses_of_action': {
+        'xml': ('    <stix:Courses_Of_Action>\n', '    </stix:Courses_Of_Action>\n'),
+        'json': ('"courses_of_action": [', '], '),
+    },
+    'exploit_targets': {
+        'xml': ('    <stix:ExploitTargets>\n', '    </stix:ExploitTargets>\n'),
+        'json': ('"exploit_targets": {"exploit_targets": [', ']}, '),
+    },
+    'indicators': {
+        'xml': ('    <stix:Indicators>\n', '    </stix:Indicators>\n'),
+        'json': ('"indicators": [', '], '),
+    },
+    'observables': {
+        'xml': ('    <stix:Observables>\n', '    </stix:Observables>\n'),
+        'json': ('"observables": {"observables": [', ']}, '),
+    },
+    'threat_actors': {
+        'xml': ('    <stix:ThreatActors>\n', '    </stix:ThreatActors>\n'),
+        'json': ('"threat_actors": [', '], '),
+    },
+    'ttps': {
+        'xml': ('    <stix:TTPs>\n', '    </stix:TTPs>\n'),
+        'json': ('"ttps": {"ttps": [', ']}, '),
+    },
+}
 
-    @property
-    def features(self):
-        return self.__features
 
-    @property
-    def campaigns(self):
-        return self.features['campaigns'].get('filename')
-
-    @campaigns.setter
-    def campaigns(self, filename):
-        self.features['campaigns']['filename'] = f'{filename}.{self.return_format}'
-        self.features['campaigns'].update(
-            {
-                'header': '    <stix:Campaigns>\n',
-                'footer': '    </stix:Campaigns>\n'
-            } if self.return_format == 'xml' else {
-                'header': '"campaigns": [',
-                'footer': '], '
-            }
-        )
-
-    @property
-    def campaigns_footer(self):
-        return self.features['campaigns']['footer']
-
-    @property
-    def campaigns_header(self):
-        return self.features['campaigns']['header']
-
-    @property
-    def courses_of_action(self):
-        return self.features['courses_of_action'].get('filename')
-
-    @courses_of_action.setter
-    def courses_of_action(self, filename):
-        self.features['courses_of_action']['filename'] = f'{filename}.{self.return_format}'
-        self.features['courses_of_action'].update(
-            {
-                'header': '    <stix:CoursesOfAction>\n',
-                'footer': '    </stix:CoursesOfAction>\n'
-            } if self.return_format == 'xml' else {
-                'header': '"courses_of_action": [',
-                'footer': '], '
-            }
-        )
-
-    @property
-    def courses_of_action_footer(self):
-        return self.features['courses_of_action']['footer']
-
-    @property
-    def courses_of_action_header(self):
-        return self.features['courses_of_action']['header']
-
-    @property
-    def exploit_targets(self):
-        return self.features['exploit_targets'].get('filename')
-
-    @exploit_targets.setter
-    def exploit_targets(self, filename):
-        self.features['exploit_targets']['filename'] = f'{filename}.{self.return_format}'
-        self.features['exploit_targets'].update(
-            {
-                'header': '    <stix:ExploitTargets>\n',
-                'footer': '    </stix:ExploitTargets>\n'
-            } if self.return_format == 'xml' else {
-                'header': '"exploit_targets": {"exploit_targets": [',
-                'footer': ']}, '
-            }
-        )
-
-    @property
-    def exploit_targets_footer(self):
-        return self.features['exploit_targets']['footer']
-
-    @property
-    def exploit_targets_header(self):
-        return self.features['exploit_targets']['header']
-
-    @property
-    def indicators(self):
-        return self.features['indicators'].get('filename')
-
-    @indicators.setter
-    def indicators(self, filename):
-        self.features['indicators']['filename'] = f'{filename}.{self.return_format}'
-        self.features['indicators'].update(
-            {
-                'header': '    <stix:Indicators>\n',
-                'footer': '    </stix:Indicators>\n'
-            } if self.return_format == 'xml' else {
-                'header': '"indicators": [',
-                'footer': '], '
-            }
-        )
-
-    @property
-    def indicators_footer(self):
-        return self.features['indicators']['footer']
-
-    @property
-    def indicators_header(self):
-        return self.features['indicators']['header']
-
-    @property
-    def observables(self):
-        return self.features['observables'].get('filename')
-
-    @observables.setter
-    def observables(self, filename):
-        self.features['observables']['filename'] = f'{filename}.{self.return_format}'
-        self.features['observables'].update(
-            {
-                'header': '    <stix:Observables>\n',
-                'footer': '    </stix:Observables>\n'
-            } if self.return_format == 'xml' else {
-                'header': '"observables": {"observables": [',
-                'footer': ']}, '
-            }
-        )
-
-    @property
-    def observables_footer(self):
-        return self.features['observables']['footer']
-
-    @property
-    def observables_header(self):
-        return self.features['observables']['header']
+class AttributeCollectionHandler:
+    def __init__(self, return_format: str):
+        self._return_format = return_format
+        self._filenames: dict[str, str] = {}
 
     @property
     def return_format(self) -> str:
-        return self.__return_format
+        return self._return_format
 
     @property
-    def threat_actors(self):
-        return self.features['threat_actors'].get('filename')
+    def features(self) -> dict:
+        return self._filenames
 
-    @threat_actors.setter
-    def threat_actors(self, filename):
-        self.features['threat_actors']['filename'] = f'{filename}.{self.return_format}'
-        self.features['threat_actors'].update(
-            {
-                'header': '    <stix:ThreatActors>\n',
-                'footer': '    </stix:ThreatActors>\n'
-            } if self.return_format == 'xml' else {
-                'header': '"threat_actors": [',
-                'footer': '], '
-            }
-        )
+    def set_feature(self, feature: str, stem) -> str:
+        path = f'{stem}.{self._return_format}'
+        self._filenames[feature] = path
+        return path
 
-    @property
-    def threat_actors_footer(self):
-        return self.features['threat_actors']['footer']
+    def get_filename(self, feature: str) -> str | None:
+        return self._filenames.get(feature)
 
-    @property
-    def threat_actors_header(self):
-        return self.features['threat_actors']['header']
+    def header(self, feature: str) -> str:
+        return _STIX1_feature_frames[feature][self._return_format][0]
 
-    @property
-    def ttps(self):
-        return self.features['ttps'].get('filename')
-
-    @ttps.setter
-    def ttps(self, filename):
-        self.features['ttps']['filename'] = f'{filename}.{self.return_format}'
-        self.features['ttps'].update(
-            {
-                'header': '    <stix:TTPs>\n',
-                'footer': '    </stix:TTPs>\n'
-            } if self.return_format == 'xml' else {
-                'header': '"ttps": {"ttps": [',
-                'footer': ']}, '
-            }
-        )
-
-    @property
-    def ttps_footer(self):
-        return self.features['ttps']['footer']
-
-    @property
-    def ttps_header(self):
-        return self.features['ttps']['header']
+    def footer(self, feature: str) -> str:
+        return _STIX1_feature_frames[feature][self._return_format][1]
 
 
 def misp_attribute_collection_to_stix1(
@@ -315,13 +186,11 @@ def misp_attribute_collection_to_stix1(
                         content = globals()[f'write_{feature}'](values, return_format)
                         if not content.strip():
                             continue
-                        filename = getattr(handler, feature)
+                        filename = handler.get_filename(feature)
                         if filename is None:
-                            setattr(handler, feature, uuid4())
-                            filename = getattr(handler, feature)
+                            filename = handler.set_feature(feature, uuid4())
                             with open(tmp_path / filename, 'wt', encoding='utf-8') as f:
-                                current_header = getattr(handler, f'{feature}_header')
-                                f.write(f'{current_header}{content}')
+                                f.write(f'{handler.header(feature)}{content}')
                             continue
                         with open(tmp_path / filename, 'at', encoding='utf-8') as f:
                             f.write(content)
@@ -333,17 +202,14 @@ def misp_attribute_collection_to_stix1(
             )
             with open(name, 'wt', encoding='utf-8') as result:
                 result.write(header)
-                actual_features = handler.features
-                for feature in actual_features:
-                    filename = getattr(handler, feature)
-                    if filename is not None:
-                        with open(tmp_path / filename, 'rt', encoding='utf-8') as current:
-                            content = current.read() if return_format == 'xml' else current.read()[:-2]
-                        current_footer = getattr(handler, f'{feature}_footer')
-                        if return_format == 'json' and feature == actual_features[-1]:
-                            current_footer = current_footer[:-2]
-                        result.write(f'{content}{current_footer}')
-                        os.remove(tmp_path / filename)
+                for feature, filename in handler.features.items():
+                    with open(tmp_path / filename, 'rt', encoding='utf-8') as current:
+                        content = current.read() if return_format == 'xml' else current.read()[:-2]
+                    current_footer = handler.footer(feature)
+                    if return_format == 'json' and feature == list(handler.features)[-1]:
+                        current_footer = current_footer[:-2]
+                    result.write(f'{content}{current_footer}')
+                    os.remove(tmp_path / filename)
                 result.write(footer)
             traceback.update(_generate_traceback(debug, parser, name))
         return traceback

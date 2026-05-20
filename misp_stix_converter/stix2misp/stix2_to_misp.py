@@ -108,6 +108,8 @@ _STIX_OBJECT_TYPING = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
+    _CONVERTER_CLASSES: dict = {}
+
     def __init__(self):
         super().__init__()
         self._creators: set = set()
@@ -117,6 +119,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
         self._analyst_data: dict = defaultdict(list)
         self._clusters: dict = {}
+        self._converter_cache: dict = {}
         self._galaxies: dict = {}
 
         self._attack_pattern: dict
@@ -199,6 +202,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._parsed_object_refs = set()
         self._creators = set()
         self._analyst_data = defaultdict(list)
+        self._converter_cache.clear()
         for feature in _SDOs:
             if hasattr(self, feature):
                 delattr(self, feature)
@@ -206,6 +210,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _set_misp_event(self, misp_event):
         super()._set_misp_event(misp_event)
         self._parsed_object_refs = set()
+
+    def _get_converter(self, stix_type: str):
+        if stix_type not in self._converter_cache:
+            cls = self._CONVERTER_CLASSES.get(stix_type)
+            if cls is None:
+                raise UnknownStixObjectTypeError(stix_type)
+            self._converter_cache[stix_type] = cls(self)
+        return self._converter_cache[stix_type]
+
+    def _fetch_observable(self, object_ref: str) -> Optional[dict]:
+        return self._observable.get(object_ref)
+
+    def _has_observable(self, object_ref: str) -> bool:
+        return object_ref in self._observable
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -410,15 +428,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_object(self, object_type: str, object_ref: str):
         self._parsed_object_refs.add(object_ref)
-        feature = self._mapping.stix_to_misp_mapping(object_type)
-        if feature is None:
-            raise UnknownStixObjectTypeError(object_type)
         try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser.parse(object_ref)
+            self._get_converter(object_type).parse(object_ref)
         except ObjectRefLoadingError as error:
             self._object_ref_loading_error(error)
         except ObjectTypeLoadingError as error:
@@ -447,9 +458,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
 
     def _handle_unparsed_content(self):
-        if hasattr(self, '_observed_data_parser'):
-            if hasattr(self.observed_data_parser, '_observable_relationships'):
-                self.observed_data_parser.parse_relationships()
+        if 'observed-data' in self._converter_cache:
+            observed_data_parser = self._get_converter('observed-data')
+            if hasattr(observed_data_parser, '_observable_relationships'):
+                observed_data_parser.parse_relationships()
         if hasattr(self, '_relationship'):
             if hasattr(self, '_sighting'):
                 self._parse_relationships_and_sightings()

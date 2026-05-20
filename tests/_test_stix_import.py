@@ -139,7 +139,7 @@ class TestSTIX2Import(TestSTIX):
         return b64encode(data.getvalue()).decode()
 
     def _get_compiled_pattern(self, indicator):
-        pattern = self.parser.indicator_parser._compile_stix_pattern(indicator)
+        pattern = self.parser._get_converter('indicator')._compile_stix_pattern(indicator)
         return pattern.comparisons
 
     @staticmethod
