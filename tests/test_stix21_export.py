@@ -355,6 +355,47 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         _, _, _, marking = stix_objects
         self.assertEqual(marking.definition_type, 'tlp')
         self.assertEqual(marking.definition['tlp'], 'white')
+        self.assertFalse(hasattr(marking, 'extensions') and marking.extensions)
+
+    def _test_event_with_tlp2_tags(self, event):
+        self.parser.parse_misp_event(event)
+        bundle = self.parser.bundle
+        markings = [o for o in bundle.objects if o.type == 'marking-definition']
+        grouping = next(o for o in bundle.objects if o.type == 'grouping')
+        marking_ids = {m.id: m for m in markings}
+        clear_id = 'marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487'
+        amber_strict_id = 'marking-definition--939a9414-2ddd-4d32-a0cd-375ea402b003'
+        self.assertIn(clear_id, marking_ids)
+        self.assertIn(amber_strict_id, marking_ids)
+        self.assertEqual(marking_ids[clear_id].name, 'TLP:CLEAR')
+        self.assertEqual(marking_ids[amber_strict_id].name, 'TLP:AMBER+STRICT')
+        self.assertIn(clear_id, grouping.object_marking_refs)
+        self.assertIn(amber_strict_id, grouping.object_marking_refs)
+        grouping_labels = getattr(grouping, 'labels', []) or []
+        self.assertNotIn('tlp:clear', grouping_labels)
+        self.assertNotIn('tlp:amber+strict', grouping_labels)
+        extension_id = (
+            'extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d'
+        )
+        for marking_id, tlp_value in (
+            (clear_id, 'clear'), (amber_strict_id, 'amber+strict')
+        ):
+            extensions = marking_ids[marking_id].extensions
+            self.assertIn(extension_id, extensions)
+            extension = extensions[extension_id]
+            self.assertEqual(extension['extension_type'], 'property-extension')
+            self.assertEqual(extension['tlp_2_0'], tlp_value)
+        clear_count = sum(1 for m in markings if m.id == clear_id)
+        self.assertEqual(clear_count, 1)
+        observed = next(
+            (o for o in bundle.objects if o.type == 'observed-data'), None
+        )
+        self.assertIsNotNone(observed)
+        self.assertIn(clear_id, observed.object_marking_refs)
+        extension_objects = [
+            o for o in bundle.objects if o.type == 'extension-definition'
+        ]
+        self.assertEqual(extension_objects, [])
 
     def _test_published_event(self, event):
         orgc = event['Orgc']
@@ -405,6 +446,10 @@ class TestSTIX21JSONEventExport(TestSTIX21EventExport):
     def test_event_with_tags(self):
         event = get_event_with_tags()
         self._test_event_with_tags(event['Event'])
+
+    def test_event_with_tlp2_tags(self):
+        event = get_event_with_tlp2_tags()
+        self._test_event_with_tlp2_tags(event['Event'])
 
     def test_published_event(self):
         event = get_published_event()

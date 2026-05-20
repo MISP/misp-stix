@@ -4065,6 +4065,26 @@ def get_event_with_tags():
     return event
 
 
+def get_event_with_tlp2_tags():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Tag'] = [
+        {"name": "tlp:clear"},
+        {"name": "tlp:amber+strict"}
+    ]
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "ad0c96f5-cef3-412c-be28-6939e0f566ed",
+            "type": "ip-src",
+            "category": "Network activity",
+            "timestamp": "1603642920",
+            "to_ids": True,
+            "value": "203.0.113.0",
+            "Tag": [{"name": "tlp:clear"}]
+        }
+    ]
+    return event
+
+
 def get_published_event():
     base_event = deepcopy(_BASE_EVENT)
     base_event['Event']['date'] = '2020-10-25'
