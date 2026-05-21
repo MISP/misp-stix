@@ -1124,7 +1124,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             force_single=self._mapping.ip_port_single_fields(),
             with_uuid=self._mapping.ip_port_uuid_fields()
         )
-        protocols = set()
+        protocols: dict[str, None] = {}
         network_traffic_args = {
             'id': self._parse_stix_object_id(
                 'object', 'network-traffic', misp_object
@@ -1146,7 +1146,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     address_id = f'{address_type._type}--{uuid}'
                     objects.append(address_type(id=address_id, value=ip_value))
                     network_traffic_args[ref_type] = address_id
-                    protocols.add(address_type._type.split('-')[0])
+                    protocols[address_type._type.split('-')[0]] = None
                 else:
                     attributes[feature] = [
                         value[0] for value in attributes.pop(feature)
