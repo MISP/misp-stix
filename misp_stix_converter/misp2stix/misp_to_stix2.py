@@ -574,13 +574,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_event_report_references(
             self, event_report: MISPEventReport | dict):
-        references = {
+        references = dict.fromkeys(
             reference.split('(')[1][:-1]
             for feature in ('attribute', 'object')
             for reference in re.findall(
                 _event_report_regex % feature, event_report['content']
             )
-        }
+        )
         for reference in references:
             if reference in self._event_report_matching:
                 yield from self._event_report_matching[reference]

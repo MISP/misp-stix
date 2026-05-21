@@ -275,7 +275,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         if event_report.get('name'):
             note_args['x_misp_name'] = event_report['name']
-        references = set(self._parse_event_report_references(event_report))
+        references = dict.fromkeys(
+            self._parse_event_report_references(event_report)
+        )
         note_args['object_refs'] = (
             list(references) if references
             else [f"report--{self._misp_event['uuid']}"]
