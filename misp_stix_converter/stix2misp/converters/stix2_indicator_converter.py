@@ -1052,9 +1052,9 @@ class ExternalSTIX2IndicatorConverter(
     def _parse_pe_object(self, indicator: _INDICATOR_TYPING,
                          *attributes: tuple[dict]) -> MISPObject:
         object_id = f'{indicator.id} - windows-pebinary-ext'
-        misp_object = self._create_misp_object('pe')
-        misp_object.from_dict(**self._parse_timeline(indicator))
-        misp_object.uuid = self.main_parser._create_v5_uuid(object_id)
+        misp_object = self._create_misp_object(
+            'pe', indicator, object_id=object_id
+        )
         for attr in attributes:
             misp_object.add_attribute(
                 **attr, uuid=self.main_parser._create_v5_uuid(
@@ -1090,9 +1090,9 @@ class ExternalSTIX2IndicatorConverter(
     def _parse_pe_section_object(self, indicator: _INDICATOR_TYPING,
                                  index: str, *attributes: tuple[dict]) -> str:
         object_id = f'{indicator.id} - windows-pebinary-ext - sections - {index}'
-        misp_object = self._create_misp_object('pe-section')
-        misp_object.from_dict(**self._parse_timeline(indicator))
-        misp_object.uuid = self.main_parser._create_v5_uuid(object_id)
+        misp_object = self._create_misp_object(
+            'pe-section', indicator, object_id=object_id
+        )
         for attr in attributes:
             misp_object.add_attribute(
                 **attr, uuid=self.main_parser._create_v5_uuid(
@@ -1177,9 +1177,9 @@ class ExternalSTIX2IndicatorConverter(
             indicator: _INDICATOR_TYPING) -> Iterator[str]:
         for index, value_attributes in values_attributes.items():
             object_id = f'{indicator.id} - values - {index}'
-            value_object = self._create_misp_object('registry-key-value')
-            value_object.from_dict(**self._parse_timeline(indicator))
-            value_object.uuid = self.main_parser._create_v5_uuid(object_id)
+            value_object = self._create_misp_object(
+                'registry-key-value', indicator, object_id=object_id
+            )
             for attr in value_attributes:
                 attr['uuid'] = self.main_parser._create_v5_uuid(
                     f"{object_id} - {attr['object_relation']} - {attr['value']}"
@@ -1942,9 +1942,10 @@ class InternalSTIX2IndicatorConverter(
 
     def _object_from_file_extension_pattern(
             self, extension: dict, indicator: _INDICATOR_TYPING) -> str:
-        object_id = indicator.id
-        pe_object = self._create_misp_object('pe')
-        pe_object.from_dict(**self._parse_timeline(indicator))
+        object_id = f'{indicator.id} - windows-pebinary-ext'
+        pe_object = self._create_misp_object(
+            'pe', indicator, object_id=object_id
+        )
         if 'address_of_entry_point' in extension['pe']:
             value = extension['pe'].pop('address_of_entry_point')
             pe_object.add_attribute(
@@ -1962,9 +1963,11 @@ class InternalSTIX2IndicatorConverter(
                 )
             )
         misp_object = self.main_parser._add_misp_object(pe_object, indicator)
-        for section in extension.get('sections').values():
-            section_object = self._create_misp_object('pe-section')
-            section_object.from_dict(**self._parse_timeline(indicator))
+        for section_index, section in extension.get('sections').items():
+            section_id = f'{object_id} - sections - {section_index}'
+            section_object = self._create_misp_object(
+                'pe-section', indicator, object_id=section_id
+            )
             for feature, value in section.items():
                 attribute = self._mapping.pe_section_pattern_mapping(feature)
                 if attribute is not None:
