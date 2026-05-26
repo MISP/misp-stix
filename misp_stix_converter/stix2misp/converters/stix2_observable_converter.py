@@ -801,9 +801,9 @@ class ExternalSTIX2ObservableConverter(
         if hasattr(observable, 'arguments'):
             value = ' '.join(observable.arguments)
             yield {
-                **self._mappping.args_attribute(),
+                **self._mapping.args_attribute(),
                 'value': value, 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} -  args - {value}'
+                    f'{object_id} - args - {value}'
                 )
             }
         if hasattr(observable, 'environment_variables'):
@@ -1497,9 +1497,9 @@ class InternalSTIX2ObservableConverter(
         if hasattr(observable, 'arguments'):
             value = ' '.join(observable.arguments)
             yield {
-                **self._mappping.args_attribute(),
+                **self._mapping.args_attribute(),
                 'value': value, 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} -  args - {value}'
+                    f'{object_id} - args - {value}'
                 )
             }
         if hasattr(observable, 'environment_variables'):
