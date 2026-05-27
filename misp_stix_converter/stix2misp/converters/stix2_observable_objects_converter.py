@@ -3,14 +3,12 @@
 
 from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2_observable_converter import (
-    ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
-    InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping)
+    ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping)
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
-    EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
-    NetworkTraffic, Process, Software, URL, UserAccount, WindowsRegistryKey,
+    Artifact, AutonomousSystem, Directory, DomainName, EmailMessage, File,
+    NetworkTraffic, Process, Software, UserAccount, WindowsRegistryKey,
     X509Certificate)
 from stix2.v21.sdo import Malware
 from typing import Iterator, Optional, TYPE_CHECKING, Union
@@ -33,9 +31,6 @@ _OBSERVABLE_TYPING = Union[
     Artifact, AutonomousSystem, Directory, DomainName, EmailMessage, File,
     NetworkTraffic, Process, Software, UserAccount, WindowsRegistryKey,
     X509Certificate
-]
-_SINGLE_ATTRIBUTE_OBSERVABLE_TYPING = Union[
-    DomainName, EmailAddress, IPv4Address, IPv6Address, MACAddress, Mutex, URL
 ]
 
 

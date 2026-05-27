@@ -7,8 +7,7 @@ from ...misp_stix_mapping import Mapping
 from ..exceptions import (
     AttributeFromPatternParsingError, InvalidSTIXPatternError,
     UndefinedIndicatorError, UndefinedSTIXObjectError,
-    UnknownParsingFunctionError, UnknownPatternMappingError,
-    UnknownPatternTypeError)
+    UnknownParsingFunctionError, UnknownPatternMappingError)
 from ..stix2_pattern_parser import STIX2PatternParser
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,

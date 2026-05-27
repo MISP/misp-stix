@@ -6,7 +6,6 @@ from ..exceptions import UnknownParsingFunctionError
 from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
-from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v20.sdo import CourseOfAction as CourseOfAction_v20
 from stix2.v21.sdo import CourseOfAction as CourseOfAction_v21

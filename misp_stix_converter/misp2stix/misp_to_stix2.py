@@ -36,7 +36,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 try:
     from datetime import UTC

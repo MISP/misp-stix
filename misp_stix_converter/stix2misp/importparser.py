@@ -200,12 +200,6 @@ class STIXtoMISPParser(AbstractParser):
             'init'
         )
 
-    def _distribution_and_sharing_group_id_error(self):
-        self._add_error(
-            'Invalid Sharing Group ID - cannot be None when distribution is 4',
-            'init'
-        )
-
     def _distribution_error(self, exception: Exception):
         self._add_error(
             f'Wrong distribution format: {exception}', 'init'

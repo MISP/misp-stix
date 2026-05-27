@@ -7,8 +7,8 @@ from ..exceptions import (
 from .stix2_observable_converter import (
     ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping,
-    STIX2ObservableConverter, _AUTONOMOUS_SYSTEM_TYPING, _EMAIL_ADDRESS_TYPING,
-    _EXTENSION_TYPING, _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
+    _AUTONOMOUS_SYSTEM_TYPING, _EMAIL_ADDRESS_TYPING, _EXTENSION_TYPING,
+    _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, _MAIN_PARSER_TYPING)
 from abc import ABCMeta
@@ -47,17 +47,16 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
 ]
-class _ObservableMethods(NamedTuple):
-    v21: str
-    v20: str
-
-
 _WINDOWS_PE_BINARY_EXT_TYPING = Union[
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
 ]
 _WINDOWS_REGISTRY_VALUE_TYPING = Union[
     WindowsRegistryValueType_v20, WindowsRegistryValueType_v21
 ]
+
+class _ObservableMethods(NamedTuple):
+    v21: str
+    v20: str
 
 
 class STIX2ObservedDataConverter(metaclass=ABCMeta):
