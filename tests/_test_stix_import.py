@@ -91,6 +91,20 @@ class TestSTIX2Bundles:
 class TestSTIX2Import(TestSTIX):
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
+    def _check_object_attribute_uuid(self, attr, object_id, value=None):
+        self.assertEqual(
+            attr.uuid,
+            uuid5(
+                UUIDv4,
+                f'{object_id} - {attr.object_relation} - {value or attr.value}'
+            )
+        )
+
+    def _check_attributes_from_indicator_fields(self, attributes, indicator_id):
+        for attribute in attributes:
+            self.assertTrue(attribute.to_ids)
+            self._check_object_attribute_uuid(attribute, indicator_id)
+
     def _check_attribute_labels(self, attribute, labels):
         if len(labels) == 3:
             type_label, category_label, ids_label = labels
@@ -633,15 +647,6 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
         self.parser = ExternalSTIX2toMISPParser()
 
-    def _check_object_attribute_uuid(self, attr, object_id, value=None):
-        self.assertEqual(
-            attr.uuid,
-            uuid5(
-                UUIDv4,
-                f'{object_id} - {attr.object_relation} - {value or attr.value}'
-            )
-        )
-
     ############################################################################
     #                      MISP GALAXIES CHECKING METHODS                      #
     ############################################################################
@@ -746,11 +751,6 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(description.type, 'text')
         self.assertEqual(description.object_relation, 'description')
         self.assertEqual(description.value, _name)
-
-    def _check_attributes_from_indicator_fields(self, attributes, indicator_id):
-        for attribute in attributes:
-            self.assertTrue(attribute.to_ids)
-            self._check_object_attribute_uuid(attribute, indicator_id)
 
     def _check_domain_indicator_attribute(self, indicator, attribute):
         pattern = self._get_compiled_pattern(indicator)
@@ -3025,6 +3025,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             f"CAPEC-{capec_id.value}",
             attack_pattern.external_references[0].external_id
         )
+        self._check_object_attribute_uuid(capec_id, attack_pattern.id)
 
     def _check_attributes_ids_flag(self, feature, pattern, *attributes):
         pattern_values = [value[-1] for value in pattern[feature]]
@@ -3182,7 +3183,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(port.object_relation, 'port')
         self.assertEqual(port.value, self._get_pattern_value(port_pattern))
 
-    def _check_email_indicator_object(self, attributes, pattern):
+    def _check_email_indicator_object(self, attributes, pattern, indicator_id):
         self.assertEqual(len(attributes), 18)
         self.assertTrue(all(attribute.to_ids for attribute in attributes))
         _to, to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, _from, from_dn, message_id, reply_to, subject, x_mailer, user_agent, boundary, *attachments = attributes
@@ -3238,6 +3239,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(attribute.type, 'attachment')
             self.assertEqual(attribute.object_relation, pattern[f'body_multipart[{index}].content_disposition'])
             self.assertEqual(attribute.value, pattern[f'body_multipart[{index}].body_raw_ref.name'])
+            self._check_object_attribute_uuid(
+                attribute,
+                f'{indicator_id} - body_multipart - {index}'
+            )
 
     def _check_email_observable_object(self, attributes, observables, pattern):
         self.assertEqual(len(attributes), 18)
@@ -4092,45 +4097,83 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(layer7.object_relation, 'layer7-protocol')
         self.assertEqual(layer7.value, network_traffic.protocols[2].upper())
 
-    def _check_network_socket_indicator_object(self, attributes, pattern):
+    def _check_network_socket_indicator_object(
+            self, attributes, pattern, indicator_id):
         self.assertEqual(len(attributes), 10)
-        for attribute in attributes:
-            if attribute.object_relation in ('protocol', 'state'):
-                self.assertFalse(attribute.to_ids)
-                continue
-            self.assertTrue(attribute.to_ids)
         ip_src, ip_dst, hostname, port_dst, port_src, protocol, address_family, socket_type, listening, domain_family = attributes
         src_ref, dst_ref, domain_ref, dst_port, src_port, protocols, addressFamily, socketType, is_listening, protocolFamily = pattern
+        socket_ext_id = f'{indicator_id} - socket-ext'
+        ip_src_value = self._get_pattern_value(src_ref)[:-2]
+        self.assertTrue(ip_src.to_ids)
         self.assertEqual(ip_src.type, 'ip-src')
         self.assertEqual(ip_src.object_relation, 'ip-src')
-        self.assertEqual(ip_src.value, self._get_pattern_value(src_ref)[:-2])
+        self.assertEqual(ip_src.value, ip_src_value)
+        self._check_object_attribute_uuid(ip_src, indicator_id, ip_src_value)
+        ip_dst_value = self._get_pattern_value(dst_ref)[:-2]
+        self.assertTrue(ip_dst.to_ids)
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
-        self.assertEqual(ip_dst.value, self._get_pattern_value(dst_ref)[:-2])
+        self.assertEqual(ip_dst.value, ip_dst_value)
+        self._check_object_attribute_uuid(ip_dst, indicator_id, ip_dst_value)
+        hostname_value = self._get_pattern_value(domain_ref)[:-2]
+        self.assertTrue(hostname.to_ids)
         self.assertEqual(hostname.type, 'hostname')
         self.assertEqual(hostname.object_relation, 'hostname-dst')
-        self.assertEqual(hostname.value, self._get_pattern_value(domain_ref)[:-2])
+        self.assertEqual(hostname.value, hostname_value)
+        self._check_object_attribute_uuid(hostname, indicator_id, hostname_value)
+        port_dst_value = self._get_pattern_value(dst_port)
+        self.assertTrue(port_dst.to_ids)
         self.assertEqual(port_dst.type, 'port')
         self.assertEqual(port_dst.object_relation, 'dst-port')
-        self.assertEqual(port_dst.value, self._get_pattern_value(dst_port))
+        self.assertEqual(port_dst.value, port_dst_value)
+        self._check_object_attribute_uuid(port_dst, indicator_id, port_dst_value)
+        port_src_value = self._get_pattern_value(src_port)
+        self.assertTrue(port_src.to_ids)
         self.assertEqual(port_src.type, 'port')
         self.assertEqual(port_src.object_relation, 'src-port')
-        self.assertEqual(port_src.value, self._get_pattern_value(src_port))
+        self.assertEqual(port_src.value, port_src_value)
+        self._check_object_attribute_uuid(port_src, indicator_id, port_src_value)
+        protocol_value = self._get_pattern_value(protocols).upper()
+        self.assertFalse(protocol.to_ids)
         self.assertEqual(protocol.type, 'text')
         self.assertEqual(protocol.object_relation, 'protocol')
-        self.assertEqual(protocol.value, self._get_pattern_value(protocols).upper())
+        self.assertEqual(protocol.value, protocol_value)
+        self._check_object_attribute_uuid(protocol, indicator_id, protocol_value)
+        address_family_value = self._get_pattern_value(addressFamily)
+        self.assertTrue(address_family.to_ids)
         self.assertEqual(address_family.type, 'text')
         self.assertEqual(address_family.object_relation, 'address-family')
-        self.assertEqual(address_family.value, self._get_pattern_value(addressFamily))
+        self.assertEqual(address_family.value, address_family_value)
+        self._check_object_attribute_uuid(
+            address_family, socket_ext_id, address_family_value
+        )
+        socket_type_value = self._get_pattern_value(socketType)
+        self.assertTrue(socket_type.to_ids)
         self.assertEqual(socket_type.type, 'text')
         self.assertEqual(socket_type.object_relation, 'socket-type')
-        self.assertEqual(socket_type.value, self._get_pattern_value(socketType))
+        self.assertEqual(socket_type.value, socket_type_value)
+        self._check_object_attribute_uuid(
+            socket_type, socket_ext_id, socket_type_value
+        )
+        listening_value = is_listening.split(' = ')[0].split('_')[-1]
+        self.assertFalse(listening.to_ids)
         self.assertEqual(listening.type, 'text')
         self.assertEqual(listening.object_relation, 'state')
-        self.assertEqual(listening.value, is_listening.split(' = ')[0].split('_')[-1])
+        self.assertEqual(listening.value, listening_value)
+        self._check_object_attribute_uuid(
+            listening, socket_ext_id, listening_value
+        )
+        domain_family_value = self._get_pattern_value(protocolFamily)
+        self.assertTrue(domain_family.to_ids)
         self.assertEqual(domain_family.type, 'text')
         self.assertEqual(domain_family.object_relation, 'domain-family')
-        self.assertEqual(domain_family.value, self._get_pattern_value(protocolFamily))
+        self.assertEqual(domain_family.value, domain_family_value)
+        domain_family_prefix = (
+            socket_ext_id if "socket-ext" in protocolFamily else indicator_id
+        )
+        self._check_object_attribute_uuid(
+            domain_family, domain_family_prefix, domain_family_value
+        )
 
     def _check_network_socket_observable_object(self, attributes, observables, pattern):
         self.assertEqual(len(attributes), 10 - 1) # 10 expected attributes minus the one tested separately
@@ -4245,7 +4288,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             observable.x_misp_profile_photo['data']
         )
 
-    def _check_pe_indicator_object(self, attributes, pattern):
+    def _check_pe_indicator_object(self, attributes, pattern, indicator_id):
         self.assertEqual(len(attributes), 15)
         self.assertTrue(all(attribute.to_ids for attribute in attributes))
         (entrypoint, imphash, number, pe_type, compilation, original,
@@ -4254,83 +4297,136 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         (IMPHASH, _number, _pe_type, address, _compilation, _original,
          _internal, _description, _file_version, _lang_id, _name,
          _product_version, _company, _legal, _impfuzzy) = pattern
+        pe_id = f'{indicator_id} - windows-pebinary-ext'
+        entrypoint_value = self._get_pattern_value(address)
         self.assertEqual(entrypoint.type, 'text')
         self.assertEqual(entrypoint.object_relation, 'entrypoint-address')
-        self.assertEqual(entrypoint.value, self._get_pattern_value(address))
+        self.assertEqual(entrypoint.value, entrypoint_value)
+        self._check_object_attribute_uuid(entrypoint, pe_id, entrypoint_value)
+        imphash_value = self._get_pattern_value(IMPHASH)
         self.assertEqual(imphash.type, 'imphash')
         self.assertEqual(imphash.object_relation, 'imphash')
-        self.assertEqual(imphash.value, self._get_pattern_value(IMPHASH))
+        self.assertEqual(imphash.value, imphash_value)
+        self._check_object_attribute_uuid(imphash, pe_id, imphash_value)
+        number_value = self._get_pattern_value(_number)
         self.assertEqual(number.type, 'counter')
         self.assertEqual(number.object_relation, 'number-sections')
-        self.assertEqual(number.value, self._get_pattern_value(_number))
+        self.assertEqual(number.value, number_value)
+        self._check_object_attribute_uuid(number, pe_id, number_value)
+        pe_type_value = self._get_pattern_value(_pe_type)
         self.assertEqual(pe_type.type, 'text')
         self.assertEqual(pe_type.object_relation, 'type')
-        self.assertEqual(pe_type.value, self._get_pattern_value(_pe_type))
+        self.assertEqual(pe_type.value, pe_type_value)
+        self._check_object_attribute_uuid(pe_type, pe_id, pe_type_value)
+        compilation_value = self._get_pattern_value(_compilation)
         self.assertEqual(compilation.type, 'datetime')
         self.assertEqual(compilation.object_relation, 'compilation-timestamp')
         self.assertEqual(
-            compilation.value,
-            self._datetime_from_str(self._get_pattern_value(_compilation))
+            compilation.value, self._datetime_from_str(compilation_value)
         )
+        self._check_object_attribute_uuid(compilation, pe_id, compilation_value)
+        original_value = self._get_pattern_value(_original)
         self.assertEqual(original.type, 'filename')
         self.assertEqual(original.object_relation, 'original-filename')
-        self.assertEqual(original.value, self._get_pattern_value(_original))
+        self.assertEqual(original.value, original_value)
+        self._check_object_attribute_uuid(original, pe_id, original_value)
+        internal_value = self._get_pattern_value(_internal)
         self.assertEqual(internal.type, 'filename')
         self.assertEqual(internal.object_relation, 'internal-filename')
-        self.assertEqual(internal.value, self._get_pattern_value(_internal))
+        self.assertEqual(internal.value, internal_value)
+        self._check_object_attribute_uuid(internal, pe_id, internal_value)
+        description_value = self._get_pattern_value(_description)
         self.assertEqual(description.type, 'text')
         self.assertEqual(description.object_relation, 'file-description')
-        self.assertEqual(description.value, self._get_pattern_value(_description))
+        self.assertEqual(description.value, description_value)
+        self._check_object_attribute_uuid(description, pe_id, description_value)
+        file_version_value = self._get_pattern_value(_file_version)
         self.assertEqual(file_version.type, 'text')
         self.assertEqual(file_version.object_relation, 'file-version')
-        self.assertEqual(file_version.value, self._get_pattern_value(_file_version))
+        self.assertEqual(file_version.value, file_version_value)
+        self._check_object_attribute_uuid(file_version, pe_id, file_version_value)
+        lang_id_value = self._get_pattern_value(_lang_id)
         self.assertEqual(lang_id.type, 'text')
         self.assertEqual(lang_id.object_relation, 'lang-id')
-        self.assertEqual(lang_id.value, self._get_pattern_value(_lang_id))
+        self.assertEqual(lang_id.value, lang_id_value)
+        self._check_object_attribute_uuid(lang_id, pe_id, lang_id_value)
+        name_value = self._get_pattern_value(_name)
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'product-name')
-        self.assertEqual(name.value, self._get_pattern_value(_name))
+        self.assertEqual(name.value, name_value)
+        self._check_object_attribute_uuid(name, pe_id, name_value)
+        product_version_value = self._get_pattern_value(_product_version)
         self.assertEqual(product_version.type, 'text')
         self.assertEqual(product_version.object_relation, 'product-version')
-        self.assertEqual(product_version.value, self._get_pattern_value(_product_version))
+        self.assertEqual(product_version.value, product_version_value)
+        self._check_object_attribute_uuid(
+            product_version, pe_id, product_version_value
+        )
+        company_value = self._get_pattern_value(_company)
         self.assertEqual(company.type, 'text')
         self.assertEqual(company.object_relation, 'company-name')
-        self.assertEqual(company.value, self._get_pattern_value(_company))
+        self.assertEqual(company.value, company_value)
+        self._check_object_attribute_uuid(company, pe_id, company_value)
+        legal_value = self._get_pattern_value(_legal)
         self.assertEqual(legal.type, 'text')
         self.assertEqual(legal.object_relation, 'legal-copyright')
-        self.assertEqual(legal.value, self._get_pattern_value(_legal))
+        self.assertEqual(legal.value, legal_value)
+        self._check_object_attribute_uuid(legal, pe_id, legal_value)
+        impfuzzy_value = self._get_pattern_value(_impfuzzy)
         self.assertEqual(impfuzzy.type, 'impfuzzy')
         self.assertEqual(impfuzzy.object_relation, 'impfuzzy')
-        self.assertEqual(impfuzzy.value, self._get_pattern_value(_impfuzzy))
+        self.assertEqual(impfuzzy.value, impfuzzy_value)
+        self._check_object_attribute_uuid(impfuzzy, pe_id, impfuzzy_value)
 
-    def _check_pe_section_indicator_object(self, attributes, pattern):
+    def _check_pe_section_indicator_object(
+            self, attributes, pattern, indicator_id, section_index=0):
         self.assertEqual(len(attributes), 8)
+        self.assertTrue(all(attribute.to_ids for attribute in attributes))
         entropy, name, size_in_bytes, md5, sha1, sha256, sha512, ssdeep = attributes
         _entropy, _name, size, MD5, SHA1, SHA256, SHA512, SSDEEP = pattern
+        section_id = (
+            f'{indicator_id} - windows-pebinary-ext - sections - {section_index}'
+        )
+        entropy_value = self._get_pattern_value(_entropy)
         self.assertEqual(entropy.type, 'float')
         self.assertEqual(entropy.object_relation, 'entropy')
-        self.assertEqual(entropy.value, self._get_pattern_value(_entropy))
+        self.assertEqual(entropy.value, entropy_value)
+        self._check_object_attribute_uuid(entropy, section_id, entropy_value)
+        name_value = self._get_pattern_value(_name)
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
-        self.assertEqual(name.value, self._get_pattern_value(_name))
+        self.assertEqual(name.value, name_value)
+        self._check_object_attribute_uuid(name, section_id, name_value)
+        size_value = self._get_pattern_value(size)
         self.assertEqual(size_in_bytes.type, 'size-in-bytes')
         self.assertEqual(size_in_bytes.object_relation, 'size-in-bytes')
-        self.assertEqual(size_in_bytes.value, self._get_pattern_value(size))
+        self.assertEqual(size_in_bytes.value, size_value)
+        self._check_object_attribute_uuid(size_in_bytes, section_id, size_value)
+        md5_value = self._get_pattern_value(MD5)
         self.assertEqual(md5.type, 'md5')
         self.assertEqual(md5.object_relation, 'md5')
-        self.assertEqual(md5.value, self._get_pattern_value(MD5))
+        self.assertEqual(md5.value, md5_value)
+        self._check_object_attribute_uuid(md5, section_id, md5_value)
+        sha1_value = self._get_pattern_value(SHA1)
         self.assertEqual(sha1.type, 'sha1')
         self.assertEqual(sha1.object_relation, 'sha1')
-        self.assertEqual(sha1.value, self._get_pattern_value(SHA1))
+        self.assertEqual(sha1.value, sha1_value)
+        self._check_object_attribute_uuid(sha1, section_id, sha1_value)
+        sha256_value = self._get_pattern_value(SHA256)
         self.assertEqual(sha256.type, 'sha256')
         self.assertEqual(sha256.object_relation, 'sha256')
-        self.assertEqual(sha256.value, self._get_pattern_value(SHA256))
+        self.assertEqual(sha256.value, sha256_value)
+        self._check_object_attribute_uuid(sha256, section_id, sha256_value)
+        sha512_value = self._get_pattern_value(SHA512)
         self.assertEqual(sha512.type, 'sha512')
         self.assertEqual(sha512.object_relation, 'sha512')
-        self.assertEqual(sha512.value, self._get_pattern_value(SHA512))
+        self.assertEqual(sha512.value, sha512_value)
+        self._check_object_attribute_uuid(sha512, section_id, sha512_value)
+        ssdeep_value = self._get_pattern_value(SSDEEP)
         self.assertEqual(ssdeep.type, 'ssdeep')
         self.assertEqual(ssdeep.object_relation, 'ssdeep')
-        self.assertEqual(ssdeep.value, self._get_pattern_value(SSDEEP))
+        self.assertEqual(ssdeep.value, ssdeep_value)
+        self._check_object_attribute_uuid(ssdeep, section_id, ssdeep_value)
 
     def _check_person_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
@@ -4525,6 +4621,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self._get_data_value(attachment.data),
             stix_object.x_misp_script_as_attachment['data']
         )
+        self._check_object_attribute_uuid(attachment, stix_object.id)
         return language, state
 
     def _check_single_file_indicator_object(self, attributes, pattern):
@@ -4772,6 +4869,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         self.assertEqual(reference1.value, external_ref1.url)
         self.assertEqual(reference2.value, external_ref2.url)
+        for attribute in (cve_id, reference1, reference2):
+            self._check_object_attribute_uuid(attribute, vulnerability.id)
         self.assertEqual(description.value, vulnerability.description)
         self.assertEqual(
             created.value,
