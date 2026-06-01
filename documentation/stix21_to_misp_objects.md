@@ -253,9 +253,9 @@ The list of currently supported MISP object templates is available [here](https:
             "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
             "ObjectReference": [
                 {
-                    "uuid": "b9b7ef90-a196-4e5f-8f7a-1c8f18a8d1a2",
+                    "uuid": "799cd749-ffbf-5ec4-b40f-86281869794a",
                     "object_uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
-                    "referenced_uuid": "76ccdd74-a593-4781-87d5-1a785a7f3f12",
+                    "referenced_uuid": "f62a7d88-8532-5e89-97b0-cf5f3a52e652",
                     "relationship_type": "includes"
                 }
             ],
@@ -325,18 +325,18 @@ The list of currently supported MISP object templates is available [here](https:
             "template_uuid": "cf7adecc-d4f0-4e88-9d90-f978ee151a07",
             "description": "Object describing a Portable Executable",
             "template_version": "11",
-            "uuid": "76ccdd74-a593-4781-87d5-1a785a7f3f12",
+            "uuid": "f62a7d88-8532-5e89-97b0-cf5f3a52e652",
             "ObjectReference": [
                 {
-                    "uuid": "301b1be7-ab9f-4706-b179-d052a278108a",
-                    "object_uuid": "76ccdd74-a593-4781-87d5-1a785a7f3f12",
-                    "referenced_uuid": "19cff33c-75f2-4984-8302-4f9bceec3bd9",
+                    "uuid": "721aca64-1dc8-5b61-9b39-992e3b00b55b",
+                    "object_uuid": "f62a7d88-8532-5e89-97b0-cf5f3a52e652",
+                    "referenced_uuid": "cd8983c8-34be-50bd-9b2c-0c8d2fdbb0e5",
                     "relationship_type": "includes"
                 }
             ],
             "Attribute": [
                 {
-                    "uuid": "72e1a43f-35fd-5ae4-8295-5c0e4cfca5e2",
+                    "uuid": "75c3709b-6cf8-556e-9caa-01d20d8f38bf",
                     "object_relation": "entrypoint-address",
                     "value": "5369222868",
                     "type": "text",
@@ -345,7 +345,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "d35f202f-e89d-53c2-81be-6804f90c80fa",
+                    "uuid": "608dfbe6-d6bb-5c17-b440-f3436321e5ae",
                     "object_relation": "imphash",
                     "value": "23ea835ab4b9017c74dfb023d2301c99",
                     "type": "imphash",
@@ -354,7 +354,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "8c18a781-3f07-5b04-87f1-78cc4f967868",
+                    "uuid": "2009ae17-3738-5ecf-a165-a0f61295333a",
                     "object_relation": "number-sections",
                     "value": "8",
                     "type": "counter",
@@ -363,7 +363,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "712b242b-3b98-58b5-96da-257ce5fec952",
+                    "uuid": "0030e494-91cd-5b29-8114-0d28b6b6556e",
                     "object_relation": "type",
                     "value": "exe",
                     "type": "text",
@@ -372,7 +372,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "becaee1f-5efb-544d-aadf-9af328dddc7e",
+                    "uuid": "4c0d6843-d0d8-57f2-a4a5-0fe5a56dd28e",
                     "object_relation": "compilation-timestamp",
                     "value": "2019-03-16T12:31:22+00:00",
                     "type": "datetime",
@@ -381,7 +381,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "cd58298c-b13f-57d8-bb87-77a88d59de93",
+                    "uuid": "cf23f60e-0a6d-536e-b039-b404d0d47fd2",
                     "object_relation": "original-filename",
                     "value": "PuTTy",
                     "type": "filename",
@@ -390,7 +390,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "ef65699e-cfe3-5f36-8f51-eaa6243440dd",
+                    "uuid": "e184d6e1-c26b-5ea2-b590-cc4c5c002f43",
                     "object_relation": "internal-filename",
                     "value": "PuTTy",
                     "type": "filename",
@@ -399,7 +399,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "8eb829df-c85e-5dd0-8221-1c2454ed4da6",
+                    "uuid": "65327076-c6a4-5932-a6f9-92b4d5953236",
                     "object_relation": "file-description",
                     "value": "SSH, Telnet and Rlogin client",
                     "type": "text",
@@ -408,7 +408,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "0c1b9cdd-5e30-5aa9-8bbc-a9c42b71f214",
+                    "uuid": "cb19eca4-7ba0-5b8e-bcf7-02ddbd31544c",
                     "object_relation": "file-version",
                     "value": "Release 0.71 (with embedded help)",
                     "type": "text",
@@ -417,7 +417,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "7979d4d9-fbec-518d-8eed-90d53e48fcc7",
+                    "uuid": "124016dd-0249-50dd-8946-00a10a5083a6",
                     "object_relation": "lang-id",
                     "value": "080904B0",
                     "type": "text",
@@ -426,7 +426,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "b19d767b-ad03-5de3-8203-a57067bb1390",
+                    "uuid": "71b48fa8-2c37-5b1a-97b1-dbfe7042408c",
                     "object_relation": "product-name",
                     "value": "PuTTy suite",
                     "type": "text",
@@ -435,7 +435,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "a0baadcc-0329-5475-bc55-ea643bd442ce",
+                    "uuid": "7ff61cec-78bb-5811-bd9a-097e53dd631b",
                     "object_relation": "product-version",
                     "value": "Release 0.71",
                     "type": "text",
@@ -444,7 +444,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "54b0d69d-51f9-566e-ac6a-0086f8f78954",
+                    "uuid": "8d038ed5-5cf8-52c1-a5b1-415a3a8cf090",
                     "object_relation": "company-name",
                     "value": "Simoe Tatham",
                     "type": "text",
@@ -453,7 +453,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "4c38b484-bad8-5ed5-9e63-bedba33759d4",
+                    "uuid": "7631f0bc-ba4a-520c-8245-997afde2a7ca",
                     "object_relation": "legal-copyright",
                     "value": "Copyright \u00a9 1997-2019 Simon Tatham.",
                     "type": "text",
@@ -462,7 +462,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "4445ad69-db27-56b8-9648-306456c23c16",
+                    "uuid": "dfc2dfa7-d704-5c8b-9f91-82cca18b18a2",
                     "object_relation": "impfuzzy",
                     "value": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
                     "type": "impfuzzy",
@@ -481,10 +481,10 @@ The list of currently supported MISP object templates is available [here](https:
             "template_uuid": "198a17d2-a135-4b25-9a32-5aa4e632014a",
             "description": "Object describing a section of a Portable Executable",
             "template_version": "3",
-            "uuid": "19cff33c-75f2-4984-8302-4f9bceec3bd9",
+            "uuid": "cd8983c8-34be-50bd-9b2c-0c8d2fdbb0e5",
             "Attribute": [
                 {
-                    "uuid": "88272e26-8dc6-5fe2-bceb-ac782ffc0a0a",
+                    "uuid": "6300c350-2537-5575-97a5-1416257cfc40",
                     "object_relation": "entropy",
                     "value": "7.836462238824369",
                     "type": "float",
@@ -493,7 +493,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "6ae22987-c106-5388-981b-db3e62404cf2",
+                    "uuid": "3da8cf6a-19db-5646-9fa3-b629907bdf44",
                     "object_relation": "name",
                     "value": ".rsrc",
                     "type": "text",
@@ -502,7 +502,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "4385ad23-3adc-53dc-82ba-a3239b8cee22",
+                    "uuid": "2f0ff948-8737-57ba-b75a-0db62108b617",
                     "object_relation": "size-in-bytes",
                     "value": "305152",
                     "type": "size-in-bytes",
@@ -511,7 +511,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Other"
                 },
                 {
-                    "uuid": "d2de06c2-2b79-58fd-a4d6-7fada700f016",
+                    "uuid": "b3aca9fb-678c-5601-9f29-f01fde7d98d0",
                     "object_relation": "md5",
                     "value": "8a2a5fc2ce56b3b04d58539a95390600",
                     "type": "md5",
@@ -520,7 +520,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "9352b999-509f-586b-9708-0cc99f311373",
+                    "uuid": "e3554fbb-a3ab-5e13-9c0b-6d28e57aabaf",
                     "object_relation": "sha1",
                     "value": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf",
                     "type": "sha1",
@@ -529,7 +529,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "e5c9acb1-9e28-5e7c-80db-4422413a9991",
+                    "uuid": "1f0a9a6c-d77a-5eb1-9e16-fac5fca6ee1e",
                     "object_relation": "sha256",
                     "value": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b",
                     "type": "sha256",
@@ -538,7 +538,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "7ecef93f-2c66-5884-bdc7-71fe0aeba836",
+                    "uuid": "e01ef94c-e51e-5b77-a774-a3e30d2cdce2",
                     "object_relation": "sha512",
                     "value": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f",
                     "type": "sha512",
@@ -547,7 +547,7 @@ The list of currently supported MISP object templates is available [here](https:
                     "category": "Payload delivery"
                 },
                 {
-                    "uuid": "47341526-f70c-5a13-8869-0f454a236a2a",
+                    "uuid": "d00b847f-7ec3-5763-bff3-bcc257ae9c26",
                     "object_relation": "ssdeep",
                     "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
                     "type": "ssdeep",
@@ -645,7 +645,7 @@ The list of currently supported MISP object templates is available [here](https:
             "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
             "ObjectReference": [
                 {
-                    "uuid": "90362fd3-9350-47ce-92cb-47760be20e93",
+                    "uuid": "f4cc2172-aa30-53c0-958d-96fef057f5d1",
                     "object_uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                     "referenced_uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                     "relationship_type": "includes"
@@ -724,7 +724,7 @@ The list of currently supported MISP object templates is available [here](https:
             "uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
             "ObjectReference": [
                 {
-                    "uuid": "c6da935b-fd25-4a59-84b8-dbd041f302e6",
+                    "uuid": "6566f36b-6b41-504a-89ee-b72e22d4e854",
                     "object_uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                     "referenced_uuid": "fb7ddfd6-13c1-5ca6-bd1e-04efa3af3247",
                     "relationship_type": "includes"
@@ -1061,7 +1061,7 @@ The list of currently supported MISP object templates is available [here](https:
             },
             {
                 "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo=",
-                "uuid": "aac397ed-5b76-464c-8faf-0692b14694a7",
+                "uuid": "80abb40c-a4d7-523d-880f-3aec1c995abc",
                 "object_relation": "script-as-attachment",
                 "value": "infected.py",
                 "type": "attachment",
@@ -1164,7 +1164,7 @@ The list of currently supported MISP object templates is available [here](https:
             },
             {
                 "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK",
-                "uuid": "4eb4c636-0f27-4d4b-af30-3b06f97ee15d",
+                "uuid": "88b30610-fc2f-5609-a57a-494caabd2778",
                 "object_relation": "script-as-attachment",
                 "value": "hello.py",
                 "type": "attachment",
@@ -1395,13 +1395,13 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
         "ObjectReference": [
             {
-                "uuid": "e62634a1-7553-4f97-9e29-952d6257739f",
+                "uuid": "1ba356d0-6cd0-548c-b380-1369f2e245c0",
                 "object_uuid": "eb6592bb-675c-48f3-9272-157141196b93",
                 "referenced_uuid": "5ac47edc-31e4-4402-a7b6-040d0a00020f",
                 "relationship_type": "annotates"
             },
             {
-                "uuid": "5a314d41-fa3d-4dc9-8a00-21821d7648d5",
+                "uuid": "6bd54d1b-7362-58f6-bec2-2859b6a72ada",
                 "object_uuid": "eb6592bb-675c-48f3-9272-157141196b93",
                 "referenced_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                 "relationship_type": "annotates"
@@ -1742,7 +1742,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "f2a5a101-28ba-4632-a804-28d56525620c",
+                "uuid": "b029a396-da92-5313-b2aa-884bbf06d901",
                 "object_relation": "id",
                 "value": "9",
                 "type": "text",
@@ -2744,7 +2744,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "f97e6d67-0ca8-5c15-b6cf-d06781ce15a5",
+                "uuid": "3470ddd6-bfb5-5ad1-8668-28b0d8392981",
                 "object_relation": "attachment",
                 "value": "attachment1.file",
                 "type": "attachment",
@@ -2753,7 +2753,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "375280c8-5132-56dd-9f2f-1e4e2fa868e2",
+                "uuid": "99d3dcef-537d-5e94-af83-dae325f500c7",
                 "object_relation": "attachment",
                 "value": "attachment2.file",
                 "type": "attachment",
@@ -3837,7 +3837,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "85d80c4d-5511-4d73-8e60-e66c69e259a3",
+                "uuid": "1358bde3-b309-5cd8-a7e3-815de12f93e0",
                 "object_relation": "accuracy-radius",
                 "value": 1.0,
                 "type": "float",
@@ -6053,7 +6053,7 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
         "Attribute": [
             {
-                "uuid": "e77922de-44a6-4232-8452-996f840d8356",
+                "uuid": "9de87dd8-df6f-5e07-9033-9818fc0bc737",
                 "object_relation": "ip-src",
                 "value": "1.2.3.4",
                 "type": "ip-src",
@@ -6062,7 +6062,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "e75222a0-635b-4cd6-9a06-ce8a3790e17d",
+                "uuid": "23b7b320-d4f2-56e6-aaf7-d3209f7cd97d",
                 "object_relation": "ip-dst",
                 "value": "5.6.7.8",
                 "type": "ip-dst",
@@ -6071,7 +6071,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "f642f6df-d498-40ab-b080-a9e9f9e67473",
+                "uuid": "d6886165-274c-5f21-8af0-bdb91db7a19e",
                 "object_relation": "hostname-dst",
                 "value": "circl.lu",
                 "type": "hostname",
@@ -6098,7 +6098,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "c5a82917-ef5a-4b1f-b97f-ad16fe8a990b",
+                "uuid": "bd90706c-7865-587e-8289-ee7533e2677c",
                 "object_relation": "layer3-protocol",
                 "value": "IP",
                 "type": "text",
@@ -6107,7 +6107,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "007cb3ce-7e85-40ae-9064-2099abbeab5c",
+                "uuid": "9aff32e5-af12-55f5-8d4c-ad8bd727172b",
                 "object_relation": "layer4-protocol",
                 "value": "TCP",
                 "type": "text",
@@ -6116,7 +6116,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "a0f2b540-ea92-42c3-95d9-ab6246fa7084",
+                "uuid": "ad7bfbad-7512-5f08-a59c-e48319412bb8",
                 "object_relation": "layer7-protocol",
                 "value": "HTTP",
                 "type": "text",
@@ -6343,7 +6343,7 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
         "Attribute": [
             {
-                "uuid": "c34aa8c7-aba5-4846-8630-f387a45f1db9",
+                "uuid": "69b48f08-e44a-5c8c-b420-e70810c7f9e9",
                 "object_relation": "ip-src",
                 "value": "1.2.3.4",
                 "type": "ip-src",
@@ -6352,7 +6352,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "fc3282ce-da01-433e-bb0d-53c6e02a4465",
+                "uuid": "2bb3dbe0-2687-524f-9fa8-cf673c3c704e",
                 "object_relation": "ip-dst",
                 "value": "5.6.7.8",
                 "type": "ip-dst",
@@ -6361,7 +6361,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "d004b83f-31ff-4455-8772-da55f05941e0",
+                "uuid": "650e70a4-46c1-5784-b821-3e6b2ca15f63",
                 "object_relation": "hostname-dst",
                 "value": "circl.lu",
                 "type": "hostname",
@@ -6397,7 +6397,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "a594c074-f54f-583d-aa9f-cb621336bd23",
+                "uuid": "88565fbe-2a16-53fd-b978-40544c12eef1",
                 "object_relation": "address-family",
                 "value": "AF_INET",
                 "type": "text",
@@ -6406,7 +6406,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "861d4ede-721b-54bb-ab65-a47fb552b744",
+                "uuid": "6b811fbb-929d-5541-a4b3-30e326f80826",
                 "object_relation": "socket-type",
                 "value": "SOCK_RAW",
                 "type": "text",
@@ -6415,7 +6415,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "c17d2582-7c65-58a8-874c-c4ad6e906257",
+                "uuid": "35ae6c2c-fd43-5890-952f-d37ff3644beb",
                 "object_relation": "state",
                 "value": "listening",
                 "type": "text",
@@ -8102,7 +8102,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "09b6df96-d3bd-414d-9875-250042463168",
+                "uuid": "a5df1e39-290f-5d64-bdbf-88e0def2414c",
                 "object_relation": "reference",
                 "value": "https://www.us-cert.gov/ncas/alerts/TA17-293A",
                 "type": "link",
@@ -8188,7 +8188,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "c60f9d6b-30fd-4ccd-9f72-b99c3b32192f",
+                "uuid": "acaab4b9-8322-5138-b6fb-c25a1dcca240",
                 "object_relation": "ref",
                 "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html",
                 "type": "link",
@@ -9228,7 +9228,7 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
         "Attribute": [
             {
-                "uuid": "31d5e18b-b2d9-4df1-ba7b-008f31894071",
+                "uuid": "64255dd2-2f7c-5dad-a933-ff70b98336f5",
                 "object_relation": "id",
                 "value": "CVE-2017-11774",
                 "type": "vulnerability",
@@ -9237,7 +9237,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "External analysis"
             },
             {
-                "uuid": "797235f3-3644-4382-9dff-4ca0cab0d0bb",
+                "uuid": "85df5439-e4f3-5fa8-b001-7b1cdf21195d",
                 "object_relation": "references",
                 "value": "http://www.securityfocus.com/bid/101098",
                 "type": "link",
@@ -9246,7 +9246,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "External analysis"
             },
             {
-                "uuid": "3744be05-7e7b-44d5-9f7e-f27ee9e6b25d",
+                "uuid": "ff796bd7-6944-5c4a-8b2c-cd25ca96a0ff",
                 "object_relation": "references",
                 "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774",
                 "type": "link",
@@ -9395,7 +9395,7 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
         "Attribute": [
             {
-                "uuid": "38fc0594-313b-45a3-93ca-9ad5b5ab77a4",
+                "uuid": "f16773be-18ef-5034-b0b8-3418c5c4ca01",
                 "object_relation": "x509-fingerprint-md5",
                 "value": "b2a5abfeef9e36964281a31e17b57c97",
                 "type": "x509-fingerprint-md5",
@@ -9404,7 +9404,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Network activity"
             },
             {
-                "uuid": "bcdcd1ce-78e8-4f84-954d-a8d8b2eda647",
+                "uuid": "aefc3a8a-75d1-596c-9b41-9c3814338595",
                 "object_relation": "x509-fingerprint-sha1",
                 "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
                 "type": "x509-fingerprint-sha1",
@@ -9413,7 +9413,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Network activity"
             },
             {
-                "uuid": "e1de816b-d135-477f-b8e1-a62160ad6a63",
+                "uuid": "adc1975c-1d73-5f3b-9a8d-90338f2a1ff3",
                 "object_relation": "issuer",
                 "value": "Issuer Name",
                 "type": "text",
@@ -9422,7 +9422,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "e43493e5-79fa-429e-a45f-86544665b8b1",
+                "uuid": "9a25c81a-37fe-5089-9c8b-ce413b58131f",
                 "object_relation": "pubkey-info-algorithm",
                 "value": "PublicKeyAlgorithm",
                 "type": "text",
@@ -9431,7 +9431,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "7c5d52fa-d4ac-48dc-a4fc-ee307bb51d74",
+                "uuid": "04b2ab50-0572-590b-afc9-0a357604d235",
                 "object_relation": "pubkey-info-exponent",
                 "value": "2",
                 "type": "text",
@@ -9440,7 +9440,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "833c1dc8-b0ce-47e2-b1d4-567065ea387a",
+                "uuid": "4ec13fc8-79e2-51be-b7f9-14ffc908101e",
                 "object_relation": "pubkey-info-modulus",
                 "value": "C5",
                 "type": "text",
@@ -9449,7 +9449,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "56fd26ce-33f6-44e4-9287-3d37956fffe6",
+                "uuid": "d1769939-d23c-59a9-8ad9-e3cb934a2063",
                 "object_relation": "serial-number",
                 "value": "1234567890",
                 "type": "text",
@@ -9458,7 +9458,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "a0702bbc-6457-4519-965f-d295027ae562",
+                "uuid": "761b3a85-6c3e-5c49-afce-eeeae10e8819",
                 "object_relation": "signature_algorithm",
                 "value": "SHA1_WITH_RSA_ENCRYPTION",
                 "type": "text",
@@ -9467,7 +9467,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "a638ef9c-eac9-4bad-bd94-0118f18053c5",
+                "uuid": "473cbe5b-c722-5345-af75-0ca4aef4cffa",
                 "object_relation": "subject",
                 "value": "CertificateSubject",
                 "type": "text",
@@ -9476,7 +9476,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "6771cf1d-9a9f-42f7-b5ac-b9e0513c00b3",
+                "uuid": "dadd4713-7562-5b18-80b1-5db48e096bee",
                 "object_relation": "version",
                 "value": "1",
                 "type": "text",
@@ -9485,7 +9485,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "65e4d8fd-9435-4043-b8e9-a6a627ca9274",
+                "uuid": "76cebf53-05b1-5ca2-be39-eab7c8a348e4",
                 "object_relation": "validity-not-after",
                 "value": "2021-01-01T00:00:00+00:00",
                 "type": "datetime",
@@ -9494,7 +9494,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "6d019908-55fd-44c6-9494-71600c9ba786",
+                "uuid": "2ed780ec-98b2-525c-a282-37393ad740e1",
                 "object_relation": "validity-not-before",
                 "value": "2020-01-01T00:00:00+00:00",
                 "type": "datetime",
@@ -9503,7 +9503,7 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
-                "uuid": "2e8bd8c2-0eb5-49ab-b895-186f6cabea8f",
+                "uuid": "a7114ce8-56e4-54e1-b704-2aff2bdc1c6b",
                 "object_relation": "pem",
                 "value": "RawCertificateInPEMFormat",
                 "type": "text",
