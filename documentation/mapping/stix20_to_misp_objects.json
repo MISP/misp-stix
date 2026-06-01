@@ -188,9 +188,9 @@
                     "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                     "ObjectReference": [
                         {
-                            "uuid": "24eeb0f4-dc35-456d-a9ac-e0bd05223f1a",
+                            "uuid": "799cd749-ffbf-5ec4-b40f-86281869794a",
                             "object_uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
-                            "referenced_uuid": "1a048a18-2080-4d46-b5eb-25e940f91457",
+                            "referenced_uuid": "f62a7d88-8532-5e89-97b0-cf5f3a52e652",
                             "relationship_type": "includes"
                         }
                     ],
@@ -260,18 +260,18 @@
                     "template_uuid": "cf7adecc-d4f0-4e88-9d90-f978ee151a07",
                     "description": "Object describing a Portable Executable",
                     "template_version": "11",
-                    "uuid": "1a048a18-2080-4d46-b5eb-25e940f91457",
+                    "uuid": "f62a7d88-8532-5e89-97b0-cf5f3a52e652",
                     "ObjectReference": [
                         {
-                            "uuid": "ed1962f3-c135-4351-9895-4eae623b1cb6",
-                            "object_uuid": "1a048a18-2080-4d46-b5eb-25e940f91457",
-                            "referenced_uuid": "ce798c2f-2c9e-4d85-8375-7fa07827e51e",
+                            "uuid": "721aca64-1dc8-5b61-9b39-992e3b00b55b",
+                            "object_uuid": "f62a7d88-8532-5e89-97b0-cf5f3a52e652",
+                            "referenced_uuid": "cd8983c8-34be-50bd-9b2c-0c8d2fdbb0e5",
                             "relationship_type": "includes"
                         }
                     ],
                     "Attribute": [
                         {
-                            "uuid": "72e1a43f-35fd-5ae4-8295-5c0e4cfca5e2",
+                            "uuid": "75c3709b-6cf8-556e-9caa-01d20d8f38bf",
                             "object_relation": "entrypoint-address",
                             "value": "5369222868",
                             "type": "text",
@@ -280,7 +280,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "d35f202f-e89d-53c2-81be-6804f90c80fa",
+                            "uuid": "608dfbe6-d6bb-5c17-b440-f3436321e5ae",
                             "object_relation": "imphash",
                             "value": "23ea835ab4b9017c74dfb023d2301c99",
                             "type": "imphash",
@@ -289,7 +289,7 @@
                             "category": "Payload delivery"
                         },
                         {
-                            "uuid": "8c18a781-3f07-5b04-87f1-78cc4f967868",
+                            "uuid": "2009ae17-3738-5ecf-a165-a0f61295333a",
                             "object_relation": "number-sections",
                             "value": "8",
                             "type": "counter",
@@ -298,7 +298,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "712b242b-3b98-58b5-96da-257ce5fec952",
+                            "uuid": "0030e494-91cd-5b29-8114-0d28b6b6556e",
                             "object_relation": "type",
                             "value": "exe",
                             "type": "text",
@@ -307,7 +307,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "becaee1f-5efb-544d-aadf-9af328dddc7e",
+                            "uuid": "4c0d6843-d0d8-57f2-a4a5-0fe5a56dd28e",
                             "object_relation": "compilation-timestamp",
                             "value": "2019-03-16T12:31:22+00:00",
                             "type": "datetime",
@@ -316,7 +316,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "cd58298c-b13f-57d8-bb87-77a88d59de93",
+                            "uuid": "cf23f60e-0a6d-536e-b039-b404d0d47fd2",
                             "object_relation": "original-filename",
                             "value": "PuTTy",
                             "type": "filename",
@@ -325,7 +325,7 @@
                             "category": "Payload delivery"
                         },
                         {
-                            "uuid": "ef65699e-cfe3-5f36-8f51-eaa6243440dd",
+                            "uuid": "e184d6e1-c26b-5ea2-b590-cc4c5c002f43",
                             "object_relation": "internal-filename",
                             "value": "PuTTy",
                             "type": "filename",
@@ -334,7 +334,7 @@
                             "category": "Payload delivery"
                         },
                         {
-                            "uuid": "8eb829df-c85e-5dd0-8221-1c2454ed4da6",
+                            "uuid": "65327076-c6a4-5932-a6f9-92b4d5953236",
                             "object_relation": "file-description",
                             "value": "SSH, Telnet and Rlogin client",
                             "type": "text",
@@ -343,7 +343,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "0c1b9cdd-5e30-5aa9-8bbc-a9c42b71f214",
+                            "uuid": "cb19eca4-7ba0-5b8e-bcf7-02ddbd31544c",
                             "object_relation": "file-version",
                             "value": "Release 0.71 (with embedded help)",
                             "type": "text",
@@ -352,7 +352,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "7979d4d9-fbec-518d-8eed-90d53e48fcc7",
+                            "uuid": "124016dd-0249-50dd-8946-00a10a5083a6",
                             "object_relation": "lang-id",
                             "value": "080904B0",
                             "type": "text",
@@ -361,7 +361,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "b19d767b-ad03-5de3-8203-a57067bb1390",
+                            "uuid": "71b48fa8-2c37-5b1a-97b1-dbfe7042408c",
                             "object_relation": "product-name",
                             "value": "PuTTy suite",
                             "type": "text",
@@ -370,7 +370,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "a0baadcc-0329-5475-bc55-ea643bd442ce",
+                            "uuid": "7ff61cec-78bb-5811-bd9a-097e53dd631b",
                             "object_relation": "product-version",
                             "value": "Release 0.71",
                             "type": "text",
@@ -379,7 +379,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "54b0d69d-51f9-566e-ac6a-0086f8f78954",
+                            "uuid": "8d038ed5-5cf8-52c1-a5b1-415a3a8cf090",
                             "object_relation": "company-name",
                             "value": "Simoe Tatham",
                             "type": "text",
@@ -388,7 +388,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "4c38b484-bad8-5ed5-9e63-bedba33759d4",
+                            "uuid": "7631f0bc-ba4a-520c-8245-997afde2a7ca",
                             "object_relation": "legal-copyright",
                             "value": "Copyright © 1997-2019 Simon Tatham.",
                             "type": "text",
@@ -397,7 +397,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "4445ad69-db27-56b8-9648-306456c23c16",
+                            "uuid": "dfc2dfa7-d704-5c8b-9f91-82cca18b18a2",
                             "object_relation": "impfuzzy",
                             "value": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
                             "type": "impfuzzy",
@@ -416,10 +416,10 @@
                     "template_uuid": "198a17d2-a135-4b25-9a32-5aa4e632014a",
                     "description": "Object describing a section of a Portable Executable",
                     "template_version": "3",
-                    "uuid": "ce798c2f-2c9e-4d85-8375-7fa07827e51e",
+                    "uuid": "cd8983c8-34be-50bd-9b2c-0c8d2fdbb0e5",
                     "Attribute": [
                         {
-                            "uuid": "88272e26-8dc6-5fe2-bceb-ac782ffc0a0a",
+                            "uuid": "6300c350-2537-5575-97a5-1416257cfc40",
                             "object_relation": "entropy",
                             "value": "7.836462238824369",
                             "type": "float",
@@ -428,7 +428,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "6ae22987-c106-5388-981b-db3e62404cf2",
+                            "uuid": "3da8cf6a-19db-5646-9fa3-b629907bdf44",
                             "object_relation": "name",
                             "value": ".rsrc",
                             "type": "text",
@@ -437,7 +437,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "4385ad23-3adc-53dc-82ba-a3239b8cee22",
+                            "uuid": "2f0ff948-8737-57ba-b75a-0db62108b617",
                             "object_relation": "size-in-bytes",
                             "value": "305152",
                             "type": "size-in-bytes",
@@ -446,7 +446,7 @@
                             "category": "Other"
                         },
                         {
-                            "uuid": "d2de06c2-2b79-58fd-a4d6-7fada700f016",
+                            "uuid": "b3aca9fb-678c-5601-9f29-f01fde7d98d0",
                             "object_relation": "md5",
                             "value": "8a2a5fc2ce56b3b04d58539a95390600",
                             "type": "md5",
@@ -455,7 +455,7 @@
                             "category": "Payload delivery"
                         },
                         {
-                            "uuid": "9352b999-509f-586b-9708-0cc99f311373",
+                            "uuid": "e3554fbb-a3ab-5e13-9c0b-6d28e57aabaf",
                             "object_relation": "sha1",
                             "value": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf",
                             "type": "sha1",
@@ -464,7 +464,7 @@
                             "category": "Payload delivery"
                         },
                         {
-                            "uuid": "e5c9acb1-9e28-5e7c-80db-4422413a9991",
+                            "uuid": "1f0a9a6c-d77a-5eb1-9e16-fac5fca6ee1e",
                             "object_relation": "sha256",
                             "value": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b",
                             "type": "sha256",
@@ -473,7 +473,7 @@
                             "category": "Payload delivery"
                         },
                         {
-                            "uuid": "7ecef93f-2c66-5884-bdc7-71fe0aeba836",
+                            "uuid": "e01ef94c-e51e-5b77-a774-a3e30d2cdce2",
                             "object_relation": "sha512",
                             "value": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f",
                             "type": "sha512",
@@ -482,7 +482,7 @@
                             "category": "Payload delivery"
                         },
                         {
-                            "uuid": "47341526-f70c-5a13-8869-0f454a236a2a",
+                            "uuid": "d00b847f-7ec3-5763-bff3-bcc257ae9c26",
                             "object_relation": "ssdeep",
                             "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
                             "type": "ssdeep",
@@ -527,7 +527,7 @@
                     "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                     "ObjectReference": [
                         {
-                            "uuid": "e1f6fc16-1e83-44d8-99e2-60b2a2802235",
+                            "uuid": "f4cc2172-aa30-53c0-958d-96fef057f5d1",
                             "object_uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
                             "referenced_uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                             "relationship_type": "includes"
@@ -606,7 +606,7 @@
                     "uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                     "ObjectReference": [
                         {
-                            "uuid": "2c296776-f836-453d-bb05-40f8fa4c95af",
+                            "uuid": "6566f36b-6b41-504a-89ee-b72e22d4e854",
                             "object_uuid": "61f720bc-2fb8-5a7a-a849-4542b59048e4",
                             "referenced_uuid": "fb7ddfd6-13c1-5ca6-bd1e-04efa3af3247",
                             "relationship_type": "includes"
@@ -1001,7 +1001,7 @@
                     },
                     {
                         "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo=",
-                        "uuid": "836fa0f0-c310-49af-a73f-8f081424a9e8",
+                        "uuid": "80abb40c-a4d7-523d-880f-3aec1c995abc",
                         "object_relation": "script-as-attachment",
                         "value": "infected.py",
                         "type": "attachment",
@@ -1101,7 +1101,7 @@
                     },
                     {
                         "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK",
-                        "uuid": "4e13978e-2d57-4c30-9b92-faa3af9bb082",
+                        "uuid": "88b30610-fc2f-5609-a57a-494caabd2778",
                         "object_relation": "script-as-attachment",
                         "value": "hello.py",
                         "type": "attachment",
@@ -1546,7 +1546,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "35c3828c-9536-4979-8bdd-7cdabf3e2458",
+                        "uuid": "b029a396-da92-5313-b2aa-884bbf06d901",
                         "object_relation": "id",
                         "value": "9",
                         "type": "text",
@@ -2491,7 +2491,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "f97e6d67-0ca8-5c15-b6cf-d06781ce15a5",
+                        "uuid": "3470ddd6-bfb5-5ad1-8668-28b0d8392981",
                         "object_relation": "attachment",
                         "value": "attachment1.file",
                         "type": "attachment",
@@ -2500,7 +2500,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "375280c8-5132-56dd-9f2f-1e4e2fa868e2",
+                        "uuid": "99d3dcef-537d-5e94-af83-dae325f500c7",
                         "object_relation": "attachment",
                         "value": "attachment2.file",
                         "type": "attachment",
@@ -5375,7 +5375,7 @@
                 "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
                 "Attribute": [
                     {
-                        "uuid": "d1901083-1e41-4c3d-a9f7-3fd5496b02e8",
+                        "uuid": "9de87dd8-df6f-5e07-9033-9818fc0bc737",
                         "object_relation": "ip-src",
                         "value": "1.2.3.4",
                         "type": "ip-src",
@@ -5384,7 +5384,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "8fea1bf1-3ce4-4711-b249-5c84a72b109f",
+                        "uuid": "23b7b320-d4f2-56e6-aaf7-d3209f7cd97d",
                         "object_relation": "ip-dst",
                         "value": "5.6.7.8",
                         "type": "ip-dst",
@@ -5393,7 +5393,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "0641fe6f-2701-41e5-9339-7c5d5a2163c1",
+                        "uuid": "d6886165-274c-5f21-8af0-bdb91db7a19e",
                         "object_relation": "hostname-dst",
                         "value": "circl.lu",
                         "type": "hostname",
@@ -5420,7 +5420,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "a4f45ae0-baff-4c3e-b42b-c2d05b7bf72e",
+                        "uuid": "bd90706c-7865-587e-8289-ee7533e2677c",
                         "object_relation": "layer3-protocol",
                         "value": "IP",
                         "type": "text",
@@ -5429,7 +5429,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "f5903401-3c1a-49cf-832e-4d6c8c50c7c1",
+                        "uuid": "9aff32e5-af12-55f5-8d4c-ad8bd727172b",
                         "object_relation": "layer4-protocol",
                         "value": "TCP",
                         "type": "text",
@@ -5438,7 +5438,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "6654387a-3040-4b96-b325-3237edfa2aae",
+                        "uuid": "ad7bfbad-7512-5f08-a59c-e48319412bb8",
                         "object_relation": "layer7-protocol",
                         "value": "HTTP",
                         "type": "text",
@@ -5640,7 +5640,7 @@
                 "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
                 "Attribute": [
                     {
-                        "uuid": "261f8e03-9339-4b96-ac60-afc659036c1d",
+                        "uuid": "69b48f08-e44a-5c8c-b420-e70810c7f9e9",
                         "object_relation": "ip-src",
                         "value": "1.2.3.4",
                         "type": "ip-src",
@@ -5649,7 +5649,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "ff019782-cefc-4287-8e04-7c43ed9e383d",
+                        "uuid": "2bb3dbe0-2687-524f-9fa8-cf673c3c704e",
                         "object_relation": "ip-dst",
                         "value": "5.6.7.8",
                         "type": "ip-dst",
@@ -5658,7 +5658,7 @@
                         "to_ids": true
                     },
                     {
-                        "uuid": "cdd466d7-6c3c-4f3e-a52d-38f6c897892d",
+                        "uuid": "650e70a4-46c1-5784-b821-3e6b2ca15f63",
                         "object_relation": "hostname-dst",
                         "value": "circl.lu",
                         "type": "hostname",
@@ -5694,7 +5694,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "a594c074-f54f-583d-aa9f-cb621336bd23",
+                        "uuid": "88565fbe-2a16-53fd-b978-40544c12eef1",
                         "object_relation": "address-family",
                         "value": "AF_INET",
                         "type": "text",
@@ -5703,7 +5703,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "7ca3eeed-899d-5bde-8392-4b2e3851c608",
+                        "uuid": "0cfd1a28-5ebb-5305-a863-cb7bb5ded430",
                         "object_relation": "domain-family",
                         "value": "PF_INET",
                         "type": "text",
@@ -5712,7 +5712,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "861d4ede-721b-54bb-ab65-a47fb552b744",
+                        "uuid": "6b811fbb-929d-5541-a4b3-30e326f80826",
                         "object_relation": "socket-type",
                         "value": "SOCK_RAW",
                         "type": "text",
@@ -5721,7 +5721,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "c17d2582-7c65-58a8-874c-c4ad6e906257",
+                        "uuid": "35ae6c2c-fd43-5890-952f-d37ff3644beb",
                         "object_relation": "state",
                         "value": "listening",
                         "type": "text",
@@ -8004,7 +8004,7 @@
                 "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
                 "Attribute": [
                     {
-                        "uuid": "5405ce12-6263-43ff-b95f-513b06287e73",
+                        "uuid": "64255dd2-2f7c-5dad-a933-ff70b98336f5",
                         "object_relation": "id",
                         "value": "CVE-2017-11774",
                         "type": "vulnerability",
@@ -8013,7 +8013,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "a9bc7020-207b-4c1e-8221-4d611ba3cd9e",
+                        "uuid": "85df5439-e4f3-5fa8-b001-7b1cdf21195d",
                         "object_relation": "references",
                         "value": "http://www.securityfocus.com/bid/101098",
                         "type": "link",
@@ -8022,7 +8022,7 @@
                         "category": "External analysis"
                     },
                     {
-                        "uuid": "43c3082b-c64e-4ff6-8cf9-03baef5d6742",
+                        "uuid": "ff796bd7-6944-5c4a-8b2c-cd25ca96a0ff",
                         "object_relation": "references",
                         "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774",
                         "type": "link",
@@ -8114,7 +8114,7 @@
                 "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
                 "Attribute": [
                     {
-                        "uuid": "13457776-e2b3-4d09-92ba-93097980614f",
+                        "uuid": "f16773be-18ef-5034-b0b8-3418c5c4ca01",
                         "object_relation": "x509-fingerprint-md5",
                         "value": "b2a5abfeef9e36964281a31e17b57c97",
                         "type": "x509-fingerprint-md5",
@@ -8123,7 +8123,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "ffb83d95-4f6f-47a9-9f9e-21a5a14a9104",
+                        "uuid": "aefc3a8a-75d1-596c-9b41-9c3814338595",
                         "object_relation": "x509-fingerprint-sha1",
                         "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
                         "type": "x509-fingerprint-sha1",
@@ -8132,7 +8132,7 @@
                         "category": "Network activity"
                     },
                     {
-                        "uuid": "415ece03-4599-483d-a79a-17817838604b",
+                        "uuid": "adc1975c-1d73-5f3b-9a8d-90338f2a1ff3",
                         "object_relation": "issuer",
                         "value": "Issuer Name",
                         "type": "text",
@@ -8141,7 +8141,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "53dccb0a-5ff3-4048-b788-11444cbd4ad1",
+                        "uuid": "9a25c81a-37fe-5089-9c8b-ce413b58131f",
                         "object_relation": "pubkey-info-algorithm",
                         "value": "PublicKeyAlgorithm",
                         "type": "text",
@@ -8150,7 +8150,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "f7fda82c-fd14-4747-b373-20f7c13c88dc",
+                        "uuid": "04b2ab50-0572-590b-afc9-0a357604d235",
                         "object_relation": "pubkey-info-exponent",
                         "value": "2",
                         "type": "text",
@@ -8159,7 +8159,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "427da7e9-d33d-4e87-8d57-919e1e3b4789",
+                        "uuid": "4ec13fc8-79e2-51be-b7f9-14ffc908101e",
                         "object_relation": "pubkey-info-modulus",
                         "value": "C5",
                         "type": "text",
@@ -8168,7 +8168,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "857d5a8b-c88e-4773-b5d7-0765905691c2",
+                        "uuid": "d1769939-d23c-59a9-8ad9-e3cb934a2063",
                         "object_relation": "serial-number",
                         "value": "1234567890",
                         "type": "text",
@@ -8177,7 +8177,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "39661df4-943f-4537-ac5e-d7ffbe687935",
+                        "uuid": "761b3a85-6c3e-5c49-afce-eeeae10e8819",
                         "object_relation": "signature_algorithm",
                         "value": "SHA1_WITH_RSA_ENCRYPTION",
                         "type": "text",
@@ -8186,7 +8186,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "f093e368-2a34-47b3-978c-41c1f7838250",
+                        "uuid": "473cbe5b-c722-5345-af75-0ca4aef4cffa",
                         "object_relation": "subject",
                         "value": "CertificateSubject",
                         "type": "text",
@@ -8195,7 +8195,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "43656f4d-ad6b-40d8-8216-2348402ecc69",
+                        "uuid": "dadd4713-7562-5b18-80b1-5db48e096bee",
                         "object_relation": "version",
                         "value": "1",
                         "type": "text",
@@ -8204,7 +8204,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "39b13268-1f41-4417-9cda-dc02bf94291e",
+                        "uuid": "76cebf53-05b1-5ca2-be39-eab7c8a348e4",
                         "object_relation": "validity-not-after",
                         "value": "2021-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -8213,7 +8213,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "92703633-2ad8-4cb4-97cd-be58b03661fb",
+                        "uuid": "2ed780ec-98b2-525c-a282-37393ad740e1",
                         "object_relation": "validity-not-before",
                         "value": "2020-01-01T00:00:00+00:00",
                         "type": "datetime",
@@ -8222,7 +8222,7 @@
                         "category": "Other"
                     },
                     {
-                        "uuid": "2bf72272-330f-45f5-ab85-045a8ef3124a",
+                        "uuid": "a7114ce8-56e4-54e1-b704-2aff2bdc1c6b",
                         "object_relation": "pem",
                         "value": "RawCertificateInPEMFormat",
                         "type": "text",
