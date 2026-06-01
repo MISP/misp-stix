@@ -999,11 +999,9 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | network-connection | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
 | network-socket | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
 | news-agency | **Identity** |
-| nova-rule | Ule Multimodalinjection
-{
-    Meta Object (pattern) / Custom Object |
+| nova-rule | **Indicator** |
 | organization | **Identity** |
-| owasp-crs-rule | Ecrule Tx Object (pattern) / Custom Object |
+| owasp-crs-rule | **Indicator** |
 | parler-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | person | **Identity** |
 | process | Process Object (pattern) / File & Process Objects and IoCs described in Indicator (pattern) (observable) |
@@ -1016,11 +1014,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | url | URL Object (pattern) / Url Object and IoCs described in Indicator (pattern) (observable) |
 | user-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | vulnerability | **Vulnerability** |
-| wazuh-rule | Rule Id="200996" Level="12">
-    <Decoded_As>Json</Decoded_As>
-    <Field Name="Cluster.Name">\.+</Field>
-    <Field Name="Level">^Error$</Field>
-    <Description>Wazuh Indexer Cluster Logs   Level Object (pattern) / Custom Object |
+| wazuh-rule | **Indicator** |
 | x509 | X509 Certificate Object (pattern) / X509 Certificate Object and IoCs described in Indicator (pattern) (observable) |
 | yara | **Indicator** |
 

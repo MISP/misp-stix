@@ -2011,6 +2011,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(ref_attr.type, 'link')
         self.assertEqual(ref_attr.object_relation, 'reference')
         self.assertEqual(ref_attr.value, indicator.external_references[0].url)
+        self._check_patterning_attribute_uuids(misp_object, indicator)
 
     def _check_suricata_indicator_object(self, misp_object, indicator):
         self.assertEqual(misp_object.name, 'suricata')
@@ -2026,6 +2027,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(ref_attr.type, 'link')
         self.assertEqual(ref_attr.object_relation, 'ref')
         self.assertEqual(ref_attr.value, indicator.external_references[0].url)
+        self._check_patterning_attribute_uuids(misp_object, indicator)
 
     def _check_yara_indicator_object(self, misp_object, indicator):
         self.assertEqual(misp_object.name, 'yara')
@@ -2041,6 +2043,15 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(name_attr.type, 'text')
         self.assertEqual(name_attr.object_relation, 'yara-rule-name')
         self.assertEqual(name_attr.value, indicator.name)
+        self._check_patterning_attribute_uuids(misp_object, indicator)
+
+    def _check_patterning_attribute_uuids(self, misp_object, indicator):
+        for attribute in misp_object.attributes:
+            self._check_object_attribute_uuid(attribute, indicator.id)
+            self.assertEqual(
+                attribute.to_ids,
+                attribute.type in ('sigma', 'suricata', 'yara')
+            )
 
     def test_stix21_bundle_with_patterning_language_indicators(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_patterning_language_indicators()

@@ -275,7 +275,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         if event_report.get('name'):
             note_args['x_misp_name'] = event_report['name']
-        references = set(self._parse_event_report_references(event_report))
+        references = dict.fromkeys(
+            self._parse_event_report_references(event_report)
+        )
         note_args['object_refs'] = (
             list(references) if references
             else [f"report--{self._misp_event['uuid']}"]
@@ -1053,7 +1055,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             misp_object['Attribute'],
             force_single=self._mapping.ip_port_single_fields()
         )
-        protocols = set()
+        protocols: dict[str, None] = {}
         observable_object = {}
         network_args: defaultdict = defaultdict(dict)
         index = 1
@@ -1066,7 +1068,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 )
                 observable_object[str_index] = address_object
                 network_args['_valid_refs'][str_index] = address_object._type
-                protocols.add(address_object._type.split('-')[0])
+                protocols[address_object._type.split('-')[0]] = None
                 ref_type = 'src_ref' if feature == 'ip-src' else 'dst_ref'
                 network_args[ref_type] = str_index
                 if ref_type == 'dst_ref':

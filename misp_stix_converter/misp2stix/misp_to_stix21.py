@@ -114,7 +114,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'abstract': event_report['name'], **self.shared_args,
             'labels': ['misp:data-layer="Event Report"']
         }
-        references = set(self._parse_event_report_references(event_report))
+        references = dict.fromkeys(
+            self._parse_event_report_references(event_report)
+        )
         note_args['object_refs'] = (
             list(references) if references else self._handle_empty_note_refs()
         )
@@ -141,6 +143,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 marking_ids.append(self._markings[marking]['marking'].id)
                 continue
             marking_definition = self._mapping.tlp_markings(marking)
+            if marking_definition is None:
+                marking_definition = self._mapping.tlp2_markings(marking)
             if marking_definition is not None:
                 marking_id = marking_definition.id
                 if marking_id not in self.unique_ids:
@@ -703,14 +707,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return self._handle_object_observable(misp_object, [software_object])
 
     def _parse_annotation_object(self, misp_object: MISPObject | dict):
-        object_refs = set()
+        object_refs: dict[str, None] = {}
         for reference in misp_object['ObjectReference']:
             for object_ref in self.object_refs:
                 object_type, object_id = object_ref.split('--')
                 if object_type not in _NOTE_REFERENCE_TYPES:
                     continue
                 if object_id == reference['referenced_uuid']:
-                    object_refs.add(object_ref)
+                    object_refs[object_ref] = None
         if not object_refs:
             return self._parse_custom_object(misp_object)
         note_id = self._parse_stix_object_id('object', 'note', misp_object)
@@ -1120,7 +1124,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             force_single=self._mapping.ip_port_single_fields(),
             with_uuid=self._mapping.ip_port_uuid_fields()
         )
-        protocols = set()
+        protocols: dict[str, None] = {}
         network_traffic_args = {
             'id': self._parse_stix_object_id(
                 'object', 'network-traffic', misp_object
@@ -1142,7 +1146,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     address_id = f'{address_type._type}--{uuid}'
                     objects.append(address_type(id=address_id, value=ip_value))
                     network_traffic_args[ref_type] = address_id
-                    protocols.add(address_type._type.split('-')[0])
+                    protocols[address_type._type.split('-')[0]] = None
                 else:
                     attributes[feature] = [
                         value[0] for value in attributes.pop(feature)

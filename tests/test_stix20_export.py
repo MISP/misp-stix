@@ -257,6 +257,22 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self.assertEqual(marking.definition_type, 'tlp')
         self.assertEqual(marking.definition['tlp'], 'white')
 
+    def _test_event_with_tlp2_tags(self, event):
+        self.parser.parse_misp_event(event)
+        bundle = self.parser.bundle
+        markings = [o for o in bundle.objects if o.type == 'marking-definition']
+        canonical_tlp2_ids = {
+            'marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487',
+            'marking-definition--939a9414-2ddd-4d32-a0cd-375ea402b003',
+        }
+        self.assertFalse(
+            canonical_tlp2_ids.intersection({m.id for m in markings})
+        )
+        report = next(o for o in bundle.objects if o.type == 'report')
+        labels = list(report.labels)
+        self.assertIn('tlp:clear', labels)
+        self.assertIn('tlp:amber+strict', labels)
+
     def _test_published_event(self, event):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
@@ -299,6 +315,10 @@ class TestSTIX20JSONEventExport(TestSTIX20EventExport):
     def test_event_with_tags(self):
         event = get_event_with_tags()
         self._test_event_with_tags(event['Event'])
+
+    def test_event_with_tlp2_tags(self):
+        event = get_event_with_tlp2_tags()
+        self._test_event_with_tlp2_tags(event['Event'])
 
     def test_published_event(self):
         event = get_published_event()

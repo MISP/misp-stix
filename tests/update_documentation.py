@@ -2,15 +2,126 @@
 # -*- coding: utf-8 -*-
 
 import json
+import re
 from pathlib import Path
+from uuid import UUID, uuid5
+
+from misp_stix_converter.abstract import _UUIDv4
 
 _ROOT_PATH = Path(__file__).parents[1].resolve()
+_UUID_RE = re.compile(
+    r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+    re.IGNORECASE
+)
+
+
+def _canonicalise(mapping, feature):
+    """Substitute pymisp's random uuid4 fallback on each Import-direction
+    ObjectReference with a deterministic uuid5 derived from object_uuid +
+    referenced_uuid + relationship_type, so doc-mapping diffs only reflect
+    semantic changes. Parent MISPObject uuids and MISPAttribute uuids are
+    set deterministically at the converter side already (see the
+    ``_create_misp_object(..., object_id=...)`` factory and the
+    ``add_attribute(..., uuid=_create_v5_uuid(...))`` convention), so they
+    no longer need normalisation here. ObjectReference uuids stay random
+    at the converter side by design — pymisp generates them inside
+    ``MISPObjectReference.__init__`` with no clean injection point — and
+    are the sole reason this layer still exists."""
+    if feature != 'import' or not isinstance(mapping, dict):
+        return
+    for entry in mapping.values():
+        _canonicalise_entry(entry)
+
+
+def _canonicalise_entry(entry):
+    if not isinstance(entry, dict):
+        return
+    if 'MISP' in entry or 'STIX' in entry:
+        _canonicalise_pair(entry)
+    else:
+        for sub in entry.values():
+            _canonicalise_entry(sub)
+
+
+def _canonicalise_pair(pair):
+    misp_side = pair.get('MISP')
+    if misp_side is None:
+        return
+    preserved = _scrape_uuids(pair.get('STIX'))
+    uuid_map = {}
+    for misp_object in (misp_side if isinstance(misp_side, list) else [misp_side]):
+        _resolve_reference_uuids(misp_object, preserved, uuid_map)
+    if uuid_map:
+        _rewrite_misp_uuids(misp_side, uuid_map)
+
+
+def _scrape_uuids(stix_side):
+    """Collect every UUID-shaped substring appearing anywhere on the STIX
+    side. These are the UUIDs the converter preserved or derived from STIX
+    input, so the MISP side may legitimately reuse them."""
+    if stix_side is None:
+        return frozenset()
+    return frozenset(_UUID_RE.findall(json.dumps(stix_side)))
+
+
+def _resolve_reference_uuids(misp_object, preserved, uuid_map):
+    """Compute a stable uuid5 for each ObjectReference whose own uuid is a
+    pymisp v4 fallback. The recipe uses the (already-deterministic)
+    object_uuid / referenced_uuid stored on the reference itself, so no
+    cross-reference lookup is needed."""
+    if not isinstance(misp_object, dict):
+        return
+    for reference in misp_object.get('ObjectReference', []) or []:
+        ref_uuid = reference.get('uuid')
+        if (
+            isinstance(ref_uuid, str) and _UUID_RE.fullmatch(ref_uuid)
+            and _is_pymisp_fallback(ref_uuid, preserved)
+        ):
+            uuid_map[ref_uuid] = str(
+                uuid5(
+                    _UUIDv4,
+                    f"{reference.get('object_uuid')}"
+                    f" - {reference.get('referenced_uuid')}"
+                    f" - {reference.get('relationship_type', '')}"
+                )
+            )
+
+
+def _is_pymisp_fallback(uuid_value, preserved):
+    if uuid_value in preserved:
+        return False
+    try:
+        return UUID(uuid_value).version == 4
+    except ValueError:
+        return False
+
+
+def _rewrite_misp_uuids(node, uuid_map):
+    """Apply the {old -> canonical} substitutions on every ObjectReference
+    uuid encountered in the MISP-side tree."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if (
+                key == 'uuid' and isinstance(value, str)
+                and value in uuid_map
+            ):
+                node[key] = uuid_map[value]
+            else:
+                _rewrite_misp_uuids(value, uuid_map)
+    elif isinstance(node, list):
+        for item in node:
+            _rewrite_misp_uuids(item, uuid_map)
+
+
 _OBJECT_FEATURES = ('indicator', 'observed-data')
 _PATTERNING_TYPES = (
+    'crs',
+    'nova',
     'sigma',
     'snort',
     'suricata',
-    'yara'
+    'wazuh',
+    'yara',
 )
 _SUMMARY_MAPPING = {
     'email-addr': 'Email Address',
@@ -27,6 +138,7 @@ class DocumentationUpdater:
         self.__mapping_path = documentation_path / f'{filename}.json'
         with open(self.__mapping_path, 'rt', encoding='utf-8') as f:
             self._documentation = json.load(f)
+        _canonicalise(self._documentation, feature)
         self.__summary_path = documentation_path / f'{filename}_summary.json'
         try:
             with open(self.__summary_path, 'rt', encoding='utf-8') as f:
@@ -113,6 +225,7 @@ class DocumentationUpdater:
             self._summary_changed = True
 
     def _declare_mapping(self, mapping):
+        _canonicalise(mapping, self.feature)
         self.__mapping_to_check = mapping
 
     def _declare_summary(self, summary):
