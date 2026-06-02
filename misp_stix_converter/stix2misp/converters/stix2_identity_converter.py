@@ -111,10 +111,6 @@ class ExternalSTIX2IdentityConverter(
             else:
                 name = self._fetch_identity_object_name(identity)
                 getattr(self, f'_parse_{name}_object')(identity)
-                misp_object = self._create_misp_object(name, identity)
-                for attribute in self._generic_parser(identity, name):
-                    misp_object.add_attribute(**attribute)
-                self.main_parser._add_misp_object(misp_object, identity)
 
     @staticmethod
     def _fetch_identity_object_name(identity: _IDENTITY_TYPING) -> str:
