@@ -822,6 +822,7 @@ The detailed mapping for attributes from external STIX 2.0 bundles, with explana
 | domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr & Ipv6 Addr Objects and IoCs described in Indicator (pattern) (observable) |
 | email | Email Message Object (pattern) / Artifact & Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) |
 | file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
+| identity | **Identity** |
 | network-socket | Network Traffic Object (pattern) / Custom Object |
 | network-traffic | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
 | process | Process Object (pattern) / Process Object and IoCs described in Indicator (pattern) (observable) |
@@ -845,6 +846,7 @@ SDOs in STIX 2.0 bundles produced by third-party tools are imported as new MISP 
 | attack-pattern | STIX 2.0 Attack Pattern (stix-2.0-attack-pattern) |
 | campaign | STIX 2.0 Campaign (stix-2.0-campaign) |
 | course-of-action | STIX 2.0 Course of Action (stix-2.0-course-of-action) |
+| identity | Sector (sector) |
 | intrusion-set | STIX 2.0 Intrusion Set (stix-2.0-intrusion-set) |
 | malware | STIX 2.0 Malware (stix-2.0-malware) |
 | threat-actor | STIX 2.0 Threat Actor (stix-2.0-threat-actor) |
@@ -1072,6 +1074,9 @@ The detailed mapping for attributes from external STIX 2.1 bundles, with explana
 | domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr & Ipv6 Addr Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
 | email | Email Message Object (pattern) / Artifact & Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
 | file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
+| geolocation | **Location** |
+| identity | **Identity** |
+| malware-analysis | **Malware Analysis** |
 | network-socket | Network Traffic Object (pattern) / Custom Object |
 | network-traffic | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
 | process | Process Object (pattern) / Process Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
@@ -1095,6 +1100,7 @@ SDOs in STIX 2.1 bundles produced by third-party tools are imported as new MISP 
 | attack-pattern | STIX 2.1 Attack Pattern (stix-2.1-attack-pattern) |
 | campaign | STIX 2.1 Campaign (stix-2.1-campaign) |
 | course-of-action | STIX 2.1 Course of Action (stix-2.1-course-of-action) |
+| identity | Sector (sector) |
 | intrusion-set | STIX 2.1 Intrusion Set (stix-2.1-intrusion-set) |
 | location | STIX 2.1 Location (stix-2.1-location) |
 | malware | STIX 2.1 Malware (stix-2.1-malware) |
