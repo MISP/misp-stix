@@ -789,6 +789,32 @@ _INTRUSION_SET_OBJECTS = [
         ]
     }
 ]
+_IDENTITY_OBJECTS = [
+    {
+        "type": "identity",
+        "id": "identity--c2cc2c57-98f5-4804-9e79-8df735f52921",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "name": "John Doe",
+        "identity_class": "individual"
+    }
+]
+_SECTOR_GALAXY = [
+    {
+        "type": "identity",
+        "id": "identity--d8e9f0a1-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "name": "Financial Services",
+        "description": "Activities of the financial services sector",
+        "identity_class": "class",
+        "sectors": [
+            "financial-services"
+        ]
+    }
+]
 _IP_ADDRESS_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -2118,6 +2144,14 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
             observed_data[0]['objects']['2']['payload_bin'] = payload_bin
             observed_data[1]['objects']['3']['payload_bin'] = payload_bin
         return cls.__assemble_bundle(*observed_data)
+
+    @classmethod
+    def get_bundle_with_identity_objects(cls):
+        return cls.__assemble_bundle(*_IDENTITY_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_sector_galaxy(cls):
+        return cls.__assemble_bundle(*_SECTOR_GALAXY)
 
     @classmethod
     def get_bundle_with_ip_address_attributes(cls):

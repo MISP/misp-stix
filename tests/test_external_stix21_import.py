@@ -3,7 +3,8 @@
 
 from .test_external_stix21_bundles import TestExternalSTIX21Bundles
 from ._test_stix import TestSTIX21
-from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import, UUIDv4
+from ._test_stix_import import (
+    TestExternalSTIX2Import, TestSTIX21Import, UUIDv4, MISP_org_uuid)
 from uuid import uuid5
 
 _ACS_EXTENSION_ID = 'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce'
@@ -1795,6 +1796,99 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
         self._populate_ext_observable_documentation(
             misp_object=file_object1, observable=file1
+        )
+
+    def test_stix21_bundle_with_identity_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_identity_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_content), 1)
+        misp_object = misp_content[0]
+        self.assertEqual(misp_object.name, 'identity')
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        name_attribute, class_attribute = misp_object.attributes
+        self.assertEqual(name_attribute.object_relation, 'name')
+        self.assertEqual(name_attribute.value, identity.name)
+        self.assertEqual(class_attribute.object_relation, 'identity_class')
+        self.assertEqual(class_attribute.value, identity.identity_class)
+        self._populate_ext_sdo_documentation(
+            misp_object=misp_object, stix_object=identity, source='Identity'
+        )
+
+    def test_stix21_bundle_with_malware_analysis_object(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_malware_analysis_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, malware_analysis = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_content), 1)
+        misp_object = misp_content[0]
+        self.assertEqual(misp_object.name, 'malware-analysis')
+        self.assertEqual(misp_object.uuid, malware_analysis.id.split('--')[1])
+        attributes = {
+            attribute.object_relation: attribute.value
+            for attribute in misp_object.attributes
+        }
+        self.assertEqual(attributes['product'], malware_analysis.product)
+        self.assertEqual(attributes['version'], malware_analysis.version)
+        self.assertEqual(attributes['result'], malware_analysis.result)
+        self.assertEqual(attributes['module'], malware_analysis.modules[0])
+        self._populate_ext_sdo_documentation(
+            misp_object=misp_object, stix_object=malware_analysis,
+            source='Malware Analysis'
+        )
+
+    def test_stix21_bundle_with_location_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_geolocation_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, location = bundle.objects
+        misp_content = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_content), 1)
+        misp_object = misp_content[0]
+        self.assertEqual(misp_object.name, 'geolocation')
+        self.assertEqual(misp_object.uuid, location.id.split('--')[1])
+        attributes = {
+            attribute.object_relation: attribute.value
+            for attribute in misp_object.attributes
+        }
+        self.assertEqual(attributes['city'], location.city)
+        self.assertEqual(attributes['countrycode'], location.country)
+        self.assertEqual(attributes['address'], location.street_address)
+        self.assertEqual(attributes['zipcode'], location.postal_code)
+        self.assertEqual(float(attributes['latitude']), location.latitude)
+        self.assertEqual(float(attributes['longitude']), location.longitude)
+        self.assertEqual(
+            float(attributes['accuracy-radius']), location.precision / 1000
+        )
+        self._populate_ext_sdo_documentation(
+            misp_object=misp_object, stix_object=location, source='Location'
+        )
+
+    def test_stix21_bundle_with_sector_galaxy(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_sector_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(event.galaxies), 1)
+        galaxy = event.galaxies[0]
+        self.assertEqual(galaxy.type, 'sector')
+        self.assertEqual(len(galaxy.clusters), 1)
+        cluster = galaxy.clusters[0]
+        self.assertEqual(cluster.value, identity.name)
+        self.assertEqual(
+            cluster.uuid,
+            uuid5(UUIDv4, f"{identity.id.split('--')[1]} - {MISP_org_uuid}")
+        )
+        self._populate_external_galaxy_documentation(
+            galaxy=galaxy, identity=identity
         )
 
     def test_stix21_bundle_with_ip_address_attributes(self):

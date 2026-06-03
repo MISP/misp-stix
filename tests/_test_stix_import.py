@@ -32,6 +32,7 @@ _EXT_GALAXY_SUMMARY_MAPPING_V20 = {
     'attack-pattern': 'STIX 2.0 Attack Pattern (stix-2.0-attack-pattern)',
     'campaign': 'STIX 2.0 Campaign (stix-2.0-campaign)',
     'course-of-action': 'STIX 2.0 Course of Action (stix-2.0-course-of-action)',
+    'identity': 'Sector (sector)',
     'intrusion-set': 'STIX 2.0 Intrusion Set (stix-2.0-intrusion-set)',
     'malware': 'STIX 2.0 Malware (stix-2.0-malware)',
     'threat-actor': 'STIX 2.0 Threat Actor (stix-2.0-threat-actor)',
@@ -43,6 +44,7 @@ _EXT_GALAXY_SUMMARY_MAPPING_V21 = {
     'attack-pattern': 'STIX 2.1 Attack Pattern (stix-2.1-attack-pattern)',
     'campaign': 'STIX 2.1 Campaign (stix-2.1-campaign)',
     'course-of-action': 'STIX 2.1 Course of Action (stix-2.1-course-of-action)',
+    'identity': 'Sector (sector)',
     'intrusion-set': 'STIX 2.1 Intrusion Set (stix-2.1-intrusion-set)',
     'location': 'STIX 2.1 Location (stix-2.1-location)',
     'malware': 'STIX 2.1 Malware (stix-2.1-malware)',
@@ -267,6 +269,16 @@ class TestSTIX20Import(TestSTIX2Import):
         self._ext_galaxies_v20['summary'][stix_type] = _EXT_GALAXY_SUMMARY_MAPPING_V20.get(
             stix_type, stix_type
         )
+
+    def _populate_ext_sdo_documentation(self, **kwargs):
+        source = kwargs['source']
+        name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+        self._ext_objects_v20[name][source] = {
+            'MISP': json.loads(kwargs['misp_object'].to_json()),
+            'STIX': json.loads(kwargs['stix_object'].serialize())
+        }
+        if 'summary' in kwargs:
+            self._ext_objects_v20['summary'][name] = kwargs['summary']
 
     def _populate_ext_indicator_documentation(self, **kwargs):
         if 'attribute' in kwargs:
@@ -590,6 +602,16 @@ class TestSTIX21Import(TestSTIX2Import):
         self._ext_galaxies_v21['summary'][stix_type] = _EXT_GALAXY_SUMMARY_MAPPING_V21.get(
             stix_type, stix_type
         )
+
+    def _populate_ext_sdo_documentation(self, **kwargs):
+        source = kwargs['source']
+        name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+        self._ext_objects_v21[name][source] = {
+            'MISP': json.loads(kwargs['misp_object'].to_json()),
+            'STIX': json.loads(kwargs['stix_object'].serialize())
+        }
+        if 'summary' in kwargs:
+            self._ext_objects_v21['summary'][name] = kwargs['summary']
 
     def _populate_ext_indicator_documentation(self, **kwargs):
         if 'attribute' in kwargs:
