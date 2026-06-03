@@ -584,7 +584,7 @@
                 "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                 "ObjectReference": [
                     {
-                        "uuid": "694a7cd6-eaae-4793-ba02-12abfa8bbde3",
+                        "uuid": "62fdb4db-20dd-5fa1-b54c-8a35b28938ae",
                         "object_uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                         "referenced_uuid": "f93cb275-0366-4ecc-abf0-a17928d1e177",
                         "relationship_type": "contains"
@@ -943,13 +943,13 @@
                 "uuid": "cf9b4b7f-14c8-5955-8065-020e0316b559",
                 "ObjectReference": [
                     {
-                        "uuid": "7256eb48-8679-49d3-9de6-84fa815534db",
+                        "uuid": "e18de3d0-05fe-5f18-8f0c-11f262a2b059",
                         "object_uuid": "cf9b4b7f-14c8-5955-8065-020e0316b559",
                         "referenced_uuid": "4cce66f8-6eaa-53cb-85d5-3a85fca3a6c5",
                         "relationship_type": "contains"
                     },
                     {
-                        "uuid": "be4cb1d0-cc28-4451-b9a6-550390288d9d",
+                        "uuid": "c84f8393-c4b4-54f6-8f7b-1ca2113b0b6e",
                         "object_uuid": "cf9b4b7f-14c8-5955-8065-020e0316b559",
                         "referenced_uuid": "6ce09d9c-0ad3-5ebf-900c-e3cb288955b5",
                         "relationship_type": "contains"
@@ -1186,13 +1186,13 @@
                 "uuid": "cf9b4b7f-14c8-5955-8065-020e0316b559",
                 "ObjectReference": [
                     {
-                        "uuid": "924383ce-88f0-4e53-8cb3-7f51c46d7dfe",
+                        "uuid": "e18de3d0-05fe-5f18-8f0c-11f262a2b059",
                         "object_uuid": "cf9b4b7f-14c8-5955-8065-020e0316b559",
                         "referenced_uuid": "4cce66f8-6eaa-53cb-85d5-3a85fca3a6c5",
                         "relationship_type": "contains"
                     },
                     {
-                        "uuid": "4ed47e2b-eb43-42fa-84f0-f4d0a4f0768f",
+                        "uuid": "c84f8393-c4b4-54f6-8f7b-1ca2113b0b6e",
                         "object_uuid": "cf9b4b7f-14c8-5955-8065-020e0316b559",
                         "referenced_uuid": "6ce09d9c-0ad3-5ebf-900c-e3cb288955b5",
                         "relationship_type": "contains"
@@ -1447,7 +1447,7 @@
                 "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                 "ObjectReference": [
                     {
-                        "uuid": "eb14433a-6fdf-4d57-884a-d6f99e0ee12f",
+                        "uuid": "6f8125af-c9b5-5a83-bcee-5c39ac75d79d",
                         "object_uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                         "referenced_uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                         "relationship_type": "contained-in"
@@ -1576,7 +1576,7 @@
                 "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                 "ObjectReference": [
                     {
-                        "uuid": "475c5fa0-8efa-43e5-819a-2f422b978c73",
+                        "uuid": "6f8125af-c9b5-5a83-bcee-5c39ac75d79d",
                         "object_uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                         "referenced_uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                         "relationship_type": "contained-in"
@@ -1655,6 +1655,294 @@
                 "name_enc": "UTF-8",
                 "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                 "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            }
+        }
+    },
+    "geolocation": {
+        "Location": {
+            "MISP": {
+                "name": "geolocation",
+                "meta-category": "misc",
+                "template_uuid": "cd6f2238-ba55-4888-82c4-104e6e1acf21",
+                "description": "An object to describe a geographic location.",
+                "template_version": "8",
+                "uuid": "e8f1c2a3-4b5d-4e6f-9a8b-7c6d5e4f3a2b",
+                "Attribute": [
+                    {
+                        "uuid": "7c9ad6a8-65ce-5832-9046-9c7d3257f795",
+                        "object_relation": "city",
+                        "value": "Paris",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "6cf21704-ef2f-5906-b240-94f732d40f12",
+                        "object_relation": "countrycode",
+                        "value": "FR",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "d4fa159a-3471-5475-80fc-974dd12cd26e",
+                        "object_relation": "latitude",
+                        "value": 48.8566,
+                        "type": "float",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "269701b6-dcc3-5975-aa1e-142bc4be2925",
+                        "object_relation": "longitude",
+                        "value": 2.3522,
+                        "type": "float",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "a5a38d12-fd81-5f6f-80f5-ceeb4efa5ce6",
+                        "object_relation": "zipcode",
+                        "value": "75000",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "cd1fc04a-1ded-5fca-8db7-056a8da8947c",
+                        "object_relation": "region",
+                        "value": "western-europe",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "414b2e2f-4c1d-5fd4-9de1-5c5338305ae1",
+                        "object_relation": "address",
+                        "value": "5 Rue de la Paix",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "4a8f404e-8f21-5217-8ae2-d0961d87c167",
+                        "object_relation": "accuracy-radius",
+                        "value": 1.0,
+                        "type": "float",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    }
+                ],
+                "distribution": "5",
+                "sharing_group_id": "0",
+                "timestamp": "1706177909"
+            },
+            "STIX": {
+                "type": "location",
+                "spec_version": "2.1",
+                "id": "location--e8f1c2a3-4b5d-4e6f-9a8b-7c6d5e4f3a2b",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2024-01-25T10:18:28.125Z",
+                "modified": "2024-01-25T10:18:29.125Z",
+                "name": "Paris",
+                "latitude": 48.8566,
+                "longitude": 2.3522,
+                "precision": 1000.0,
+                "region": "western-europe",
+                "country": "FR",
+                "city": "Paris",
+                "street_address": "5 Rue de la Paix",
+                "postal_code": "75000"
+            }
+        }
+    },
+    "identity": {
+        "Identity": {
+            "MISP": {
+                "name": "identity",
+                "meta-category": "misc",
+                "template_uuid": "ae85b960-b507-4de2-a32c-9cfb8f25f990",
+                "description": "Identities can represent actual individuals, organizations, or groups (e.g., ACME, Inc.) as well as classes of individuals, organizations, systems or groups (e.g., the finance sector).  The Identity SDO can capture basic identifying information, contact information, and the sectors that the Identity belongs to. Identity is used in STIX to represent, among other things, targets of attacks, information sources, object creators, and threat actor identities. (ref. STIX 2.1 - 4.5)",
+                "template_version": "1",
+                "uuid": "c2cc2c57-98f5-4804-9e79-8df735f52921",
+                "Attribute": [
+                    {
+                        "uuid": "6cf35d44-4f20-5e93-98af-d55674f5694d",
+                        "object_relation": "name",
+                        "value": "John Doe",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "ee29e3cb-f6c0-5901-8bbd-81fab2ee0308",
+                        "object_relation": "identity_class",
+                        "value": "individual",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    }
+                ],
+                "distribution": "5",
+                "sharing_group_id": "0",
+                "timestamp": "1706177909"
+            },
+            "STIX": {
+                "type": "identity",
+                "spec_version": "2.1",
+                "id": "identity--c2cc2c57-98f5-4804-9e79-8df735f52921",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2024-01-25T10:18:28.125Z",
+                "modified": "2024-01-25T10:18:29.125Z",
+                "name": "John Doe",
+                "identity_class": "individual"
+            }
+        }
+    },
+    "malware-analysis": {
+        "Malware Analysis": {
+            "MISP": {
+                "name": "malware-analysis",
+                "meta-category": "misc",
+                "template_uuid": "8229ee82-7218-4ff5-9eac-57961a6f0288",
+                "description": "Malware Analysis captures the metadata and results of a particular static or dynamic analysis performed on a malware instance or family.",
+                "template_version": "1",
+                "uuid": "f44f7eb8-0c10-4bb3-b59e-6b1d8a3f9c41",
+                "Attribute": [
+                    {
+                        "uuid": "81e8d790-c29f-5af8-892c-a0eb0b7cab74",
+                        "object_relation": "analysis_definition_version",
+                        "value": "2024-01-20",
+                        "type": "text",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "f0326f10-05d5-514d-affc-e05f1fa94368",
+                        "object_relation": "end_time",
+                        "value": "2024-01-25T10:15:00+00:00",
+                        "type": "datetime",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "661f0206-b847-566b-8664-0a2fb66a3604",
+                        "object_relation": "analysis_engine_version",
+                        "value": "5.6.0",
+                        "type": "text",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "e10c6883-705d-57b8-9522-edbae5bf00e9",
+                        "object_relation": "start_time",
+                        "value": "2024-01-25T10:05:00+00:00",
+                        "type": "datetime",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "b8f9f1e8-b723-5ec2-b6c0-161aa987759d",
+                        "object_relation": "configuration_version",
+                        "value": "1.2.0",
+                        "type": "text",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "0e3ac463-17a9-5c01-9167-64d5dca29545",
+                        "object_relation": "module",
+                        "value": "static_analysis",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "c88e5093-fbc9-5793-aeee-f494aed2d1c0",
+                        "object_relation": "product",
+                        "value": "VirusTotal",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "4a43fec6-6db5-5ba6-8da9-eb1cb072487f",
+                        "object_relation": "result",
+                        "value": "malicious",
+                        "type": "text",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "cb14f158-8775-514b-a2c0-d3054ca89a89",
+                        "object_relation": "result_name",
+                        "value": "Trojan.Generic",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "6b657a2e-9a33-5449-bbfb-d31f92243cec",
+                        "object_relation": "submitted_time",
+                        "value": "2024-01-25T10:00:00+00:00",
+                        "type": "datetime",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "e6b2f43a-f768-5035-b7d8-1fb29ed077c3",
+                        "object_relation": "version",
+                        "value": "3.0",
+                        "type": "text",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    }
+                ],
+                "distribution": "5",
+                "sharing_group_id": "0",
+                "timestamp": "1706177909"
+            },
+            "STIX": {
+                "type": "malware-analysis",
+                "spec_version": "2.1",
+                "id": "malware-analysis--f44f7eb8-0c10-4bb3-b59e-6b1d8a3f9c41",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2024-01-25T10:18:28.125Z",
+                "modified": "2024-01-25T10:18:29.125Z",
+                "product": "VirusTotal",
+                "version": "3.0",
+                "configuration_version": "1.2.0",
+                "modules": [
+                    "static_analysis"
+                ],
+                "analysis_engine_version": "5.6.0",
+                "analysis_definition_version": "2024-01-20",
+                "submitted": "2024-01-25T10:00:00Z",
+                "analysis_started": "2024-01-25T10:05:00Z",
+                "analysis_ended": "2024-01-25T10:15:00Z",
+                "result_name": "Trojan.Generic",
+                "result": "malicious"
             }
         }
     },
@@ -1880,7 +2168,7 @@
                 "uuid": "ac267abc-1a41-536d-8e8d-98458d9bf491",
                 "ObjectReference": [
                     {
-                        "uuid": "0d5b4b36-5c98-49b2-8a8f-d6d29a354f1d",
+                        "uuid": "a1635e4d-35fd-523b-8fd3-40f3f821baf9",
                         "object_uuid": "ac267abc-1a41-536d-8e8d-98458d9bf491",
                         "referenced_uuid": "53e0bf48-2eee-5c03-8bde-ed7049d2c0a3",
                         "relationship_type": "encapsulates"
@@ -2028,13 +2316,13 @@
                 "uuid": "b4a8c150-e214-57a3-9017-e85dfa345f46",
                 "ObjectReference": [
                     {
-                        "uuid": "dc9815d3-fea3-4d53-a743-e92f5eb1980d",
+                        "uuid": "190e3170-7296-56ab-8fe3-c936d5301728",
                         "object_uuid": "b4a8c150-e214-57a3-9017-e85dfa345f46",
                         "referenced_uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                         "relationship_type": "source-sent"
                     },
                     {
-                        "uuid": "7c22d7f8-2701-4388-80fd-857c5d9c4a3a",
+                        "uuid": "12f432ec-a088-570b-bc3e-b58398f01e3b",
                         "object_uuid": "b4a8c150-e214-57a3-9017-e85dfa345f46",
                         "referenced_uuid": "65a6016d-a91c-5781-baad-178cd55f01d4",
                         "relationship_type": "encapsulates"
@@ -2300,19 +2588,19 @@
                 "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                 "ObjectReference": [
                     {
-                        "uuid": "ff2e1aed-0a8e-436a-af8e-5e65f3b4770e",
+                        "uuid": "0fbe865c-7640-5c93-baa5-178e30725792",
                         "object_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                         "referenced_uuid": "43fdb7b9-a771-4b10-ab74-2bac893daf0d",
                         "relationship_type": "executes"
                     },
                     {
-                        "uuid": "4e033853-3c87-4549-ad74-4cd6db81e687",
+                        "uuid": "3b9535ef-87ea-5d90-8d1c-586bade04768",
                         "object_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                         "referenced_uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
                         "relationship_type": "child-of"
                     },
                     {
-                        "uuid": "d9f36fee-479e-4c8f-823c-907fc8a6ac09",
+                        "uuid": "332e8042-c298-517c-af1f-66cbc331910e",
                         "object_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                         "referenced_uuid": "f93cb275-0366-4ecc-abf0-a17928d1e177",
                         "relationship_type": "parent-of"

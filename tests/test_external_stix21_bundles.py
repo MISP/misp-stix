@@ -9,9 +9,10 @@ from stix2.parsing import dict_to_stix2
 from uuid import uuid5
 
 SDOs = (
-    'attack-pattern', 'campaign', 'course-of-action', 'intrusion-set',
-    'location', 'malware', 'malware-analysis', 'marking-definition',
-    'observed-data', 'threat-actor', 'tool', 'vulnerability'
+    'attack-pattern', 'campaign', 'course-of-action', 'identity',
+    'intrusion-set', 'location', 'malware', 'malware-analysis',
+    'marking-definition', 'observed-data', 'threat-actor', 'tool',
+    'vulnerability'
 )
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
@@ -1149,6 +1150,76 @@ _INTRUSION_SET_OBJECTS = [
             "Guardians of Peace",
             "ZINC",
             "NICKEL ACADEMY"
+        ]
+    }
+]
+_IDENTITY_OBJECTS = [
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--c2cc2c57-98f5-4804-9e79-8df735f52921",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "name": "John Doe",
+        "identity_class": "individual"
+    }
+]
+_MALWARE_ANALYSIS_OBJECTS = [
+    {
+        "type": "malware-analysis",
+        "spec_version": "2.1",
+        "id": "malware-analysis--f44f7eb8-0c10-4bb3-b59e-6b1d8a3f9c41",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "product": "VirusTotal",
+        "version": "3.0",
+        "configuration_version": "1.2.0",
+        "analysis_engine_version": "5.6.0",
+        "analysis_definition_version": "2024-01-20",
+        "submitted": "2024-01-25T10:00:00.000Z",
+        "analysis_started": "2024-01-25T10:05:00.000Z",
+        "analysis_ended": "2024-01-25T10:15:00.000Z",
+        "result_name": "Trojan.Generic",
+        "result": "malicious",
+        "modules": [
+            "static_analysis"
+        ]
+    }
+]
+_GEOLOCATION_OBJECTS = [
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--e8f1c2a3-4b5d-4e6f-9a8b-7c6d5e4f3a2b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "name": "Paris",
+        "latitude": 48.8566,
+        "longitude": 2.3522,
+        "precision": 1000.0,
+        "city": "Paris",
+        "country": "FR",
+        "postal_code": "75000",
+        "region": "western-europe",
+        "street_address": "5 Rue de la Paix"
+    }
+]
+_SECTOR_GALAXY = [
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--d8e9f0a1-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "name": "Financial Services",
+        "description": "Activities of the financial services sector",
+        "identity_class": "class",
+        "sectors": [
+            "financial-services"
         ]
     }
 ]
@@ -2882,6 +2953,22 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observables[2]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_identity_objects(cls):
+        return cls.__assemble_bundle(*_IDENTITY_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_malware_analysis_objects(cls):
+        return cls.__assemble_bundle(*_MALWARE_ANALYSIS_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_geolocation_objects(cls):
+        return cls.__assemble_bundle(*_GEOLOCATION_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_sector_galaxy(cls):
+        return cls.__assemble_bundle(*_SECTOR_GALAXY)
 
     @classmethod
     def get_bundle_with_ip_address_attributes(cls):

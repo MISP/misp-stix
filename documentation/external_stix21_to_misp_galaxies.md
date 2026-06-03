@@ -4,6 +4,8 @@ When importing STIX 2.1 bundles from third-party tools (not produced by MISP), S
 
 Unlike the internal conversion (which maps back to known MISP galaxy types), the external conversion creates new `STIX 2.1 *` galaxies that preserve the original STIX content. The cluster value is the STIX object's `name`, and meta fields are extracted from fields such as `aliases`, `kill_chain_phases`, `external_references`, etc.
 
+As an exception, an `Identity` whose `identity_class` is `class` is mapped to the existing MISP `sector` galaxy rather than a dynamically generated `stix-2.1-*` type.
+
 - attack-pattern
   - STIX
     ```json
@@ -247,6 +249,60 @@ Unlike the internal conversion (which maps back to known MISP galaxy types), the
         "icon": "link",
         "type": "stix-2.1-course-of-action",
         "name": "STIX 2.1 Course of Action"
+    }
+    ```
+
+- identity
+  - STIX
+    ```json
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--d8e9f0a1-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "name": "Financial Services",
+        "description": "Activities of the financial services sector",
+        "identity_class": "class",
+        "sectors": [
+            "financial-services"
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "GalaxyCluster": [
+            {
+                "GalaxyElement": [
+                    {
+                        "key": "created",
+                        "value": "2024-01-25T10:18:28.125000Z"
+                    },
+                    {
+                        "key": "modified",
+                        "value": "2024-01-25T10:18:29.125000Z"
+                    }
+                ],
+                "meta": {
+                    "created": "2024-01-25T10:18:28.125000Z",
+                    "modified": "2024-01-25T10:18:29.125000Z"
+                },
+                "default": false,
+                "distribution": "0",
+                "uuid": "d2ea1531-3ba0-5d28-9d7f-e0332cbf4abb",
+                "value": "Financial Services",
+                "source": "MISP-Project",
+                "type": "sector",
+                "description": "Activities of the financial services sector"
+            }
+        ],
+        "description": "Activity sectors",
+        "namespace": "stix",
+        "distribution": "0",
+        "type": "sector",
+        "name": "Sector"
     }
     ```
 
