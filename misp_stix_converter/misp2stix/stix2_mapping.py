@@ -356,6 +356,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'file': '_parse_file_object',
             'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
+            'hashlookup': '_parse_hashlookup_object',
             'http-request': '_parse_http_request_object',
             'identity': '_parse_identity_object',
             'image': '_parse_image_object',
@@ -530,6 +531,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'path',
         *__file_data_fields,
         *__hash_attribute_types
+    )
+    __hashlookup_hash_types = (
+        'MD5',
+        'SHA-1',
+        'SHA-256',
+        'SSDEEP',
+        'TLSH'
     )
     __github_user_data_fields = (
         'profile-image',
@@ -1130,6 +1138,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def hash_attribute_types(cls) -> tuple:
         return cls.__hash_attribute_types
+
+    @classmethod
+    def hashlookup_hash_types(cls) -> tuple:
+        return cls.__hashlookup_hash_types
 
     @classmethod
     def hash_pattern_mapping(cls, field: str) -> str:

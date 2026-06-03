@@ -1092,6 +1092,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             misp_object, identity_args, 'identity'
         )
 
+    def _parse_hashlookup_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        file_args = {
+            'id': self._parse_stix_object_id('object', 'file', misp_object),
+            **self._parse_hashlookup_args(attributes)
+        }
+        return self._handle_object_observable(misp_object, [File(**file_args)])
+
     def _parse_image_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(

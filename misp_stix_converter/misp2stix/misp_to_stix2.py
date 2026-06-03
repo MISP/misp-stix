@@ -2204,6 +2204,48 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(misp_object, *stix_objects)
 
+    def _parse_hashlookup_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_hashlookup_object_observable(misp_object)
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_hashlookup_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_hashlookup_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        attributes = self._extract_indicator_object_attributes(
+            misp_object['Attribute']
+        )
+        pattern = []
+        for hash_relation in self._mapping.hashlookup_hash_types():
+            if attributes.get(hash_relation):
+                try:
+                    pattern.append(
+                        self._create_hash_pattern(
+                            hash_relation, attributes.pop(hash_relation)
+                        )
+                    )
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error(
+                        hash_relation, misp_object
+                    )
+        if attributes.get('FileName'):
+            pattern.append(
+                self._create_filename_pattern(attributes.pop('FileName'))
+            )
+        if attributes.get('FileSize'):
+            pattern.append(f"file:size = '{attributes.pop('FileSize')}'")
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(attributes, 'file')
+            )
+        return pattern
+
     def _parse_image_object(self, misp_object: MISPObject | dict):
         observed_data = self._parse_image_object_observable(misp_object)
         stix_objects = [observed_data]
@@ -4313,6 +4355,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             file_args.update(
                 self._handle_observable_multiple_properties(attributes)
             )
+        return file_args
+
+    def _parse_hashlookup_args(self, attributes: dict) -> dict:
+        file_args = defaultdict(dict)
+        if attributes.get('FileName'):
+            file_args['name'] = self._select_single_feature(
+                attributes, 'FileName'
+            )
+        if attributes.get('FileSize'):
+            file_args['size'] = int(
+                self._select_single_feature(attributes, 'FileSize')
+            )
+        for hash_type in self._mapping.hashlookup_hash_types():
+            if attributes.get(hash_type):
+                file_args['hashes'][hash_type] = self._select_single_feature(
+                    attributes, hash_type
+                )
+        if attributes:
+            file_args.update(self._handle_observable_properties(attributes))
         return file_args
 
     def _parse_http_request_args(self, attributes: dict) -> dict:
