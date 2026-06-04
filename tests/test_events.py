@@ -3437,6 +3437,91 @@ _TEST_PROCESS_OBJECT = {
     ]
 }
 
+_TEST_HASHLOOKUP_OBJECT = {
+    "name": "hashlookup",
+    "meta-category": "file",
+    "description": "hashlookup object as described on hashlookup services from circl.lu",
+    "uuid": "b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "filename",
+            "object_relation": "FileName",
+            "value": "oui"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "FileSize",
+            "value": "35"
+        },
+        {
+            "type": "text",
+            "object_relation": "KnownMalicious",
+            "value": "hashlookup-known-malicious-source"
+        },
+        {
+            "type": "md5",
+            "object_relation": "MD5",
+            "value": "8764605c6f388c89096b534d33565802"
+        },
+        {
+            "type": "sha1",
+            "object_relation": "SHA-1",
+            "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "SHA-256",
+            "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+        },
+        {
+            "type": "ssdeep",
+            "object_relation": "SSDEEP",
+            "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
+        },
+        {
+            "type": "tlsh",
+            "object_relation": "TLSH",
+            "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageName",
+            "value": "coreutils"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageVersion",
+            "value": "8.32"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageRelease",
+            "value": "4.1ubuntu1"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageArch",
+            "value": "amd64"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageDescription",
+            "value": "GNU core utilities"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageMaintainer",
+            "value": "Ubuntu Developers"
+        },
+        {
+            "type": "text",
+            "object_relation": "source",
+            "value": "https://www.circl.lu/services/hashlookup"
+        }
+    ]
+}
+
 _TEST_REGISTRY_KEY_OBJECT = {
     "name": "registry-key",
     "meta-category": "file",
@@ -5805,6 +5890,14 @@ def get_event_with_process_object_v2():
     )
     event['Event']['Object'] = [
         process_object
+    ]
+    return event
+
+
+def get_event_with_hashlookup_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_HASHLOOKUP_OBJECT))
     ]
     return event
 

@@ -2220,6 +2220,29 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(artifact.hashes['MD5'], md5)
         self.assertEqual(artifact.x_misp_filename, filename)
 
+    def _check_hashlookup_observable_object(self, misp_object, observed_data):
+        (filename, filesize, known_malicious, md5, sha1, sha256, ssdeep, tlsh,
+         package_name, package_version, package_release, package_arch,
+         package_description, package_maintainer, source) = misp_object.attributes
+        _file = observed_data.objects['0']
+        self.assertEqual(_file.type, 'file')
+        self.assertEqual(_file.name, filename.value)
+        self.assertEqual(_file.size, int(filesize.value))
+        hashes = _file.hashes
+        self.assertEqual(hashes['MD5'], md5.value)
+        self.assertEqual(hashes['SHA-1'], sha1.value)
+        self.assertEqual(hashes['SHA-256'], sha256.value)
+        self.assertEqual(hashes['ssdeep'], ssdeep.value)
+        self.assertEqual(hashes['TLSH'], tlsh.value)
+        self.assertEqual(_file.x_misp_KnownMalicious, known_malicious.value)
+        self.assertEqual(_file.x_misp_PackageName, package_name.value)
+        self.assertEqual(_file.x_misp_PackageVersion, package_version.value)
+        self.assertEqual(_file.x_misp_PackageRelease, package_release.value)
+        self.assertEqual(_file.x_misp_PackageArch, package_arch.value)
+        self.assertEqual(_file.x_misp_PackageDescription, package_description.value)
+        self.assertEqual(_file.x_misp_PackageMaintainer, package_maintainer.value)
+        self.assertEqual(_file.x_misp_source, source.value)
+
     def _check_http_request_observable_object(self, misp_object, observed_data):
         ip_src, ip_dst, host, method, user_agent, uri, url, content = (
             attribute.value for attribute in misp_object.attributes
@@ -3321,6 +3344,26 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         misp_object, observed_data = self._run_observable_from_object_tests(event)
         self._check_process_observable_object(misp_object, observed_data)
 
+    def _test_event_with_hashlookup_indicator_object(self, event):
+        misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
+        self._check_hashlookup_observable_object(misp_object, observed_data)
+        filename, _, _, md5, sha1, sha256, ssdeep, tlsh, *_ = misp_object.attributes
+        self.assertEqual(
+            set(pattern[1:-1].split(' AND ')),
+            {
+                f"file:name = '{filename.value}'",
+                f"file:hashes.MD5 = '{md5.value}'",
+                f"file:hashes.'SHA-1' = '{sha1.value}'",
+                f"file:hashes.'SHA-256' = '{sha256.value}'",
+                f"file:hashes.SSDEEP = '{ssdeep.value}'",
+                f"file:hashes.TLSH = '{tlsh.value}'",
+            }
+        )
+
+    def _test_event_with_hashlookup_observable_object(self, event):
+        misp_object, observed_data = self._run_observable_from_object_tests(event)
+        self._check_hashlookup_observable_object(misp_object, observed_data)
+
     def _test_event_with_registry_key_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
         self._check_registry_key_observable_object(misp_object, observed_data)
@@ -3726,6 +3769,18 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_file_observable_object(self):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_observable_object(event['Event'])
+
+    def test_event_with_hashlookup_indicator_object(self):
+        event = get_event_with_hashlookup_object()
+        self._test_event_with_hashlookup_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_hashlookup_observable_object(self):
+        event = get_event_with_hashlookup_object()
+        self._test_event_with_hashlookup_observable_object(event['Event'])
 
     def test_event_with_http_request_indicator_object(self):
         event = get_event_with_http_request_object()
@@ -4173,6 +4228,18 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_file_observable_object(misp_event)
+
+    def test_event_with_hashlookup_indicator_object(self):
+        event = get_event_with_hashlookup_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_hashlookup_indicator_object(misp_event)
+
+    def test_event_with_hashlookup_observable_object(self):
+        event = get_event_with_hashlookup_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_hashlookup_observable_object(misp_event)
 
     def test_event_with_http_request_indicator_object(self):
         event = get_event_with_http_request_object()

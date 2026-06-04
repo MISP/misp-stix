@@ -2813,6 +2813,31 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(artifact.hashes['MD5'], md5)
         self.assertEqual(artifact.x_misp_filename, filename)
 
+    def _check_hashlookup_observable_object(self, misp_object, observable, object_ref):
+        (filename, filesize, known_malicious, md5, sha1, sha256, ssdeep, tlsh,
+         package_name, package_version, package_release, package_arch,
+         package_description, package_maintainer, source) = misp_object['Attribute']
+        self._assert_multiple_equal(
+            observable.id, object_ref, f"file--{misp_object['uuid']}"
+        )
+        self.assertEqual(observable.type, 'file')
+        self.assertEqual(observable.name, filename['value'])
+        self.assertEqual(observable.size, int(filesize['value']))
+        hashes = observable.hashes
+        self.assertEqual(hashes['MD5'], md5['value'])
+        self.assertEqual(hashes['SHA-1'], sha1['value'])
+        self.assertEqual(hashes['SHA-256'], sha256['value'])
+        self.assertEqual(hashes['SSDEEP'], ssdeep['value'])
+        self.assertEqual(hashes['TLSH'], tlsh['value'])
+        self.assertEqual(observable.x_misp_KnownMalicious, known_malicious['value'])
+        self.assertEqual(observable.x_misp_PackageName, package_name['value'])
+        self.assertEqual(observable.x_misp_PackageVersion, package_version['value'])
+        self.assertEqual(observable.x_misp_PackageRelease, package_release['value'])
+        self.assertEqual(observable.x_misp_PackageArch, package_arch['value'])
+        self.assertEqual(observable.x_misp_PackageDescription, package_description['value'])
+        self.assertEqual(observable.x_misp_PackageMaintainer, package_maintainer['value'])
+        self.assertEqual(observable.x_misp_source, source['value'])
+
     def _check_http_request_observable_object(self, misp_object, observables, object_refs):
         ip_src, ip_dst, host, method, user_agent, uri, url, content = misp_object['Attribute']
         network_traffic, src_address, dst_address, domain_name = observables
@@ -3865,6 +3890,28 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
         self._check_file_observable_object(misp_object, observables, object_refs)
 
+    def _test_event_with_hashlookup_indicator_object(self, event):
+        misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_hashlookup_observable_object(misp_object, observables[0], object_refs[0])
+        filename, _, _, md5, sha1, sha256, ssdeep, tlsh, *_ = misp_object['Attribute']
+        self.assertEqual(
+            set(pattern[1:-1].split(' AND ')),
+            {
+                f"file:name = '{filename['value']}'",
+                f"file:hashes.MD5 = '{md5['value']}'",
+                f"file:hashes.'SHA-1' = '{sha1['value']}'",
+                f"file:hashes.'SHA-256' = '{sha256['value']}'",
+                f"file:hashes.SSDEEP = '{ssdeep['value']}'",
+                f"file:hashes.TLSH = '{tlsh['value']}'",
+            }
+        )
+
+    def _test_event_with_hashlookup_observable_object(self, event):
+        misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_hashlookup_observable_object(misp_object, observables[0], object_refs[0])
+
     def _test_event_with_geolocation_object(self, event):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
@@ -4721,6 +4768,18 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             stix=self.parser.stix_objects[-1]
         )
 
+    def test_event_with_hashlookup_indicator_object(self):
+        event = get_event_with_hashlookup_object()
+        self._test_event_with_hashlookup_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_hashlookup_observable_object(self):
+        event = get_event_with_hashlookup_object()
+        self._test_event_with_hashlookup_observable_object(event['Event'])
+
     def test_event_with_http_request_indicator_object(self):
         event = get_event_with_http_request_object()
         self._test_event_with_http_request_indicator_object(event['Event'])
@@ -5183,6 +5242,18 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_geolocation_object(misp_event)
+
+    def test_event_with_hashlookup_indicator_object(self):
+        event = get_event_with_hashlookup_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_hashlookup_indicator_object(misp_event)
+
+    def test_event_with_hashlookup_observable_object(self):
+        event = get_event_with_hashlookup_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_hashlookup_observable_object(misp_event)
 
     def test_event_with_http_request_indicator_object(self):
         event = get_event_with_http_request_object()
