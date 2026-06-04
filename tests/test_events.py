@@ -1902,6 +1902,41 @@ _TEST_CREDENTIAL_OBJECT = {
     ]
 }
 
+_TEST_DIRECTORY_OBJECT = {
+    "name": "directory",
+    "meta-category": "file",
+    "description": "Directory object describing a directory of files",
+    "uuid": "5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "path",
+            "value": "/var/www/MISP/app/files/scripts/tmp"
+        },
+        {
+            "type": "text",
+            "object_relation": "path-encoding",
+            "value": "UTF-8"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "creation-time",
+            "value": "2021-10-25T16:22:00Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "modification-time",
+            "value": "2022-10-25T16:22:00Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "access-time",
+            "value": "2023-10-25T16:22:00Z"
+        }
+    ]
+}
+
 _TEST_DOMAIN_IP_OBJECT = {
     "name": "domain-ip",
     "meta-category": "network",
@@ -5549,6 +5584,14 @@ def get_event_with_custom_objects():
         dict(_populate_object(_TEST_BANK_ACCOUNT_OBJECT)),
         dict(_populate_object(_TEST_BTC_WALLET_OBJECT)),
         dict(_populate_object(_TEST_REPORT_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_directory_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_DIRECTORY_OBJECT))
     ]
     return event
 

@@ -2094,6 +2094,16 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
                 attribute.value
             )
 
+    def _check_directory_observable_object(self, misp_object, observed_data):
+        path, path_enc, ctime, mtime, atime = misp_object.attributes
+        directory = observed_data.objects['0']
+        self.assertEqual(directory.type, 'directory')
+        self.assertEqual(directory.path, path.value)
+        self.assertEqual(directory.path_enc, path_enc.value)
+        self.assertEqual(directory.created, self._datetime_from_str(ctime.value))
+        self.assertEqual(directory.modified, self._datetime_from_str(mtime.value))
+        self.assertEqual(directory.accessed, self._datetime_from_str(atime.value))
+
     def _check_domain_ip_observable_object(self, misp_object, observed_data):
         _domain, hostname, _ip, port = (
             attribute.value for attribute in misp_object.attributes
@@ -2901,6 +2911,16 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
+    def _test_event_with_directory_indicator_object(self, event):
+        misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
+        self._check_directory_observable_object(misp_object, observed_data)
+        path = misp_object.attributes[0]
+        self.assertEqual(pattern, f"[directory:path = '{path.value}']")
+
+    def _test_event_with_directory_observable_object(self, event):
+        misp_object, observed_data = self._run_observable_from_object_tests(event)
+        self._check_directory_observable_object(misp_object, observed_data)
+
     def _test_event_with_domain_ip_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
         self._check_domain_ip_observable_object(misp_object, observed_data)
@@ -3695,6 +3715,18 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_custom_objects()
         self._test_event_with_custom_objects(event['Event'])
 
+    def test_event_with_directory_indicator_object(self):
+        event = get_event_with_directory_object()
+        self._test_event_with_directory_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_directory_observable_object(self):
+        event = get_event_with_directory_object()
+        self._test_event_with_directory_observable_object(event['Event'])
+
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_indicator_object(event['Event'])
@@ -4156,6 +4188,18 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_objects(misp_event)
+
+    def test_event_with_directory_indicator_object(self):
+        event = get_event_with_directory_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_directory_indicator_object(misp_event)
+
+    def test_event_with_directory_observable_object(self):
+        event = get_event_with_directory_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_directory_observable_object(misp_event)
 
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()

@@ -2632,6 +2632,18 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 attribute['value']
             )
 
+    def _check_directory_observable_object(self, misp_object, observable, object_ref):
+        path, path_enc, ctime, mtime, atime = misp_object['Attribute']
+        self._assert_multiple_equal(
+            observable.id, object_ref, f"directory--{misp_object['uuid']}"
+        )
+        self.assertEqual(observable.type, 'directory')
+        self.assertEqual(observable.path, path['value'])
+        self.assertEqual(observable.path_enc, path_enc['value'])
+        self.assertEqual(observable.ctime, self._datetime_from_str(ctime['value']))
+        self.assertEqual(observable.mtime, self._datetime_from_str(mtime['value']))
+        self.assertEqual(observable.atime, self._datetime_from_str(atime['value']))
+
     def _check_domain_ip_observable_object(self, misp_object, observables, object_refs):
         _domain, hostname, _ip, port = misp_object['Attribute']
         domain_ref, ip_ref = object_refs
@@ -3751,6 +3763,18 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
+    def _test_event_with_directory_indicator_object(self, event):
+        misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_directory_observable_object(misp_object, observables[0], object_refs[0])
+        path = misp_object['Attribute'][0]
+        self.assertEqual(pattern, f"[directory:path = '{path['value']}']")
+
+    def _test_event_with_directory_observable_object(self, event):
+        misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_directory_observable_object(misp_object, observables[0], object_refs[0])
+
     def _test_event_with_domain_ip_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._check_domain_ip_observable_object(misp_object, observables, object_refs)
@@ -4685,6 +4709,18 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_custom_objects()
         self._test_event_with_custom_object(event['Event'])
 
+    def test_event_with_directory_indicator_object(self):
+        event = get_event_with_directory_object()
+        self._test_event_with_directory_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_directory_observable_object(self):
+        event = get_event_with_directory_object()
+        self._test_event_with_directory_observable_object(event['Event'])
+
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_indicator_object(event['Event'])
@@ -5164,6 +5200,18 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_object(misp_event)
+
+    def test_event_with_directory_indicator_object(self):
+        event = get_event_with_directory_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_directory_indicator_object(misp_event)
+
+    def test_event_with_directory_observable_object(self):
+        event = get_event_with_directory_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_directory_observable_object(misp_event)
 
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
