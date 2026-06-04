@@ -3407,6 +3407,27 @@ class InternalSTIX2ObservedDataConverter(
             observed_data, 'gitlab-user', 'v21'
         )
 
+    def _object_from_hashlookup_observable(
+            self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('hashlookup', observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(
+            observed_data
+        )
+        attributes = self._observables._parse_hashlookup_observable(
+            observable, observed_data.id
+        )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, observed_data)
+
+    def _object_from_hashlookup_observable_v20(
+            self, observed_data: ObservedData_v20):
+        self._object_from_hashlookup_observable(observed_data, 'v20')
+
+    def _object_from_hashlookup_observable_v21(
+            self, observed_data: ObservedData_v21):
+        self._object_from_hashlookup_observable(observed_data, 'v21')
+
     def _object_from_http_request_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('http-request', observed_data)

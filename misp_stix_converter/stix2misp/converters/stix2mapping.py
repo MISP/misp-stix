@@ -1048,6 +1048,21 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __format_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'format'}
     )
+    __hashlookup_md5_attribute = Mapping(
+        **{'type': 'md5', 'object_relation': 'MD5'}
+    )
+    __hashlookup_sha1_attribute = Mapping(
+        **{'type': 'sha1', 'object_relation': 'SHA-1'}
+    )
+    __hashlookup_sha256_attribute = Mapping(
+        **{'type': 'sha256', 'object_relation': 'SHA-256'}
+    )
+    __hashlookup_ssdeep_attribute = Mapping(
+        **{'type': 'ssdeep', 'object_relation': 'SSDEEP'}
+    )
+    __hashlookup_tlsh_attribute = Mapping(
+        **{'type': 'tlsh', 'object_relation': 'TLSH'}
+    )
     __host_attribute = Mapping(
         **{'type': 'hostname', 'object_relation': 'host'}
     )
@@ -1186,6 +1201,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'geolocation': '_parse_location_object',
             'github-user': '_object_from_github_user',
             'gitlab-user': '_object_from_gitlab_user',
+            'hashlookup': '_object_from_hashlookup',
             'http-request': '_object_from_http_request',
             'identity': '_parse_identity_object',
             'image': '_object_from_image',
@@ -1336,6 +1352,30 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_pattern_in_file=__pattern_in_file_attribute,
         x_misp_state=STIX2Mapping.state_attribute(),
         x_misp_text=STIX2Mapping.text_attribute()
+    )
+    __hashlookup_hashes_mapping = Mapping(
+        **{
+            'MD5': __hashlookup_md5_attribute,
+            'SHA-1': __hashlookup_sha1_attribute,
+            'SHA-256': __hashlookup_sha256_attribute,
+            'SSDEEP': __hashlookup_ssdeep_attribute,
+            'ssdeep': __hashlookup_ssdeep_attribute,
+            'TLSH': __hashlookup_tlsh_attribute
+        }
+    )
+    __hashlookup_object_mapping = Mapping(
+        **{
+            'name': {'type': 'filename', 'object_relation': 'FileName'},
+            'size': {'type': 'size-in-bytes', 'object_relation': 'FileSize'},
+            'x_misp_KnownMalicious': {'type': 'text', 'object_relation': 'KnownMalicious'},
+            'x_misp_PackageArch': {'type': 'text', 'object_relation': 'PackageArch'},
+            'x_misp_PackageDescription': {'type': 'text', 'object_relation': 'PackageDescription'},
+            'x_misp_PackageMaintainer': {'type': 'text', 'object_relation': 'PackageMaintainer'},
+            'x_misp_PackageName': {'type': 'text', 'object_relation': 'PackageName'},
+            'x_misp_PackageRelease': {'type': 'text', 'object_relation': 'PackageRelease'},
+            'x_misp_PackageVersion': {'type': 'text', 'object_relation': 'PackageVersion'},
+            'x_misp_source': {'type': 'text', 'object_relation': 'source'}
+        }
     )
     __github_user_object_mapping = Mapping(
         user_id=__id_attribute,
@@ -1727,6 +1767,34 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def github_user_object_mapping(cls) -> dict:
         return cls.__github_user_object_mapping
+
+    @classmethod
+    def hashlookup_hashes_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__hashlookup_hashes_mapping.get(field)
+
+    @classmethod
+    def hashlookup_md5_attribute(cls) -> dict:
+        return cls.__hashlookup_md5_attribute
+
+    @classmethod
+    def hashlookup_object_mapping(cls) -> dict:
+        return cls.__hashlookup_object_mapping
+
+    @classmethod
+    def hashlookup_sha1_attribute(cls) -> dict:
+        return cls.__hashlookup_sha1_attribute
+
+    @classmethod
+    def hashlookup_sha256_attribute(cls) -> dict:
+        return cls.__hashlookup_sha256_attribute
+
+    @classmethod
+    def hashlookup_ssdeep_attribute(cls) -> dict:
+        return cls.__hashlookup_ssdeep_attribute
+
+    @classmethod
+    def hashlookup_tlsh_attribute(cls) -> dict:
+        return cls.__hashlookup_tlsh_attribute
 
     @classmethod
     def gitlab_user_object_mapping(cls) -> dict:

@@ -1454,6 +1454,16 @@ class InternalSTIX2IndicatorMapping(
             **InternalSTIX2Mapping.file_object_mapping()
         }
     )
+    __hashlookup_pattern_mapping = Mapping(
+        **{
+            'hashes.MD5': InternalSTIX2Mapping.hashlookup_md5_attribute(),
+            "hashes.'SHA-1'": InternalSTIX2Mapping.hashlookup_sha1_attribute(),
+            "hashes.'SHA-256'": InternalSTIX2Mapping.hashlookup_sha256_attribute(),
+            'hashes.SSDEEP': InternalSTIX2Mapping.hashlookup_ssdeep_attribute(),
+            'hashes.TLSH': InternalSTIX2Mapping.hashlookup_tlsh_attribute(),
+            **InternalSTIX2Mapping.hashlookup_object_mapping()
+        }
+    )
     __http_ext = "extensions.'http-request-ext'"
     __header_ext = f'{__http_ext}.request_header'
     __http_request_pattern_mapping = Mapping(
@@ -1579,6 +1589,10 @@ class InternalSTIX2IndicatorMapping(
     @classmethod
     def github_user_pattern_mapping(cls, field: str) -> dict | None:
         return cls.github_user_object_mapping().get(field)
+
+    @classmethod
+    def hashlookup_pattern_mapping(cls, field: str) -> dict | None:
+        return cls.__hashlookup_pattern_mapping.get(field)
 
     @classmethod
     def gitlab_user_pattern_mapping(cls, field: str) -> dict | None:
@@ -2072,6 +2086,19 @@ class InternalSTIX2IndicatorConverter(
 
     def _object_from_gitlab_user_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_indicator(indicator, 'gitlab-user')
+
+    def _object_from_hashlookup_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('hashlookup', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            print(feature)
+            attributes = self._handle_object_attributes(
+                value, self._mapping.hashlookup_pattern_mapping(feature),
+                indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_http_request_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('http-request', indicator)

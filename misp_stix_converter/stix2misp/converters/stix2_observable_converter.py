@@ -1236,6 +1236,19 @@ class InternalSTIX2ObservableConverter(
                     mapping, getattr(observable, field), object_id
                 )
 
+    def _parse_hashlookup_observable(
+            self, observable: _FILE_TYPING, object_id: str) -> Iterator[dict]:
+        if hasattr(observable, 'hashes'):
+            for hash_type, value in observable.hashes.items():
+                yield self._handle_hash_attribute(
+                    hash_type, value, object_id, mapping='hashlookup'
+                )
+        for field, mapping in self._mapping.hashlookup_object_mapping().items():
+            if hasattr(observable, field):
+                yield from self._handle_object_attributes(
+                    mapping, getattr(observable, field), object_id
+                )
+
     def _parse_generic_observable_with_data(
             self, observable: _USER_ACCOUNT_TYPING,
             name: str, observed_data_id: str) -> Iterator[dict]:
