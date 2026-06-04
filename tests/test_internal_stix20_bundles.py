@@ -6642,6 +6642,76 @@ _PROCESS_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e39776a-b284-40b3-8079-22fea964451a"
     }
 ]
+_HASHLOOKUP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_KnownMalicious = 'hashlookup-known-malicious-source' AND file:x_misp_PackageName = 'coreutils' AND file:x_misp_PackageVersion = '8.32' AND file:x_misp_PackageRelease = '4.1ubuntu1' AND file:x_misp_PackageArch = 'amd64' AND file:x_misp_PackageDescription = 'GNU core utilities' AND file:x_misp_PackageMaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="hashlookup"', 'misp:meta-category="file"']
+}
+_HASHLOOKUP_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "name": "oui",
+                "size": 35,
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802",
+                    "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                    "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                    "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
+                    "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+                },
+                "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
+                "x_misp_PackageName": "coreutils",
+                "x_misp_PackageVersion": "8.32",
+                "x_misp_PackageRelease": "4.1ubuntu1",
+                "x_misp_PackageArch": "amd64",
+                "x_misp_PackageDescription": "GNU core utilities",
+                "x_misp_PackageMaintainer": "Ubuntu Developers",
+                "x_misp_source": "https://www.circl.lu/services/hashlookup"
+            }
+        },
+        "labels": ['misp:name="hashlookup"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="hashlookup"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a8b9c0d1-2e3f-4a5b-8c6d-7e8f9a0b1c2d",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "target_ref": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f"
+    }
+]
 _REGISTRY_KEY_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
@@ -8322,6 +8392,14 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_process_observable_object(cls):
         return cls.__assemble_bundle(*_PROCESS_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_hashlookup_indicator_object(cls):
+        return cls.__assemble_bundle(_HASHLOOKUP_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_hashlookup_observable_object(cls):
+        return cls.__assemble_bundle(*_HASHLOOKUP_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_registry_key_indicator_object(cls):
