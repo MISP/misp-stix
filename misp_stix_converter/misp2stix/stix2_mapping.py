@@ -348,6 +348,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'course-of-action': '_parse_course_of_action_object',
             'cpe-asset': '_parse_cpe_asset_object',
             'credential': '_parse_credential_object',
+            'directory': '_parse_directory_object',
             'domain-ip': '_parse_domain_ip_object',
             'domain|ip': '_parse_domain_ip_object',
             'email': '_parse_email_object',
@@ -434,6 +435,12 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __credential_single_fields = (
         'username',
+    )
+    __directory_object_mapping = Mapping(
+        **{
+            'path': 'path',
+            'path-encoding': 'path_enc'
+        }
     )
     __domain_family_enum_list = (
         "PF_INET",
@@ -1030,6 +1037,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def credential_single_fields(cls) -> tuple:
         return cls.__credential_single_fields
+
+    @classmethod
+    def directory_object_mapping(cls) -> dict:
+        return cls.__directory_object_mapping
 
     @classmethod
     def domain_family_enum_list(cls) -> tuple:

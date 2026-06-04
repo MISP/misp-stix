@@ -809,6 +809,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
+    def _parse_directory_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        directory_args = {
+            'id': self._parse_stix_object_id(
+                'object', 'directory', misp_object
+            ),
+            **self._parse_directory_args(attributes)
+        }
+        return self._handle_object_observable(
+            misp_object, [Directory(**directory_args)]
+        )
+
     def _parse_directory_ref(
             self, file_args: dict, objects: list, value: str, uuid: str):
         directory_id = self._parse_stix_object_id(

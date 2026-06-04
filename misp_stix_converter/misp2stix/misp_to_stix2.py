@@ -1858,6 +1858,42 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(misp_object, *stix_objects)
 
+    def _parse_directory_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_directory_object_observable(misp_object)
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_directory_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_directory_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        attributes = self._extract_indicator_object_attributes(
+            misp_object['Attribute']
+        )
+        pattern = []
+        for key, feature in self._mapping.directory_object_mapping().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"directory:{feature} = '{attributes.pop(key)}'"
+                )
+        for key, feature in self._mapping.file_time_fields().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"directory:{feature} = '{attributes.pop(key)}'"
+                )
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(
+                    attributes, 'directory'
+                )
+            )
+        return pattern
+
     @staticmethod
     def _parse_custom_attachment(attachment: str | tuple) -> dict:
         if isinstance(attachment, tuple):
@@ -4282,6 +4318,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._handle_observable_multiple_properties(attributes)
             )
         return credential_args
+
+    def _parse_directory_args(self, attributes: dict) -> dict:
+        directory_args = {}
+        for key, feature in self._mapping.directory_object_mapping().items():
+            if attributes.get(key):
+                directory_args[feature] = self._select_single_feature(
+                    attributes, key
+                )
+        for key, feature in self._mapping.file_time_fields().items():
+            if attributes.get(key):
+                directory_args[feature] = self._datetime_from_str(
+                    self._select_single_feature(attributes, key)
+                )
+        if attributes:
+            directory_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        return directory_args
 
     def _parse_domain_args(self, attributes: dict) -> dict:
         domain_args = {}

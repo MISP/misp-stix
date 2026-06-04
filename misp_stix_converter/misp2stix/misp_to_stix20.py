@@ -789,6 +789,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': UserAccount(**credential_args)}
         return self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_directory_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        directory_args = self._parse_directory_args(attributes)
+        return self._handle_object_observable(
+            misp_object, {'0': Directory(**directory_args)}
+        )
+
     def _parse_domain_ip_object_custom(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes(
