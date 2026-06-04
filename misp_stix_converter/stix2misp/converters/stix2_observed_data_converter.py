@@ -3167,6 +3167,18 @@ class InternalSTIX2ObservedDataConverter(
             observed_data, 'credential', 'v21'
         )
 
+    def _object_from_directory_observable_v20(
+            self, observed_data: ObservedData_v20):
+        self._object_from_generic_observable(
+            observed_data, 'directory', 'v20'
+        )
+
+    def _object_from_directory_observable_v21(
+            self, observed_data: ObservedData_v21):
+        self._object_from_generic_observable(
+            observed_data, 'directory', 'v21'
+        )
+
     def _object_from_domain_ip_observable_v20(
             self, observed_data: ObservedData_v20):
         misp_object = self._create_misp_object('domain-ip', observed_data)

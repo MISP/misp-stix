@@ -1901,6 +1901,9 @@ class InternalSTIX2IndicatorConverter(
     def _object_from_credential_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'credential')
 
+    def _object_from_directory_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_standard_pattern(indicator, 'directory')
+
     def _object_from_domain_ip_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('domain-ip', indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
@@ -2091,7 +2094,6 @@ class InternalSTIX2IndicatorConverter(
         misp_object = self._create_misp_object('hashlookup', indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
-            print(feature)
             attributes = self._handle_object_attributes(
                 value, self._mapping.hashlookup_pattern_mapping(feature),
                 indicator.id

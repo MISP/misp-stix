@@ -1193,6 +1193,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'course-of-action': '_parse_course_of_action_object',
             'cpe-asset': '_object_from_cpe_asset',
             'credential': '_object_from_credential',
+            'directory': '_object_from_directory',
             'domain-ip': '_object_from_domain_ip',
             'email': '_object_from_email',
             'employee': '_parse_employee_object',
