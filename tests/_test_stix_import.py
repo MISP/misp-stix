@@ -3489,6 +3489,54 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         feature = 'SSDEEP' if 'SSDEEP' in section.hashes else 'ssdeep'
         self.assertEqual(ssdeep.value, section.hashes[feature])
 
+    _HASHLOOKUP_FIELDS = (
+        ('filename', 'FileName'), ('size-in-bytes', 'FileSize'),
+        ('md5', 'MD5'), ('sha1', 'SHA-1'), ('sha256', 'SHA-256'),
+        ('ssdeep', 'SSDEEP'), ('tlsh', 'TLSH'),
+        ('text', 'KnownMalicious'), ('text', 'PackageName'),
+        ('text', 'PackageVersion'), ('text', 'PackageRelease'),
+        ('text', 'PackageArch'), ('text', 'PackageDescription'),
+        ('text', 'PackageMaintainer'), ('text', 'source')
+    )
+
+    def _check_hashlookup_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), len(pattern))
+        for attribute, (attribute_type, relation), pattern_part in zip(
+                attributes, self._HASHLOOKUP_FIELDS, pattern):
+            self.assertEqual(attribute.type, attribute_type)
+            self.assertEqual(attribute.object_relation, relation)
+            self.assertEqual(
+                str(attribute.value), self._get_pattern_value(pattern_part)
+            )
+
+    def _check_hashlookup_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), len(self._HASHLOOKUP_FIELDS))
+        hashes = observable.hashes
+        stix_values = {
+            'FileName': observable.name,
+            'FileSize': observable.size,
+            'MD5': hashes['MD5'],
+            'SHA-1': hashes['SHA-1'],
+            'SHA-256': hashes['SHA-256'],
+            'SSDEEP': hashes.get('SSDEEP', hashes.get('ssdeep')),
+            'TLSH': hashes['TLSH'],
+            'KnownMalicious': observable.x_misp_KnownMalicious,
+            'PackageName': observable.x_misp_PackageName,
+            'PackageVersion': observable.x_misp_PackageVersion,
+            'PackageRelease': observable.x_misp_PackageRelease,
+            'PackageArch': observable.x_misp_PackageArch,
+            'PackageDescription': observable.x_misp_PackageDescription,
+            'PackageMaintainer': observable.x_misp_PackageMaintainer,
+            'source': observable.x_misp_source
+        }
+        attributes_by_relation = {
+            attribute.object_relation: attribute for attribute in attributes
+        }
+        for attribute_type, relation in self._HASHLOOKUP_FIELDS:
+            attribute = attributes_by_relation[relation]
+            self.assertEqual(attribute.type, attribute_type)
+            self.assertEqual(str(attribute.value), str(stix_values[relation]))
+
     def _check_file_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 9)
         self.assertTrue(all(attribute.to_ids for attribute in attributes))
