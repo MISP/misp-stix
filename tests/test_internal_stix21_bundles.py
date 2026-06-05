@@ -8414,6 +8414,73 @@ _PROCESS_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e39776a-b284-40b3-8079-22fea964451a"
     }
 ]
+_DIRECTORY_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/tmp' AND directory:path_enc = 'UTF-8' AND directory:ctime = '2021-10-25T16:22:00Z' AND directory:mtime = '2022-10-25T16:22:00Z' AND directory:atime = '2023-10-25T16:22:00Z']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="directory"', 'misp:meta-category="file"']
+}
+_DIRECTORY_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": ["directory--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"],
+        "labels": ['misp:name="directory"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "directory",
+        "spec_version": "2.1",
+        "id": "directory--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "path": "/var/www/MISP/app/files/scripts/tmp",
+        "path_enc": "UTF-8",
+        "ctime": "2021-10-25T16:22:00Z",
+        "mtime": "2022-10-25T16:22:00Z",
+        "atime": "2023-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/tmp']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="directory"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--6f9b3c2d-4e5f-4a7b-9c8d-1e2f3a4b5c6d",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "target_ref": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
+    }
+]
 _HASHLOOKUP_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -10379,6 +10446,14 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_process_observable_object(cls):
         return cls.__assemble_bundle(*_PROCESS_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_directory_indicator_object(cls):
+        return cls.__assemble_bundle(_DIRECTORY_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_directory_observable_object(cls):
+        return cls.__assemble_bundle(*_DIRECTORY_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_hashlookup_indicator_object(cls):

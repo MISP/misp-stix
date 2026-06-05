@@ -3489,6 +3489,70 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         feature = 'SSDEEP' if 'SSDEEP' in section.hashes else 'ssdeep'
         self.assertEqual(ssdeep.value, section.hashes[feature])
 
+    def _check_directory_indicator_object(self, attributes, indicator):
+        path, path_enc, ctime, mtime, atime = attributes
+        _path, _path_enc, _ctime, _mtime, _atime = (
+            self._get_pattern_value(part)
+            for part in indicator.pattern[1:-1].split(' AND ')
+        )
+        self.assertTrue(all(attribute.to_ids for attribute in attributes))
+        self.assertEqual(path.type, 'text')
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, _path)
+        self._check_object_attribute_uuid(path, indicator.id, _path)
+        self.assertEqual(path_enc.type, 'text')
+        self.assertEqual(path_enc.object_relation, 'path-encoding')
+        self.assertEqual(path_enc.value, _path_enc)
+        self._check_object_attribute_uuid(path_enc, indicator.id, _path_enc)
+        self.assertEqual(ctime.type, 'datetime')
+        self.assertEqual(ctime.object_relation, 'creation-time')
+        self.assertEqual(ctime.value, self._datetime_from_str(_ctime))
+        self._check_object_attribute_uuid(ctime, indicator.id, _ctime)
+        self.assertEqual(mtime.type, 'datetime')
+        self.assertEqual(mtime.object_relation, 'modification-time')
+        self.assertEqual(mtime.value, self._datetime_from_str(_mtime))
+        self._check_object_attribute_uuid(mtime, indicator.id, _mtime)
+        self.assertEqual(atime.type, 'datetime')
+        self.assertEqual(atime.object_relation, 'access-time')
+        self.assertEqual(atime.value, self._datetime_from_str(_atime))
+        self._check_object_attribute_uuid(atime, indicator.id, _atime)
+
+    def _check_directory_observable_object(
+            self, attributes, observed_data, observable, indicator):
+        atime, ctime, mtime, path, path_enc = attributes
+        object_id = observed_data.id
+        self.assertEqual(atime.type, 'datetime')
+        self.assertEqual(atime.object_relation, 'access-time')
+        self.assertEqual(
+            atime.value, observable.get('atime', observable.get('accessed'))
+        )
+        self.assertFalse(atime.to_ids)
+        self._check_object_attribute_uuid(atime, object_id)
+        self.assertEqual(ctime.type, 'datetime')
+        self.assertEqual(ctime.object_relation, 'creation-time')
+        self.assertEqual(
+            ctime.value, observable.get('ctime', observable.get('created'))
+        )
+        self.assertFalse(ctime.to_ids)
+        self._check_object_attribute_uuid(ctime, object_id)
+        self.assertEqual(mtime.type, 'datetime')
+        self.assertEqual(mtime.object_relation, 'modification-time')
+        self.assertEqual(
+            mtime.value, observable.get('mtime', observable.get('modified'))
+        )
+        self.assertFalse(mtime.to_ids)
+        self._check_object_attribute_uuid(mtime, object_id)
+        self.assertEqual(path.type, 'text')
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, observable.path)
+        self.assertTrue(path.to_ids)
+        self._check_object_attribute_uuid(path, f'{indicator.id} - {object_id}')
+        self.assertEqual(path_enc.type, 'text')
+        self.assertEqual(path_enc.object_relation, 'path-encoding')
+        self.assertEqual(path_enc.value, observable.path_enc)
+        self.assertFalse(path_enc.to_ids)
+        self._check_object_attribute_uuid(path_enc, object_id)
+
     _HASHLOOKUP_FIELDS = (
         ('filename', 'FileName'), ('size-in-bytes', 'FileSize'),
         ('md5', 'MD5'), ('sha1', 'SHA-1'), ('sha256', 'SHA-256'),
