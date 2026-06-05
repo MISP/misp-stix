@@ -3597,6 +3597,31 @@ _TEST_REGISTRY_KEY_OBJECT = {
     ]
 }
 
+_TEST_REGISTRY_KEY_VALUE_OBJECT = {
+    "name": "registry-key-value",
+    "meta-category": "file",
+    "description": "Registry key value object",
+    "uuid": "8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "RegistryName"
+        },
+        {
+            "type": "text",
+            "object_relation": "data",
+            "value": "%DATA%\\qwertyuiop"
+        },
+        {
+            "type": "text",
+            "object_relation": "data-type",
+            "value": "REG_SZ"
+        }
+    ]
+}
+
 _TEST_REPORT_OBJECT = {
     "uuid": "3e76898a-fcb1-485b-ac24-d450fe8c54bc",
     "name": "report",
@@ -5949,6 +5974,14 @@ def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         dict(_populate_object(_TEST_REGISTRY_KEY_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_registry_key_value_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_REGISTRY_KEY_VALUE_OBJECT))
     ]
     return event
 

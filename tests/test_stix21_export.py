@@ -2644,6 +2644,19 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(observable.mtime, self._datetime_from_str(mtime['value']))
         self.assertEqual(observable.atime, self._datetime_from_str(atime['value']))
 
+    def _check_registry_key_value_observable_object(
+            self, misp_object, observable, object_ref):
+        name, data, data_type = misp_object['Attribute']
+        self._assert_multiple_equal(
+            observable.id, object_ref,
+            f"windows-registry-key--{misp_object['uuid']}"
+        )
+        self.assertEqual(observable.type, 'windows-registry-key')
+        registry_value = observable['values'][0]
+        self.assertEqual(registry_value.name, name['value'])
+        self.assertEqual(registry_value.data, data['value'])
+        self.assertEqual(registry_value.data_type, data_type['value'])
+
     def _check_domain_ip_observable_object(self, misp_object, observables, object_refs):
         _domain, hostname, _ip, port = misp_object['Attribute']
         domain_ref, ip_ref = object_refs
@@ -3775,6 +3788,25 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
         self._check_directory_observable_object(misp_object, observables[0], object_refs[0])
 
+    def _test_event_with_registry_key_value_indicator_object(self, event):
+        misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_registry_key_value_observable_object(
+            misp_object, observables[0], object_refs[0]
+        )
+        name = misp_object['Attribute'][0]
+        self.assertEqual(
+            pattern,
+            f"[windows-registry-key:values[0].name = '{name['value']}']"
+        )
+
+    def _test_event_with_registry_key_value_observable_object(self, event):
+        misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_registry_key_value_observable_object(
+            misp_object, observables[0], object_refs[0]
+        )
+
     def _test_event_with_domain_ip_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._check_domain_ip_observable_object(misp_object, observables, object_refs)
@@ -4721,6 +4753,18 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_directory_object()
         self._test_event_with_directory_observable_object(event['Event'])
 
+    def test_event_with_registry_key_value_indicator_object(self):
+        event = get_event_with_registry_key_value_object()
+        self._test_event_with_registry_key_value_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_registry_key_value_observable_object(self):
+        event = get_event_with_registry_key_value_object()
+        self._test_event_with_registry_key_value_observable_object(event['Event'])
+
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_indicator_object(event['Event'])
@@ -5212,6 +5256,18 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_directory_observable_object(misp_event)
+
+    def test_event_with_registry_key_value_indicator_object(self):
+        event = get_event_with_registry_key_value_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_value_indicator_object(misp_event)
+
+    def test_event_with_registry_key_value_observable_object(self):
+        event = get_event_with_registry_key_value_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_value_observable_object(misp_event)
 
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
