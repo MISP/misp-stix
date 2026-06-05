@@ -1482,6 +1482,72 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         registry_key = WindowsRegistryKey(**registry_key_args)
         return self._handle_object_observable(misp_object, [registry_key])
 
+    def _parse_registry_key_value_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_registry_key_value_object_observable(
+            misp_object
+        )
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_registry_key_value_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_registry_key_value_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        values_args = {
+            feature: attributes.pop(key)
+            for key, feature in self._mapping.registry_key_mapping().items()
+            if key in attributes
+        }
+        if attributes.get('data'):
+            values_args['data'] = attributes.pop('data')
+        if attributes:
+            values_args.update(self._handle_observable_properties(attributes))
+        registry_key_args = {
+            'values': [values_args], 'id': self._parse_stix_object_id(
+                'object', 'windows-registry-key', misp_object
+            )
+        }
+        registry_key = WindowsRegistryKey(**registry_key_args)
+        return self._handle_object_observable(misp_object, [registry_key])
+
+    def _parse_registry_key_value_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        prefix = 'windows-registry-key'
+        values_prefix = f'{prefix}:values[0]'
+        attributes = self._extract_indicator_object_attributes(
+            misp_object['Attribute']
+        )
+        pattern = []
+        if attributes.get('data'):
+            data = self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(
+                    attributes.pop('data').strip("'").strip('"')
+                )
+            )
+            pattern.append(f"{values_prefix}.data = '{data}'")
+        attributes = {
+            key: self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(value)
+            )
+            for key, value in attributes.items()
+        }
+        for key, feature in self._mapping.registry_key_mapping().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"{values_prefix}.{feature} = '{attributes.pop(key)}'"
+                )
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_properties(attributes, prefix)
+            )
+        return pattern
+
     @staticmethod
     def _parse_regkey_key_values_observable(attributes: dict) -> dict:
         registry_key_args = {}
