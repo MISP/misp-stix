@@ -3499,17 +3499,21 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         ('text', 'PackageMaintainer'), ('text', 'source')
     )
 
-    def _check_hashlookup_indicator_object(self, attributes, pattern):
+    def _check_hashlookup_indicator_object(self, attributes, indicator):
+        pattern = indicator.pattern[1:-1].split(' AND ')
         self.assertEqual(len(attributes), len(pattern))
         for attribute, (attribute_type, relation), pattern_part in zip(
                 attributes, self._HASHLOOKUP_FIELDS, pattern):
+            value = self._get_pattern_value(pattern_part)
             self.assertEqual(attribute.type, attribute_type)
             self.assertEqual(attribute.object_relation, relation)
-            self.assertEqual(
-                str(attribute.value), self._get_pattern_value(pattern_part)
-            )
+            self.assertEqual(str(attribute.value), value)
+            self.assertTrue(attribute.to_ids)
+            self._check_object_attribute_uuid(attribute, indicator.id, value)
 
-    def _check_hashlookup_observable_object(self, attributes, observable):
+    def _check_hashlookup_observable_object(
+            self, attributes, observed_data, observable, indicator):
+        object_id = observed_data.id
         self.assertEqual(len(attributes), len(self._HASHLOOKUP_FIELDS))
         hashes = observable.hashes
         stix_values = {
@@ -3536,6 +3540,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             attribute = attributes_by_relation[relation]
             self.assertEqual(attribute.type, attribute_type)
             self.assertEqual(str(attribute.value), str(stix_values[relation]))
+            if relation in ('FileName', 'MD5'):
+                self.assertTrue(attribute.to_ids)
+                self._check_object_attribute_uuid(
+                    attribute, f'{indicator.id} - {object_id}'
+                )
+            else:
+                self.assertFalse(attribute.to_ids)
+                self._check_object_attribute_uuid(attribute, object_id)
 
     def _check_file_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 9)

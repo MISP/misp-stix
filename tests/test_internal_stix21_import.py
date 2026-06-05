@@ -2906,14 +2906,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, indicator = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        pattern = self._check_indicator_object(misp_object, indicator)
-        self._check_hashlookup_indicator_object(
-            misp_object.attributes, pattern[1:-1].split(' AND ')
-        )
+        self._check_indicator_object(misp_object, indicator)
+        self._check_hashlookup_indicator_object(misp_object.attributes, indicator)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), indicator=indicator
         )
-        self.assertFalse(True)
 
     def test_stix21_bundle_with_hashlookup_observable_object(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_hashlookup_observable_object()
@@ -2923,7 +2920,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, observed_data, file_object, indicator, relationship = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_observed_data_object(misp_object, observed_data)
-        self._check_hashlookup_observable_object(misp_object.attributes, file_object)
+        self._check_hashlookup_observable_object(
+            misp_object.attributes, observed_data, file_object, indicator
+        )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
             observed_data=[observed_data, file_object, indicator, relationship]
