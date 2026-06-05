@@ -1858,6 +1858,48 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(misp_object, *stix_objects)
 
+    def _parse_artifact_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_artifact_object_observable(misp_object)
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_artifact_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_artifact_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        attributes = self._extract_indicator_object_attributes(
+            misp_object['Attribute']
+        )
+        pattern = []
+        for hash_type in self._mapping.artifact_hash_types():
+            if attributes.get(hash_type):
+                try:
+                    pattern.append(
+                        self._create_hash_pattern(
+                            hash_type, attributes.pop(hash_type),
+                            prefix='artifact:hashes'
+                        )
+                    )
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error(
+                        hash_type, misp_object
+                    )
+        for key, feature in self._mapping.artifact_object_mapping().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"artifact:{feature} = '{attributes.pop(key)}'"
+                )
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(attributes, 'artifact')
+            )
+        return pattern
+
     def _parse_directory_object(self, misp_object: MISPObject | dict):
         observed_data = self._parse_directory_object_observable(misp_object)
         stix_objects = [observed_data]
@@ -4318,6 +4360,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._handle_observable_multiple_properties(attributes)
             )
         return credential_args
+
+    def _parse_artifact_args(self, attributes: dict) -> dict:
+        artifact_args = defaultdict(dict)
+        for hash_type in self._mapping.artifact_hash_types():
+            if attributes.get(hash_type):
+                artifact_args['hashes'][hash_type] = self._select_single_feature(
+                    attributes, hash_type
+                )
+        if attributes.get('payload_bin'):
+            payload = self._select_single_feature(attributes, 'payload_bin')
+            if isinstance(payload, tuple):
+                payload = payload[1]
+            if not isinstance(payload, str):
+                payload = b64encode(payload.getvalue()).decode()
+            artifact_args['payload_bin'] = payload
+        for key, feature in self._mapping.artifact_object_mapping().items():
+            if attributes.get(key):
+                artifact_args[feature] = self._select_single_feature(
+                    attributes, key
+                )
+        return artifact_args
 
     def _parse_directory_args(self, attributes: dict) -> dict:
         directory_args = {}

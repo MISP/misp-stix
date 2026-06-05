@@ -343,6 +343,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     __objects_mapping = Mapping(
         **{
             'android-app': '_parse_android_app_object',
+            'artifact': '_parse_artifact_object',
             'asn': '_parse_asn_object',
             'attack-pattern': '_parse_attack_pattern_object',
             'course-of-action': '_parse_course_of_action_object',
@@ -435,6 +436,16 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __credential_single_fields = (
         'username',
+    )
+    __artifact_hash_types = (
+        'md5', 'sha1', 'sha256', 'sha3-256', 'sha3-512', 'sha512',
+        'ssdeep', 'tlsh'
+    )
+    __artifact_object_mapping = Mapping(
+        **{
+            'mime_type': 'mime_type',
+            'url': 'url'
+        }
     )
     __directory_object_mapping = Mapping(
         **{
@@ -1037,6 +1048,14 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def credential_single_fields(cls) -> tuple:
         return cls.__credential_single_fields
+
+    @classmethod
+    def artifact_hash_types(cls) -> tuple:
+        return cls.__artifact_hash_types
+
+    @classmethod
+    def artifact_object_mapping(cls) -> dict:
+        return cls.__artifact_object_mapping
 
     @classmethod
     def directory_object_mapping(cls) -> dict:

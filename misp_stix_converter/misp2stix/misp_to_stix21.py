@@ -809,6 +809,28 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
+    def _parse_artifact_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'], with_data=('payload_bin',)
+        )
+        artifact_args = {
+            'id': self._parse_stix_object_id('object', 'artifact', misp_object),
+            **self._parse_artifact_args(attributes)
+        }
+        for feature in ('encryption_algorithm', 'decryption_key'):
+            if attributes.get(feature):
+                artifact_args[feature] = self._select_single_feature(
+                    attributes, feature
+                )
+        if attributes:
+            artifact_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        return self._handle_object_observable(
+            misp_object, [Artifact(**artifact_args)]
+        )
+
     def _parse_directory_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_object_attributes(misp_object['Attribute'])

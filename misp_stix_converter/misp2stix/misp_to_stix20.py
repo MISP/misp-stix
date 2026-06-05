@@ -789,6 +789,22 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': UserAccount(**credential_args)}
         return self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_artifact_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'], with_data=('payload_bin',)
+        )
+        artifact_args = self._parse_artifact_args(attributes)
+        # STIX 2.0 Artifact has no encryption_algorithm/decryption_key
+        # properties, so those relations fall through to x_misp_* fields.
+        if attributes:
+            artifact_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        return self._handle_object_observable(
+            misp_object, {'0': Artifact(**artifact_args)}
+        )
+
     def _parse_directory_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_object_attributes(misp_object['Attribute'])
