@@ -2632,6 +2632,79 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 attribute['value']
             )
 
+    def _check_artifact_url_observable_object(
+            self, misp_object, observable, object_ref):
+        md5, sha256, url, mime_type = misp_object['Attribute']
+        self._assert_multiple_equal(
+            observable.id, object_ref, f"artifact--{misp_object['uuid']}"
+        )
+        self.assertEqual(observable.type, 'artifact')
+        self.assertEqual(observable.hashes['MD5'], md5['value'])
+        self.assertEqual(observable.hashes['SHA-256'], sha256['value'])
+        self.assertEqual(observable.url, url['value'])
+        self.assertEqual(observable.mime_type, mime_type['value'])
+
+    def _test_event_with_artifact_url_indicator_object(self, event):
+        misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_artifact_url_observable_object(
+            misp_object, observables[0], object_refs[0]
+        )
+        md5, sha256, url, _mime_type = misp_object['Attribute']
+        md5_p, sha256_p, url_p = pattern[1:-1].split(' AND ')
+        self.assertEqual(md5_p, f"artifact:hashes.MD5 = '{md5['value']}'")
+        self.assertEqual(
+            sha256_p, f"artifact:hashes.'SHA-256' = '{sha256['value']}'"
+        )
+        self.assertEqual(url_p, f"artifact:url = '{url['value']}'")
+
+    def _test_event_with_artifact_url_observable_object(self, event):
+        misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_artifact_url_observable_object(
+            misp_object, observables[0], object_refs[0]
+        )
+
+    def _check_artifact_payload_observable_object(
+            self, misp_object, observable, object_ref):
+        (md5, sha256, payload_bin, mime_type, encryption_algorithm,
+         decryption_key) = misp_object['Attribute']
+        self._assert_multiple_equal(
+            observable.id, object_ref, f"artifact--{misp_object['uuid']}"
+        )
+        self.assertEqual(observable.type, 'artifact')
+        self.assertEqual(observable.hashes['MD5'], md5['value'])
+        self.assertEqual(observable.hashes['SHA-256'], sha256['value'])
+        data = payload_bin['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(observable.payload_bin, data)
+        self.assertEqual(observable.mime_type, mime_type['value'])
+        self.assertEqual(
+            observable.encryption_algorithm, encryption_algorithm['value']
+        )
+        self.assertEqual(observable.decryption_key, decryption_key['value'])
+
+    def _test_event_with_artifact_payload_observable_object(self, event):
+        misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_artifact_payload_observable_object(
+            misp_object, observables[0], object_refs[0]
+        )
+
+    def _test_event_with_artifact_payload_indicator_object(self, event):
+        misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
+        self._assert_multiple_equal(len(observables), len(object_refs), 1)
+        self._check_artifact_payload_observable_object(
+            misp_object, observables[0], object_refs[0]
+        )
+        md5, sha256 = misp_object['Attribute'][:2]
+        md5_p, sha256_p = pattern[1:-1].split(' AND ')
+        self.assertEqual(md5_p, f"artifact:hashes.MD5 = '{md5['value']}'")
+        self.assertEqual(
+            sha256_p, f"artifact:hashes.'SHA-256' = '{sha256['value']}'"
+        )
+
     def _check_directory_observable_object(self, misp_object, observable, object_ref):
         path, path_enc, ctime, mtime, atime = misp_object['Attribute']
         self._assert_multiple_equal(
@@ -4741,6 +4814,26 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_custom_objects()
         self._test_event_with_custom_object(event['Event'])
 
+    def test_event_with_artifact_url_indicator_object(self):
+        event = get_event_with_artifact_url_object()
+        self._test_event_with_artifact_url_indicator_object(event['Event'])
+
+    def test_event_with_artifact_url_observable_object(self):
+        event = get_event_with_artifact_url_object()
+        self._test_event_with_artifact_url_observable_object(event['Event'])
+
+    def test_event_with_artifact_payload_observable_object(self):
+        event = get_event_with_artifact_payload_object()
+        self._test_event_with_artifact_payload_observable_object(event['Event'])
+
+    def test_event_with_artifact_payload_indicator_object(self):
+        event = get_event_with_artifact_payload_object()
+        self._test_event_with_artifact_payload_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
         self._test_event_with_directory_indicator_object(event['Event'])
@@ -5244,6 +5337,30 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_object(misp_event)
+
+    def test_event_with_artifact_url_indicator_object(self):
+        event = get_event_with_artifact_url_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_url_indicator_object(misp_event)
+
+    def test_event_with_artifact_url_observable_object(self):
+        event = get_event_with_artifact_url_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_url_observable_object(misp_event)
+
+    def test_event_with_artifact_payload_observable_object(self):
+        event = get_event_with_artifact_payload_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_payload_observable_object(misp_event)
+
+    def test_event_with_artifact_payload_indicator_object(self):
+        event = get_event_with_artifact_payload_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_payload_indicator_object(misp_event)
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()

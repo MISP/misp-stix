@@ -1602,6 +1602,77 @@ _TEST_ANNOTATION_OBJECT = {
     ]
 }
 
+_TEST_ARTIFACT_PAYLOAD_OBJECT = {
+    "name": "artifact",
+    "meta-category": "file",
+    "description": "Artifact object",
+    "uuid": "d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+        },
+        {
+            "type": "attachment",
+            "object_relation": "payload_bin",
+            "value": "artifact.bin",
+            "data": "YXJ0aWZhY3QgY29udGVudA=="
+        },
+        {
+            "type": "mime-type",
+            "object_relation": "mime_type",
+            "value": "application/zip"
+        },
+        {
+            "type": "text",
+            "object_relation": "encryption_algorithm",
+            "value": "AES-256-GCM"
+        },
+        {
+            "type": "text",
+            "object_relation": "decryption_key",
+            "value": "secret-decryption-key"
+        }
+    ]
+}
+
+_TEST_ARTIFACT_URL_OBJECT = {
+    "name": "artifact",
+    "meta-category": "file",
+    "description": "Artifact object",
+    "uuid": "e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+        },
+        {
+            "type": "url",
+            "object_relation": "url",
+            "value": "https://example.com/artifact.bin"
+        },
+        {
+            "type": "mime-type",
+            "object_relation": "mime_type",
+            "value": "application/zip"
+        }
+    ]
+}
+
 _TEST_ASN_OBJECT = {
     "name": "asn",
     "meta-category": "network",
@@ -5540,6 +5611,22 @@ def get_event_with_android_app_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         dict(_populate_object(_TEST_ANDROID_APP_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_artifact_payload_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_ARTIFACT_PAYLOAD_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_artifact_url_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_ARTIFACT_URL_OBJECT))
     ]
     return event
 
