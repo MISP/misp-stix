@@ -986,7 +986,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_wrapped_attributes(directory4.id, *directoryObj1.attributes)
         self.assertEqual(artifactObj3.name, 'artifact')
         self.assertEqual(artifactObj3.uuid, artifact5.id.split('--')[1])
-        self.assertEqual(len(artifactObj3.attributes), 4)
+        self.assertEqual(len(artifactObj3.attributes), 5)
         payload_bin, *artifactObj3_attributes = artifactObj3.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -2701,7 +2701,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_wrapped_attributes(directory4.id, *directoryObj1.attributes)
         self.assertEqual(artifactObj3.name, 'artifact')
         self.assertEqual(artifactObj3.uuid, artifact5.id.split('--')[1])
-        self.assertEqual(len(artifactObj3.attributes), 4)
+        self.assertEqual(len(artifactObj3.attributes), 5)
         payload_bin, *artifactObj3_attributes = artifactObj3.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(

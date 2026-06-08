@@ -1408,8 +1408,10 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def _check_artifact_fields(self, misp_object, artifact, object_id=None):
         if object_id is None:
             object_id = artifact.id
-        self.assertEqual(len(misp_object.attributes), 6)
-        payload_bin, md5, sha1, sha256, decryption, mime_type = misp_object.attributes
+        has_encryption = hasattr(artifact, 'encryption_algorithm')
+        self.assertEqual(len(misp_object.attributes), 7 if has_encryption else 6)
+        payload_bin, md5, sha1, sha256, decryption = misp_object.attributes[:5]
+        mime_type = misp_object.attributes[-1]
         self.assertEqual(payload_bin.type, 'attachment')
         self.assertEqual(payload_bin.object_relation, 'payload_bin')
         self.assertEqual(
@@ -1449,6 +1451,18 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             decryption.uuid,
             uuid5(UUIDv4, f'{object_id} - decryption_key - {decryption.value}')
         )
+        if has_encryption:
+            encryption = misp_object.attributes[5]
+            self.assertEqual(encryption.type, 'text')
+            self.assertEqual(encryption.object_relation, 'encryption_algorithm')
+            self.assertEqual(encryption.value, artifact.encryption_algorithm)
+            self.assertEqual(
+                encryption.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{object_id} - encryption_algorithm - {encryption.value}'
+                )
+            )
         self.assertEqual(mime_type.type, 'mime-type')
         self.assertEqual(mime_type.object_relation, 'mime_type')
         self.assertEqual(mime_type.value, artifact.mime_type)
@@ -1533,8 +1547,10 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def _check_content_ref_fields(self, misp_object, artifact, object_id = None):
         if object_id is None:
             object_id = artifact.id
-        self.assertEqual(len(misp_object.attributes), 4)
-        payload_bin, md5, decryption_key, mime_type = misp_object.attributes
+        has_encryption = hasattr(artifact, 'encryption_algorithm')
+        self.assertEqual(len(misp_object.attributes), 5 if has_encryption else 4)
+        payload_bin, md5, decryption_key = misp_object.attributes[:3]
+        mime_type = misp_object.attributes[-1]
         self.assertEqual(payload_bin.type, 'attachment')
         self.assertEqual(payload_bin.object_relation, 'payload_bin')
         self.assertEqual(
@@ -1562,6 +1578,18 @@ class TestExternalSTIX2Import(TestSTIX2Import):
                 f'{object_id} - decryption_key - {decryption_key.value}'
             )
         )
+        if has_encryption:
+            encryption = misp_object.attributes[3]
+            self.assertEqual(encryption.type, 'text')
+            self.assertEqual(encryption.object_relation, 'encryption_algorithm')
+            self.assertEqual(encryption.value, artifact.encryption_algorithm)
+            self.assertEqual(
+                encryption.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{object_id} - encryption_algorithm - {encryption.value}'
+                )
+            )
         self.assertEqual(mime_type.type, 'mime-type')
         self.assertEqual(mime_type.object_relation, 'mime_type')
         self.assertEqual(mime_type.value, artifact.mime_type)
