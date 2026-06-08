@@ -328,7 +328,7 @@ class STIX2Mapping:
     )
     __artifact_object_mapping = Mapping(
         decryption_key={'type': 'text', 'object_relation': 'decryption_key'},
-        encyption_algorithm={
+        encryption_algorithm={
             'type': 'text', 'object_relation': 'encryption_algorithm'
         },
         mime_type={'type': 'mime-type', 'object_relation': 'mime_type'},
