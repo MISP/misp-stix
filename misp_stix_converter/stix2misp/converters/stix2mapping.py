@@ -1188,6 +1188,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __objects_mapping = Mapping(
         **{
             'android-app': '_object_from_android_app',
+            'artifact': '_object_from_artifact',
             'asn': '_object_from_asn',
             'attack-pattern': '_parse_attack_pattern_object',
             'course-of-action': '_parse_course_of_action_object',

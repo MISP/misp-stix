@@ -1454,6 +1454,19 @@ class InternalSTIX2IndicatorMapping(
             **InternalSTIX2Mapping.file_object_mapping()
         }
     )
+    __artifact_pattern_mapping = Mapping(
+        **{
+            'hashes.MD5': InternalSTIX2Mapping.md5_attribute(),
+            "hashes.'SHA-1'": InternalSTIX2Mapping.sha1_attribute(),
+            "hashes.'SHA-256'": InternalSTIX2Mapping.sha256_attribute(),
+            "hashes.'SHA-512'": InternalSTIX2Mapping.sha512_attribute(),
+            "hashes.'SHA3-256'": InternalSTIX2Mapping.sha3_256_attribute(),
+            "hashes.'SHA3-512'": InternalSTIX2Mapping.sha3_512_attribute(),
+            'hashes.SSDEEP': InternalSTIX2Mapping.ssdeep_attribute(),
+            'hashes.TLSH': InternalSTIX2Mapping.tlsh_attribute(),
+            **InternalSTIX2Mapping.artifact_object_mapping()
+        }
+    )
     __hashlookup_pattern_mapping = Mapping(
         **{
             'hashes.MD5': InternalSTIX2Mapping.hashlookup_md5_attribute(),
@@ -1589,6 +1602,10 @@ class InternalSTIX2IndicatorMapping(
     @classmethod
     def github_user_pattern_mapping(cls, field: str) -> dict | None:
         return cls.github_user_object_mapping().get(field)
+
+    @classmethod
+    def artifact_pattern_mapping(cls, field: str) -> dict | None:
+        return cls.__artifact_pattern_mapping.get(field)
 
     @classmethod
     def hashlookup_pattern_mapping(cls, field: str) -> dict | None:
@@ -1890,6 +1907,18 @@ class InternalSTIX2IndicatorConverter(
                 continue
             attributes = self._handle_object_attributes(
                 value, self._mapping.asn_pattern_mapping(feature), indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _object_from_artifact_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('artifact', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            attributes = self._handle_object_attributes(
+                value, self._mapping.artifact_pattern_mapping(feature),
+                indicator.id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
