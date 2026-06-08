@@ -2994,6 +2994,41 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
             misp_object, custom_object, object_ref, identity_id
         )
 
+    def _test_event_with_registry_key_value_indicator_object(self, event):
+        # STIX 2.0 cannot represent a key-less windows-registry-key, so the
+        # observable side stays a custom object; a values[0] pattern is valid
+        # in 2.0, though, so a to_ids registry-key-value still yields an
+        # Indicator pointing at that custom observable.
+        self._add_object_ids_flag(event)
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        identity, report, custom_object, indicator, relationship = (
+            self.parser.stix_objects
+        )
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        custom_ref, indicator_ref, relationship_ref = self._check_report_features(
+            report, event, identity_id, timestamp
+        )
+        self._run_custom_object_tests(
+            misp_object, custom_object, custom_ref, identity_id
+        )
+        self._check_object_indicator_features(
+            indicator, misp_object, identity_id, indicator_ref
+        )
+        name = misp_object['Attribute'][0]
+        self.assertEqual(
+            indicator.pattern,
+            f"[windows-registry-key:values[0].name = '{name['value']}']"
+        )
+        self.assertEqual(relationship.id, relationship_ref)
+        self.assertEqual(relationship.relationship_type, 'based-on')
+        self.assertEqual(relationship.source_ref, indicator_ref)
+        self.assertEqual(relationship.target_ref, custom_ref)
+
     def _test_event_with_domain_ip_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
         self._check_domain_ip_observable_object(misp_object, observed_data)
@@ -3879,6 +3914,14 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_registry_key_value_object()
         self._test_event_with_registry_key_value_object(event['Event'])
 
+    def test_event_with_registry_key_value_indicator_object(self):
+        event = get_event_with_registry_key_value_object()
+        self._test_event_with_registry_key_value_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_indicator_object(event['Event'])
@@ -4401,6 +4444,12 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_registry_key_value_object(misp_event)
+
+    def test_event_with_registry_key_value_indicator_object(self):
+        event = get_event_with_registry_key_value_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_value_indicator_object(misp_event)
 
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
