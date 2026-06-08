@@ -4468,6 +4468,103 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
         self._check_registry_key_observable_object(misp_object, observables[0], object_refs[0])
 
+    def _test_event_with_registry_key_and_values_indicator_object(self, event):
+        for misp_object in event['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = True
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        registry_key, value1, value2 = self.parser._misp_event.objects
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        (identity, grouping, observed_data, observable,
+         indicator, relationship) = stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        od_ref, observable_ref, indicator_ref, relationship_ref = (
+            self._check_grouping_features(grouping, identity_id)
+        )
+        self._assert_multiple_equal(
+            observed_data.object_refs[0], observable.id, observable_ref,
+            f"windows-registry-key--{registry_key['uuid']}"
+        )
+        self._check_object_indicator_features(
+            indicator, registry_key, identity_id, indicator_ref
+        )
+        self.assertEqual(relationship.id, relationship_ref)
+        self.assertEqual(relationship.relationship_type, 'based-on')
+        self.assertEqual(relationship.source_ref, indicator_ref)
+        self.assertEqual(relationship.target_ref, od_ref)
+        key, hive, modified = (
+            attribute['value'] for attribute in registry_key['Attribute']
+        )
+        name1, data1, data_type1 = (
+            attribute['value'] for attribute in value1['Attribute']
+        )
+        name2, data2, data_type2 = (
+            attribute['value'] for attribute in value2['Attribute']
+        )
+        self.assertEqual(
+            set(indicator.pattern[1:-1].split(' AND ')),
+            {
+                f"windows-registry-key:key = "
+                f"'{self._sanitise_registry_key_value(key)}'",
+                f"windows-registry-key:modified_time = "
+                f"'{self._datetime_from_str(modified)}'",
+                f"windows-registry-key:x_misp_hive = '{hive}'",
+                f"windows-registry-key:values[0].data = '{data1}'",
+                f"windows-registry-key:values[0].data_type = '{data_type1}'",
+                f"windows-registry-key:values[0].name = '{name1}'",
+                f"windows-registry-key:values[1].data = '{data2}'",
+                f"windows-registry-key:values[1].data_type = '{data_type2}'",
+                f"windows-registry-key:values[1].name = '{name2}'",
+            }
+        )
+
+    def _test_event_with_registry_key_and_values_observable_object(self, event):
+        self._remove_object_ids_flags(event)
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        registry_key, value1, value2 = self.parser._misp_event.objects
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, observed_data, observable = stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        observed_data_id, object_ref = self._check_grouping_features(
+            grouping, identity_id
+        )
+        self.assertEqual(len(observed_data.object_refs), 1)
+        self._assert_multiple_equal(
+            observed_data.object_refs[0], object_ref, observable.id,
+            f"windows-registry-key--{registry_key['uuid']}"
+        )
+        self._check_object_observable_features(
+            observed_data, registry_key, identity_id, observed_data_id
+        )
+        key, hive, modified = (
+            attribute['value'] for attribute in registry_key['Attribute']
+        )
+        self.assertEqual(observable.type, 'windows-registry-key')
+        self.assertEqual(observable.key, key)
+        self.assertEqual(observable.x_misp_hive, hive)
+        if not isinstance(modified, datetime):
+            modified = self._datetime_from_str(modified)
+        self.assertEqual(observable.modified_time.timestamp(), modified.timestamp())
+        values = observable['values']
+        self.assertEqual(len(values), 2)
+        for registry_value, misp_value in zip(values, (value1, value2)):
+            name, data, data_type = (
+                attribute['value'] for attribute in misp_value['Attribute']
+            )
+            self.assertEqual(registry_value.name, name)
+            self.assertEqual(registry_value.data, data)
+            self.assertEqual(registry_value.data_type, data_type)
+
     def _test_event_with_script_objects(self, event):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
@@ -5143,6 +5240,25 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_registry_key_object()
         self._test_event_with_registry_key_observable_object(event['Event'])
 
+    def test_event_with_registry_key_and_values_indicator_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        self._test_event_with_registry_key_and_values_indicator_object(
+            event['Event']
+        )
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects,
+            stix=self.parser.stix_objects[2:],
+            name='registry-key with references to registry-key-value(s)',
+            summary='Registry Key Object referencing multiple '
+                    'Registry Key Value Objects'
+        )
+
+    def test_event_with_registry_key_and_values_observable_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        self._test_event_with_registry_key_and_values_observable_object(
+            event['Event']
+        )
+
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()
         self._test_event_with_script_objects(event['Event'])
@@ -5649,6 +5765,22 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_registry_key_observable_object(misp_event)
+
+    def test_event_with_registry_key_and_values_indicator_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_and_values_indicator_object(
+            misp_event
+        )
+
+    def test_event_with_registry_key_and_values_observable_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_and_values_observable_object(
+            misp_event
+        )
 
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()

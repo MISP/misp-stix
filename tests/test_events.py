@@ -3693,6 +3693,109 @@ _TEST_REGISTRY_KEY_VALUE_OBJECT = {
     ]
 }
 
+_TEST_REGISTRY_KEY_WITH_VALUES_OBJECTS = [
+    {
+        "name": "registry-key",
+        "meta-category": "file",
+        "description": "Registry key object describing a Windows registry key",
+        "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "regkey",
+                "object_relation": "key",
+                "value": "hkey_local_machine\\system\\bar\\foo"
+            },
+            {
+                "type": "text",
+                "object_relation": "hive",
+                "value": "hklm"
+            },
+            {
+                "type": "datetime",
+                "object_relation": "last-modified",
+                "value": "2020-10-25T16:22:00Z"
+            }
+        ],
+        "ObjectReference": [
+            {
+                "uuid": uuid5(
+                    _TEST_UUID, "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81"
+                ).__str__(),
+                "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                "referenced_uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+                "relationship_type": "contains",
+                "Object": {
+                    "uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+                    "name": "registry-key-value",
+                    "meta-category": "file"
+                }
+            },
+            {
+                "uuid": uuid5(
+                    _TEST_UUID, "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92"
+                ).__str__(),
+                "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                "referenced_uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+                "relationship_type": "contains",
+                "Object": {
+                    "uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+                    "name": "registry-key-value",
+                    "meta-category": "file"
+                }
+            }
+        ]
+    },
+    {
+        "name": "registry-key-value",
+        "meta-category": "file",
+        "description": "Registry key value object",
+        "uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "Foo"
+            },
+            {
+                "type": "text",
+                "object_relation": "data",
+                "value": "qwerty"
+            },
+            {
+                "type": "text",
+                "object_relation": "data-type",
+                "value": "REG_SZ"
+            }
+        ]
+    },
+    {
+        "name": "registry-key-value",
+        "meta-category": "file",
+        "description": "Registry key value object",
+        "uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "Bar"
+            },
+            {
+                "type": "text",
+                "object_relation": "data",
+                "value": "42"
+            },
+            {
+                "type": "text",
+                "object_relation": "data-type",
+                "value": "REG_DWORD"
+            }
+        ]
+    }
+]
+
 _TEST_REPORT_OBJECT = {
     "uuid": "3e76898a-fcb1-485b-ac24-d450fe8c54bc",
     "name": "report",
@@ -6069,6 +6172,15 @@ def get_event_with_registry_key_value_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         dict(_populate_object(_TEST_REGISTRY_KEY_VALUE_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_registry_key_and_values_objects():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(misp_object))
+        for misp_object in deepcopy(_TEST_REGISTRY_KEY_WITH_VALUES_OBJECTS)
     ]
     return event
 

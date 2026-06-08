@@ -3468,6 +3468,61 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         misp_object, observed_data = self._run_observable_from_object_tests(event)
         self._check_registry_key_observable_object(misp_object, observed_data)
 
+    def _check_registry_key_with_values_observable_object(
+            self, misp_objects, observed_data):
+        registry_key, value1, value2 = misp_objects
+        registry_key_object = observed_data.objects['0']
+        self.assertEqual(registry_key_object.type, 'windows-registry-key')
+        key, hive, modified = (
+            attribute['value'] for attribute in registry_key['Attribute']
+        )
+        self.assertEqual(registry_key_object.key, key)
+        self.assertEqual(registry_key_object.x_misp_hive, hive)
+        if not isinstance(modified, datetime):
+            modified = self._datetime_from_str(modified)
+        self.assertEqual(
+            registry_key_object.modified.timestamp(), modified.timestamp()
+        )
+        values = registry_key_object['values']
+        self.assertEqual(len(values), 2)
+        for registry_value, misp_value in zip(values, (value1, value2)):
+            name, data, data_type = (
+                attribute['value'] for attribute in misp_value['Attribute']
+            )
+            self.assertEqual(registry_value.name, name)
+            self.assertEqual(registry_value.data, data)
+            self.assertEqual(registry_value.data_type, data_type)
+
+    def _test_event_with_registry_key_and_values_indicator_object(self, event):
+        misp_objects, observed_data, pattern = (
+            self._run_indicator_from_objects_tests(event)
+        )
+        self._check_registry_key_with_values_observable_object(
+            misp_objects, observed_data
+        )
+        registry_key, value1, value2 = misp_objects
+        key = self._sanitise_registry_key_value(
+            registry_key['Attribute'][0]['value']
+        )
+        self.assertEqual(
+            set(pattern[1:-1].split(' AND ')),
+            {
+                f"windows-registry-key:key = '{key}'",
+                f"windows-registry-key:values[0].name = "
+                f"'{value1['Attribute'][0]['value']}'",
+                f"windows-registry-key:values[1].name = "
+                f"'{value2['Attribute'][0]['value']}'",
+            }
+        )
+
+    def _test_event_with_registry_key_and_values_observable_object(self, event):
+        misp_objects, observed_data = (
+            self._run_observable_from_objects_tests(event)
+        )
+        self._check_registry_key_with_values_observable_object(
+            misp_objects, observed_data
+        )
+
     def _test_event_with_script_objects(self, event):
         orgc = event['Orgc']
         malware_script, tool_script = deepcopy(event['Object'])
@@ -4095,6 +4150,25 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_registry_key_object()
         self._test_event_with_registry_key_observable_object(event['Event'])
 
+    def test_event_with_registry_key_and_values_indicator_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        self._test_event_with_registry_key_and_values_indicator_object(
+            event['Event']
+        )
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects,
+            stix=self.parser.stix_objects[2:],
+            name='registry-key with references to registry-key-value(s)',
+            summary='Registry Key Object referencing multiple '
+                    'Registry Key Value Objects'
+        )
+
+    def test_event_with_registry_key_and_values_observable_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        self._test_event_with_registry_key_and_values_observable_object(
+            event['Event']
+        )
+
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()
         self._test_event_with_script_objects(event['Event'])
@@ -4579,6 +4653,22 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_registry_key_observable_object(misp_event)
+
+    def test_event_with_registry_key_and_values_indicator_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_and_values_indicator_object(
+            misp_event
+        )
+
+    def test_event_with_registry_key_and_values_observable_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_and_values_observable_object(
+            misp_event
+        )
 
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()
