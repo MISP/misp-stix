@@ -1704,8 +1704,14 @@ class InternalSTIX2IndicatorConverter(
         self._mapping = InternalSTIX2IndicatorMapping
 
     def parse(self, indicator_ref: str):
-        od_id = self.main_parser._extract_uuid(indicator_ref)
-        if f'observed-data--{od_id}' in self._observed_data:
+        object_id = self.main_parser._extract_uuid(indicator_ref)
+        if f'observed-data--{object_id}' in self._observed_data:
+            return
+        # A standalone registry-key-value exported to STIX 2.0 emits both a
+        # custom observable and a values[0] Indicator sharing the object uuid
+        # the custom object is the richer carrier, so skip the Indicator to
+        # avoid importing the object twice.
+        if f'x-misp-object--{object_id}' in self._custom_object:
             return
         indicator = self.main_parser._get_stix_object(indicator_ref)
         try:
@@ -1731,6 +1737,10 @@ class InternalSTIX2IndicatorConverter(
                 'Error while parsing the Indicator object with id '
                 f'{indicator.id}: {_traceback}'
             )
+
+    @property
+    def _custom_object(self) -> dict:
+        return getattr(self.main_parser, '_custom_object', {})
 
     @property
     def _observed_data(self) -> dict:
