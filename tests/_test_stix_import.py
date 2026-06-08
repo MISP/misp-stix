@@ -135,6 +135,49 @@ class TestSTIX2Import(TestSTIX):
         )
         return (*event.objects, *event.attributes)
 
+    def _check_registry_key_value_indicator_fields(self, misp_object, values,
+                                                    object_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        data, data_type, name = misp_object.attributes
+        _data, _data_type, _name = values
+        for attribute, relation, value in (
+            (data, 'data', _data),
+            (data_type, 'data-type', _data_type),
+            (name, 'name', _name)
+        ):
+            self.assertEqual(attribute.type, 'text')
+            self.assertEqual(attribute.object_relation, relation)
+            self.assertEqual(attribute.value, value)
+            self.assertTrue(attribute.to_ids)
+            self._check_object_attribute_uuid(attribute, object_id)
+
+    def _check_registry_key_value_fields(self, misp_object, registry_value,
+                                         object_id, indicator=None):
+        self.assertEqual(len(misp_object.attributes), 3)
+        data, data_type, name = misp_object.attributes
+        for attribute, relation, value in (
+            (data, 'data', registry_value.data),
+            (data_type, 'data-type', registry_value.data_type),
+            (name, 'name', registry_value.name)
+        ):
+            self.assertEqual(attribute.type, 'text')
+            self.assertEqual(attribute.object_relation, relation)
+            self.assertEqual(attribute.value, value)
+            if indicator is not None:
+                self.assertTrue(attribute.to_ids)
+                self.assertEqual(
+                    attribute.uuid,
+                    uuid5(
+                        UUIDv4,
+                        f'{indicator.id} - {object_id} - {relation} - {value}'
+                    )
+                )
+            else:
+                self.assertEqual(
+                    attribute.uuid,
+                    uuid5(UUIDv4, f'{object_id} - {relation} - {value}')
+                )
+
     def _check_object_labels(self, misp_object, labels):
         name_label, category_label = labels
         self.assertEqual(name_label, f'misp:name="{misp_object.name}"')
@@ -2246,29 +2289,6 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(modified.object_relation, 'last-modified')
         return modified
 
-    def _check_registry_key_value_fields(self, misp_object, registry_value, object_id):
-        self.assertEqual(len(misp_object.attributes), 3)
-        data, data_type, name = misp_object.attributes
-        self.assertEqual(data.type, 'text')
-        self.assertEqual(data.object_relation, 'data')
-        self.assertEqual(data.value, registry_value.data)
-        self.assertEqual(
-            data.uuid, uuid5(UUIDv4, f'{object_id} - data - {data.value}')
-        )
-        self.assertEqual(data_type.type, 'text')
-        self.assertEqual(data_type.object_relation, 'data-type')
-        self.assertEqual(data_type.value, registry_value.data_type)
-        self.assertEqual(
-            data_type.uuid,
-            uuid5(UUIDv4, f'{object_id} - data-type - {data_type.value}')
-        )
-        self.assertEqual(name.type, 'text')
-        self.assertEqual(name.object_relation, 'name')
-        self.assertEqual(name.value, registry_value.name)
-        self.assertEqual(
-            name.uuid, uuid5(UUIDv4, f'{object_id} - name - {name.value}')
-        )
-
     def _check_registry_key_with_values_fields(self, misp_object, registry_key,
                                                 object_id=None, indicator=None):
         if object_id is None:
@@ -3691,6 +3711,47 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(mime_type.value, observable.mime_type)
         self.assertFalse(mime_type.to_ids)
         self._check_object_attribute_uuid(mime_type, object_id)
+
+    def _check_registry_key_value_indicator_object(self, attributes, indicator):
+        data, data_type, name = attributes
+        _data, _data_type, _name = (
+            self._get_pattern_value(part)
+            for part in indicator.pattern[1:-1].split(' AND ')
+        )
+        self.assertTrue(all(attribute.to_ids for attribute in attributes))
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, _data)
+        self._check_object_attribute_uuid(data, indicator.id, _data)
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, _data_type)
+        self._check_object_attribute_uuid(data_type, indicator.id, _data_type)
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, _name)
+        self._check_object_attribute_uuid(name, indicator.id, _name)
+
+    def _check_registry_key_value_observable_object(
+            self, attributes, observed_data, observable, indicator):
+        data, data_type, name = attributes
+        object_id = observed_data.id
+        registry_value = observable['values'][0]
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, registry_value['data'])
+        self.assertTrue(data.to_ids)
+        self._check_object_attribute_uuid(data, f'{indicator.id} - {object_id}')
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, registry_value['data_type'])
+        self.assertFalse(data_type.to_ids)
+        self._check_object_attribute_uuid(data_type, object_id)
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, registry_value['name'])
+        self.assertFalse(name.to_ids)
+        self._check_object_attribute_uuid(name, object_id)
 
     _HASHLOOKUP_FIELDS = (
         ('filename', 'FileName'), ('size-in-bytes', 'FileSize'),

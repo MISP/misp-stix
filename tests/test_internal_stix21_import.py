@@ -2983,6 +2983,138 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[observed_data, directory, indicator, relationship]
         )
 
+    def test_stix21_bundle_with_registry_key_value_indicator_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_value_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_registry_key_value_indicator_object(
+            misp_object.attributes, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        )
+
+    def test_stix21_bundle_with_registry_key_value_observable_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_value_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, registry_key, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_observed_data_object(misp_object, observed_data)
+        self._check_registry_key_value_observable_object(
+            misp_object.attributes, observed_data, registry_key, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()),
+            observed_data=[observed_data, registry_key, indicator, relationship]
+        )
+
+    def test_stix21_bundle_with_registry_key_with_values_observable_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_with_values_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, registry_key, indicator, relationship = (
+            bundle.objects
+        )
+        registry, value1, value2 = (
+            self._check_misp_event_features_from_grouping(event, grouping)
+        )
+        self._check_observed_data_object(registry, observed_data)
+        self.assertEqual(registry.name, 'registry-key')
+        key, modified, hive = registry.attributes
+        self.assertTrue(all(attr.to_ids for attr in registry.attributes))
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, registry_key.key)
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, registry_key.x_misp_hive)
+        self.assertEqual(value1.name, 'registry-key-value')
+        value1_id = f'{observed_data.id} - values - 0'
+        self.assertEqual(value1.uuid, uuid5(UUIDv4, value1_id))
+        self._check_registry_key_value_fields(
+            value1, registry_key['values'][0], value1_id, indicator
+        )
+        self.assertEqual(value2.name, 'registry-key-value')
+        value2_id = f'{observed_data.id} - values - 1'
+        self.assertEqual(value2.uuid, uuid5(UUIDv4, value2_id))
+        self._check_registry_key_value_fields(
+            value2, registry_key['values'][1], value2_id, indicator
+        )
+        self.assertEqual(len(registry.references), 2)
+        reference1, reference2 = registry.references
+        self._assert_multiple_equal(
+            reference1.relationship_type, reference2.relationship_type,
+            'contains'
+        )
+        self.assertEqual(reference1.referenced_uuid, value1.uuid)
+        self.assertEqual(reference2.referenced_uuid, value2.uuid)
+        self._populate_documentation(
+            misp_object=[
+                json.loads(registry.to_json()),
+                json.loads(value1.to_json()),
+                json.loads(value2.to_json())
+            ],
+            observed_data=[observed_data, registry_key, indicator, relationship],
+            name='registry-key with references to registry-key-value(s)',
+            summary='Registry Key Object referencing multiple '
+                    'Registry Key Value Objects'
+        )
+
+    def test_stix21_bundle_with_registry_key_with_values_indicator_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_with_values_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        registry, value1, value2 = (
+            self._check_misp_event_features_from_grouping(event, grouping)
+        )
+        self._check_indicator_object(registry, indicator)
+        self.assertEqual(registry.name, 'registry-key')
+        self.assertTrue(all(attr.to_ids for attr in registry.attributes))
+        key, modified, hive = registry.attributes
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, 'hklm')
+        self.assertEqual(value1.name, 'registry-key-value')
+        value1_id = f'{indicator.id} - values - 0'
+        self.assertEqual(value1.uuid, uuid5(UUIDv4, value1_id))
+        self._check_registry_key_value_indicator_fields(
+            value1, ('qwerty', 'REG_SZ', 'Foo'), value1_id
+        )
+        self.assertEqual(value2.name, 'registry-key-value')
+        value2_id = f'{indicator.id} - values - 1'
+        self.assertEqual(value2.uuid, uuid5(UUIDv4, value2_id))
+        self._check_registry_key_value_indicator_fields(
+            value2, ('42', 'REG_DWORD', 'Bar'), value2_id
+        )
+        self.assertEqual(len(registry.references), 2)
+        reference1, reference2 = registry.references
+        self._assert_multiple_equal(
+            reference1.relationship_type, reference2.relationship_type,
+            'contains'
+        )
+        self.assertEqual(reference1.referenced_uuid, value1.uuid)
+        self.assertEqual(reference2.referenced_uuid, value2.uuid)
+        self._populate_documentation(
+            misp_object=[
+                json.loads(registry.to_json()),
+                json.loads(value1.to_json()),
+                json.loads(value2.to_json())
+            ],
+            indicator=indicator,
+            name='registry-key with references to registry-key-value(s)',
+            summary='Registry Key Object referencing multiple '
+                    'Registry Key Value Objects'
+        )
+
     def test_stix21_bundle_with_hashlookup_indicator_object(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_hashlookup_indicator_object()
         self.parser.load_stix_bundle(bundle)

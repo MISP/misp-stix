@@ -6949,6 +6949,66 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
     }
 ]
+_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+}
+_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "windows-registry-key",
+                "key": "hkey_local_machine\\system\\bar\\foo",
+                "values": [
+                    {"name": "Foo", "data": "qwerty", "data_type": "REG_SZ"},
+                    {"name": "Bar", "data": "42", "data_type": "REG_DWORD"}
+                ],
+                "modified": "2020-10-25T16:22:00Z",
+                "x_misp_hive": "hklm"
+            }
+        },
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--1f2e3d4c-5b6a-4978-8c9d-0a1b2c3d4e5f",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
+    }
+]
 _REGKEY_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -8608,6 +8668,16 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_registry_key_observable_object(cls):
         return cls.__assemble_bundle(*_REGISTRY_KEY_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_with_values_indicator_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_with_values_observable_object(cls):
+        return cls.__assemble_bundle(
+            *_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT
+        )
 
     @classmethod
     def get_bundle_with_script_objects(cls):

@@ -8619,6 +8619,146 @@ _DIRECTORY_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
     }
 ]
+_REGISTRY_KEY_VALUE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[windows-registry-key:values[0].data = 'qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="registry-key-value"', 'misp:meta-category="file"']
+}
+_REGISTRY_KEY_VALUE_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": ["windows-registry-key--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b"],
+        "labels": ['misp:name="registry-key-value"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "windows-registry-key",
+        "spec_version": "2.1",
+        "id": "windows-registry-key--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+        "values": [
+            {
+                "name": "RegistryName",
+                "data": "qwertyuiop",
+                "data_type": "REG_SZ"
+            }
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[windows-registry-key:values[0].data = 'qwertyuiop']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="registry-key-value"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--9c6f4d3e-5f6a-4b8c-ad9e-3f4a5b6c7d8e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+        "target_ref": "observed-data--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b"
+    }
+]
+_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+}
+_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "windows-registry-key--5ac3379c-3e74-44ba-9160-04120a00020f"
+        ],
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "windows-registry-key",
+        "spec_version": "2.1",
+        "id": "windows-registry-key--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "key": "hkey_local_machine\\system\\bar\\foo",
+        "values": [
+            {"name": "Foo", "data": "qwerty", "data_type": "REG_SZ"},
+            {"name": "Bar", "data": "42", "data_type": "REG_DWORD"}
+        ],
+        "modified_time": "2020-10-25T16:22:00Z",
+        "x_misp_hive": "hklm"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--9b3ea668-d313-53c7-8e7f-57c14b4b0f01",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
+    }
+]
 _HASHLOOKUP_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -10608,6 +10748,24 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_directory_observable_object(cls):
         return cls.__assemble_bundle(*_DIRECTORY_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_value_indicator_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_VALUE_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_value_observable_object(cls):
+        return cls.__assemble_bundle(*_REGISTRY_KEY_VALUE_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_with_values_indicator_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_with_values_observable_object(cls):
+        return cls.__assemble_bundle(
+            *_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT
+        )
 
     @classmethod
     def get_bundle_with_hashlookup_indicator_object(cls):
