@@ -1223,6 +1223,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'process': '_object_from_process',
             'reddit-account': '_object_from_reddit_account',
             'registry-key': '_object_from_registry_key',
+            'registry-key-value': '_object_from_registry_key_value',
             'script': '_parse_script_object',
             'telegram-account': '_object_from_telegram_account',
             'twitter-account': '_object_from_twitter_account',

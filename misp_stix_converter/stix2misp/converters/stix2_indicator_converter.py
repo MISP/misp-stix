@@ -2408,19 +2408,72 @@ class InternalSTIX2IndicatorConverter(
 
     def _object_from_registry_key_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('registry-key', indicator)
-        for pattern in indicator.pattern[1:-1].split(' AND '):
-            feature, value = self._extract_features_from_pattern(pattern)
-            if 'values[0].' in feature:
+        comparisons = [
+            self._extract_features_from_pattern(pattern)
+            for pattern in indicator.pattern[1:-1].split(' AND ')
+        ]
+        indices = {
+            feature.split('values[')[1].split(']')[0]
+            for feature, _ in comparisons if 'values[' in feature
+        }
+        if len(indices) > 1:
+            registry_values = defaultdict(list)
+            for feature, value in comparisons:
+                if 'values[' in feature:
+                    index = feature.split('values[')[1].split(']')[0]
+                    registry_values[index].append(
+                        (feature.split('.')[-1], value)
+                    )
+                    continue
+                mapping = self._mapping.registry_key_pattern_mapping(feature)
+                for attribute in self._handle_object_attributes(
+                        value, mapping, indicator.id):
+                    misp_object.add_attribute(**attribute)
+            registry_key = self.main_parser._add_misp_object(
+                misp_object, indicator
+            )
+            for index, value_features in registry_values.items():
+                value_object = self._object_from_registry_key_value_pattern(
+                    value_features, indicator,
+                    f'{indicator.id} - values - {index}'
+                )
+                self._handle_misp_object_references(
+                    registry_key, value_object.uuid
+                )
+            return
+        for feature, value in comparisons:
+            if 'values[' in feature:
                 mapping = self._mapping.registry_key_values_pattern_mapping(
                     feature.split('.')[-1]
                 )
-                attributes = self._handle_object_attributes(
-                    value, mapping, indicator.id
-                )
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-                continue
-            mapping = self._mapping.registry_key_pattern_mapping(feature)
+            else:
+                mapping = self._mapping.registry_key_pattern_mapping(feature)
+            for attribute in self._handle_object_attributes(
+                    value, mapping, indicator.id):
+                misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _object_from_registry_key_value_pattern(
+            self, value_features: list, indicator: _INDICATOR_TYPING,
+            object_id: str) -> MISPObject:
+        misp_object = self._create_misp_object(
+            'registry-key-value', indicator, object_id=object_id
+        )
+        for feature, value in value_features:
+            mapping = self._mapping.registry_key_values_pattern_mapping(feature)
+            for attribute in self._handle_object_attributes(
+                    value, mapping, object_id):
+                misp_object.add_attribute(**attribute)
+        return self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _object_from_registry_key_value_indicator(
+            self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('registry-key-value', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            mapping = self._mapping.registry_key_values_pattern_mapping(
+                feature.split('.')[-1]
+            )
             attributes = self._handle_object_attributes(
                 value, mapping, indicator.id
             )
