@@ -1545,12 +1545,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         registry_key = WindowsRegistryKey(**registry_key_args)
         return self._handle_object_observable(misp_object, [registry_key])
 
-    def _parse_registry_key_value_object_pattern(
-            self, misp_object: MISPObject | dict) -> list:
-        return self._parse_registry_key_value_pattern(
-            misp_object['Attribute'], 'windows-registry-key:values[0]'
-        )
-
     @staticmethod
     def _parse_regkey_key_values_observable(attributes: dict) -> dict:
         registry_key_args = {}

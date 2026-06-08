@@ -4846,6 +4846,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         return pattern
 
+    def _parse_registry_key_value_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        return self._parse_registry_key_value_pattern(
+            misp_object['Attribute'], 'windows-registry-key:values[0]'
+        )
+
     def _parse_registry_key_with_values_pattern(
             self, registry_key: dict, value_objects: list) -> list:
         prefix = 'windows-registry-key'

@@ -1361,7 +1361,19 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self, misp_object: MISPObject | dict):
         # STIX 2.0 cannot represent a key-less windows-registry-key, so a
         # standalone registry-key-value object is exported as a custom object.
+        # A `values[0]` pattern is valid in 2.0, though, so a to_ids object
+        # still yields an Indicator pointing at that custom observable.
         self._parse_custom_object(misp_object)
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_registry_key_value_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id,
+                self._parse_stix_object_id(
+                    'object', 'x-misp-object', misp_object
+                ),
+                indicator.modified
+            )
 
     @staticmethod
     def _parse_regkey_key_values_observable(attributes: dict) -> dict:
