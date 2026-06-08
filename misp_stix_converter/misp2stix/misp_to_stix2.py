@@ -3012,6 +3012,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return pattern
 
     def _parse_registry_key_object(self, misp_object: MISPObject | dict):
+        for reference in misp_object.get('ObjectReference', []):
+            if self._is_reference_included(
+                    reference, 'registry-key-value', ('contains',)):
+                self._populate_objects_to_parse(misp_object)
+                return
+        self._parse_registry_key_object_standalone(misp_object)
+
+    def _parse_registry_key_object_standalone(
+            self, misp_object: MISPObject | dict):
         observed_data = self._parse_registry_key_object_observable(misp_object)
         stix_objects = [observed_data]
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -3325,6 +3334,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_object_analyst_fields(file_object, *stix_objects)
         pe_object['used'] = True
 
+    def _resolve_registry_key_to_parse(self, registry_key: dict):
+        value_uuids = self._fetch_included_reference_uuids(
+            registry_key.get('ObjectReference', []),
+            'registry-key-value', ('contains',)
+        )
+        if not value_uuids:
+            self._parse_registry_key_object_standalone(registry_key)
+            return
+        value_objects = [
+            self._objects_to_parse['registry-key-value'][value_uuid]
+            for value_uuid in value_uuids
+        ]
+        misp_values = [value['misp_object'] for value in value_objects]
+        observed_data = self._parse_registry_key_with_values_observable(
+            registry_key, misp_values
+        )
+        stix_objects = [observed_data]
+        to_ids = self._fetch_ids_flag(registry_key['Attribute']) or any(
+            self._fetch_ids_flag(value['Attribute']) for value in misp_values
+        )
+        if to_ids:
+            pattern = self._parse_registry_key_with_values_pattern(
+                registry_key, misp_values
+            )
+            indicator = self._handle_object_indicator(registry_key, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(registry_key, *stix_objects)
+        for value_object in value_objects:
+            value_object['used'] = True
+
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):
             file_objects = self._objects_to_parse['file']
@@ -3352,6 +3394,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if misp_object['used']:
                     continue
                 self._parse_custom_object(misp_object['misp_object'])
+        if self._objects_to_parse.get('registry-key'):
+            registry_keys = self._objects_to_parse['registry-key']
+            for misp_object in registry_keys.values():
+                if misp_object['used']:
+                    continue
+                registry_key = misp_object['misp_object']
+                try:
+                    self._resolve_registry_key_to_parse(registry_key)
+                except Exception as exception:
+                    self._object_error(registry_key, exception)
+                misp_object['used'] = True
+        if self._objects_to_parse.get('registry-key-value'):
+            registry_values = self._objects_to_parse['registry-key-value']
+            for misp_object in registry_values.values():
+                if misp_object['used']:
+                    continue
+                self._parse_registry_key_value_object(misp_object['misp_object'])
         if self._objects_to_parse.get('annotation'):
             objects_to_parse = self._objects_to_parse['annotation']
             for misp_object in objects_to_parse.values():
@@ -4730,6 +4789,88 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         return registry_key_args
 
+    def _parse_registry_key_value_args(self, attributes: list) -> dict:
+        attributes = self._extract_object_attributes(attributes)
+        values_args = {
+            feature: attributes.pop(key)
+            for key, feature in self._mapping.registry_key_mapping().items()
+            if key in attributes
+        }
+        if attributes.get('data'):
+            values_args['data'] = attributes.pop('data')
+        if attributes:
+            values_args.update(self._handle_observable_properties(attributes))
+        return values_args
+
+    def _parse_registry_key_with_values_args(
+            self, registry_key: dict, value_objects: list) -> dict:
+        attributes = self._extract_object_attributes(registry_key['Attribute'])
+        registry_key_args = self._parse_regkey_key_values_observable(attributes)
+        registry_key_args['values'] = [
+            self._parse_registry_key_value_args(value_object['Attribute'])
+            for value_object in value_objects
+        ]
+        if attributes:
+            registry_key_args.update(
+                self._handle_observable_properties(attributes)
+            )
+        return registry_key_args
+
+    def _parse_registry_key_value_pattern(
+            self, attributes: list, values_prefix: str) -> list:
+        attributes = self._extract_indicator_object_attributes(attributes)
+        pattern = []
+        if attributes.get('data'):
+            data = self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(
+                    attributes.pop('data').strip("'").strip('"')
+                )
+            )
+            pattern.append(f"{values_prefix}.data = '{data}'")
+        attributes = {
+            key: self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(value)
+            )
+            for key, value in attributes.items()
+        }
+        for key, feature in self._mapping.registry_key_mapping().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"{values_prefix}.{feature} = '{attributes.pop(key)}'"
+                )
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_properties(
+                    attributes, 'windows-registry-key'
+                )
+            )
+        return pattern
+
+    def _parse_registry_key_with_values_pattern(
+            self, registry_key: dict, value_objects: list) -> list:
+        prefix = 'windows-registry-key'
+        attributes = self._extract_indicator_object_attributes(
+            registry_key['Attribute']
+        )
+        pattern = self._parse_regkey_key_values_pattern(attributes, prefix)
+        for index, value_object in enumerate(value_objects):
+            pattern.extend(
+                self._parse_registry_key_value_pattern(
+                    value_object['Attribute'], f'{prefix}:values[{index}]'
+                )
+            )
+        if attributes:
+            attributes = {
+                key: self._handle_value_for_pattern(
+                    self._sanitise_registry_key_value(value)
+                )
+                for key, value in attributes.items()
+            }
+            pattern.extend(
+                self._handle_pattern_properties(attributes, prefix)
+            )
+        return pattern
+
     def _parse_url_args(self, attributes: dict) -> dict:
         attributes = self._extract_object_attributes(attributes)
         url_args = {}
@@ -4952,10 +5093,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return 'standard'
 
     def _fetch_included_reference_uuids(
-            self, references: list, name: str) -> list:
+            self, references: list, name: str,
+            relationship_types: tuple | None = None) -> list:
         uuids = []
         for reference in references:
-            if self._is_reference_included(reference, name):
+            if self._is_reference_included(reference, name, relationship_types):
                 referenced_uuid = reference['referenced_uuid']
                 if referenced_uuid not in self._objects_to_parse[name]:
                     self._referenced_object_name_warning(name, referenced_uuid)

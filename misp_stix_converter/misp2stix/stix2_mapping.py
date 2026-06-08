@@ -381,6 +381,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'process': '_parse_process_object',
             'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
+            'registry-key-value': '_populate_objects_to_parse',
             'script': '_parse_script_object',
             'stix2-pattern': '_parse_stix_pattern_object',
             'telegram-account': '_parse_account_object',

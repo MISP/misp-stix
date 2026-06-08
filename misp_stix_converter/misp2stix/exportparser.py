@@ -201,8 +201,12 @@ class MISPtoSTIXParser(AbstractParser):
             self._misp_event.get(feature) for feature in self.__published_fields
         )
 
-    def _is_reference_included(self, reference: dict, name: str) -> bool:
-        if reference['relationship_type'] not in self.__PE_RELATIONSHIP_TYPES:
+    def _is_reference_included(
+            self, reference: dict, name: str,
+            relationship_types: tuple | None = None) -> bool:
+        if relationship_types is None:
+            relationship_types = self.__PE_RELATIONSHIP_TYPES
+        if reference['relationship_type'] not in relationship_types:
             return False
         return 'Object' in reference and reference['Object'].get('name') == name
 

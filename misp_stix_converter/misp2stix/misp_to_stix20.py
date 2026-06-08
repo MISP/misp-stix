@@ -1348,6 +1348,21 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
         return self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_registry_key_with_values_observable(
+            self, registry_key: MISPObject | dict,
+            value_objects: list) -> ObservedData:
+        registry_key_args = self._parse_registry_key_with_values_args(
+            registry_key, value_objects
+        )
+        observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
+        return self._handle_object_observable(registry_key, observable_object)
+
+    def _parse_registry_key_value_object(
+            self, misp_object: MISPObject | dict):
+        # STIX 2.0 cannot represent a key-less windows-registry-key, so a
+        # standalone registry-key-value object is exported as a custom object.
+        self._parse_custom_object(misp_object)
+
     @staticmethod
     def _parse_regkey_key_values_observable(attributes: dict) -> dict:
         registry_key_args = {}

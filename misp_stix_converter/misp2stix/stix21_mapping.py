@@ -108,7 +108,6 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             'malware-analysis': '_parse_malware_analysis_object',
             'nova-rule': '_parse_nova_rule_object',
             'owasp-crs-rule': '_parse_crs_rule_object',
-            'registry-key-value': '_parse_registry_key_value_object',
             'sigma': '_parse_sigma_object',
             'suricata': '_parse_suricata_object',
             'wazuh-rule': '_parse_wazuh_rule_object',
