@@ -6642,6 +6642,124 @@ _PROCESS_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e39776a-b284-40b3-8079-22fea964451a"
     }
 ]
+_ARTIFACT_PAYLOAD_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND artifact:hashes.'SHA-256' = 'ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+}
+_ARTIFACT_PAYLOAD_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "payload_bin": "YXJ0aWZhY3QgY29udGVudA==",
+                "hashes": {
+                    "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                    "SHA-256": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+                }
+            }
+        },
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "target_ref": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f"
+    }
+]
+_ARTIFACT_URL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND artifact:hashes.'SHA-256' = 'ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a' AND artifact:url = 'https://example.com/artifact.bin']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+}
+_ARTIFACT_URL_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "url": "https://example.com/artifact.bin",
+                "hashes": {
+                    "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                    "SHA-256": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+                }
+            }
+        },
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+        "target_ref": "observed-data--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a"
+    }
+]
 _DIRECTORY_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
@@ -8450,6 +8568,22 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_process_observable_object(cls):
         return cls.__assemble_bundle(*_PROCESS_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_artifact_payload_indicator_object(cls):
+        return cls.__assemble_bundle(_ARTIFACT_PAYLOAD_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_artifact_payload_observable_object(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_PAYLOAD_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_artifact_url_indicator_object(cls):
+        return cls.__assemble_bundle(_ARTIFACT_URL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_artifact_url_observable_object(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_URL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_directory_indicator_object(cls):

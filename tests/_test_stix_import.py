@@ -3581,6 +3581,117 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertFalse(path_enc.to_ids)
         self._check_object_attribute_uuid(path_enc, object_id)
 
+    def _check_artifact_url_indicator_object(self, attributes, indicator):
+        md5, sha256, url = attributes
+        _md5, _sha256, _url = (
+            self._get_pattern_value(part)
+            for part in indicator.pattern[1:-1].split(' AND ')
+        )
+        self.assertTrue(all(attribute.to_ids for attribute in attributes))
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, _md5)
+        self._check_object_attribute_uuid(md5, indicator.id, _md5)
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, _sha256)
+        self._check_object_attribute_uuid(sha256, indicator.id, _sha256)
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, _url)
+        self._check_object_attribute_uuid(url, indicator.id, _url)
+
+    def _check_artifact_url_observable_object(
+            self, attributes, observed_data, observable, indicator):
+        md5, sha256, mime_type, url = attributes
+        object_id = observed_data.id
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, observable.hashes['MD5'])
+        self.assertTrue(md5.to_ids)
+        self._check_object_attribute_uuid(md5, f'{indicator.id} - {object_id}')
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, observable.hashes['SHA-256'])
+        self.assertFalse(sha256.to_ids)
+        self._check_object_attribute_uuid(sha256, object_id)
+        self.assertEqual(mime_type.type, 'mime-type')
+        self.assertEqual(mime_type.object_relation, 'mime_type')
+        self.assertEqual(mime_type.value, observable.mime_type)
+        self.assertFalse(mime_type.to_ids)
+        self._check_object_attribute_uuid(mime_type, object_id)
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, observable.url)
+        self.assertFalse(url.to_ids)
+        self._check_object_attribute_uuid(url, object_id)
+
+    def _check_artifact_payload_indicator_object(self, attributes, indicator):
+        md5, sha256 = attributes
+        _md5, _sha256 = (
+            self._get_pattern_value(part)
+            for part in indicator.pattern[1:-1].split(' AND ')
+        )
+        self.assertTrue(all(attribute.to_ids for attribute in attributes))
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, _md5)
+        self._check_object_attribute_uuid(md5, indicator.id, _md5)
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, _sha256)
+        self._check_object_attribute_uuid(sha256, indicator.id, _sha256)
+
+    def _check_artifact_payload_observable_object(
+            self, attributes, observed_data, observable, indicator):
+        # STIX 2.0 Artifact has no encryption_algorithm/decryption_key.
+        has_encryption = hasattr(observable, 'encryption_algorithm')
+        payload_bin, md5, sha256 = attributes[:3]
+        mime_type = attributes[-1]
+        object_id = observed_data.id
+        self.assertEqual(payload_bin.type, 'attachment')
+        self.assertEqual(payload_bin.object_relation, 'payload_bin')
+        self.assertEqual(
+            payload_bin.value,
+            getattr(observable, 'id', object_id).split('--')[1]
+        )
+        self.assertEqual(
+            self._get_data_value(payload_bin.data), observable.payload_bin
+        )
+        self.assertFalse(payload_bin.to_ids)
+        self._check_object_attribute_uuid(payload_bin, object_id)
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, observable.hashes['MD5'])
+        self.assertTrue(md5.to_ids)
+        self._check_object_attribute_uuid(md5, f'{indicator.id} - {object_id}')
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, observable.hashes['SHA-256'])
+        self.assertFalse(sha256.to_ids)
+        self._check_object_attribute_uuid(sha256, object_id)
+        if has_encryption:
+            decryption_key, encryption_algorithm = attributes[3:5]
+            self.assertEqual(decryption_key.type, 'text')
+            self.assertEqual(decryption_key.object_relation, 'decryption_key')
+            self.assertEqual(decryption_key.value, observable.decryption_key)
+            self.assertFalse(decryption_key.to_ids)
+            self._check_object_attribute_uuid(decryption_key, object_id)
+            self.assertEqual(encryption_algorithm.type, 'text')
+            self.assertEqual(
+                encryption_algorithm.object_relation, 'encryption_algorithm'
+            )
+            self.assertEqual(
+                encryption_algorithm.value, observable.encryption_algorithm
+            )
+            self.assertFalse(encryption_algorithm.to_ids)
+            self._check_object_attribute_uuid(encryption_algorithm, object_id)
+        self.assertEqual(mime_type.type, 'mime-type')
+        self.assertEqual(mime_type.object_relation, 'mime_type')
+        self.assertEqual(mime_type.value, observable.mime_type)
+        self.assertFalse(mime_type.to_ids)
+        self._check_object_attribute_uuid(mime_type, object_id)
+
     _HASHLOOKUP_FIELDS = (
         ('filename', 'FileName'), ('size-in-bytes', 'FileSize'),
         ('md5', 'MD5'), ('sha1', 'SHA-1'), ('sha256', 'SHA-256'),

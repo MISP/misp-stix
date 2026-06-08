@@ -2899,6 +2899,61 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object=json.loads(misp_object.to_json()), location=location
         )
 
+    def test_stix21_bundle_with_artifact_payload_indicator_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_artifact_payload_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_artifact_payload_indicator_object(
+            misp_object.attributes, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        )
+
+    def test_stix21_bundle_with_artifact_payload_observable_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_artifact_payload_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, artifact, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_observed_data_object(misp_object, observed_data)
+        self._check_artifact_payload_observable_object(
+            misp_object.attributes, observed_data, artifact, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()),
+            observed_data=[observed_data, artifact, indicator, relationship]
+        )
+
+    def test_stix21_bundle_with_artifact_url_indicator_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_artifact_url_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_artifact_url_indicator_object(
+            misp_object.attributes, indicator
+        )
+
+    def test_stix21_bundle_with_artifact_url_observable_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_artifact_url_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, artifact, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_observed_data_object(misp_object, observed_data)
+        self._check_artifact_url_observable_object(
+            misp_object.attributes, observed_data, artifact, indicator
+        )
+
     def test_stix21_bundle_with_directory_indicator_object(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_directory_indicator_object()
         self.parser.load_stix_bundle(bundle)

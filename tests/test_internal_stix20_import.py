@@ -2423,6 +2423,61 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[observed_data, indicator, relationship]
         )
 
+    def test_stix20_bundle_with_artifact_payload_indicator_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_payload_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_artifact_payload_indicator_object(
+            misp_object.attributes, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        )
+
+    def test_stix20_bundle_with_artifact_payload_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_payload_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_artifact_payload_observable_object(
+            misp_object.attributes, observed_data, observable, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()),
+            observed_data=[observed_data, indicator, relationship]
+        )
+
+    def test_stix20_bundle_with_artifact_url_indicator_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_url_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_artifact_url_indicator_object(
+            misp_object.attributes, indicator
+        )
+
+    def test_stix20_bundle_with_artifact_url_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_url_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_artifact_url_observable_object(
+            misp_object.attributes, observed_data, observable, indicator
+        )
+
     def test_stix20_bundle_with_directory_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_directory_indicator_object()
         self.parser.load_stix_bundle(bundle)
