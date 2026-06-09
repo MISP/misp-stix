@@ -1354,7 +1354,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_wrapped_attributes(directory1_id, *dirObj1.attributes)
         artifact3_id = f'{od_id} - {artifact5}'
         self.assertEqual(artObj3.uuid, uuid5(UUIDv4, artifact3_id))
-        self.assertEqual(len(artObj3.attributes), 4)
+        self.assertEqual(len(artObj3.attributes), 5)
         payload_bin, *artObj3_attributes = artObj3.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -1394,7 +1394,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_wrapped_attributes(directory2_id, *dirObj2.attributes)
         artifact4_id = f'{od_id} - {artifact6}'
         self.assertEqual(artObj4.uuid, uuid5(UUIDv4, artifact4_id))
-        self.assertEqual(len(artObj4.attributes), 4)
+        self.assertEqual(len(artObj4.attributes), 5)
         payload_bin, *artObj4_attributes = artObj4.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -2442,7 +2442,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_wrapped_attributes(directory1_id, *dirObj1.attributes)
         artifact3_id = f"{od_id} - {artifact5}"
         self.assertEqual(artObj3.uuid, uuid5(UUIDv4, artifact3_id))
-        self.assertEqual(len(artObj3.attributes), 4)
+        self.assertEqual(len(artObj3.attributes), 5)
         payload_bin, *artObj3_attributes = artObj3.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(
@@ -2484,7 +2484,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_wrapped_attributes(directory2_id, *dirObj2.attributes)
         artifact4_id = f"{od_id} - {artifact6}"
         self.assertEqual(artObj4.uuid, uuid5(UUIDv4, artifact4_id))
-        self.assertEqual(len(artObj4.attributes), 4)
+        self.assertEqual(len(artObj4.attributes), 5)
         payload_bin, *artObj4_attributes = artObj4.attributes
         payload_data = self._get_data_value(payload_bin.data)
         self.assertEqual(

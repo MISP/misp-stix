@@ -3147,6 +3147,27 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_asn_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_asn_observable(observed_data, 'v21')
 
+    def _object_from_artifact_observable(
+            self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('artifact', observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(
+            observed_data
+        )
+        attributes = self._observables._parse_artifact_observable(
+            observable, observed_data.id
+        )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, observed_data)
+
+    def _object_from_artifact_observable_v20(
+            self, observed_data: ObservedData_v20):
+        self._object_from_artifact_observable(observed_data, 'v20')
+
+    def _object_from_artifact_observable_v21(
+            self, observed_data: ObservedData_v21):
+        self._object_from_artifact_observable(observed_data, 'v21')
+
     def _object_from_cpe_asset_observable_v20(
             self, observed_data: ObservedData_v20):
         self._object_from_generic_observable(observed_data, 'cpe-asset', 'v20')
@@ -3165,6 +3186,18 @@ class InternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         self._object_from_generic_observable(
             observed_data, 'credential', 'v21'
+        )
+
+    def _object_from_directory_observable_v20(
+            self, observed_data: ObservedData_v20):
+        self._object_from_generic_observable(
+            observed_data, 'directory', 'v20'
+        )
+
+    def _object_from_directory_observable_v21(
+            self, observed_data: ObservedData_v21):
+        self._object_from_generic_observable(
+            observed_data, 'directory', 'v21'
         )
 
     def _object_from_domain_ip_observable_v20(
@@ -3406,6 +3439,27 @@ class InternalSTIX2ObservedDataConverter(
         self._object_from_generic_observable(
             observed_data, 'gitlab-user', 'v21'
         )
+
+    def _object_from_hashlookup_observable(
+            self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('hashlookup', observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(
+            observed_data
+        )
+        attributes = self._observables._parse_hashlookup_observable(
+            observable, observed_data.id
+        )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, observed_data)
+
+    def _object_from_hashlookup_observable_v20(
+            self, observed_data: ObservedData_v20):
+        self._object_from_hashlookup_observable(observed_data, 'v20')
+
+    def _object_from_hashlookup_observable_v21(
+            self, observed_data: ObservedData_v21):
+        self._object_from_hashlookup_observable(observed_data, 'v21')
 
     def _object_from_http_request_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
@@ -3873,10 +3927,10 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_registry_key_value_observable(
             self, registry_value: _WINDOWS_REGISTRY_VALUE_TYPING,
             observed_data: _OBSERVED_DATA_TYPING, index: int) -> str:
+        object_id = f'{observed_data.id} - values - {index}'
         misp_object = self._create_misp_object(
-            'registry-key-value', observed_data
+            'registry-key-value', observed_data, object_id=object_id
         )
-        object_id = observed_data.id
         mapping = self._mapping.registry_key_values_object_mapping
         for field, attribute in mapping().items():
             if hasattr(registry_value, field):
@@ -3885,8 +3939,8 @@ class InternalSTIX2ObservedDataConverter(
                     **self._populate_object_attribute(
                         value, attribute,
                         self._observables._handle_object_id(
-                            value, object_id, attribute['object_relation'],
-                            feature=f'{object_id} - values - {index}'
+                            value, observed_data.id,
+                            attribute['object_relation'], feature=object_id
                         )
                     )
                 )
@@ -3902,6 +3956,29 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_registry_key_observable_v21(
             self, observed_data: ObservedData_v21):
         self._object_from_registry_key_observable(observed_data, 'v21')
+
+    def _object_from_registry_key_value(
+            self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object(
+            'registry-key-value', observed_data
+        )
+        observable = getattr(self, f'_fetch_observables_{version}')(
+            observed_data
+        )
+        attributes = self._observables._parse_registry_key_observable(
+            observable, observed_data.id
+        )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, observed_data)
+
+    def _object_from_registry_key_value_observable_v20(
+            self, observed_data: ObservedData_v20):
+        self._object_from_registry_key_value(observed_data, 'v20')
+
+    def _object_from_registry_key_value_observable_v21(
+            self, observed_data: ObservedData_v21):
+        self._object_from_registry_key_value(observed_data, 'v21')
 
     def _object_from_telegram_account_observable_v20(
             self, observed_data: ObservedData_v20):

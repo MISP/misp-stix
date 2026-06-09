@@ -2094,6 +2094,71 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
                 attribute.value
             )
 
+    def _check_artifact_url_observable_object(self, misp_object, observed_data):
+        md5, sha256, url, mime_type = misp_object.attributes
+        artifact = observed_data.objects['0']
+        self.assertEqual(artifact.type, 'artifact')
+        self.assertEqual(artifact.hashes['MD5'], md5.value)
+        self.assertEqual(artifact.hashes['SHA-256'], sha256.value)
+        self.assertEqual(artifact.url, url.value)
+        self.assertEqual(artifact.mime_type, mime_type.value)
+
+    def _check_artifact_payload_observable_object(self, misp_object, observed_data):
+        (md5, sha256, payload_bin, mime_type, encryption_algorithm,
+         decryption_key) = misp_object.attributes
+        artifact = observed_data.objects['0']
+        self.assertEqual(artifact.type, 'artifact')
+        self.assertEqual(artifact.hashes['MD5'], md5.value)
+        self.assertEqual(artifact.hashes['SHA-256'], sha256.value)
+        data = payload_bin.data
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(artifact.payload_bin, data)
+        self.assertEqual(artifact.mime_type, mime_type.value)
+        self.assertEqual(
+            artifact.x_misp_encryption_algorithm, encryption_algorithm.value
+        )
+        self.assertEqual(artifact.x_misp_decryption_key, decryption_key.value)
+
+    def _test_event_with_artifact_url_indicator_object(self, event):
+        misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
+        self._check_artifact_url_observable_object(misp_object, observed_data)
+        md5, sha256, url, _mime_type = misp_object.attributes
+        md5_p, sha256_p, url_p = pattern[1:-1].split(' AND ')
+        self.assertEqual(md5_p, f"artifact:hashes.MD5 = '{md5.value}'")
+        self.assertEqual(
+            sha256_p, f"artifact:hashes.'SHA-256' = '{sha256.value}'"
+        )
+        self.assertEqual(url_p, f"artifact:url = '{url.value}'")
+
+    def _test_event_with_artifact_url_observable_object(self, event):
+        misp_object, observed_data = self._run_observable_from_object_tests(event)
+        self._check_artifact_url_observable_object(misp_object, observed_data)
+
+    def _test_event_with_artifact_payload_indicator_object(self, event):
+        misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
+        self._check_artifact_payload_observable_object(misp_object, observed_data)
+        md5, sha256 = misp_object.attributes[:2]
+        md5_p, sha256_p = pattern[1:-1].split(' AND ')
+        self.assertEqual(md5_p, f"artifact:hashes.MD5 = '{md5.value}'")
+        self.assertEqual(
+            sha256_p, f"artifact:hashes.'SHA-256' = '{sha256.value}'"
+        )
+
+    def _test_event_with_artifact_payload_observable_object(self, event):
+        misp_object, observed_data = self._run_observable_from_object_tests(event)
+        self._check_artifact_payload_observable_object(misp_object, observed_data)
+
+    def _check_directory_observable_object(self, misp_object, observed_data):
+        path, path_enc, ctime, mtime, atime = misp_object.attributes
+        directory = observed_data.objects['0']
+        self.assertEqual(directory.type, 'directory')
+        self.assertEqual(directory.path, path.value)
+        self.assertEqual(directory.path_enc, path_enc.value)
+        self.assertEqual(directory.created, self._datetime_from_str(ctime.value))
+        self.assertEqual(directory.modified, self._datetime_from_str(mtime.value))
+        self.assertEqual(directory.accessed, self._datetime_from_str(atime.value))
+
     def _check_domain_ip_observable_object(self, misp_object, observed_data):
         _domain, hostname, _ip, port = (
             attribute.value for attribute in misp_object.attributes
@@ -2219,6 +2284,29 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         filename, md5 = _malware_sample.value.split('|')
         self.assertEqual(artifact.hashes['MD5'], md5)
         self.assertEqual(artifact.x_misp_filename, filename)
+
+    def _check_hashlookup_observable_object(self, misp_object, observed_data):
+        (filename, filesize, known_malicious, md5, sha1, sha256, ssdeep, tlsh,
+         package_name, package_version, package_release, package_arch,
+         package_description, package_maintainer, source) = misp_object.attributes
+        _file = observed_data.objects['0']
+        self.assertEqual(_file.type, 'file')
+        self.assertEqual(_file.name, filename.value)
+        self.assertEqual(_file.size, int(filesize.value))
+        hashes = _file.hashes
+        self.assertEqual(hashes['MD5'], md5.value)
+        self.assertEqual(hashes['SHA-1'], sha1.value)
+        self.assertEqual(hashes['SHA-256'], sha256.value)
+        self.assertEqual(hashes['ssdeep'], ssdeep.value)
+        self.assertEqual(hashes['TLSH'], tlsh.value)
+        self.assertEqual(_file.x_misp_KnownMalicious, known_malicious.value)
+        self.assertEqual(_file.x_misp_PackageName, package_name.value)
+        self.assertEqual(_file.x_misp_PackageVersion, package_version.value)
+        self.assertEqual(_file.x_misp_PackageRelease, package_release.value)
+        self.assertEqual(_file.x_misp_PackageArch, package_arch.value)
+        self.assertEqual(_file.x_misp_PackageDescription, package_description.value)
+        self.assertEqual(_file.x_misp_PackageMaintainer, package_maintainer.value)
+        self.assertEqual(_file.x_misp_source, source.value)
 
     def _check_http_request_observable_object(self, misp_object, observed_data):
         ip_src, ip_dst, host, method, user_agent, uri, url, content = (
@@ -2878,6 +2966,69 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
+    def _test_event_with_directory_indicator_object(self, event):
+        misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
+        self._check_directory_observable_object(misp_object, observed_data)
+        path = misp_object.attributes[0]
+        self.assertEqual(pattern, f"[directory:path = '{path.value}']")
+
+    def _test_event_with_directory_observable_object(self, event):
+        misp_object, observed_data = self._run_observable_from_object_tests(event)
+        self._check_directory_observable_object(misp_object, observed_data)
+
+    def _test_event_with_registry_key_value_object(self, event):
+        # STIX 2.0 cannot represent a key-less windows-registry-key, so the
+        # registry-key-value object is exported as a custom object.
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        identity, report, custom_object = self.parser.stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_ref = self._check_report_features(
+            report, event, identity_id, timestamp
+        )[0]
+        self._run_custom_object_tests(
+            misp_object, custom_object, object_ref, identity_id
+        )
+
+    def _test_event_with_registry_key_value_indicator_object(self, event):
+        # STIX 2.0 cannot represent a key-less windows-registry-key, so the
+        # observable side stays a custom object; a values[0] pattern is valid
+        # in 2.0, though, so a to_ids registry-key-value still yields an
+        # Indicator pointing at that custom observable.
+        self._add_object_ids_flag(event)
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        identity, report, custom_object, indicator, relationship = (
+            self.parser.stix_objects
+        )
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        custom_ref, indicator_ref, relationship_ref = self._check_report_features(
+            report, event, identity_id, timestamp
+        )
+        self._run_custom_object_tests(
+            misp_object, custom_object, custom_ref, identity_id
+        )
+        self._check_object_indicator_features(
+            indicator, misp_object, identity_id, indicator_ref
+        )
+        name = misp_object['Attribute'][0]
+        self.assertEqual(
+            indicator.pattern,
+            f"[windows-registry-key:values[0].name = '{name['value']}']"
+        )
+        self.assertEqual(relationship.id, relationship_ref)
+        self.assertEqual(relationship.relationship_type, 'based-on')
+        self.assertEqual(relationship.source_ref, indicator_ref)
+        self.assertEqual(relationship.target_ref, custom_ref)
+
     def _test_event_with_domain_ip_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
         self._check_domain_ip_observable_object(misp_object, observed_data)
@@ -3321,6 +3472,26 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         misp_object, observed_data = self._run_observable_from_object_tests(event)
         self._check_process_observable_object(misp_object, observed_data)
 
+    def _test_event_with_hashlookup_indicator_object(self, event):
+        misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
+        self._check_hashlookup_observable_object(misp_object, observed_data)
+        filename, _, _, md5, sha1, sha256, ssdeep, tlsh, *_ = misp_object.attributes
+        self.assertEqual(
+            set(pattern[1:-1].split(' AND ')),
+            {
+                f"file:name = '{filename.value}'",
+                f"file:hashes.MD5 = '{md5.value}'",
+                f"file:hashes.'SHA-1' = '{sha1.value}'",
+                f"file:hashes.'SHA-256' = '{sha256.value}'",
+                f"file:hashes.SSDEEP = '{ssdeep.value}'",
+                f"file:hashes.TLSH = '{tlsh.value}'",
+            }
+        )
+
+    def _test_event_with_hashlookup_observable_object(self, event):
+        misp_object, observed_data = self._run_observable_from_object_tests(event)
+        self._check_hashlookup_observable_object(misp_object, observed_data)
+
     def _test_event_with_registry_key_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
         self._check_registry_key_observable_object(misp_object, observed_data)
@@ -3331,6 +3502,61 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
     def _test_event_with_registry_key_observable_object(self, event):
         misp_object, observed_data = self._run_observable_from_object_tests(event)
         self._check_registry_key_observable_object(misp_object, observed_data)
+
+    def _check_registry_key_with_values_observable_object(
+            self, misp_objects, observed_data):
+        registry_key, value1, value2 = misp_objects
+        registry_key_object = observed_data.objects['0']
+        self.assertEqual(registry_key_object.type, 'windows-registry-key')
+        key, hive, modified = (
+            attribute['value'] for attribute in registry_key['Attribute']
+        )
+        self.assertEqual(registry_key_object.key, key)
+        self.assertEqual(registry_key_object.x_misp_hive, hive)
+        if not isinstance(modified, datetime):
+            modified = self._datetime_from_str(modified)
+        self.assertEqual(
+            registry_key_object.modified.timestamp(), modified.timestamp()
+        )
+        values = registry_key_object['values']
+        self.assertEqual(len(values), 2)
+        for registry_value, misp_value in zip(values, (value1, value2)):
+            name, data, data_type = (
+                attribute['value'] for attribute in misp_value['Attribute']
+            )
+            self.assertEqual(registry_value.name, name)
+            self.assertEqual(registry_value.data, data)
+            self.assertEqual(registry_value.data_type, data_type)
+
+    def _test_event_with_registry_key_and_values_indicator_object(self, event):
+        misp_objects, observed_data, pattern = (
+            self._run_indicator_from_objects_tests(event)
+        )
+        self._check_registry_key_with_values_observable_object(
+            misp_objects, observed_data
+        )
+        registry_key, value1, value2 = misp_objects
+        key = self._sanitise_registry_key_value(
+            registry_key['Attribute'][0]['value']
+        )
+        self.assertEqual(
+            set(pattern[1:-1].split(' AND ')),
+            {
+                f"windows-registry-key:key = '{key}'",
+                f"windows-registry-key:values[0].name = "
+                f"'{value1['Attribute'][0]['value']}'",
+                f"windows-registry-key:values[1].name = "
+                f"'{value2['Attribute'][0]['value']}'",
+            }
+        )
+
+    def _test_event_with_registry_key_and_values_observable_object(self, event):
+        misp_objects, observed_data = (
+            self._run_observable_from_objects_tests(event)
+        )
+        self._check_registry_key_with_values_observable_object(
+            misp_objects, observed_data
+        )
 
     def _test_event_with_script_objects(self, event):
         orgc = event['Orgc']
@@ -3652,6 +3878,50 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_custom_objects()
         self._test_event_with_custom_objects(event['Event'])
 
+    def test_event_with_artifact_url_indicator_object(self):
+        event = get_event_with_artifact_url_object()
+        self._test_event_with_artifact_url_indicator_object(event['Event'])
+
+    def test_event_with_artifact_url_observable_object(self):
+        event = get_event_with_artifact_url_object()
+        self._test_event_with_artifact_url_observable_object(event['Event'])
+
+    def test_event_with_artifact_payload_indicator_object(self):
+        event = get_event_with_artifact_payload_object()
+        self._test_event_with_artifact_payload_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_artifact_payload_observable_object(self):
+        event = get_event_with_artifact_payload_object()
+        self._test_event_with_artifact_payload_observable_object(event['Event'])
+
+    def test_event_with_directory_indicator_object(self):
+        event = get_event_with_directory_object()
+        self._test_event_with_directory_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_directory_observable_object(self):
+        event = get_event_with_directory_object()
+        self._test_event_with_directory_observable_object(event['Event'])
+
+    def test_event_with_registry_key_value_object(self):
+        event = get_event_with_registry_key_value_object()
+        self._test_event_with_registry_key_value_object(event['Event'])
+
+    def test_event_with_registry_key_value_indicator_object(self):
+        event = get_event_with_registry_key_value_object()
+        self._test_event_with_registry_key_value_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
         self._test_event_with_domain_ip_indicator_object(event['Event'])
@@ -3726,6 +3996,18 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_file_observable_object(self):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_observable_object(event['Event'])
+
+    def test_event_with_hashlookup_indicator_object(self):
+        event = get_event_with_hashlookup_object()
+        self._test_event_with_hashlookup_indicator_object(event['Event'])
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects[0],
+            stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_hashlookup_observable_object(self):
+        event = get_event_with_hashlookup_object()
+        self._test_event_with_hashlookup_observable_object(event['Event'])
 
     def test_event_with_http_request_indicator_object(self):
         event = get_event_with_http_request_object()
@@ -3910,6 +4192,25 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_registry_key_observable_object(self):
         event = get_event_with_registry_key_object()
         self._test_event_with_registry_key_observable_object(event['Event'])
+
+    def test_event_with_registry_key_and_values_indicator_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        self._test_event_with_registry_key_and_values_indicator_object(
+            event['Event']
+        )
+        self._populate_documentation(
+            misp_object=self.parser._misp_event.objects,
+            stix=self.parser.stix_objects[2:],
+            name='registry-key with references to registry-key-value(s)',
+            summary='Registry Key Object referencing multiple '
+                    'Registry Key Value Objects'
+        )
+
+    def test_event_with_registry_key_and_values_observable_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        self._test_event_with_registry_key_and_values_observable_object(
+            event['Event']
+        )
 
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()
@@ -4102,6 +4403,54 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event.from_dict(**event)
         self._test_event_with_custom_objects(misp_event)
 
+    def test_event_with_artifact_url_indicator_object(self):
+        event = get_event_with_artifact_url_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_url_indicator_object(misp_event)
+
+    def test_event_with_artifact_url_observable_object(self):
+        event = get_event_with_artifact_url_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_url_observable_object(misp_event)
+
+    def test_event_with_artifact_payload_indicator_object(self):
+        event = get_event_with_artifact_payload_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_payload_indicator_object(misp_event)
+
+    def test_event_with_artifact_payload_observable_object(self):
+        event = get_event_with_artifact_payload_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_artifact_payload_observable_object(misp_event)
+
+    def test_event_with_directory_indicator_object(self):
+        event = get_event_with_directory_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_directory_indicator_object(misp_event)
+
+    def test_event_with_directory_observable_object(self):
+        event = get_event_with_directory_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_directory_observable_object(misp_event)
+
+    def test_event_with_registry_key_value_object(self):
+        event = get_event_with_registry_key_value_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_value_object(misp_event)
+
+    def test_event_with_registry_key_value_indicator_object(self):
+        event = get_event_with_registry_key_value_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_value_indicator_object(misp_event)
+
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object_custom()
         misp_event = MISPEvent()
@@ -4173,6 +4522,18 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_file_observable_object(misp_event)
+
+    def test_event_with_hashlookup_indicator_object(self):
+        event = get_event_with_hashlookup_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_hashlookup_indicator_object(misp_event)
+
+    def test_event_with_hashlookup_observable_object(self):
+        event = get_event_with_hashlookup_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_hashlookup_observable_object(misp_event)
 
     def test_event_with_http_request_indicator_object(self):
         event = get_event_with_http_request_object()
@@ -4341,6 +4702,22 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_registry_key_observable_object(misp_event)
+
+    def test_event_with_registry_key_and_values_indicator_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_and_values_indicator_object(
+            misp_event
+        )
+
+    def test_event_with_registry_key_and_values_observable_object(self):
+        event = get_event_with_registry_key_and_values_objects()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_registry_key_and_values_observable_object(
+            misp_event
+        )
 
     def test_event_with_script_objects(self):
         event = get_event_with_script_objects()

@@ -1858,6 +1858,84 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(misp_object, *stix_objects)
 
+    def _parse_artifact_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_artifact_object_observable(misp_object)
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_artifact_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_artifact_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        attributes = self._extract_indicator_object_attributes(
+            misp_object['Attribute']
+        )
+        pattern = []
+        for hash_type in self._mapping.artifact_hash_types():
+            if attributes.get(hash_type):
+                try:
+                    pattern.append(
+                        self._create_hash_pattern(
+                            hash_type, attributes.pop(hash_type),
+                            prefix='artifact:hashes'
+                        )
+                    )
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error(
+                        hash_type, misp_object
+                    )
+        for key, feature in self._mapping.artifact_object_mapping().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"artifact:{feature} = '{attributes.pop(key)}'"
+                )
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(attributes, 'artifact')
+            )
+        return pattern
+
+    def _parse_directory_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_directory_object_observable(misp_object)
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_directory_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_directory_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        attributes = self._extract_indicator_object_attributes(
+            misp_object['Attribute']
+        )
+        pattern = []
+        for key, feature in self._mapping.directory_object_mapping().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"directory:{feature} = '{attributes.pop(key)}'"
+                )
+        for key, feature in self._mapping.file_time_fields().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"directory:{feature} = '{attributes.pop(key)}'"
+                )
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(
+                    attributes, 'directory'
+                )
+            )
+        return pattern
+
     @staticmethod
     def _parse_custom_attachment(attachment: str | tuple) -> dict:
         if isinstance(attachment, tuple):
@@ -2203,6 +2281,48 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_hashlookup_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_hashlookup_object_observable(misp_object)
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_hashlookup_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_hashlookup_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        attributes = self._extract_indicator_object_attributes(
+            misp_object['Attribute']
+        )
+        pattern = []
+        for hash_relation in self._mapping.hashlookup_hash_types():
+            if attributes.get(hash_relation):
+                try:
+                    pattern.append(
+                        self._create_hash_pattern(
+                            hash_relation, attributes.pop(hash_relation)
+                        )
+                    )
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error(
+                        hash_relation, misp_object
+                    )
+        if attributes.get('FileName'):
+            pattern.append(
+                self._create_filename_pattern(attributes.pop('FileName'))
+            )
+        if attributes.get('FileSize'):
+            pattern.append(f"file:size = '{attributes.pop('FileSize')}'")
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(attributes, 'file')
+            )
+        return pattern
 
     def _parse_image_object(self, misp_object: MISPObject | dict):
         observed_data = self._parse_image_object_observable(misp_object)
@@ -2892,6 +3012,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return pattern
 
     def _parse_registry_key_object(self, misp_object: MISPObject | dict):
+        for reference in misp_object.get('ObjectReference', []):
+            if self._is_reference_included(
+                    reference, 'registry-key-value', ('contains',)):
+                self._populate_objects_to_parse(misp_object)
+                return
+        self._parse_registry_key_object_standalone(misp_object)
+
+    def _parse_registry_key_object_standalone(
+            self, misp_object: MISPObject | dict):
         observed_data = self._parse_registry_key_object_observable(misp_object)
         stix_objects = [observed_data]
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -3205,6 +3334,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_object_analyst_fields(file_object, *stix_objects)
         pe_object['used'] = True
 
+    def _resolve_registry_key_to_parse(self, registry_key: dict):
+        value_uuids = self._fetch_included_reference_uuids(
+            registry_key.get('ObjectReference', []),
+            'registry-key-value', ('contains',)
+        )
+        if not value_uuids:
+            self._parse_registry_key_object_standalone(registry_key)
+            return
+        value_objects = [
+            self._objects_to_parse['registry-key-value'][value_uuid]
+            for value_uuid in value_uuids
+        ]
+        misp_values = [value['misp_object'] for value in value_objects]
+        observed_data = self._parse_registry_key_with_values_observable(
+            registry_key, misp_values
+        )
+        stix_objects = [observed_data]
+        to_ids = self._fetch_ids_flag(registry_key['Attribute']) or any(
+            self._fetch_ids_flag(value['Attribute']) for value in misp_values
+        )
+        if to_ids:
+            pattern = self._parse_registry_key_with_values_pattern(
+                registry_key, misp_values
+            )
+            indicator = self._handle_object_indicator(registry_key, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(registry_key, *stix_objects)
+        for value_object in value_objects:
+            value_object['used'] = True
+
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):
             file_objects = self._objects_to_parse['file']
@@ -3232,6 +3394,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if misp_object['used']:
                     continue
                 self._parse_custom_object(misp_object['misp_object'])
+        if self._objects_to_parse.get('registry-key'):
+            registry_keys = self._objects_to_parse['registry-key']
+            for misp_object in registry_keys.values():
+                if misp_object['used']:
+                    continue
+                registry_key = misp_object['misp_object']
+                try:
+                    self._resolve_registry_key_to_parse(registry_key)
+                except Exception as exception:
+                    self._object_error(registry_key, exception)
+                misp_object['used'] = True
+        if self._objects_to_parse.get('registry-key-value'):
+            registry_values = self._objects_to_parse['registry-key-value']
+            for misp_object in registry_values.values():
+                if misp_object['used']:
+                    continue
+                self._parse_registry_key_value_object(misp_object['misp_object'])
         if self._objects_to_parse.get('annotation'):
             objects_to_parse = self._objects_to_parse['annotation']
             for misp_object in objects_to_parse.values():
@@ -4241,6 +4420,45 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         return credential_args
 
+    def _parse_artifact_args(self, attributes: dict) -> dict:
+        artifact_args = defaultdict(dict)
+        for hash_type in self._mapping.artifact_hash_types():
+            if attributes.get(hash_type):
+                artifact_args['hashes'][hash_type] = self._select_single_feature(
+                    attributes, hash_type
+                )
+        if attributes.get('payload_bin'):
+            payload = self._select_single_feature(attributes, 'payload_bin')
+            if isinstance(payload, tuple):
+                payload = payload[1]
+            if not isinstance(payload, str):
+                payload = b64encode(payload.getvalue()).decode()
+            artifact_args['payload_bin'] = payload
+        for key, feature in self._mapping.artifact_object_mapping().items():
+            if attributes.get(key):
+                artifact_args[feature] = self._select_single_feature(
+                    attributes, key
+                )
+        return artifact_args
+
+    def _parse_directory_args(self, attributes: dict) -> dict:
+        directory_args = {}
+        for key, feature in self._mapping.directory_object_mapping().items():
+            if attributes.get(key):
+                directory_args[feature] = self._select_single_feature(
+                    attributes, key
+                )
+        for key, feature in self._mapping.file_time_fields().items():
+            if attributes.get(key):
+                directory_args[feature] = self._datetime_from_str(
+                    self._select_single_feature(attributes, key)
+                )
+        if attributes:
+            directory_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        return directory_args
+
     def _parse_domain_args(self, attributes: dict) -> dict:
         domain_args = {}
         for feature in ('domain', 'hostname'):
@@ -4313,6 +4531,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             file_args.update(
                 self._handle_observable_multiple_properties(attributes)
             )
+        return file_args
+
+    def _parse_hashlookup_args(self, attributes: dict) -> dict:
+        file_args = defaultdict(dict)
+        if attributes.get('FileName'):
+            file_args['name'] = self._select_single_feature(
+                attributes, 'FileName'
+            )
+        if attributes.get('FileSize'):
+            file_args['size'] = int(
+                self._select_single_feature(attributes, 'FileSize')
+            )
+        for hash_type in self._mapping.hashlookup_hash_types():
+            if attributes.get(hash_type):
+                file_args['hashes'][hash_type] = self._select_single_feature(
+                    attributes, hash_type
+                )
+        if attributes:
+            file_args.update(self._handle_observable_properties(attributes))
         return file_args
 
     def _parse_http_request_args(self, attributes: dict) -> dict:
@@ -4552,6 +4789,94 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         return registry_key_args
 
+    def _parse_registry_key_value_args(self, attributes: list) -> dict:
+        attributes = self._extract_object_attributes(attributes)
+        values_args = {
+            feature: attributes.pop(key)
+            for key, feature in self._mapping.registry_key_mapping().items()
+            if key in attributes
+        }
+        if attributes.get('data'):
+            values_args['data'] = attributes.pop('data')
+        if attributes:
+            values_args.update(self._handle_observable_properties(attributes))
+        return values_args
+
+    def _parse_registry_key_with_values_args(
+            self, registry_key: dict, value_objects: list) -> dict:
+        attributes = self._extract_object_attributes(registry_key['Attribute'])
+        registry_key_args = self._parse_regkey_key_values_observable(attributes)
+        registry_key_args['values'] = [
+            self._parse_registry_key_value_args(value_object['Attribute'])
+            for value_object in value_objects
+        ]
+        if attributes:
+            registry_key_args.update(
+                self._handle_observable_properties(attributes)
+            )
+        return registry_key_args
+
+    def _parse_registry_key_value_pattern(
+            self, attributes: list, values_prefix: str) -> list:
+        attributes = self._extract_indicator_object_attributes(attributes)
+        pattern = []
+        if attributes.get('data'):
+            data = self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(
+                    attributes.pop('data').strip("'").strip('"')
+                )
+            )
+            pattern.append(f"{values_prefix}.data = '{data}'")
+        attributes = {
+            key: self._handle_value_for_pattern(
+                self._sanitise_registry_key_value(value)
+            )
+            for key, value in attributes.items()
+        }
+        for key, feature in self._mapping.registry_key_mapping().items():
+            if attributes.get(key):
+                pattern.append(
+                    f"{values_prefix}.{feature} = '{attributes.pop(key)}'"
+                )
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_properties(
+                    attributes, 'windows-registry-key'
+                )
+            )
+        return pattern
+
+    def _parse_registry_key_value_object_pattern(
+            self, misp_object: MISPObject | dict) -> list:
+        return self._parse_registry_key_value_pattern(
+            misp_object['Attribute'], 'windows-registry-key:values[0]'
+        )
+
+    def _parse_registry_key_with_values_pattern(
+            self, registry_key: dict, value_objects: list) -> list:
+        prefix = 'windows-registry-key'
+        attributes = self._extract_indicator_object_attributes(
+            registry_key['Attribute']
+        )
+        pattern = self._parse_regkey_key_values_pattern(attributes, prefix)
+        for index, value_object in enumerate(value_objects):
+            pattern.extend(
+                self._parse_registry_key_value_pattern(
+                    value_object['Attribute'], f'{prefix}:values[{index}]'
+                )
+            )
+        if attributes:
+            attributes = {
+                key: self._handle_value_for_pattern(
+                    self._sanitise_registry_key_value(value)
+                )
+                for key, value in attributes.items()
+            }
+            pattern.extend(
+                self._handle_pattern_properties(attributes, prefix)
+            )
+        return pattern
+
     def _parse_url_args(self, attributes: dict) -> dict:
         attributes = self._extract_object_attributes(attributes)
         url_args = {}
@@ -4774,10 +5099,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return 'standard'
 
     def _fetch_included_reference_uuids(
-            self, references: list, name: str) -> list:
+            self, references: list, name: str,
+            relationship_types: tuple | None = None) -> list:
         uuids = []
         for reference in references:
-            if self._is_reference_included(reference, name):
+            if self._is_reference_included(reference, name, relationship_types):
                 referenced_uuid = reference['referenced_uuid']
                 if referenced_uuid not in self._objects_to_parse[name]:
                     self._referenced_object_name_warning(name, referenced_uuid)
