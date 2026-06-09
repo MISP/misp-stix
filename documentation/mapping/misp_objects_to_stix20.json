@@ -260,6 +260,123 @@
             }
         ]
     },
+    "artifact": {
+        "MISP": {
+            "name": "artifact",
+            "meta-category": "file",
+            "description": "Artifact object",
+            "uuid": "d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+            "Attribute": [
+                {
+                    "uuid": "684da8aa-4e88-5c9b-a07c-13da628ebbee",
+                    "object_relation": "md5",
+                    "value": "b2a5abfeef9e36964281a31e17b57c97",
+                    "type": "md5",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "1c091f29-39b4-55dd-993b-db8e3c45593b",
+                    "object_relation": "sha256",
+                    "value": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a",
+                    "type": "sha256",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "data": "YXJ0aWZhY3QgY29udGVudA==",
+                    "uuid": "e9fa629f-d1b2-5fda-bc76-e2630766687f",
+                    "object_relation": "payload_bin",
+                    "value": "artifact.bin",
+                    "type": "attachment",
+                    "to_ids": false,
+                    "category": "External analysis"
+                },
+                {
+                    "uuid": "b7292752-018e-554c-82e0-5d7fc38a0e8b",
+                    "object_relation": "mime_type",
+                    "value": "application/zip",
+                    "type": "mime-type",
+                    "to_ids": false,
+                    "category": "Artifacts dropped"
+                },
+                {
+                    "uuid": "5355e834-1ea6-5c5c-9d41-11df375b67cb",
+                    "object_relation": "encryption_algorithm",
+                    "value": "AES-256-GCM",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "3dc29420-1138-5f35-bd49-872162ce4903",
+                    "object_relation": "decryption_key",
+                    "value": "secret-decryption-key",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "artifact",
+                        "mime_type": "application/zip",
+                        "payload_bin": "YXJ0aWZhY3QgY29udGVudA==",
+                        "hashes": {
+                            "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                            "SHA-256": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+                        },
+                        "x_misp_decryption_key": "secret-decryption-key",
+                        "x_misp_encryption_algorithm": "AES-256-GCM"
+                    }
+                },
+                "labels": [
+                    "misp:name=\"artifact\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "indicator",
+                "id": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND artifact:hashes.'SHA-256' = 'ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a']",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "file"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"artifact\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "relationship",
+                "id": "relationship--ef2540c4-35bf-5d60-89a4-42a54f4ac8e9",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+                "target_ref": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f"
+            }
+        ]
+    },
     "asn": {
         "MISP": {
             "name": "asn",
@@ -786,6 +903,111 @@
                 "relationship_type": "based-on",
                 "source_ref": "indicator--5b1f9378-46d4-494b-a4c1-044e0a00020f",
                 "target_ref": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f"
+            }
+        ]
+    },
+    "directory": {
+        "MISP": {
+            "name": "directory",
+            "meta-category": "file",
+            "description": "Directory object describing a directory of files",
+            "uuid": "5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+            "Attribute": [
+                {
+                    "uuid": "e9c1214e-12e6-5023-8eb3-5922e7df9b43",
+                    "object_relation": "path",
+                    "value": "/var/www/MISP/app/files/scripts/tmp",
+                    "type": "text",
+                    "to_ids": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "14d00e55-5085-5c9a-9a22-fc74e65bfc8e",
+                    "object_relation": "path-encoding",
+                    "value": "UTF-8",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "ef6e86be-6c9b-57d3-b1d2-12f8d223ba79",
+                    "object_relation": "creation-time",
+                    "value": "2021-10-25T16:22:00+00:00",
+                    "type": "datetime",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "4f5c30f7-262b-578a-9167-37423cc8c88f",
+                    "object_relation": "modification-time",
+                    "value": "2022-10-25T16:22:00+00:00",
+                    "type": "datetime",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "1783ad9b-72f3-5d40-a300-e4ca3285cd8c",
+                    "object_relation": "access-time",
+                    "value": "2023-10-25T16:22:00+00:00",
+                    "type": "datetime",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "directory",
+                        "path": "/var/www/MISP/app/files/scripts/tmp",
+                        "path_enc": "UTF-8",
+                        "created": "2021-10-25T16:22:00Z",
+                        "modified": "2022-10-25T16:22:00Z",
+                        "accessed": "2023-10-25T16:22:00Z"
+                    }
+                },
+                "labels": [
+                    "misp:name=\"directory\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "indicator",
+                "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/tmp']",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "file"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"directory\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "relationship",
+                "id": "relationship--a31c0d6d-bacc-5b83-9d7f-c83268b920d7",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+                "target_ref": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
             }
         ]
     },
@@ -2237,6 +2459,203 @@
                 "relationship_type": "based-on",
                 "source_ref": "indicator--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
                 "target_ref": "observed-data--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b"
+            }
+        ]
+    },
+    "hashlookup": {
+        "MISP": {
+            "name": "hashlookup",
+            "meta-category": "file",
+            "description": "hashlookup object as described on hashlookup services from circl.lu",
+            "uuid": "b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+            "Attribute": [
+                {
+                    "uuid": "2ce0918e-020c-53a7-980d-3b6ff629f7c0",
+                    "object_relation": "FileName",
+                    "value": "oui",
+                    "type": "filename",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "4e87fefe-f91f-54ee-b202-188cd0d6a5e2",
+                    "object_relation": "FileSize",
+                    "value": "35",
+                    "type": "size-in-bytes",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "c756da29-7f21-56cf-b1d1-6fed65468fa4",
+                    "object_relation": "KnownMalicious",
+                    "value": "hashlookup-known-malicious-source",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "366dfce6-7c95-5eb3-a4da-31a9867ab144",
+                    "object_relation": "MD5",
+                    "value": "8764605c6f388c89096b534d33565802",
+                    "type": "md5",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "2ca2da7a-ef59-5e60-9425-4f9125289fd8",
+                    "object_relation": "SHA-1",
+                    "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                    "type": "sha1",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "f6e0a018-81e8-5e45-b11d-6644c11b9c41",
+                    "object_relation": "SHA-256",
+                    "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                    "type": "sha256",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "89f9d673-9a25-566f-93b9-595f981bd618",
+                    "object_relation": "SSDEEP",
+                    "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
+                    "type": "ssdeep",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "ad193a87-fade-5aea-8bc7-e89334fc5262",
+                    "object_relation": "TLSH",
+                    "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+                    "type": "tlsh",
+                    "to_ids": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "17bf68f3-2425-5a09-8662-50bd57a6aa7e",
+                    "object_relation": "PackageName",
+                    "value": "coreutils",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "1cd900a6-4193-539f-8b0b-9795b2eda428",
+                    "object_relation": "PackageVersion",
+                    "value": "8.32",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "0f65aaff-de20-5d4c-bc07-75bbe13fae24",
+                    "object_relation": "PackageRelease",
+                    "value": "4.1ubuntu1",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "7cd4c2c4-2688-58b9-ac68-6d2db790f35d",
+                    "object_relation": "PackageArch",
+                    "value": "amd64",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "caa990e7-c871-55ff-840f-d939c021577d",
+                    "object_relation": "PackageDescription",
+                    "value": "GNU core utilities",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "d0c9ce7b-852a-5a33-a499-725abc953744",
+                    "object_relation": "PackageMaintainer",
+                    "value": "Ubuntu Developers",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "7378139b-4586-5f4c-a106-346e876c8d14",
+                    "object_relation": "source",
+                    "value": "https://www.circl.lu/services/hashlookup",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "file",
+                        "hashes": {
+                            "MD5": "8764605c6f388c89096b534d33565802",
+                            "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                            "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                            "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
+                            "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+                        },
+                        "size": 35,
+                        "name": "oui",
+                        "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
+                        "x_misp_PackageArch": "amd64",
+                        "x_misp_PackageDescription": "GNU core utilities",
+                        "x_misp_PackageMaintainer": "Ubuntu Developers",
+                        "x_misp_PackageName": "coreutils",
+                        "x_misp_PackageRelease": "4.1ubuntu1",
+                        "x_misp_PackageVersion": "8.32",
+                        "x_misp_source": "https://www.circl.lu/services/hashlookup"
+                    }
+                },
+                "labels": [
+                    "misp:name=\"hashlookup\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "indicator",
+                "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:name = 'oui']",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "file"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"hashlookup\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "relationship",
+                "id": "relationship--754c566f-4a4b-5e03-b377-39a690bcc320",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+                "target_ref": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f"
             }
         ]
     },
@@ -4516,6 +4935,299 @@
                 "relationship_type": "based-on",
                 "source_ref": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
                 "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
+            }
+        ]
+    },
+    "registry-key with references to registry-key-value(s)": {
+        "MISP": [
+            {
+                "name": "registry-key",
+                "meta-category": "file",
+                "description": "Registry key object describing a Windows registry key",
+                "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                "ObjectReference": [
+                    {
+                        "uuid": "0813e8a9-eaa3-5ed1-90de-17d4788a5c7b",
+                        "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                        "referenced_uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+                        "relationship_type": "contains",
+                        "Object": {
+                            "uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+                            "name": "registry-key-value",
+                            "meta-category": "file"
+                        }
+                    },
+                    {
+                        "uuid": "dbfb3321-4707-5626-909e-61be24720e0d",
+                        "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                        "referenced_uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+                        "relationship_type": "contains",
+                        "Object": {
+                            "uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+                            "name": "registry-key-value",
+                            "meta-category": "file"
+                        }
+                    }
+                ],
+                "Attribute": [
+                    {
+                        "uuid": "cd4eb1a9-c425-5ffa-b9e5-77c38ec08ab6",
+                        "object_relation": "key",
+                        "value": "hkey_local_machine\\system\\bar\\foo",
+                        "type": "regkey",
+                        "category": "Persistence mechanism",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "59517e1a-09fa-5156-9d75-698f25122a15",
+                        "object_relation": "hive",
+                        "value": "hklm",
+                        "type": "text",
+                        "category": "Persistence mechanism",
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "f0cdf620-0734-5715-ae7f-e77b069987d9",
+                        "object_relation": "last-modified",
+                        "value": "2020-10-25T16:22:00+00:00",
+                        "type": "datetime",
+                        "category": "Other",
+                        "to_ids": false
+                    }
+                ],
+                "timestamp": "1603642920"
+            },
+            {
+                "name": "registry-key-value",
+                "meta-category": "file",
+                "description": "Registry key value object",
+                "uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+                "Attribute": [
+                    {
+                        "uuid": "a5e0d147-97a8-5c35-b894-fafb85d4d36e",
+                        "object_relation": "name",
+                        "value": "Foo",
+                        "type": "text",
+                        "category": "Persistence mechanism",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "1424eb12-3834-51c1-a4b7-4070020aecb6",
+                        "object_relation": "data",
+                        "value": "qwerty",
+                        "type": "text",
+                        "category": "Persistence mechanism",
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "ddd4cf94-32e2-5c47-9dcd-51e10baea333",
+                        "object_relation": "data-type",
+                        "value": "REG_SZ",
+                        "type": "text",
+                        "category": "Persistence mechanism",
+                        "to_ids": false
+                    }
+                ],
+                "timestamp": "1603642920"
+            },
+            {
+                "name": "registry-key-value",
+                "meta-category": "file",
+                "description": "Registry key value object",
+                "uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+                "Attribute": [
+                    {
+                        "uuid": "000d753f-ac6f-5dc5-83d7-c219b4a8b727",
+                        "object_relation": "name",
+                        "value": "Bar",
+                        "type": "text",
+                        "category": "Persistence mechanism",
+                        "to_ids": true
+                    },
+                    {
+                        "uuid": "6ca3ce1a-96e1-55a7-8897-d3cddb6c5191",
+                        "object_relation": "data",
+                        "value": "42",
+                        "type": "text",
+                        "category": "Persistence mechanism",
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "49026b17-897e-5d44-81bb-4ec4f14a391f",
+                        "object_relation": "data-type",
+                        "value": "REG_DWORD",
+                        "type": "text",
+                        "category": "Persistence mechanism",
+                        "to_ids": false
+                    }
+                ],
+                "timestamp": "1603642920"
+            }
+        ],
+        "STIX": [
+            {
+                "type": "observed-data",
+                "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "windows-registry-key",
+                        "key": "hkey_local_machine\\system\\bar\\foo",
+                        "values": [
+                            {
+                                "name": "Foo",
+                                "data": "qwerty",
+                                "data_type": "REG_SZ"
+                            },
+                            {
+                                "name": "Bar",
+                                "data": "42",
+                                "data_type": "REG_DWORD"
+                            }
+                        ],
+                        "modified": "2020-10-25T16:22:00Z",
+                        "x_misp_hive": "hklm"
+                    }
+                },
+                "labels": [
+                    "misp:name=\"registry-key\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "indicator",
+                "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].name = 'Bar']",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "file"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"registry-key\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "relationship",
+                "id": "relationship--9b3ea668-d313-53c7-8e7f-57c14b4b0f01",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+                "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
+            }
+        ]
+    },
+    "registry-key-value": {
+        "MISP": {
+            "name": "registry-key-value",
+            "meta-category": "file",
+            "description": "Registry key value object",
+            "uuid": "8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+            "Attribute": [
+                {
+                    "uuid": "71f0aa82-31da-5bde-857e-e6dc26fb2eaa",
+                    "object_relation": "name",
+                    "value": "RegistryName",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "to_ids": true
+                },
+                {
+                    "uuid": "35d52958-e168-5b67-b506-660c11378d00",
+                    "object_relation": "data",
+                    "value": "%DATA%\\qwertyuiop",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "to_ids": false
+                },
+                {
+                    "uuid": "ddd4cf94-32e2-5c47-9dcd-51e10baea333",
+                    "object_relation": "data-type",
+                    "value": "REG_SZ",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "to_ids": false
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": [
+            {
+                "type": "x-misp-object",
+                "id": "x-misp-object--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "labels": [
+                    "misp:name=\"registry-key-value\"",
+                    "misp:meta-category=\"file\""
+                ],
+                "x_misp_attributes": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "RegistryName",
+                        "category": "Persistence mechanism",
+                        "to_ids": true,
+                        "uuid": "71f0aa82-31da-5bde-857e-e6dc26fb2eaa"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "data",
+                        "value": "%DATA%\\qwertyuiop",
+                        "category": "Persistence mechanism",
+                        "uuid": "35d52958-e168-5b67-b506-660c11378d00"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "data-type",
+                        "value": "REG_SZ",
+                        "category": "Persistence mechanism",
+                        "uuid": "ddd4cf94-32e2-5c47-9dcd-51e10baea333"
+                    }
+                ],
+                "x_misp_meta_category": "file",
+                "x_misp_name": "registry-key-value"
+            },
+            {
+                "type": "indicator",
+                "id": "indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "pattern": "[windows-registry-key:values[0].name = 'RegistryName']",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "file"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"registry-key-value\"",
+                    "misp:meta-category=\"file\""
+                ]
+            },
+            {
+                "type": "relationship",
+                "id": "relationship--4b428a50-e879-5cc7-b283-3d673b6c873d",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "based-on",
+                "source_ref": "indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+                "target_ref": "x-misp-object--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b"
             }
         ]
     },
