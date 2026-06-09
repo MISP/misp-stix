@@ -801,9 +801,9 @@ class ExternalSTIX2ObservableConverter(
         if hasattr(observable, 'arguments'):
             value = ' '.join(observable.arguments)
             yield {
-                **self._mappping.args_attribute(),
+                **self._mapping.args_attribute(),
                 'value': value, 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} -  args - {value}'
+                    f'{object_id} - args - {value}'
                 )
             }
         if hasattr(observable, 'environment_variables'):
@@ -1236,6 +1236,38 @@ class InternalSTIX2ObservableConverter(
                     mapping, getattr(observable, field), object_id
                 )
 
+    def _parse_artifact_observable(
+            self, observable: _ARTIFACT_TYPING, object_id: str) -> Iterator[dict]:
+        if hasattr(observable, 'payload_bin'):
+            value = getattr(observable, 'id', object_id.split(' - ')[0])
+            yield self._handle_object_attribute_with_data(
+                {'value': value.split('--')[1], 'data': observable.payload_bin},
+                self._mapping.payload_bin_attribute(), object_id
+            )
+        if hasattr(observable, 'hashes'):
+            for hash_type, hash_value in observable.hashes.items():
+                yield self._handle_hash_attribute(
+                    hash_type, hash_value, object_id
+                )
+        for field, mapping in self._mapping.artifact_object_mapping().items():
+            if hasattr(observable, field):
+                yield from self._handle_object_attributes(
+                    mapping, getattr(observable, field), object_id
+                )
+
+    def _parse_hashlookup_observable(
+            self, observable: _FILE_TYPING, object_id: str) -> Iterator[dict]:
+        if hasattr(observable, 'hashes'):
+            for hash_type, value in observable.hashes.items():
+                yield self._handle_hash_attribute(
+                    hash_type, value, object_id, mapping='hashlookup'
+                )
+        for field, mapping in self._mapping.hashlookup_object_mapping().items():
+            if hasattr(observable, field):
+                yield from self._handle_object_attributes(
+                    mapping, getattr(observable, field), object_id
+                )
+
     def _parse_generic_observable_with_data(
             self, observable: _USER_ACCOUNT_TYPING,
             name: str, observed_data_id: str) -> Iterator[dict]:
@@ -1497,9 +1529,9 @@ class InternalSTIX2ObservableConverter(
         if hasattr(observable, 'arguments'):
             value = ' '.join(observable.arguments)
             yield {
-                **self._mappping.args_attribute(),
+                **self._mapping.args_attribute(),
                 'value': value, 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} -  args - {value}'
+                    f'{object_id} - args - {value}'
                 )
             }
         if hasattr(observable, 'environment_variables'):

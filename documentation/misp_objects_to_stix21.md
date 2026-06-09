@@ -444,8 +444,8 @@ For the rest of this documentation, we will then, in order to keep the content c
             "modified": "2020-10-25T16:22:00.000Z",
             "content": "Google public DNS",
             "object_refs": [
-                "indicator--5ac337df-e078-4e99-8b17-02550a00020f",
-                "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
+                "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+                "indicator--5ac337df-e078-4e99-8b17-02550a00020f"
             ],
             "labels": [
                 "misp:name=\"annotation\"",

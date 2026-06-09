@@ -2,6 +2,7 @@
     "attack-pattern": "STIX 2.1 Attack Pattern (stix-2.1-attack-pattern)",
     "campaign": "STIX 2.1 Campaign (stix-2.1-campaign)",
     "course-of-action": "STIX 2.1 Course of Action (stix-2.1-course-of-action)",
+    "identity": "Sector (sector)",
     "intrusion-set": "STIX 2.1 Intrusion Set (stix-2.1-intrusion-set)",
     "location": "STIX 2.1 Location (stix-2.1-location)",
     "malware": "STIX 2.1 Malware (stix-2.1-malware)",

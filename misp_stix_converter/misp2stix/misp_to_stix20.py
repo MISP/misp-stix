@@ -789,6 +789,30 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': UserAccount(**credential_args)}
         return self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_artifact_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'], with_data=('payload_bin',)
+        )
+        artifact_args = self._parse_artifact_args(attributes)
+        # STIX 2.0 Artifact has no encryption_algorithm/decryption_key
+        # properties, so those relations fall through to x_misp_* fields.
+        if attributes:
+            artifact_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        return self._handle_object_observable(
+            misp_object, {'0': Artifact(**artifact_args)}
+        )
+
+    def _parse_directory_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        directory_args = self._parse_directory_args(attributes)
+        return self._handle_object_observable(
+            misp_object, {'0': Directory(**directory_args)}
+        )
+
     def _parse_domain_ip_object_custom(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes(
@@ -1019,6 +1043,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
         self._handle_non_indicator_object(
             misp_object, identity_args, 'identity'
+        )
+
+    def _parse_hashlookup_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        file_args = self._parse_hashlookup_args(attributes)
+        return self._handle_object_observable(
+            misp_object, {'0': File(**file_args)}
         )
 
     def _parse_image_object_observable(
@@ -1315,6 +1347,33 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         )
         observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
         return self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_registry_key_with_values_observable(
+            self, registry_key: MISPObject | dict,
+            value_objects: list) -> ObservedData:
+        registry_key_args = self._parse_registry_key_with_values_args(
+            registry_key, value_objects
+        )
+        observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
+        return self._handle_object_observable(registry_key, observable_object)
+
+    def _parse_registry_key_value_object(
+            self, misp_object: MISPObject | dict):
+        # STIX 2.0 cannot represent a key-less windows-registry-key, so a
+        # standalone registry-key-value object is exported as a custom object.
+        # A `values[0]` pattern is valid in 2.0, though, so a to_ids object
+        # still yields an Indicator pointing at that custom observable.
+        self._parse_custom_object(misp_object)
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_registry_key_value_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id,
+                self._parse_stix_object_id(
+                    'object', 'x-misp-object', misp_object
+                ),
+                indicator.modified
+            )
 
     @staticmethod
     def _parse_regkey_key_values_observable(attributes: dict) -> dict:

@@ -214,6 +214,53 @@
             ]
         }
     },
+    "identity": {
+        "MISP": {
+            "GalaxyCluster": [
+                {
+                    "GalaxyElement": [
+                        {
+                            "key": "created",
+                            "value": "2024-01-25T10:18:28.125000Z"
+                        },
+                        {
+                            "key": "modified",
+                            "value": "2024-01-25T10:18:29.125000Z"
+                        }
+                    ],
+                    "meta": {
+                        "created": "2024-01-25T10:18:28.125000Z",
+                        "modified": "2024-01-25T10:18:29.125000Z"
+                    },
+                    "default": false,
+                    "distribution": "0",
+                    "uuid": "d2ea1531-3ba0-5d28-9d7f-e0332cbf4abb",
+                    "value": "Financial Services",
+                    "source": "MISP-Project",
+                    "type": "sector",
+                    "description": "Activities of the financial services sector"
+                }
+            ],
+            "description": "Activity sectors",
+            "namespace": "stix",
+            "distribution": "0",
+            "type": "sector",
+            "name": "Sector"
+        },
+        "STIX": {
+            "type": "identity",
+            "id": "identity--d8e9f0a1-2b3c-4d5e-8f6a-7b8c9d0e1f2a",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2024-01-25T10:18:28.125Z",
+            "modified": "2024-01-25T10:18:29.125Z",
+            "name": "Financial Services",
+            "description": "Activities of the financial services sector",
+            "identity_class": "class",
+            "sectors": [
+                "financial-services"
+            ]
+        }
+    },
     "intrusion-set": {
         "MISP": {
             "GalaxyCluster": [

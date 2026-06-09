@@ -2292,7 +2292,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 message_id, reply_to, subject, x_mailer, user_agent, boundary,
                 *attachments
             ),
-            email_pattern
+            email_pattern, indicator.id
         )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), indicator=indicator
@@ -2346,8 +2346,12 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(section_object.name, 'pe-section')
         self.assertEqual(section_object.timestamp, indicator.modified)
         self._check_single_file_indicator_object(file_object.attributes, file_pattern)
-        self._check_pe_indicator_object(pe_object.attributes, pe_pattern)
-        self._check_pe_section_indicator_object(section_object.attributes, section_pattern)
+        self._check_pe_indicator_object(
+            pe_object.attributes, pe_pattern, indicator.id
+        )
+        self._check_pe_section_indicator_object(
+            section_object.attributes, section_pattern, indicator.id
+        )
         self._populate_documentation(
             misp_object=[
                 json.loads(file_object.to_json()),
@@ -2414,6 +2418,119 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         self.assertEqual(creation_time, observables['0'].created)
         self.assertEqual(modification_time, observables['0'].modified)
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()),
+            observed_data=[observed_data, indicator, relationship]
+        )
+
+    def test_stix20_bundle_with_artifact_payload_indicator_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_payload_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_artifact_payload_indicator_object(
+            misp_object.attributes, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        )
+
+    def test_stix20_bundle_with_artifact_payload_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_payload_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_artifact_payload_observable_object(
+            misp_object.attributes, observed_data, observable, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()),
+            observed_data=[observed_data, indicator, relationship]
+        )
+
+    def test_stix20_bundle_with_artifact_url_indicator_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_url_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_artifact_url_indicator_object(
+            misp_object.attributes, indicator
+        )
+
+    def test_stix20_bundle_with_artifact_url_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_url_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_artifact_url_observable_object(
+            misp_object.attributes, observed_data, observable, indicator
+        )
+
+    def test_stix20_bundle_with_directory_indicator_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_directory_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_directory_indicator_object(misp_object.attributes, indicator)
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        )
+
+    def test_stix20_bundle_with_directory_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_directory_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_directory_observable_object(
+            misp_object.attributes, observed_data, observable, indicator
+        )
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()),
+            observed_data=[observed_data, indicator, relationship]
+        )
+
+    def test_stix20_bundle_with_hashlookup_indicator_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_hashlookup_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_indicator_object(misp_object, indicator)
+        self._check_hashlookup_indicator_object(misp_object.attributes, indicator)
+        self._populate_documentation(
+            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        )
+
+    def test_stix20_bundle_with_hashlookup_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_hashlookup_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_hashlookup_observable_object(
+            misp_object.attributes, observed_data, observable, indicator
+        )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
             observed_data=[observed_data, indicator, relationship]
@@ -2695,7 +2812,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             (
                 src_ref, dst_ref, domain_ref, dst_port, src_port, protocols, addressFamily,
                 socketType, is_listening, protocolFamily
-            )
+            ),
+            indicator.id
         )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), indicator=indicator
@@ -2870,6 +2988,103 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()),
             observed_data=[observed_data, indicator, relationship]
+        )
+
+    def test_stix20_bundle_with_registry_key_with_values_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_registry_key_with_values_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        registry, value1, value2 = self._check_misp_event_features(event, report)
+        registry_key = self._check_observed_data_object(
+            registry, observed_data
+        )['0']
+        self.assertEqual(registry.name, 'registry-key')
+        key, modified, hive = registry.attributes
+        self.assertTrue(all(attr.to_ids for attr in registry.attributes))
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, registry_key.key)
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, registry_key.x_misp_hive)
+        self.assertEqual(value1.name, 'registry-key-value')
+        value1_id = f'{observed_data.id} - values - 0'
+        self.assertEqual(value1.uuid, uuid5(UUIDv4, value1_id))
+        self._check_registry_key_value_fields(
+            value1, registry_key['values'][0], value1_id, indicator
+        )
+        self.assertEqual(value2.name, 'registry-key-value')
+        value2_id = f'{observed_data.id} - values - 1'
+        self.assertEqual(value2.uuid, uuid5(UUIDv4, value2_id))
+        self._check_registry_key_value_fields(
+            value2, registry_key['values'][1], value2_id, indicator
+        )
+        self.assertEqual(len(registry.references), 2)
+        reference1, reference2 = registry.references
+        self._assert_multiple_equal(
+            reference1.relationship_type, reference2.relationship_type,
+            'contains'
+        )
+        self.assertEqual(reference1.referenced_uuid, value1.uuid)
+        self.assertEqual(reference2.referenced_uuid, value2.uuid)
+        self._populate_documentation(
+            misp_object=[
+                json.loads(registry.to_json()),
+                json.loads(value1.to_json()),
+                json.loads(value2.to_json())
+            ],
+            observed_data=[observed_data, indicator, relationship],
+            name='registry-key with references to registry-key-value(s)',
+            summary='Registry Key Object referencing multiple '
+                    'Registry Key Value Objects'
+        )
+
+    def test_stix20_bundle_with_registry_key_with_values_indicator_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_registry_key_with_values_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        registry, value1, value2 = self._check_misp_event_features(event, report)
+        self._check_indicator_object(registry, indicator)
+        self.assertEqual(registry.name, 'registry-key')
+        self.assertTrue(all(attr.to_ids for attr in registry.attributes))
+        key, modified, hive = registry.attributes
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, 'hklm')
+        self.assertEqual(value1.name, 'registry-key-value')
+        value1_id = f'{indicator.id} - values - 0'
+        self.assertEqual(value1.uuid, uuid5(UUIDv4, value1_id))
+        self._check_registry_key_value_indicator_fields(
+            value1, ('qwerty', 'REG_SZ', 'Foo'), value1_id
+        )
+        self.assertEqual(value2.name, 'registry-key-value')
+        value2_id = f'{indicator.id} - values - 1'
+        self.assertEqual(value2.uuid, uuid5(UUIDv4, value2_id))
+        self._check_registry_key_value_indicator_fields(
+            value2, ('42', 'REG_DWORD', 'Bar'), value2_id
+        )
+        self.assertEqual(len(registry.references), 2)
+        reference1, reference2 = registry.references
+        self._assert_multiple_equal(
+            reference1.relationship_type, reference2.relationship_type,
+            'contains'
+        )
+        self.assertEqual(reference1.referenced_uuid, value1.uuid)
+        self.assertEqual(reference2.referenced_uuid, value2.uuid)
+        self._populate_documentation(
+            misp_object=[
+                json.loads(registry.to_json()),
+                json.loads(value1.to_json()),
+                json.loads(value2.to_json())
+            ],
+            indicator=indicator,
+            name='registry-key with references to registry-key-value(s)',
+            summary='Registry Key Object referencing multiple '
+                    'Registry Key Value Objects'
         )
 
     def test_stix20_bundle_with_script_objects(self):

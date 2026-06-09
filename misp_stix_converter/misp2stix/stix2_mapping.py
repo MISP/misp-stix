@@ -343,11 +343,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     __objects_mapping = Mapping(
         **{
             'android-app': '_parse_android_app_object',
+            'artifact': '_parse_artifact_object',
             'asn': '_parse_asn_object',
             'attack-pattern': '_parse_attack_pattern_object',
             'course-of-action': '_parse_course_of_action_object',
             'cpe-asset': '_parse_cpe_asset_object',
             'credential': '_parse_credential_object',
+            'directory': '_parse_directory_object',
             'domain-ip': '_parse_domain_ip_object',
             'domain|ip': '_parse_domain_ip_object',
             'email': '_parse_email_object',
@@ -356,6 +358,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'file': '_parse_file_object',
             'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
+            'hashlookup': '_parse_hashlookup_object',
             'http-request': '_parse_http_request_object',
             'identity': '_parse_identity_object',
             'image': '_parse_image_object',
@@ -378,6 +381,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'process': '_parse_process_object',
             'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
+            'registry-key-value': '_populate_objects_to_parse',
             'script': '_parse_script_object',
             'stix2-pattern': '_parse_stix_pattern_object',
             'telegram-account': '_parse_account_object',
@@ -433,6 +437,22 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __credential_single_fields = (
         'username',
+    )
+    __artifact_hash_types = (
+        'md5', 'sha1', 'sha256', 'sha3-256', 'sha3-512', 'sha512',
+        'ssdeep', 'tlsh'
+    )
+    __artifact_object_mapping = Mapping(
+        **{
+            'mime_type': 'mime_type',
+            'url': 'url'
+        }
+    )
+    __directory_object_mapping = Mapping(
+        **{
+            'path': 'path',
+            'path-encoding': 'path_enc'
+        }
     )
     __domain_family_enum_list = (
         "PF_INET",
@@ -530,6 +550,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'path',
         *__file_data_fields,
         *__hash_attribute_types
+    )
+    __hashlookup_hash_types = (
+        'MD5',
+        'SHA-1',
+        'SHA-256',
+        'SSDEEP',
+        'TLSH'
     )
     __github_user_data_fields = (
         'profile-image',
@@ -1024,6 +1051,18 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         return cls.__credential_single_fields
 
     @classmethod
+    def artifact_hash_types(cls) -> tuple:
+        return cls.__artifact_hash_types
+
+    @classmethod
+    def artifact_object_mapping(cls) -> dict:
+        return cls.__artifact_object_mapping
+
+    @classmethod
+    def directory_object_mapping(cls) -> dict:
+        return cls.__directory_object_mapping
+
+    @classmethod
     def domain_family_enum_list(cls) -> tuple:
         return cls.__domain_family_enum_list
 
@@ -1130,6 +1169,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def hash_attribute_types(cls) -> tuple:
         return cls.__hash_attribute_types
+
+    @classmethod
+    def hashlookup_hash_types(cls) -> tuple:
+        return cls.__hashlookup_hash_types
 
     @classmethod
     def hash_pattern_mapping(cls, field: str) -> str:

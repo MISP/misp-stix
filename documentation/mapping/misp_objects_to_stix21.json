@@ -3871,8 +3871,8 @@
                 "src_port": 80,
                 "dst_port": 8080,
                 "protocols": [
-                    "ip",
-                    "tcp"
+                    "tcp",
+                    "ip"
                 ],
                 "extensions": {
                     "tcp-ext": {

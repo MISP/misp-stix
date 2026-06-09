@@ -1602,6 +1602,77 @@ _TEST_ANNOTATION_OBJECT = {
     ]
 }
 
+_TEST_ARTIFACT_PAYLOAD_OBJECT = {
+    "name": "artifact",
+    "meta-category": "file",
+    "description": "Artifact object",
+    "uuid": "d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+        },
+        {
+            "type": "attachment",
+            "object_relation": "payload_bin",
+            "value": "artifact.bin",
+            "data": "YXJ0aWZhY3QgY29udGVudA=="
+        },
+        {
+            "type": "mime-type",
+            "object_relation": "mime_type",
+            "value": "application/zip"
+        },
+        {
+            "type": "text",
+            "object_relation": "encryption_algorithm",
+            "value": "AES-256-GCM"
+        },
+        {
+            "type": "text",
+            "object_relation": "decryption_key",
+            "value": "secret-decryption-key"
+        }
+    ]
+}
+
+_TEST_ARTIFACT_URL_OBJECT = {
+    "name": "artifact",
+    "meta-category": "file",
+    "description": "Artifact object",
+    "uuid": "e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+        },
+        {
+            "type": "url",
+            "object_relation": "url",
+            "value": "https://example.com/artifact.bin"
+        },
+        {
+            "type": "mime-type",
+            "object_relation": "mime_type",
+            "value": "application/zip"
+        }
+    ]
+}
+
 _TEST_ASN_OBJECT = {
     "name": "asn",
     "meta-category": "network",
@@ -1898,6 +1969,41 @@ _TEST_CREDENTIAL_OBJECT = {
             "type": "text",
             "object_relation": "notification",
             "value": "victim-notified"
+        }
+    ]
+}
+
+_TEST_DIRECTORY_OBJECT = {
+    "name": "directory",
+    "meta-category": "file",
+    "description": "Directory object describing a directory of files",
+    "uuid": "5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "path",
+            "value": "/var/www/MISP/app/files/scripts/tmp"
+        },
+        {
+            "type": "text",
+            "object_relation": "path-encoding",
+            "value": "UTF-8"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "creation-time",
+            "value": "2021-10-25T16:22:00Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "modification-time",
+            "value": "2022-10-25T16:22:00Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "access-time",
+            "value": "2023-10-25T16:22:00Z"
         }
     ]
 }
@@ -3437,6 +3543,91 @@ _TEST_PROCESS_OBJECT = {
     ]
 }
 
+_TEST_HASHLOOKUP_OBJECT = {
+    "name": "hashlookup",
+    "meta-category": "file",
+    "description": "hashlookup object as described on hashlookup services from circl.lu",
+    "uuid": "b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "filename",
+            "object_relation": "FileName",
+            "value": "oui"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "FileSize",
+            "value": "35"
+        },
+        {
+            "type": "text",
+            "object_relation": "KnownMalicious",
+            "value": "hashlookup-known-malicious-source"
+        },
+        {
+            "type": "md5",
+            "object_relation": "MD5",
+            "value": "8764605c6f388c89096b534d33565802"
+        },
+        {
+            "type": "sha1",
+            "object_relation": "SHA-1",
+            "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "SHA-256",
+            "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+        },
+        {
+            "type": "ssdeep",
+            "object_relation": "SSDEEP",
+            "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
+        },
+        {
+            "type": "tlsh",
+            "object_relation": "TLSH",
+            "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageName",
+            "value": "coreutils"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageVersion",
+            "value": "8.32"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageRelease",
+            "value": "4.1ubuntu1"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageArch",
+            "value": "amd64"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageDescription",
+            "value": "GNU core utilities"
+        },
+        {
+            "type": "text",
+            "object_relation": "PackageMaintainer",
+            "value": "Ubuntu Developers"
+        },
+        {
+            "type": "text",
+            "object_relation": "source",
+            "value": "https://www.circl.lu/services/hashlookup"
+        }
+    ]
+}
+
 _TEST_REGISTRY_KEY_OBJECT = {
     "name": "registry-key",
     "meta-category": "file",
@@ -3476,6 +3667,134 @@ _TEST_REGISTRY_KEY_OBJECT = {
         }
     ]
 }
+
+_TEST_REGISTRY_KEY_VALUE_OBJECT = {
+    "name": "registry-key-value",
+    "meta-category": "file",
+    "description": "Registry key value object",
+    "uuid": "8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "RegistryName"
+        },
+        {
+            "type": "text",
+            "object_relation": "data",
+            "value": "%DATA%\\qwertyuiop"
+        },
+        {
+            "type": "text",
+            "object_relation": "data-type",
+            "value": "REG_SZ"
+        }
+    ]
+}
+
+_TEST_REGISTRY_KEY_WITH_VALUES_OBJECTS = [
+    {
+        "name": "registry-key",
+        "meta-category": "file",
+        "description": "Registry key object describing a Windows registry key",
+        "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "regkey",
+                "object_relation": "key",
+                "value": "hkey_local_machine\\system\\bar\\foo"
+            },
+            {
+                "type": "text",
+                "object_relation": "hive",
+                "value": "hklm"
+            },
+            {
+                "type": "datetime",
+                "object_relation": "last-modified",
+                "value": "2020-10-25T16:22:00Z"
+            }
+        ],
+        "ObjectReference": [
+            {
+                "uuid": uuid5(
+                    _TEST_UUID, "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81"
+                ).__str__(),
+                "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                "referenced_uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+                "relationship_type": "contains",
+                "Object": {
+                    "uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+                    "name": "registry-key-value",
+                    "meta-category": "file"
+                }
+            },
+            {
+                "uuid": uuid5(
+                    _TEST_UUID, "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92"
+                ).__str__(),
+                "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                "referenced_uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+                "relationship_type": "contains",
+                "Object": {
+                    "uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+                    "name": "registry-key-value",
+                    "meta-category": "file"
+                }
+            }
+        ]
+    },
+    {
+        "name": "registry-key-value",
+        "meta-category": "file",
+        "description": "Registry key value object",
+        "uuid": "0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "Foo"
+            },
+            {
+                "type": "text",
+                "object_relation": "data",
+                "value": "qwerty"
+            },
+            {
+                "type": "text",
+                "object_relation": "data-type",
+                "value": "REG_SZ"
+            }
+        ]
+    },
+    {
+        "name": "registry-key-value",
+        "meta-category": "file",
+        "description": "Registry key value object",
+        "uuid": "1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "Bar"
+            },
+            {
+                "type": "text",
+                "object_relation": "data",
+                "value": "42"
+            },
+            {
+                "type": "text",
+                "object_relation": "data-type",
+                "value": "REG_DWORD"
+            }
+        ]
+    }
+]
 
 _TEST_REPORT_OBJECT = {
     "uuid": "3e76898a-fcb1-485b-ac24-d450fe8c54bc",
@@ -5399,6 +5718,22 @@ def get_event_with_android_app_object():
     return event
 
 
+def get_event_with_artifact_payload_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_ARTIFACT_PAYLOAD_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_artifact_url_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_ARTIFACT_URL_OBJECT))
+    ]
+    return event
+
+
 def get_event_with_annotation_object():
     event = deepcopy(_BASE_EVENT)
     domain_ip = dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
@@ -5464,6 +5799,14 @@ def get_event_with_custom_objects():
         dict(_populate_object(_TEST_BANK_ACCOUNT_OBJECT)),
         dict(_populate_object(_TEST_BTC_WALLET_OBJECT)),
         dict(_populate_object(_TEST_REPORT_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_directory_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_DIRECTORY_OBJECT))
     ]
     return event
 
@@ -5809,10 +6152,35 @@ def get_event_with_process_object_v2():
     return event
 
 
+def get_event_with_hashlookup_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_HASHLOOKUP_OBJECT))
+    ]
+    return event
+
+
 def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         dict(_populate_object(_TEST_REGISTRY_KEY_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_registry_key_value_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_REGISTRY_KEY_VALUE_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_registry_key_and_values_objects():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(misp_object))
+        for misp_object in deepcopy(_TEST_REGISTRY_KEY_WITH_VALUES_OBJECTS)
     ]
     return event
 

@@ -138,5 +138,9 @@ class InternalSTIX2ToolConverter(InternalSTIX2Converter):
                 attribute.update(tool.x_misp_script_as_attachment)
             else:
                 attribute['value'] = tool.x_misp_script_as_attachment
+            attribute['uuid'] = self.main_parser._create_v5_uuid(
+                f"{tool.id} - {attribute['object_relation']}"
+                f" - {attribute['value']}"
+            )
             misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, tool)
