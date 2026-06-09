@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ..misp_stix_mapping import Mapping
+from ..misp_stix_mapping import Mapping, TLP2MarkingDefinitions
 from .stix2_mapping import MISPtoSTIX2Mapping
 from stix2.v21.common import MarkingDefinition, TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
 from typing import Union
@@ -549,6 +549,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def tlp_markings(cls, field: str) -> Union[MarkingDefinition, None]:
         return cls.__tlp_markings.get(field)
+
+    @classmethod
+    def tlp2_markings(cls, field: str) -> Union[MarkingDefinition, None]:
+        return TLP2MarkingDefinitions.by_tag_name(field)
 
     @classmethod
     def user_account_object_mapping(cls, field: str) -> Union[dict, None]:

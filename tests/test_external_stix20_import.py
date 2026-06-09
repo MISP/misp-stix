@@ -3,7 +3,8 @@
 
 from .test_external_stix20_bundles import TestExternalSTIX20Bundles
 from ._test_stix import TestSTIX20
-from ._test_stix_import import TestExternalSTIX2Import, TestSTIX20Import, UUIDv4
+from ._test_stix_import import (
+    TestExternalSTIX2Import, TestSTIX20Import, UUIDv4, MISP_org_uuid)
 from uuid import uuid5
 
 
@@ -847,6 +848,47 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_file_and_pe_objects(observed_data3, file3, pe, *sections)
         self._populate_ext_observed_data_documentation(
             misp_object=file1, observed_data=observed_data1
+        )
+
+    def test_stix20_bundle_with_identity_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_identity_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 1)
+        misp_object = misp_content[0]
+        self.assertEqual(misp_object.name, 'identity')
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        name_attribute, class_attribute = misp_object.attributes
+        self.assertEqual(name_attribute.object_relation, 'name')
+        self.assertEqual(name_attribute.value, identity.name)
+        self.assertEqual(class_attribute.object_relation, 'identity_class')
+        self.assertEqual(class_attribute.value, identity.identity_class)
+        self._populate_ext_sdo_documentation(
+            misp_object=misp_object, stix_object=identity, source='Identity'
+        )
+
+    def test_stix20_bundle_with_sector_galaxy(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_sector_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        self._check_misp_event_features(event, report)
+        self.assertEqual(len(event.galaxies), 1)
+        galaxy = event.galaxies[0]
+        self.assertEqual(galaxy.type, 'sector')
+        self.assertEqual(len(galaxy.clusters), 1)
+        cluster = galaxy.clusters[0]
+        self.assertEqual(cluster.value, identity.name)
+        self.assertEqual(
+            cluster.uuid,
+            uuid5(UUIDv4, f"{identity.id.split('--')[1]} - {MISP_org_uuid}")
+        )
+        self._populate_external_galaxy_documentation(
+            galaxy=galaxy, identity=identity
         )
 
     def test_stix20_bundle_with_ip_address_attributes(self):

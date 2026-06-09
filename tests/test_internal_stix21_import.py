@@ -2715,7 +2715,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, indicator = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         email_pattern = self._get_parsed_email_pattern(self._check_indicator_object(misp_object, indicator))
-        self._check_email_indicator_object(misp_object.attributes, email_pattern)
+        self._check_email_indicator_object(
+            misp_object.attributes, email_pattern, indicator.id
+        )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), indicator=indicator
         )
@@ -2783,8 +2785,12 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(section_object.name, 'pe-section')
         self.assertEqual(section_object.timestamp, indicator.modified)
         self._check_single_file_indicator_object(file_object.attributes, file_pattern)
-        self._check_pe_indicator_object(pe_object.attributes, pe_pattern)
-        self._check_pe_section_indicator_object(section_object.attributes, section_pattern)
+        self._check_pe_indicator_object(
+            pe_object.attributes, pe_pattern, indicator.id
+        )
+        self._check_pe_section_indicator_object(
+            section_object.attributes, section_pattern, indicator.id
+        )
         self._populate_documentation(
             misp_object=[
                 json.loads(file_object.to_json()),
@@ -2888,6 +2894,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(altitude.value, location.x_misp_altitude)
         self.assertEqual(country.value, location.x_misp_country)
         self.assertEqual(accuracy.value, location.precision / 1000)
+        self._check_object_attribute_uuid(accuracy, location.id)
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), location=location
         )
@@ -3239,7 +3246,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         pattern = self._check_indicator_object(misp_object, indicator)
         _, src_ref, _, dst_ref, _, *patterns = pattern[1:-1].split(' AND ')
         self._check_network_socket_indicator_object(
-            misp_object.attributes, (src_ref, dst_ref, *patterns)
+            misp_object.attributes, (src_ref, dst_ref, *patterns), indicator.id
         )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), indicator=indicator

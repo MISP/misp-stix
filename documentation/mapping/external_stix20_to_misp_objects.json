@@ -656,13 +656,13 @@
                 "uuid": "5cfbdc1b-1240-57eb-b6e8-d6fe7349221a",
                 "ObjectReference": [
                     {
-                        "uuid": "c06f4ab5-9d8d-420a-aca3-b5904c67f094",
+                        "uuid": "4413044b-e0ed-54e4-8aa0-a48292fa97a0",
                         "object_uuid": "5cfbdc1b-1240-57eb-b6e8-d6fe7349221a",
                         "referenced_uuid": "1ae2c084-4e23-52b5-935b-c3404778fa88",
                         "relationship_type": "contains"
                     },
                     {
-                        "uuid": "f5179c94-dc36-4f51-a847-eac99656dadc",
+                        "uuid": "164fa9fb-f0d4-5ae8-887d-0ee1646576dd",
                         "object_uuid": "5cfbdc1b-1240-57eb-b6e8-d6fe7349221a",
                         "referenced_uuid": "e47e1009-9864-5bd4-97cc-e13b1bf7c3bf",
                         "relationship_type": "contains"
@@ -962,7 +962,7 @@
                 "uuid": "7280bbbc-b266-5dea-af4d-ebe1499edc50",
                 "ObjectReference": [
                     {
-                        "uuid": "9a2bc146-9b66-4759-8b62-6e6c90e902cf",
+                        "uuid": "63fdfe41-6f81-5019-9b37-7cd81e21e4b5",
                         "object_uuid": "7280bbbc-b266-5dea-af4d-ebe1499edc50",
                         "referenced_uuid": "d30b62a9-18dc-5ffb-a494-335386e8da0e",
                         "relationship_type": "contained-in"
@@ -1067,6 +1067,50 @@
                         "encryption_algorithm": "mime-type-indicated"
                     }
                 }
+            }
+        }
+    },
+    "identity": {
+        "Identity": {
+            "MISP": {
+                "name": "identity",
+                "meta-category": "misc",
+                "template_uuid": "ae85b960-b507-4de2-a32c-9cfb8f25f990",
+                "description": "Identities can represent actual individuals, organizations, or groups (e.g., ACME, Inc.) as well as classes of individuals, organizations, systems or groups (e.g., the finance sector).  The Identity SDO can capture basic identifying information, contact information, and the sectors that the Identity belongs to. Identity is used in STIX to represent, among other things, targets of attacks, information sources, object creators, and threat actor identities. (ref. STIX 2.1 - 4.5)",
+                "template_version": "1",
+                "uuid": "c2cc2c57-98f5-4804-9e79-8df735f52921",
+                "Attribute": [
+                    {
+                        "uuid": "6cf35d44-4f20-5e93-98af-d55674f5694d",
+                        "object_relation": "name",
+                        "value": "John Doe",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "ee29e3cb-f6c0-5901-8bbd-81fab2ee0308",
+                        "object_relation": "identity_class",
+                        "value": "individual",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    }
+                ],
+                "distribution": "5",
+                "sharing_group_id": "0",
+                "timestamp": "1706177909"
+            },
+            "STIX": {
+                "type": "identity",
+                "id": "identity--c2cc2c57-98f5-4804-9e79-8df735f52921",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2024-01-25T10:18:28.125Z",
+                "modified": "2024-01-25T10:18:29.125Z",
+                "name": "John Doe",
+                "identity_class": "individual"
             }
         }
     },
@@ -1292,7 +1336,7 @@
                 "uuid": "4978b360-df7b-574d-8581-b9118d2cabcd",
                 "ObjectReference": [
                     {
-                        "uuid": "34e97e2e-625c-41bf-bba6-273c6801f075",
+                        "uuid": "619c7ef7-ab56-5ff2-af6f-95ee877d0e01",
                         "object_uuid": "4978b360-df7b-574d-8581-b9118d2cabcd",
                         "referenced_uuid": "1ae2c084-4e23-52b5-935b-c3404778fa88",
                         "relationship_type": "encapsulates"

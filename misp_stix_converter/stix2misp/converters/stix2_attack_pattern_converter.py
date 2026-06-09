@@ -154,8 +154,13 @@ class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
             misp_object.add_attribute(**attribute)
         if hasattr(attack_pattern, 'external_references'):
             for reference in attack_pattern.external_references:
+                attribute = self._parse_attack_pattern_reference(reference)
                 misp_object.add_attribute(
-                    **self._parse_attack_pattern_reference(reference)
+                    **attribute,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f"{attack_pattern.id} - {attribute['object_relation']}"
+                        f" - {attribute['value']}"
+                    )
                 )
         self.main_parser._add_misp_object(misp_object, attack_pattern)
 

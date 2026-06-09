@@ -78,15 +78,19 @@ class STIX2Converter(metaclass=ABCMeta):
 
     def _create_misp_object(
             self, name: str,
-            stix_object: Optional[_SDO_TYPING] = None) -> MISPObject:
+            stix_object: Optional[_SDO_TYPING] = None,
+            object_id: Optional[str] = None) -> MISPObject:
         misp_object = MISPObject(
             name, force_timestamps=True,
             misp_objects_path_custom=_MISP_OBJECTS_PATH
         )
         if stix_object is not None:
-            self.main_parser._sanitise_object_uuid(
-                misp_object, stix_object['id']
-            )
+            if object_id is None:
+                self.main_parser._sanitise_object_uuid(
+                    misp_object, stix_object['id']
+                )
+            else:
+                misp_object.uuid = self.main_parser._create_v5_uuid(object_id)
             misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
 

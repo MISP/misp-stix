@@ -7,8 +7,8 @@ from ..exceptions import (
 from .stix2_observable_converter import (
     ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping,
-    STIX2ObservableConverter, _AUTONOMOUS_SYSTEM_TYPING, _EMAIL_ADDRESS_TYPING,
-    _EXTENSION_TYPING, _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
+    _AUTONOMOUS_SYSTEM_TYPING, _EMAIL_ADDRESS_TYPING, _EXTENSION_TYPING,
+    _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, _MAIN_PARSER_TYPING)
 from abc import ABCMeta
@@ -47,17 +47,16 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
 ]
-class _ObservableMethods(NamedTuple):
-    v21: str
-    v20: str
-
-
 _WINDOWS_PE_BINARY_EXT_TYPING = Union[
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
 ]
 _WINDOWS_REGISTRY_VALUE_TYPING = Union[
     WindowsRegistryValueType_v20, WindowsRegistryValueType_v21
 ]
+
+class _ObservableMethods(NamedTuple):
+    v21: str
+    v20: str
 
 
 class STIX2ObservedDataConverter(metaclass=ABCMeta):
@@ -2634,14 +2633,11 @@ class ExternalSTIX2ObservedDataConverter(
     def _create_misp_object_from_observable_object(
             self, name: str, observed_data: _OBSERVED_DATA_TYPING,
             object_id: Optional[str] = None) -> MISPObject:
-        if object_id is None:
-            return self._create_misp_object(name, observed_data)
-        misp_object = self._create_misp_object(name)
-        misp_object.from_dict(
-            uuid=self.main_parser._create_v5_uuid(object_id),
-            comment=f'Observed Data ID: {observed_data.id}',
-            **self._parse_timeline(observed_data)
+        misp_object = self._create_misp_object(
+            name, observed_data, object_id=object_id
         )
+        if object_id is not None:
+            misp_object.comment = f'Observed Data ID: {observed_data.id}'
         return misp_object
 
     def _create_misp_object_from_observable_object_ref(
@@ -3299,12 +3295,9 @@ class InternalSTIX2ObservedDataConverter(
             self, extension: _EXTENSION_TYPING,
             observed_data: _OBSERVED_DATA_TYPING) -> str:
         object_id = observed_data.id
-        pe_object = self._create_misp_object('pe')
-        pe_object.from_dict(
-            **self._parse_timeline(observed_data),
-            uuid=self.main_parser._create_v5_uuid(
-                f'{object_id} - windows-pebinary-ext'
-            )
+        pe_prefix = f'{object_id} - windows-pebinary-ext'
+        pe_object = self._create_misp_object(
+            'pe', observed_data, object_id=pe_prefix
         )
         attributes = self._observables._parse_pe_extension_observable(extension, object_id)
         for attribute in attributes:
@@ -3312,13 +3305,9 @@ class InternalSTIX2ObservedDataConverter(
         misp_object = self.main_parser._add_misp_object(pe_object, observed_data)
         if hasattr(extension, 'sections'):
             for index, section in enumerate(extension.sections):
-                section_object = self._create_misp_object('pe-section')
-                section_object.from_dict(
-                    **self._parse_timeline(observed_data),
-                    uuid=self.main_parser._create_v5_uuid(
-                        f'{object_id} - windows-pebinary-ext'
-                        f' - sections - {index}'
-                    ),
+                section_object = self._create_misp_object(
+                    'pe-section', observed_data,
+                    object_id=f'{pe_prefix} - sections - {index}'
                 )
                 attributes = self._observables._parse_pe_section_observable(
                     section, index, object_id

@@ -4,6 +4,8 @@ When importing STIX 2.0 bundles from third-party tools (not produced by MISP), S
 
 Unlike the internal conversion (which maps back to known MISP galaxy types), the external conversion creates new `STIX 2.0 *` galaxies that preserve the original STIX content. The cluster value is the STIX object's `name`, and meta fields are extracted from fields such as `aliases`, `kill_chain_phases`, `external_references`, etc.
 
+As an exception, an `Identity` whose `identity_class` is `class` is mapped to the existing MISP `sector` galaxy rather than a dynamically generated `stix-2.0-*` type.
+
 {_external_galaxies_from_stix20_mapping_}
 
 ## The other detailed mappings

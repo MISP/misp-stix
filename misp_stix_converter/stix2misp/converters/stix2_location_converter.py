@@ -53,11 +53,13 @@ class STIX2LocationConverter(STIX2Converter, metaclass=ABCMeta):
         for attribute in self._generic_parser(location):
             misp_object.add_attribute(**attribute)
         if hasattr(location, 'precision'):
+            mapping = self._mapping.accuracy_radius_attribute()
+            value = float(location.precision) / 1000
             misp_object.add_attribute(
-                **{
-                    'value': float(location.precision) / 1000,
-                    **self._mapping.accuracy_radius_attribute()
-                }
+                **mapping, value=value,
+                uuid=self.main_parser._create_v5_uuid(
+                    f"{location.id} - {mapping['object_relation']} - {value}"
+                )
             )
         self.main_parser._add_misp_object(misp_object, location)
 

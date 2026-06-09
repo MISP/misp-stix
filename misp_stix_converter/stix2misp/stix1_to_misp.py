@@ -3,7 +3,6 @@
 
 from ..tools.stix1_loading_helpers import load_stix1_package
 from .importparser import STIXtoMISPParser
-from .stix1_mapping import STIX1toMISPMapping
 from abc import ABCMeta
 from base64 import b64decode, b64encode
 from collections import defaultdict
@@ -20,7 +19,7 @@ from cybox.objects import (
 from operator import attrgetter
 from pathlib import Path
 from pymisp.abstract import misp_objects_path
-from pymisp import MISPAttribute, MISPEvent, MISPObject
+from pymisp import MISPAttribute, MISPObject
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
 from stix.threat_actor import ThreatActor

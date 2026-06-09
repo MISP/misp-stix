@@ -36,7 +36,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 try:
     from datetime import UTC
@@ -574,13 +574,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_event_report_references(
             self, event_report: MISPEventReport | dict):
-        references = {
+        references = dict.fromkeys(
             reference.split('(')[1][:-1]
             for feature in ('attribute', 'object')
             for reference in re.findall(
                 _event_report_regex % feature, event_report['content']
             )
-        }
+        )
         for reference in references:
             if reference in self._event_report_matching:
                 yield from self._event_report_matching[reference]
@@ -4337,7 +4337,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
 
-    def _parse_ip_port_args(self, attributes: dict, protocols: set) -> dict:
+    def _parse_ip_port_args(
+            self, attributes: dict, protocols: dict[str, None]) -> dict:
         mapping = self._mapping.ip_port_object_mapping
         args = {
             feature: self._select_single_feature(attributes, key)
@@ -4345,7 +4346,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if key in attributes
         }
         if 'protocol' in attributes:
-            protocols.add(attributes.pop('protocol'))
+            protocols[attributes.pop('protocol')] = None
         args['protocols'] = list(protocols) if protocols else ['tcp']
         for key, feature in mapping('timeline').items():
             if attributes.get(key):
@@ -4441,18 +4442,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _parse_netflow_protocol(attributes: dict) -> dict:
-        protocols = set()
+        protocols: dict[str, None] = {}
         extensions = defaultdict(dict)
         if attributes.get('icmp-type'):
             extensions['icmp-ext']['icmp_tpye_hex'] = attributes.pop(
                 'icmp-type'
             )
-            protocols.add('icmp')
+            protocols['icmp'] = None
         if attributes.get('tcp-flags'):
             extensions['tcp-ext']['src_flags_hex'] = attributes.pop('tcp-flags')
-            protocols.add('tcp')
+            protocols['tcp'] = None
         if attributes.get('protocol'):
-            protocols.add(attributes.pop('protocol').lower())
+            protocols[attributes.pop('protocol').lower()] = None
         if extensions:
             return {'extensions': extensions, 'protocols': list(protocols)}
         if protocols:

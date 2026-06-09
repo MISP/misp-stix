@@ -2292,7 +2292,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 message_id, reply_to, subject, x_mailer, user_agent, boundary,
                 *attachments
             ),
-            email_pattern
+            email_pattern, indicator.id
         )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), indicator=indicator
@@ -2346,8 +2346,12 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(section_object.name, 'pe-section')
         self.assertEqual(section_object.timestamp, indicator.modified)
         self._check_single_file_indicator_object(file_object.attributes, file_pattern)
-        self._check_pe_indicator_object(pe_object.attributes, pe_pattern)
-        self._check_pe_section_indicator_object(section_object.attributes, section_pattern)
+        self._check_pe_indicator_object(
+            pe_object.attributes, pe_pattern, indicator.id
+        )
+        self._check_pe_section_indicator_object(
+            section_object.attributes, section_pattern, indicator.id
+        )
         self._populate_documentation(
             misp_object=[
                 json.loads(file_object.to_json()),
@@ -2695,7 +2699,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             (
                 src_ref, dst_ref, domain_ref, dst_port, src_port, protocols, addressFamily,
                 socketType, is_listening, protocolFamily
-            )
+            ),
+            indicator.id
         )
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), indicator=indicator
