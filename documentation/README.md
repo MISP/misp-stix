@@ -346,11 +346,13 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | Script object where state is "Malicious" | **Malware** |
 | Script object where state is not "Malicious" | **Tool** |
 | android-app |  Object and IoCs described in Indicator (pattern) |
+| artifact |  Object and IoCs described in Indicator (pattern) |
 | asn |  Object and IoCs described in Indicator (pattern) |
 | attack-pattern | **Attack-pattern** |
 | course-of-action | **Course-of-action** |
 | cpe-asset |  Object and IoCs described in Indicator (pattern) |
 | credential |  Object and IoCs described in Indicator (pattern) |
+| directory |  Object and IoCs described in Indicator (pattern) |
 | domain-ip |  Object and IoCs described in Indicator (pattern) |
 | email |  Object and IoCs described in Indicator (pattern) |
 | email with display names |  Object and IoCs described in Indicator (pattern) |
@@ -360,6 +362,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | file with references to pe & pe-section(s) | File Object with a Windows PE binary extension |
 | github-user |  Object and IoCs described in Indicator (pattern) |
 | gitlab-user |  Object and IoCs described in Indicator (pattern) |
+| hashlookup |  Object and IoCs described in Indicator (pattern) |
 | http-request |  Object and IoCs described in Indicator (pattern) |
 | identity | **Identity** |
 | image |  Object and IoCs described in Indicator (pattern) |
@@ -381,6 +384,8 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | process | Process Objects (potential reference to File Objects) |
 | reddit-account |  Object and IoCs described in Indicator (pattern) |
 | registry-key |  Object and IoCs described in Indicator (pattern) |
+| registry-key with references to registry-key-value(s) | Registry Key Object referencing multiple Registry Key Value Objects |
+| registry-key-value | **X-misp-object** / **Indicator** |
 | telegram-account |  Object and IoCs described in Indicator (pattern) |
 | twitter-account |  Object and IoCs described in Indicator (pattern) |
 | url |  Object and IoCs described in Indicator (pattern) |
@@ -533,11 +538,13 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | Script object where state is not "Malicious" | **Tool** |
 | android-app | Software Object and IoCs described in Indicator (pattern) |
 | annotation | **Note** with references to the annotated objects |
+| artifact | Artifact Object and IoCs described in Indicator (pattern) |
 | asn | Autonomous System Object and IoCs described in Indicator (pattern) |
 | attack-pattern | **Attack-pattern** |
 | course-of-action | **Course-of-action** |
 | cpe-asset | Software Object and IoCs described in Indicator (pattern) |
 | credential | User Account Object and IoCs described in Indicator (pattern) |
+| directory | Directory Object and IoCs described in Indicator (pattern) |
 | domain-ip | Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) |
 | domain-ip with the perfect domain & ip matching | A tuple of IPv4/IPv6 Address & Network Objects for each associated domain & ip |
 | email | Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) |
@@ -550,6 +557,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | geolocation | **Location** |
 | github-user | User Account Object and IoCs described in Indicator (pattern) |
 | gitlab-user | User Account Object and IoCs described in Indicator (pattern) |
+| hashlookup | File Object and IoCs described in Indicator (pattern) |
 | http-request | Domain Name & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) |
 | identity | **Identity** |
 | image | Artifact & File Objects and IoCs described in Indicator (pattern) |
@@ -573,6 +581,8 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | process | Process Objects (potential reference to File Objects) |
 | reddit-account | User Account Object and IoCs described in Indicator (pattern) |
 | registry-key | Windows Registry Key Object and IoCs described in Indicator (pattern) |
+| registry-key with references to registry-key-value(s) | Registry Key Object referencing multiple Registry Key Value Objects |
+| registry-key-value | Windows Registry Key Object and IoCs described in Indicator (pattern) |
 | sigma | **Indicator** |
 | suricata | **Indicator** |
 | telegram-account | User Account Object and IoCs described in Indicator (pattern) |
@@ -732,11 +742,13 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | Script object where state is "Malicious" | **Malware** |
 | Script object where state is not "Malicious" | **Tool** |
 | android-app | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
+| artifact | Artifact Object (pattern) / Artifact Object and IoCs described in Indicator (pattern) (observable) |
 | asn | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
 | attack-pattern | **Attack Pattern** |
 | course-of-action | **Course of Action** |
 | cpe-asset | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
 | credential | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| directory | Directory Object (pattern) / Directory Object and IoCs described in Indicator (pattern) (observable) |
 | domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) (observable) |
 | email | Email Message Object (pattern) / Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) |
 | employee | **Identity** |
@@ -744,6 +756,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
 | github-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | gitlab-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| hashlookup | File Object (pattern) / File Object and IoCs described in Indicator (pattern) (observable) |
 | http-request | Network Traffic Object (pattern) / Domain Name & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
 | identity | **Identity** |
 | image | File Object (pattern) / Artifact & File Objects and IoCs described in Indicator (pattern) (observable) |
@@ -761,6 +774,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | process | Process Object (pattern) / File & Process Objects and IoCs described in Indicator (pattern) (observable) |
 | reddit-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) |
+| registry-key with references to registry-key-value(s) | Registry Key Object referencing multiple Registry Key Value Objects |
 | telegram-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | twitter-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | url | URL Object (pattern) / Url Object and IoCs described in Indicator (pattern) (observable) |
@@ -977,11 +991,13 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | Script object where state is not "Malicious" | **Tool** |
 | android-app | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
 | annotation | **Note** |
+| artifact | Artifact Object (pattern) / Artifact Object and IoCs described in Indicator (pattern) (observable) |
 | asn | Autonomous System Object (pattern) / Autonomous System Object and IoCs described in Indicator (pattern) (observable) |
 | attack-pattern | **Attack Pattern** |
 | course-of-action | **Course of Action** |
 | cpe-asset | Software Object (pattern) / Software Object and IoCs described in Indicator (pattern) (observable) |
 | credential | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| directory | Directory Object (pattern) / Directory Object and IoCs described in Indicator (pattern) (observable) |
 | domain-ip | Domain Name Object (pattern) / Domain Name & Ipv4 Addr Objects and IoCs described in Indicator (pattern) (observable) |
 | email | Email Message Object (pattern) / Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) |
 | employee | **Identity** |
@@ -990,6 +1006,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | geolocation | **Location** |
 | github-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | gitlab-user | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
+| hashlookup | File Object (pattern) / File Object and IoCs described in Indicator (pattern) (observable) |
 | http-request | Network Traffic Object (pattern) / Domain Name & Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
 | identity | **Identity** |
 | image | File Object (pattern) / Artifact & File Objects and IoCs described in Indicator (pattern) (observable) |
@@ -1009,6 +1026,8 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | process | Process Object (pattern) / File & Process Objects and IoCs described in Indicator (pattern) (observable) |
 | reddit-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
 | registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) |
+| registry-key with references to registry-key-value(s) | Registry Key Object referencing multiple Registry Key Value Objects |
+| registry-key-value | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) |
 | sigma | **Indicator** |
 | suricata | **Indicator** |
 | telegram-account | User Account Object (pattern) / User Account Object and IoCs described in Indicator (pattern) (observable) |
