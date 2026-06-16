@@ -856,9 +856,13 @@ class ExternalSTIX2ObservedDataConverter(
                             )
                 continue
             if observable['used'].get(self.event_uuid, False):
-                self._handle_misp_object_fields(
-                    observable['misp_attribute'], observed_data
+                misp_content = observable.get(
+                    'misp_attribute', observable.get('misp_object')
                 )
+                if misp_content:
+                    self._handle_misp_object_fields(
+                        misp_content, observed_data
+                    )
                 continue
             attribute = self._parse_generic_observable_object_ref_as_attribute(
                 domain, observed_data, 'domain'
@@ -980,9 +984,13 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             if observable['used'].get(self.event_uuid, False):
-                self._handle_misp_object_fields(
-                    observable['misp_attribute'], observed_data
+                misp_content = observable.get(
+                    'misp_attribute', observable.get('misp_object')
                 )
+                if misp_content:
+                    self._handle_misp_object_fields(
+                        misp_content, observed_data
+                    )
                 continue
             domain = observable['observable']
             if hasattr(domain, 'resolves_to_refs'):
