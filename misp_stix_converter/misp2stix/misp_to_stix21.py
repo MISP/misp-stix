@@ -1787,15 +1787,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._country_code_warning(country_value)
             return country_value
 
-    def _parse_location_attribute_galaxy(self, galaxy: MISPGalaxy | dict,
-                                         object_id: str, timestamp: datetime):
+    def _parse_location_attribute_galaxy(
+            self, galaxy: MISPGalaxy | dict, location_args: dict):
+        timestamp = location_args['modified']
         to_call = (
             self._parse_territorial_location_galaxy
             if galaxy['type'] in ('country', 'region')
             else self._parse_location_galaxy
         )
         self._handle_attribute_galaxy_relationships(
-            object_id, to_call(galaxy, timestamp), timestamp
+            location_args['id'], to_call(galaxy, timestamp), timestamp
         )
 
     def _parse_location_event_galaxy(self, galaxy: MISPGalaxy | dict):
