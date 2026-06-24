@@ -4897,6 +4897,38 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         self.assertEqual(identity.identity_class, 'class')
         self._check_galaxy_features(identity, galaxy, timestamp)
 
+    def _test_attributes_collection_with_sector_galaxy(self, attributes):
+        cluster = attributes['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_attributes(attributes)
+        self.assertIsNotNone(self.parser.bundle)
+        identity = next(
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.id == f"identity--{cluster['uuid']}"
+        )
+        self.assertEqual(identity.type, 'identity')
+        self.assertEqual(identity.identity_class, 'class')
+        self.assertEqual(identity.name, cluster['value'])
+
+    def _test_attributes_collection_with_meta_less_acs_marking(self, attributes):
+        galaxy = attributes['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertNotIn('meta', cluster)
+        self.parser.parse_misp_attributes(attributes)
+        self.assertIsNotNone(self.parser.bundle)
+        # No meta means no definition content. Rather than crashing on the
+        # forbidden empty definition, the ACS marking is still converted to
+        # its STIX 2.0 custom marking definition object, without a definition.
+        marking = next(
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.id == f"x-misp-marking-definition--{cluster['uuid']}"
+        )
+        self.assertEqual(marking.type, 'x-misp-marking-definition')
+        self.assertEqual(
+            marking.definition_type,
+            f"acs-extension-definition--{galaxy['uuid']}"
+        )
+        self.assertNotIn('definition', marking)
+
     def _test_event_with_threat_actor_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -5111,6 +5143,21 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy=self.parser._misp_event.galaxies[0],
             stix=self.parser.stix_objects[-1]
+        )
+
+    def test_attributes_collection_with_sector_galaxy(self):
+        self._test_attributes_collection_with_sector_galaxy(
+            get_attributes_collection_with_sector_galaxy()
+        )
+
+    def test_attributes_collection_with_meta_less_galaxies(self):
+        self._test_attributes_collection_with_meta_less_galaxies(
+            get_attributes_collection_with_meta_less_galaxies()
+        )
+
+    def test_attributes_collection_with_meta_less_acs_marking(self):
+        self._test_attributes_collection_with_meta_less_acs_marking(
+            get_attributes_collection_with_meta_less_acs_marking()
         )
 
     def test_event_with_threat_actor_galaxy(self):

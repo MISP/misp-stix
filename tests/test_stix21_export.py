@@ -6019,6 +6019,45 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(identity.identity_class, 'class')
         self._check_galaxy_features(identity, galaxy, timestamp)
 
+    def _test_attributes_collection_with_sector_galaxy(self, attributes):
+        cluster = attributes['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_attributes(attributes)
+        self.assertIsNotNone(self.parser.bundle)
+        identity = next(
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.id == f"identity--{cluster['uuid']}"
+        )
+        self.assertEqual(identity.type, 'identity')
+        self.assertEqual(identity.identity_class, 'class')
+        self.assertEqual(identity.name, cluster['value'])
+
+    def _test_attributes_collection_with_meta_less_acs_marking(self, attributes):
+        galaxy = attributes['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertNotIn('meta', cluster)
+        self.parser.parse_misp_attributes(attributes)
+        self.assertIsNotNone(self.parser.bundle)
+        marking = next(
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.id == f"marking-definition--{cluster['uuid']}"
+        )
+        self.assertEqual(marking.type, 'marking-definition')
+        self.assertIn(
+            f"extension-definition--{galaxy['uuid']}", marking.extensions
+        )
+
+    def _test_attribute_with_location_galaxy(self, attribute):
+        cluster = attribute['Galaxy'][0]['GalaxyCluster'][0]
+        misp_attribute = MISPAttribute()
+        misp_attribute.from_dict(**attribute)
+        self.parser.parse_misp_attributes([misp_attribute])
+        self.assertIsNotNone(self.parser.bundle)
+        location = next(
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.id == f"location--{cluster['uuid']}"
+        )
+        self.assertEqual(location.type, 'location')
+
     def _test_event_with_threat_actor_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -6249,6 +6288,21 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             stix=self.parser.stix_objects[-1]
         )
 
+    def test_attributes_collection_with_sector_galaxy(self):
+        self._test_attributes_collection_with_sector_galaxy(
+            get_attributes_collection_with_sector_galaxy()
+        )
+
+    def test_attributes_collection_with_meta_less_galaxies(self):
+        self._test_attributes_collection_with_meta_less_galaxies(
+            get_attributes_collection_with_meta_less_galaxies()
+        )
+
+    def test_attributes_collection_with_meta_less_acs_marking(self):
+        self._test_attributes_collection_with_meta_less_acs_marking(
+            get_attributes_collection_with_meta_less_acs_marking()
+        )
+
     def test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
         self._test_event_with_threat_actor_galaxy(event['Event'])
@@ -6452,6 +6506,11 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_attribute.from_dict(**attribute)
         self.parser.parse_misp_attributes([misp_attribute])
         self.assertIsNotNone(self.parser.bundle)
+
+    def test_attribute_with_location_galaxy(self):
+        self._test_attribute_with_location_galaxy(
+            get_indicator_attribute_with_location_galaxy()
+        )
 
 
 class TestSTIX21ExportInteroperability(TestSTIX2Export, TestSTIX21):

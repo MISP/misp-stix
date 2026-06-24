@@ -172,7 +172,7 @@ class CustomGalaxyCluster:
         ('id', IDProperty('x-misp-marking-definition')),
         ('created', TimestampProperty(precision='millisecond')),
         ('definition_type', StringProperty(required=True)),
-        ('definition', DictionaryProperty(required=True))
+        ('definition', DictionaryProperty())
     ]
 )
 class CustomMarkingDefinition:
@@ -1437,8 +1437,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         elif marking_definition.get('modified') is not None:
             if marking_definition.get('created') is None:
                 marking_definition['created'] = marking_definition['modified']
+        if extension_definition:
+            marking_definition['definition'] = extension_definition
         return CustomMarkingDefinition(
-            id=f'x-misp-{marking_id}', definition=extension_definition,
+            id=f'x-misp-{marking_id}',
             definition_type=f'acs-extension-definition--{galaxy_uuid}',
             interoperability=True, **marking_definition
         )
