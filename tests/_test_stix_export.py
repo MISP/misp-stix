@@ -396,6 +396,22 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(reference.source_name, source_name)
         self.assertEqual(reference.external_id, value)
 
+    def _test_attributes_collection_with_meta_less_galaxies(self, attributes):
+        self.parser.parse_misp_attributes(attributes)
+        self.assertIsNotNone(self.parser.bundle)
+        produced = {
+            stix_object.id.split('--')[-1]
+            for stix_object in self.parser.stix_objects
+        }
+        for galaxy in attributes['Galaxy']:
+            for cluster in galaxy['GalaxyCluster']:
+                self.assertNotIn('meta', cluster)
+                self.assertIn(
+                    cluster['uuid'], produced,
+                    f"No STIX object produced for the meta-less "
+                    f"{galaxy['type']} Galaxy Cluster {cluster['uuid']}"
+                )
+
     def _check_galaxy_features(self, stix_object, galaxy, timestamp):
         cluster = galaxy['GalaxyCluster'][0]
         self.assertEqual(stix_object.id, f"{stix_object.type}--{cluster['uuid']}")

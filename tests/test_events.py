@@ -890,6 +890,21 @@ _TEST_EVENT_WITH_ANALYST_DATA = {
     ]
 }
 
+_TEST_ACS_MARKING_GALAXY = {
+    "uuid": "2f3e5c9a-1b6d-4f2a-9c3e-7a1b2c3d4e5f",
+    "name": "ACS Marking",
+    "type": "stix-2.1-acs-marking",
+    "description": "Access Control Specification marking",
+    "GalaxyCluster": [
+        {
+            "uuid": "9b8c7d6e-5f4a-4b3c-8d2e-1f0a9b8c7d6e",
+            "type": "stix-2.1-acs-marking",
+            "value": "ACS marking without meta",
+            "description": "ACS marking Galaxy Cluster lacking a meta field"
+        }
+    ]
+}
+
 _TEST_ATTACK_PATTERN_GALAXY = {
     "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
     "name": "Attack Pattern",
@@ -4633,6 +4648,38 @@ def get_event_with_sector_galaxy():
     return event
 
 
+def get_attributes_collection_with_sector_galaxy():
+    return {
+        'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)],
+        'Galaxy': [deepcopy(_TEST_SECTOR_GALAXY)]
+    }
+
+
+def get_attributes_collection_with_meta_less_galaxies():
+    galaxies = []
+    for galaxy in (
+            _TEST_ATTACK_PATTERN_GALAXY, _TEST_COURSE_OF_ACTION_GALAXY,
+            _TEST_INTRUSION_SET_GALAXY, _TEST_MALWARE_GALAXY,
+            _TEST_SECTOR_GALAXY, _TEST_THREAT_ACTOR_GALAXY, _TEST_TOOL_GALAXY,
+            _TEST_VULNERABILITY_GALAXY, _TEST_COUNTRY_GALAXY,
+            _TEST_REGION_GALAXY):
+        galaxy = deepcopy(galaxy)
+        for cluster in galaxy['GalaxyCluster']:
+            cluster.pop('meta', None)
+        galaxies.append(galaxy)
+    return {
+        'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)],
+        'Galaxy': galaxies
+    }
+
+
+def get_attributes_collection_with_meta_less_acs_marking():
+    return {
+        'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)],
+        'Galaxy': [deepcopy(_TEST_ACS_MARKING_GALAXY)]
+    }
+
+
 def get_event_with_threat_actor_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
@@ -4777,6 +4824,12 @@ def get_indicator_attribute_with_galaxy():
         deepcopy(_TEST_ATTACK_PATTERN_GALAXY),
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
+    return attribute
+
+
+def get_indicator_attribute_with_location_galaxy():
+    attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+    attribute['Galaxy'] = [deepcopy(_TEST_COUNTRY_GALAXY)]
     return attribute
 
 
