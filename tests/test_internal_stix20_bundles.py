@@ -6642,6 +6642,252 @@ _PROCESS_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e39776a-b284-40b3-8079-22fea964451a"
     }
 ]
+_ARTIFACT_PAYLOAD_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND artifact:hashes.'SHA-256' = 'ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+}
+_ARTIFACT_PAYLOAD_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "payload_bin": "YXJ0aWZhY3QgY29udGVudA==",
+                "hashes": {
+                    "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                    "SHA-256": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+                }
+            }
+        },
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "target_ref": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f"
+    }
+]
+_ARTIFACT_URL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND artifact:hashes.'SHA-256' = 'ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a' AND artifact:url = 'https://example.com/artifact.bin']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+}
+_ARTIFACT_URL_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "url": "https://example.com/artifact.bin",
+                "hashes": {
+                    "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                    "SHA-256": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+                }
+            }
+        },
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="artifact"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a",
+        "target_ref": "observed-data--e3d5f7a9-2b4c-4d6e-9f8a-0b1c2d3e4f5a"
+    }
+]
+_DIRECTORY_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/tmp' AND directory:path_enc = 'UTF-8' AND directory:created = '2021-10-25T16:22:00Z' AND directory:modified = '2022-10-25T16:22:00Z' AND directory:accessed = '2023-10-25T16:22:00Z']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="directory"', 'misp:meta-category="file"']
+}
+_DIRECTORY_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "directory",
+                "path": "/var/www/MISP/app/files/scripts/tmp",
+                "path_enc": "UTF-8",
+                "created": "2021-10-25T16:22:00Z",
+                "modified": "2022-10-25T16:22:00Z",
+                "accessed": "2023-10-25T16:22:00Z"
+            }
+        },
+        "labels": ['misp:name="directory"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/tmp']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="directory"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--6f9b3c2d-4e5f-4a7b-9c8d-1e2f3a4b5c6d",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "target_ref": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
+    }
+]
+_HASHLOOKUP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_KnownMalicious = 'hashlookup-known-malicious-source' AND file:x_misp_PackageName = 'coreutils' AND file:x_misp_PackageVersion = '8.32' AND file:x_misp_PackageRelease = '4.1ubuntu1' AND file:x_misp_PackageArch = 'amd64' AND file:x_misp_PackageDescription = 'GNU core utilities' AND file:x_misp_PackageMaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="hashlookup"', 'misp:meta-category="file"']
+}
+_HASHLOOKUP_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "name": "oui",
+                "size": 35,
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802",
+                    "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                    "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                    "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
+                    "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+                },
+                "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
+                "x_misp_PackageName": "coreutils",
+                "x_misp_PackageVersion": "8.32",
+                "x_misp_PackageRelease": "4.1ubuntu1",
+                "x_misp_PackageArch": "amd64",
+                "x_misp_PackageDescription": "GNU core utilities",
+                "x_misp_PackageMaintainer": "Ubuntu Developers",
+                "x_misp_source": "https://www.circl.lu/services/hashlookup"
+            }
+        },
+        "labels": ['misp:name="hashlookup"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="hashlookup"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a8b9c0d1-2e3f-4a5b-8c6d-7e8f9a0b1c2d",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "target_ref": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f"
+    }
+]
 _REGISTRY_KEY_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
@@ -6696,6 +6942,66 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = [
     {
         "type": "relationship",
         "id": "relationship--0ec23b58-fbd1-4dbb-be28-6a48d4677410",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
+    }
+]
+_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+}
+_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "windows-registry-key",
+                "key": "hkey_local_machine\\system\\bar\\foo",
+                "values": [
+                    {"name": "Foo", "data": "qwerty", "data_type": "REG_SZ"},
+                    {"name": "Bar", "data": "42", "data_type": "REG_DWORD"}
+                ],
+                "modified": "2020-10-25T16:22:00Z",
+                "x_misp_hive": "hklm"
+            }
+        },
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--1f2e3d4c-5b6a-4978-8c9d-0a1b2c3d4e5f",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "based-on",
@@ -8324,12 +8630,54 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_PROCESS_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_artifact_payload_indicator_object(cls):
+        return cls.__assemble_bundle(_ARTIFACT_PAYLOAD_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_artifact_payload_observable_object(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_PAYLOAD_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_artifact_url_indicator_object(cls):
+        return cls.__assemble_bundle(_ARTIFACT_URL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_artifact_url_observable_object(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_URL_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_directory_indicator_object(cls):
+        return cls.__assemble_bundle(_DIRECTORY_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_directory_observable_object(cls):
+        return cls.__assemble_bundle(*_DIRECTORY_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_hashlookup_indicator_object(cls):
+        return cls.__assemble_bundle(_HASHLOOKUP_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_hashlookup_observable_object(cls):
+        return cls.__assemble_bundle(*_HASHLOOKUP_OBSERVABLE_OBJECT)
+
+    @classmethod
     def get_bundle_with_registry_key_indicator_object(cls):
         return cls.__assemble_bundle(_REGISTRY_KEY_INDICATOR_OBJECT)
 
     @classmethod
     def get_bundle_with_registry_key_observable_object(cls):
         return cls.__assemble_bundle(*_REGISTRY_KEY_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_with_values_indicator_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_with_values_observable_object(cls):
+        return cls.__assemble_bundle(
+            *_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT
+        )
 
     @classmethod
     def get_bundle_with_script_objects(cls):

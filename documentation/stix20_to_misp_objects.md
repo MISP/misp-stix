@@ -1341,6 +1341,176 @@ The list of currently supported MISP object templates is available [here](https:
     }
     ```
 
+- artifact
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND artifact:hashes.'SHA-256' = 'ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "file"
+            }
+        ],
+        "labels": [
+            "misp:name=\"artifact\"",
+            "misp:meta-category=\"file\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "name": "artifact",
+        "meta-category": "file",
+        "template_uuid": "0a46df3a-bd9b-472c-a1e7-6aede7094483",
+        "description": "The Artifact object permits capturing an array of bytes (8-bits), as a base64-encoded string, or linking to a file-like payload. From STIX 2.1 (6.1)",
+        "template_version": "3",
+        "uuid": "d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "Attribute": [
+            {
+                "uuid": "fc8054c0-6d39-5689-82a2-3bbecf698774",
+                "object_relation": "md5",
+                "value": "b2a5abfeef9e36964281a31e17b57c97",
+                "type": "md5",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "7b2e59eb-de59-58a8-ab36-5489d1b56841",
+                "object_relation": "sha256",
+                "value": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a",
+                "type": "sha256",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery"
+            }
+        ],
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "timestamp": "1603642920"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "id": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "0": {
+                    "type": "artifact",
+                    "mime_type": "application/zip",
+                    "payload_bin": "YXJ0aWZhY3QgY29udGVudA==",
+                    "hashes": {
+                        "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                        "SHA-256": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a"
+                    }
+                }
+            },
+            "labels": [
+                "misp:name=\"artifact\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "indicator",
+            "id": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[artifact:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "file"
+                }
+            ],
+            "labels": [
+                "misp:name=\"artifact\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+            "target_ref": "observed-data--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "name": "artifact",
+        "meta-category": "file",
+        "template_uuid": "0a46df3a-bd9b-472c-a1e7-6aede7094483",
+        "description": "The Artifact object permits capturing an array of bytes (8-bits), as a base64-encoded string, or linking to a file-like payload. From STIX 2.1 (6.1)",
+        "template_version": "3",
+        "uuid": "d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "Attribute": [
+            {
+                "data": "YXJ0aWZhY3QgY29udGVudA==",
+                "uuid": "27a36270-bd0a-59f8-b5fd-ae884be819ba",
+                "object_relation": "payload_bin",
+                "value": "d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+                "type": "attachment",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "External analysis"
+            },
+            {
+                "uuid": "51cc3480-3908-581e-ab76-0c83b9471142",
+                "object_relation": "md5",
+                "value": "b2a5abfeef9e36964281a31e17b57c97",
+                "type": "md5",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery",
+                "comment": "Indicator ID: indicator--d2c4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f"
+            },
+            {
+                "uuid": "597d0cdc-a860-5255-b967-9797b47141cd",
+                "object_relation": "sha256",
+                "value": "ec5aedf5ecc6329d3b1b8c0e3e2f8c5e6b1d0f7a2c3b4d5e6f7a8b9c0d1e2f3a",
+                "type": "sha256",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "5e312b58-9af5-5351-8de1-a0c1908b0371",
+                "object_relation": "mime_type",
+                "value": "application/zip",
+                "type": "mime-type",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Artifacts dropped"
+            }
+        ],
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "timestamp": "1603642920"
+    }
+    ```
+
 - asn
   - STIX - Indicator
     ```json
@@ -2210,6 +2380,210 @@ The list of currently supported MISP object templates is available [here](https:
                 "uuid": "49cb96ba-a48e-55ee-9cfe-fa6b8d3e9033",
                 "object_relation": "type",
                 "value": "password",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            }
+        ],
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "timestamp": "1603642920"
+    }
+    ```
+
+- directory
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/tmp' AND directory:path_enc = 'UTF-8' AND directory:created = '2021-10-25T16:22:00Z' AND directory:modified = '2022-10-25T16:22:00Z' AND directory:accessed = '2023-10-25T16:22:00Z']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "file"
+            }
+        ],
+        "labels": [
+            "misp:name=\"directory\"",
+            "misp:meta-category=\"file\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "name": "directory",
+        "meta-category": "file",
+        "template_uuid": "23ac6a02-1017-4ea6-a4df-148ed563988d",
+        "description": "Directory object describing a directory with meta-information",
+        "template_version": "1",
+        "uuid": "5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "Attribute": [
+            {
+                "uuid": "eb8920d2-ef18-51b1-a09b-27e7f840994f",
+                "object_relation": "path",
+                "value": "/var/www/MISP/app/files/scripts/tmp",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "74c6ec84-9227-5eb0-96e3-ef38d59e44a2",
+                "object_relation": "path-encoding",
+                "value": "UTF-8",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "54726ddb-afd0-56af-ac4f-f97b6629d13d",
+                "object_relation": "creation-time",
+                "value": "2021-10-25T16:22:00+00:00",
+                "type": "datetime",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "e1d4273a-2724-55be-b810-4ee8c74e053e",
+                "object_relation": "modification-time",
+                "value": "2022-10-25T16:22:00+00:00",
+                "type": "datetime",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "eecbe9f8-ce6b-501b-9e86-d05f533ace36",
+                "object_relation": "access-time",
+                "value": "2023-10-25T16:22:00+00:00",
+                "type": "datetime",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Other"
+            }
+        ],
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "timestamp": "1603642920"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "id": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "0": {
+                    "type": "directory",
+                    "path": "/var/www/MISP/app/files/scripts/tmp",
+                    "path_enc": "UTF-8",
+                    "created": "2021-10-25T16:22:00Z",
+                    "modified": "2022-10-25T16:22:00Z",
+                    "accessed": "2023-10-25T16:22:00Z"
+                }
+            },
+            "labels": [
+                "misp:name=\"directory\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "indicator",
+            "id": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[directory:path = '/var/www/MISP/app/files/scripts/tmp']",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "file"
+                }
+            ],
+            "labels": [
+                "misp:name=\"directory\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--6f9b3c2d-4e5f-4a7b-9c8d-1e2f3a4b5c6d",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+            "target_ref": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "name": "directory",
+        "meta-category": "file",
+        "template_uuid": "23ac6a02-1017-4ea6-a4df-148ed563988d",
+        "description": "Directory object describing a directory with meta-information",
+        "template_version": "1",
+        "uuid": "5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c",
+        "Attribute": [
+            {
+                "uuid": "fae61335-1d66-5694-b5ac-1e4b0ea6124e",
+                "object_relation": "access-time",
+                "value": "2023-10-25T16:22:00+00:00",
+                "type": "datetime",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "d01bd8b0-48c2-57eb-96e4-5c2aa12e1a80",
+                "object_relation": "creation-time",
+                "value": "2021-10-25T16:22:00+00:00",
+                "type": "datetime",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "433043bc-2b9e-5fd6-bc44-690712601cc6",
+                "object_relation": "modification-time",
+                "value": "2022-10-25T16:22:00+00:00",
+                "type": "datetime",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "ae3c4b9e-2b42-5d04-a1fa-554484296284",
+                "object_relation": "path",
+                "value": "/var/www/MISP/app/files/scripts/tmp",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other",
+                "comment": "Indicator ID: indicator--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
+            },
+            {
+                "uuid": "32e4a3f6-aa3a-50e8-b281-595bf16db672",
+                "object_relation": "path-encoding",
+                "value": "UTF-8",
                 "type": "text",
                 "disable_correlation": true,
                 "to_ids": false,
@@ -3873,6 +4247,403 @@ The list of currently supported MISP object templates is available [here](https:
                 "value": "j0hnd0e",
                 "type": "text",
                 "disable_correlation": false,
+                "to_ids": false,
+                "category": "Other"
+            }
+        ],
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "timestamp": "1603642920"
+    }
+    ```
+
+- hashlookup
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_KnownMalicious = 'hashlookup-known-malicious-source' AND file:x_misp_PackageName = 'coreutils' AND file:x_misp_PackageVersion = '8.32' AND file:x_misp_PackageRelease = '4.1ubuntu1' AND file:x_misp_PackageArch = 'amd64' AND file:x_misp_PackageDescription = 'GNU core utilities' AND file:x_misp_PackageMaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "file"
+            }
+        ],
+        "labels": [
+            "misp:name=\"hashlookup\"",
+            "misp:meta-category=\"file\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    {
+        "name": "hashlookup",
+        "meta-category": "file",
+        "template_uuid": "18671816-2524-452e-b031-5fc0fe2ab774",
+        "description": "hashlookup object as described on hashlookup services from circl.lu - https://www.circl.lu/services/hashlookup",
+        "template_version": "3",
+        "uuid": "b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "Attribute": [
+            {
+                "uuid": "2eb59f4a-22a0-5491-ae20-b3042b102d83",
+                "object_relation": "FileName",
+                "value": "oui",
+                "type": "filename",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "e345b5bb-df20-5ee8-9be2-9d16c5dc94b8",
+                "object_relation": "FileSize",
+                "value": "35",
+                "type": "size-in-bytes",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "b52a3f19-6b81-5825-9572-55c580bb5a7e",
+                "object_relation": "MD5",
+                "value": "8764605c6f388c89096b534d33565802",
+                "type": "md5",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "fcd5dc2b-4c1e-56d5-a2bb-2a9eccf26f11",
+                "object_relation": "SHA-1",
+                "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                "type": "sha1",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "f900b2f6-da92-531e-aca9-e4ff9583e8df",
+                "object_relation": "SHA-256",
+                "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                "type": "sha256",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "57677269-012a-57fb-8f5d-6521d3a3868c",
+                "object_relation": "SSDEEP",
+                "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
+                "type": "ssdeep",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "8ee1115b-1636-500b-8680-f2eddf235e5a",
+                "object_relation": "TLSH",
+                "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+                "type": "tlsh",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "8f13e8c9-d09e-5390-86c2-4eaae915a304",
+                "object_relation": "KnownMalicious",
+                "value": "hashlookup-known-malicious-source",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "d2a1dc48-39d1-5acf-8df5-c86e2a02a09c",
+                "object_relation": "PackageName",
+                "value": "coreutils",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "2b9d3692-e34d-540b-b269-90d261e93ad1",
+                "object_relation": "PackageVersion",
+                "value": "8.32",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "74697468-c3af-5c3c-80cc-cc8208c82055",
+                "object_relation": "PackageRelease",
+                "value": "4.1ubuntu1",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "04704eac-900c-55b9-bbc9-5882e4952d81",
+                "object_relation": "PackageArch",
+                "value": "amd64",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "f82fee47-9aa1-52e9-abbb-50d82b4826e7",
+                "object_relation": "PackageDescription",
+                "value": "GNU core utilities",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "fca7ec80-4ff0-5ece-bc77-210e53e2e76d",
+                "object_relation": "PackageMaintainer",
+                "value": "Ubuntu Developers",
+                "type": "text",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Other"
+            },
+            {
+                "uuid": "a61f4ef8-db4e-5e2e-8e4e-59daa4e25d40",
+                "object_relation": "source",
+                "value": "https://www.circl.lu/services/hashlookup",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Other"
+            }
+        ],
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "timestamp": "1603642920"
+    }
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "id": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "0": {
+                    "type": "file",
+                    "hashes": {
+                        "MD5": "8764605c6f388c89096b534d33565802",
+                        "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                        "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                        "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
+                        "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+                    },
+                    "size": 35,
+                    "name": "oui",
+                    "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
+                    "x_misp_PackageArch": "amd64",
+                    "x_misp_PackageDescription": "GNU core utilities",
+                    "x_misp_PackageMaintainer": "Ubuntu Developers",
+                    "x_misp_PackageName": "coreutils",
+                    "x_misp_PackageRelease": "4.1ubuntu1",
+                    "x_misp_PackageVersion": "8.32",
+                    "x_misp_source": "https://www.circl.lu/services/hashlookup"
+                }
+            },
+            "labels": [
+                "misp:name=\"hashlookup\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "indicator",
+            "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "file"
+                }
+            ],
+            "labels": [
+                "misp:name=\"hashlookup\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--a8b9c0d1-2e3f-4a5b-8c6d-7e8f9a0b1c2d",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+            "target_ref": "observed-data--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    {
+        "name": "hashlookup",
+        "meta-category": "file",
+        "template_uuid": "18671816-2524-452e-b031-5fc0fe2ab774",
+        "description": "hashlookup object as described on hashlookup services from circl.lu - https://www.circl.lu/services/hashlookup",
+        "template_version": "3",
+        "uuid": "b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+        "Attribute": [
+            {
+                "uuid": "ab715848-2f67-5b94-9f72-f520d78163d3",
+                "object_relation": "MD5",
+                "value": "8764605c6f388c89096b534d33565802",
+                "type": "md5",
+                "disable_correlation": false,
+                "to_ids": true,
+                "category": "Payload delivery",
+                "comment": "Indicator ID: indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f"
+            },
+            {
+                "uuid": "ad63e70d-fa5a-550f-a68d-f86ac04d74c6",
+                "object_relation": "SHA-1",
+                "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                "type": "sha1",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "6d0952da-b96a-551b-8b34-0a15ea037bca",
+                "object_relation": "SHA-256",
+                "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+                "type": "sha256",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "21e7e6a3-8522-58ac-ae93-ed30a1b296ad",
+                "object_relation": "SSDEEP",
+                "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
+                "type": "ssdeep",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "6ae130b7-0a53-5340-b05c-36165e6b8691",
+                "object_relation": "TLSH",
+                "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+                "type": "tlsh",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Payload delivery"
+            },
+            {
+                "uuid": "8494681c-f14f-53c9-b4ee-16f75e9b9dba",
+                "object_relation": "FileName",
+                "value": "oui",
+                "type": "filename",
+                "disable_correlation": true,
+                "to_ids": true,
+                "category": "Payload delivery",
+                "comment": "Indicator ID: indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f"
+            },
+            {
+                "uuid": "de8c6cf6-4d31-5f71-a41f-2f09a5dc1d85",
+                "object_relation": "FileSize",
+                "value": "35",
+                "type": "size-in-bytes",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "612809b6-b15c-50c6-a968-61a8f76727eb",
+                "object_relation": "KnownMalicious",
+                "value": "hashlookup-known-malicious-source",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "e263f9eb-e583-5e7a-a576-72bab41cf932",
+                "object_relation": "PackageArch",
+                "value": "amd64",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "491c5221-20d9-5548-832f-cb3780d01a08",
+                "object_relation": "PackageDescription",
+                "value": "GNU core utilities",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "24c4c344-8cd9-544c-9318-5136b3d6e2d0",
+                "object_relation": "PackageMaintainer",
+                "value": "Ubuntu Developers",
+                "type": "text",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "3b30fcf6-d35f-53cf-b5da-f5a81b5b46d5",
+                "object_relation": "PackageName",
+                "value": "coreutils",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "f26b6641-d68e-55c6-9196-278d9b154e89",
+                "object_relation": "PackageRelease",
+                "value": "4.1ubuntu1",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "ae1acd7f-fa30-5871-90ea-ddbafa2e31d9",
+                "object_relation": "PackageVersion",
+                "value": "8.32",
+                "type": "text",
+                "disable_correlation": true,
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "c6a5f5b5-fb5d-5d06-ae41-dbeb5961ead1",
+                "object_relation": "source",
+                "value": "https://www.circl.lu/services/hashlookup",
+                "type": "text",
+                "disable_correlation": true,
                 "to_ids": false,
                 "category": "Other"
             }
@@ -7327,6 +8098,384 @@ The list of currently supported MISP object templates is available [here](https:
         "sharing_group_id": "0",
         "timestamp": "1603642920"
     }
+    ```
+
+- registry-key with references to registry-key-value(s)
+  - STIX - Indicator
+    ```json
+    {
+        "type": "indicator",
+        "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "file"
+            }
+        ],
+        "labels": [
+            "misp:name=\"registry-key\"",
+            "misp:meta-category=\"file\""
+        ]
+    }
+    ```
+  - MISP
+    ```json
+    [
+        {
+            "name": "registry-key",
+            "meta-category": "file",
+            "template_uuid": "8b3228ad-6d82-4fe6-b2ae-05426308f1d5",
+            "description": "Registry key object describing a Windows registry key with value and last-modified timestamp",
+            "template_version": "5",
+            "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+            "ObjectReference": [
+                {
+                    "uuid": "d6bc3b0a-3e6f-5d37-8a2b-6c00425972ca",
+                    "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                    "referenced_uuid": "a398a7f4-d366-5eca-8ab2-18c1174382b1",
+                    "relationship_type": "contains"
+                },
+                {
+                    "uuid": "04c54f69-6aee-561b-afd3-ed28352ae40d",
+                    "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                    "referenced_uuid": "f7429da5-278e-5d4a-868f-bd42f04106c2",
+                    "relationship_type": "contains"
+                }
+            ],
+            "Attribute": [
+                {
+                    "uuid": "14e53210-3f72-5b1c-b831-5a6793fa4feb",
+                    "object_relation": "key",
+                    "value": "hkey_local_machine\\\\system\\\\bar\\\\foo",
+                    "type": "regkey",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true
+                },
+                {
+                    "uuid": "2a7ff1d3-459e-5862-b67f-19a16284eaa7",
+                    "object_relation": "last-modified",
+                    "value": "2020-10-25T16:22:00+00:00",
+                    "type": "datetime",
+                    "category": "Other",
+                    "disable_correlation": false,
+                    "to_ids": true
+                },
+                {
+                    "uuid": "d8f5f46d-2018-534d-8369-277509b14272",
+                    "object_relation": "hive",
+                    "value": "hklm",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": true,
+                    "to_ids": true
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        {
+            "name": "registry-key-value",
+            "meta-category": "file",
+            "template_uuid": "4626a273-72c1-48d3-8595-ff48ea2277f7",
+            "description": "Registry key value object describing a Windows registry key value, with its data, data type and name values. To be used when a registry key has multiple values.",
+            "template_version": "1",
+            "uuid": "a398a7f4-d366-5eca-8ab2-18c1174382b1",
+            "Attribute": [
+                {
+                    "uuid": "36bc3569-c1be-545a-aedd-e78a59d50fb7",
+                    "object_relation": "data",
+                    "value": "qwerty",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true
+                },
+                {
+                    "uuid": "b20b0dec-681a-5df4-bb99-146e54787c3c",
+                    "object_relation": "data-type",
+                    "value": "REG_SZ",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": true,
+                    "to_ids": true
+                },
+                {
+                    "uuid": "5059e6e6-6e83-50fd-9b6f-6f640dc7892c",
+                    "object_relation": "name",
+                    "value": "Foo",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        {
+            "name": "registry-key-value",
+            "meta-category": "file",
+            "template_uuid": "4626a273-72c1-48d3-8595-ff48ea2277f7",
+            "description": "Registry key value object describing a Windows registry key value, with its data, data type and name values. To be used when a registry key has multiple values.",
+            "template_version": "1",
+            "uuid": "f7429da5-278e-5d4a-868f-bd42f04106c2",
+            "Attribute": [
+                {
+                    "uuid": "5bfb181d-4a06-5ba3-acae-fa004dabeb7a",
+                    "object_relation": "data",
+                    "value": "42",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true
+                },
+                {
+                    "uuid": "5a26eaeb-a0b2-5f7a-90f5-abf04f4e68ef",
+                    "object_relation": "data-type",
+                    "value": "REG_DWORD",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": true,
+                    "to_ids": true
+                },
+                {
+                    "uuid": "f3fdce01-f141-5634-ad0b-02b1f3a4a28e",
+                    "object_relation": "name",
+                    "value": "Bar",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        }
+    ]
+    ```
+  - STIX - Observed Data
+    ```json
+    [
+        {
+            "type": "observed-data",
+            "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {
+                "0": {
+                    "type": "windows-registry-key",
+                    "key": "hkey_local_machine\\system\\bar\\foo",
+                    "values": [
+                        {
+                            "name": "Foo",
+                            "data": "qwerty",
+                            "data_type": "REG_SZ"
+                        },
+                        {
+                            "name": "Bar",
+                            "data": "42",
+                            "data_type": "REG_DWORD"
+                        }
+                    ],
+                    "modified": "2020-10-25T16:22:00Z",
+                    "x_misp_hive": "hklm"
+                }
+            },
+            "labels": [
+                "misp:name=\"registry-key\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "indicator",
+            "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "file"
+                }
+            ],
+            "labels": [
+                "misp:name=\"registry-key\"",
+                "misp:meta-category=\"file\""
+            ]
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--1f2e3d4c-5b6a-4978-8c9d-0a1b2c3d4e5f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "relationship_type": "based-on",
+            "source_ref": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+            "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
+        }
+    ]
+    ```
+  - MISP
+    ```json
+    [
+        {
+            "name": "registry-key",
+            "meta-category": "file",
+            "template_uuid": "8b3228ad-6d82-4fe6-b2ae-05426308f1d5",
+            "description": "Registry key object describing a Windows registry key with value and last-modified timestamp",
+            "template_version": "5",
+            "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+            "ObjectReference": [
+                {
+                    "uuid": "d52923aa-7153-5ef2-998b-10613fae96f4",
+                    "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                    "referenced_uuid": "70bcbd73-f9a9-552a-8675-279ee613a354",
+                    "relationship_type": "contains"
+                },
+                {
+                    "uuid": "15d30b10-5dfd-56a3-9a97-78678b329d5d",
+                    "object_uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                    "referenced_uuid": "b217140b-254f-5b84-be15-8fdad9411663",
+                    "relationship_type": "contains"
+                }
+            ],
+            "Attribute": [
+                {
+                    "uuid": "8f7a03ce-8999-5ebd-985f-8938c6ae6d64",
+                    "object_relation": "key",
+                    "value": "hkey_local_machine\\system\\bar\\foo",
+                    "type": "regkey",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                },
+                {
+                    "uuid": "d5700ba5-8f30-5838-9fc2-bb7ae877ce28",
+                    "object_relation": "last-modified",
+                    "value": "2020-10-25T16:22:00+00:00",
+                    "type": "datetime",
+                    "category": "Other",
+                    "disable_correlation": false,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                },
+                {
+                    "uuid": "851cef9d-8d24-55a8-9512-47a6b55f96f6",
+                    "object_relation": "hive",
+                    "value": "hklm",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": true,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        {
+            "name": "registry-key-value",
+            "meta-category": "file",
+            "template_uuid": "4626a273-72c1-48d3-8595-ff48ea2277f7",
+            "description": "Registry key value object describing a Windows registry key value, with its data, data type and name values. To be used when a registry key has multiple values.",
+            "template_version": "1",
+            "uuid": "70bcbd73-f9a9-552a-8675-279ee613a354",
+            "Attribute": [
+                {
+                    "uuid": "2c0f054d-14cb-5949-b971-570d0964a6e5",
+                    "object_relation": "data",
+                    "value": "qwerty",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                },
+                {
+                    "uuid": "f4e04d3d-0a54-5e4b-9b4c-1c8a1e45c803",
+                    "object_relation": "data-type",
+                    "value": "REG_SZ",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": true,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                },
+                {
+                    "uuid": "1ccd2ec2-e755-5531-a06d-7417fdf5038e",
+                    "object_relation": "name",
+                    "value": "Foo",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        {
+            "name": "registry-key-value",
+            "meta-category": "file",
+            "template_uuid": "4626a273-72c1-48d3-8595-ff48ea2277f7",
+            "description": "Registry key value object describing a Windows registry key value, with its data, data type and name values. To be used when a registry key has multiple values.",
+            "template_version": "1",
+            "uuid": "b217140b-254f-5b84-be15-8fdad9411663",
+            "Attribute": [
+                {
+                    "uuid": "3a87020d-98f4-5dac-878f-5fc92211c161",
+                    "object_relation": "data",
+                    "value": "42",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                },
+                {
+                    "uuid": "f219743f-9977-5558-8d52-7359319e3aa1",
+                    "object_relation": "data-type",
+                    "value": "REG_DWORD",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": true,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                },
+                {
+                    "uuid": "5b5d9731-b386-5d52-aafe-d88a877f2fa3",
+                    "object_relation": "name",
+                    "value": "Bar",
+                    "type": "text",
+                    "category": "Persistence mechanism",
+                    "disable_correlation": false,
+                    "to_ids": true,
+                    "comment": "Indicator ID: indicator--5ac3379c-3e74-44ba-9160-04120a00020f"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        }
+    ]
     ```
 
 - telegram-account

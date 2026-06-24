@@ -1454,6 +1454,29 @@ class InternalSTIX2IndicatorMapping(
             **InternalSTIX2Mapping.file_object_mapping()
         }
     )
+    __artifact_pattern_mapping = Mapping(
+        **{
+            'hashes.MD5': InternalSTIX2Mapping.md5_attribute(),
+            "hashes.'SHA-1'": InternalSTIX2Mapping.sha1_attribute(),
+            "hashes.'SHA-256'": InternalSTIX2Mapping.sha256_attribute(),
+            "hashes.'SHA-512'": InternalSTIX2Mapping.sha512_attribute(),
+            "hashes.'SHA3-256'": InternalSTIX2Mapping.sha3_256_attribute(),
+            "hashes.'SHA3-512'": InternalSTIX2Mapping.sha3_512_attribute(),
+            'hashes.SSDEEP': InternalSTIX2Mapping.ssdeep_attribute(),
+            'hashes.TLSH': InternalSTIX2Mapping.tlsh_attribute(),
+            **InternalSTIX2Mapping.artifact_object_mapping()
+        }
+    )
+    __hashlookup_pattern_mapping = Mapping(
+        **{
+            'hashes.MD5': InternalSTIX2Mapping.hashlookup_md5_attribute(),
+            "hashes.'SHA-1'": InternalSTIX2Mapping.hashlookup_sha1_attribute(),
+            "hashes.'SHA-256'": InternalSTIX2Mapping.hashlookup_sha256_attribute(),
+            'hashes.SSDEEP': InternalSTIX2Mapping.hashlookup_ssdeep_attribute(),
+            'hashes.TLSH': InternalSTIX2Mapping.hashlookup_tlsh_attribute(),
+            **InternalSTIX2Mapping.hashlookup_object_mapping()
+        }
+    )
     __http_ext = "extensions.'http-request-ext'"
     __header_ext = f'{__http_ext}.request_header'
     __http_request_pattern_mapping = Mapping(
@@ -1581,6 +1604,14 @@ class InternalSTIX2IndicatorMapping(
         return cls.github_user_object_mapping().get(field)
 
     @classmethod
+    def artifact_pattern_mapping(cls, field: str) -> dict | None:
+        return cls.__artifact_pattern_mapping.get(field)
+
+    @classmethod
+    def hashlookup_pattern_mapping(cls, field: str) -> dict | None:
+        return cls.__hashlookup_pattern_mapping.get(field)
+
+    @classmethod
     def gitlab_user_pattern_mapping(cls, field: str) -> dict | None:
         return cls.gitlab_user_object_mapping().get(field)
 
@@ -1673,8 +1704,14 @@ class InternalSTIX2IndicatorConverter(
         self._mapping = InternalSTIX2IndicatorMapping
 
     def parse(self, indicator_ref: str):
-        od_id = self.main_parser._extract_uuid(indicator_ref)
-        if f'observed-data--{od_id}' in self._observed_data:
+        object_id = self.main_parser._extract_uuid(indicator_ref)
+        if f'observed-data--{object_id}' in self._observed_data:
+            return
+        # A standalone registry-key-value exported to STIX 2.0 emits both a
+        # custom observable and a values[0] Indicator sharing the object uuid
+        # the custom object is the richer carrier, so skip the Indicator to
+        # avoid importing the object twice.
+        if f'x-misp-object--{object_id}' in self._custom_object:
             return
         indicator = self.main_parser._get_stix_object(indicator_ref)
         try:
@@ -1700,6 +1737,10 @@ class InternalSTIX2IndicatorConverter(
                 'Error while parsing the Indicator object with id '
                 f'{indicator.id}: {_traceback}'
             )
+
+    @property
+    def _custom_object(self) -> dict:
+        return getattr(self.main_parser, '_custom_object', {})
 
     @property
     def _observed_data(self) -> dict:
@@ -1881,11 +1922,26 @@ class InternalSTIX2IndicatorConverter(
                 misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
+    def _object_from_artifact_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('artifact', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            attributes = self._handle_object_attributes(
+                value, self._mapping.artifact_pattern_mapping(feature),
+                indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, indicator)
+
     def _object_from_cpe_asset_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'cpe-asset')
 
     def _object_from_credential_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'credential')
+
+    def _object_from_directory_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_standard_pattern(indicator, 'directory')
 
     def _object_from_domain_ip_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('domain-ip', indicator)
@@ -2072,6 +2128,18 @@ class InternalSTIX2IndicatorConverter(
 
     def _object_from_gitlab_user_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_indicator(indicator, 'gitlab-user')
+
+    def _object_from_hashlookup_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('hashlookup', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            attributes = self._handle_object_attributes(
+                value, self._mapping.hashlookup_pattern_mapping(feature),
+                indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_http_request_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('http-request', indicator)
@@ -2350,19 +2418,72 @@ class InternalSTIX2IndicatorConverter(
 
     def _object_from_registry_key_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('registry-key', indicator)
-        for pattern in indicator.pattern[1:-1].split(' AND '):
-            feature, value = self._extract_features_from_pattern(pattern)
-            if 'values[0].' in feature:
+        comparisons = [
+            self._extract_features_from_pattern(pattern)
+            for pattern in indicator.pattern[1:-1].split(' AND ')
+        ]
+        indices = {
+            feature.split('values[')[1].split(']')[0]
+            for feature, _ in comparisons if 'values[' in feature
+        }
+        if len(indices) > 1:
+            registry_values = defaultdict(list)
+            for feature, value in comparisons:
+                if 'values[' in feature:
+                    index = feature.split('values[')[1].split(']')[0]
+                    registry_values[index].append(
+                        (feature.split('.')[-1], value)
+                    )
+                    continue
+                mapping = self._mapping.registry_key_pattern_mapping(feature)
+                for attribute in self._handle_object_attributes(
+                        value, mapping, indicator.id):
+                    misp_object.add_attribute(**attribute)
+            registry_key = self.main_parser._add_misp_object(
+                misp_object, indicator
+            )
+            for index, value_features in registry_values.items():
+                value_object = self._object_from_registry_key_value_pattern(
+                    value_features, indicator,
+                    f'{indicator.id} - values - {index}'
+                )
+                self._handle_misp_object_references(
+                    registry_key, value_object.uuid
+                )
+            return
+        for feature, value in comparisons:
+            if 'values[' in feature:
                 mapping = self._mapping.registry_key_values_pattern_mapping(
                     feature.split('.')[-1]
                 )
-                attributes = self._handle_object_attributes(
-                    value, mapping, indicator.id
-                )
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-                continue
-            mapping = self._mapping.registry_key_pattern_mapping(feature)
+            else:
+                mapping = self._mapping.registry_key_pattern_mapping(feature)
+            for attribute in self._handle_object_attributes(
+                    value, mapping, indicator.id):
+                misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _object_from_registry_key_value_pattern(
+            self, value_features: list, indicator: _INDICATOR_TYPING,
+            object_id: str) -> MISPObject:
+        misp_object = self._create_misp_object(
+            'registry-key-value', indicator, object_id=object_id
+        )
+        for feature, value in value_features:
+            mapping = self._mapping.registry_key_values_pattern_mapping(feature)
+            for attribute in self._handle_object_attributes(
+                    value, mapping, object_id):
+                misp_object.add_attribute(**attribute)
+        return self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _object_from_registry_key_value_indicator(
+            self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('registry-key-value', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            mapping = self._mapping.registry_key_values_pattern_mapping(
+                feature.split('.')[-1]
+            )
             attributes = self._handle_object_attributes(
                 value, mapping, indicator.id
             )

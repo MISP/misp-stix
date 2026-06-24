@@ -809,6 +809,41 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
+    def _parse_artifact_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'], with_data=('payload_bin',)
+        )
+        artifact_args = {
+            'id': self._parse_stix_object_id('object', 'artifact', misp_object),
+            **self._parse_artifact_args(attributes)
+        }
+        for feature in ('encryption_algorithm', 'decryption_key'):
+            if attributes.get(feature):
+                artifact_args[feature] = self._select_single_feature(
+                    attributes, feature
+                )
+        if attributes:
+            artifact_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        return self._handle_object_observable(
+            misp_object, [Artifact(**artifact_args)]
+        )
+
+    def _parse_directory_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        directory_args = {
+            'id': self._parse_stix_object_id(
+                'object', 'directory', misp_object
+            ),
+            **self._parse_directory_args(attributes)
+        }
+        return self._handle_object_observable(
+            misp_object, [Directory(**directory_args)]
+        )
+
     def _parse_directory_ref(
             self, file_args: dict, objects: list, value: str, uuid: str):
         directory_id = self._parse_stix_object_id(
@@ -1091,6 +1126,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_non_indicator_object(
             misp_object, identity_args, 'identity'
         )
+
+    def _parse_hashlookup_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        file_args = {
+            'id': self._parse_stix_object_id('object', 'file', misp_object),
+            **self._parse_hashlookup_args(attributes)
+        }
+        return self._handle_object_observable(misp_object, [File(**file_args)])
 
     def _parse_image_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
@@ -1460,6 +1504,47 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         registry_key = WindowsRegistryKey(**registry_key_args)
         return self._handle_object_observable(misp_object, [registry_key])
 
+    def _parse_registry_key_with_values_observable(
+            self, registry_key: MISPObject | dict,
+            value_objects: list) -> ObservedData:
+        registry_key_args = self._parse_registry_key_with_values_args(
+            registry_key, value_objects
+        )
+        registry_key_args['id'] = self._parse_stix_object_id(
+            'object', 'windows-registry-key', registry_key
+        )
+        registry_key_object = WindowsRegistryKey(**registry_key_args)
+        return self._handle_object_observable(
+            registry_key, [registry_key_object]
+        )
+
+    def _parse_registry_key_value_object(self, misp_object: MISPObject | dict):
+        observed_data = self._parse_registry_key_value_object_observable(
+            misp_object
+        )
+        stix_objects = [observed_data]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_registry_key_value_object_pattern(misp_object)
+            indicator = self._handle_object_indicator(misp_object, pattern)
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
+        self._handle_object_analyst_fields(misp_object, *stix_objects)
+
+    def _parse_registry_key_value_object_observable(
+            self, misp_object: MISPObject | dict) -> ObservedData:
+        registry_key_args = {
+            'values': [
+                self._parse_registry_key_value_args(misp_object['Attribute'])
+            ],
+            'id': self._parse_stix_object_id(
+                'object', 'windows-registry-key', misp_object
+            )
+        }
+        registry_key = WindowsRegistryKey(**registry_key_args)
+        return self._handle_object_observable(misp_object, [registry_key])
+
     @staticmethod
     def _parse_regkey_key_values_observable(attributes: dict) -> dict:
         registry_key_args = {}
@@ -1627,7 +1712,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_country_galaxy_args(
             self, cluster: MISPGalaxyCluster | dict, description: str,
             name: str, timestamp: datetime | None) -> dict:
-        meta = cluster['meta']
+        meta = cluster.get('meta', {})
         country_value = meta.get('ISO', cluster['value'])
         location_args = {
             'id': f"location--{cluster['uuid']}", 'type': 'location',
@@ -1656,7 +1741,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_region_galaxy_args(
             self, cluster: MISPGalaxyCluster | dict, description: str,
             name: str, timestamp: datetime| None) -> dict:
-        meta = cluster['meta']
+        meta = cluster.get('meta', {})
         region_value = cluster['value'].split(' - ')[1]
         location_args = {
             'id': f"location--{cluster['uuid']}", 'type': 'location',
@@ -1756,9 +1841,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location_args = getattr(self, to_call)(
                 cluster, galaxy['description'], galaxy['name'], timestamp
             )
-            location_args.update(
-                self._parse_meta_custom_fields(cluster['meta'])
-            )
+            if cluster.get('meta'):
+                location_args.update(
+                    self._parse_meta_custom_fields(cluster['meta'])
+                )
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)
             object_refs.append(location.id)
