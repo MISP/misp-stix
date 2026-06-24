@@ -4010,7 +4010,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_object_refs(object_refs)
 
     def _parse_sector_galaxy(self, galaxy: MISPGalaxy | dict,
-                             timestamp: datetime | None) -> list:
+                             timestamp: Optional[datetime] = None) -> list:
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
@@ -4267,7 +4267,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _create_sector_galaxy_args(
             self, cluster: MISPGalaxyCluster | dict, description: str,
-            name: str, timestamp: datetime) -> dict:
+            name: str, timestamp: datetime | None) -> dict:
         if cluster.get('description'):
             description = cluster['description']
         sector_args = {
