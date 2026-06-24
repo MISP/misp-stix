@@ -3676,7 +3676,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
             marking_id = f"marking-definition--{cluster['uuid']}"
-            meta = cluster['meta']
+            meta = cluster.get('meta', {})
             marking_definition = {
                 feature: values[0] if isinstance(values, list) else values
                 for feature in ('created', 'modified')

@@ -1712,7 +1712,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_country_galaxy_args(
             self, cluster: MISPGalaxyCluster | dict, description: str,
             name: str, timestamp: datetime | None) -> dict:
-        meta = cluster['meta']
+        meta = cluster.get('meta', {})
         country_value = meta.get('ISO', cluster['value'])
         location_args = {
             'id': f"location--{cluster['uuid']}", 'type': 'location',
@@ -1741,7 +1741,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_region_galaxy_args(
             self, cluster: MISPGalaxyCluster | dict, description: str,
             name: str, timestamp: datetime| None) -> dict:
-        meta = cluster['meta']
+        meta = cluster.get('meta', {})
         region_value = cluster['value'].split(' - ')[1]
         location_args = {
             'id': f"location--{cluster['uuid']}", 'type': 'location',
@@ -1841,9 +1841,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location_args = getattr(self, to_call)(
                 cluster, galaxy['description'], galaxy['name'], timestamp
             )
-            location_args.update(
-                self._parse_meta_custom_fields(cluster['meta'])
-            )
+            if cluster.get('meta'):
+                location_args.update(
+                    self._parse_meta_custom_fields(cluster['meta'])
+                )
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)
             object_refs.append(location.id)
