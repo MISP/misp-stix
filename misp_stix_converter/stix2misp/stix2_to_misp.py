@@ -795,11 +795,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
             uuid=marking_definition.id.split('--')[1],
-            value=extension.get('name', extension['identifier']),
+            value=extension.get(
+                'name',
+                extension.get(
+                    'identifier', marking_definition.id.split('--')[1]
+                )
+            ),
             source=(
                 self._handle_creator(marking_definition.created_by_ref)
                 if hasattr(marking_definition, 'created_by_ref') else
-                extension['responsible_entity_custodian']
+                extension.get('responsible_entity_custodian')
             )
         )
 
@@ -833,6 +838,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._clusters[marking_definition.id] = {
                     'used': {}, 'cluster': clusters
                 }
+                # A marking that yielded clusters was loaded successfully, even
+                # when it produced no tags (e.g. an ACS marking with no meta):
+                # return the (possibly empty) tags rather than raising.
+                return tags
             if tags:
                 return tags
         raise MarkingDefinitionLoadingError(marking_definition.id)
