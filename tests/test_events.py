@@ -891,7 +891,7 @@ _TEST_EVENT_WITH_ANALYST_DATA = {
 }
 
 _TEST_ACS_MARKING_GALAXY = {
-    "uuid": "2f3e5c9a-1b6d-4f2a-9c3e-7a1b2c3d4e5f",
+    "uuid": "3a65884d-005a-4290-8335-cb2d778a83ce",
     "name": "ACS Marking",
     "type": "stix-2.1-acs-marking",
     "description": "Access Control Specification marking",

@@ -3,8 +3,8 @@
 
 from datetime import datetime
 from misp_stix_converter import (
-    MISPtoSTIX21Mapping, MISPtoSTIX21Parser, misp_collection_to_stix2,
-    misp_to_stix2)
+    InternalSTIX2toMISPParser, MISPtoSTIX21Mapping, MISPtoSTIX21Parser,
+    misp_collection_to_stix2, misp_to_stix2)
 from pymisp import MISPAttribute, MISPEvent
 from .test_events import *
 from .update_documentation import (
@@ -6302,6 +6302,23 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._test_attributes_collection_with_meta_less_acs_marking(
             get_attributes_collection_with_meta_less_acs_marking()
         )
+
+    def test_roundtrip_with_meta_less_acs_marking(self):
+        # A meta-less ACS marking Galaxy Cluster exports to a marking-definition
+        # whose ACS property-extension is empty. Re-importing that output used
+        # to abort the whole bundle (KeyError on the absent extension fields);
+        # it must now round-trip cleanly: no error, and the rest of the event
+        # is reconstructed faithfully.
+        attributes = get_attributes_collection_with_meta_less_acs_marking()
+        misp_attribute = attributes['Attribute'][0]
+        self.parser.parse_misp_attributes(attributes)
+        import_parser = InternalSTIX2toMISPParser()
+        import_parser.load_stix_bundle(self.parser.bundle)
+        import_parser.parse_stix_bundle()
+        self.assertEqual(import_parser.errors, {})
+        event = import_parser.misp_event
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, misp_attribute['value'])
 
     def test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
