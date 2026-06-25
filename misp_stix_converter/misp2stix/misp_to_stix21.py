@@ -1561,9 +1561,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self, attributes: dict, prefix: str) -> list:
         pattern = []
         if attributes.get('key'):
-            value = self._handle_value_for_pattern(
-                self._sanitise_registry_key_value(attributes.pop('key'))
-            )
+            value = self._sanitise_registry_key_value(attributes.pop('key'))
             pattern.append(f"{prefix}:key = '{value}'")
         if attributes.get('last-modified'):
             modified = self._handle_value_for_pattern(
