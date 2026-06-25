@@ -5030,6 +5030,24 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_observable_object(event['Event'])
 
+    def test_event_with_file_indicator_object_escaped_pattern_value(self):
+        event = get_event_with_file_object()
+        self._add_object_ids_flag(event['Event'])
+        file_object = event['Event']['Object'][0]
+        filename = next(
+            attribute for attribute in file_object['Attribute']
+            if attribute['object_relation'] == 'filename'
+        )
+        filename['value'] = "%USERPROFILE%\\Desktop\\O'Brien\\Styx-Stealer.pdb"
+        self.parser.parse_misp_event(event['Event'])
+        indicators = [
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object['type'] == 'indicator'
+        ]
+        self.assertEqual(len(indicators), 1)
+        escaped = filename['value'].replace('\\', '\\\\').replace("'", "\\'")
+        self.assertIn(f"file:name = '{escaped}'", indicators[0].pattern)
+
     def test_event_with_geolocation_object(self):
         event = get_event_with_geolocation_object()
         self._test_event_with_geolocation_object(event['Event'])
@@ -5121,6 +5139,24 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_lnk_observable_object(self):
         event = get_event_with_lnk_object()
         self._test_event_with_lnk_observable_object(event['Event'])
+
+    def test_event_with_lnk_indicator_object_escaped_pattern_value(self):
+        event = get_event_with_lnk_object()
+        self._add_object_ids_flag(event['Event'])
+        lnk_object = event['Event']['Object'][0]
+        filename = next(
+            attribute for attribute in lnk_object['Attribute']
+            if attribute['object_relation'] == 'filename'
+        )
+        filename['value'] = "C:\\Users\\O'Brien\\shortcut.lnk"
+        self.parser.parse_misp_event(event['Event'])
+        indicators = [
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object['type'] == 'indicator'
+        ]
+        self.assertEqual(len(indicators), 1)
+        escaped = filename['value'].replace('\\', '\\\\').replace("'", "\\'")
+        self.assertIn(f"file:name = '{escaped}'", indicators[0].pattern)
 
     def test_event_with_mutex_indicator_object(self):
         event = get_event_with_mutex_object()
