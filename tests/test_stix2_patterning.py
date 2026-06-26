@@ -3,6 +3,7 @@ import unittest
 from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
 
 _qs = MISPtoSTIX2Parser._quote_segment
+_ev = MISPtoSTIX2Parser._escape_pattern_value
 
 
 def _cn(name: str) -> str:
@@ -79,6 +80,36 @@ class TestCanonicalHashPatternName(unittest.TestCase):
         self.assertEqual(_qs(_cn('SHA3256')), "'SHA3-256'")
         self.assertEqual(_qs(_cn('MD5')), 'MD5')
         self.assertEqual(_qs(_cn('SSDEEP')), 'SSDEEP')
+
+
+class TestEscapePatternValue(unittest.TestCase):
+
+    def test_clean_value_unchanged(self):
+        self.assertEqual(_ev('test_file_name'), 'test_file_name')
+        self.assertEqual(_ev('plain value'), 'plain value')
+        self.assertEqual(_ev(''), '')
+
+    def test_backslash_doubled(self):
+        self.assertEqual(_ev('a\\b'), r'a\\b')
+        self.assertEqual(
+            _ev(r'C:\Windows\System32'), r'C:\\Windows\\System32'
+        )
+
+    def test_apostrophe_escaped(self):
+        self.assertEqual(_ev("O'Brien"), r"O\'Brien")
+
+    def test_backslash_escaped_before_apostrophe(self):
+        # backslash first, then quote: a lone "\'" becomes "\\\'"
+        self.assertEqual(_ev("\\'"), r"\\\'")
+
+    def test_backslash_and_apostrophe_combined(self):
+        self.assertEqual(
+            _ev("%USERPROFILE%\\O'Brien\\x.pdb"),
+            r"%USERPROFILE%\\O\'Brien\\x.pdb"
+        )
+
+    def test_double_quote_left_untouched(self):
+        self.assertEqual(_ev('say "hi"'), 'say "hi"')
 
 
 if __name__ == '__main__':

@@ -5030,6 +5030,49 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_file_object_with_artifact()
         self._test_event_with_file_observable_object(event['Event'])
 
+    def test_event_with_file_indicator_object_escaped_pattern_value(self):
+        event = get_event_with_file_object()
+        self._add_object_ids_flag(event['Event'])
+        file_object = event['Event']['Object'][0]
+        filename = next(
+            attribute for attribute in file_object['Attribute']
+            if attribute['object_relation'] == 'filename'
+        )
+        filename['value'] = "%USERPROFILE%\\Desktop\\O'Brien\\Styx-Stealer.pdb"
+        self.parser.parse_misp_event(event['Event'])
+        indicators = [
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object['type'] == 'indicator'
+        ]
+        self.assertEqual(len(indicators), 1)
+        escaped = filename['value'].replace('\\', '\\\\').replace("'", "\\'")
+        self.assertIn(f"file:name = '{escaped}'", indicators[0].pattern)
+
+    def test_event_with_file_object_invalid_hash_single_error(self):
+        # A file object with a `to_ids` flag is built as both observed-data
+        # and indicator; an invalid hash must be reported exactly once, with
+        # a stable label.
+        event = get_event_with_file_object()
+        file_object = event['Event']['Object'][0]
+        file_object['Attribute'].append(
+            {
+                'type': 'tlsh', 'object_relation': 'tlsh',
+                'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
+            }
+        )
+        self.parser.parse_misp_event(event['Event'])
+        hash_errors = [
+            error for errors in self.parser.errors.values()
+            for error in errors if 'Invalid' in error
+        ]
+        self.assertEqual(
+            hash_errors,
+            [
+                f"Error with the file object (uuid: {file_object['uuid']}): "
+                "Invalid TLSH value."
+            ]
+        )
+
     def test_event_with_geolocation_object(self):
         event = get_event_with_geolocation_object()
         self._test_event_with_geolocation_object(event['Event'])
@@ -5121,6 +5164,24 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_lnk_observable_object(self):
         event = get_event_with_lnk_object()
         self._test_event_with_lnk_observable_object(event['Event'])
+
+    def test_event_with_lnk_indicator_object_escaped_pattern_value(self):
+        event = get_event_with_lnk_object()
+        self._add_object_ids_flag(event['Event'])
+        lnk_object = event['Event']['Object'][0]
+        filename = next(
+            attribute for attribute in lnk_object['Attribute']
+            if attribute['object_relation'] == 'filename'
+        )
+        filename['value'] = "C:\\Users\\O'Brien\\shortcut.lnk"
+        self.parser.parse_misp_event(event['Event'])
+        indicators = [
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object['type'] == 'indicator'
+        ]
+        self.assertEqual(len(indicators), 1)
+        escaped = filename['value'].replace('\\', '\\\\').replace("'", "\\'")
+        self.assertIn(f"file:name = '{escaped}'", indicators[0].pattern)
 
     def test_event_with_mutex_indicator_object(self):
         event = get_event_with_mutex_object()
