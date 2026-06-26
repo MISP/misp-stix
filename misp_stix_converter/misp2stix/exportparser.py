@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from io import BufferedIOBase, TextIOBase
 from pathlib import Path
 from pymisp import MISPAttribute, MISPObject
+from stix2.hashes import Hash
 from typing import IO, Optional, Union
 
 
@@ -288,10 +289,18 @@ class MISPtoSTIXParser(AbstractParser):
 
     def _invalid_object_hash_value_error(
             self, hash_type: str, misp_object: Union[MISPObject, dict]):
-        self._add_error(
+        # With a to_ids flag set, a file is built as both observed-data and
+        # indicator, so the same invalid hash is validated twice. Canonicalise
+        # the label to the STIX hash name and report it only once.
+        canonical = self._define_hash_type(hash_type)
+        if not hasattr(Hash, canonical):
+            canonical = hash_type
+        error = (
             f"Error with the {misp_object['name']} object "
-            f"(uuid: {misp_object['uuid']}): Invalid {hash_type} value."
+            f"(uuid: {misp_object['uuid']}): Invalid {canonical} value."
         )
+        if error not in self.errors[self.identifier]:
+            self._add_error(error)
 
     def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
         self._add_warning(
