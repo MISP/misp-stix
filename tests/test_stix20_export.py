@@ -4015,6 +4015,31 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         escaped = filename['value'].replace('\\', '\\\\').replace("'", "\\'")
         self.assertIn(f"file:name = '{escaped}'", indicators[0].pattern)
 
+    def test_event_with_file_object_invalid_hash_single_error(self):
+        # A file object with a `to_ids` flag is built as both observed-data
+        # and indicator; an invalid hash must be reported exactly once, with
+        # a stable label.
+        event = get_event_with_file_object()
+        file_object = event['Event']['Object'][0]
+        file_object['Attribute'].append(
+            {
+                'type': 'tlsh', 'object_relation': 'tlsh',
+                'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
+            }
+        )
+        self.parser.parse_misp_event(event['Event'])
+        hash_errors = [
+            error for errors in self.parser.errors.values()
+            for error in errors if 'Invalid' in error
+        ]
+        self.assertEqual(
+            hash_errors,
+            [
+                f"Error with the file object (uuid: {file_object['uuid']}): "
+                "Invalid TLSH value."
+            ]
+        )
+
     def test_event_with_hashlookup_indicator_object(self):
         event = get_event_with_hashlookup_object()
         self._test_event_with_hashlookup_indicator_object(event['Event'])
