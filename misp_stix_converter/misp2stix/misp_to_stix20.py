@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
+from .exceptions import InvalidHashValueError
+from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix20_mapping import MISPtoSTIX20Mapping
 from base64 import b64encode
 from collections import defaultdict
@@ -560,7 +561,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self, attribute: MISPAttribute | dict) -> ObservedData:
         hash_type = self._define_hash_type(attribute['type'])
         if not self._check_hash_value(hash_type, attribute['value']):
-            raise InvalidHashValueError()
+            raise InvalidHashValueError(
+                f"Invalid {hash_type} hash value: {attribute['value']}"
+            )
         file_args = {
             'hashes': {hash_type: attribute['value']}
         }
@@ -581,7 +584,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 hash_type = self._define_hash_type(hash_type)
                 filename, hash_value = attribute['value'].split(separator)
                 if not self._check_hash_value(hash_type, hash_value):
-                    raise InvalidHashValueError()
+                    raise InvalidHashValueError(
+                        f'Invalid {hash_type} hash value: {hash_value}'
+                    )
                 file_args = {
                     'name': filename, 'hashes': {hash_type: hash_value}
                 }
@@ -664,7 +669,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             if separator in attribute['value']:
                 filename, hash_value = attribute['value'].split(separator)
                 if not self._check_hash_value('MD5', hash_value):
-                    raise InvalidHashValueError()
+                    raise InvalidHashValueError(
+                        f'Invalid MD5 hash value: {hash_value}'
+                    )
                 file_args.update(
                     {'name': filename, 'hashes': {'MD5': hash_value}}
                 )
@@ -730,7 +737,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self, attribute: MISPAttribute | dict) -> ObservedData:
         hash_type = self._define_hash_type(attribute['type'].split('-')[-1])
         if not self._check_hash_value(hash_type, attribute['value']):
-            raise InvalidHashValueError()
+            raise InvalidHashValueError(
+                f"Invalid {hash_type} hash value: {attribute['value']}"
+            )
         observable_object = {
             '0': X509Certificate(hashes={hash_type: attribute['value']})
         }

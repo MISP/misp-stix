@@ -8,5 +8,9 @@ class MISPtoSTIXError(Exception):
         self.message = message
 
 
+class InvalidHashValueError(MISPtoSTIXError):
+    pass
+
+
 class InvalidMISPInputError(MISPtoSTIXError):
     pass

@@ -4,7 +4,7 @@
 import json
 import os
 import re
-from .exceptions import InvalidMISPInputError
+from .exceptions import InvalidHashValueError, InvalidMISPInputError
 from .exportparser import MISPtoSTIXParser
 from abc import ABCMeta
 from base64 import b64encode
@@ -70,10 +70,6 @@ _STIX_OBJECT_TYPING = Union[
     Note, ObservedData_v20, ObservedData_v21, Tool_v20, Tool_v21,
     Vulnerability_v20, Vulnerability_v21, dict
 ]
-
-
-class InvalidHashValueError(Exception):
-    pass
 
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
@@ -1379,7 +1375,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if character.isalnum()
             )
             if not self._check_hash_value(hash_type, value):
-                raise InvalidHashValueError()
+                raise InvalidHashValueError(
+                    f'Invalid {hash_type} hash value: {value}'
+                )
             indicator = self._handle_attribute_indicator(
                 attribute,
                 f"[x509-certificate:hashes.{self._quote_segment(hash_type)} = '{value}']"
@@ -2605,7 +2603,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     )
                 )
                 if not self._check_hash_value('MD5', md5):
-                    raise InvalidHashValueError()
+                    raise InvalidHashValueError(
+                        f'Invalid MD5 hash value: {md5}'
+                    )
                 pattern.append(
                     self._create_content_ref_pattern(md5, 'hashes.MD5')
                 )
@@ -4664,7 +4664,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if separator in value:
                 filename, md5 = value.split(separator)
                 if not self._check_hash_value('MD5', md5):
-                    raise InvalidHashValueError()
+                    raise InvalidHashValueError(
+                        f'Invalid MD5 hash value: {md5}'
+                    )
                 args.update(
                     {'hashes': {'MD5': md5}, 'x_misp_filename': filename}
                 )
@@ -5019,7 +5021,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._define_hash_type(attribute_type)
         )
         if not self._check_hash_value(hash_type, value):
-            raise InvalidHashValueError()
+            raise InvalidHashValueError(
+                f'Invalid {hash_type} hash value: {value}'
+            )
         return f"{prefix}.{self._quote_segment(hash_type)} = '{value}'"
 
     def _create_ip_pattern(self, ip_type: str, value: str) -> str:
