@@ -4,6 +4,7 @@
 import json
 import os
 import re
+from .exceptions import InvalidMISPInputError
 from .exportparser import MISPtoSTIXParser
 from abc import ABCMeta
 from base64 import b64encode
@@ -130,6 +131,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 attribute = validate_attribute(attribute)
             except PyMISPError as exception:
                 self._validation_errors(str(exception))
+                continue
             self._resolve_attribute(attribute)
         if self._markings:
             for marking in self._markings.values():
@@ -196,31 +198,60 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_json_content(self, json_content: dict | list):
         self._results_handling_method = '_append_SDO'
-        if 'response' in json_content:
+        if not isinstance(json_content, (dict, list)):
+            raise InvalidMISPInputError('Input does not look like MISP data.')
+        if isinstance(json_content, dict) and 'response' in json_content:
+            # restSearch output: stay lenient - a list that is not all objects
+            # is treated as events, so malformed items surface as per-item
+            # conversion errors rather than an Invalid Input error.
             json_content = json_content['response']
             if isinstance(json_content, list):
                 if all('Object' in content for content in json_content):
                     self.parse_misp_objects(json_content)
                 else:
-                    if not self.__initiated:
-                        self._initiate_events_parsing()
-                    for event in json_content:
-                        self._parse_misp_event(event)
-                        self.__index = len(self.stix_objects)
+                    self._parse_misp_events(json_content)
             else:
                 self.parse_misp_attributes(json_content)
+        elif isinstance(json_content, list):
+            self._dispatch_misp_list(json_content)
         else:
-            if isinstance(json_content, list):
-                for content in json_content:
-                    if 'Attribute' in content:
-                        self.parse_misp_attribute(content)
+            self._dispatch_misp_dict(json_content)
+
+    def _dispatch_misp_list(self, json_content: list):
+        # Events first: a bare event also carries 'Attribute'/'Object' keys.
+        if all('Event' in content or 'info' in content
+               for content in json_content):
+            self._parse_misp_events(json_content)
+        elif all('Object' in content for content in json_content):
+            self.parse_misp_objects(json_content)
+        elif all('Attribute' in content or 'type' in content
+                 for content in json_content):
+            self.parse_misp_attributes(json_content)
+        else:
+            raise InvalidMISPInputError('Input does not look like MISP data.')
+
+    def _dispatch_misp_dict(self, json_content: dict):
+        # 'Event'/'info' first: a bare event also carries 'Attribute'/'Object'.
+        if 'Event' in json_content or 'info' in json_content:
+            self.parse_misp_event(json_content)
+        elif 'Attribute' in json_content:
+            if isinstance(json_content['Attribute'], list):
+                self.parse_misp_attributes(json_content)
             else:
-                if 'Event' in json_content or 'info' in json_content:
-                    self.parse_misp_event(json_content)
-                elif 'Object' in json_content:
-                    self.parse_misp_object(json_content)
-                else:
-                    self.parse_misp_attribute(json_content)
+                self.parse_misp_attribute(json_content)
+        elif 'Object' in json_content:
+            self.parse_misp_object(json_content)
+        elif 'type' in json_content:
+            self.parse_misp_attribute(json_content)
+        else:
+            raise InvalidMISPInputError('Input does not look like MISP data.')
+
+    def _parse_misp_events(self, events: list):
+        if not self.__initiated:
+            self._initiate_events_parsing()
+        for event in events:
+            self._parse_misp_event(event)
+            self.__index = len(self.stix_objects)
 
     def _parse_misp_event(self, misp_event: MISPEvent | dict):
         self._misp_event = validate_event(
