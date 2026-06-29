@@ -13,7 +13,7 @@ class AbstractParser(metaclass=ABCMeta):
     def __init__(self):
         self.__errors: defaultdict = defaultdict(list)
         self.__warnings: defaultdict = defaultdict(set)
-        self.__identifier: str
+        self.__identifier: str = 'misp event'
 
     @property
     def errors(self) -> dict:

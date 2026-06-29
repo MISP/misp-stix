@@ -377,11 +377,9 @@ class MISPtoSTIXParser(AbstractParser):
         )
 
     def _validation_errors(self, *messages: tuple[str]):
-        identifier = getattr(self, '_identifier', 'misp event')
         for message in messages:
-            self._add_error(message, identifier)
+            self._add_error(message, self.identifier)
 
     def _validation_warnings(self, *messages: tuple[str]):
-        identifier = getattr(self, '_identifier', 'misp event')
         for message in messages:
-            self._add_warning(message, identifier)
+            self._add_warning(message, self.identifier)
