@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .test_external_stix21_bundles import TestExternalSTIX21Bundles
+from .test_external_stix21_bundles import (
+    TestExternalSTIX21Bundles, TLP_1_0_EXPECTED_TAGS, TLP_2_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX21
 from ._test_stix_import import (
     TestExternalSTIX2Import, TestSTIX21Import, UUIDv4, MISP_org_uuid)
@@ -67,6 +68,20 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.type, 'ip-dst')
         self.assertEqual(attribute.uuid, ip_address.id.split('--')[1])
         self.assertEqual(attribute.value, ip_address.value)
+
+    def test_stix21_bundle_with_tlp_1_0_markings(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_tlp_1_0_markings()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self._check_tlp_marking_tags(event.attributes, TLP_1_0_EXPECTED_TAGS)
+
+    def test_stix21_bundle_with_tlp_2_0_markings(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_tlp_2_0_markings()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self._check_tlp_marking_tags(event.attributes, TLP_2_0_EXPECTED_TAGS)
 
     def test_stix21_bundle_with_analyst_data(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_analyst_data()

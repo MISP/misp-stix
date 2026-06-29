@@ -2632,6 +2632,97 @@ _X509_INDICATOR = {
 }
 
 
+_TLP_2_0_EXTENSION = 'extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d'
+# TLP 1.0 canonical marking-definitions (definition_type 'tlp').
+_TLP_1_0_MARKING_DEFINITIONS = [
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:WHITE", "definition": {"tlp": "white"}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:GREEN", "definition": {"tlp": "green"}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--f88d31f6-486f-44da-b317-01333bde0b82",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:AMBER", "definition": {"tlp": "amber"}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--5e57c739-391a-4eb3-b6be-7d15ca92d5ed",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:RED", "definition": {"tlp": "red"}},
+]
+# TLP 2.0 canonical marking-definitions (property-extension; no extension-definition
+# SDO in the bundle, per ADR-0005 §4 — the UUID is OASIS-published).
+_TLP_2_0_MARKING_DEFINITIONS = [
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+     "name": "TLP:CLEAR", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "clear"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+     "name": "TLP:GREEN", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "green"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--55d920b0-5e8b-4f79-9ee9-91f868d9b421",
+     "name": "TLP:AMBER", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "amber"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--939a9414-2ddd-4d32-a0cd-375ea402b003",
+     "name": "TLP:AMBER+STRICT", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "amber+strict"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--e828b379-4e03-4974-9ac4-e53a884c97c1",
+     "name": "TLP:RED", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "red"}}},
+]
+
+
+def _tlp_marked_address(uuid, value, marking_id):
+    return {"type": "ipv4-addr", "spec_version": "2.1", "id": f"ipv4-addr--{uuid}",
+            "value": value, "object_marking_refs": [marking_id]}
+
+
+# Each bare ipv4-addr SCO is marked with one TLP marking; the MISP attribute it
+# becomes should carry the matching tlp: tag. Keyed by value for assertion.
+_TLP_1_0_MARKED_ADDRESSES = [
+    _tlp_marked_address('11111111-1111-4111-8111-111111111111', '10.0.0.1',
+                        _TLP_1_0_MARKING_DEFINITIONS[0]['id']),
+    _tlp_marked_address('22222222-2222-4222-8222-222222222222', '10.0.0.2',
+                        _TLP_1_0_MARKING_DEFINITIONS[1]['id']),
+    _tlp_marked_address('33333333-3333-4333-8333-333333333333', '10.0.0.3',
+                        _TLP_1_0_MARKING_DEFINITIONS[2]['id']),
+    _tlp_marked_address('44444444-4444-4444-8444-444444444444', '10.0.0.4',
+                        _TLP_1_0_MARKING_DEFINITIONS[3]['id']),
+]
+_TLP_2_0_MARKED_ADDRESSES = [
+    _tlp_marked_address('a1111111-1111-4111-8111-111111111111', '10.0.1.1',
+                        _TLP_2_0_MARKING_DEFINITIONS[0]['id']),
+    _tlp_marked_address('a2222222-2222-4222-8222-222222222222', '10.0.1.2',
+                        _TLP_2_0_MARKING_DEFINITIONS[1]['id']),
+    _tlp_marked_address('a3333333-3333-4333-8333-333333333333', '10.0.1.3',
+                        _TLP_2_0_MARKING_DEFINITIONS[2]['id']),
+    _tlp_marked_address('a4444444-4444-4444-8444-444444444444', '10.0.1.4',
+                        _TLP_2_0_MARKING_DEFINITIONS[3]['id']),
+    _tlp_marked_address('a5555555-5555-4555-8555-555555555555', '10.0.1.5',
+                        _TLP_2_0_MARKING_DEFINITIONS[4]['id']),
+]
+# value -> expected MISP tag, shared by the import tests.
+TLP_1_0_EXPECTED_TAGS = {
+    '10.0.0.1': 'tlp:white', '10.0.0.2': 'tlp:green',
+    '10.0.0.3': 'tlp:amber', '10.0.0.4': 'tlp:red',
+}
+TLP_2_0_EXPECTED_TAGS = {
+    '10.0.1.1': 'tlp:clear', '10.0.1.2': 'tlp:green', '10.0.1.3': 'tlp:amber',
+    '10.0.1.4': 'tlp:amber+strict', '10.0.1.5': 'tlp:red',
+}
+
+
 class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     __bundle = {
         "type": "bundle",
@@ -2788,6 +2879,31 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         acs_marking_definitions = deepcopy(_ACS_MARKING_DEFINITION_OBJECTS)
         ip_address['object_marking_refs'] = [acs_marking_definitions[0]['id']]
         return cls.__assemble_bundle(ip_address, *acs_marking_definitions)
+
+    @classmethod
+    def __tlp_markings_bundle(cls, addresses, markings):
+        bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        addresses = deepcopy(addresses)
+        grouping.update(
+            cls._populate_references(*(address['id'] for address in addresses))
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), grouping, *addresses, *deepcopy(markings)
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_tlp_1_0_markings(cls):
+        return cls.__tlp_markings_bundle(
+            _TLP_1_0_MARKED_ADDRESSES, _TLP_1_0_MARKING_DEFINITIONS
+        )
+
+    @classmethod
+    def get_bundle_with_tlp_2_0_markings(cls):
+        return cls.__tlp_markings_bundle(
+            _TLP_2_0_MARKED_ADDRESSES, _TLP_2_0_MARKING_DEFINITIONS
+        )
 
     @classmethod
     def get_bundle_with_analyst_data(cls):

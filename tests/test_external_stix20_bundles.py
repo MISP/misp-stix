@@ -1912,6 +1912,57 @@ _X509_INDICATOR = {
 }
 
 
+# STIX 2.0 has no native TLP 2.0 representation (no property-extensions), so only
+# the TLP 1.0 canonical marking-definitions are applicable on 2.0 import.
+_TLP_1_0_MARKING_DEFINITIONS = [
+    {"type": "marking-definition",
+     "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "definition": {"tlp": "white"}},
+    {"type": "marking-definition",
+     "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "definition": {"tlp": "green"}},
+    {"type": "marking-definition",
+     "id": "marking-definition--f88d31f6-486f-44da-b317-01333bde0b82",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "definition": {"tlp": "amber"}},
+    {"type": "marking-definition",
+     "id": "marking-definition--5e57c739-391a-4eb3-b6be-7d15ca92d5ed",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "definition": {"tlp": "red"}},
+]
+
+
+def _tlp_marked_observed_data(uuid, value, marking_id):
+    # STIX 2.0 wraps cyber-observables inside observed-data (no top-level SCOs).
+    return {
+        "type": "observed-data", "id": f"observed-data--{uuid}",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z", "number_observed": 1,
+        "objects": {"0": {"type": "ipv4-addr", "value": value}},
+        "object_marking_refs": [marking_id],
+    }
+
+
+_TLP_1_0_MARKED_OBSERVED_DATA = [
+    _tlp_marked_observed_data('11111111-1111-4111-8111-111111111111', '10.0.0.1',
+                              _TLP_1_0_MARKING_DEFINITIONS[0]['id']),
+    _tlp_marked_observed_data('22222222-2222-4222-8222-222222222222', '10.0.0.2',
+                              _TLP_1_0_MARKING_DEFINITIONS[1]['id']),
+    _tlp_marked_observed_data('33333333-3333-4333-8333-333333333333', '10.0.0.3',
+                              _TLP_1_0_MARKING_DEFINITIONS[2]['id']),
+    _tlp_marked_observed_data('44444444-4444-4444-8444-444444444444', '10.0.0.4',
+                              _TLP_1_0_MARKING_DEFINITIONS[3]['id']),
+]
+TLP_1_0_EXPECTED_TAGS = {
+    '10.0.0.1': 'tlp:white', '10.0.0.2': 'tlp:green',
+    '10.0.0.3': 'tlp:amber', '10.0.0.4': 'tlp:red',
+}
+
+
 class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     __bundle = {
         "type": "bundle",
@@ -1965,6 +2016,18 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
         ]
         bundle['objects'][1]['object_refs'] = [
             stix_object['id'] for stix_object in stix_objects
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_tlp_1_0_markings(cls):
+        bundle = deepcopy(cls.__bundle)
+        observed_data = deepcopy(_TLP_1_0_MARKED_OBSERVED_DATA)
+        report = deepcopy(cls.__report)
+        report['object_refs'] = [obj['id'] for obj in observed_data]
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, *observed_data,
+            *deepcopy(_TLP_1_0_MARKING_DEFINITIONS)
         ]
         return dict_to_stix2(bundle, allow_custom=True)
 

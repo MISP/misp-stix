@@ -3,7 +3,8 @@
 
 import json
 from uuid import uuid5
-from .test_internal_stix21_bundles import TestInternalSTIX21Bundles
+from .test_internal_stix21_bundles import (
+    TestInternalSTIX21Bundles, TLP_1_0_EXPECTED_TAGS, TLP_2_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX21
 from ._test_stix_import import TestInternalSTIX2Import, TestSTIX21Import, UUIDv4
 
@@ -45,6 +46,20 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     ############################################################################
     #                       MISP ATTRIBUTES IMPORT TESTS                       #
     ############################################################################
+
+    def test_stix21_bundle_with_tlp_1_0_markings(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_tlp_1_0_markings()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self._check_tlp_marking_tags(event.attributes, TLP_1_0_EXPECTED_TAGS)
+
+    def test_stix21_bundle_with_tlp_2_0_markings(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_tlp_2_0_markings()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self._check_tlp_marking_tags(event.attributes, TLP_2_0_EXPECTED_TAGS)
 
     def test_stix21_bundle_with_AS_attribute(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_AS_attribute()
