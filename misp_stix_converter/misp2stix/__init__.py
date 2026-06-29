@@ -1,3 +1,4 @@
+from .exceptions import InvalidMISPInputError  # noqa
 from .misp_to_stix1 import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser  # noqa
 from .misp_to_stix20 import MISPtoSTIX20Parser  # noqa
 from .misp_to_stix21 import MISPtoSTIX21Parser  # noqa
