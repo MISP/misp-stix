@@ -3,6 +3,7 @@
 
 import re
 import socket
+from .exceptions import InvalidMISPInputError
 from .exportparser import MISPtoSTIXParser
 from ..tools.stix1_framing import _create_stix_package
 from .stix1_mapping import MISPtoSTIX1Mapping
@@ -1107,11 +1108,15 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         self._ids = set()
 
     def _parse_json_content(self, attributes: dict | list):
-        if attributes.get('response') is not None:
+        if isinstance(attributes, dict) and attributes.get('response') is not None:
             attributes = attributes['response']
-        self._stix_package = STIXPackage()
-        if 'Attribute' in attributes:
+        if isinstance(attributes, dict) and 'Attribute' in attributes:
             attributes = attributes['Attribute']
+        if not isinstance(attributes, list):
+            raise InvalidMISPInputError(
+                'Input does not look like a MISP attributes collection.'
+            )
+        self._stix_package = STIXPackage()
         for attribute in attributes:
             self._resolve_attribute(attribute)
 
@@ -1155,7 +1160,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         super().__init__(orgname, version)
 
     def _parse_json_content(self, json_content: dict):
-        if json_content.get('response'):
+        if not isinstance(json_content, dict):
+            raise InvalidMISPInputError('Input does not look like a MISP event.')
+        if json_content.get('response') is not None:
             package = _create_stix_package(
                 self._orgname, self._version, header=False
             )
@@ -1163,8 +1170,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 self.parse_misp_event(event)
                 package.add_related_package(self._stix_package)
             self._stix_package = package
-        else:
+        elif 'Event' in json_content or 'info' in json_content:
             self.parse_misp_event(json_content)
+        else:
+            raise InvalidMISPInputError('Input does not look like a MISP event.')
 
     def parse_misp_event(self, misp_event: dict):
         self._header_comment = []
