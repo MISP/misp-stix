@@ -1923,16 +1923,7 @@ class InternalSTIX2IndicatorConverter(
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_artifact_indicator(self, indicator: _INDICATOR_TYPING):
-        misp_object = self._create_misp_object('artifact', indicator)
-        for pattern in indicator.pattern[1:-1].split(' AND '):
-            feature, value = self._extract_features_from_pattern(pattern)
-            attributes = self._handle_object_attributes(
-                value, self._mapping.artifact_pattern_mapping(feature),
-                indicator.id
-            )
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
-        self.main_parser._add_misp_object(misp_object, indicator)
+        self._object_from_standard_pattern(indicator, 'artifact')
 
     def _object_from_cpe_asset_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'cpe-asset')
@@ -2130,16 +2121,7 @@ class InternalSTIX2IndicatorConverter(
         self._object_from_account_indicator(indicator, 'gitlab-user')
 
     def _object_from_hashlookup_indicator(self, indicator: _INDICATOR_TYPING):
-        misp_object = self._create_misp_object('hashlookup', indicator)
-        for pattern in indicator.pattern[1:-1].split(' AND '):
-            feature, value = self._extract_features_from_pattern(pattern)
-            attributes = self._handle_object_attributes(
-                value, self._mapping.hashlookup_pattern_mapping(feature),
-                indicator.id
-            )
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
-        self.main_parser._add_misp_object(misp_object, indicator)
+        self._object_from_standard_pattern(indicator, 'hashlookup')
 
     def _object_from_http_request_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('http-request', indicator)
