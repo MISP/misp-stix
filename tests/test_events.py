@@ -4285,6 +4285,23 @@ _OBSERVABLE_ATTRIBUTE = {
     "value": "AS174"
 }
 
+_INVALID_ATTRIBUTE = {
+    "uuid": "11111111-1111-4111-8111-111111111111",
+    "type": "ip-src"  # missing required 'value'
+}
+
+_DOMAIN_IP_OBJECT = {
+    "name": "domain-ip", "meta-category": "network",
+    "description": "A domain and IP address seen as a tuple",
+    "uuid": "22222222-2222-4222-8222-222222222222",
+    "timestamp": "1603642920",
+    "Attribute": [{
+        "uuid": "33333333-3333-4333-8333-333333333333",
+        "type": "domain", "object_relation": "domain",
+        "value": "circl.lu"
+    }]
+}
+
 
 def _populate_attributes(attribute: dict):
     if 'uuid' in attribute:
@@ -4304,6 +4321,18 @@ def _populate_object(misp_object: dict):
             ]
             continue
         yield key, value
+
+def get_indicator_attribute():
+    return deepcopy(_INDICATOR_ATTRIBUTE)
+
+
+def get_invalid_attribute():
+    return deepcopy(_INVALID_ATTRIBUTE)
+
+
+def get_domain_ip_object():
+    return deepcopy(_DOMAIN_IP_OBJECT)
+
 
 ################################################################################
 #                               BASE EVENT TESTS                               #

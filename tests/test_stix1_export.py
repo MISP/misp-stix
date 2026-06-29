@@ -4,11 +4,13 @@
 import re
 from base64 import b64encode
 from datetime import datetime, timezone
-from misp_stix_converter import (MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
+from misp_stix_converter import (InvalidMISPInputError, MISPtoSTIX1AttributesParser,
+                                 MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1)
 from pymisp import MISPEvent
 from uuid import uuid5, UUID
 from .test_events import *
+from .test_events import _INDICATOR_ATTRIBUTE
 from ._test_stix import TestSTIX
 from ._test_stix_export import TestCollectionSTIX1Export
 
@@ -35,6 +37,56 @@ misp_reghive = {
     "HKEY_PERFORMANCE_TEXT": "HKEY_PERFORMANCE_TEXT",
     "HKPT": "HKEY_PERFORMANCE_TEXT",
 }
+
+
+class TestSTIX1InputContract(TestSTIX):
+    @staticmethod
+    def _events_parser():
+        return MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+
+    @staticmethod
+    def _attributes_parser():
+        return MISPtoSTIX1AttributesParser(_ORGNAME_ID, '1.1.1')
+
+    def test_events_parser_garbage_raises(self):
+        with self.assertRaises(InvalidMISPInputError):
+            self._events_parser().parse_json_content({'foo': 'bar'})
+
+    def test_events_parser_top_level_list_raises(self):
+        with self.assertRaises(InvalidMISPInputError):
+            self._events_parser().parse_json_content([get_base_event()])
+
+    def test_events_parser_wrong_layer_raises(self):
+        # A valid attribute collection is the wrong layer for the events parser.
+        with self.assertRaises(InvalidMISPInputError):
+            self._events_parser().parse_json_content(
+                {'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)]}
+            )
+
+    def test_events_parser_bare_event_converts(self):
+        parser = self._events_parser()
+        parser.parse_json_content(get_base_event()['Event'])
+        self.assertIsNotNone(parser.stix_package)
+
+    def test_attributes_parser_garbage_raises(self):
+        with self.assertRaises(InvalidMISPInputError):
+            self._attributes_parser().parse_json_content({'foo': 'bar'})
+
+    def test_attributes_parser_empty_dict_raises(self):
+        with self.assertRaises(InvalidMISPInputError):
+            self._attributes_parser().parse_json_content({})
+
+    def test_attributes_parser_bare_list_converts(self):
+        parser = self._attributes_parser()
+        parser.parse_json_content([deepcopy(_INDICATOR_ATTRIBUTE)])
+        self.assertIsNotNone(parser.stix_package)
+
+    def test_attributes_parser_collection_converts(self):
+        parser = self._attributes_parser()
+        parser.parse_json_content(
+            {'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)]}
+        )
+        self.assertIsNotNone(parser.stix_package)
 
 
 class TestStix1Export(TestSTIX):

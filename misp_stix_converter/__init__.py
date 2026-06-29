@@ -1,6 +1,7 @@
 __version__ = '2026.6.25'
 
 import argparse
+from .misp2stix import InvalidMISPInputError  # noqa
 from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser  # noqa
 from .misp2stix import MISPtoSTIX1Mapping  # noqa
 from .misp2stix import MISPtoSTIX20Parser, MISPtoSTIX21Parser  # noqa

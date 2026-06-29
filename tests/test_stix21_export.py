@@ -3,8 +3,8 @@
 
 from datetime import datetime
 from misp_stix_converter import (
-    InternalSTIX2toMISPParser, MISPtoSTIX21Mapping, MISPtoSTIX21Parser,
-    misp_collection_to_stix2, misp_to_stix2)
+    InternalSTIX2toMISPParser, InvalidMISPInputError, MISPtoSTIX21Mapping,
+    MISPtoSTIX21Parser, misp_collection_to_stix2, misp_to_stix2)
 from pymisp import MISPAttribute, MISPEvent
 from .test_events import *
 from .update_documentation import (
@@ -31,6 +31,109 @@ class TestSTIX21GenericExport(TestSTIX21Export, TestSTIX21):
     def _check_spec_versions(self, stix_objects):
         for stix_object in stix_objects:
             self.assertEqual(stix_object.spec_version, '2.1')
+
+
+class TestSTIX21InputContract(TestSTIX21GenericExport):
+    def test_garbage_input_raises_invalid_misp_input(self):
+        with self.assertRaises(InvalidMISPInputError):
+            self.parser.parse_json_content({'foo': 'bar'})
+
+    def test_single_bare_attribute_converts(self):
+        self.parser.parse_json_content(get_indicator_attribute())
+        self.assertIsNotNone(self.parser.bundle)
+        self.assertTrue(
+            any(o.type == 'indicator' for o in self.parser.stix_objects)
+        )
+
+    def test_bare_attribute_collection_converts(self):
+        self.parser.parse_json_content(
+            {'Attribute': [get_indicator_attribute()]}
+        )
+        self.assertIsNotNone(self.parser.bundle)
+        self.assertTrue(
+            any(o.type == 'indicator' for o in self.parser.stix_objects)
+        )
+
+    def test_top_level_event_list_converts(self):
+        self.parser.parse_json_content([get_base_event()])
+        self.assertIsNotNone(self.parser.bundle)
+        self.assertTrue(
+            any(o.type in ('grouping', 'report')
+                for o in self.parser.stix_objects)
+        )
+
+    def test_bare_attribute_list_converts(self):
+        self.parser.parse_json_content([get_indicator_attribute()])
+        self.assertIsNotNone(self.parser.bundle)
+        self.assertTrue(
+            any(o.type == 'indicator' for o in self.parser.stix_objects)
+        )
+
+    def test_bare_object_list_converts(self):
+        self.parser.parse_json_content(
+            [{'Object': get_domain_ip_object()}]
+        )
+        self.assertIsNotNone(self.parser.bundle)
+        self.assertTrue(
+            any(o.type == 'observed-data' for o in self.parser.stix_objects)
+        )
+
+    def test_bare_event_converts(self):
+        # The original trigger: a bare event (no `Event` wrapper).
+        self.parser.parse_json_content(get_base_event()['Event'])
+        self.assertIsNotNone(self.parser.bundle)
+        self.assertTrue(
+            any(o.type in ('grouping', 'report')
+                for o in self.parser.stix_objects)
+        )
+
+    def test_wrapped_event_converts(self):
+        self.parser.parse_json_content(get_base_event())
+        self.assertIsNotNone(self.parser.bundle)
+        self.assertTrue(
+            any(o.type in ('grouping', 'report')
+                for o in self.parser.stix_objects)
+        )
+
+    def test_empty_dict_raises_invalid_misp_input(self):
+        with self.assertRaises(InvalidMISPInputError):
+            self.parser.parse_json_content({})
+
+    def test_empty_list_is_valid_but_empty(self):
+        # Empty != invalid: an empty collection yields 0 objects, no raise.
+        self.parser.parse_json_content([])
+        self.assertEqual(len(self.parser.stix_objects), 0)
+
+    def test_junk_list_raises_invalid_misp_input(self):
+        with self.assertRaises(InvalidMISPInputError):
+            self.parser.parse_json_content([{'foo': 'bar'}])
+
+    def test_non_misp_scalar_raises_invalid_misp_input(self):
+        # A JSON scalar is not MISP and must not be substring-routed by a
+        # stray 'type'/'response' occurrence.
+        with self.assertRaises(InvalidMISPInputError):
+            self.parser.parse_json_content('"a string mentioning type"')
+
+    def test_misp_shaped_invalid_content_is_not_invalid_input(self):
+        # Has `type` → looks like MISP format → a Validation Error (recorded),
+        # never an Invalid Input (raised).
+        try:
+            self.parser.parse_json_content({'type': 'domain'})
+        except InvalidMISPInputError:
+            self.fail('MISP-shaped content must not raise InvalidMISPInputError')
+        self.assertTrue(self.parser.errors)
+
+    def test_invalid_attribute_in_collection_is_non_breaking(self):
+        self.parser.parse_json_content(
+            {'Attribute': [get_invalid_attribute(), get_indicator_attribute()]}
+        )
+        # One bad attribute must not block the rest of the batch.
+        self.assertTrue(
+            any(o.type == 'indicator' for o in self.parser.stix_objects)
+        )
+        # The Validation Error is attributed to its context, not 'misp event'.
+        self.assertIn('attributes collection', self.parser.errors)
+        self.assertNotIn('misp event', self.parser.errors)
 
 
 class TestSTIX21EventExport(TestSTIX21GenericExport):
