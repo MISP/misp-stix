@@ -9751,6 +9751,103 @@ _X509_OBSERVABLE_OBJECT = [
 _indicator_types = ('indicator', 'relationship')
 
 
+_TLP_2_0_EXTENSION = 'extension-definition--60a3c5c5-0d10-413e-aab3-9e08dde9e88d'
+_TLP_1_0_MARKING_DEFINITIONS = [
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:WHITE", "definition": {"tlp": "white"}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:GREEN", "definition": {"tlp": "green"}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--f88d31f6-486f-44da-b317-01333bde0b82",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:AMBER", "definition": {"tlp": "amber"}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--5e57c739-391a-4eb3-b6be-7d15ca92d5ed",
+     "created": "2017-01-20T00:00:00.000Z", "definition_type": "tlp",
+     "name": "TLP:RED", "definition": {"tlp": "red"}},
+]
+_TLP_2_0_MARKING_DEFINITIONS = [
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+     "name": "TLP:CLEAR", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "clear"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+     "name": "TLP:GREEN", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "green"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--55d920b0-5e8b-4f79-9ee9-91f868d9b421",
+     "name": "TLP:AMBER", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "amber"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--939a9414-2ddd-4d32-a0cd-375ea402b003",
+     "name": "TLP:AMBER+STRICT", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "amber+strict"}}},
+    {"type": "marking-definition", "spec_version": "2.1",
+     "id": "marking-definition--e828b379-4e03-4974-9ac4-e53a884c97c1",
+     "name": "TLP:RED", "created": "2022-10-01T00:00:00.000Z",
+     "extensions": {_TLP_2_0_EXTENSION: {
+         "extension_type": "property-extension", "tlp_2_0": "red"}}},
+]
+
+
+def _tlp_marked_observable(base, value, marking_id):
+    # MISP-style observed-data (labels declare the attribute type) + its SCO.
+    return (
+        {"type": "observed-data", "spec_version": "2.1",
+         "id": f"observed-data--b{base}",
+         "created": "2020-10-25T16:22:00.000Z",
+         "modified": "2020-10-25T16:22:00.000Z",
+         "first_observed": "2020-10-25T16:22:00Z",
+         "last_observed": "2020-10-25T16:22:00Z", "number_observed": 1,
+         "object_refs": [f"ipv4-addr--c{base}"],
+         "labels": ['misp:type="ip-src"', 'misp:category="Network activity"'],
+         "object_marking_refs": [marking_id]},
+        {"type": "ipv4-addr", "spec_version": "2.1",
+         "id": f"ipv4-addr--c{base}", "value": value},
+    )
+
+
+_TLP_1_0_OBSERVABLES = [
+    _tlp_marked_observable('1111111-1111-4111-8111-111111111111', '10.0.0.1',
+                           _TLP_1_0_MARKING_DEFINITIONS[0]['id']),
+    _tlp_marked_observable('2222222-2222-4222-8222-222222222222', '10.0.0.2',
+                           _TLP_1_0_MARKING_DEFINITIONS[1]['id']),
+    _tlp_marked_observable('3333333-3333-4333-8333-333333333333', '10.0.0.3',
+                           _TLP_1_0_MARKING_DEFINITIONS[2]['id']),
+    _tlp_marked_observable('4444444-4444-4444-8444-444444444444', '10.0.0.4',
+                           _TLP_1_0_MARKING_DEFINITIONS[3]['id']),
+]
+_TLP_2_0_OBSERVABLES = [
+    _tlp_marked_observable('5555555-5555-4555-8555-555555555555', '10.0.1.1',
+                           _TLP_2_0_MARKING_DEFINITIONS[0]['id']),
+    _tlp_marked_observable('6666666-6666-4666-8666-666666666666', '10.0.1.2',
+                           _TLP_2_0_MARKING_DEFINITIONS[1]['id']),
+    _tlp_marked_observable('7777777-7777-4777-8777-777777777777', '10.0.1.3',
+                           _TLP_2_0_MARKING_DEFINITIONS[2]['id']),
+    _tlp_marked_observable('8888888-8888-4888-8888-888888888888', '10.0.1.4',
+                           _TLP_2_0_MARKING_DEFINITIONS[3]['id']),
+    _tlp_marked_observable('9999999-9999-4999-8999-999999999999', '10.0.1.5',
+                           _TLP_2_0_MARKING_DEFINITIONS[4]['id']),
+]
+TLP_1_0_EXPECTED_TAGS = {
+    '10.0.0.1': 'tlp:white', '10.0.0.2': 'tlp:green',
+    '10.0.0.3': 'tlp:amber', '10.0.0.4': 'tlp:red',
+}
+TLP_2_0_EXPECTED_TAGS = {
+    '10.0.1.1': 'tlp:clear', '10.0.1.2': 'tlp:green', '10.0.1.3': 'tlp:amber',
+    '10.0.1.4': 'tlp:amber+strict', '10.0.1.5': 'tlp:red',
+}
+
+
 class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     __bundle = {
         "type": "bundle",
@@ -9791,6 +9888,33 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
         bundle['objects'] = [deepcopy(cls.__identity), grouping, *stix_objects]
         return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def __tlp_markings_bundle(cls, observables, markings):
+        observed_data = [deepcopy(observable[0]) for observable in observables]
+        scos = [deepcopy(observable[1]) for observable in observables]
+        bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        grouping.update(
+            cls._populate_references(*(obj['id'] for obj in observed_data))
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), grouping, *observed_data, *scos,
+            *deepcopy(markings)
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_tlp_1_0_markings(cls):
+        return cls.__tlp_markings_bundle(
+            _TLP_1_0_OBSERVABLES, _TLP_1_0_MARKING_DEFINITIONS
+        )
+
+    @classmethod
+    def get_bundle_with_tlp_2_0_markings(cls):
+        return cls.__tlp_markings_bundle(
+            _TLP_2_0_OBSERVABLES, _TLP_2_0_MARKING_DEFINITIONS
+        )
 
     @staticmethod
     def __extract_observables(stix_objects):

@@ -135,6 +135,14 @@ class TestSTIX2Import(TestSTIX):
         )
         return (*event.objects, *event.attributes)
 
+    def _check_tlp_marking_tags(self, attributes, expected_tags):
+        # expected_tags maps each marked attribute value to its expected tlp tag.
+        self.assertEqual(len(attributes), len(expected_tags))
+        for attribute in attributes:
+            self.assertIn(attribute.value, expected_tags)
+            tag_names = {tag.name for tag in attribute.tags}
+            self.assertIn(expected_tags[attribute.value], tag_names)
+
     def _check_registry_key_value_indicator_fields(self, misp_object, values,
                                                     object_id):
         self.assertEqual(len(misp_object.attributes), 3)

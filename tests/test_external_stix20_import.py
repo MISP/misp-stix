@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .test_external_stix20_bundles import TestExternalSTIX20Bundles
+from .test_external_stix20_bundles import (
+    TestExternalSTIX20Bundles, TLP_1_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX20
 from ._test_stix_import import (
     TestExternalSTIX2Import, TestSTIX20Import, UUIDv4, MISP_org_uuid)
@@ -13,6 +14,13 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
     ############################################################################
     #                         MISP EVENT IMPORT TESTS.                         #
     ############################################################################
+
+    def test_stix20_bundle_with_tlp_1_0_markings(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self._check_tlp_marking_tags(event.attributes, TLP_1_0_EXPECTED_TAGS)
 
     def test_stix20_bundle_with_event_title_and_producer(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_without_report()

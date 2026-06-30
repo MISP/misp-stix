@@ -63,10 +63,7 @@ class TLP2MarkingDefinitions:
     __by_tag_name = Mapping(
         **{
             'tlp:clear': _TLP_CLEAR,
-            'tlp:green': _TLP_GREEN,
-            'tlp:amber': _TLP_AMBER,
             'tlp:amber+strict': _TLP_AMBER_STRICT,
-            'tlp:red': _TLP_RED,
         }
     )
 
