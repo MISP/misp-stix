@@ -141,7 +141,7 @@ def stix_xml_separator():
 def _create_stix_package(
         orgname: str, version: str,  header: Optional[bool] = True,
         uuid: Optional[UUID | str] = None) -> STIXPackage:
-    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
+    parsed_orgname = re.sub(r'[\W]+', '', orgname.replace(' ', '_'))
     if uuid is None:
         uuid = uuid4()
     stix_package = STIXPackage(
@@ -158,7 +158,7 @@ def _create_stix_package(
 
 
 def _handle_namespaces(namespace: str, orgname: str) -> tuple:
-    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
+    parsed_orgname = re.sub(r'[\W]+', '', orgname.replace(' ', '_'))
     namespaces = {namespace: parsed_orgname}
     namespaces.update(NS_DICT)
     try:
