@@ -88,7 +88,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             pass
 
     def _load_stix_bundle(self, bundle: _BUNDLE_TYPING):
-        stix_objects, object_refs = self._partition_stix_objects(bundle.objects)
+        stix_objects, object_refs = self._partition_stix_objects(
+            getattr(bundle, 'objects', [])
+        )
         standalone_objects = {}
         for stix_object in stix_objects:
             object_id = stix_object['id']

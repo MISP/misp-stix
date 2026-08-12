@@ -608,9 +608,10 @@ def stix_2_to_misp(filename: _files_type,
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = get_stix2_parser(
-        is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, force_contextual_data, galaxies_as_tags, single_event,
-        organisation_uuid, cluster_distribution, cluster_sharing_group_id
+        is_stix2_from_misp(getattr(bundle, 'objects', [])), distribution,
+        sharing_group_id, title, producer, force_contextual_data,
+        galaxies_as_tags, single_event, organisation_uuid,
+        cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
     stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
@@ -652,9 +653,10 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = get_stix2_parser(
-        is_stix2_from_misp(bundle.objects), distribution, sharing_group_id,
-        title, producer, force_contextual_data, galaxies_as_tags, single_event,
-        organisation_uuid, cluster_distribution, cluster_sharing_group_id
+        is_stix2_from_misp(getattr(bundle, 'objects', [])), distribution,
+        sharing_group_id, title, producer, force_contextual_data,
+        galaxies_as_tags, single_event, organisation_uuid,
+        cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
     stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)

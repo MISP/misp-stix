@@ -66,7 +66,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._parse_stix_bundle()
 
     def _load_stix_bundle(self, bundle: _BUNDLE_TYPING) -> int:
-        for stix_object in bundle.objects:
+        for stix_object in getattr(bundle, 'objects', []):
             self._load_stix_object(stix_object)
 
     ############################################################################
