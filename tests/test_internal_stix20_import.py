@@ -1768,6 +1768,32 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
 
+    def test_stix20_reused_parser_does_not_leak_galaxy_clusters(self):
+        # `_reset_bundle_state()` must clear `_clusters`/`_galaxies` so a parser
+        # reused across documents does not carry one bundle's galaxy into the
+        # event built from another. Bundle B reuses bundle A's cluster UUID
+        # (cluster UUIDs are public) but defines its own value, so B's event must
+        # show B's value - under the leak it silently inherits A's.
+        from stix2.parsing import dict_to_stix2
+        from misp_stix_converter import InternalSTIX2toMISPParser
+        bundle_a = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy()
+        b_dict = json.loads(bundle_a.serialize())
+        b_dict['id'] = 'bundle--5b8e0f9a-0000-4000-8000-0000000000b0'
+        for stix_object in b_dict['objects']:
+            if stix_object['type'] == 'report':
+                stix_object['id'] = 'report--5b8e0f9a-0000-4000-8000-0000000000b1'
+            elif stix_object['type'] == 'x-misp-galaxy-cluster':
+                stix_object['x_misp_value'] = 'LEAKED-B-ACTOR'
+                stix_object['x_misp_description'] = 'only bundle B defines this'
+        bundle_b = dict_to_stix2(b_dict, allow_custom=True)
+        parser = InternalSTIX2toMISPParser()
+        parser.load_stix_bundle(bundle_a)
+        parser.parse_stix_bundle()
+        parser.load_stix_bundle(bundle_b)
+        parser.parse_stix_bundle()
+        cluster = parser.misp_event.galaxies[0].clusters[0]
+        self.assertEqual(cluster.value, 'LEAKED-B-ACTOR')
+
     def test_stix20_bundle_with_stix_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_stix_galaxy()
         self.parser.load_stix_bundle(bundle)
@@ -3094,6 +3120,32 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             summary='Registry Key Object referencing multiple '
                     'Registry Key Value Objects'
         )
+
+    def test_stix20_registry_key_value_indicator_object_round_trip(self):
+        # In STIX 2.0 a to_ids registry-key-value exports as a custom
+        # observable *and* a values[0] Indicator. Both carry the same uuid,
+        # so import must yield a single registry-key-value.
+        from misp_stix_converter import MISPtoSTIX20Parser
+        from .test_events import get_event_with_registry_key_value_object
+        event = get_event_with_registry_key_value_object()
+        event['Event']['Object'][0]['Attribute'][0]['to_ids'] = True
+        export_parser = MISPtoSTIX20Parser()
+        export_parser.parse_misp_event(event['Event'])
+        self.parser.load_stix_bundle(export_parser.bundle)
+        self.parser.parse_stix_bundle()
+        misp_objects = self.parser.misp_event.objects
+        self.assertEqual(len(misp_objects), 1)
+        registry_value = misp_objects[0]
+        self.assertEqual(registry_value.name, 'registry-key-value')
+        # The custom observable (all three values) wins over the name-only
+        # Indicator, and the to_ids flag survives the round-trip.
+        name, data, data_type = (
+            registry_value.get_attributes_by_relation(relation)[0]
+            for relation in ('name', 'data', 'data-type')
+        )
+        self.assertTrue(name.to_ids)
+        self.assertFalse(data.to_ids)
+        self.assertFalse(data_type.to_ids)
 
     def test_stix20_bundle_with_script_objects(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_script_objects()

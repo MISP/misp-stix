@@ -2098,6 +2098,32 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
 
+    def test_stix21_reused_parser_does_not_leak_galaxy_clusters(self):
+        # `_reset_bundle_state()` must clear `_clusters`/`_galaxies` so a parser
+        # reused across documents does not carry one bundle's galaxy into the
+        # event built from another. Bundle B reuses bundle A's cluster UUID
+        # (cluster UUIDs are public) but defines its own value, so B's event must
+        # show B's value - under the leak it silently inherits A's.
+        from stix2.parsing import dict_to_stix2
+        from misp_stix_converter import InternalSTIX2toMISPParser
+        bundle_a = TestInternalSTIX21Bundles.get_bundle_with_custom_galaxy()
+        b_dict = json.loads(bundle_a.serialize())
+        b_dict['id'] = 'bundle--5b8e0f9a-0000-4000-8000-0000000000b0'
+        for stix_object in b_dict['objects']:
+            if stix_object['type'] == 'grouping':
+                stix_object['id'] = 'grouping--5b8e0f9a-0000-4000-8000-0000000000b1'
+            elif stix_object['type'] == 'x-misp-galaxy-cluster':
+                stix_object['x_misp_value'] = 'LEAKED-B-ACTOR'
+                stix_object['x_misp_description'] = 'only bundle B defines this'
+        bundle_b = dict_to_stix2(b_dict, allow_custom=True)
+        parser = InternalSTIX2toMISPParser()
+        parser.load_stix_bundle(bundle_a)
+        parser.parse_stix_bundle()
+        parser.load_stix_bundle(bundle_b)
+        parser.parse_stix_bundle()
+        cluster = parser.misp_event.galaxies[0].clusters[0]
+        self.assertEqual(cluster.value, 'LEAKED-B-ACTOR')
+
     def test_stix21_bundle_with_stix_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_stix_galaxy()
         self.parser.load_stix_bundle(bundle)
