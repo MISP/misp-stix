@@ -329,7 +329,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         relationship = related_object.relationship.value.lower().replace('_', '-')
                         self.references[uuid].append(
                             {
-                                "idref": self.fetch_uuid(related_object.idref),
+                                "idref": self._sanitise_uuid(related_object.idref),
                                 "relationship": relationship
                             }
                         )
@@ -403,10 +403,16 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     ############################################################################
 
     def _get_event_info(self):
-        if hasattr(self.stix_package, 'title'):
+        # Testing the value, not the attribute: a STIX header always carries a
+        # `title` field, set to None when absent, so `hasattr` would return the
+        # missing title instead of falling through.
+        if getattr(self.stix_package, 'title', None):
             return self.stix_package.title
-        if hasattr(getattr(self.stix_package, 'stix_header', None), 'title'):
-            return self.stix_package.stix_header.title
+        title = getattr(
+            getattr(self.stix_package, 'stix_header', None), 'title', None
+        )
+        if title:
+            return title
         return f"Imported from external STIX {self.stix_version} Package"
 
     @staticmethod

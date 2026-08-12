@@ -130,25 +130,27 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self.misp_event.add_object(misp_object)
 
     # Parse a course of action and add a MISP object to the event
-    def parse_course_of_action(self, course_of_action):
+    def _parse_course_of_action(self, course_of_action):
         misp_object = MISPObject('course-of-action', misp_objects_path_custom=misp_objects_path)
-        misp_object.uuid = self.fetch_uuid(course_of_action.id_)
+        misp_object.uuid = self._sanitise_uuid(course_of_action.id_)
         if course_of_action.title:
             attribute = {'type': 'text', 'object_relation': 'name',
                          'value': course_of_action.title}
             misp_object.add_attribute(**attribute)
-        for prop, properties_key in self._mapping._coa_mapping().items():
+        for prop, properties_key in self._mapping.course_of_action_mapping().items():
             if getattr(course_of_action, prop):
                 attribute = {
                     'type': 'text', 'object_relation': prop.replace('_', ''),
-                    'value': attrgetter('{}.{}'.format(prop, properties_key))(course_of_action)
+                    'value': str(
+                        attrgetter(f'{prop}.{properties_key}')(course_of_action)
+                    )
                 }
                 misp_object.add_attribute(**attribute)
         if course_of_action.parameter_observables:
             for observable in course_of_action.parameter_observables.observables:
                 properties = observable.object_.properties
                 attribute = MISPAttribute()
-                attribute.type, attribute.value, _ = self.handle_attribute_type(properties)
+                attribute.type, attribute.value, _ = self._handle_attribute_type(properties)
                 referenced_uuid = str(uuid4())
                 attribute.uuid = referenced_uuid
                 self.misp_event.add_attribute(**attribute)
