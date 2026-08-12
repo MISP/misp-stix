@@ -2124,6 +2124,21 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         cluster = parser.misp_event.galaxies[0].clusters[0]
         self.assertEqual(cluster.value, 'LEAKED-B-ACTOR')
 
+    def test_stix21_parser_handles_objectless_bundle(self):
+        # a direct API consumer (e.g. MISP core) can hand the parser a bundle
+        # whose objects all failed validation - STIX 2.1 then omits `objects`
+        # - and iterating `bundle.objects` raised AttributeError instead of
+        # yielding an empty conversion.
+        from stix2.v21.bundle import Bundle as Bundle_v21
+        bundle = Bundle_v21(
+            id='bundle--5b8e0f9a-0000-4000-8000-0000000000e1', allow_custom=True
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(len(event.attributes), 0)
+        self.assertEqual(len(event.objects), 0)
+
     def test_stix21_bundle_with_stix_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_stix_galaxy()
         self.parser.load_stix_bundle(bundle)

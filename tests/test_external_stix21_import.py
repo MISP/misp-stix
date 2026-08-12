@@ -45,6 +45,27 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 continue
             self.assertEqual(meta[key], value)
 
+    def test_stix21_empty_bundle_does_not_crash(self):
+        # an empty bundle - a TAXII poll that returned no new content, or one
+        # whose objects all failed validation - has no `objects` property in
+        # STIX 2.1, so `bundle.objects` raised AttributeError and escaped the
+        # `stix_2_to_misp` entry point as a traceback instead of a result dict.
+        from misp_stix_converter import stix_2_to_misp
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        empty_bundle = (
+            '{"type": "bundle", '
+            '"id": "bundle--5b8e0f9a-0000-4000-8000-0000000000e0", '
+            '"spec_version": "2.1", "objects": []}'
+        )
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'empty.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(empty_bundle)
+            results = stix_2_to_misp(filename, output_dir=Path(tmp_dir))
+        self.assertNotIn('errors', results)
+        self.assertEqual(results['success'], 1)
+
     def test_stix21_bundle_with_acs_marking(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_acs_marking()
         self.parser.load_stix_bundle(bundle)
