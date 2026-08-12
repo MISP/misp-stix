@@ -44,6 +44,7 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest tests/test_stix*_export.py
+        poetry run pytest tests/test_stix1_import.py
         poetry run pytest tests/test_*ternal_stix*_import.py
         poetry run pytest tests/test_stix2_patterning.py
 
