@@ -202,7 +202,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._parsed_object_refs = set()
         self._creators = set()
         self._analyst_data = defaultdict(list)
+        self._clusters = {}
         self._converter_cache.clear()
+        self._galaxies = {}
         for feature in _SDOs:
             if hasattr(self, feature):
                 delattr(self, feature)
