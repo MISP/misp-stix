@@ -73,6 +73,26 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
 
 
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
+    def _export_event_with_invalid_hash(self, version: str) -> dict:
+        # A `to_ids` file object with an invalid hash is recorded as an error
+        # and the hash is dropped: the partial failure a result dict has to
+        # report.
+        from misp_stix_converter import misp_to_stix2
+        from tempfile import TemporaryDirectory
+        from .test_events import get_event_with_file_object
+        event = get_event_with_file_object()
+        event['Event']['Object'][0]['Attribute'].append(
+            {
+                'type': 'tlsh', 'object_relation': 'tlsh',
+                'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
+            }
+        )
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'event_with_invalid_hash.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(event, f)
+            return misp_to_stix2(filename, version=version)
+
     def _check_stix2_results_export(self, to_test_file, reference_file):
         with open(to_test_file, 'rt', encoding='utf-8') as f:
             to_test = json.load(f)

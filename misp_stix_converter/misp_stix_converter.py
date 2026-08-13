@@ -18,7 +18,7 @@ from .tools.stix1_writing_helpers import (
     write_observables, write_threat_actors, write_ttps, _write_raw_stix)
 from .tools.stix2_loading_helpers import load_stix2_file
 from .tools.stix2_to_misp_helpers import get_stix2_parser, is_stix2_from_misp
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from pymisp import MISPEvent, PyMISP, PyMISPError
 from stix2.base import STIXJSONEncoder
@@ -513,19 +513,19 @@ def stix_1_to_misp(filename: _files_type,
         filename = Path(filename).resolve()
     try:
         stix_package = load_stix1_package(filename)
+        detected = is_stix1_from_misp(stix_package)
+        parser, args = get_stix1_parser(
+            detected if from_misp is None else from_misp, distribution,
+            sharing_group_id, title, producer, force_contextual_data,
+            galaxies_as_tags, single_event, organisation_uuid,
+            cluster_distribution, cluster_sharing_group_id
+        )
+        stix_parser = parser()
+        stix_parser.load_stix_package(stix_package)
+        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.parse_stix_package(**args)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    detected = is_stix1_from_misp(stix_package)
-    parser, args = get_stix1_parser(
-        detected if from_misp is None else from_misp, distribution,
-        sharing_group_id, title, producer, force_contextual_data,
-        galaxies_as_tags, single_event, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
-    )
-    stix_parser = parser()
-    stix_parser.load_stix_package(stix_package)
-    _handle_classification_warning(stix_parser, from_misp, detected)
-    stix_parser.parse_stix_package(**args)
     if output_dir is None:
         output_dir = filename.parent
     if stix_parser.single_event:
@@ -562,19 +562,19 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
         filename = Path(filename).resolve()
     try:
         stix_package = load_stix1_package(filename)
+        detected = is_stix1_from_misp(stix_package)
+        parser, args = get_stix1_parser(
+            detected if from_misp is None else from_misp, distribution,
+            sharing_group_id, title, producer, force_contextual_data,
+            galaxies_as_tags, single_event, organisation_uuid,
+            cluster_distribution, cluster_sharing_group_id
+        )
+        stix_parser = parser()
+        stix_parser.load_stix_package(stix_package)
+        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.parse_stix_package(**args)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    detected = is_stix1_from_misp(stix_package)
-    parser, args = get_stix1_parser(
-        detected if from_misp is None else from_misp, distribution,
-        sharing_group_id, title, producer, force_contextual_data,
-        galaxies_as_tags, single_event, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
-    )
-    stix_parser = parser()
-    stix_parser.load_stix_package(stix_package)
-    _handle_classification_warning(stix_parser, from_misp, detected)
-    stix_parser.parse_stix_package(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
@@ -616,20 +616,20 @@ def stix_2_to_misp(filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = load_stix2_file(filename, invalid_objects := {})
+        bundle = load_stix2_file(filename)
+        detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
+        parser, args = get_stix2_parser(
+            detected if from_misp is None else from_misp, distribution,
+            sharing_group_id, title, producer, force_contextual_data,
+            galaxies_as_tags, single_event, organisation_uuid,
+            cluster_distribution, cluster_sharing_group_id
+        )
+        stix_parser = parser()
+        stix_parser.load_stix_bundle(bundle)
+        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.parse_stix_bundle(**args)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
-    parser, args = get_stix2_parser(
-        detected if from_misp is None else from_misp, distribution,
-        sharing_group_id, title, producer, force_contextual_data,
-        galaxies_as_tags, single_event, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
-    )
-    stix_parser = parser()
-    stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
-    _handle_classification_warning(stix_parser, from_misp, detected)
-    stix_parser.parse_stix_bundle(**args)
     if output_dir is None:
         output_dir = filename.parent
     if stix_parser.single_event:
@@ -665,20 +665,20 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = load_stix2_file(filename, invalid_objects := {})
+        bundle = load_stix2_file(filename)
+        detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
+        parser, args = get_stix2_parser(
+            detected if from_misp is None else from_misp, distribution,
+            sharing_group_id, title, producer, force_contextual_data,
+            galaxies_as_tags, single_event, organisation_uuid,
+            cluster_distribution, cluster_sharing_group_id
+        )
+        stix_parser = parser()
+        stix_parser.load_stix_bundle(bundle)
+        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.parse_stix_bundle(**args)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
-    parser, args = get_stix2_parser(
-        detected if from_misp is None else from_misp, distribution,
-        sharing_group_id, title, producer, force_contextual_data,
-        galaxies_as_tags, single_event, organisation_uuid,
-        cluster_distribution, cluster_sharing_group_id
-    )
-    stix_parser = parser()
-    stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
-    _handle_classification_warning(stix_parser, from_misp, detected)
-    stix_parser.parse_stix_bundle(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
@@ -797,8 +797,12 @@ def _process_stix_to_misp_files(args) -> dict:
             if isinstance(content, list):
                 results['fails'][filename.name] = content
                 continue
-            for identifier, values in traceback[field].items():
-                results['fails'][identifier] = tuple(values)
+            # errors and warnings key on the same identifier: gather them
+            # instead of letting the warnings overwrite the errors
+            for identifier, values in content.items():
+                results['fails'][identifier] = (
+                    *results['fails'].get(identifier, ()), *values
+                )
     if success:
         results['results'] = success
     return results
@@ -842,8 +846,12 @@ def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
             if isinstance(content, list):
                 results['fails'][filename.name] = content
                 continue
-            for identifier, values in traceback[field].items():
-                results['fails'][identifier] = tuple(values)
+            # errors and warnings key on the same identifier: gather them
+            # instead of letting the warnings overwrite the errors
+            for identifier, values in content.items():
+                results['fails'][identifier] = (
+                    *results['fails'].get(identifier, ()), *values
+                )
     if success:
         results['event_ids'] = success
     return results
@@ -910,13 +918,18 @@ def _handle_classification_warning(
 def _generate_traceback(
         debug: bool, parser, *output_names: tuple, errors: dict = {}) -> dict:
     traceback = {'pymisp_errors': errors} if errors else {'success': 1}
-    # Warnings surface regardless of `debug`;
-    # only the errors verbosity is debug-gated
+    # Warnings and errors surface regardless of `debug`: a conversion that
+    # dropped content never reports a bare success. `debug` only selects the
+    # errors detail - warnings are reported in full either way
     warnings = parser.warnings
     if warnings:
         traceback['warnings'] = warnings
-    if debug and parser.errors:
-        traceback['errors'] = parser.errors
+    if parser.errors:
+        # `parser.errors` is the parser's own `defaultdict` - copy it, so a
+        # caller looking up an identifier neither aliases nor grows it
+        traceback['errors'] = (
+            dict(parser.errors) if debug else _summarise_errors(parser.errors)
+        )
     traceback['results'] = list(output_names)
     return traceback
 
@@ -931,3 +944,32 @@ def _get_stix_ingestion_method(version):
     if version == '2':
         return stix2_to_misp_instance
     return stix1_to_misp_instance
+
+
+_ERRORS_SUMMARY_LIMIT = 10
+
+
+def _summarise_errors(errors: dict) -> dict:
+    # Default reporting: one entry per distinct message, capped - a single
+    # document can produce an error per object it carries - with the number
+    # of remaining messages and where to get them. Messages carrying no
+    # object id are indistinguishable, so how many times each happened is
+    # part of the signal: hundreds of objects dropped the same way must not
+    # read like one
+    summary = {}
+    for identifier, messages in errors.items():
+        occurrences = Counter(messages)
+        distinct = [
+            message if occurrence == 1 else f'{message} ({occurrence} times)'
+            for message, occurrence in occurrences.items()
+        ]
+        remaining = len(distinct) - _ERRORS_SUMMARY_LIMIT
+        if remaining > 0:
+            distinct = distinct[:_ERRORS_SUMMARY_LIMIT]
+            distinct.append(
+                f'... and {remaining} more error'
+                f"{'s' if remaining > 1 else ''} - use the debug option "
+                'to get the full list'
+            )
+        summary[identifier] = distinct
+    return summary

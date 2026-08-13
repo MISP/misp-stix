@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import annotations
-import sys
+from ..tools.exceptions import STIXLoadingError, _reduce_input_path
 from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
-    MarkingDefinitionLoadingError, ObjectRefLoadingError,
-    ObjectTypeLoadingError, UndefinedIndicatorError, UndefinedSTIXObjectError,
-    UndefinedObservableError, UnknownAttributeTypeError, UnknownObjectNameError,
+    MarkingDefinitionLoadingError, MissingSTIXContentError,
+    ObjectRefLoadingError, ObjectTypeLoadingError, UndefinedIndicatorError,
+    UndefinedSTIXObjectError, UndefinedObservableError,
+    UnknownAttributeTypeError, UnknownObjectNameError,
     UnknownParsingFunctionError, UnknownPatternTypeError,
     UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
@@ -144,8 +145,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._vulnerability: dict
 
     def load_stix_bundle(self, bundle: Bundle_v20 | Bundle_v21,
-                         invalid_objects: Optional[dict] = {}):
+                         invalid_objects: Optional[dict] = None):
         self._reset_bundle_state()
+        if invalid_objects is None:
+            # the loading helpers keep the invalid objects they recovered
+            # with the bundle they were recovered from
+            invalid_objects = getattr(bundle, '_invalid_objects', None)
+            if invalid_objects is None:
+                invalid_objects = {}
         self.__invalid_objects = invalid_objects
         self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
@@ -154,10 +161,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
-            bundle = load_stix2_file(filename, invalid_objects := {})
+            bundle = load_stix2_file(filename)
         except Exception as exception:
-            sys.exit(exception)
-        self.load_stix_bundle(bundle, invalid_objects=invalid_objects)
+            raise STIXLoadingError(
+                'Error while loading the STIX 2 content: '
+                f'{_reduce_input_path(str(exception), filename)}'
+            ) from exception
+        self.load_stix_bundle(bundle)
         del bundle
         self.parse_stix_bundle(**kwargs)
 
@@ -183,18 +193,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._critical_error(exception)
 
     def _parse_stix_bundle(self):
+        # `stix_version` is only set by `load_stix_bundle` - without it the
+        # dispatch below would build a generic event from unloaded state
+        if not hasattr(self, 'stix_version'):
+            raise MissingSTIXContentError(
+                'No STIX content loaded, please run `load_stix_bundle` first.'
+            )
         n_reports = sum(
             len(getattr(self, feature, {}))
             for feature in ('_report', '_grouping')
         )
-        try:
-            feature = self._mapping.bundle_to_misp_mapping(
-                str(2 if n_reports >= 2 else n_reports)
-            )
-        except AttributeError:
-            sys.exit(
-                'No STIX content loaded, please run `load_stix_content` first.'
-            )
+        feature = self._mapping.bundle_to_misp_mapping(
+            str(2 if n_reports >= 2 else n_reports)
+        )
         getattr(self, feature)()
 
     def _reset_bundle_state(self):

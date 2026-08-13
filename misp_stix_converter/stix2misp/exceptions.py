@@ -20,6 +20,10 @@ class MarkingDefinitionLoadingError(STIXtoMISPError):
     pass
 
 
+class MissingSTIXContentError(STIXtoMISPError):
+    pass
+
+
 class ObjectRefLoadingError(STIXtoMISPError):
     pass
 
