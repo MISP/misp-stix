@@ -2246,6 +2246,17 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[observed_data, indicator, relationship]
         )
 
+    def test_stix20_bundle_with_custom_object_with_injected_fields(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_object_with_injected_fields()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, custom_object = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_custom_object_injected_fields(
+            misp_object, custom_object, self.parser.warnings
+        )
+
     def test_stix20_bundle_with_custom_objects(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_objects()
         self.parser.load_stix_bundle(bundle)

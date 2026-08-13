@@ -3243,6 +3243,36 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                     custom_attribute['data']
                 )
 
+    def _check_custom_object_injected_fields(
+            self, misp_object, custom_object, warnings):
+        custom_attribute = custom_object.x_misp_attributes[0]
+        attribute = misp_object.attributes[0]
+        self.assertEqual(attribute.type, custom_attribute['type'])
+        self.assertEqual(
+            attribute.object_relation, custom_attribute['object_relation']
+        )
+        self.assertEqual(attribute.value, custom_attribute['value'])
+        self.assertEqual(attribute.category, custom_attribute['category'])
+        self.assertEqual(attribute.comment, custom_attribute['comment'])
+        self.assertEqual(attribute.to_ids, custom_attribute['to_ids'])
+        self.assertEqual(attribute.uuid, custom_attribute['uuid'])
+        attribute_fields = attribute.to_dict()
+        for injected_field in ('distribution', 'sharing_group_id',
+                               'first_seen', 'deleted', 'Tag'):
+            self.assertNotIn(
+                injected_field, attribute_fields,
+                f'`{injected_field}` should not be set from STIX content'
+            )
+        dropped_fields_warnings = [
+            warning for parser_warnings in warnings.values()
+            for warning in parser_warnings
+            if all(field in warning for field
+                   in ('distribution', 'sharing_group_id', 'Tag',
+                       'first_seen', 'deleted'))
+        ]
+        self.assertEqual(len(dropped_fields_warnings), 1)
+        self.assertIn(custom_object.id, dropped_fields_warnings[0])
+
     def _check_domain_ip_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         self.assertTrue(all(attribute.to_ids for attribute in attributes))
