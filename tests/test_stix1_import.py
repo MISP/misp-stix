@@ -4,11 +4,13 @@
 from cybox.core import Object, Observable, Observables, RelatedObject
 from cybox.objects.domain_name_object import DomainName
 from cybox.objects.file_object import File
-from misp_stix_converter import stix_1_to_misp
+from misp_stix_converter import stix_1_to_misp, STIXLoadingError
+from misp_stix_converter.tools import load_stix1_package
 from misp_stix_converter.stix2misp.external_stix1_to_misp import (
     ExternalSTIX1toMISPParser)
 from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
+from unittest.mock import patch
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement
 from stix.common.related import RelatedPackage, RelatedPackages
@@ -219,6 +221,48 @@ class TestSTIX1Import(TestSTIX):
             results = stix_1_to_misp(filename, single_event=True)
         self.assertNotIn('errors', results)
         self.assertEqual(results['success'], 1)
+
+    ############################################################################
+    #                          ERROR HANDLING TESTS.                           #
+    ############################################################################
+
+    def test_load_stix1_package_raises_a_catchable_error(self):
+        """The loader called `sys.exit()` on malformed content - `SystemExit`
+        derives from `BaseException`, so a caller's `except Exception` never
+        saw it and one hostile document killed the hosting process."""
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'malformed.xml'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write('<not-stix>not a STIX package</not-stix')
+            with self.assertRaises(STIXLoadingError):
+                load_stix1_package(filename)
+
+    def test_stix_1_to_misp_returns_error_dict_on_malformed_content(self):
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'malformed.xml'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write('not even xml')
+            results = stix_1_to_misp(filename)
+        self.assertIn('errors', results)
+
+    def test_stix_1_to_misp_returns_error_dict_when_parsing_fails(self):
+        """Only the loading call was guarded - a crash in the parsing stage
+        escaped `stix_1_to_misp` as a traceback instead of the documented
+        error dict."""
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'course_of_action.xml'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(stix_package.to_xml().decode())
+            with patch.object(
+                    ExternalSTIX1toMISPParser, 'parse_stix_package',
+                    side_effect=RuntimeError('parser stage crash')):
+                results = stix_1_to_misp(filename, single_event=True)
+        self.assertNotIn('success', results)
+        self.assertTrue(
+            any('parser stage crash' in error for error in results['errors'])
+        )
 
     ############################################################################
     #                         CLASSIFICATION OVERRIDE.                         #

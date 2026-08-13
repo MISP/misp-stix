@@ -55,6 +55,51 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 )
             )
 
+    def test_stix20_parse_stix_content_raises_a_catchable_error(self):
+        # `parse_stix_content` called `sys.exit()` when loading failed -
+        # `SystemExit` derives from `BaseException`, so a caller's
+        # `except Exception` never saw it and one malformed document killed
+        # the hosting process.
+        from misp_stix_converter import STIXLoadingError
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'malformed.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write('{"not": "a bundle"')
+            with self.assertRaises(STIXLoadingError):
+                self.parser.parse_stix_content(filename)
+
+    def test_stix20_parsing_before_loading_raises_a_catchable_error(self):
+        # same `sys.exit()` class of defect on the call-order guard
+        from misp_stix_converter import MissingSTIXContentError
+        with self.assertRaises(MissingSTIXContentError):
+            self.parser.parse_stix_bundle()
+
+    def test_stix20_entry_point_returns_error_dict_when_parsing_fails(self):
+        # only the loading call was guarded - a crash in the parsing stage
+        # escaped `stix_2_to_misp` as a traceback instead of the documented
+        # error dict.
+        from misp_stix_converter import stix_2_to_misp
+        from misp_stix_converter.stix2misp.external_stix2_to_misp import (
+            ExternalSTIX2toMISPParser)
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from unittest.mock import patch
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'external.stix20.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            with patch.object(
+                    ExternalSTIX2toMISPParser, 'parse_stix_bundle',
+                    side_effect=RuntimeError('parser stage crash')):
+                results = stix_2_to_misp(filename, output_dir=Path(tmp_dir))
+        self.assertNotIn('success', results)
+        self.assertTrue(
+            any('parser stage crash' in error for error in results['errors'])
+        )
+
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)
