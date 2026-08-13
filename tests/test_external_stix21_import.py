@@ -111,6 +111,91 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             any('parser stage crash' in error for error in results['errors'])
         )
 
+    def test_stix21_dropped_objects_are_reported_without_debug(self):
+        # objects the parser failed to load were recorded as errors, but
+        # `_generate_traceback` only attached them when `debug` was set - the
+        # default result was a bare `{'success': 1}` for a conversion that
+        # dropped content, leaving no signal that the MISP event is an
+        # incomplete rendering of the bundle.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        results = self._import_bundle_with_unloadable_objects(bundle)
+        self.assertTrue(
+            any(
+                'x-unloadable-type-0' in error
+                for error in results['errors'][bundle.id]
+            )
+        )
+
+    def test_stix21_debug_only_controls_the_errors_verbosity(self):
+        # `debug` selects how much detail is reported, not whether failures
+        # are reported at all: the default summary is deduplicated, capped -
+        # a hostile bundle can produce an error per object - and names the
+        # number of errors left out.
+        from misp_stix_converter.misp_stix_converter import (
+            _ERRORS_SUMMARY_LIMIT)
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        summary = self._import_bundle_with_unloadable_objects(
+            bundle, count=_ERRORS_SUMMARY_LIMIT
+        )['errors'][bundle.id]
+        detailed = self._import_bundle_with_unloadable_objects(
+            bundle, count=_ERRORS_SUMMARY_LIMIT, debug=True
+        )['errors'][bundle.id]
+        self.assertGreater(len(detailed), _ERRORS_SUMMARY_LIMIT)
+        self.assertEqual(len(summary), _ERRORS_SUMMARY_LIMIT + 1)
+        self.assertEqual(summary[:-1], detailed[:_ERRORS_SUMMARY_LIMIT])
+        self.assertIn(
+            f'{len(detailed) - _ERRORS_SUMMARY_LIMIT} more', summary[-1]
+        )
+        self.assertIn('debug', summary[-1])
+
+    def test_stix2_cli_aggregation_keeps_both_errors_and_warnings(self):
+        # the CLI aggregation wrote errors then warnings into the same `fails`
+        # entry, keyed on the same identifier - now that both are reported
+        # without `debug`, the warnings overwrote the errors this ticket
+        # exists to surface.
+        from misp_stix_converter.misp_stix_converter import (
+            _process_stix_to_misp_instance)
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        identifier = 'bundle--5b8e0f9a-0000-4000-8000-0000000000e1'
+        traceback = {
+            'pymisp_errors': {identifier: 'MISP refused the event'},
+            'errors': {identifier: ['Unable to load STIX object type: x-nope']},
+            'warnings': {identifier: ['The Internal parser was selected']}
+        }
+        args = SimpleNamespace(
+            classification=None, cluster_distribution=0,
+            cluster_sharing_group=None, debug=False, distribution=0,
+            file=[Path('bundle.json')], galaxies_as_tags=False,
+            no_force_contextual_data=False, org_uuid=MISP_org_uuid,
+            producer=None, sharing_group=None, single_event=False,
+            title=None, version='2'
+        )
+        with patch(
+                'misp_stix_converter.misp_stix_converter.'
+                '_get_stix_ingestion_method',
+                return_value=lambda *_, **__: traceback):
+            results = _process_stix_to_misp_instance(None, args)
+        self.assertEqual(
+            results['fails'][identifier],
+            (
+                'Unable to load STIX object type: x-nope',
+                'The Internal parser was selected'
+            )
+        )
+
+    def test_stix21_repeated_errors_are_summarised_with_their_count(self):
+        # deduplicating on the message alone made a bundle dropping a dozen
+        # objects read exactly like one dropping a single object: most error
+        # messages carry no object id, so how many times each happened is the
+        # only volume signal left in the default report.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        errors = self._import_bundle_with_unloadable_objects(
+            bundle, count=12, distinct_types=False
+        )['errors'][bundle.id]
+        self.assertTrue(all('(12 times)' in error for error in errors))
+
     def test_stix21_content_without_objects_produces_a_meaningful_error(self):
         # the fallback loading path read `stix_content['objects']` unguarded -
         # a document without an `objects` property surfaced as the bare

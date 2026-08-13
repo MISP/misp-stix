@@ -7,7 +7,9 @@ from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import (
     ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
-    MISP_org_uuid)
+    MISP_org_uuid, stix_2_to_misp)
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
 from .update_documentation import (
@@ -92,6 +94,31 @@ class TestSTIX2Bundles:
 
 class TestSTIX2Import(TestSTIX):
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
+    def _import_bundle_with_unloadable_objects(
+            self, bundle, count: int = 1, distinct_types: bool = True,
+            debug: bool = False) -> dict:
+        # Objects whose type has no loading mapping are recorded as errors and
+        # dropped: the partial failure a result dict has to report. With
+        # `distinct_types` unset they all share one type, so every dropped
+        # object produces the same error message.
+        content = json.loads(bundle.serialize())
+        content['objects'].extend(
+            {
+                'type': f'x-unloadable-type-{index if distinct_types else 0}',
+                'id': f'x-unloadable-type-{index if distinct_types else 0}'
+                      f'--2f2e4b1a-9f3d-4c5e-8a6b-0c1d2e3f4a{index:02d}',
+                'created': '2020-10-25T16:22:00.000Z',
+                'modified': '2020-10-25T16:22:00.000Z'
+            } for index in range(count)
+        )
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'unloadable.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(content, f)
+            return stix_2_to_misp(
+                filename, debug=debug, output_dir=Path(tmp_dir)
+            )
 
     def _check_object_attribute_uuid(self, attr, object_id, value=None):
         self.assertEqual(
