@@ -2,6 +2,7 @@ __version__ = '2026.7.8'
 
 import argparse
 from .misp2stix import InvalidMISPInputError  # noqa
+from .tools import STIXLoadingError  # noqa
 from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser  # noqa
 from .misp2stix import MISPtoSTIX1Mapping  # noqa
 from .misp2stix import MISPtoSTIX20Parser, MISPtoSTIX21Parser  # noqa
@@ -16,6 +17,7 @@ from .misp_stix_converter import _misp_to_stix, _stix_to_misp  # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser  # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping  # noqa
 from .stix2misp import ExternalSTIX2Mapping  # noqa
+from .stix2misp import MissingSTIXContentError  # noqa
 from .stix2misp import STIX2PatternParser  # noqa
 from .stix2misp import MISP_org_uuid  # noqa
 from pathlib import Path

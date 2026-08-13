@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+from .exceptions import STIXLoadingError, _reduce_input_path
 from mixbox.namespaces import NamespaceNotFoundError
 from stix.core import STIXPackage
 
@@ -22,18 +22,21 @@ def _update_namespaces():
 def load_stix1_package(filename, tries=0):
     try:
         return STIXPackage.from_xml(filename)
-    except NamespaceNotFoundError:
+    except NamespaceNotFoundError as error:
         if tries > 0:
-            sys.exit('Cannot handle STIX namespace')
+            raise STIXLoadingError('Cannot handle STIX namespace') from error
         _update_namespaces()
         return load_stix1_package(filename, tries + 1)
-    except NotImplementedError:
-        sys.exit('Missing python library: stix_edh')
+    except NotImplementedError as error:
+        raise STIXLoadingError('Missing python library: stix_edh') from error
     except Exception:
         try:
             import maec
             return STIXPackage.from_xml(filename)
-        except ImportError:
-            sys.exit('Missing python library: maec')
+        except ImportError as error:
+            raise STIXLoadingError('Missing python library: maec') from error
         except Exception as error:
-            sys.exit(f'Error while loading STIX1 package: {error.__str__()}')
+            raise STIXLoadingError(
+                'Error while loading STIX1 package: '
+                f'{_reduce_input_path(error.__str__(), filename)}'
+            ) from error
