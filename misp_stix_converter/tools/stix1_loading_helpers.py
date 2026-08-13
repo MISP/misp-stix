@@ -2,6 +2,7 @@
 
 from .exceptions import STIXLoadingError, _reduce_input_path
 from mixbox.namespaces import NamespaceNotFoundError
+from pathlib import Path
 from stix.core import STIXPackage
 
 
@@ -20,6 +21,10 @@ def _update_namespaces():
 
 
 def load_stix1_package(filename, tries=0):
+    # lxml treats a plain string argument as a filename *or* a URL - resolving
+    # it here keeps `file://` targets out of the parser for every caller
+    if isinstance(filename, str):
+        filename = Path(filename).resolve()
     try:
         return STIXPackage.from_xml(filename)
     except NamespaceNotFoundError as error:
@@ -29,14 +34,23 @@ def load_stix1_package(filename, tries=0):
         return load_stix1_package(filename, tries + 1)
     except NotImplementedError as error:
         raise STIXLoadingError('Missing python library: stix_edh') from error
-    except Exception:
-        try:
-            import maec
-            return STIXPackage.from_xml(filename)
-        except ImportError as error:
-            raise STIXLoadingError('Missing python library: maec') from error
-        except Exception as error:
-            raise STIXLoadingError(
-                'Error while loading STIX1 package: '
-                f'{_reduce_input_path(error.__str__(), filename)}'
-            ) from error
+    except ImportError as error:
+        # `stix` imports optional parsing dependencies (e.g. `maec`) lazily
+        # during the parse itself, so a missing one surfaces here
+        raise STIXLoadingError(
+            f'Missing python library: {error.name or error}'
+        ) from error
+    except MemoryError:
+        # memory exhaustion must surface as what it is, not as a document
+        # loading error
+        raise
+    except OSError as error:
+        raise STIXLoadingError(
+            'Error while reading the STIX1 document: '
+            f'{_reduce_input_path(str(error), filename)}'
+        ) from error
+    except Exception as error:
+        raise STIXLoadingError(
+            'Error while loading STIX1 package: '
+            f'{_reduce_input_path(str(error), filename)}'
+        ) from error
