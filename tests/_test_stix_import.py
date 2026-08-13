@@ -9,7 +9,7 @@ from misp_stix_converter import (
     ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
     MISP_org_uuid)
 from uuid import UUID, uuid5
-from ._test_stix import TestSTIX
+from ._test_stix import PLANTED_TEMPLATE, TestSTIX
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
@@ -3242,6 +3242,40 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                     self._get_data_value(attribute.data),
                     custom_attribute['data']
                 )
+
+    def _check_custom_object_invalid_name(
+            self, misp_object, custom_object, warnings):
+        rejected_name = custom_object.x_misp_name
+        # The name never reached template resolution: the object is generic,
+        # and carries no field that could only come from a template file.
+        self.assertEqual(misp_object.name, 'unknown-template')
+        self.assertFalse(misp_object._known_template)
+        object_fields = misp_object.to_dict()
+        for template_field in ('template_uuid', 'template_version',
+                               'description'):
+            self.assertNotIn(
+                template_field, object_fields,
+                f'`{template_field}` should not be read from a file'
+            )
+        self.assertNotEqual(
+            getattr(misp_object, 'meta-category', None),
+            PLANTED_TEMPLATE['meta-category']
+        )
+        # The meta-category still comes from the STIX content itself.
+        self.assertEqual(
+            misp_object.category, custom_object.x_misp_meta_category
+        )
+        # Nothing is lost: the rejected name is kept as data.
+        self.assertIn(rejected_name, misp_object.comment)
+        name_warnings = [
+            warning for parser_warnings in warnings.values()
+            for warning in parser_warnings
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(name_warnings), 1)
+        self.assertIn(custom_object.id, name_warnings[0])
+        self.assertIn(rejected_name, name_warnings[0])
+        return misp_object
 
     def _check_custom_object_injected_fields(
             self, misp_object, custom_object, warnings):

@@ -1995,6 +1995,24 @@ _CUSTOM_OBJECTS = [
         "x_misp_name": "report"
     }
 ]
+_CUSTOM_OBJECT_WITH_INVALID_NAME = {
+    "type": "x-misp-object",
+    "id": "x-misp-object--0e9f0ad0-2f16-4bdb-a1a0-2f1a4bfd0b0e",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+    "x_misp_attributes": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "uuid": "8acaad62-227a-4988-96e7-4586847421a3"
+        }
+    ],
+    "x_misp_meta_category": "financial",
+    "x_misp_name": "../../../../../../../../planted"
+}
 _CUSTOM_OBJECT_WITH_INJECTED_FIELDS = {
     "type": "x-misp-object",
     "id": "x-misp-object--695e7924-2518-4054-9cea-f82853d37410",
@@ -8498,6 +8516,13 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_custom_object_with_injected_fields(cls):
         return cls.__assemble_bundle(_CUSTOM_OBJECT_WITH_INJECTED_FIELDS)
+
+    @classmethod
+    def get_bundle_with_custom_object_with_invalid_name(cls, name=None):
+        custom_object = _CUSTOM_OBJECT_WITH_INVALID_NAME
+        if name is not None:
+            custom_object = {**custom_object, 'x_misp_name': name}
+        return cls.__assemble_bundle(custom_object)
 
     @classmethod
     def get_bundle_with_custom_objects(cls):

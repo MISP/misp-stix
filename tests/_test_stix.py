@@ -1,8 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 import unittest
 from datetime import datetime
+
+# Stands in for any `definition.json` a traversing object name could reach:
+# the values are recognisable so a leak into the converted data is obvious.
+PLANTED_TEMPLATE = {
+    'name': 'planted',
+    'uuid': 'deadbeef-0000-4000-8000-000000000000',
+    'meta-category': 'LEAKED-CATEGORY',
+    'description': 'CONTENTS OF A FILE OUTSIDE THE TEMPLATE DIRECTORY',
+    'version': 99,
+    'attributes': {}
+}
 
 
 class TestSTIX(unittest.TestCase):
@@ -10,6 +22,22 @@ class TestSTIX(unittest.TestCase):
     def _assert_multiple_equal(self, reference, *elements):
         for element in elements:
             self.assertEqual(reference, element)
+
+    @staticmethod
+    def _plant_template_definition(directory):
+        """Plant a template definition outside the MISP objects directory.
+
+        :param directory: a directory outside the template tree
+        :return: the object name that reaches it from the templates path
+        """
+        from os.path import relpath
+        from pathlib import Path
+        from pymisp import AbstractMISP
+        planted = Path(directory) / 'planted'
+        planted.mkdir()
+        with open(planted / 'definition.json', 'wt', encoding='utf-8') as f:
+            json.dump(PLANTED_TEMPLATE, f)
+        return relpath(planted, AbstractMISP().misp_objects_path)
 
     @staticmethod
     def _datetime_from_str(timestamp):
