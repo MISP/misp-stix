@@ -5,7 +5,8 @@ from cybox.core import Object, Observable, Observables, RelatedObject
 from cybox.objects.domain_name_object import DomainName
 from cybox.objects.file_object import File
 from misp_stix_converter import stix_1_to_misp, STIXLoadingError
-from misp_stix_converter.tools import load_stix1_package
+from misp_stix_converter.tools import load_stix1_package, stix1_loading_helpers
+from mixbox.namespaces import NamespaceNotFoundError
 from misp_stix_converter.stix2misp.external_stix1_to_misp import (
     ExternalSTIX1toMISPParser)
 from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
@@ -93,6 +94,13 @@ class TestSTIX1Import(TestSTIX):
         header = STIXHeader()
         header.title = title
         return header
+
+    @staticmethod
+    def _write_package(tmp_dir, stix_package, name='package.xml'):
+        filename = Path(tmp_dir) / name
+        with open(filename, 'wt', encoding='utf-8') as f:
+            f.write(stix_package.to_xml().decode())
+        return filename
 
     @classmethod
     def _internal_package(cls, incident, inner_title=None, outer_title=None):
@@ -215,9 +223,9 @@ class TestSTIX1Import(TestSTIX):
         stix_package = STIXPackage()
         stix_package.add_course_of_action(self._course_of_action())
         with TemporaryDirectory() as tmp_dir:
-            filename = Path(tmp_dir) / 'course_of_action.xml'
-            with open(filename, 'wt', encoding='utf-8') as f:
-                f.write(stix_package.to_xml().decode())
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
             results = stix_1_to_misp(filename, single_event=True)
         self.assertNotIn('errors', results)
         self.assertEqual(results['success'], 1)
@@ -237,6 +245,130 @@ class TestSTIX1Import(TestSTIX):
             with self.assertRaises(STIXLoadingError):
                 load_stix1_package(filename)
 
+    def test_load_stix1_package_does_not_honour_file_url_strings(self):
+        """lxml treats a plain string argument as a filename *or* a URL, so a
+        `file://` string turned a conversion request into a local file read.
+        String input is now resolved to a `Path` first, like the top-level
+        helpers already did."""
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            with self.assertRaises(STIXLoadingError):
+                load_stix1_package(f'file://{filename}')
+
+    def test_parse_stix_content_does_not_honour_file_url_strings(self):
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            parser = ExternalSTIX1toMISPParser()
+            with self.assertRaises(STIXLoadingError):
+                parser.parse_stix_content(f'file://{filename}')
+
+    def test_parse_stix_content_accepts_a_plain_path_string(self):
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            parser = ExternalSTIX1toMISPParser()
+            parser.parse_stix_content(str(filename))
+        self.assertEqual(len(parser.misp_event.objects), 1)
+
+    def test_load_stix1_package_parses_a_failing_document_exactly_once(self):
+        """A document engineered to be expensive to parse and then fail was
+        parsed twice: the generic fallback imported `maec` and retried, even
+        though a successful `import maec` never changes the parse outcome -
+        `stix` imports it lazily during the first attempt when it is needed."""
+        with patch.object(
+                stix1_loading_helpers.STIXPackage, 'from_xml',
+                side_effect=ValueError('generic parse failure')) as from_xml:
+            with self.assertRaises(STIXLoadingError) as context:
+                load_stix1_package('input.xml')
+        self.assertEqual(from_xml.call_count, 1)
+        self.assertIn('generic parse failure', str(context.exception))
+
+    def test_load_stix1_package_retries_once_for_unregistered_namespaces(self):
+        stix_package = STIXPackage()
+        with patch.object(
+                stix1_loading_helpers.STIXPackage, 'from_xml',
+                side_effect=[
+                    NamespaceNotFoundError('http://us-cert.gov/ciscp'),
+                    stix_package
+                ]) as from_xml:
+            self.assertIs(load_stix1_package('input.xml'), stix_package)
+        self.assertEqual(from_xml.call_count, 2)
+
+    def test_load_stix1_package_namespace_retry_is_bounded(self):
+        with patch.object(
+                stix1_loading_helpers.STIXPackage, 'from_xml',
+                side_effect=NamespaceNotFoundError(
+                    'http://unknown.namespace')) as from_xml:
+            with self.assertRaises(STIXLoadingError) as context:
+                load_stix1_package('input.xml')
+        self.assertEqual(from_xml.call_count, 2)
+        self.assertIn('Cannot handle STIX namespace', str(context.exception))
+
+    def test_load_stix1_package_propagates_memory_error(self):
+        """`MemoryError` from a memory bomb was swallowed into the generic
+        retry - the document was parsed a second time and the exhaustion
+        reported as a plain loading error."""
+        with patch.object(
+                stix1_loading_helpers.STIXPackage, 'from_xml',
+                side_effect=MemoryError()) as from_xml:
+            with self.assertRaises(MemoryError):
+                load_stix1_package('input.xml')
+        self.assertEqual(from_xml.call_count, 1)
+
+    def test_load_stix1_package_reports_io_errors_without_retry(self):
+        with patch.object(
+                stix1_loading_helpers.STIXPackage, 'from_xml',
+                side_effect=OSError('Error reading file')) as from_xml:
+            with self.assertRaises(STIXLoadingError) as context:
+                load_stix1_package('input.xml')
+        self.assertEqual(from_xml.call_count, 1)
+        self.assertIn(
+            'Error while reading the STIX1 document', str(context.exception)
+        )
+
+    def test_load_stix1_package_reports_a_missing_parsing_dependency(self):
+        """`stix` raises `ImportError` from its lazy `maec` import when the
+        library is missing - the loader turns it into the diagnostic the old
+        import-and-retry fallback existed to produce."""
+        with patch.object(
+                stix1_loading_helpers.STIXPackage, 'from_xml',
+                side_effect=ModuleNotFoundError(
+                    "No module named 'maec'", name='maec')) as from_xml:
+            with self.assertRaises(STIXLoadingError) as context:
+                load_stix1_package('input.xml')
+        self.assertEqual(from_xml.call_count, 1)
+        self.assertEqual(
+            str(context.exception), 'Missing python library: maec'
+        )
+
+    def test_load_stix1_package_loads_maec_carrying_documents(self):
+        """MAEC support must survive the removal of the import-and-retry
+        fallback: `stix` imports `maec` on its own during the first parse."""
+        from maec.package.package import Package as MAECPackage
+        from stix.extensions.malware.maec_4_1_malware import MAECInstance
+        from stix.ttp import TTP, Behavior
+        ttp = TTP(title='MAEC carrying TTP')
+        behavior = Behavior()
+        behavior.add_malware_instance(MAECInstance(MAECPackage()))
+        ttp.behavior = behavior
+        stix_package = STIXPackage()
+        stix_package.add_ttp(ttp)
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(tmp_dir, stix_package, 'maec_ttp.xml')
+            package = load_stix1_package(filename)
+        self.assertEqual(package.ttps.ttp[0].title, 'MAEC carrying TTP')
+
     def test_stix_1_to_misp_returns_error_dict_on_malformed_content(self):
         with TemporaryDirectory() as tmp_dir:
             filename = Path(tmp_dir) / 'malformed.xml'
@@ -252,9 +384,9 @@ class TestSTIX1Import(TestSTIX):
         stix_package = STIXPackage()
         stix_package.add_course_of_action(self._course_of_action())
         with TemporaryDirectory() as tmp_dir:
-            filename = Path(tmp_dir) / 'course_of_action.xml'
-            with open(filename, 'wt', encoding='utf-8') as f:
-                f.write(stix_package.to_xml().decode())
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
             with patch.object(
                     ExternalSTIX1toMISPParser, 'parse_stix_package',
                     side_effect=RuntimeError('parser stage crash')):
@@ -280,9 +412,7 @@ class TestSTIX1Import(TestSTIX):
     def test_stix_1_classification_auto_detection_warns_and_explicit_is_silent(self):
         stix_package = self._internal_titled_package()
         with TemporaryDirectory() as tmp_dir:
-            filename = Path(tmp_dir) / 'internal.xml'
-            with open(filename, 'wt', encoding='utf-8') as f:
-                f.write(stix_package.to_xml().decode())
+            filename = self._write_package(tmp_dir, stix_package, 'internal.xml')
             results = stix_1_to_misp(filename, single_event=True)
             self.assertEqual(results['success'], 1)
             self.assertTrue(
@@ -301,9 +431,7 @@ class TestSTIX1Import(TestSTIX):
     def test_stix_1_classification_forced_external_warns_on_mismatch(self):
         stix_package = self._internal_titled_package()
         with TemporaryDirectory() as tmp_dir:
-            filename = Path(tmp_dir) / 'internal.xml'
-            with open(filename, 'wt', encoding='utf-8') as f:
-                f.write(stix_package.to_xml().decode())
+            filename = self._write_package(tmp_dir, stix_package, 'internal.xml')
             results = stix_1_to_misp(
                 filename, single_event=True, classification='external'
             )
