@@ -41,7 +41,9 @@ def main():
         version=f'{parser.prog} {__version__}'
     )
     parser.add_argument(
-        '--debug', action='store_true', help='Show errors and warnings'
+        '--debug', action='store_true',
+        help='Show the full list of errors - errors and warnings are reported '
+             'either way, this only controls the errors level of detail'
     )
 
     # SUBPARSERS TO SEPARATE THE 2 MAIN FEATURES

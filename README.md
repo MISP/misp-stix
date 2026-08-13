@@ -124,7 +124,7 @@ Convert MISP <-> STIX
 
 options:
   -h, --help       show this help message and exit
-  --debug          Show errors and warnings
+  --debug          Show the full list of errors - errors and warnings are reported either way, this only controls the errors level of detail
 
 Main feature:
   {export,import}
