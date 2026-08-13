@@ -16,6 +16,11 @@ if TYPE_CHECKING:
 _attribute_additional_fields = (
     'category', 'comment', 'data', 'to_ids', 'uuid'
 )
+# Mirrors what the export side writes into `x_misp_attributes` — anything else
+# is not part of the round-trip contract and never comes from STIX content
+_object_attribute_fields = (
+    'type', 'object_relation', 'value', *_attribute_additional_fields
+)
 _CUSTOM_OBJECT_TYPING = Union[
     CustomObject_v20, CustomObject_v21
 ]
@@ -116,8 +121,17 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
         self.main_parser._sanitise_object_uuid(misp_object, custom_object.id)
+        dropped_fields = set()
         for custom_attribute in custom_object.x_misp_attributes:
-            attribute = dict(custom_attribute)
+            attribute = {
+                field: custom_attribute[field]
+                for field in _object_attribute_fields
+                if field in custom_attribute
+            }
+            dropped_fields.update(
+                field for field in custom_attribute
+                if field not in _object_attribute_fields
+            )
             if attribute.get('uuid'):
                 attribute.update(
                     self.main_parser._sanitise_attribute_uuid(
@@ -125,6 +139,12 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                     )
                 )
             misp_object.add_attribute(**attribute)
+        if dropped_fields:
+            self.main_parser._add_warning(
+                'Dropped attribute fields that are never imported from STIX '
+                f'content, in the Custom object with id {custom_object.id}: '
+                f"{', '.join(sorted(dropped_fields))}"
+            )
         self.main_parser._add_misp_object(misp_object, custom_object)
 
     @staticmethod
