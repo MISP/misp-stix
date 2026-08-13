@@ -15,6 +15,46 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
     #                         MISP EVENT IMPORT TESTS.                         #
     ############################################################################
 
+    def test_stix20_classification_forced_internal_warns_on_mismatch(self):
+        from misp_stix_converter import stix_2_to_misp
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        empty_bundle = (
+            '{"type": "bundle", '
+            '"id": "bundle--5b8e0f9a-0000-4000-8000-0000000000e2", '
+            '"spec_version": "2.0", "objects": []}'
+        )
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'external.stix20.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            results = stix_2_to_misp(filename, output_dir=Path(tmp_dir))
+            self.assertEqual(results['success'], 1)
+            self.assertNotIn('warnings', results)
+            results = stix_2_to_misp(
+                filename, classification='external', output_dir=Path(tmp_dir)
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertNotIn('warnings', results)
+            # Forcing the Internal parser on genuinely external SDOs may crash
+            # converters that dispatch on MISP labels, so the mismatch warning
+            # is checked with a bundle both parsers survive.
+            filename = Path(tmp_dir) / 'empty.stix20.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(empty_bundle)
+            results = stix_2_to_misp(
+                filename, classification='internal', output_dir=Path(tmp_dir)
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(
+                any(
+                    'detected as external' in warning
+                    for warnings in results['warnings'].values()
+                    for warning in warnings
+                )
+            )
+
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)

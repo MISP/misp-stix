@@ -44,6 +44,67 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.value, indicator.pattern)
 
     ############################################################################
+    #                      CLASSIFICATION OVERRIDE TESTS                       #
+    ############################################################################
+
+    def test_stix21_classification_auto_detection_warns_and_explicit_is_silent(self):
+        from misp_stix_converter import stix_2_to_misp
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_indicator_attribute()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'internal.stix21.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            results = stix_2_to_misp(filename, output_dir=Path(tmp_dir))
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(
+                any(
+                    'selected from the document content' in warning
+                    for warnings in results['warnings'].values()
+                    for warning in warnings
+                )
+            )
+            results = stix_2_to_misp(
+                filename, classification='internal', output_dir=Path(tmp_dir)
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertNotIn('warnings', results)
+
+    def test_stix21_classification_forced_external_warns_on_mismatch(self):
+        from misp_stix_converter import stix_2_to_misp
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_indicator_attribute()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'internal.stix21.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            results = stix_2_to_misp(
+                filename, classification='external', output_dir=Path(tmp_dir)
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(
+                any(
+                    'detected as internal' in warning
+                    for warnings in results['warnings'].values()
+                    for warning in warnings
+                )
+            )
+
+    def test_stix21_detection_logs_a_warning(self):
+        from misp_stix_converter.tools.stix2_to_misp_helpers import (
+            is_stix2_from_misp)
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_indicator_attribute()
+        with self.assertLogs('misp_stix_converter', level='WARNING'):
+            self.assertTrue(is_stix2_from_misp(bundle.objects))
+
+    def test_stix21_classification_rejects_invalid_value(self):
+        from misp_stix_converter import stix_2_to_misp
+        with self.assertRaises(ValueError):
+            stix_2_to_misp('unused.json', classification='banana')
+
+    ############################################################################
     #                       MISP ATTRIBUTES IMPORT TESTS                       #
     ############################################################################
 

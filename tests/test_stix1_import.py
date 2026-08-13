@@ -221,6 +221,69 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(results['success'], 1)
 
     ############################################################################
+    #                         CLASSIFICATION OVERRIDE.                         #
+    ############################################################################
+
+    def _internal_titled_package(self):
+        """A package whose header title matches the MISP export convention, so
+        content-based detection classifies it as internal - shaped with the
+        related packages the Internal parser expects."""
+        return self._internal_package(
+            Incident(), inner_title='Incident title',
+            outer_title="Export from ACME's MISP"
+        )
+
+    def test_stix_1_classification_auto_detection_warns_and_explicit_is_silent(self):
+        stix_package = self._internal_titled_package()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'internal.xml'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(stix_package.to_xml().decode())
+            results = stix_1_to_misp(filename, single_event=True)
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(
+                any(
+                    'selected from the document content' in warning
+                    for warnings in results['warnings'].values()
+                    for warning in warnings
+                )
+            )
+            results = stix_1_to_misp(
+                filename, single_event=True, classification='internal'
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertNotIn('warnings', results)
+
+    def test_stix_1_classification_forced_external_warns_on_mismatch(self):
+        stix_package = self._internal_titled_package()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'internal.xml'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(stix_package.to_xml().decode())
+            results = stix_1_to_misp(
+                filename, single_event=True, classification='external'
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(
+                any(
+                    'detected as internal' in warning
+                    for warnings in results['warnings'].values()
+                    for warning in warnings
+                )
+            )
+
+    def test_stix_1_detection_logs_a_warning(self):
+        from misp_stix_converter.tools.stix1_to_misp_helpers import (
+            is_stix1_from_misp)
+        stix_package = self._internal_titled_package()
+        with self.assertLogs('misp_stix_converter', level='WARNING'):
+            self.assertTrue(is_stix1_from_misp(stix_package))
+
+    def test_stix_1_classification_rejects_invalid_value(self):
+        with self.assertRaises(ValueError):
+            stix_1_to_misp('unused.xml', classification='banana')
+
+    ############################################################################
     #                           EVENT INFO FALLBACK.                           #
     ############################################################################
 
