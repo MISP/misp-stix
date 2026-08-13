@@ -494,6 +494,7 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
 ################################################################################
 
 def stix_1_to_misp(filename: _files_type,
+                   classification: Optional[str] = None,
                    cluster_distribution: Optional[int] = 0,
                    cluster_sharing_group_id: Optional[int] = None,
                    debug: Optional[bool] = False,
@@ -507,19 +508,23 @@ def stix_1_to_misp(filename: _files_type,
                    sharing_group_id: Optional[int] = None,
                    single_event: Optional[bool] = False,
                    title: Optional[str] = None) -> dict:
+    from_misp = _classification_as_from_misp(classification)
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
         stix_package = load_stix1_package(filename)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
+    detected = is_stix1_from_misp(stix_package)
     parser, args = get_stix1_parser(
-        is_stix1_from_misp(stix_package), distribution, sharing_group_id,
-        title, producer, force_contextual_data, galaxies_as_tags, single_event,
-        organisation_uuid, cluster_distribution, cluster_sharing_group_id
+        detected if from_misp is None else from_misp, distribution,
+        sharing_group_id, title, producer, force_contextual_data,
+        galaxies_as_tags, single_event, organisation_uuid,
+        cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
     stix_parser.load_stix_package(stix_package)
+    _handle_classification_warning(stix_parser, from_misp, detected)
     stix_parser.parse_stix_package(**args)
     if output_dir is None:
         output_dir = filename.parent
@@ -540,6 +545,7 @@ def stix_1_to_misp(filename: _files_type,
 
 
 def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
+                           classification: Optional[str] = None,
                            cluster_distribution: Optional[int] = 0,
                            cluster_sharing_group_id: Optional[int] = None,
                            debug: Optional[bool] = False,
@@ -551,19 +557,23 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
                            sharing_group_id: Optional[int] = None,
                            single_event: Optional[bool] = False,
                            title: Optional[str] = None) -> dict:
+    from_misp = _classification_as_from_misp(classification)
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
         stix_package = load_stix1_package(filename)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
+    detected = is_stix1_from_misp(stix_package)
     parser, args = get_stix1_parser(
-        is_stix1_from_misp(stix_package), distribution, sharing_group_id,
-        title, producer, force_contextual_data, galaxies_as_tags, single_event,
-        organisation_uuid, cluster_distribution, cluster_sharing_group_id
+        detected if from_misp is None else from_misp, distribution,
+        sharing_group_id, title, producer, force_contextual_data,
+        galaxies_as_tags, single_event, organisation_uuid,
+        cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
     stix_parser.load_stix_package(stix_package)
+    _handle_classification_warning(stix_parser, from_misp, detected)
     stix_parser.parse_stix_package(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
@@ -588,6 +598,7 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
 
 
 def stix_2_to_misp(filename: _files_type,
+                   classification: Optional[str] = None,
                    cluster_distribution: Optional[int] = 0,
                    cluster_sharing_group_id: Optional[int] = None,
                    debug: Optional[bool] = False,
@@ -601,20 +612,23 @@ def stix_2_to_misp(filename: _files_type,
                    sharing_group_id: Optional[int] = None,
                    single_event: Optional[bool] = False,
                    title: Optional[str] = None) -> dict:
+    from_misp = _classification_as_from_misp(classification)
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
         bundle = load_stix2_file(filename, invalid_objects := {})
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
+    detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
     parser, args = get_stix2_parser(
-        is_stix2_from_misp(getattr(bundle, 'objects', [])), distribution,
+        detected if from_misp is None else from_misp, distribution,
         sharing_group_id, title, producer, force_contextual_data,
         galaxies_as_tags, single_event, organisation_uuid,
         cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
     stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
+    _handle_classification_warning(stix_parser, from_misp, detected)
     stix_parser.parse_stix_bundle(**args)
     if output_dir is None:
         output_dir = filename.parent
@@ -635,6 +649,7 @@ def stix_2_to_misp(filename: _files_type,
 
 
 def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
+                           classification: Optional[str] = None,
                            cluster_distribution: Optional[int] = 0,
                            cluster_sharing_group_id: Optional[int] = None,
                            debug: Optional[bool] = False,
@@ -646,20 +661,23 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
                            sharing_group_id: Optional[int] = None,
                            single_event: Optional[bool] = False,
                            title: Optional[str] = None) -> dict:
+    from_misp = _classification_as_from_misp(classification)
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
         bundle = load_stix2_file(filename, invalid_objects := {})
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
+    detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
     parser, args = get_stix2_parser(
-        is_stix2_from_misp(getattr(bundle, 'objects', [])), distribution,
+        detected if from_misp is None else from_misp, distribution,
         sharing_group_id, title, producer, force_contextual_data,
         galaxies_as_tags, single_event, organisation_uuid,
         cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser()
     stix_parser.load_stix_bundle(bundle, invalid_objects=invalid_objects)
+    _handle_classification_warning(stix_parser, from_misp, detected)
     stix_parser.parse_stix_bundle(**args)
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
@@ -749,6 +767,7 @@ def _process_stix_to_misp_files(args) -> dict:
     success = []
     method = _get_stix_conversion_method(args.version)
     kwargs = {
+        'classification': args.classification,
         'cluster_distribution': args.cluster_distribution,
         'cluster_sharing_group_id': args.cluster_sharing_group,
         'debug': args.debug,
@@ -793,6 +812,7 @@ def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
     success = []
     method = _get_stix_ingestion_method(args.version)
     kwargs = {
+        'classification': args.classification,
         'cluster_distribution': args.cluster_distribution,
         'cluster_sharing_group_id': args.cluster_sharing_group,
         'debug': args.debug,
@@ -855,14 +875,48 @@ def _check_output(
     return output_dir / default_name
 
 
+_CLASSIFICATION_VALUES = ('internal', 'external')
+
+
+def _classification_as_from_misp(classification: Optional[str]) -> Optional[bool]:
+    if classification is None:
+        return None
+    if classification not in _CLASSIFICATION_VALUES:
+        raise ValueError(
+            f"Invalid classification value: '{classification}' - "
+            "must be either 'internal' or 'external'."
+        )
+    return classification == 'internal'
+
+
+def _handle_classification_warning(
+        parser, from_misp: Optional[bool], detected: bool):
+    if from_misp is None:
+        if detected:
+            parser._add_warning(
+                'The Internal parser was selected from the document content '
+                'itself. Use the `classification` parameter to make this '
+                'choice explicit.'
+            )
+    elif from_misp != detected:
+        parser._add_warning(
+            'The STIX document content is detected as '
+            f"{'internal' if detected else 'external'}, but is parsed as "
+            f"{'internal' if from_misp else 'external'} as requested with "
+            'the `classification` parameter.'
+        )
+
+
 def _generate_traceback(
         debug: bool, parser, *output_names: tuple, errors: dict = {}) -> dict:
     traceback = {'pymisp_errors': errors} if errors else {'success': 1}
-    if debug:
-        for feature in ('errors', 'warnings'):
-            brol = getattr(parser, feature)
-            if brol:
-                traceback[feature] = brol
+    # Warnings surface regardless of `debug`;
+    # only the errors verbosity is debug-gated
+    warnings = parser.warnings
+    if warnings:
+        traceback['warnings'] = warnings
+    if debug and parser.errors:
+        traceback['errors'] = parser.errors
     traceback['results'] = list(output_names)
     return traceback
 

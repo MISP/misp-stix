@@ -127,6 +127,13 @@ def main():
              '`single_event` argument is not used.'
     )
     import_parser.add_argument(
+        '--classification', choices=['internal', 'external'], default=None,
+        help='Classification of the STIX content to import: `internal` for '
+             'content exported from MISP, `external` for third-party content. '
+             'When not set, the classification is detected from the content '
+             'itself.'
+    )
+    import_parser.add_argument(
         '-d', '--distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
         help='''
             Distribution level for the imported MISP content (default is 0)
