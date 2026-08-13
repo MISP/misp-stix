@@ -145,8 +145,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._vulnerability: dict
 
     def load_stix_bundle(self, bundle: Bundle_v20 | Bundle_v21,
-                         invalid_objects: Optional[dict] = {}):
+                         invalid_objects: Optional[dict] = None):
         self._reset_bundle_state()
+        if invalid_objects is None:
+            # the loading helpers keep the invalid objects they recovered
+            # with the bundle they were recovered from
+            invalid_objects = getattr(bundle, '_invalid_objects', None)
+            if invalid_objects is None:
+                invalid_objects = {}
         self.__invalid_objects = invalid_objects
         self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
@@ -155,13 +161,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def parse_stix_content(self, filename: str, **kwargs):
         try:
-            bundle = load_stix2_file(filename, invalid_objects := {})
+            bundle = load_stix2_file(filename)
         except Exception as exception:
             raise STIXLoadingError(
                 'Error while loading the STIX 2 content: '
                 f'{_reduce_input_path(str(exception), filename)}'
             ) from exception
-        self.load_stix_bundle(bundle, invalid_objects=invalid_objects)
+        self.load_stix_bundle(bundle)
         del bundle
         self.parse_stix_bundle(**kwargs)
 
