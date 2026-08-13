@@ -111,6 +111,160 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             any('parser stage crash' in error for error in results['errors'])
         )
 
+    def test_stix21_content_without_objects_produces_a_meaningful_error(self):
+        # the fallback loading path read `stix_content['objects']` unguarded -
+        # a document without an `objects` property surfaced as the bare
+        # string `'objects'`, indistinguishable from a STIX field problem.
+        from misp_stix_converter import STIXLoadingError
+        from misp_stix_converter.tools import load_stix2_content
+        with self.assertRaises(STIXLoadingError) as context:
+            load_stix2_content('{"foo": "bar"}')
+        self.assertIn("no 'objects' property", str(context.exception))
+
+    def test_stix21_fallback_object_without_id_is_located_in_the_error(self):
+        # recovering the valid objects one by one indexed the invalid ones
+        # with `stix_object['id']` - an object without an `id` property
+        # crashed the recovery with `KeyError: 'id'` raised from inside an
+        # except handler, instead of locating the object.
+        from misp_stix_converter import STIXLoadingError
+        from misp_stix_converter.tools import load_stix2_content
+        with self.assertRaises(STIXLoadingError) as context:
+            load_stix2_content(
+                {
+                    'type': 'bundle',
+                    'id': 'bundle--4d3f5e19-9c11-42b5-9b93-6337d443f0f1',
+                    'objects': [
+                        {
+                            'type': 'identity',
+                            'spec_version': '2.1',
+                            'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'name': 'CIRCL',
+                            'identity_class': 'organization'
+                        },
+                        {'foo': 'bar'}
+                    ]
+                }
+            )
+        error_message = str(context.exception)
+        self.assertIn("'id'", error_message)
+        self.assertIn('index 1', error_message)
+
+    def test_stix21_repeated_loads_share_no_invalid_objects_state(self):
+        # the `invalid_objects={}` mutable defaults shared a single dict
+        # across every call that omitted the argument - attacker-supplied
+        # objects accumulated for the process lifetime and references from
+        # a later document resolved against an earlier, unrelated one.
+        from misp_stix_converter.tools import load_stix2_content
+        first_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        second_id = 'indicator--b6f1a83b-6d92-40dc-83b3-e575a04a5c29'
+        bundles = {
+            first_id: 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            second_id: 'bundle--6a99f66a-8d92-4653-a481-b7cbeef97e95'
+        }
+        _, second = (
+            load_stix2_content(
+                {
+                    'type': 'bundle',
+                    'id': bundle_id,
+                    'objects': [
+                        {
+                            'type': 'identity',
+                            'spec_version': '2.1',
+                            'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'name': 'CIRCL',
+                            'identity_class': 'organization'
+                        },
+                        {
+                            'type': 'indicator',
+                            'spec_version': '2.1',
+                            'id': indicator_id,
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'pattern': 'NOT A VALID PATTERN',
+                            'pattern_type': 'stix',
+                            'valid_from': '2020-10-25T16:22:00.000Z'
+                        }
+                    ]
+                }
+            ) for indicator_id, bundle_id in bundles.items()
+        )
+        self.parser.load_stix_bundle(second)
+        self.assertIn(second_id, self.parser.invalid_objects)
+        self.assertNotIn(first_id, self.parser.invalid_objects)
+
+    def test_stix21_parser_inherits_the_invalid_objects_from_the_loader(self):
+        # `load_stix2_file` populated its own `invalid_objects` dict, but
+        # `load_stix_bundle` created another one when the argument was
+        # omitted - the documented sequence of both calls silently lost the
+        # objects the loader had recovered.
+        from misp_stix_converter.tools import load_stix2_file
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        import json
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        stix_content = {
+            'type': 'bundle',
+            'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            'objects': [
+                {
+                    'type': 'identity',
+                    'spec_version': '2.1',
+                    'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                    'created': '2020-10-25T16:22:00.000Z',
+                    'modified': '2020-10-25T16:22:00.000Z',
+                    'name': 'CIRCL',
+                    'identity_class': 'organization'
+                },
+                {
+                    'type': 'indicator',
+                    'spec_version': '2.1',
+                    'id': indicator_id,
+                    'created': '2020-10-25T16:22:00.000Z',
+                    'modified': '2020-10-25T16:22:00.000Z',
+                    'pattern': 'NOT A VALID PATTERN',
+                    'pattern_type': 'stix',
+                    'valid_from': '2020-10-25T16:22:00.000Z'
+                }
+            ]
+        }
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'invalid_indicator.stix21.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(stix_content, f)
+            bundle = load_stix2_file(filename)
+        self.parser.load_stix_bundle(bundle)
+        self.assertIn(indicator_id, self.parser.invalid_objects)
+
+    def test_stix21_loading_does_not_mutate_the_caller_content(self):
+        # recovering from a `spec_version` mismatch reassigned the property
+        # on the dict the caller passed in - a surprising side effect for a
+        # function named `load`.
+        from copy import deepcopy
+        from misp_stix_converter.tools import load_stix2_content
+        stix_content = {
+            'type': 'bundle',
+            'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            'spec_version': '2.1',
+            'objects': [
+                {
+                    'type': 'indicator',
+                    'id': 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e',
+                    'created': '2020-10-25T16:22:00.000Z',
+                    'modified': '2020-10-25T16:22:00.000Z',
+                    'labels': ['malicious-activity'],
+                    'pattern': 'NOT A VALID PATTERN',
+                    'valid_from': '2020-10-25T16:22:00.000Z'
+                }
+            ]
+        }
+        original = deepcopy(stix_content)
+        load_stix2_content(stix_content)
+        self.assertEqual(stix_content, original)
+
     def test_stix21_classification_forced_internal_warns_on_mismatch(self):
         from misp_stix_converter import stix_2_to_misp
         from pathlib import Path
