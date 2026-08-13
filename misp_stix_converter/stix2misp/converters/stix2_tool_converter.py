@@ -88,7 +88,7 @@ class InternalSTIX2ToolConverter(InternalSTIX2Converter):
     
     def parse(self, tool_ref: str):
         tool = self.main_parser._get_stix_object(tool_ref)
-        feature = self._handle_mapping_from_labels(tool.labels, tool.id)
+        feature = self._handle_mapping_from_labels(tool)
         try:
             parser = getattr(self, feature)
         except AttributeError:
