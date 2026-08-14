@@ -2039,6 +2039,45 @@ _CUSTOM_OBJECT_WITH_INJECTED_FIELDS = {
     "x_misp_meta_category": "financial",
     "x_misp_name": "bank-account"
 }
+_DICT_FORM_OBJECTS = [
+    # STIX 2.0 has neither a Note nor an Opinion object type: parsed with
+    # `allow_custom`, both reach the loaders as plain dicts rather than typed
+    # objects.
+    {
+        "type": "note",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "abstract": "Analyst note in a STIX 2.0 Bundle",
+        "content": "Domain used by the threat actor to host its payloads",
+        "authors": ["john.doe@foo.bar"],
+        "lang": "en",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:context-layer="Analyst Note"']
+    },
+    {
+        "type": "opinion",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the domain",
+        "authors": ["opinion@foo.bar"],
+        "opinion": "strongly-agree",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "x_misp_opinion": 90
+    },
+    {
+        "type": "note",
+        "id": "note--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "abstract": "Summary of the case",
+        "content": "A victim reported a malicious domain",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:data-layer="Event Report"']
+    }
+]
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -8285,6 +8324,21 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         observed_data = deepcopy(_DOMAIN_IP_OBSERVABLE_OBJECTS[0])
         observed_data['labels'].append('Object tag')
         return cls.__assemble_bundle(indicator, observed_data)
+
+    @classmethod
+    def get_bundle_with_dict_form_objects(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        note, opinion, event_report = deepcopy(_DICT_FORM_OBJECTS)
+        report.update(
+            cls._populate_references(indicator['id'], event_report['id'])
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, indicator, note, opinion,
+            event_report
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
     def get_bundle_with_duplicate_object_ids(cls):

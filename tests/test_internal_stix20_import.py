@@ -1644,6 +1644,25 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(port.value, observables["0"].x_misp_port)
         self.assertEqual(free_tag, port.tags[0].name)
 
+    def test_stix20_bundle_with_dict_form_objects(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_dict_form_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator, note, opinion, event_report = bundle.objects
+        self._check_misp_event_features(event, report)
+        self.assertEqual(self.parser.errors, {})
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self._check_dict_form_analyst_note(attribute.notes[0], note)
+        self._check_dict_form_analyst_opinion(attribute.opinions[0], opinion)
+        misp_event_report = event.event_reports[0]
+        self.assertEqual(
+            misp_event_report.uuid, event_report['id'].split('--')[1]
+        )
+        self.assertEqual(misp_event_report.name, event_report['abstract'])
+        self.assertEqual(misp_event_report.content, event_report['content'])
+
     def test_stix20_bundle_with_duplicate_object_ids(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_duplicate_object_ids()
         self.parser.load_stix_bundle(bundle)

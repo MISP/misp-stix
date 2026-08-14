@@ -62,6 +62,19 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         self._check_tlp_marking_tags(event.attributes, TLP_1_0_EXPECTED_TAGS)
 
+    def test_stix20_bundle_with_dict_form_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_dict_form_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator, note, opinion = bundle.objects
+        self._check_misp_event_features(event, report)
+        self.assertEqual(self.parser.errors, {})
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self._check_dict_form_analyst_note(attribute.notes[0], note)
+        self._check_dict_form_analyst_opinion(attribute.opinions[0], opinion)
+
     def test_stix20_bundle_with_duplicate_object_ids(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_duplicate_object_ids()
         self.parser.load_stix_bundle(bundle)

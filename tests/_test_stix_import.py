@@ -91,6 +91,19 @@ class TestSTIX2Bundles:
 
 
 class TestSTIX2Import(TestSTIX):
+    # Opinion is a STIX 2.1 object type, but one in a 2.0 Bundle reaches the
+    # import as a Dict-Form Object, so both versions need the mapping.
+    __opinion_mapping = {
+        'strongly-disagree': 0,
+        'disagree': 25,
+        'neutral': 50,
+        'agree': 75,
+        'strongly-agree': 100
+    }
+
+    def opinion_mapping(self, field):
+        return self.__opinion_mapping.get(field)
+
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
     @staticmethod
@@ -100,6 +113,49 @@ class TestSTIX2Import(TestSTIX):
             message for identifier_reports in reports.values()
             for message in identifier_reports
         ]
+
+    @staticmethod
+    def _dict_form_timestamp(timestamp: str):
+        """The `datetime` a dict-form object's timestamp string stands for.
+
+        Only typed STIX objects parse their timestamps: the ones left as plain
+        dicts keep the string the document carried.
+        """
+        return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+
+    def _check_dict_form_analyst_note(self, misp_note, stix_note):
+        """A Note the STIX version does not know arrives as a plain dict."""
+        self.assertIsInstance(stix_note, dict)
+        self.assertEqual(misp_note.uuid, stix_note['id'].split('--')[1])
+        self.assertEqual(misp_note.note, stix_note['content'])
+        self.assertEqual(misp_note.authors, stix_note['authors'][0])
+        self.assertEqual(misp_note.language, stix_note['lang'])
+        for field in ('created', 'modified'):
+            self.assertEqual(
+                getattr(misp_note, field),
+                self._dict_form_timestamp(stix_note[field])
+            )
+
+    def _check_dict_form_analyst_opinion(self, misp_opinion, stix_opinion):
+        """An Opinion the STIX version does not know arrives as a plain dict."""
+        self.assertIsInstance(stix_opinion, dict)
+        self.assertEqual(misp_opinion.uuid, stix_opinion['id'].split('--')[1])
+        if 'x_misp_opinion' in stix_opinion:
+            self.assertEqual(
+                misp_opinion.opinion, stix_opinion['x_misp_opinion']
+            )
+        else:
+            self.assertEqual(
+                misp_opinion.opinion,
+                self.opinion_mapping(stix_opinion['opinion'])
+            )
+        self.assertEqual(misp_opinion.comment, stix_opinion['explanation'])
+        self.assertEqual(misp_opinion.authors, stix_opinion['authors'][0])
+        for field in ('created', 'modified'):
+            self.assertEqual(
+                getattr(misp_opinion, field),
+                self._dict_form_timestamp(stix_opinion[field])
+            )
 
     def _check_duplicate_object_id_warning(self, object_id, warnings):
         """The last occurrence wins, but the shadowing is never silent."""
@@ -478,17 +534,6 @@ class TestSTIX21Import(TestSTIX2Import):
     _ext_galaxies_v21 = defaultdict(dict)
     _ext_attributes_v21 = defaultdict(dict)
     _ext_objects_v21 = defaultdict(dict)
-
-    __opinion_mapping = {
-        'strongly-disagree': 0,
-        'disagree': 25,
-        'neutral': 50,
-        'agree': 75,
-        'strongly-agree': 100
-    }
-
-    def opinion_mapping(self, field):
-        return self.__opinion_mapping.get(field)
 
     @classmethod
     def tearDownClass(self):

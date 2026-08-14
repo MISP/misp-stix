@@ -1969,6 +1969,36 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.value, f'{domain.value}|{address.value}')
         self.assertEqual(attribute.tags[0].name, free_tag)
 
+    def test_stix21_bundle_with_dict_form_objects(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_dict_form_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator, note, opinion = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(self.parser.errors, {})
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertIsInstance(note, dict)
+        misp_note = attribute.notes[0]
+        self.assertEqual(misp_note.uuid, note['id'].split('--')[1])
+        self.assertEqual(misp_note.note, note['x_misp_note'])
+        self.assertEqual(misp_note.authors, note['x_misp_author'])
+        self.assertEqual(misp_note.language, note['x_misp_language'])
+        self.assertIsInstance(opinion, dict)
+        misp_opinion = attribute.opinions[0]
+        self.assertEqual(misp_opinion.uuid, opinion['id'].split('--')[1])
+        self.assertEqual(misp_opinion.opinion, opinion['x_misp_opinion'])
+        self.assertEqual(misp_opinion.comment, opinion['x_misp_comment'])
+        self.assertEqual(misp_opinion.authors, opinion['x_misp_author'])
+        for analyst_data, stix_object in (
+                (misp_note, note), (misp_opinion, opinion)):
+            for field in ('created', 'modified'):
+                self.assertEqual(
+                    getattr(analyst_data, field),
+                    self._dict_form_timestamp(stix_object[field])
+                )
+
     def test_stix21_bundle_with_duplicate_object_ids(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
         self.parser.load_stix_bundle(bundle)
