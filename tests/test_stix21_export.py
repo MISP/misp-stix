@@ -6815,6 +6815,21 @@ class TestSTIX21MISPExportInteroperability(TestSTIX21ExportInteroperability):
 
 
 class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
+    def test_export_reports_dropped_content_without_debug(self):
+        # export records an error for every attribute or object it could not
+        # convert, but `_generate_traceback` only attached them when `debug`
+        # was set - the default result claimed a plain success for a bundle
+        # rendering only part of the event.
+        results = self._export_event_with_invalid_hash('2.1')
+        self.assertEqual(results['success'], 1)
+        self.assertTrue(
+            any(
+                'Invalid TLSH value' in error
+                for errors in results['errors'].values()
+                for error in errors
+            )
+        )
+
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
         output_file = self._current_path / f'{name}.json.out'

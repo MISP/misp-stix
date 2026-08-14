@@ -66,6 +66,290 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertNotIn('errors', results)
         self.assertEqual(results['success'], 1)
 
+    def test_stix21_parse_stix_content_raises_a_catchable_error(self):
+        # `parse_stix_content` called `sys.exit()` when loading failed -
+        # `SystemExit` derives from `BaseException`, so a caller's
+        # `except Exception` never saw it and one malformed document killed
+        # the hosting process.
+        from misp_stix_converter import STIXLoadingError
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'malformed.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write('{"not": "a bundle"')
+            with self.assertRaises(STIXLoadingError):
+                self.parser.parse_stix_content(filename)
+
+    def test_stix21_parsing_before_loading_raises_a_catchable_error(self):
+        # same `sys.exit()` class of defect on the call-order guard
+        from misp_stix_converter import MissingSTIXContentError
+        with self.assertRaises(MissingSTIXContentError):
+            self.parser.parse_stix_bundle()
+
+    def test_stix21_entry_point_returns_error_dict_when_parsing_fails(self):
+        # only the loading call was guarded - a crash in the parsing stage
+        # escaped `stix_2_to_misp` as a traceback instead of the documented
+        # error dict.
+        from misp_stix_converter import stix_2_to_misp
+        from misp_stix_converter.stix2misp.external_stix2_to_misp import (
+            ExternalSTIX2toMISPParser)
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from unittest.mock import patch
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'external.stix21.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            with patch.object(
+                    ExternalSTIX2toMISPParser, 'parse_stix_bundle',
+                    side_effect=RuntimeError('parser stage crash')):
+                results = stix_2_to_misp(filename, output_dir=Path(tmp_dir))
+        self.assertNotIn('success', results)
+        self.assertTrue(
+            any('parser stage crash' in error for error in results['errors'])
+        )
+
+    def test_stix21_dropped_objects_are_reported_without_debug(self):
+        # objects the parser failed to load were recorded as errors, but
+        # `_generate_traceback` only attached them when `debug` was set - the
+        # default result was a bare `{'success': 1}` for a conversion that
+        # dropped content, leaving no signal that the MISP event is an
+        # incomplete rendering of the bundle.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        results = self._import_bundle_with_unloadable_objects(bundle)
+        self.assertTrue(
+            any(
+                'x-unloadable-type-0' in error
+                for error in results['errors'][bundle.id]
+            )
+        )
+
+    def test_stix21_debug_only_controls_the_errors_verbosity(self):
+        # `debug` selects how much detail is reported, not whether failures
+        # are reported at all: the default summary is deduplicated, capped -
+        # a hostile bundle can produce an error per object - and names the
+        # number of errors left out.
+        from misp_stix_converter.misp_stix_converter import (
+            _ERRORS_SUMMARY_LIMIT)
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        summary = self._import_bundle_with_unloadable_objects(
+            bundle, count=_ERRORS_SUMMARY_LIMIT
+        )['errors'][bundle.id]
+        detailed = self._import_bundle_with_unloadable_objects(
+            bundle, count=_ERRORS_SUMMARY_LIMIT, debug=True
+        )['errors'][bundle.id]
+        self.assertGreater(len(detailed), _ERRORS_SUMMARY_LIMIT)
+        self.assertEqual(len(summary), _ERRORS_SUMMARY_LIMIT + 1)
+        self.assertEqual(summary[:-1], detailed[:_ERRORS_SUMMARY_LIMIT])
+        self.assertIn(
+            f'{len(detailed) - _ERRORS_SUMMARY_LIMIT} more', summary[-1]
+        )
+        self.assertIn('debug', summary[-1])
+
+    def test_stix2_cli_aggregation_keeps_both_errors_and_warnings(self):
+        # the CLI aggregation wrote errors then warnings into the same `fails`
+        # entry, keyed on the same identifier - now that both are reported
+        # without `debug`, the warnings overwrote the errors this ticket
+        # exists to surface.
+        from misp_stix_converter.misp_stix_converter import (
+            _process_stix_to_misp_instance)
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        identifier = 'bundle--5b8e0f9a-0000-4000-8000-0000000000e1'
+        traceback = {
+            'pymisp_errors': {identifier: 'MISP refused the event'},
+            'errors': {identifier: ['Unable to load STIX object type: x-nope']},
+            'warnings': {identifier: ['The Internal parser was selected']}
+        }
+        args = SimpleNamespace(
+            classification=None, cluster_distribution=0,
+            cluster_sharing_group=None, debug=False, distribution=0,
+            file=[Path('bundle.json')], galaxies_as_tags=False,
+            no_force_contextual_data=False, org_uuid=MISP_org_uuid,
+            producer=None, sharing_group=None, single_event=False,
+            title=None, version='2'
+        )
+        with patch(
+                'misp_stix_converter.misp_stix_converter.'
+                '_get_stix_ingestion_method',
+                return_value=lambda *_, **__: traceback):
+            results = _process_stix_to_misp_instance(None, args)
+        self.assertEqual(
+            results['fails'][identifier],
+            (
+                'Unable to load STIX object type: x-nope',
+                'The Internal parser was selected'
+            )
+        )
+
+    def test_stix21_repeated_errors_are_summarised_with_their_count(self):
+        # deduplicating on the message alone made a bundle dropping a dozen
+        # objects read exactly like one dropping a single object: most error
+        # messages carry no object id, so how many times each happened is the
+        # only volume signal left in the default report.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        errors = self._import_bundle_with_unloadable_objects(
+            bundle, count=12, distinct_types=False
+        )['errors'][bundle.id]
+        self.assertTrue(all('(12 times)' in error for error in errors))
+
+    def test_stix21_content_without_objects_produces_a_meaningful_error(self):
+        # the fallback loading path read `stix_content['objects']` unguarded -
+        # a document without an `objects` property surfaced as the bare
+        # string `'objects'`, indistinguishable from a STIX field problem.
+        from misp_stix_converter import STIXLoadingError
+        from misp_stix_converter.tools import load_stix2_content
+        with self.assertRaises(STIXLoadingError) as context:
+            load_stix2_content('{"foo": "bar"}')
+        self.assertIn("no 'objects' property", str(context.exception))
+
+    def test_stix21_fallback_object_without_id_is_located_in_the_error(self):
+        # recovering the valid objects one by one indexed the invalid ones
+        # with `stix_object['id']` - an object without an `id` property
+        # crashed the recovery with `KeyError: 'id'` raised from inside an
+        # except handler, instead of locating the object.
+        from misp_stix_converter import STIXLoadingError
+        from misp_stix_converter.tools import load_stix2_content
+        with self.assertRaises(STIXLoadingError) as context:
+            load_stix2_content(
+                {
+                    'type': 'bundle',
+                    'id': 'bundle--4d3f5e19-9c11-42b5-9b93-6337d443f0f1',
+                    'objects': [
+                        {
+                            'type': 'identity',
+                            'spec_version': '2.1',
+                            'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'name': 'CIRCL',
+                            'identity_class': 'organization'
+                        },
+                        {'foo': 'bar'}
+                    ]
+                }
+            )
+        error_message = str(context.exception)
+        self.assertIn("'id'", error_message)
+        self.assertIn('index 1', error_message)
+
+    def test_stix21_repeated_loads_share_no_invalid_objects_state(self):
+        # the `invalid_objects={}` mutable defaults shared a single dict
+        # across every call that omitted the argument - attacker-supplied
+        # objects accumulated for the process lifetime and references from
+        # a later document resolved against an earlier, unrelated one.
+        from misp_stix_converter.tools import load_stix2_content
+        first_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        second_id = 'indicator--b6f1a83b-6d92-40dc-83b3-e575a04a5c29'
+        bundles = {
+            first_id: 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            second_id: 'bundle--6a99f66a-8d92-4653-a481-b7cbeef97e95'
+        }
+        _, second = (
+            load_stix2_content(
+                {
+                    'type': 'bundle',
+                    'id': bundle_id,
+                    'objects': [
+                        {
+                            'type': 'identity',
+                            'spec_version': '2.1',
+                            'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'name': 'CIRCL',
+                            'identity_class': 'organization'
+                        },
+                        {
+                            'type': 'indicator',
+                            'spec_version': '2.1',
+                            'id': indicator_id,
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'pattern': 'NOT A VALID PATTERN',
+                            'pattern_type': 'stix',
+                            'valid_from': '2020-10-25T16:22:00.000Z'
+                        }
+                    ]
+                }
+            ) for indicator_id, bundle_id in bundles.items()
+        )
+        self.parser.load_stix_bundle(second)
+        self.assertIn(second_id, self.parser.invalid_objects)
+        self.assertNotIn(first_id, self.parser.invalid_objects)
+
+    def test_stix21_parser_inherits_the_invalid_objects_from_the_loader(self):
+        # `load_stix2_file` populated its own `invalid_objects` dict, but
+        # `load_stix_bundle` created another one when the argument was
+        # omitted - the documented sequence of both calls silently lost the
+        # objects the loader had recovered.
+        from misp_stix_converter.tools import load_stix2_file
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        import json
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        stix_content = {
+            'type': 'bundle',
+            'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            'objects': [
+                {
+                    'type': 'identity',
+                    'spec_version': '2.1',
+                    'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                    'created': '2020-10-25T16:22:00.000Z',
+                    'modified': '2020-10-25T16:22:00.000Z',
+                    'name': 'CIRCL',
+                    'identity_class': 'organization'
+                },
+                {
+                    'type': 'indicator',
+                    'spec_version': '2.1',
+                    'id': indicator_id,
+                    'created': '2020-10-25T16:22:00.000Z',
+                    'modified': '2020-10-25T16:22:00.000Z',
+                    'pattern': 'NOT A VALID PATTERN',
+                    'pattern_type': 'stix',
+                    'valid_from': '2020-10-25T16:22:00.000Z'
+                }
+            ]
+        }
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'invalid_indicator.stix21.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(stix_content, f)
+            bundle = load_stix2_file(filename)
+        self.parser.load_stix_bundle(bundle)
+        self.assertIn(indicator_id, self.parser.invalid_objects)
+
+    def test_stix21_loading_does_not_mutate_the_caller_content(self):
+        # recovering from a `spec_version` mismatch reassigned the property
+        # on the dict the caller passed in - a surprising side effect for a
+        # function named `load`.
+        from copy import deepcopy
+        from misp_stix_converter.tools import load_stix2_content
+        stix_content = {
+            'type': 'bundle',
+            'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            'spec_version': '2.1',
+            'objects': [
+                {
+                    'type': 'indicator',
+                    'id': 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e',
+                    'created': '2020-10-25T16:22:00.000Z',
+                    'modified': '2020-10-25T16:22:00.000Z',
+                    'labels': ['malicious-activity'],
+                    'pattern': 'NOT A VALID PATTERN',
+                    'valid_from': '2020-10-25T16:22:00.000Z'
+                }
+            ]
+        }
+        original = deepcopy(stix_content)
+        load_stix2_content(stix_content)
+        self.assertEqual(stix_content, original)
+
     def test_stix21_classification_forced_internal_warns_on_mismatch(self):
         from misp_stix_converter import stix_2_to_misp
         from pathlib import Path
