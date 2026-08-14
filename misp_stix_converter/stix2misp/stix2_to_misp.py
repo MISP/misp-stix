@@ -19,7 +19,9 @@ from collections import defaultdict
 from pymisp import (
     MISPEvent, MISPAttribute, MISPEventReport, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
+from datetime import datetime
 from stix2 import TLP_AMBER, TLP_GREEN, TLP_RED, TLP_WHITE
+from stix2.utils import parse_into_datetime
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
 from stix2.v20.sdo import (
@@ -65,11 +67,14 @@ _SDOs = (
 )
 
 # Typing
+# `dict` is part of every incoming typing: content parsed with `allow_custom`
+# keeps the object types the STIX version it is parsed against does not know as
+# plain dictionaries, so any incoming object may reach us in that form.
 _OBSERVABLE_TYPING = Union[
     Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
     EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic_v21, Process, Software, URL, UserAccount, WindowsRegistryKey,
-    X509Certificate
+    X509Certificate, dict
 ]
 
 _BUNDLE_TYPING = Union[
@@ -79,7 +84,7 @@ _DATA_LAYER_TYPING = Union[
     MISPAttribute, MISPEvent, MISPEventReport, MISPObject
 ]
 _GROUPING_REPORT_TYPING = Union[
-    Grouping, Report_v20, Report_v21
+    Grouping, Report_v20, Report_v21, dict
 ]
 _MARKING_DEFINITION_TYPING = Union[
     MarkingDefinition_v20, MarkingDefinition_v21, dict
@@ -90,16 +95,23 @@ _NOTE_TYPING = Union[
 _OPINION_TYPING = Union[
     Opinion, CustomObject_v20, dict
 ]
+_RELATIONSHIP_TYPING = Union[
+    Relationship_v20, Relationship_v21, dict
+]
 _REPORT_TYPING = Union[
-    Report_v20, Report_v21
+    Report_v20, Report_v21, dict
 ]
 _SDO_TYPING = Union[
-    Campaign_v20, Campaign_v21, CustomObject_v20, CustomObject_v21, Grouping,
-    Indicator_v20, Indicator_v21, ObservedData_v20, ObservedData_v21,
-    Report_v20, Report_v21, Vulnerability_v20, Vulnerability_v21
+    AttackPattern_v20, AttackPattern_v21, Campaign_v20, Campaign_v21,
+    CourseOfAction_v20, CourseOfAction_v21, CustomObject_v20, CustomObject_v21,
+    Grouping, Identity_v20, Identity_v21, Indicator_v20, Indicator_v21,
+    IntrusionSet_v20, IntrusionSet_v21, Location, Malware_v20, Malware_v21,
+    MalwareAnalysis, Note, ObservedData_v20, ObservedData_v21, Opinion,
+    Report_v20, Report_v21, ThreatActor_v20, ThreatActor_v21, Tool_v20,
+    Tool_v21, Vulnerability_v20, Vulnerability_v21, dict
 ]
 _SIGHTING_TYPING = Union[
-    Sighting_v20, Sighting_v21
+    Sighting_v20, Sighting_v21, dict
 ]
 _STIX_OBJECT_TYPING = Union[
     _OBSERVABLE_TYPING, _GROUPING_REPORT_TYPING,
@@ -172,8 +184,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
             return
         self._check_duplicate_id(stix_object['id'])
-        if hasattr(stix_object, 'created_by_ref'):
-            self._creators.add(stix_object.created_by_ref)
+        if 'created_by_ref' in stix_object:
+            self._creators.add(stix_object['created_by_ref'])
         try:
             getattr(self, feature)(stix_object)
         except MarkingDefinitionLoadingError as marking_definition_id:
@@ -181,8 +193,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 'Error whil parsing the Marking Definition '
                 f'object with id {marking_definition_id}'
             )
-        except AttributeError as exception:
-            self._critical_error(exception)
+        except Exception as exception:
+            # Loading methods read the fields they need with the Mapping
+            # interface every incoming object honours, typed or dict-form.
+            # Anything raised past that point is a field the object does not
+            # carry: drop it, but name the object instead of the exception
+            # alone.
+            self._add_error(
+                'Error while loading the STIX object with id '
+                f'{stix_object["id"]}: {self._parse_traceback(exception)}'
+            )
 
     def _check_duplicate_id(self, object_id: str):
         """Report the ids a bundle gives to more than one loaded object.
@@ -280,85 +300,87 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
 
     def _load_attack_pattern(
-            self, attack_pattern: AttackPattern_v20 | AttackPattern_v21):
-        self._check_uuid(attack_pattern.id)
+            self,
+            attack_pattern: AttackPattern_v20 | AttackPattern_v21 | dict):
+        self._check_uuid(attack_pattern['id'])
         try:
-            self._attack_pattern[attack_pattern.id] = attack_pattern
+            self._attack_pattern[attack_pattern['id']] = attack_pattern
         except AttributeError:
-            self._attack_pattern = {attack_pattern.id: attack_pattern}
+            self._attack_pattern = {attack_pattern['id']: attack_pattern}
 
-    def _load_campaign(self, campaign: Campaign_v20 | Campaign_v21):
-        self._check_uuid(campaign.id)
+    def _load_campaign(self, campaign: Campaign_v20 | Campaign_v21 | dict):
+        self._check_uuid(campaign['id'])
         try:
-            self._campaign[campaign.id] = campaign
+            self._campaign[campaign['id']] = campaign
         except AttributeError:
-            self._campaign = {campaign.id: campaign}
+            self._campaign = {campaign['id']: campaign}
 
     def _load_course_of_action(
-            self, course_of_action: CourseOfAction_v20 | CourseOfAction_v21):
-        self._check_uuid(course_of_action.id)
+            self,
+            course_of_action: CourseOfAction_v20 | CourseOfAction_v21 | dict):
+        self._check_uuid(course_of_action['id'])
         try:
-            self._course_of_action[course_of_action.id] = course_of_action
+            self._course_of_action[course_of_action['id']] = course_of_action
         except AttributeError:
-            self._course_of_action = {course_of_action.id: course_of_action}
+            self._course_of_action = {course_of_action['id']: course_of_action}
 
-    def _load_grouping(self, grouping: Grouping):
-        self._check_uuid(grouping.id)
+    def _load_grouping(self, grouping: Grouping | dict):
+        self._check_uuid(grouping['id'])
         try:
-            self._grouping[grouping.id] = grouping
+            self._grouping[grouping['id']] = grouping
         except AttributeError:
-            self._grouping = {grouping.id: grouping}
+            self._grouping = {grouping['id']: grouping}
 
-    def _load_identity(self, identity: Identity_v20 | Identity_v21):
-        self._check_uuid(identity.id)
+    def _load_identity(self, identity: Identity_v20 | Identity_v21 | dict):
+        self._check_uuid(identity['id'])
         try:
-            self._identity[identity.id] = identity
+            self._identity[identity['id']] = identity
         except AttributeError:
-            self._identity = {identity.id: identity}
+            self._identity = {identity['id']: identity}
 
-    def _load_indicator(self, indicator: Indicator_v20 | Indicator_v21):
-        self._check_uuid(indicator.id)
+    def _load_indicator(self, indicator: Indicator_v20 | Indicator_v21 | dict):
+        self._check_uuid(indicator['id'])
         try:
-            self._indicator[indicator.id] = indicator
+            self._indicator[indicator['id']] = indicator
         except AttributeError:
-            self._indicator = {indicator.id: indicator}
+            self._indicator = {indicator['id']: indicator}
 
     def _load_intrusion_set(
-            self, intrusion_set: IntrusionSet_v20 | IntrusionSet_v21):
-        self._check_uuid(intrusion_set.id)
+            self, intrusion_set: IntrusionSet_v20 | IntrusionSet_v21 | dict):
+        self._check_uuid(intrusion_set['id'])
         try:
-            self._intrusion_set[intrusion_set.id] = intrusion_set
+            self._intrusion_set[intrusion_set['id']] = intrusion_set
         except AttributeError:
-            self._intrusion_set = {intrusion_set.id: intrusion_set}
+            self._intrusion_set = {intrusion_set['id']: intrusion_set}
 
-    def _load_location(self, location: Location):
+    def _load_location(self, location: Location | dict):
         self._check_uuid(location['id'])
         try:
             self._location[location['id']] = location
         except AttributeError:
             self._location = {location['id']: location}
 
-    def _load_malware(self, malware: Malware_v20 | Malware_v21):
-        self._check_uuid(malware.id)
+    def _load_malware(self, malware: Malware_v20 | Malware_v21 | dict):
+        self._check_uuid(malware['id'])
         try:
-            self._malware[malware.id] = malware
+            self._malware[malware['id']] = malware
         except AttributeError:
-            self._malware = {malware.id: malware}
+            self._malware = {malware['id']: malware}
 
-    def _load_malware_analysis(self, malware_analysis: MalwareAnalysis):
-        self._check_uuid(malware_analysis.id)
+    def _load_malware_analysis(self, malware_analysis: MalwareAnalysis | dict):
+        self._check_uuid(malware_analysis['id'])
         try:
-            self._malware_analysis[malware_analysis.id] = malware_analysis
+            self._malware_analysis[malware_analysis['id']] = malware_analysis
         except AttributeError:
-            self._malware_analysis = {malware_analysis.id: malware_analysis}
+            self._malware_analysis = {malware_analysis['id']: malware_analysis}
 
     def _load_marking_definition(
             self, marking_definition: _MARKING_DEFINITION_TYPING):
         tag = self._parse_marking_definition(marking_definition)
         try:
-            self._marking_definition[marking_definition.id] = tag
+            self._marking_definition[marking_definition['id']] = tag
         except AttributeError:
-            self._marking_definition = {marking_definition.id: tag}
+            self._marking_definition = {marking_definition['id']: tag}
 
     def _load_note(self, note_ref: str, note: _NOTE_TYPING):
         try:
@@ -367,12 +389,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._note = {note_ref: note}
 
     def _load_observed_data(
-            self, observed_data: ObservedData_v20 | ObservedData_v21):
-        self._check_uuid(observed_data.id)
+            self, observed_data: ObservedData_v20 | ObservedData_v21 | dict):
+        self._check_uuid(observed_data['id'])
         try:
-            self._observed_data[observed_data.id] = observed_data
+            self._observed_data[observed_data['id']] = observed_data
         except AttributeError:
-            self._observed_data = {observed_data.id: observed_data}
+            self._observed_data = {observed_data['id']: observed_data}
 
     def _load_opinion(self, opinion_ref: str, opinion_dict: _OPINION_TYPING):
         try:
@@ -380,10 +402,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._opinion = {opinion_ref: opinion_dict}
 
-    def _load_relationship(
-            self, relationship: Relationship_v20 | Relationship_v21):
-        reference = (relationship.target_ref, relationship.relationship_type)
-        source_uuid = self._sanitise_uuid(relationship.source_ref)
+    def _load_relationship(self, relationship: _RELATIONSHIP_TYPING):
+        reference = (
+            relationship['target_ref'], relationship['relationship_type']
+        )
+        source_uuid = self._sanitise_uuid(relationship['source_ref'])
         try:
             self._relationship[source_uuid].add(reference)
         except AttributeError:
@@ -391,34 +414,35 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._relationship[source_uuid].add(reference)
 
     def _load_report(self, report: _REPORT_TYPING):
-        self._check_uuid(report.id)
+        self._check_uuid(report['id'])
         try:
-            self._report[report.id] = report
+            self._report[report['id']] = report
         except AttributeError:
-            self._report = {report.id: report}
+            self._report = {report['id']: report}
 
     def _load_threat_actor(
-            self, threat_actor: ThreatActor_v20 | ThreatActor_v21):
-        self._check_uuid(threat_actor.id)
+            self, threat_actor: ThreatActor_v20 | ThreatActor_v21 | dict):
+        self._check_uuid(threat_actor['id'])
         try:
-            self._threat_actor[threat_actor.id] = threat_actor
+            self._threat_actor[threat_actor['id']] = threat_actor
         except AttributeError:
-            self._threat_actor = {threat_actor.id: threat_actor}
+            self._threat_actor = {threat_actor['id']: threat_actor}
 
-    def _load_tool(self, tool: Tool_v20 | Tool_v21):
-        self._check_uuid(tool.id)
+    def _load_tool(self, tool: Tool_v20 | Tool_v21 | dict):
+        self._check_uuid(tool['id'])
         try:
-            self._tool[tool.id] = tool
+            self._tool[tool['id']] = tool
         except AttributeError:
-            self._tool = {tool.id: tool}
+            self._tool = {tool['id']: tool}
 
     def _load_vulnerability(
-            self, vulnerability: Vulnerability_v20 | Vulnerability_v21):
-        self._check_uuid(vulnerability.id)
+            self,
+            vulnerability: Vulnerability_v20 | Vulnerability_v21 | dict):
+        self._check_uuid(vulnerability['id'])
         try:
-            self._vulnerability[vulnerability.id] = vulnerability
+            self._vulnerability[vulnerability['id']] = vulnerability
         except AttributeError:
-            self._vulnerability = {vulnerability.id: vulnerability}
+            self._vulnerability = {vulnerability['id']: vulnerability}
 
     ############################################################################
     #                    MAIN STIX OBJECTS PARSING METHODS.                    #
@@ -510,11 +534,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _misp_event_from_report(self, report: _REPORT_TYPING) -> MISPEvent:
         misp_event = self._create_misp_event(report)
-        if report.published != report.modified:
+        published = self._stix_date(report['published'])
+        if published != self._stix_date(report['modified']):
             misp_event.published = True
-            misp_event.publish_timestamp = self._timestamp_from_date(
-                report.published
-            )
+            misp_event.publish_timestamp = self._timestamp_from_date(published)
         else:
             misp_event.published = False
         return misp_event
@@ -524,17 +547,17 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._set_misp_event(self._create_generic_event())
             if getattr(self, '_report', None):
                 for report in self._report.values():
-                    self._handle_object_refs(report.object_refs)
+                    self._handle_object_refs(report['object_refs'])
             if getattr(self, '_grouping', None):
                 for grouping in self._grouping.values():
-                    self._handle_object_refs(grouping.object_refs)
+                    self._handle_object_refs(grouping['object_refs'])
             self._handle_unparsed_content()
         else:
             self._set_misp_events()
             if getattr(self, '_report', None):
                 for report in self._report.values():
                     self._set_misp_event(self._misp_event_from_report(report))
-                    self._handle_object_refs(report.object_refs)
+                    self._handle_object_refs(report['object_refs'])
                     self._handle_unparsed_content()
                     self._populate_misp_event()
             if getattr(self, '_grouping', None):
@@ -542,7 +565,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self._set_misp_event(
                         self._misp_event_from_grouping(grouping)
                     )
-                    self._handle_object_refs(grouping.object_refs)
+                    self._handle_object_refs(grouping['object_refs'])
                     self._handle_unparsed_content()
                     self._populate_misp_event()
 
@@ -557,11 +580,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if getattr(self, '_report', None):
             for report in self._report.values():
                 self._set_misp_event(self._misp_event_from_report(report))
-                self._handle_object_refs(report.object_refs)
+                self._handle_object_refs(report['object_refs'])
         elif getattr(self, '_grouping', None):
             for grouping in self._grouping.values():
                 self._set_misp_event(self._misp_event_from_grouping(grouping))
-                self._handle_object_refs(grouping.object_refs)
+                self._handle_object_refs(grouping['object_refs'])
         else:
             self._parse_bundle_with_no_report()
         self._handle_unparsed_content()
@@ -610,28 +633,30 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                       ANALYST DATA PARSING METHODS                       #
     ############################################################################
 
-    @staticmethod
-    def _parse_analyst_note(note: Note) -> dict:
+    @classmethod
+    def _parse_analyst_note(cls, note: _NOTE_TYPING) -> dict:
         note_dict = {
-            'created': note.created, 'modified': note.modified,
-            'note': note.content
+            'created': cls._stix_date(note['created']),
+            'modified': cls._stix_date(note['modified']),
+            'note': note['content']
         }
-        if hasattr(note, 'abstract'):
-            note_dict['comment'] = note.abstract
-        if hasattr(note, 'authors'):
-            note_dict['authors'] = ', '.join(note.authors)
-        if hasattr(note, 'lang'):
-            note_dict['language'] = note.lang
+        if 'abstract' in note:
+            note_dict['comment'] = note['abstract']
+        if 'authors' in note:
+            note_dict['authors'] = ', '.join(note['authors'])
+        if 'lang' in note:
+            note_dict['language'] = note['lang']
         return note_dict
 
-    @staticmethod
-    def _parse_analyst_opinion(opinion: Opinion) -> dict:
+    @classmethod
+    def _parse_analyst_opinion(cls, opinion: _OPINION_TYPING) -> dict:
         opinion_dict = {
-            'comment': getattr(opinion, 'explanation', ''),
-            'created': opinion.created, 'modified': opinion.modified
+            'comment': opinion.get('explanation', ''),
+            'created': cls._stix_date(opinion['created']),
+            'modified': cls._stix_date(opinion['modified'])
         }
-        if hasattr(opinion, 'authors'):
-            opinion_dict['authors'] = ', '.join(opinion.authors)
+        if 'authors' in opinion:
+            opinion_dict['authors'] = ', '.join(opinion['authors'])
         return opinion_dict
 
     ############################################################################
@@ -713,11 +738,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_tags_from_stix_fields(
             self, misp_layer: MISPAttribute | MISPEvent | MISPObject,
             stix_object: _SDO_TYPING) -> Iterator[str]:
-        if hasattr(stix_object, 'confidence'):
-            yield self._parse_confidence_level(stix_object.confidence)
-        if hasattr(stix_object, 'object_marking_refs'):
+        if 'confidence' in stix_object:
+            yield self._parse_confidence_level(stix_object['confidence'])
+        if 'object_marking_refs' in stix_object:
             cluster_ids = []
-            for marking_ref in stix_object.object_marking_refs:
+            for marking_ref in stix_object['object_marking_refs']:
                 try:
                     marking_definition = self._get_stix_object(marking_ref)
                     if marking_ref in self._clusters:
@@ -825,36 +850,36 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             collection_uuid=self._create_v5_uuid(name),
             meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
-            uuid=marking_definition.id.split('--')[1],
+            uuid=marking_definition['id'].split('--')[1],
             value=extension.get(
                 'name',
                 extension.get(
-                    'identifier', marking_definition.id.split('--')[1]
+                    'identifier', marking_definition['id'].split('--')[1]
                 )
             ),
             source=(
-                self._handle_creator(marking_definition.created_by_ref)
-                if hasattr(marking_definition, 'created_by_ref') else
+                self._handle_creator(marking_definition['created_by_ref'])
+                if 'created_by_ref' in marking_definition else
                 extension.get('responsible_entity_custodian')
             )
         )
 
     def _parse_marking_definition(
             self, marking_definition: _MARKING_DEFINITION_TYPING) -> Union[dict, str]:
-        if hasattr(marking_definition, 'definition_type'):
-            definition_type = marking_definition.definition_type
-            definition = marking_definition.definition[definition_type]
+        if 'definition_type' in marking_definition:
+            definition_type = marking_definition['definition_type']
+            definition = marking_definition['definition'][definition_type]
             if definition.startswith(f'{definition_type}:'):
                 return definition
             return f"{definition_type}:{definition}"
-        if hasattr(marking_definition, 'name'):
+        if 'name' in marking_definition:
             # should be TLP 2.0 definition
-            return marking_definition.name.lower()
-        if hasattr(marking_definition, 'extensions'):
+            return marking_definition['name'].lower()
+        if 'extensions' in marking_definition:
             clusters = []
             tags = []
-            version = getattr(marking_definition, 'spec_version', '2.0')
-            for identifier in marking_definition.extensions.keys():
+            version = marking_definition.get('spec_version', '2.0')
+            for identifier in marking_definition['extensions'].keys():
                 feature = self._mapping.marking_extension_mapping(identifier)
                 if feature is None:
                     self._unknown_marking_definition_extension_error(identifier)
@@ -866,7 +891,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     )
                 )
             if clusters:
-                self._clusters[marking_definition.id] = {
+                self._clusters[marking_definition['id']] = {
                     'used': {}, 'cluster': clusters
                 }
                 # A marking that yielded clusters was loaded successfully, even
@@ -875,7 +900,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 return tags
             if tags:
                 return tags
-        raise MarkingDefinitionLoadingError(marking_definition.id)
+        raise MarkingDefinitionLoadingError(marking_definition['id'])
 
     ############################################################################
     #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
@@ -1028,19 +1053,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_sighting(self, sighting: _SIGHTING_TYPING) -> MISPSighting:
         misp_sighting = MISPSighting()
         sighting_args = {
-            'date_sighting': self._timestamp_from_date(sighting.modified),
+            'date_sighting': self._timestamp_from_stix_date(
+                sighting['modified']
+            ),
             'type': '0'
         }
-        if hasattr(sighting, 'description'):
-            sighting_args['source'] = sighting.description
-        if hasattr(sighting, 'where_sighted_refs'):
-            for reference in sighting.where_sighted_refs:
+        if 'description' in sighting:
+            sighting_args['source'] = sighting['description']
+        if 'where_sighted_refs' in sighting:
+            for reference in sighting['where_sighted_refs']:
                 identity = self._identity.get(reference)
                 if identity is None:
                     continue
                 sighting_args['Organisation'] = {
-                    'uuid': self._sanitise_uuid(identity.id),
-                    'name': identity.name
+                    'uuid': self._sanitise_uuid(identity['id']),
+                    'name': identity['name']
                 }
                 misp_sighting.from_dict(**sighting_args)
                 return misp_sighting
@@ -1086,16 +1113,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _add_misp_attribute(
             self, attribute: dict, stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = self.misp_event.add_attribute(**attribute)
-        if stix_object.id in self._analyst_data:
-            for reference in self._analyst_data[stix_object.id]:
+        if stix_object['id'] in self._analyst_data:
+            for reference in self._analyst_data[stix_object['id']]:
                 self._add_analyst_data(misp_attribute, reference)
         self._add_markings_to_misp_attribute(misp_attribute, stix_object)
         return misp_attribute
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
-        if stix_object.id in self._analyst_data:
-            for reference in self._analyst_data[stix_object.id]:
+        if stix_object['id'] in self._analyst_data:
+            for reference in self._analyst_data[stix_object['id']]:
                 self._add_analyst_data(misp_object, reference)
         self._add_markings_to_misp_object(misp_object, stix_object)
         return self.misp_event.add_object(misp_object)
@@ -1120,8 +1147,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _create_misp_event(
             self, stix_object: _GROUPING_REPORT_TYPING) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
-        self._sanitise_object_uuid(misp_event, stix_object.id)
-        timestamp = self._timestamp_from_date(stix_object.modified)
+        self._sanitise_object_uuid(misp_event, stix_object['id'])
+        timestamp = self._timestamp_from_stix_date(stix_object['modified'])
         event_args = {
             'info': self._generate_info_field(stix_object),
             'distribution': self.distribution, 'timestamp': timestamp
@@ -1129,27 +1156,32 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if self.distribution == 4 and self.sharing_group_id is not None:
             event_args['sharing_group_id'] = self.sharing_group_id
         misp_event.from_dict(**event_args)
-        if hasattr(stix_object, 'description'):
+        if 'description' in stix_object:
             event_report = MISPEventReport()
             event_report.from_dict(
-                content=stix_object.description, timestamp=timestamp,
-                name=f'STIX {self.stix_version} {stix_object.type} description',
-                uuid=self._create_v5_uuid(f'description - {stix_object.id}')
+                content=stix_object['description'], timestamp=timestamp,
+                name=(
+                    f'STIX {self.stix_version} '
+                    f'{stix_object["type"]} description'
+                ),
+                uuid=self._create_v5_uuid(
+                    f'description - {stix_object["id"]}'
+                )
             )
             misp_event.add_event_report(**event_report)
-        if stix_object.id in self._analyst_data:
-            for reference in self._analyst_data[stix_object.id]:
+        if stix_object['id'] in self._analyst_data:
+            for reference in self._analyst_data[stix_object['id']]:
                 self._add_analyst_data(misp_event, reference)
         if self.producer is not None:
             misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
-        elif hasattr(stix_object, 'created_by_ref'):
-            producer = self._handle_creator(stix_object.created_by_ref)
+        elif 'created_by_ref' in stix_object:
+            producer = self._handle_creator(stix_object['created_by_ref'])
             misp_event.add_tag(f'misp-galaxy:producer="{producer}"')
         self._event_tags = set()
         self._add_markings_to_misp_event(misp_event, stix_object)
-        if hasattr(stix_object, 'labels'):
+        if 'labels' in stix_object:
             labels = (
-                label for label in stix_object.labels
+                label for label in stix_object['labels']
                 if label.lower() != 'threat-report'
             )
             for label in labels:
@@ -1171,9 +1203,25 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _extract_uuid(object_id: str) -> str:
         return object_id.split('--')[-1]
 
+    @staticmethod
+    def _stix_date(date: datetime | str) -> datetime:
+        """Read a date field whatever form the object carrying it takes.
+
+        Typed STIX objects expose their dates as `datetime` values, while the
+        dict-form ones keep the string the document carried. Both reach the
+        same MISP-side code, which only knows what to do with a `datetime`.
+        """
+        if isinstance(date, str):
+            return parse_into_datetime(date)
+        return date
+
+    @classmethod
+    def _timestamp_from_stix_date(cls, date: datetime | str) -> int:
+        return cls._timestamp_from_date(cls._stix_date(date))
+
     def _generate_info_field(self, stix_object: _GROUPING_REPORT_TYPING) -> str:
-        if hasattr(stix_object, 'name'):
-            title = stix_object.name
+        if 'name' in stix_object:
+            title = stix_object['name']
             if self.event_title is not None:
                 title = f'{self.event_title} {title}'
             return title
@@ -1181,7 +1229,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_creator(self, reference: str) -> str:
         if reference in getattr(self, '_identity', {}):
-            return self._identity[reference].name
+            return self._identity[reference]['name']
         return self._mapping.identity_references(reference) or 'misp-stix'
 
     def _is_tlp_marking(self, marking_ref: str) -> bool:
@@ -1190,7 +1238,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._load_marking_definition(tlp_2_marking)
             return True
         for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):
-            if marking_ref == marking.id:
+            if marking_ref == marking['id']:
                 self._load_marking_definition(marking)
                 return True
         return False
@@ -1210,9 +1258,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
-
-    def _critical_error(self, exception: Exception):
-        self._add_error(f'The following exception was raised: {exception}')
 
     def _object_ref_loading_error(self, object_ref: str):
         self._add_error(f'Error loading the STIX object with id {object_ref}')
