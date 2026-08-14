@@ -6,7 +6,9 @@ from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
 from pymisp import MISPEventReport
 from stix2.v21 import Note
-from typing import Any, Iterator, TYPE_CHECKING
+from typing import Any, Iterator, TYPE_CHECKING, Union
+
+_NOTE_TYPING = Union[Note, dict]
 
 if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
@@ -39,37 +41,41 @@ class InternalSTIX2NoteConverter(InternalSTIX2Converter):
 
     def parse(self, note_ref: str):
         note = self.main_parser._get_stix_object(note_ref)
-        labels = getattr(note, 'labels', [])
+        # A Note in a STIX 2.0 Bundle is a dict rather than a typed object:
+        # reading its labels with attribute access would silently yield none
+        # and drop it here, without an error naming what was lost.
+        labels = note.get('labels', [])
         if 'misp:data-layer="Event Report"' in labels:
             self._parse_event_report(note)
         elif 'misp:name="annotation"' in labels:
             self._parse_annotation_object(note)
 
-    def _parse_annotation_object(self, note: Note):
+    def _parse_annotation_object(self, note: _NOTE_TYPING):
         misp_object = self._create_misp_object('annotation', note)
-        self.main_parser._sanitise_object_uuid(misp_object, note.id)
+        self.main_parser._sanitise_object_uuid(misp_object, note['id'])
         misp_object.from_dict(**self._parse_timeline(note))
         for field, mapping in self._mapping.annotation_object_mapping().items():
-            if hasattr(note, field):
+            if field in note:
                 attributes = self._populate_object_attributes_with_data(
-                    mapping, getattr(note, field), note.id
+                    mapping, note[field], note['id']
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
-        if hasattr(note, 'object_refs'):
-            for object_ref in note.object_refs:
+        if 'object_refs' in note:
+            for object_ref in note['object_refs']:
                 misp_object.add_reference(
                     self.main_parser._sanitise_uuid(object_ref), 'annotates'
                 )
         self.main_parser._add_misp_object(misp_object, note)
 
-    def _parse_event_report(self, note: Note):
+    def _parse_event_report(self, note: _NOTE_TYPING):
         event_report = MISPEventReport()
         event_report.from_dict(
-            content=note.content, name=note.abstract, timestamp=note.modified,
-            uuid=self.main_parser._sanitise_uuid(note.id)
+            content=note['content'], name=note['abstract'],
+            timestamp=self.main_parser._stix_date(note['modified']),
+            uuid=self.main_parser._sanitise_uuid(note['id'])
         )
-        self.main_parser._add_event_report(event_report, note.id)
+        self.main_parser._add_event_report(event_report, note['id'])
 
     def _populate_object_attributes_with_data(self, mapping: dict, values: Any,
                                               object_id: str) -> Iterator[dict]:
