@@ -10483,6 +10483,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_LOCATION_GALAXIES)
 
     @classmethod
+    def get_bundle_with_malformed_galaxy_labels(cls, labels):
+        malware = deepcopy(_MALWARE_GALAXY)
+        malware['labels'] = labels
+        return cls.__assemble_bundle(malware)
+
+    @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_bundle(_MALWARE_GALAXY)
 

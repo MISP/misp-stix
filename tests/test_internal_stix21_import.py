@@ -2318,6 +2318,46 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             cluster = galaxy.clusters[0]
             self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
 
+    def test_stix21_bundle_with_malformed_galaxy_labels(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
+            ['misp:galaxy-type="mitre-malware"']
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, malware = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        # The galaxy is the one the type label names, name label or not.
+        self._check_malware_galaxy(event.galaxies[0], malware)
+        self._check_galaxy_without_name_label(malware, self.parser.warnings)
+
+    def test_stix21_bundle_with_malformed_galaxy_labels_as_tags(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
+            ['misp:galaxy-type="mitre-malware"']
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        malware = bundle.objects[-1]
+        self.assertIn(
+            f'misp-galaxy:mitre-malware="{malware.name}"',
+            {tag.name for tag in event.tags}
+        )
+
+    def test_stix21_bundle_with_undefined_galaxy_labels(self):
+        bundles = TestInternalSTIX21Bundles
+        for labels in (['misp:galaxy-name="Malware"'],
+                       ['misp:galaxy-type=""']):
+            with self.subTest(labels=labels):
+                self.setUp()
+                bundle = bundles.get_bundle_with_malformed_galaxy_labels(labels)
+                self.parser.load_stix_bundle(bundle)
+                self.parser.parse_stix_bundle()
+                self._check_galaxy_with_undefined_labels(
+                    self.parser.misp_event, bundle.objects[-1],
+                    self.parser.errors
+                )
+
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
         self.parser.load_stix_bundle(bundle)

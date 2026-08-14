@@ -93,6 +93,14 @@ class TestSTIX2Bundles:
 class TestSTIX2Import(TestSTIX):
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
+    @staticmethod
+    def _reported_messages(reports: dict) -> list:
+        """Flatten the errors or warnings of every parsed identifier."""
+        return [
+            message for identifier_reports in reports.values()
+            for message in identifier_reports
+        ]
+
     def _check_object_attribute_uuid(self, attr, object_id, value=None):
         self.assertEqual(
             attr.uuid,
@@ -2937,6 +2945,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             )
         self.assertEqual(cluster.description, stix_object.description)
         return cluster.meta
+
+    def _check_galaxy_with_undefined_labels(self, event, stix_object, errors):
+        """A galaxy object no label can dispatch is dropped, never silently."""
+        self.assertFalse(event.galaxies)
+        self.assertTrue(
+            any(
+                stix_object.id in error
+                for error in self._reported_messages(errors)
+            ),
+            f'{stix_object.id} was dropped without any error reported'
+        )
+
+    def _check_galaxy_without_name_label(self, stix_object, warnings):
+        """The galaxy type label alone is enough to convert the object."""
+        label_warnings = [
+            warning for warning in self._reported_messages(warnings)
+            if 'Missing MISP galaxy name label' in warning
+        ]
+        self.assertEqual(len(label_warnings), 1)
+        self.assertIn(stix_object.id, label_warnings[0])
 
     def _check_generic_malware_galaxy(self, galaxy, malware):
         meta = self._check_galaxy_fields_with_external_id(
