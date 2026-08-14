@@ -121,6 +121,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._clusters: dict = {}
         self._converter_cache: dict = {}
         self._galaxies: dict = {}
+        self._loaded_object_ids: set = set()
 
         self._attack_pattern: dict
         self._campaign: dict
@@ -170,6 +171,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     f'Unable to load STIX object type: {object_type}'
                 )
             return
+        self._check_duplicate_id(stix_object['id'])
         if hasattr(stix_object, 'created_by_ref'):
             self._creators.add(stix_object.created_by_ref)
         try:
@@ -181,6 +183,24 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
         except AttributeError as exception:
             self._critical_error(exception)
+
+    def _check_duplicate_id(self, object_id: str):
+        """Report the ids a bundle gives to more than one loaded object.
+
+        Most loading methods store the object they get by its id, so the last
+        occurrence of a duplicated id wins and the ones before it are
+        shadowed. That behaviour is kept - the converted content is a
+        rendering of the last version sent - but it is no longer silent. The
+        few methods keying on a referenced object instead (relationship,
+        sighting, opinion) keep every occurrence, hence a warning naming the
+        id and what it puts at stake rather than the objects lost.
+        """
+        if object_id in self._loaded_object_ids:
+            self._add_warning(
+                f'Duplicate STIX object id: {object_id} - the converted '
+                'content may be an altered rendering of the bundle'
+            )
+        self._loaded_object_ids.add(object_id)
 
     def _parse_stix_bundle(self):
         n_reports = sum(
@@ -205,6 +225,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._clusters = {}
         self._converter_cache.clear()
         self._galaxies = {}
+        self._loaded_object_ids = set()
         for feature in _SDOs:
             if hasattr(self, feature):
                 delattr(self, feature)
