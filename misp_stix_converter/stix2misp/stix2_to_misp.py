@@ -458,6 +458,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 'Unknown pattern type in Indicator object with id '
                 f'{object_ref}: {pattern_type}'
             )
+        except Exception as exception:
+            # Converters make assumptions about the shape of what they get -
+            # labels above all - that content is free not to hold. Whatever
+            # they raise, the object is dropped: say which one and why.
+            self._add_error(
+                f'Error while parsing the STIX object with id {object_ref}: '
+                f'{self._parse_traceback(exception)}'
+            )
 
     def _handle_unparsed_content(self):
         if 'observed-data' in self._converter_cache:
