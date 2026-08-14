@@ -155,14 +155,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             misp_object = misp_object['Object']
         errors = defaultdict(list)
         if isinstance(misp_object, list):
-            for obj in validate_objects(misp_object, errors):
+            objects = [
+                self._sanitise_object_template_name(obj) for obj in misp_object
+            ]
+            for obj in validate_objects(objects, errors):
                 self._bind_shared_args(
                     self._handle_identity_from_feed(obj.get('Event', event))
                 )
                 self._resolve_object(obj)
         else:
             self._bind_shared_args(self._handle_identity_from_feed(event))
-            self._resolve_object(validate_object(misp_object, errors))
+            self._resolve_object(
+                validate_object(
+                    self._sanitise_object_template_name(misp_object), errors
+                )
+            )
         if errors:
             self._handle_validation_errors(errors)
         if self._objects_to_parse:
@@ -184,7 +191,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._bind_shared_args(
                 self._handle_identity_from_feed(misp_object.get('Event', {}))
             )
-            self._resolve_object(validate_object(misp_object, errors))
+            self._resolve_object(
+                validate_object(
+                    self._sanitise_object_template_name(misp_object), errors
+                )
+            )
         if errors:
             self._handle_validation_errors(errors)
         if self._objects_to_parse:
@@ -251,7 +262,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_misp_event(self, misp_event: MISPEvent | dict):
         self._misp_event = validate_event(
-            misp_event, errors := defaultdict(list)
+            self._sanitise_event_object_names(misp_event),
+            errors := defaultdict(list)
         )
         if errors:
             self._handle_validation_errors(errors)

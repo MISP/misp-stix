@@ -1995,6 +1995,24 @@ _CUSTOM_OBJECTS = [
         "x_misp_name": "report"
     }
 ]
+_CUSTOM_OBJECT_WITH_INVALID_NAME = {
+    "type": "x-misp-object",
+    "id": "x-misp-object--0e9f0ad0-2f16-4bdb-a1a0-2f1a4bfd0b0e",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+    "x_misp_attributes": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "uuid": "8acaad62-227a-4988-96e7-4586847421a3"
+        }
+    ],
+    "x_misp_meta_category": "financial",
+    "x_misp_name": "../../../../../../../../planted"
+}
 _CUSTOM_OBJECT_WITH_INJECTED_FIELDS = {
     "type": "x-misp-object",
     "id": "x-misp-object--695e7924-2518-4054-9cea-f82853d37410",
@@ -2021,6 +2039,45 @@ _CUSTOM_OBJECT_WITH_INJECTED_FIELDS = {
     "x_misp_meta_category": "financial",
     "x_misp_name": "bank-account"
 }
+_DICT_FORM_OBJECTS = [
+    # STIX 2.0 has neither a Note nor an Opinion object type: parsed with
+    # `allow_custom`, both reach the loaders as plain dicts rather than typed
+    # objects.
+    {
+        "type": "note",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "abstract": "Analyst note in a STIX 2.0 Bundle",
+        "content": "Domain used by the threat actor to host its payloads",
+        "authors": ["john.doe@foo.bar"],
+        "lang": "en",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:context-layer="Analyst Note"']
+    },
+    {
+        "type": "opinion",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the domain",
+        "authors": ["opinion@foo.bar"],
+        "opinion": "strongly-agree",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "x_misp_opinion": 90
+    },
+    {
+        "type": "note",
+        "id": "note--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "abstract": "Summary of the case",
+        "content": "A victim reported a malicious domain",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:data-layer="Event Report"']
+    }
+]
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -8269,6 +8326,34 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(indicator, observed_data)
 
     @classmethod
+    def get_bundle_with_dict_form_objects(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        note, opinion, event_report = deepcopy(_DICT_FORM_OBJECTS)
+        report.update(
+            cls._populate_references(indicator['id'], event_report['id'])
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, indicator, note, opinion,
+            event_report
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_duplicate_object_ids(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        shadowed = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        shadowed['pattern'] = "[domain-name:value = 'shadowed.example.com']"
+        report.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, shadowed, indicator
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_bundle_with_event_report(cls):
         return cls.__assemble_bundle(*_EVENT_REPORT)
 
@@ -8338,6 +8423,12 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_intrusion_set_galaxy(cls):
         return cls.__assemble_bundle(_INTRUSION_SET_GALAXY)
+
+    @classmethod
+    def get_bundle_with_malformed_galaxy_labels(cls, labels):
+        malware = deepcopy(_MALWARE_GALAXY)
+        malware['labels'] = labels
+        return cls.__assemble_bundle(malware)
 
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
@@ -8498,6 +8589,13 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_custom_object_with_injected_fields(cls):
         return cls.__assemble_bundle(_CUSTOM_OBJECT_WITH_INJECTED_FIELDS)
+
+    @classmethod
+    def get_bundle_with_custom_object_with_invalid_name(cls, name=None):
+        custom_object = _CUSTOM_OBJECT_WITH_INVALID_NAME
+        if name is not None:
+            custom_object = {**custom_object, 'x_misp_name': name}
+        return cls.__assemble_bundle(custom_object)
 
     @classmethod
     def get_bundle_with_custom_objects(cls):

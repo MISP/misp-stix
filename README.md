@@ -124,7 +124,7 @@ Convert MISP <-> STIX
 
 options:
   -h, --help       show this help message and exit
-  --debug          Show errors and warnings
+  --debug          Show the full list of errors - errors and warnings are reported either way, this only controls the errors level of detail
 
 Main feature:
   {export,import}
@@ -314,6 +314,8 @@ stix21_response = misp_event_collection_to_stix2_1(
 )
 ```
 Again, all the responses should have a `success` field equal to 1 and the resulting STIX1 Package and STIX 2.0 & 2.1 Bundles are available in the specific output file names.
+
+Note that `success` = 1 only tells you the conversion wrote its output: a conversion that dropped part of the content says so as well. Any response - from the conversion functions in both directions - may therefore carry an `errors` field, and a `warnings` one, next to `success`, both keyed by the event or bundle identifier the messages belong to. The `debug` argument controls how detailed the `errors` field is, never whether failures are reported: by default each distinct message appears once with the number of times it happened, capped at ten messages per identifier, and `debug=True` returns the full list instead.
 
 ### Samples and examples
 

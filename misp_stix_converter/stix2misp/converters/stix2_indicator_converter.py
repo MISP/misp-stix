@@ -1715,9 +1715,7 @@ class InternalSTIX2IndicatorConverter(
             return
         indicator = self.main_parser._get_stix_object(indicator_ref)
         try:
-            feature = self._handle_mapping_from_labels(
-                indicator.labels, indicator.id
-            )
+            feature = self._handle_mapping_from_labels(indicator)
         except UndefinedSTIXObjectError as error:
             raise UndefinedIndicatorError(error)
         try:

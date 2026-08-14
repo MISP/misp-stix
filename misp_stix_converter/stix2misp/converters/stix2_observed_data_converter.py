@@ -2699,9 +2699,7 @@ class InternalSTIX2ObservedDataConverter(
     def parse(self, observed_data_ref: str):
         observed_data = self._get_observed_data(observed_data_ref)
         try:
-            feature = self._handle_mapping_from_labels(
-                observed_data.labels, observed_data.id
-            )
+            feature = self._handle_mapping_from_labels(observed_data)
         except UndefinedSTIXObjectError as error:
             raise UndefinedObservableError(error)
         version = getattr(observed_data, 'spec_version', '2.0')

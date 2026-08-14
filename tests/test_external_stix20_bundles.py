@@ -815,6 +815,32 @@ _SECTOR_GALAXY = [
         ]
     }
 ]
+_DICT_FORM_OBJECTS = [
+    # STIX 2.0 has neither a Note nor an Opinion object type: parsed with
+    # `allow_custom`, both reach the loaders as plain dicts rather than typed
+    # objects.
+    {
+        "type": "note",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "abstract": "Analyst note in a STIX 2.0 Bundle",
+        "content": "Hop point observed in the same campaign",
+        "authors": ["john.doe@foo.bar"],
+        "lang": "en",
+        "object_refs": ["indicator--031778a4-057f-48e6-9db9-c8d72b81ccd5"]
+    },
+    {
+        "type": "opinion",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the range",
+        "authors": ["opinion@foo.bar"],
+        "opinion": "strongly-agree",
+        "object_refs": ["indicator--031778a4-057f-48e6-9db9-c8d72b81ccd5"]
+    }
+]
 _IP_ADDRESS_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -2111,6 +2137,25 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     ############################################################################
     #                              EVENTS SAMPLES                              #
     ############################################################################
+
+    @classmethod
+    def get_bundle_with_dict_form_objects(cls):
+        return cls.__assemble_bundle(
+            deepcopy(cls.__indicator), *deepcopy(_DICT_FORM_OBJECTS)
+        )
+
+    @classmethod
+    def get_bundle_with_duplicate_object_ids(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        shadowed = deepcopy(cls.__indicator)
+        indicator = deepcopy(cls.__indicator)
+        shadowed['pattern'] = "[ipv4-addr:value = '198.51.100.0/24']"
+        report.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, shadowed, indicator
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
     def get_bundle_with_report_description(cls):

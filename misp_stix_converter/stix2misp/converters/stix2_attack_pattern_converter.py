@@ -106,9 +106,7 @@ class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
 
     def parse(self, attack_pattern_ref: str):
         attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
-        feature = self._handle_mapping_from_labels(
-            attack_pattern.labels, attack_pattern.id
-        )
+        feature = self._handle_mapping_from_labels(attack_pattern)
         try:
             parser = getattr(self, feature)
         except AttributeError:
