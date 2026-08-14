@@ -70,12 +70,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         from misp_stix_converter import stix_2_to_misp
         from pathlib import Path
         from tempfile import TemporaryDirectory
-        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
-        empty_bundle = (
-            '{"type": "bundle", '
-            '"id": "bundle--5b8e0f9a-0000-4000-8000-0000000000e1", '
-            '"spec_version": "2.1", "objects": []}'
-        )
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_campaign_galaxy()
         with TemporaryDirectory() as tmp_dir:
             filename = Path(tmp_dir) / 'external.stix21.json'
             with open(filename, 'wt', encoding='utf-8') as f:
@@ -88,14 +83,13 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
             self.assertEqual(results['success'], 1)
             self.assertNotIn('warnings', results)
-            # Forcing the Internal parser on genuinely external SDOs may crash
-            # converters that dispatch on MISP labels, so the mismatch warning
-            # is checked with a bundle both parsers survive.
-            filename = Path(tmp_dir) / 'empty.stix21.json'
-            with open(filename, 'wt', encoding='utf-8') as f:
-                f.write(empty_bundle)
+            # Forcing the Internal parser on genuinely external SDOs used to
+            # crash the converters dispatching on MISP labels: the objects are
+            # dropped one by one, each of them reported, and no exception
+            # escapes the entry function.
             results = stix_2_to_misp(
-                filename, classification='internal', output_dir=Path(tmp_dir)
+                filename, classification='internal', debug=True,
+                output_dir=Path(tmp_dir)
             )
             self.assertEqual(results['success'], 1)
             self.assertTrue(
@@ -105,6 +99,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
                     for warning in warnings
                 )
             )
+            # The Campaign converter has no local error handling and the
+            # Indicator has no MISP label to dispatch on: both used to escape.
+            reported = '\n'.join(self._reported_messages(results['errors']))
+            _, _, campaign, indicator, attribute_campaign, _ = bundle.objects
+            for stix_object in (campaign, indicator, attribute_campaign):
+                self.assertIn(stix_object.id, reported)
 
     def test_stix21_bundle_with_acs_marking(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_acs_marking()
