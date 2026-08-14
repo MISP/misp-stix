@@ -1969,6 +1969,22 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.value, f'{domain.value}|{address.value}')
         self.assertEqual(attribute.tags[0].name, free_tag)
 
+    def test_stix21_bundle_with_duplicate_object_ids(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, shadowed, indicator = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        # Last occurrence wins: the first Indicator sharing the id is gone.
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.value, 'circl.lu')
+        self._check_duplicate_object_id_warning(
+            shadowed.id, self.parser.warnings
+        )
+
     def test_stix21_bundle_with_event_report(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_event_report()
         self.parser.load_stix_bundle(bundle)

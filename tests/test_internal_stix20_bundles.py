@@ -8287,6 +8287,19 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(indicator, observed_data)
 
     @classmethod
+    def get_bundle_with_duplicate_object_ids(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        shadowed = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        shadowed['pattern'] = "[domain-name:value = 'shadowed.example.com']"
+        report.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, shadowed, indicator
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_bundle_with_event_report(cls):
         return cls.__assemble_bundle(*_EVENT_REPORT)
 

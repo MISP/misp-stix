@@ -101,6 +101,15 @@ class TestSTIX2Import(TestSTIX):
             for message in identifier_reports
         ]
 
+    def _check_duplicate_object_id_warning(self, object_id, warnings):
+        """The last occurrence wins, but the shadowing is never silent."""
+        duplicate_warnings = [
+            warning for warning in self._reported_messages(warnings)
+            if 'Duplicate STIX object id' in warning
+        ]
+        self.assertEqual(len(duplicate_warnings), 1)
+        self.assertIn(object_id, duplicate_warnings[0])
+
     def _check_object_attribute_uuid(self, attr, object_id, value=None):
         self.assertEqual(
             attr.uuid,

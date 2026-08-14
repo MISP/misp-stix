@@ -177,6 +177,38 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             f'misp-galaxy:producer="{self.parser.producer}"'
         )
 
+    def test_stix21_bundle_with_duplicate_object_ids(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, shadowed, indicator = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        # Last occurrence wins: the first Indicator sharing the id is gone.
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.value, '223.166.0.0/15')
+        self._check_duplicate_object_id_warning(
+            shadowed.id, self.parser.warnings
+        )
+
+    def test_stix21_duplicate_object_ids_reported_in_result(self):
+        from misp_stix_converter import stix_2_to_misp
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'duplicate_ids.stix21.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            results = stix_2_to_misp(filename, output_dir=Path(tmp_dir))
+        self.assertEqual(results['success'], 1)
+        shadowed = bundle.objects[2]
+        self._check_duplicate_object_id_warning(
+            shadowed.id, results['warnings']
+        )
+
     def test_stix21_bundle_with_grouping_description(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_grouping_description()
         self.parser.load_stix_bundle(bundle)
