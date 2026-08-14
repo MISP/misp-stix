@@ -4,6 +4,8 @@
 import json
 import traceback
 from ..abstract import AbstractParser
+from ..tools.misp_object_templates import (
+    _rejected_name_note, _sanitise_template_name, _UNKNOWN_TEMPLATE_NAME)
 from .stix1_mapping import MISPtoSTIX1Mapping
 from .stix20_mapping import MISPtoSTIX20Mapping
 from .stix21_mapping import MISPtoSTIX21Mapping
@@ -11,9 +13,9 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from io import BufferedIOBase, TextIOBase
 from pathlib import Path
-from pymisp import MISPAttribute, MISPObject
+from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.hashes import Hash
-from typing import IO, Optional, Union
+from typing import Any, IO, Optional, Union
 
 
 class MISPtoSTIXParser(AbstractParser):
@@ -227,6 +229,64 @@ class MISPtoSTIXParser(AbstractParser):
             for cluster in galaxy["GalaxyCluster"]
         )
 
+    def _sanitise_event_object_names(
+            self, misp_event: Union[MISPEvent, dict]) -> Union[MISPEvent, dict]:
+        """Keep the object names of an event out of template resolution.
+
+        :param misp_event: MISP event, only handled in its dictionary form
+        :return: the event, with any unusable object name replaced
+        """
+        if not isinstance(misp_event, dict):
+            return misp_event
+        event = misp_event.get('Event', misp_event)
+        objects = event.get('Object') if isinstance(event, dict) else None
+        if not isinstance(objects, list):
+            return misp_event
+        # An event with no uuid of its own is only identified once pymisp has
+        # generated one: file under the default rather than under whichever
+        # event came before this one in a collection.
+        identifier = event.get('uuid') or 'misp event'
+        sanitised = [
+            self._sanitise_object_template_name(misp_object, identifier)
+            for misp_object in objects
+        ]
+        # Nothing to replace: every object came back as the very same one.
+        if all(new is old for new, old in zip(sanitised, objects)):
+            return misp_event
+        event = {**event, 'Object': sanitised}
+        return (
+            {**misp_event, 'Event': event} if 'Event' in misp_event else event
+        )
+
+    def _sanitise_object_template_name(
+            self, misp_object: Union[MISPObject, dict],
+            identifier: Optional[str] = None) -> Union[MISPObject, dict]:
+        """Keep an object name out of pymisp's template resolution.
+
+        A name that is not a plain template name is joined into a filesystem
+        path when pymisp looks the template up, so a name stored in an event -
+        which may have been written there by imported content - is replaced
+        before the object reaches that lookup.
+
+        :param misp_object: MISP object, only handled in its dictionary form
+        :param identifier: identifier the warning is filed under
+        :return: the object, with an unusable name replaced, kept as data
+        """
+        if not isinstance(misp_object, dict) or 'name' not in misp_object:
+            return misp_object
+        name, rejected_name = _sanitise_template_name(misp_object['name'])
+        if rejected_name is None:
+            return misp_object
+        self._invalid_object_template_name_warning(rejected_name, identifier)
+        # Nothing is silently dropped: the name the object cannot carry is
+        # kept as data, as it is on the import side.
+        note = _rejected_name_note(rejected_name)
+        comment = misp_object.get('comment')
+        return {
+            **misp_object, 'name': name,
+            'comment': f'{comment}\n{note}' if comment else note
+        }
+
     @staticmethod
     def _select_single_feature(
             attributes: dict, feature: str) -> Union[str, tuple]:
@@ -301,6 +361,13 @@ class MISPtoSTIXParser(AbstractParser):
         )
         if error not in self.errors[self.identifier]:
             self._add_error(error)
+
+    def _invalid_object_template_name_warning(
+            self, name: Any, identifier: Optional[str] = None):
+        self._add_warning(
+            f'Invalid MISP object template name {name!r}: the object is '
+            f'converted as a {_UNKNOWN_TEMPLATE_NAME} one.', identifier
+        )
 
     def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
         self._add_warning(

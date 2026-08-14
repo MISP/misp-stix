@@ -193,7 +193,7 @@ class InternalSTIX2LocationConverter(
 
     def parse(self, location_ref: str):
         location = self.main_parser._get_stix_object(location_ref)
-        feature = self._handle_mapping_from_labels(location.labels, location.id)
+        feature = self._handle_mapping_from_labels(location)
         try:
             parser = getattr(self, feature)
         except AttributeError:

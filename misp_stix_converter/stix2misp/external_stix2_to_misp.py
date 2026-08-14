@@ -13,7 +13,9 @@ from .converters import (
     ExternalSTIX2ToolConverter, ExternalSTIX2VulnerabilityConverter,
     STIX2ObservableObjectConverter)
 from .importparser import ExternalSTIXtoMISPParser
-from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
+from .stix2_to_misp import (
+    STIX2toMISPParser, _BUNDLE_TYPING, _NOTE_TYPING, _OBSERVABLE_TYPING,
+    _OPINION_TYPING)
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.observables import (
@@ -21,7 +23,6 @@ from stix2.v20.observables import (
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.observables import (
     _Extension as Extension_v21, _STIXBase21 as STIXBase_v21)
-from stix2.v21.sdo import Note, Opinion
 from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Iterator, Optional, Union
 
@@ -31,7 +32,7 @@ _OBSERVABLE_FIELDS_TO_SKIP = (
     'spec_version', 'type'
 )
 _SDO_STORAGE_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
-_SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
+_SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21, dict]
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
@@ -106,9 +107,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         for stix_object in stix_objects:
             if stix_object['type'] in ('grouping', 'report'):
                 self._load_stix_object(stix_object)
-                object_refs.update(stix_object.object_refs)
-                if hasattr(stix_object, 'object_marking_refs'):
-                    object_refs.update(stix_object.object_marking_refs)
+                object_refs.update(stix_object['object_refs'])
+                if 'object_marking_refs' in stix_object:
+                    object_refs.update(stix_object['object_marking_refs'])
                 continue
             partitioned.append(stix_object)
             if stix_object['type'] not in ('relationship', 'sighting'):
@@ -127,35 +128,35 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
 
-    def _load_analyst_note(self, note: Note):
+    def _load_analyst_note(self, note: _NOTE_TYPING):
         note_dict = self._parse_analyst_note(note)
-        if len(note.object_refs) == 1:
-            note_dict['uuid'] = self._sanitise_uuid(note.id)
-        for object_ref in note.object_refs:
-            self._analyst_data[object_ref].append(note.id)
-        super()._load_note(note.id, note_dict)
+        if len(note['object_refs']) == 1:
+            note_dict['uuid'] = self._sanitise_uuid(note['id'])
+        for object_ref in note['object_refs']:
+            self._analyst_data[object_ref].append(note['id'])
+        super()._load_note(note['id'], note_dict)
 
-    def _load_analyst_opinion(self, opinion: Opinion):
+    def _load_analyst_opinion(self, opinion: _OPINION_TYPING):
         opinion_dict = {
-            'opinion': self._mapping.opinion_mapping(opinion.opinion),
+            'opinion': self._mapping.opinion_mapping(opinion['opinion']),
             **self._parse_analyst_opinion(opinion)
         }
-        if len(opinion.object_refs) == 1:
-            opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
-        for object_ref in opinion.object_refs:
-            self._analyst_data[object_ref].append(opinion.id)
-        super()._load_opinion(opinion.id, opinion_dict)
+        if len(opinion['object_refs']) == 1:
+            opinion_dict['uuid'] = self._sanitise_uuid(opinion['id'])
+        for object_ref in opinion['object_refs']:
+            self._analyst_data[object_ref].append(opinion['id'])
+        super()._load_opinion(opinion['id'], opinion_dict)
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
-        self._check_uuid(observable.id)
+        self._check_uuid(observable['id'])
         to_load = {'used': {}, 'observable': observable}
         try:
-            self._observable[observable.id] = to_load
+            self._observable[observable['id']] = to_load
         except AttributeError:
-            self._observable = {observable.id: to_load}
+            self._observable = {observable['id']: to_load}
 
     def _load_sighting(self, sighting: _SIGHTING_TYPING):
-        sighting_of_ref = self._sanitise_uuid(sighting.sighting_of_ref)
+        sighting_of_ref = self._sanitise_uuid(sighting['sighting_of_ref'])
         try:
             self._sighting[sighting_of_ref].append(sighting)
         except AttributeError:
@@ -354,7 +355,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         self._indicator_references = {
             indicator_id: {obs_type: tuple(val[-1] for val in pattern)}
             for indicator_id, indicator in self._indicator.items()
-            if getattr(indicator, 'pattern_type', 'stix') == 'stix'
+            if indicator.get('pattern_type', 'stix') == 'stix'
             for obs_type, pattern in pattern_parser(indicator).comparisons.items()
         }
         if score in (3, 7):
@@ -379,10 +380,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     observable['indicator_ref'].add(indicator_reference)
         if score >= 5:
             for observed_id, observed_data in self._observed_data.items():
-                if not hasattr(observed_data, 'objects'):
+                if 'objects' not in observed_data:
                     continue
                 indicator_refs = defaultdict(set)
-                for observable_id, observable in observed_data.objects.items():
+                for observable_id, observable in observed_data[
+                        'objects'].items():
                     indicator_references = set(
                         self._fetch_indicator_reference(observable)
                     )

@@ -3863,6 +3863,33 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         )
         objects_documentation.check_export_mapping()
 
+    # Only the JSON input path: with a MISPEvent, pymisp resolves the template
+    # while the caller builds the event, before misp-stix sees any of it.
+    def test_event_with_object_with_invalid_name(self):
+        name = '../../../../../../../../planted'
+        event = get_event_with_object_with_invalid_name(name)
+        self._run_invalid_object_name_tests(event['Event'], name)
+
+    def test_event_with_object_name_traversing_out_of_the_templates(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp_dir:
+            traversal = self._plant_template_definition(tmp_dir)
+            event = get_event_with_object_with_invalid_name(traversal)
+            self._run_invalid_object_name_tests(event['Event'], traversal)
+
+    def test_objects_collection_with_invalid_name(self):
+        name = '../../../../../../../../planted'
+        event = get_event_with_object_with_invalid_name(name)
+        misp_object = event['Event']['Object'][0]
+        for argument in (misp_object, {'Object': [misp_object]}):
+            parser = MISPtoSTIX20Parser()
+            parser.parse_misp_object(argument)
+            self._check_invalid_object_name_collection(parser, name)
+        parser = MISPtoSTIX20Parser()
+        parser.parse_misp_objects([misp_object])
+        self._check_invalid_object_name_collection(parser, name)
+        self.assertEqual(misp_object['name'], name)
+
     def test_embedded_indicator_object_galaxy(self):
         event = get_embedded_indicator_object_galaxy()
         self._test_embedded_indicator_object_galaxy(event['Event'])

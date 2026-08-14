@@ -11,7 +11,7 @@ from pathlib import Path
 from pymisp import MISPAttribute
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
-from ._test_stix import TestSTIX
+from ._test_stix import PLANTED_TEMPLATE, TestSTIX
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
@@ -917,6 +917,43 @@ class TestSTIX2Export(TestSTIX):
         if attribute.get('comment'):
             self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
         self.assertEqual(custom_object.x_misp_value, attribute['value'])
+
+    def _run_invalid_object_name_tests(self, event, rejected_name):
+        self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        custom_object = self.parser.stix_objects[-1]
+        # The name never reached template resolution: the object is generic,
+        # and carries no field that could only come from a template file.
+        self.assertEqual(misp_object.name, 'unknown-template')
+        self.assertFalse(misp_object._known_template)
+        self.assertNotEqual(
+            getattr(misp_object, 'meta-category', None),
+            PLANTED_TEMPLATE['meta-category']
+        )
+        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
+        self.assertEqual(
+            custom_object.labels[0], 'misp:name="unknown-template"'
+        )
+        # Nothing is lost: the rejected name is kept as data.
+        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        self.assertIn(event['uuid'], self.parser.warnings)
+        name_warnings = [
+            warning for warning in self.parser.warnings[event['uuid']]
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(name_warnings), 1)
+        self.assertIn(rejected_name, name_warnings[0])
+
+    def _check_invalid_object_name_collection(self, parser, rejected_name):
+        custom_object = parser.stix_objects[-1]
+        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
+        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        name_warnings = [
+            warning for warning in parser.warnings['objects collection']
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(name_warnings), 1)
+        self.assertIn(rejected_name, name_warnings[0])
 
     def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
         name = misp_object['name']

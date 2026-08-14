@@ -98,9 +98,7 @@ class InternalSTIX2IntrusionSetConverter(InternalSTIX2Converter):
 
     def parse(self, intrusion_set_ref: str):
         intrusion_set = self.main_parser._get_stix_object(intrusion_set_ref)
-        feature = self._handle_mapping_from_labels(
-            intrusion_set.labels, intrusion_set.id
-        )
+        feature = self._handle_mapping_from_labels(intrusion_set)
         try:
             parser = getattr(self, feature)
         except AttributeError:

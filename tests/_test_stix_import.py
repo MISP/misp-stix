@@ -11,7 +11,7 @@ from misp_stix_converter import (
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import UUID, uuid5
-from ._test_stix import TestSTIX
+from ._test_stix import PLANTED_TEMPLATE, TestSTIX
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
@@ -93,7 +93,80 @@ class TestSTIX2Bundles:
 
 
 class TestSTIX2Import(TestSTIX):
+    # Opinion is a STIX 2.1 object type, but one in a 2.0 Bundle reaches the
+    # import as a Dict-Form Object, so both versions need the mapping.
+    __opinion_mapping = {
+        'strongly-disagree': 0,
+        'disagree': 25,
+        'neutral': 50,
+        'agree': 75,
+        'strongly-agree': 100
+    }
+
+    def opinion_mapping(self, field):
+        return self.__opinion_mapping.get(field)
+
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
+    @staticmethod
+    def _reported_messages(reports: dict) -> list:
+        """Flatten the errors or warnings of every parsed identifier."""
+        return [
+            message for identifier_reports in reports.values()
+            for message in identifier_reports
+        ]
+
+    @staticmethod
+    def _dict_form_timestamp(timestamp: str):
+        """The `datetime` a dict-form object's timestamp string stands for.
+
+        Only typed STIX objects parse their timestamps: the ones left as plain
+        dicts keep the string the document carried.
+        """
+        return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+
+    def _check_dict_form_analyst_note(self, misp_note, stix_note):
+        """A Note the STIX version does not know arrives as a plain dict."""
+        self.assertIsInstance(stix_note, dict)
+        self.assertEqual(misp_note.uuid, stix_note['id'].split('--')[1])
+        self.assertEqual(misp_note.note, stix_note['content'])
+        self.assertEqual(misp_note.authors, stix_note['authors'][0])
+        self.assertEqual(misp_note.language, stix_note['lang'])
+        for field in ('created', 'modified'):
+            self.assertEqual(
+                getattr(misp_note, field),
+                self._dict_form_timestamp(stix_note[field])
+            )
+
+    def _check_dict_form_analyst_opinion(self, misp_opinion, stix_opinion):
+        """An Opinion the STIX version does not know arrives as a plain dict."""
+        self.assertIsInstance(stix_opinion, dict)
+        self.assertEqual(misp_opinion.uuid, stix_opinion['id'].split('--')[1])
+        if 'x_misp_opinion' in stix_opinion:
+            self.assertEqual(
+                misp_opinion.opinion, stix_opinion['x_misp_opinion']
+            )
+        else:
+            self.assertEqual(
+                misp_opinion.opinion,
+                self.opinion_mapping(stix_opinion['opinion'])
+            )
+        self.assertEqual(misp_opinion.comment, stix_opinion['explanation'])
+        self.assertEqual(misp_opinion.authors, stix_opinion['authors'][0])
+        for field in ('created', 'modified'):
+            self.assertEqual(
+                getattr(misp_opinion, field),
+                self._dict_form_timestamp(stix_opinion[field])
+            )
+
+    def _check_duplicate_object_id_warning(self, object_id, warnings):
+        """The last occurrence wins, but the shadowing is never silent."""
+        duplicate_warnings = [
+            warning for warning in self._reported_messages(warnings)
+            if 'Duplicate STIX object id' in warning
+        ]
+        self.assertEqual(len(duplicate_warnings), 1)
+        self.assertIn(object_id, duplicate_warnings[0])
 
     def _import_bundle_with_unloadable_objects(
             self, bundle, count: int = 1, distinct_types: bool = True,
@@ -488,17 +561,6 @@ class TestSTIX21Import(TestSTIX2Import):
     _ext_galaxies_v21 = defaultdict(dict)
     _ext_attributes_v21 = defaultdict(dict)
     _ext_objects_v21 = defaultdict(dict)
-
-    __opinion_mapping = {
-        'strongly-disagree': 0,
-        'disagree': 25,
-        'neutral': 50,
-        'agree': 75,
-        'strongly-agree': 100
-    }
-
-    def opinion_mapping(self, field):
-        return self.__opinion_mapping.get(field)
 
     @classmethod
     def tearDownClass(self):
@@ -2965,6 +3027,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(cluster.description, stix_object.description)
         return cluster.meta
 
+    def _check_galaxy_with_undefined_labels(self, event, stix_object, errors):
+        """A galaxy object no label can dispatch is dropped, never silently."""
+        self.assertFalse(event.galaxies)
+        self.assertTrue(
+            any(
+                stix_object.id in error
+                for error in self._reported_messages(errors)
+            ),
+            f'{stix_object.id} was dropped without any error reported'
+        )
+
+    def _check_galaxy_without_name_label(self, stix_object, warnings):
+        """The galaxy type label alone is enough to convert the object."""
+        label_warnings = [
+            warning for warning in self._reported_messages(warnings)
+            if 'Missing MISP galaxy name label' in warning
+        ]
+        self.assertEqual(len(label_warnings), 1)
+        self.assertIn(stix_object.id, label_warnings[0])
+
     def _check_generic_malware_galaxy(self, galaxy, malware):
         meta = self._check_galaxy_fields_with_external_id(
             galaxy, malware, 'mitre-malware', 'Malware'
@@ -3269,6 +3351,40 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                     self._get_data_value(attribute.data),
                     custom_attribute['data']
                 )
+
+    def _check_custom_object_invalid_name(
+            self, misp_object, custom_object, warnings):
+        rejected_name = custom_object.x_misp_name
+        # The name never reached template resolution: the object is generic,
+        # and carries no field that could only come from a template file.
+        self.assertEqual(misp_object.name, 'unknown-template')
+        self.assertFalse(misp_object._known_template)
+        object_fields = misp_object.to_dict()
+        for template_field in ('template_uuid', 'template_version',
+                               'description'):
+            self.assertNotIn(
+                template_field, object_fields,
+                f'`{template_field}` should not be read from a file'
+            )
+        self.assertNotEqual(
+            getattr(misp_object, 'meta-category', None),
+            PLANTED_TEMPLATE['meta-category']
+        )
+        # The meta-category still comes from the STIX content itself.
+        self.assertEqual(
+            misp_object.category, custom_object.x_misp_meta_category
+        )
+        # Nothing is lost: the rejected name is kept as data.
+        self.assertIn(rejected_name, misp_object.comment)
+        name_warnings = [
+            warning for parser_warnings in warnings.values()
+            for warning in parser_warnings
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(name_warnings), 1)
+        self.assertIn(custom_object.id, name_warnings[0])
+        self.assertIn(rejected_name, name_warnings[0])
+        return misp_object
 
     def _check_custom_object_injected_fields(
             self, misp_object, custom_object, warnings):

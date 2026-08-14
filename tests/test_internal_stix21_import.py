@@ -104,6 +104,30 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         with self.assertRaises(ValueError):
             stix_2_to_misp('unused.json', classification='banana')
 
+    def test_stix21_object_template_name_validation(self):
+        from misp_stix_converter.tools.misp_object_templates import (
+            _is_template_name)
+        from pymisp import AbstractMISP
+        for name in ('../../../../etc', 'foo/bar', 'foo\\bar', '..', '.',
+                     'bank account', 'bank\taccount', '', '-dash-first',
+                     None, 42):
+            self.assertFalse(
+                _is_template_name(name),
+                f'{name!r} must not reach template resolution'
+            )
+        # Every template pymisp ships keeps resolving as before, upper case
+        # and underscores included.
+        templates = [
+            path.name for path in AbstractMISP().misp_objects_path.iterdir()
+            if path.is_dir()
+        ]
+        self.assertTrue(templates)
+        for template in templates:
+            self.assertTrue(
+                _is_template_name(template),
+                f'{template} is a template name pymisp ships'
+            )
+
     ############################################################################
     #                       MISP ATTRIBUTES IMPORT TESTS                       #
     ############################################################################
@@ -1945,6 +1969,52 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.value, f'{domain.value}|{address.value}')
         self.assertEqual(attribute.tags[0].name, free_tag)
 
+    def test_stix21_bundle_with_dict_form_objects(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_dict_form_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator, note, opinion = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(self.parser.errors, {})
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertIsInstance(note, dict)
+        misp_note = attribute.notes[0]
+        self.assertEqual(misp_note.uuid, note['id'].split('--')[1])
+        self.assertEqual(misp_note.note, note['x_misp_note'])
+        self.assertEqual(misp_note.authors, note['x_misp_author'])
+        self.assertEqual(misp_note.language, note['x_misp_language'])
+        self.assertIsInstance(opinion, dict)
+        misp_opinion = attribute.opinions[0]
+        self.assertEqual(misp_opinion.uuid, opinion['id'].split('--')[1])
+        self.assertEqual(misp_opinion.opinion, opinion['x_misp_opinion'])
+        self.assertEqual(misp_opinion.comment, opinion['x_misp_comment'])
+        self.assertEqual(misp_opinion.authors, opinion['x_misp_author'])
+        for analyst_data, stix_object in (
+                (misp_note, note), (misp_opinion, opinion)):
+            for field in ('created', 'modified'):
+                self.assertEqual(
+                    getattr(analyst_data, field),
+                    self._dict_form_timestamp(stix_object[field])
+                )
+
+    def test_stix21_bundle_with_duplicate_object_ids(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, shadowed, indicator = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        # Last occurrence wins: the first Indicator sharing the id is gone.
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.value, 'circl.lu')
+        self._check_duplicate_object_id_warning(
+            shadowed.id, self.parser.warnings
+        )
+
     def test_stix21_bundle_with_event_report(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_event_report()
         self.parser.load_stix_bundle(bundle)
@@ -2293,6 +2363,46 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         for galaxy in (country, region):
             cluster = galaxy.clusters[0]
             self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
+
+    def test_stix21_bundle_with_malformed_galaxy_labels(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
+            ['misp:galaxy-type="mitre-malware"']
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, malware = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        # The galaxy is the one the type label names, name label or not.
+        self._check_malware_galaxy(event.galaxies[0], malware)
+        self._check_galaxy_without_name_label(malware, self.parser.warnings)
+
+    def test_stix21_bundle_with_malformed_galaxy_labels_as_tags(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
+            ['misp:galaxy-type="mitre-malware"']
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        malware = bundle.objects[-1]
+        self.assertIn(
+            f'misp-galaxy:mitre-malware="{malware.name}"',
+            {tag.name for tag in event.tags}
+        )
+
+    def test_stix21_bundle_with_undefined_galaxy_labels(self):
+        bundles = TestInternalSTIX21Bundles
+        for labels in (['misp:galaxy-name="Malware"'],
+                       ['misp:galaxy-type=""']):
+            with self.subTest(labels=labels):
+                self.setUp()
+                bundle = bundles.get_bundle_with_malformed_galaxy_labels(labels)
+                self.parser.load_stix_bundle(bundle)
+                self.parser.parse_stix_bundle()
+                self._check_galaxy_with_undefined_labels(
+                    self.parser.misp_event, bundle.objects[-1],
+                    self.parser.errors
+                )
 
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
@@ -2768,6 +2878,33 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_custom_object_injected_fields(
             misp_object, custom_object, self.parser.warnings
         )
+
+    def test_stix21_bundle_with_custom_object_with_invalid_name(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_object_with_invalid_name()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, custom_object = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_custom_object_invalid_name(
+            misp_object, custom_object, self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_custom_object_name_traversing_out_of_the_templates(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp_dir:
+            traversal = self._plant_template_definition(tmp_dir)
+            bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_object_with_invalid_name(
+                traversal
+            )
+            self.parser.load_stix_bundle(bundle)
+            self.parser.parse_stix_bundle()
+            event = self.parser.misp_event
+            _, grouping, custom_object = bundle.objects
+            misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+            self._check_custom_object_invalid_name(
+                misp_object, custom_object, self.parser.warnings
+            )
 
     def test_stix21_bundle_with_custom_objects(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_objects()

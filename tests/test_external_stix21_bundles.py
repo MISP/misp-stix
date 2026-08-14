@@ -2910,6 +2910,19 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*deepcopy(_ANALYST_DATA_SAMPLES))
 
     @classmethod
+    def get_bundle_with_duplicate_object_ids(cls):
+        bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        shadowed = deepcopy(cls.__indicator)
+        indicator = deepcopy(cls.__indicator)
+        shadowed['pattern'] = "[ipv4-addr:value = '198.51.100.0/24']"
+        grouping.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [
+            deepcopy(cls.__identity), grouping, shadowed, indicator
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_bundle_with_grouping_description(cls):
         bundle = deepcopy(cls.__bundle)
         indicator = deepcopy(cls.__indicator)
