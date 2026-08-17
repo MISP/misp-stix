@@ -18,19 +18,10 @@ from .stix2_to_misp import (
     _OPINION_TYPING)
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPEvent, MISPObject
-from stix2.v20.observables import (
-    _Extension as Extension_v20, _STIXBase20 as STIXBase_v20)
 from stix2.v20.sro import Sighting as Sighting_v20
-from stix2.v21.observables import (
-    _Extension as Extension_v21, _STIXBase21 as STIXBase_v21)
 from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Iterator, Optional, Union
 
-_EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
-_OBSERVABLE_FIELDS_TO_SKIP = (
-    'defanged', 'granular_markings', 'id', 'object_marking_refs',
-    'spec_version', 'type'
-)
 _SDO_STORAGE_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
 _SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21, dict]
 
@@ -325,26 +316,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                 if not any(ref in values for ref in observable_references):
                     continue
                 yield indicator_id
-
-    def _fetch_observable_references(
-            self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
-        for key, values in observable.items():
-            if key in _OBSERVABLE_FIELDS_TO_SKIP:
-                continue
-            if isinstance(values, dict):
-                yield from self._fetch_observable_references(values)
-                continue
-            if isinstance(values, list):
-                for value in values:
-                    if isinstance(value, _EXTENSION_TYPES):
-                        yield from self._fetch_observable_references(value)
-                        continue
-                    yield value
-                continue
-            if isinstance(values, _EXTENSION_TYPES):
-                yield from self._fetch_observable_references(values)
-                continue
-            yield values
 
     def _set_indicator_references(self):
         score = 0

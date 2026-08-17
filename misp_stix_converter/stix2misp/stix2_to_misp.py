@@ -25,6 +25,8 @@ from stix2 import TLP_AMBER, TLP_GREEN, TLP_RED, TLP_WHITE
 from stix2.utils import parse_into_datetime
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
+from stix2.v20.observables import (
+    _Extension as Extension_v20, _STIXBase20 as STIXBase_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
@@ -38,8 +40,9 @@ from stix2.v20.sro import (
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
-    EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+    _Extension as Extension_v21, _STIXBase21 as STIXBase_v21, Artifact,
+    AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage, File,
+    IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic as NetworkTraffic_v21, Process, Software, URL, UserAccount,
     WindowsRegistryKey, X509Certificate)
 from stix2.v21.sdo import Grouping, Location, MalwareAnalysis, Note, Opinion
@@ -53,9 +56,14 @@ from stix2.v21.sdo import (
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import (
     Relationship as Relationship_v21, Sighting as Sighting_v21)
-from typing import Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Union
 
 # Some constants
+_EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
+_OBSERVABLE_FIELDS_TO_SKIP = (
+    'defanged', 'granular_markings', 'id', 'object_marking_refs',
+    'spec_version', 'type'
+)
 _LOADED_FEATURES = (
     '_attack_pattern', '_campaign', '_course_of_action', '_custom_attribute',
     '_custom_object', '_identity', '_indicator', '_intrusion_set', '_malware',
@@ -275,6 +283,34 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _fetch_observable(self, object_ref: str) -> Optional[dict]:
         return self._observable.get(object_ref)
+
+    def _fetch_observable_references(
+            self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[Any]:
+        """Yield every value an observable object carries, at any depth.
+
+        Which field holds the value an SCO is about depends on its type, and
+        extensions nest further fields under it, so the values are collected
+        by walking the object instead of by asking each type where it keeps
+        them. Only the fields naming or qualifying the object rather than
+        describing what it observed are skipped
+        """
+        for key, values in observable.items():
+            if key in _OBSERVABLE_FIELDS_TO_SKIP:
+                continue
+            if isinstance(values, dict):
+                yield from self._fetch_observable_references(values)
+                continue
+            if isinstance(values, list):
+                for value in values:
+                    if isinstance(value, _EXTENSION_TYPES):
+                        yield from self._fetch_observable_references(value)
+                        continue
+                    yield value
+                continue
+            if isinstance(values, _EXTENSION_TYPES):
+                yield from self._fetch_observable_references(values)
+                continue
+            yield values
 
     def _has_observable(self, object_ref: str) -> bool:
         return object_ref in self._observable
