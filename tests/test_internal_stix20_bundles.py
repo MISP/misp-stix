@@ -8370,6 +8370,47 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def __assemble_merged_indicator_bundle(cls, **indicator_fields):
+        """An Indicator and an Observed Data sharing the uuid they merge on.
+
+        `indicator--X` and `observed-data--X` are the 2 renderings a MISP
+        object with a `to_ids` attribute exports, and the import merges them
+        back into the single record X: what the Indicator says the Observed
+        Data does not is what such a merge takes away.
+        """
+        observed_data, indicator, relationship = deepcopy(
+            _DOMAIN_OBSERVABLE_ATTRIBUTE
+        )
+        indicator.update(indicator_fields)
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
+
+    @classmethod
+    def get_bundle_with_merged_indicator_on_different_values(cls):
+        return cls.__assemble_merged_indicator_bundle(
+            pattern="[domain-name:value = 'misp-project.org']"
+        )
+
+    @classmethod
+    def get_bundle_with_merged_indicator_on_narrowed_value(cls):
+        # The Observed Data narrows what the pattern states rather than
+        # contradicting it: still a value the merge does not keep.
+        observed_data, indicator, relationship = deepcopy(
+            _DOMAIN_OBSERVABLE_ATTRIBUTE
+        )
+        observed_data['objects']['0']['value'] = 'www.circl.lu'
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
+
+    @classmethod
+    def get_bundle_with_merged_indicator_without_stix_pattern(cls):
+        # A sigma rule states no value the Observed Data could be repeating.
+        # STIX 2.0 knows no `pattern_type` and validates every pattern as a
+        # STIX one, so the rule reaches the parser as a custom property.
+        return cls.__assemble_merged_indicator_bundle(
+            pattern="[domain-name:value = 'misp-project.org']",
+            pattern_type='sigma'
+        )
+
+    @classmethod
     def get_bundle_with_multiple_reports(cls):
         bundle = deepcopy(cls.__bundle)
         bundle['objects'] = [

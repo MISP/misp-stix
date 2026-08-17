@@ -350,6 +350,252 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         load_stix2_content(stix_content)
         self.assertEqual(stix_content, original)
 
+    def _load_stix21_content_with_invalid_markings(self, *markings):
+        from misp_stix_converter.tools import load_stix2_content
+        return load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'objects': [
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL',
+                        'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'grouping', 'spec_version': '2.1',
+                        'id': 'grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'context': 'suspicious-activity',
+                        'object_refs': [
+                            'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+                        ]
+                    },
+                    {
+                        'type': 'indicator', 'spec_version': '2.1',
+                        'id': 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'pattern_type': 'stix',
+                        'valid_from': '2020-10-25T16:22:00.000Z',
+                        'object_marking_refs': [markings[0]['id']]
+                    },
+                    *markings
+                ]
+            }
+        )
+
+    def test_stix21_duplicate_invalid_marking_definitions_are_reported(self):
+        # A Marking Definition is the one invalid object applied rather than
+        # reported as a loading error: with 2 of them under one id, the last
+        # one wins and the data ends up governed by a marking the sender may
+        # never have sent.
+        marking_id = 'marking-definition--11111111-1111-4111-8111-111111111111'
+        bundle = self._load_stix21_content_with_invalid_markings(
+            *self._invalid_tlp_markings(marking_id, 'white', 'red')
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        # `invalid_objects` keeps its `id -> object` shape: the marking the
+        # bundle lost travels as an id, not as a second object.
+        self.assertEqual(list(self.parser.invalid_objects), [marking_id])
+        self._check_duplicate_invalid_marking_warning(
+            marking_id, self.parser.warnings
+        )
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual([tag.name for tag in attribute.tags], ['tlp:red'])
+
+    def test_stix21_unapplied_invalid_marking_definitions_are_not_reported(self):
+        # A marking too broken to read governs nothing: loading it raises,
+        # the object referring to it is reported as an error and lands with
+        # no marking, and a duplicate that changed no marking has no stake to
+        # warn about.
+        marking_id = 'marking-definition--11111111-1111-4111-8111-111111111111'
+        bundle = self._load_stix21_content_with_invalid_markings(
+            *(
+                {
+                    'type': 'marking-definition', 'id': marking_id,
+                    'created': '2017-01-20T00:00:00.000Z',
+                    'definition_type': 'tlp'
+                } for _ in range(2)
+            )
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_duplicate_invalid_marking_warning_absence(
+            self.parser.warnings
+        )
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual([tag.name for tag in attribute.tags], [])
+        self.assertIn(
+            attribute.uuid,
+            '\n'.join(self._reported_messages(self.parser.errors))
+        )
+
+    def test_stix21_distinct_invalid_marking_definitions_are_not_reported(self):
+        # Invalid markings the bundle keeps apart shadow nothing: both are
+        # recovered, and each governs what refers to it.
+        markings = self._invalid_tlp_markings(
+            'marking-definition--11111111-1111-4111-8111-111111111111', 'white'
+        ) + self._invalid_tlp_markings(
+            'marking-definition--22222222-2222-4222-8222-222222222222', 'red'
+        )
+        bundle = self._load_stix21_content_with_invalid_markings(*markings)
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(len(self.parser.invalid_objects), 2)
+        self._check_duplicate_invalid_marking_warning_absence(
+            self.parser.warnings
+        )
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual([tag.name for tag in attribute.tags], ['tlp:white'])
+
+    def test_stix21_duplicate_invalid_objects_are_reported_by_type(self):
+        # Any other invalid object is fetched, dropped and named by the error
+        # its reference produces: 1 id, 1 reference, 1 error, duplicate or
+        # not - nothing a second warning would add.
+        from misp_stix_converter.tools import load_stix2_content
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        bundle = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'objects': [
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL',
+                        'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'grouping', 'spec_version': '2.1',
+                        'id': 'grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'context': 'suspicious-activity',
+                        'object_refs': [
+                            'indicator--91ae0a21-4b7c-4c1d-9d18-b8b4e2f4a1e2',
+                            indicator_id
+                        ]
+                    },
+                    {
+                        'type': 'indicator', 'spec_version': '2.1',
+                        'id': 'indicator--91ae0a21-4b7c-4c1d-9d18-b8b4e2f4a1e2',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'pattern_type': 'stix',
+                        'valid_from': '2020-10-25T16:22:00.000Z'
+                    },
+                    *(
+                        {
+                            'type': 'indicator', 'spec_version': '2.1',
+                            'id': indicator_id,
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'pattern': pattern, 'pattern_type': 'stix',
+                            'valid_from': '2020-10-25T16:22:00.000Z'
+                        } for pattern in ('FIRST pattern', 'SECOND pattern')
+                    )
+                ]
+            }
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_duplicate_invalid_marking_warning_absence(
+            self.parser.warnings
+        )
+        self.assertIn(
+            indicator_id, '\n'.join(self._reported_messages(self.parser.errors))
+        )
+
+    def test_stix21_dangling_object_refs_are_reported(self):
+        # A Grouping referencing an object the bundle does not carry produces
+        # an event missing it. Only the SDO references used to say so: the
+        # observable and Marking Definition ones took their own path out.
+        dangling_refs = (
+            'domain-name--11111111-1111-4111-8111-111111111111',
+            'indicator--22222222-2222-4222-8222-222222222222',
+            'marking-definition--33333333-3333-4333-8333-333333333333'
+        )
+        bundle = self._load_stix21_content_with_object_refs(*dangling_refs)
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        for object_ref in dangling_refs:
+            self._check_dangling_object_ref_error(
+                object_ref, self.parser.errors
+            )
+        # what the bundle does carry is converted all the same
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix21_resolved_object_refs_are_not_reported(self):
+        # An observable object a Grouping lists next to the Observed Data
+        # consuming it is converted with its parent: the reference resolves,
+        # and has nothing to report.
+        bundle = self._load_stix21_content_with_object_refs()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix21_dangling_observable_ref_without_observable_objects(self):
+        # The observable objects are only mapped once one is loaded, so a
+        # bundle carrying none used to make the lookup an `AttributeError`
+        # escaping `parse_stix_bundle` uncaught.
+        object_ref = 'domain-name--11111111-1111-4111-8111-111111111111'
+        bundle = self._load_stix21_content_with_object_refs(
+            object_ref, observables=False
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error(object_ref, self.parser.errors)
+        self.assertEqual(len(self.parser.misp_event.attributes), 1)
+
+    def test_stix21_carried_marking_refs_are_not_reported(self):
+        # A Marking Definition reference is dangling only when the bundle
+        # carried no object under that id - whatever became of the object
+        # afterwards. The 3 shapes that are carried: a marking too broken to
+        # read, which its own loading error already names; an invalid one,
+        # recovered and applied where it is referenced; and a TLP marking the
+        # specification defines, which a bundle does not have to send.
+        unreadable_id = 'marking-definition--55555555-5555-4555-8555-555555555555'
+        invalid_id = 'marking-definition--66666666-6666-4666-8666-666666666666'
+        bundle = self._load_stix21_content_with_object_refs(
+            'marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9',
+            carried=(
+                {
+                    'type': 'marking-definition', 'spec_version': '2.1',
+                    'id': unreadable_id,
+                    'created': '2017-01-20T00:00:00.000Z',
+                    'extensions': {
+                        'extension-definition--99999999-9999-4999-8999-999999999999': {
+                            'extension_type': 'property-extension'
+                        }
+                    }
+                },
+                *self._invalid_tlp_markings(invalid_id, 'white')
+            )
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # the marking that could not be read is named by the loader instead
+        self.assertIn(
+            unreadable_id, '\n'.join(self._reported_messages(self.parser.errors))
+        )
+
     def test_stix21_classification_forced_internal_warns_on_mismatch(self):
         from misp_stix_converter import stix_2_to_misp
         from pathlib import Path
@@ -460,6 +706,96 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             event.tags[0]['name'],
             f'misp-galaxy:producer="{self.parser.producer}"'
         )
+
+    def test_stix21_bundle_with_colliding_record_uuids(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_colliding_record_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator, _, observable = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        indicated, observed = event.attributes
+        record_uuid = indicator.id.split('--')[1]
+        # Both attributes keep the uuid their STIX id yields: re-deriving one
+        # of them would cost it the round-trip ADR-0006 guarantees.
+        self.assertEqual(indicated.value, 'first.example.com')
+        self.assertEqual(indicated.uuid, record_uuid)
+        self.assertEqual(observed.value, 'second.example.com')
+        self.assertEqual(observed.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (indicator.id, observable.id), self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_colliding_non_rfc_record_uuids(self):
+        # Both records carry the v5 replacement the sanitation registered, so
+        # the warning names that uuid rather than the one the STIX ids share.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_colliding_non_rfc_record_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, indicator, _, observable = bundle.objects
+        indicated, observed = event.attributes
+        self.assertEqual(indicated.uuid, observed.uuid)
+        self.assertNotEqual(str(indicated.uuid), indicator.id.split('--')[1])
+        self._check_uuid_collision_warning(
+            str(indicated.uuid), (indicator.id, observable.id),
+            self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_colliding_uuids_on_matching_values(self):
+        # The Indicator and the Observable describe the same value, so the
+        # linking merges them into one attribute: one record, one uuid.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_colliding_uuids_on_matching_values()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'same.example.com')
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_observable_sharing_its_observed_data_uuid(self):
+        # MISP's own export gives an Observable the uuid of the Observed Data
+        # holding it - 21 times in `test_misp_events.stix21.json`. Only the
+        # Observable becomes a record, so nothing collides.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_observable_sharing_its_observed_data_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.value, 'circl.lu')
+        self.assertEqual(attribute.uuid, bundle.objects[3].id.split('--')[1])
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_indicator_and_observable_uuids(self):
+        # The Observable carries an id of its own, so the attribute it becomes
+        # takes that uuid instead of the Observed Data's: nothing collides.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_indicator_and_observable_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, indicator, _, observable = bundle.objects
+        indicated, observed = event.attributes
+        self.assertEqual(indicated.uuid, indicator.id.split('--')[1])
+        self.assertEqual(observed.uuid, observable.id.split('--')[1])
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_vulnerability_sharing_an_indicator_uuid(self):
+        # The Vulnerability becomes a Galaxy Cluster, a namespace of its own:
+        # the attribute is the only record claiming the shared uuid part.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_vulnerability_sharing_an_indicator_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        indicator, vulnerability = bundle.objects[2:]
+        record_uuid = indicator.id.split('--')[1]
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].uuid, record_uuid)
+        self.assertEqual(len(event.galaxies), 1)
+        cluster = event.galaxies[0].clusters[0]
+        self.assertEqual(cluster.value, vulnerability.name)
+        self.assertNotEqual(str(cluster.uuid), record_uuid)
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
 
     def test_stix21_bundle_with_duplicate_object_ids(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()

@@ -17,20 +17,11 @@ from .stix2_to_misp import (
     STIX2toMISPParser, _BUNDLE_TYPING, _NOTE_TYPING, _OBSERVABLE_TYPING,
     _OPINION_TYPING)
 from collections import defaultdict
-from pymisp import MISPAttribute, MISPObject
-from stix2.v20.observables import (
-    _Extension as Extension_v20, _STIXBase20 as STIXBase_v20)
+from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sro import Sighting as Sighting_v20
-from stix2.v21.observables import (
-    _Extension as Extension_v21, _STIXBase21 as STIXBase_v21)
 from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Iterator, Optional, Union
 
-_EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
-_OBSERVABLE_FIELDS_TO_SKIP = (
-    'defanged', 'granular_markings', 'id', 'object_marking_refs',
-    'spec_version', 'type'
-)
 _SDO_STORAGE_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
 _SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21, dict]
 
@@ -57,6 +48,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
+        self._record_uuids: dict = defaultdict(dict)
 
     def parse_stix_bundle(
             self, cluster_distribution: Optional[int] = 0,
@@ -83,6 +75,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
+        self._record_uuids = defaultdict(dict)
         try:
             del self.__standalone_object_refs
         except AttributeError:
@@ -183,15 +176,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             if object_type in self._mapping.object_type_refs_to_skip():
                 continue
             if object_type in self._mapping.observable_object_types():
-                if (observable := self._fetch_observable(object_ref)) is not None:
-                    if self.misp_event.uuid not in observable['used']:
-                        observable['used'][self.misp_event.uuid] = False
+                if (observable := self._fetch_observable(object_ref)) is None:
+                    self._object_ref_loading_error(object_ref)
+                    continue
+                if self.misp_event.uuid not in observable['used']:
+                    observable['used'][self.misp_event.uuid] = False
                 continue
             if object_type == 'marking-definition':
-                if object_ref in self._clusters:
-                    cluster = self._clusters[object_ref]
-                    if cluster['used'].get(self.misp_event.uuid) is None:
-                        cluster['used'][self.misp_event.uuid] = False
+                self._handle_marking_definition_ref(object_ref)
                 continue
             try:
                 self._handle_object(object_type, object_ref)
@@ -324,26 +316,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     continue
                 yield indicator_id
 
-    def _fetch_observable_references(
-            self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
-        for key, values in observable.items():
-            if key in _OBSERVABLE_FIELDS_TO_SKIP:
-                continue
-            if isinstance(values, dict):
-                yield from self._fetch_observable_references(values)
-                continue
-            if isinstance(values, list):
-                for value in values:
-                    if isinstance(value, _EXTENSION_TYPES):
-                        yield from self._fetch_observable_references(value)
-                        continue
-                    yield value
-                continue
-            if isinstance(values, _EXTENSION_TYPES):
-                yield from self._fetch_observable_references(values)
-                continue
-            yield values
-
     def _set_indicator_references(self):
         score = 0
         for feature, count in _SDO_STORAGE_FIELDS.items():
@@ -409,3 +381,52 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                         continue
                     for observable_id, refs in indicator_refs.items():
                         observed_data['indicator_refs'][observable_id].update(refs)
+
+    ############################################################################
+    #                     UUID SANITATION HANDLING METHODS                     #
+    ############################################################################
+
+    def _check_uuid_collision(self, record_type: str, object_id: str):
+        """Report the **Colliding Record Uuid** 2 STIX ids both produce.
+
+        The uuid computation is untouched: re-deriving one of the 2 records
+        would cost it the round-trip, and what MISP core does with a uuid it
+        already knows is its own ownership decision. Only the reporting is
+        added, and only here - an **Internal** bundle merges such a pair on
+        purpose, the **Merged Indicator** loss reported on its own
+
+        Records are tracked per record type because events, objects and
+        attributes each get their uuid namespace: an attribute sharing its
+        uuid with the object holding it costs nothing, and is the shape MISP's
+        own STIX 2.1 export writes for the address an email message comes from
+        """
+        record_uuid = self._extract_uuid(object_id)
+        known_id = self._record_uuids[record_type].setdefault(
+            record_uuid, object_id
+        )
+        if known_id != object_id:
+            # A uuid the RFC does not know is swapped for the v5 replacement
+            # `_sanitise_*` registered: the collision is keyed on what the 2
+            # ids share, but named with the uuid the records end up carrying.
+            reported_uuid = self.replacement_uuids.get(
+                record_uuid, record_uuid
+            )
+            self._add_warning(
+                f'Colliding MISP {record_type} uuid {reported_uuid} - the '
+                f'STIX objects {known_id} and {object_id} both produce it, so '
+                f'the converted content has 2 {record_type}s sharing one uuid'
+            )
+
+    def _sanitise_attribute_uuid(
+            self, object_id: str, comment: Optional[str] = None,
+            **kwargs) -> dict:
+        self._check_uuid_collision('attribute', object_id)
+        return super()._sanitise_attribute_uuid(object_id, comment, **kwargs)
+
+    def _sanitise_object_uuid(
+            self, misp_object: MISPEvent | MISPObject, object_id: str):
+        self._check_uuid_collision(
+            'event' if isinstance(misp_object, MISPEvent) else 'object',
+            object_id
+        )
+        super()._sanitise_object_uuid(misp_object, object_id)

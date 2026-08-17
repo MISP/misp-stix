@@ -2910,6 +2910,109 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*deepcopy(_ANALYST_DATA_SAMPLES))
 
     @classmethod
+    def __assemble_colliding_uuids_bundle(
+            cls, observed, indicated=None, record_uuid=None,
+            observable_uuid=None, interoperability=False):
+        """An Observable and, optionally, an Indicator sharing a uuid part.
+
+        `indicator--X` and `domain-name--X` are 2 STIX objects, but the MISP
+        records they produce keep only the part after `--`, so both claim X.
+        `observable_uuid` gives the Observable a uuid part of its own, and
+        leaving `indicated` out keeps the Observed Data with the Observable it
+        holds - the 2 shapes that share a uuid without colliding.
+        """
+        bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        if record_uuid is None:
+            record_uuid = cls.__indicator['id'].split('--')[1]
+        observable = {
+            "type": "domain-name", "spec_version": "2.1",
+            "id": f"domain-name--{observable_uuid or record_uuid}",
+            "value": observed
+        }
+        observed_data = {
+            "type": "observed-data", "spec_version": "2.1",
+            "id": f"observed-data--{record_uuid}",
+            "created_by_ref": cls.__identity['id'],
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1, "object_refs": [observable['id']]
+        }
+        stix_objects = [observed_data, observable]
+        if indicated is not None:
+            indicator = deepcopy(cls.__indicator)
+            indicator['id'] = f'indicator--{record_uuid}'
+            indicator['pattern'] = f"[domain-name:value = '{indicated}']"
+            stix_objects.insert(0, indicator)
+        grouping.update(
+            cls._populate_references(
+                *(
+                    stix_object['id'] for stix_object in stix_objects
+                    if stix_object['type'] != 'domain-name'
+                )
+            )
+        )
+        bundle['objects'] = [deepcopy(cls.__identity), grouping, *stix_objects]
+        return dict_to_stix2(
+            bundle, allow_custom=True, interoperability=interoperability
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_record_uuids(cls):
+        return cls.__assemble_colliding_uuids_bundle(
+            'second.example.com', indicated='first.example.com'
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_non_rfc_record_uuids(cls):
+        # A uuid no RFC version knows is replaced by a v5 one on both sides of
+        # the collision, so the warning has to name the replacement. Only the
+        # interoperability mode lets such an id through the STIX validation.
+        return cls.__assemble_colliding_uuids_bundle(
+            'second.example.com', indicated='first.example.com',
+            record_uuid='91ae0a21-c7ae-0c7f-b84b-b84a7ce53d1f',
+            interoperability=True
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_uuids_on_matching_values(cls):
+        return cls.__assemble_colliding_uuids_bundle(
+            'same.example.com', indicated='same.example.com'
+        )
+
+    @classmethod
+    def get_bundle_with_indicator_and_observable_uuids(cls):
+        return cls.__assemble_colliding_uuids_bundle(
+            'second.example.com', indicated='first.example.com',
+            observable_uuid='4dbbf3d9-0a3d-45d5-9d5e-8bea0a1a2fef'
+        )
+
+    @classmethod
+    def get_bundle_with_observable_sharing_its_observed_data_uuid(cls):
+        """The shape MISP's own STIX 2.1 export writes for every Observable."""
+        return cls.__assemble_colliding_uuids_bundle('circl.lu')
+
+    @classmethod
+    def get_bundle_with_vulnerability_sharing_an_indicator_uuid(cls):
+        """A Galaxy Cluster and an attribute claiming the same uuid part."""
+        bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        indicator = deepcopy(cls.__indicator)
+        vulnerability = deepcopy(_VULNERABILITY_OBJECTS[0])
+        vulnerability['id'] = (
+            f"vulnerability--{indicator['id'].split('--')[1]}"
+        )
+        grouping.update(
+            cls._populate_references(indicator['id'], vulnerability['id'])
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), grouping, indicator, vulnerability
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_bundle_with_duplicate_object_ids(cls):
         bundle = deepcopy(cls.__bundle)
         grouping = deepcopy(cls.__grouping)

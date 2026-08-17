@@ -25,6 +25,8 @@ from stix2 import TLP_AMBER, TLP_GREEN, TLP_RED, TLP_WHITE
 from stix2.utils import parse_into_datetime
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
+from stix2.v20.observables import (
+    _Extension as Extension_v20, _STIXBase20 as STIXBase_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
@@ -38,8 +40,9 @@ from stix2.v20.sro import (
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
-    EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+    _Extension as Extension_v21, _STIXBase21 as STIXBase_v21, Artifact,
+    AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage, File,
+    IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic as NetworkTraffic_v21, Process, Software, URL, UserAccount,
     WindowsRegistryKey, X509Certificate)
 from stix2.v21.sdo import Grouping, Location, MalwareAnalysis, Note, Opinion
@@ -53,9 +56,14 @@ from stix2.v21.sdo import (
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import (
     Relationship as Relationship_v21, Sighting as Sighting_v21)
-from typing import Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Union
 
 # Some constants
+_EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
+_OBSERVABLE_FIELDS_TO_SKIP = (
+    'defanged', 'granular_markings', 'id', 'object_marking_refs',
+    'spec_version', 'type'
+)
 _LOADED_FEATURES = (
     '_attack_pattern', '_campaign', '_course_of_action', '_custom_attribute',
     '_custom_object', '_identity', '_indicator', '_intrusion_set', '_malware',
@@ -167,6 +175,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if invalid_objects is None:
                 invalid_objects = {}
         self.__invalid_objects = invalid_objects
+        # the ids the loader saw more than one invalid object claim - what
+        # `invalid_objects` cannot hold, since it keeps one object per id
+        self._duplicate_invalid_ids = getattr(
+            bundle, '_duplicate_invalid_ids', set()
+        )
         self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
         self._load_stix_bundle(bundle)
@@ -232,6 +245,24 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
         self._loaded_object_ids.add(object_id)
 
+    def _check_duplicate_invalid_marking(self, object_id: str):
+        """Report the ids a bundle gives to more than one invalid marking.
+
+        Objects a whole-bundle parsing failure recovers one at a time are
+        kept by id, so the last of the objects sharing one wins - the same
+        shadowing `_check_duplicate_id` names, one layer below the loaded
+        objects it sees. A Marking Definition is the one invalid object that
+        is applied rather than reported as a loading error, which makes the
+        surviving marking a marking the sender may never have sent: the
+        others cost a reference each, and that reference already fails loudly.
+        """
+        if object_id in self._duplicate_invalid_ids:
+            self._add_warning(
+                f'Duplicate invalid Marking Definition id: {object_id} - the '
+                'marking applied to the converted content may not be the one '
+                'that was sent'
+            )
+
     def _parse_stix_bundle(self):
         # `stix_version` is only set by `load_stix_bundle` - without it the
         # dispatch below would build a generic event from unloaded state
@@ -274,10 +305,58 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return self._converter_cache[stix_type]
 
     def _fetch_observable(self, object_ref: str) -> Optional[dict]:
-        return self._observable.get(object_ref)
+        # a bundle carrying no observable object at all never creates the
+        # `_observable` mapping: a reference to one is missing, not a crash
+        return getattr(self, '_observable', {}).get(object_ref)
+
+    def _fetch_observable_references(
+            self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[Any]:
+        """Yield every value an observable object carries, at any depth.
+
+        Which field holds the value an SCO is about depends on its type, and
+        extensions nest further fields under it, so the values are collected
+        by walking the object instead of by asking each type where it keeps
+        them. Only the fields naming or qualifying the object rather than
+        describing what it observed are skipped
+        """
+        for key, values in observable.items():
+            if key in _OBSERVABLE_FIELDS_TO_SKIP:
+                continue
+            if isinstance(values, dict):
+                yield from self._fetch_observable_references(values)
+                continue
+            if isinstance(values, list):
+                for value in values:
+                    if isinstance(value, _EXTENSION_TYPES):
+                        yield from self._fetch_observable_references(value)
+                        continue
+                    yield value
+                continue
+            if isinstance(values, _EXTENSION_TYPES):
+                yield from self._fetch_observable_references(values)
+                continue
+            yield values
+
+    def _has_marking_definition(self, object_ref: str) -> bool:
+        """Tell a Marking Definition reference the bundle carries an object for.
+
+        Loading records the id of every object it reaches before that object
+        is stored, so a marking too broken to read counts as carried all the
+        same: the loading error already names it, and a second message would
+        say the bundle never sent what it did send. A marking the `stix2`
+        library rejected is recovered and applied wherever it is referenced
+        (see `_recover_invalid_object`), and the TLP markings the
+        specification defines are carried by their id alone - a bundle
+        referring to one of those does not have to send it.
+        """
+        return (
+            object_ref in self._loaded_object_ids
+            or object_ref in self.invalid_objects
+            or self._fetch_tlp_marking(object_ref) is not None
+        )
 
     def _has_observable(self, object_ref: str) -> bool:
-        return object_ref in self._observable
+        return object_ref in getattr(self, '_observable', {})
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -470,19 +549,53 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         try:
             return getattr(self, feature)[object_ref]
         except AttributeError:
-            if (invalid := self.invalid_objects.get(object_ref)) is not None:
-                if object_type == 'marking-definition':
-                    invalid = InvalidMarkingDefinition(invalid)
-                    getattr(self, f'_load{feature}')(invalid)
-                    return getattr(self, feature)[object_ref]
+            recovered = self._recover_invalid_object(object_ref, object_type)
+            if recovered is not None:
+                return recovered
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
-            if (invalid := self.invalid_objects.get(object_ref)) is not None:
-                if object_type == 'marking-definition':
-                    invalid = InvalidMarkingDefinition(invalid)
-                    getattr(self, f'_load{feature}')(invalid)
-                    return getattr(self, feature)[object_ref]
+            recovered = self._recover_invalid_object(object_ref, object_type)
+            if recovered is not None:
+                return recovered
             raise ObjectRefLoadingError(object_ref)
+
+    def _recover_invalid_object(self, object_ref: str, object_type: str):
+        """Recover a referenced object the loader could not parse.
+
+        Marking Definitions are the only invalid objects recovered rather
+        than reported as a loading error: the fields a marking is read for
+        survive a validation failure, and dropping one would silently widen
+        the sharing of the data it governs.
+        """
+        if object_type != 'marking-definition':
+            return None
+        invalid = self.invalid_objects.get(object_ref)
+        if invalid is None:
+            return None
+        # loading raises on a marking too broken to read, and a marking that
+        # governs nothing costs nothing: the duplicate is reported once the
+        # survivor is applied, not before
+        self._load_marking_definition(InvalidMarkingDefinition(invalid))
+        self._check_duplicate_invalid_marking(object_ref)
+        return self._marking_definition[object_ref]
+
+    def _handle_marking_definition_ref(self, object_ref: str):
+        """Handle a Marking Definition a Report or Grouping lists as content.
+
+        A marking that yielded Galaxy Clusters is registered for the event to
+        use; any other marking the bundle carries is applied through the
+        fields referring to it rather than through this list, so listing it
+        costs nothing. What is left is a reference to an object the bundle
+        never carried, reported like the SDO references `_handle_object`
+        fails to resolve.
+        """
+        if object_ref in self._clusters:
+            cluster = self._clusters[object_ref]
+            if cluster['used'].get(self.misp_event.uuid) is None:
+                cluster['used'][self.misp_event.uuid] = False
+            return
+        if not self._has_marking_definition(object_ref):
+            self._object_ref_loading_error(object_ref)
 
     def _handle_object(self, object_type: str, object_ref: str):
         self._parsed_object_refs.add(object_ref)
@@ -1249,16 +1362,23 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return self._identity[reference]['name']
         return self._mapping.identity_references(reference) or 'misp-stix'
 
-    def _is_tlp_marking(self, marking_ref: str) -> bool:
+    def _fetch_tlp_marking(
+            self, marking_ref: str) -> Optional[_MARKING_DEFINITION_TYPING]:
+        """Return the TLP marking the specification gives that id, if any."""
         tlp_2_marking = self._mapping.tlp2_marking_definitions(marking_ref)
         if tlp_2_marking is not None:
-            self._load_marking_definition(tlp_2_marking)
-            return True
+            return tlp_2_marking
         for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):
             if marking_ref == marking['id']:
-                self._load_marking_definition(marking)
-                return True
-        return False
+                return marking
+        return None
+
+    def _is_tlp_marking(self, marking_ref: str) -> bool:
+        marking = self._fetch_tlp_marking(marking_ref)
+        if marking is None:
+            return False
+        self._load_marking_definition(marking)
+        return True
 
     @staticmethod
     def _parse_confidence_level(confidence_level: int) -> str:
