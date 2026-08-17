@@ -155,7 +155,7 @@ STIX 1 specific arguments:
                         MISP data structure level.
   --format {json,xml}   STIX 1 format.
   -n, --namespace NAMESPACE
-                        Namespace to be used in the STIX 1 header.
+                        Namespace to be used in the STIX 1 header - must be a URI.
   -org ORG              Organisation name to be used in the STIX 1 header.
 ```
 

@@ -1268,10 +1268,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             event_args['sharing_group_id'] = self.sharing_group_id
         misp_event.from_dict(**event_args)
         if self.producer is not None:
-            misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
+            self._add_producer_tag(misp_event, self.producer)
         elif len(self._creators) == 1:
-            producer = self._handle_creator(tuple(self._creators)[0])
-            misp_event.add_tag(f'misp-galaxy:producer="{producer}"')
+            self._add_producer_tag(
+                misp_event, self._handle_creator(tuple(self._creators)[0])
+            )
         return misp_event
 
     def _create_misp_event(
@@ -1303,10 +1304,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             for reference in self._analyst_data[stix_object['id']]:
                 self._add_analyst_data(misp_event, reference)
         if self.producer is not None:
-            misp_event.add_tag(f'misp-galaxy:producer="{self.producer}"')
+            self._add_producer_tag(misp_event, self.producer)
         elif 'created_by_ref' in stix_object:
-            producer = self._handle_creator(stix_object['created_by_ref'])
-            misp_event.add_tag(f'misp-galaxy:producer="{producer}"')
+            self._add_producer_tag(
+                misp_event, self._handle_creator(stix_object['created_by_ref'])
+            )
         self._event_tags = set()
         self._add_markings_to_misp_event(misp_event, stix_object)
         if 'labels' in stix_object:

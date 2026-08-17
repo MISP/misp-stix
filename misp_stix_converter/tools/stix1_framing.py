@@ -119,6 +119,20 @@ SCHEMALOC_DICT = Mapping(
 )
 
 
+# A namespace reaches the STIX Package root element as
+# `xmlns:<org>="<namespace>"` without being escaped: a quote breaks out of the
+# attribute and declares namespace prefixes of its own, `<`, `>` and `&` make
+# the document not well-formed at all. What may get there is an absolute URI -
+# a scheme, then anything but the characters RFC 3986 excludes - with `&` and
+# the quotes taken out as well, since the value is written into markup as it
+# stands. `\s` is not enough to keep the control characters out - it misses
+# most of the C0 range, and a `\x08` in an attribute value is as invalid as
+# a `<`.
+_NAMESPACE_REGEX = re.compile(
+    r'[A-Za-z][A-Za-z0-9+.\-]*:[^\x00-\x20\x7f<>"\'&{}|\\^`]+'
+)
+
+
 def stix1_attributes_framing(namespace: str, orgname: str, return_format: str,
                              version: str) -> tuple:
     stix_package = _create_stix_package(orgname, version)
@@ -158,6 +172,7 @@ def _create_stix_package(
 
 
 def _handle_namespaces(namespace: str, orgname: str) -> tuple:
+    namespace = _validate_namespace(namespace)
     parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
     namespaces = {namespace: parsed_orgname}
     namespaces.update(NS_DICT)
@@ -213,3 +228,21 @@ def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
     footer = f"        </{s_related}>\n    </{s_related}s>\n{s_stix}"
     separator = f"        </{s_related}>\n        <{s_related}>\n"
     return header, separator, footer
+
+
+def _validate_namespace(namespace: str) -> str:
+    """Reject a namespace the XML framing cannot write as it stands.
+
+    :param namespace: the caller-supplied STIX 1 namespace
+    :return: the namespace itself, unchanged
+    :raises ValueError: if it does not match `_NAMESPACE_REGEX`
+    """
+    if not isinstance(namespace, str) or (
+            _NAMESPACE_REGEX.fullmatch(namespace) is None):
+        raise ValueError(
+            f'Invalid `namespace` parameter: {namespace!r} - the STIX 1 '
+            'namespace must be an absolute URI: a scheme, followed by `:`, '
+            'then characters a URI allows, minus the `& " \'` a namespace '
+            'declaration cannot carry unescaped.'
+        )
+    return namespace

@@ -95,7 +95,7 @@ def main():
     )
     stix1_parser.add_argument(
         '-n', '--namespace', default='https://misp-project.org',
-        help='Namespace to be used in the STIX 1 header.'
+        help='Namespace to be used in the STIX 1 header - must be a URI.'
     )
     stix1_parser.add_argument(
         '-org', default='MISP',
