@@ -175,6 +175,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if invalid_objects is None:
                 invalid_objects = {}
         self.__invalid_objects = invalid_objects
+        # the ids the loader saw more than one invalid object claim - what
+        # `invalid_objects` cannot hold, since it keeps one object per id
+        self._duplicate_invalid_ids = getattr(
+            bundle, '_duplicate_invalid_ids', set()
+        )
         self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
         self._load_stix_bundle(bundle)
@@ -239,6 +244,24 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 'content may be an altered rendering of the bundle'
             )
         self._loaded_object_ids.add(object_id)
+
+    def _check_duplicate_invalid_marking(self, object_id: str):
+        """Report the ids a bundle gives to more than one invalid marking.
+
+        Objects a whole-bundle parsing failure recovers one at a time are
+        kept by id, so the last of the objects sharing one wins - the same
+        shadowing `_check_duplicate_id` names, one layer below the loaded
+        objects it sees. A Marking Definition is the one invalid object that
+        is applied rather than reported as a loading error, which makes the
+        surviving marking a marking the sender may never have sent: the
+        others cost a reference each, and that reference already fails loudly.
+        """
+        if object_id in self._duplicate_invalid_ids:
+            self._add_warning(
+                f'Duplicate invalid Marking Definition id: {object_id} - the '
+                'marking applied to the converted content may not be the one '
+                'that was sent'
+            )
 
     def _parse_stix_bundle(self):
         # `stix_version` is only set by `load_stix_bundle` - without it the
@@ -529,7 +552,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         invalid = self.invalid_objects.get(object_ref)
         if invalid is None:
             return None
+        # loading raises on a marking too broken to read, and a marking that
+        # governs nothing costs nothing: the duplicate is reported once the
+        # survivor is applied, not before
         self._load_marking_definition(InvalidMarkingDefinition(invalid))
+        self._check_duplicate_invalid_marking(object_ref)
         return self._marking_definition[object_ref]
 
     def _handle_object(self, object_type: str, object_ref: str):
