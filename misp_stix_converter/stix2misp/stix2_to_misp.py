@@ -506,19 +506,31 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         try:
             return getattr(self, feature)[object_ref]
         except AttributeError:
-            if (invalid := self.invalid_objects.get(object_ref)) is not None:
-                if object_type == 'marking-definition':
-                    invalid = InvalidMarkingDefinition(invalid)
-                    getattr(self, f'_load{feature}')(invalid)
-                    return getattr(self, feature)[object_ref]
+            recovered = self._recover_invalid_object(object_ref, object_type)
+            if recovered is not None:
+                return recovered
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
-            if (invalid := self.invalid_objects.get(object_ref)) is not None:
-                if object_type == 'marking-definition':
-                    invalid = InvalidMarkingDefinition(invalid)
-                    getattr(self, f'_load{feature}')(invalid)
-                    return getattr(self, feature)[object_ref]
+            recovered = self._recover_invalid_object(object_ref, object_type)
+            if recovered is not None:
+                return recovered
             raise ObjectRefLoadingError(object_ref)
+
+    def _recover_invalid_object(self, object_ref: str, object_type: str):
+        """Recover a referenced object the loader could not parse.
+
+        Marking Definitions are the only invalid objects recovered rather
+        than reported as a loading error: the fields a marking is read for
+        survive a validation failure, and dropping one would silently widen
+        the sharing of the data it governs.
+        """
+        if object_type != 'marking-definition':
+            return None
+        invalid = self.invalid_objects.get(object_ref)
+        if invalid is None:
+            return None
+        self._load_marking_definition(InvalidMarkingDefinition(invalid))
+        return self._marking_definition[object_ref]
 
     def _handle_object(self, object_type: str, object_ref: str):
         self._parsed_object_refs.add(object_ref)
