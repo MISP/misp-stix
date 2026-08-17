@@ -302,6 +302,182 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         load_stix2_content(stix_content)
         self.assertEqual(stix_content, original)
 
+    def _load_stix20_content_with_invalid_markings(self, *markings):
+        from misp_stix_converter.tools import load_stix2_content
+        return load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'spec_version': '2.0',
+                'objects': [
+                    {
+                        'type': 'identity',
+                        'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL',
+                        'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'report',
+                        'id': 'report--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'published': '2020-10-25T16:22:00Z',
+                        'labels': ['Threat-Report'],
+                        'object_refs': [
+                            'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+                        ]
+                    },
+                    {
+                        'type': 'indicator',
+                        'id': 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'labels': ['malicious-activity'],
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'valid_from': '2020-10-25T16:22:00.000Z',
+                        'object_marking_refs': [markings[0]['id']]
+                    },
+                    *markings
+                ]
+            }
+        )
+
+    def test_stix20_duplicate_invalid_marking_definitions_are_reported(self):
+        # A Marking Definition is the one invalid object applied rather than
+        # reported as a loading error: with 2 of them under one id, the last
+        # one wins and the data ends up governed by a marking the sender may
+        # never have sent.
+        marking_id = 'marking-definition--11111111-1111-4111-8111-111111111111'
+        bundle = self._load_stix20_content_with_invalid_markings(
+            *self._invalid_tlp_markings(marking_id, 'white', 'red')
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        # `invalid_objects` keeps its `id -> object` shape: the marking the
+        # bundle lost travels as an id, not as a second object.
+        self.assertEqual(list(self.parser.invalid_objects), [marking_id])
+        self._check_duplicate_invalid_marking_warning(
+            marking_id, self.parser.warnings
+        )
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual(
+            [tag.name for tag in attribute.tags], ['tlp:red']
+        )
+
+    def test_stix20_unapplied_invalid_marking_definitions_are_not_reported(self):
+        # A marking too broken to read governs nothing: loading it raises,
+        # the object referring to it is reported as an error and lands with
+        # no marking, and a duplicate that changed no marking has no stake to
+        # warn about.
+        marking_id = 'marking-definition--11111111-1111-4111-8111-111111111111'
+        bundle = self._load_stix20_content_with_invalid_markings(
+            *(
+                {
+                    'type': 'marking-definition', 'id': marking_id,
+                    'created': '2017-01-20T00:00:00.000Z',
+                    'definition_type': 'tlp'
+                } for _ in range(2)
+            )
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_duplicate_invalid_marking_warning_absence(
+            self.parser.warnings
+        )
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual([tag.name for tag in attribute.tags], [])
+        self.assertIn(
+            attribute.uuid,
+            '\n'.join(self._reported_messages(self.parser.errors))
+        )
+
+    def test_stix20_distinct_invalid_marking_definitions_are_not_reported(self):
+        # Invalid markings the bundle keeps apart shadow nothing: both are
+        # recovered, and each governs what refers to it.
+        markings = self._invalid_tlp_markings(
+            'marking-definition--11111111-1111-4111-8111-111111111111', 'white'
+        ) + self._invalid_tlp_markings(
+            'marking-definition--22222222-2222-4222-8222-222222222222', 'red'
+        )
+        bundle = self._load_stix20_content_with_invalid_markings(*markings)
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(len(self.parser.invalid_objects), 2)
+        self._check_duplicate_invalid_marking_warning_absence(
+            self.parser.warnings
+        )
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual([tag.name for tag in attribute.tags], ['tlp:white'])
+
+    def test_stix20_duplicate_invalid_objects_are_reported_by_type(self):
+        # Any other invalid object is fetched, dropped and named by the error
+        # its reference produces: 1 id, 1 reference, 1 error, duplicate or
+        # not - nothing a second warning would add.
+        from misp_stix_converter.tools import load_stix2_content
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        bundle = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'spec_version': '2.0',
+                'objects': [
+                    {
+                        'type': 'identity',
+                        'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL',
+                        'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'report',
+                        'id': 'report--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'published': '2020-10-25T16:22:00Z',
+                        'labels': ['Threat-Report'],
+                        'object_refs': [
+                            'indicator--91ae0a21-4b7c-4c1d-9d18-b8b4e2f4a1e2',
+                            indicator_id
+                        ]
+                    },
+                    {
+                        'type': 'indicator',
+                        'id': 'indicator--91ae0a21-4b7c-4c1d-9d18-b8b4e2f4a1e2',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'labels': ['malicious-activity'],
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'valid_from': '2020-10-25T16:22:00.000Z'
+                    },
+                    *(
+                        {
+                            'type': 'indicator', 'id': indicator_id,
+                            'created': '2020-10-25T16:22:00.000Z',
+                            'modified': '2020-10-25T16:22:00.000Z',
+                            'labels': ['malicious-activity'],
+                            'pattern': pattern,
+                            'valid_from': '2020-10-25T16:22:00.000Z'
+                        } for pattern in ('FIRST pattern', 'SECOND pattern')
+                    )
+                ]
+            }
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_duplicate_invalid_marking_warning_absence(
+            self.parser.warnings
+        )
+        self.assertIn(
+            indicator_id, '\n'.join(self._reported_messages(self.parser.errors))
+        )
+
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)

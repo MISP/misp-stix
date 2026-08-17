@@ -167,6 +167,39 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(len(duplicate_warnings), 1)
         self.assertIn(object_id, duplicate_warnings[0])
 
+    @staticmethod
+    def _invalid_tlp_markings(marking_id: str, *tlp_values) -> list:
+        """The Marking Definitions a bundle carries under a single id.
+
+        A TLP marking under an id the specification does not give it fails
+        `stix2` validation in both versions, which is what puts the objects
+        below on the invalid objects path - the shape a sender minting its
+        own TLP markings writes, with one id reused.
+        """
+        return [
+            {
+                'type': 'marking-definition', 'id': marking_id,
+                'created': '2017-01-20T00:00:00.000Z',
+                'definition_type': 'tlp', 'definition': {'tlp': tlp_value}
+            } for tlp_value in tlp_values
+        ]
+
+    def _check_duplicate_invalid_marking_warning(self, marking_id, warnings):
+        """The marking governing the data may not be the one that was sent."""
+        duplicate_warnings = self._reports_matching(
+            warnings, 'Duplicate invalid Marking Definition id'
+        )
+        self.assertEqual(len(duplicate_warnings), 1)
+        self.assertIn(marking_id, duplicate_warnings[0])
+
+    def _check_duplicate_invalid_marking_warning_absence(self, warnings):
+        """Invalid objects a bundle keeps apart, or does not apply."""
+        self.assertEqual(
+            self._reports_matching(
+                warnings, 'Duplicate invalid Marking Definition id'
+            ), []
+        )
+
     def _check_merged_indicator_warning(
             self, record_uuid, object_ids, discarded, warnings):
         """An Indicator merged into an Observed Data names what it took away."""
