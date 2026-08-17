@@ -394,7 +394,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         would cost it the round-trip, and what MISP core does with a uuid it
         already knows is its own ownership decision. Only the reporting is
         added, and only here - an **Internal** bundle merges such a pair on
-        purpose, a different loss handled on its own
+        purpose, the **Merged Indicator** loss reported on its own
 
         Records are tracked per record type because events, objects and
         attributes each get their uuid namespace: an attribute sharing its

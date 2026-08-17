@@ -9,6 +9,7 @@ from ..exceptions import (
     UndefinedIndicatorError, UndefinedSTIXObjectError,
     UnknownParsingFunctionError, UnknownPatternMappingError)
 from ..stix2_pattern_parser import STIX2PatternParser
+from ..stix2_to_misp import _OBSERVABLE_FIELDS_TO_SKIP
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
     _MAIN_PARSER_TYPING)
@@ -16,9 +17,14 @@ from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
 from collections import defaultdict
+from datetime import datetime
+from itertools import chain
 from pymisp import MISPObject
-from stix2.v20.sdo import Indicator as Indicator_v20
-from stix2.v21.sdo import Indicator as Indicator_v21
+from stix2.utils import format_datetime
+from stix2.v20.sdo import (
+    Indicator as Indicator_v20, ObservedData as ObservedData_v20)
+from stix2.v21.sdo import (
+    Indicator as Indicator_v21, ObservedData as ObservedData_v21)
 from stix2patterns.inspector import _PatternData as PatternData
 from types import GeneratorType
 from typing import Any, Iterator, Optional, TYPE_CHECKING, Union
@@ -28,6 +34,21 @@ if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _INDICATOR_TYPING = Union[Indicator_v20, Indicator_v21]
+_OBSERVED_DATA_TYPING = Union[ObservedData_v20, ObservedData_v21, dict]
+# Pattern fields whose value an observable never repeats as it stands, so a
+# merge dropping them costs nothing: the ones an observable keeps no value
+# for at all - `src_ref.type = 'ipv4-addr'` naming the type of the observable
+# a reference points to; the MIME content disposition, written bare in a
+# pattern where the observable gains the file name `body_raw_ref.name`
+# compares on its own; and the fixed `content_ref` boilerplate an export
+# writes for a malware sample (`application/zip`, `mime-type-indicated`,
+# `infected`), which carries no MISP data and which the observable renders as
+# `x_misp_attachment` / `x_misp_malware_sample` instead - the sample's own
+# filename and hash are compared from the same pattern
+_PATTERN_FIELDS_TO_SKIP = (
+    *_OBSERVABLE_FIELDS_TO_SKIP, 'content_disposition', 'decryption_key',
+    'encryption_algorithm', 'mime_type'
+)
 
 
 class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
@@ -1705,7 +1726,15 @@ class InternalSTIX2IndicatorConverter(
 
     def parse(self, indicator_ref: str):
         object_id = self.main_parser._extract_uuid(indicator_ref)
-        if f'observed-data--{object_id}' in self._observed_data:
+        observed_data_id = f'observed-data--{object_id}'
+        if observed_data_id in self._observed_data:
+            # A `to_ids` MISP record - an attribute, or an object holding at
+            # least 1 such attribute - exports to an Observed Data carrying
+            # its values *and* an Indicator whose pattern says them again,
+            # both under the record uuid: the Observed Data is the complete
+            # carrier, so the Indicator is skipped - but only what it says
+            # again can be dropped in silence.
+            self._check_merged_indicator(indicator_ref, observed_data_id)
             return
         # A standalone registry-key-value exported to STIX 2.0 emits both a
         # custom observable and a values[0] Indicator sharing the object uuid
@@ -1743,6 +1772,129 @@ class InternalSTIX2IndicatorConverter(
     @property
     def _observed_data(self) -> dict:
         return getattr(self.main_parser, '_observed_data', {})
+
+    ############################################################################
+    #                    MERGED INDICATOR HANDLING METHODS                     #
+    ############################################################################
+
+    def _check_merged_indicator(
+            self, indicator_ref: str, observed_data_id: str):
+        """Report what merging an Indicator into an Observed Data takes away.
+
+        The merge is keyed on the uuid the 2 STIX objects share, never on
+        what they carry, so a bundle whose 2 halves disagree - which a MISP
+        export does not write - is merged all the same and the Indicator's
+        pattern goes with it. The merge stays: it is right for the content it
+        was built for. Only the values the Observed Data does not say again
+        are reported, so a faithful round-trip stays quiet
+        """
+        indicator = self.main_parser._get_stix_object(indicator_ref)
+        comparisons = self._fetch_pattern_comparisons(indicator)
+        if comparisons is None:
+            # A yara, sigma or snort rule states no value an observable could
+            # be repeating, and an unparsable pattern never reaches the
+            # standard parsing path that would report it: either way the
+            # merge takes the whole pattern with it
+            self._merged_indicator_warning(
+                indicator_ref, observed_data_id, (indicator.get('pattern'),)
+            )
+            return
+        observed_values = set(
+            self._fetch_observed_data_values(observed_data_id)
+        )
+        discarded = tuple(
+            value for path, value in self._fetch_pattern_values(comparisons)
+            if path[-1] not in _PATTERN_FIELDS_TO_SKIP
+            and not self._pattern_value_is_kept(value, observed_values)
+        )
+        if discarded:
+            self._merged_indicator_warning(
+                indicator_ref, observed_data_id, discarded
+            )
+
+    def _fetch_merged_observables(
+            self, observed_data: _OBSERVED_DATA_TYPING) -> Iterator[dict]:
+        # The Observed Data converter walks its own observables with the
+        # version already known and reports the `object_refs` it cannot
+        # resolve: here the version is whatever the merged pair carries, and
+        # a missing observable is that converter's loss to name, not ours
+        if 'objects' in observed_data:
+            yield from observed_data['objects'].values()
+            return
+        for object_ref in observed_data.get('object_refs', []):
+            observable = self.main_parser._fetch_observable(object_ref)
+            if observable is not None:
+                yield observable
+
+    def _fetch_observed_data_values(
+            self, observed_data_id: str) -> Iterator[str]:
+        """Yield every value the observables of an Observed Data carry.
+
+        Values are lowered because a pattern and the observable saying the
+        same thing may differ in case only - a hash is the usual one - and a
+        case is not the disagreement worth reporting. Timestamps are yielded
+        in both the form `str` gives and the one a pattern is written with
+        """
+        observed_data = self._observed_data[observed_data_id]
+        for observable in self._fetch_merged_observables(observed_data):
+            for value in self.main_parser._fetch_observable_references(
+                    observable):
+                yield str(value).lower()
+                if isinstance(value, datetime):
+                    yield format_datetime(value).lower()
+
+    def _fetch_pattern_comparisons(
+            self, indicator: _INDICATOR_TYPING) -> Optional[dict]:
+        """The comparisons of a pattern, or None when there are none to read."""
+        if indicator.get('pattern_type', 'stix') != 'stix':
+            return None
+        try:
+            return self._compile_stix_pattern(indicator).comparisons
+        except InvalidSTIXPatternError:
+            return None
+        except Exception as exception:
+            # Reporting a merge must never be what breaks a conversion
+            self.main_parser._add_error(
+                'Error while compiling the pattern of the Indicator merged '
+                f'into an Observed Data with id {indicator.id}: '
+                f'{self.main_parser._parse_traceback(exception)}'
+            )
+            return None
+
+    @staticmethod
+    def _fetch_pattern_values(comparisons: dict) -> Iterator[tuple]:
+        for path, _, value in chain(*comparisons.values()):
+            yield path, value
+
+    @staticmethod
+    def _pattern_value_is_kept(value: Any, observed_values: set) -> bool:
+        """Tell whether an Observed Data says a pattern value again.
+
+        The value has to be there whole: a value one of the 2 halves narrows
+        - `circl.lu` against `www.circl.lu` - is a value the merge takes
+        away. Case is not such a narrowing, and a hash is the usual pair
+        differing by it alone, so the comparison is lowered. A registry value
+        is written with its `%` escaped in a pattern and bare in the
+        observable (ADR-0007), so both of its forms are tried
+        """
+        value = str(value).lower()
+        candidates = {value, value.replace('\\%', '%')}
+        return not candidates.isdisjoint(observed_values)
+
+    def _merged_indicator_warning(
+            self, indicator_ref: str, observed_data_id: str,
+            discarded: tuple):
+        record_uuid = self.main_parser._extract_uuid(indicator_ref)
+        reported_uuid = self.main_parser.replacement_uuids.get(
+            record_uuid, record_uuid
+        )
+        values = ', '.join(f"'{value}'" for value in discarded)
+        self.main_parser._add_warning(
+            f'Merged MISP record uuid {reported_uuid} - the STIX objects '
+            f'{indicator_ref} and {observed_data_id} both produce it, so the '
+            f'Observed Data alone is converted and the values only the '
+            f'Indicator carries ({values}) are not'
+        )
 
     ############################################################################
     #                        ATTRIBUTES PARSING METHODS                        #

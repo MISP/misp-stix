@@ -321,6 +321,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if not all(hasattr(self, field) for field in _STORAGE_VARIABLE_NAMES):
             return
         pattern_parser = self._get_converter('indicator')._compile_stix_pattern
+        # Keyed on the bare uuid where the External parser keys the same map
+        # on the whole STIX id: an Internal Indicator and the Observed Data
+        # rendering the same MISP record share that uuid and nothing else, so
+        # it is what makes each of the 2 findable from the other. Only
+        # Indicators feed the map, so no other type can collide with them here
         self._indicator_references = {
             self._extract_uuid(indicator_id): tuple(val[-1] for val in pattern)
             for indicator_id, indicator in self._indicator.items()
