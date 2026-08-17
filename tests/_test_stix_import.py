@@ -19,6 +19,11 @@ from .update_documentation import (
 PATTERNS = ('_ATTRIBUTES', '_OBJECTS')
 UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
+# A producer name asking for a second taxonomy entry inside the tag it is
+# written into, and what a MISP taxonomy tag value can carry of it.
+SMUGGLING_PRODUCER = 'Evil" tlp:clear misp-galaxy:producer="CIRCL'
+SANITISED_PRODUCER = 'Evil tlp:clear misp-galaxy:producer=CIRCL'
+
 _GALAXY_SUMMARY_MAPPING = {
     'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
     'course-of-action': 'Course of Action (mitre-course-of-action)',
@@ -228,6 +233,23 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(
             self._reports_matching(warnings, 'Merged MISP record'), []
         )
+
+    def _check_unusable_producer_warning(self, producer, warnings):
+        """A producer name a taxonomy tag has nothing left to carry from."""
+        producer_warnings = self._reports_matching(
+            warnings, 'Unusable producer name'
+        )
+        self.assertEqual(len(producer_warnings), 1)
+        self.assertIn(producer, producer_warnings[0])
+
+    def _check_sanitised_producer_warning(self, producer, sanitised, warnings):
+        """A producer name is one taxonomy entry, whatever it carries."""
+        producer_warnings = self._reports_matching(
+            warnings, 'Sanitised producer name'
+        )
+        self.assertEqual(len(producer_warnings), 1)
+        for value in (producer, sanitised):
+            self.assertIn(value, producer_warnings[0])
 
     def _check_uuid_collision_warning(self, record_uuid, object_ids, warnings):
         """Two STIX ids, one MISP uuid: both records stay, the loss is named."""

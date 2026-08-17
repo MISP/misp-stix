@@ -5,7 +5,8 @@ from .test_external_stix20_bundles import (
     TestExternalSTIX20Bundles, TLP_1_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX20
 from ._test_stix_import import (
-    TestExternalSTIX2Import, TestSTIX20Import, UUIDv4, MISP_org_uuid)
+    SANITISED_PRODUCER, SMUGGLING_PRODUCER, TestExternalSTIX2Import,
+    TestSTIX20Import, UUIDv4, MISP_org_uuid)
 from uuid import uuid5
 
 
@@ -651,6 +652,59 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             event.tags[0]['name'],
             f'misp-galaxy:producer="{self.parser.producer}"'
         )
+
+    def test_stix20_bundle_with_metacharacters_in_identity_name(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_metacharacters_in_identity_name()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        identity, _, _ = bundle.objects
+        # The Identity name asks for a second taxonomy entry inside the tag
+        # the producer is written into: what the event gets is one tag.
+        self.assertEqual(
+            [tag.name for tag in event.tags],
+            [f'misp-galaxy:producer="{SANITISED_PRODUCER}"']
+        )
+        self._check_sanitised_producer_warning(
+            identity.name, SANITISED_PRODUCER, self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_metacharacters_in_the_only_creator_name(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_metacharacters_in_the_only_creator_name()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(
+            [tag.name for tag in event.tags],
+            [f'misp-galaxy:producer="{SANITISED_PRODUCER}"']
+        )
+        self._check_sanitised_producer_warning(
+            SMUGGLING_PRODUCER, SANITISED_PRODUCER, self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_metacharacters_in_producer_parameter(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_without_report()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(producer=SMUGGLING_PRODUCER)
+        event = self.parser.misp_event
+        self.assertEqual(
+            [tag.name for tag in event.tags],
+            [f'misp-galaxy:producer="{SANITISED_PRODUCER}"']
+        )
+        self._check_sanitised_producer_warning(
+            SMUGGLING_PRODUCER, SANITISED_PRODUCER, self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_unusable_producer_parameter(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_without_report()
+        self.parser.load_stix_bundle(bundle)
+        producer = '" "'
+        self.parser.parse_stix_bundle(producer=producer)
+        # Nothing a tag value can be made of: the event carries no producer
+        # tag at all, rather than an empty one - and never the provenance the
+        # bundle claims instead of the one the parameter asked for.
+        self.assertEqual(self.parser.misp_event.tags, [])
+        self._check_unusable_producer_warning(producer, self.parser.warnings)
 
     def test_stix21_bundle_with_report_description(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_report_description()
