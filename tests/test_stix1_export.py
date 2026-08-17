@@ -4,10 +4,14 @@
 import re
 from base64 import b64encode
 from datetime import datetime, timezone
+from lxml import etree
 from misp_stix_converter import (InvalidMISPInputError, MISPtoSTIX1AttributesParser,
                                  MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1)
+from misp_stix_converter.tools.stix1_framing import _handle_namespaces
 from pymisp import MISPEvent
+from shutil import copyfile
+from tempfile import TemporaryDirectory
 from uuid import uuid5, UUID
 from .test_events import *
 from .test_events import _INDICATOR_ATTRIBUTE
@@ -87,6 +91,113 @@ class TestSTIX1InputContract(TestSTIX):
             {'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)]}
         )
         self.assertIsNotNone(parser.stix_package)
+
+
+class TestSTIX1NamespaceParameter(TestSTIX):
+    # Every STIX 1 export entry validates the `namespace` parameter - the
+    # framing writes it into the root element as it stands - so a rejected
+    # value produces no output at all.
+    _BREAKOUT_NAMESPACE = 'http://evil.example" xmlns:evil="http://x'
+    _INVALID_NAMESPACES = (
+        _BREAKOUT_NAMESPACE,
+        'http://evil.example/<',
+        'http://evil.example/>',
+        'http://evil.example/?a=1&b=2',
+        'http://evil.example/\x08',  # a control character is as invalid as a `<`
+        'misp-project.org',  # no scheme: not a URI
+        'http://misp project.example',  # whitespace
+        '',
+        None
+    )
+    _DEFAULT_NAMESPACE = 'https://misp-project.org'
+    _VALID_NAMESPACE = 'http://custom.example/misp'
+
+    def setUp(self):
+        self._events_file = Path(__file__).parent / 'test_events_collection_1.json'
+        self._attributes_file = Path(__file__).parent / 'test_attributes_collection_1.json'
+
+    def tearDown(self):
+        # Framing sets the process-global mixbox id namespace: put the default
+        # back, so the exports a custom namespace ran here stay contained
+        _handle_namespaces(self._DEFAULT_NAMESPACE, 'MISP')
+
+    def _copy_input(self, tmp_dir, input_file):
+        filename = Path(tmp_dir) / input_file.name
+        copyfile(input_file, filename)
+        return filename
+
+    def _export_event(self, tmp_dir, **kwargs):
+        filename = self._copy_input(tmp_dir, self._events_file)
+        output_file = Path(f'{filename}.out')
+        self.assertEqual(
+            misp_to_stix1(filename, **kwargs),
+            {'success': 1, 'results': [output_file]}
+        )
+        return output_file
+
+    def test_invalid_namespaces_are_rejected(self):
+        for namespace in self._INVALID_NAMESPACES:
+            with TemporaryDirectory() as tmp_dir:
+                filename = self._copy_input(tmp_dir, self._events_file)
+                with self.assertRaises(ValueError) as context:
+                    misp_to_stix1(filename, namespace=namespace)
+                self.assertIn('namespace', str(context.exception))
+                # The parameter is rejected before any file is written
+                self.assertEqual(list(Path(tmp_dir).iterdir()), [filename])
+
+    def test_json_export_rejects_invalid_namespaces(self):
+        # The JSON framing never writes the namespace, but the value is still
+        # the invalid configuration the operator has to hear about
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._copy_input(tmp_dir, self._events_file)
+            with self.assertRaises(ValueError):
+                misp_to_stix1(
+                    filename, return_format='json',
+                    namespace=self._BREAKOUT_NAMESPACE
+                )
+            self.assertEqual(list(Path(tmp_dir).iterdir()), [filename])
+
+    def test_collection_exports_reject_invalid_namespaces(self):
+        for function, input_file in (
+                (misp_event_collection_to_stix1, self._events_file),
+                (misp_attribute_collection_to_stix1, self._attributes_file)):
+            with TemporaryDirectory() as tmp_dir:
+                filename = self._copy_input(tmp_dir, input_file)
+                with self.assertRaises(ValueError) as context:
+                    function(
+                        filename, filename, single_output=True,
+                        output_dir=tmp_dir,
+                        namespace=self._BREAKOUT_NAMESPACE
+                    )
+                self.assertIn('namespace', str(context.exception))
+                # Not even the temp fragments of the streamed path
+                self.assertEqual(list(Path(tmp_dir).iterdir()), [filename])
+
+    def test_valid_namespace_frames_the_root_element(self):
+        with TemporaryDirectory() as tmp_dir:
+            default_map = etree.parse(
+                str(self._export_event(tmp_dir))
+            ).getroot().nsmap
+        with TemporaryDirectory() as tmp_dir:
+            custom_map = etree.parse(
+                str(self._export_event(tmp_dir, namespace=self._VALID_NAMESPACE))
+            ).getroot().nsmap
+        # The organisation prefix is the only declaration that moved
+        self.assertEqual(default_map.pop('MISP'), self._DEFAULT_NAMESPACE)
+        self.assertEqual(custom_map.pop('MISP'), self._VALID_NAMESPACE)
+        self.assertEqual(default_map, custom_map)
+
+    def test_framing_helper_validates_the_namespace(self):
+        # The framing helpers are the choke point every XML export goes
+        # through, including callers using them directly
+        with self.assertRaises(ValueError):
+            _handle_namespaces(self._BREAKOUT_NAMESPACE, 'MISP')
+        self.assertEqual(
+            _handle_namespaces(self._VALID_NAMESPACE, 'MISP')[
+                self._VALID_NAMESPACE
+            ],
+            'MISP'
+        )
 
 
 class TestStix1Export(TestSTIX):

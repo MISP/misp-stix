@@ -10,7 +10,8 @@ from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .stix2misp.importparser import MISP_org_uuid
 from .tools.stix1_framing import (
-    stix1_attributes_framing, stix1_framing, _create_stix_package)
+    stix1_attributes_framing, stix1_framing, _create_stix_package,
+    _validate_namespace)
 from .tools.stix1_loading_helpers import load_stix1_package
 from .tools.stix1_to_misp_helpers import get_stix1_parser, is_stix1_from_misp
 from .tools.stix1_writing_helpers import (
@@ -111,7 +112,7 @@ class AttributeCollectionHandler:
 def misp_attribute_collection_to_stix1(
         *input_files: List[_files_type], debug: Optional[bool] = False,
         return_format: Optional[str] = _STIX1_default_format,
-        namespace: Optional[str] = _default_namespace,
+        namespace: str = _default_namespace,
         org: Optional[str] = _default_org,
         version: Optional[str] = _STIX1_default_version,
         in_memory: Optional[bool] = False,
@@ -122,6 +123,7 @@ def misp_attribute_collection_to_stix1(
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
+    namespace = _validate_namespace(namespace)
     parser = MISPtoSTIX1AttributesParser(org, version)
     if len(input_files) == 1:
         try:
@@ -236,7 +238,7 @@ def misp_attribute_collection_to_stix1(
 def misp_event_collection_to_stix1(
         *input_files: List[_files_type], debug: Optional[bool] = False,
         return_format: Optional[str] = _STIX1_default_format,
-        namespace: Optional[str] = _default_namespace,
+        namespace: str = _default_namespace,
         org: Optional[str] = _default_org,
         version: Optional[str] = _STIX1_default_version,
         in_memory: Optional[bool] = False,
@@ -247,6 +249,7 @@ def misp_event_collection_to_stix1(
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
+    namespace = _validate_namespace(namespace)
     _write_args = (namespace, org, return_format)
     parser = MISPtoSTIX1EventsParser(org, version)
     if len(input_files) == 1:
@@ -443,7 +446,7 @@ def misp_collection_to_stix2(
 def misp_to_stix1(
         filename: _files_type, debug: Optional[bool] = False,
         return_format: Optional[str] = _STIX1_default_format,
-        namespace: Optional[str] = _default_namespace,
+        namespace: str = _default_namespace,
         org: Optional[str] = _default_org,
         version: Optional[str] = _STIX1_default_version,
         output_dir: Optional[_files_type] = None,
@@ -452,6 +455,7 @@ def misp_to_stix1(
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
+    namespace = _validate_namespace(namespace)
     parser = MISPtoSTIX1EventsParser(org, version)
     try:
         if not isinstance(filename, Path):

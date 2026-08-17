@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from pymisp import MISPAttribute
 from stix.core import STIXPackage
+from stix2patterns.validator import validate
+from unittest.mock import patch
 from uuid import uuid5, UUID
 from ._test_stix import PLANTED_TEMPLATE, TestSTIX
 
@@ -17,6 +19,23 @@ _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
 _MISP_OBJECT_EXCLUSION_LIST = (
     'distribution', 'sharing_group_id', 'template_uuid', 'template_version'
+)
+
+# Object relations reaching a pattern property-name position, paired with the
+# pattern segment each one must produce. An unquoted metacharacter segment
+# either breaks the pattern - the object is then reported instead of converted
+# - or, for a dotted relation, silently turns one property into a path. The
+# last pair is the benign control: a relation needing no quotes keeps the bare
+# segment it always had. Segments are spelled out rather than computed, so the
+# expectations do not restate the escaping they guard.
+_PATTERN_SEGMENT_RELATIONS = (
+    ("rel' OR file:name = 'x", r"'x_misp_rel\' OR file:name = \'x'"),
+    ('rel]', "'x_misp_rel]'"),
+    ('rel=1', "'x_misp_rel=1'"),
+    ('weird relation', "'x_misp_weird relation'"),
+    ("x'", r"'x_misp_x\''"),
+    ('a.b', "'x_misp_a.b'"),
+    ('rel-with-dash', 'x_misp_rel_with_dash')
 )
 
 
@@ -140,6 +159,28 @@ class TestSTIX2Export(TestSTIX):
     def _add_object_ids_flag(event):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
+
+    def _add_metacharacter_relation(self, event, relation, value):
+        misp_object = event['Event']['Object'][0]
+        misp_object['Attribute'].append(
+            {
+                'type': 'text', 'object_relation': relation,
+                'value': value, 'to_ids': True
+            }
+        )
+        return misp_object
+
+    def _get_indicators(self):
+        return [
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object['type'] == 'indicator'
+        ]
+
+    def _object_errors(self, misp_object):
+        return [
+            error for errors in self.parser.errors.values()
+            for error in errors if misp_object['uuid'] in error
+        ]
 
     def _check_account_indicator_objects(self, misp_objects, patterns):
         gitlab_object, telegram_object = misp_objects
@@ -649,6 +690,56 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(observed_data.modified, timestamp)
         self.assertEqual(observed_data.first_observed, timestamp)
         self.assertEqual(observed_data.last_observed, timestamp)
+
+    def _check_pattern_metacharacter_relations(self, event_getter, prefix):
+        value = 'metacharacter value'
+        for relation, segment in _PATTERN_SEGMENT_RELATIONS:
+            with self.subTest(object_relation=relation):
+                self.setUp()
+                event = event_getter()
+                self._add_object_ids_flag(event['Event'])
+                misp_object = self._add_metacharacter_relation(
+                    event, relation, value
+                )
+                self.parser.parse_misp_event(event['Event'])
+                self.assertEqual(self._object_errors(misp_object), [])
+                indicators = self._get_indicators()
+                self.assertEqual(len(indicators), 1)
+                self.assertIn(
+                    f"{prefix}:{segment} = '{value}'", indicators[0].pattern
+                )
+                self.assertTrue(
+                    validate(
+                        indicators[0].pattern,
+                        stix_version=self.parser._version
+                    )
+                )
+
+    def _check_unquotable_pattern_reported(self, event_getter, name):
+        # The quoting under test is what keeps a metacharacter relation out of
+        # the property-name position; with it neutralised the pattern fails to
+        # parse, and the object must then be *reported* and converted as a
+        # custom object rather than vanishing from the export.
+        event = event_getter()
+        self._add_object_ids_flag(event['Event'])
+        misp_object = self._add_metacharacter_relation(event, 'rel]', 'V')
+        with patch.object(
+                self.parser, '_quote_custom_property',
+                lambda relation: f'x_misp_{relation}'):
+            self.parser.parse_misp_event(event['Event'])
+        self.assertEqual(self._get_indicators(), [])
+        self.assertIn(
+            'x-misp-object',
+            [stix_object['type'] for stix_object in self.parser.stix_objects]
+        )
+        object_errors = self._object_errors(misp_object)
+        self.assertEqual(len(object_errors), 1)
+        self.assertTrue(
+            object_errors[0].startswith(
+                f"Error with the {name} object "
+                f"(uuid: {misp_object['uuid']}):"
+            )
+        )
 
     def _check_pe_and_section_observable(self, extension, pe, section):
         (_type, compilation, entrypoint, original, internal, desc, version,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ._test_stix_import import TestSTIX2Bundles
+from ._test_stix_import import SMUGGLING_PRODUCER, TestSTIX2Bundles
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -2236,6 +2236,34 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
             deepcopy(cls.__identity), report, shadowed, indicator
         ]
         return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def __smuggling_identity(cls):
+        """An Identity naming itself what a taxonomy tag cannot carry."""
+        identity = deepcopy(cls.__identity)
+        identity['name'] = SMUGGLING_PRODUCER
+        return identity
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_identity_name(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(cls.__indicator)
+        report.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [cls.__smuggling_identity(), report, indicator]
+        return dict_to_stix2(bundle)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_the_only_creator_name(cls):
+        """The same Identity, as the one creator a bundle credits itself to."""
+        bundle = deepcopy(cls.__bundle)
+        identity = cls.__smuggling_identity()
+        observables = deepcopy(_IP_ADDRESS_ATTRIBUTES)
+        for stix_object in observables:
+            if 'created_by_ref' in stix_object:
+                stix_object['created_by_ref'] = identity['id']
+        bundle['objects'] = [identity, *observables]
+        return dict_to_stix2(bundle)
 
     @classmethod
     def get_bundle_with_report_description(cls):

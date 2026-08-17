@@ -3988,6 +3988,11 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
             stix=self.parser.stix_objects[2:]
         )
 
+    def test_event_with_cpe_asset_indicator_metacharacter_relation(self):
+        self._check_pattern_metacharacter_relations(
+            get_event_with_cpe_asset_object, 'software'
+        )
+
     def test_event_with_cpe_asset_observable_object(self):
         event = get_event_with_cpe_asset_object()
         self._test_event_with_cpe_asset_observable_object(event['Event'])
@@ -4137,13 +4142,20 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         )
         filename['value'] = "%USERPROFILE%\\Desktop\\O'Brien\\Styx-Stealer.pdb"
         self.parser.parse_misp_event(event['Event'])
-        indicators = [
-            stix_object for stix_object in self.parser.stix_objects
-            if stix_object['type'] == 'indicator'
-        ]
+        indicators = self._get_indicators()
         self.assertEqual(len(indicators), 1)
         escaped = filename['value'].replace('\\', '\\\\').replace("'", "\\'")
         self.assertIn(f"file:name = '{escaped}'", indicators[0].pattern)
+
+    def test_event_with_file_indicator_metacharacter_relation(self):
+        self._check_pattern_metacharacter_relations(
+            get_event_with_file_object, 'file'
+        )
+
+    def test_event_with_file_indicator_unquotable_pattern_reported(self):
+        self._check_unquotable_pattern_reported(
+            get_event_with_file_object, 'file'
+        )
 
     def test_event_with_file_object_invalid_hash_single_error(self):
         # A file object with a `to_ids` flag is built as both observed-data
@@ -4416,6 +4428,11 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         self._populate_documentation(
             misp_object=self.parser._misp_event.objects[0],
             stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_user_account_indicator_metacharacter_relation(self):
+        self._check_pattern_metacharacter_relations(
+            get_event_with_user_account_object, 'user-account'
         )
 
     def test_event_with_user_account_observable_object(self):

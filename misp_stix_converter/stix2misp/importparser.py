@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import traceback
 from ..abstract import AbstractParser
 from abc import ABCMeta
 from datetime import datetime
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
@@ -16,6 +17,16 @@ _DEFAULT_DISTRIBUTION = 0
 
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
+
+# The producer is written into the MISP taxonomy tag
+# `misp-galaxy:producer="<producer>"`, a grammar with no escaping of its own: a
+# `"` in the value closes it, and the rest of the name is then read as further
+# taxonomy entries of the tag - a name a bundle chose for itself deciding what
+# else the event is tagged with. The control characters cannot be written into
+# the XML and CSV exports the tag reaches either. Both are taken out of the
+# value, along with the whitespace around what is left - the rest is kept as it
+# stands, inner spaces and the `:` and `=` a plain name may carry included.
+_TAG_VALUE_METACHARACTERS = re.compile(r'["\x00-\x1f\x7f]')
 
 
 def _load_json_file(path) -> dict:
@@ -61,6 +72,26 @@ class STIXtoMISPParser(AbstractParser):
         self.__title: Union[str, None]
 
         self.__replacement_uuids: dict = {}
+
+    def _add_producer_tag(self, misp_event: MISPEvent, producer: Any):
+        """Tag the event with the producer, as one taxonomy entry at most.
+
+        Sanitised here rather than with the other parameters in
+        `_set_parameters`: a `producer` parameter a tag value cannot be made of
+        has to leave the event without a producer tag, never falling back to
+        the provenance the bundle claims for itself.
+
+        :param misp_event: the event being created
+        :param producer: the producer name, from the `producer` parameter or
+            from the Identity the bundle credits itself to - from any source
+        """
+        name = _TAG_VALUE_METACHARACTERS.sub('', str(producer)).strip()
+        if not name:
+            self._unusable_producer_warning(producer)
+            return
+        if name != producer:
+            self._sanitised_producer_warning(producer, name)
+        misp_event.add_tag(f'misp-galaxy:producer="{name}"')
 
     def _populate_misp_event(self):
         self.misp_events.append(self.misp_event)
@@ -215,9 +246,22 @@ class STIXtoMISPParser(AbstractParser):
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
 
+    def _sanitised_producer_warning(self, producer: Any, sanitised: str):
+        self._add_warning(
+            f'Sanitised producer name: {producer} - what a MISP taxonomy tag '
+            'value cannot carry was taken out, the event is tagged as '
+            f'produced by {sanitised}'
+        )
+
     def _sharing_group_id_error(self, exception: Exception):
         self._add_error(
             f'Wrong sharing group id format: {exception}', 'init'
+        )
+
+    def _unusable_producer_warning(self, producer: Any):
+        self._add_warning(
+            f'Unusable producer name: {producer} - nothing a MISP taxonomy '
+            'tag value can be made of, the event carries no producer tag'
         )
 
     ############################################################################
