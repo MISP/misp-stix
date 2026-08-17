@@ -1324,16 +1324,23 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return self._identity[reference]['name']
         return self._mapping.identity_references(reference) or 'misp-stix'
 
-    def _is_tlp_marking(self, marking_ref: str) -> bool:
+    def _fetch_tlp_marking(
+            self, marking_ref: str) -> Optional[_MARKING_DEFINITION_TYPING]:
+        """Return the TLP marking the specification gives that id, if any."""
         tlp_2_marking = self._mapping.tlp2_marking_definitions(marking_ref)
         if tlp_2_marking is not None:
-            self._load_marking_definition(tlp_2_marking)
-            return True
+            return tlp_2_marking
         for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):
             if marking_ref == marking['id']:
-                self._load_marking_definition(marking)
-                return True
-        return False
+                return marking
+        return None
+
+    def _is_tlp_marking(self, marking_ref: str) -> bool:
+        marking = self._fetch_tlp_marking(marking_ref)
+        if marking is None:
+            return False
+        self._load_marking_definition(marking)
+        return True
 
     @staticmethod
     def _parse_confidence_level(confidence_level: int) -> str:
