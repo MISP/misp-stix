@@ -461,6 +461,96 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             f'misp-galaxy:producer="{self.parser.producer}"'
         )
 
+    def test_stix21_bundle_with_colliding_record_uuids(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_colliding_record_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator, _, observable = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        indicated, observed = event.attributes
+        record_uuid = indicator.id.split('--')[1]
+        # Both attributes keep the uuid their STIX id yields: re-deriving one
+        # of them would cost it the round-trip ADR-0006 guarantees.
+        self.assertEqual(indicated.value, 'first.example.com')
+        self.assertEqual(indicated.uuid, record_uuid)
+        self.assertEqual(observed.value, 'second.example.com')
+        self.assertEqual(observed.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (indicator.id, observable.id), self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_colliding_non_rfc_record_uuids(self):
+        # Both records carry the v5 replacement the sanitation registered, so
+        # the warning names that uuid rather than the one the STIX ids share.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_colliding_non_rfc_record_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, indicator, _, observable = bundle.objects
+        indicated, observed = event.attributes
+        self.assertEqual(indicated.uuid, observed.uuid)
+        self.assertNotEqual(str(indicated.uuid), indicator.id.split('--')[1])
+        self._check_uuid_collision_warning(
+            str(indicated.uuid), (indicator.id, observable.id),
+            self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_colliding_uuids_on_matching_values(self):
+        # The Indicator and the Observable describe the same value, so the
+        # linking merges them into one attribute: one record, one uuid.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_colliding_uuids_on_matching_values()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'same.example.com')
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_observable_sharing_its_observed_data_uuid(self):
+        # MISP's own export gives an Observable the uuid of the Observed Data
+        # holding it - 21 times in `test_misp_events.stix21.json`. Only the
+        # Observable becomes a record, so nothing collides.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_observable_sharing_its_observed_data_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.value, 'circl.lu')
+        self.assertEqual(attribute.uuid, bundle.objects[3].id.split('--')[1])
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_indicator_and_observable_uuids(self):
+        # The Observable carries an id of its own, so the attribute it becomes
+        # takes that uuid instead of the Observed Data's: nothing collides.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_indicator_and_observable_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, indicator, _, observable = bundle.objects
+        indicated, observed = event.attributes
+        self.assertEqual(indicated.uuid, indicator.id.split('--')[1])
+        self.assertEqual(observed.uuid, observable.id.split('--')[1])
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_vulnerability_sharing_an_indicator_uuid(self):
+        # The Vulnerability becomes a Galaxy Cluster, a namespace of its own:
+        # the attribute is the only record claiming the shared uuid part.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_vulnerability_sharing_an_indicator_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        indicator, vulnerability = bundle.objects[2:]
+        record_uuid = indicator.id.split('--')[1]
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].uuid, record_uuid)
+        self.assertEqual(len(event.galaxies), 1)
+        cluster = event.galaxies[0].clusters[0]
+        self.assertEqual(cluster.value, vulnerability.name)
+        self.assertNotEqual(str(cluster.uuid), record_uuid)
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
     def test_stix21_bundle_with_duplicate_object_ids(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
         self.parser.load_stix_bundle(bundle)

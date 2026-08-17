@@ -161,12 +161,31 @@ class TestSTIX2Import(TestSTIX):
 
     def _check_duplicate_object_id_warning(self, object_id, warnings):
         """The last occurrence wins, but the shadowing is never silent."""
-        duplicate_warnings = [
-            warning for warning in self._reported_messages(warnings)
-            if 'Duplicate STIX object id' in warning
-        ]
+        duplicate_warnings = self._reports_matching(
+            warnings, 'Duplicate STIX object id'
+        )
         self.assertEqual(len(duplicate_warnings), 1)
         self.assertIn(object_id, duplicate_warnings[0])
+
+    def _check_uuid_collision_warning(self, record_uuid, object_ids, warnings):
+        """Two STIX ids, one MISP uuid: both records stay, the loss is named."""
+        collision_warnings = self._reports_matching(warnings, 'Colliding MISP')
+        self.assertEqual(len(collision_warnings), 1)
+        self.assertIn(record_uuid, collision_warnings[0])
+        for object_id in object_ids:
+            self.assertIn(object_id, collision_warnings[0])
+
+    def _check_uuid_collision_warning_absence(self, warnings):
+        """STIX ids sharing a uuid part the conversion does not collide on."""
+        self.assertEqual(
+            self._reports_matching(warnings, 'Colliding MISP'), []
+        )
+
+    def _reports_matching(self, reports: dict, message: str) -> list:
+        return [
+            report for report in self._reported_messages(reports)
+            if message in report
+        ]
 
     def _import_bundle_with_unloadable_objects(
             self, bundle, count: int = 1, distinct_types: bool = True,
