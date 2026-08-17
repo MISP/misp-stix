@@ -167,6 +167,21 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(len(duplicate_warnings), 1)
         self.assertIn(object_id, duplicate_warnings[0])
 
+    def _check_merged_indicator_warning(
+            self, record_uuid, object_ids, discarded, warnings):
+        """An Indicator merged into an Observed Data names what it took away."""
+        merge_warnings = self._reports_matching(warnings, 'Merged MISP record')
+        self.assertEqual(len(merge_warnings), 1)
+        self.assertIn(record_uuid, merge_warnings[0])
+        for object_id in (*object_ids, *discarded):
+            self.assertIn(object_id, merge_warnings[0])
+
+    def _check_merged_indicator_warning_absence(self, warnings):
+        """An Indicator the Observed Data merging it says again in full."""
+        self.assertEqual(
+            self._reports_matching(warnings, 'Merged MISP record'), []
+        )
+
     def _check_uuid_collision_warning(self, record_uuid, object_ids, warnings):
         """Two STIX ids, one MISP uuid: both records stay, the loss is named."""
         collision_warnings = self._reports_matching(warnings, 'Colliding MISP')

@@ -2108,6 +2108,64 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertIn(f'Original UUID was: {vulnerability_uuid}', vulnerability.comment)
 
+    def test_stix21_bundle_with_merged_indicator_on_different_values(self):
+        # The Observed Data wins the merge, as it does for the content this
+        # was built for, but what only the Indicator carried is now named.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_merged_indicator_on_different_values()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, _, indicator, _ = bundle.objects
+        attribute = self._check_misp_event_features(event, grouping)[0]
+        record_uuid = indicator.id.split('--')[1]
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(attribute.uuid, record_uuid)
+        self.assertEqual(attribute.value, 'circl.lu')
+        self._check_merged_indicator_warning(
+            record_uuid, (indicator.id, observed_data.id),
+            ('misp-project.org',), self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_merged_indicator_on_matching_values(self):
+        # The 2 renderings a MISP record exports say the same thing, so the
+        # merge restoring that record takes nothing away.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'circl.lu')
+        self._check_merged_indicator_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_merged_indicator_on_narrowed_value(self):
+        # A value the Observed Data narrows is a value the merge takes away,
+        # so the comparison cannot settle for the pattern being contained.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_merged_indicator_on_narrowed_value()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, observed_data, _, indicator, _ = bundle.objects
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'www.circl.lu')
+        self._check_merged_indicator_warning(
+            indicator.id.split('--')[1], (indicator.id, observed_data.id),
+            ('circl.lu',), self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_merged_indicator_without_stix_pattern(self):
+        # No comparison to run: the whole rule goes with the merge.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_merged_indicator_without_stix_pattern()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, observed_data, _, indicator, _ = bundle.objects
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'circl.lu')
+        self._check_merged_indicator_warning(
+            indicator.id.split('--')[1], (indicator.id, observed_data.id),
+            (indicator.pattern,), self.parser.warnings
+        )
+
     def test_stix21_bundle_with_multiple_reports_as_multiple_events(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_multiple_reports()
         self.parser.load_stix_bundle(bundle)
