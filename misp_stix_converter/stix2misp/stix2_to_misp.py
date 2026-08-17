@@ -305,7 +305,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return self._converter_cache[stix_type]
 
     def _fetch_observable(self, object_ref: str) -> Optional[dict]:
-        return self._observable.get(object_ref)
+        # a bundle carrying no observable object at all never creates the
+        # `_observable` mapping: a reference to one is missing, not a crash
+        return getattr(self, '_observable', {}).get(object_ref)
 
     def _fetch_observable_references(
             self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[Any]:
@@ -335,8 +337,26 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             yield values
 
+    def _has_marking_definition(self, object_ref: str) -> bool:
+        """Tell a Marking Definition reference the bundle carries an object for.
+
+        Loading records the id of every object it reaches before that object
+        is stored, so a marking too broken to read counts as carried all the
+        same: the loading error already names it, and a second message would
+        say the bundle never sent what it did send. A marking the `stix2`
+        library rejected is recovered and applied wherever it is referenced
+        (see `_recover_invalid_object`), and the TLP markings the
+        specification defines are carried by their id alone - a bundle
+        referring to one of those does not have to send it.
+        """
+        return (
+            object_ref in self._loaded_object_ids
+            or object_ref in self.invalid_objects
+            or self._fetch_tlp_marking(object_ref) is not None
+        )
+
     def _has_observable(self, object_ref: str) -> bool:
-        return object_ref in self._observable
+        return object_ref in getattr(self, '_observable', {})
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -558,6 +578,24 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._load_marking_definition(InvalidMarkingDefinition(invalid))
         self._check_duplicate_invalid_marking(object_ref)
         return self._marking_definition[object_ref]
+
+    def _handle_marking_definition_ref(self, object_ref: str):
+        """Handle a Marking Definition a Report or Grouping lists as content.
+
+        A marking that yielded Galaxy Clusters is registered for the event to
+        use; any other marking the bundle carries is applied through the
+        fields referring to it rather than through this list, so listing it
+        costs nothing. What is left is a reference to an object the bundle
+        never carried, reported like the SDO references `_handle_object`
+        fails to resolve.
+        """
+        if object_ref in self._clusters:
+            cluster = self._clusters[object_ref]
+            if cluster['used'].get(self.misp_event.uuid) is None:
+                cluster['used'][self.misp_event.uuid] = False
+            return
+        if not self._has_marking_definition(object_ref):
+            self._object_ref_loading_error(object_ref)
 
     def _handle_object(self, object_type: str, object_ref: str):
         self._parsed_object_refs.add(object_ref)

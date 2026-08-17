@@ -211,7 +211,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
+            if object_type in self._mapping.observable_object_types():
+                # A MISP export lists the observable objects its Observed
+                # Data consumed next to it, and those are converted with
+                # their parent: only a reference to one the bundle never
+                # carried has anything to say.
+                if not self._has_observable(object_ref):
+                    self._object_ref_loading_error(object_ref)
+                continue
             if object_type in self._mapping.object_type_refs_to_skip():
+                continue
+            if object_type == 'marking-definition':
+                self._handle_marking_definition_ref(object_ref)
                 continue
             try:
                 self._handle_object(object_type, object_ref)

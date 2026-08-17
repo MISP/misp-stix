@@ -176,15 +176,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             if object_type in self._mapping.object_type_refs_to_skip():
                 continue
             if object_type in self._mapping.observable_object_types():
-                if (observable := self._fetch_observable(object_ref)) is not None:
-                    if self.misp_event.uuid not in observable['used']:
-                        observable['used'][self.misp_event.uuid] = False
+                if (observable := self._fetch_observable(object_ref)) is None:
+                    self._object_ref_loading_error(object_ref)
+                    continue
+                if self.misp_event.uuid not in observable['used']:
+                    observable['used'][self.misp_event.uuid] = False
                 continue
             if object_type == 'marking-definition':
-                if object_ref in self._clusters:
-                    cluster = self._clusters[object_ref]
-                    if cluster['used'].get(self.misp_event.uuid) is None:
-                        cluster['used'][self.misp_event.uuid] = False
+                self._handle_marking_definition_ref(object_ref)
                 continue
             try:
                 self._handle_object(object_type, object_ref)
