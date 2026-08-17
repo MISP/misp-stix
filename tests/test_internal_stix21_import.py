@@ -204,6 +204,86 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         attribute = self.parser.misp_event.attributes[0]
         self.assertEqual([tag.name for tag in attribute.tags], ['tlp:red'])
 
+    def test_stix21_dangling_object_refs_are_reported(self):
+        # An Internal Grouping lists the observable objects its Observed Data
+        # consumed, which is why observable references are skipped before any
+        # lookup: the skip took the references to objects the bundle never
+        # carried with it.
+        dangling_refs = (
+            'domain-name--11111111-1111-4111-8111-111111111111',
+            'indicator--22222222-2222-4222-8222-222222222222',
+            'marking-definition--33333333-3333-4333-8333-333333333333'
+        )
+        bundle = self._load_stix21_content_with_object_refs(
+            *dangling_refs, internal=True
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        for object_ref in dangling_refs:
+            self._check_dangling_object_ref_error(
+                object_ref, self.parser.errors
+            )
+        # what the bundle does carry is converted all the same
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix21_resolved_object_refs_are_not_reported(self):
+        # The observable objects a MISP export lists next to their Observed
+        # Data are converted with it: references that resolve, reported by
+        # nothing.
+        bundle = self._load_stix21_content_with_object_refs(internal=True)
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix21_dangling_observable_ref_without_observable_objects(self):
+        # The observable objects are only mapped once one is loaded: a bundle
+        # carrying none is the shape the reference has nothing to be looked
+        # up in.
+        object_ref = 'domain-name--11111111-1111-4111-8111-111111111111'
+        bundle = self._load_stix21_content_with_object_refs(
+            object_ref, internal=True, observables=False
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error(object_ref, self.parser.errors)
+        self.assertEqual(len(self.parser.misp_event.attributes), 1)
+
+    def test_stix21_carried_marking_refs_are_not_reported(self):
+        # A Marking Definition reference is dangling only when the bundle
+        # carried no object under that id - whatever became of the object
+        # afterwards. The 3 shapes that are carried: a marking too broken to
+        # read, which its own loading error already names; an invalid one,
+        # recovered and applied where it is referenced; and a TLP marking the
+        # specification defines, which a bundle does not have to send.
+        unreadable_id = 'marking-definition--55555555-5555-4555-8555-555555555555'
+        invalid_id = 'marking-definition--66666666-6666-4666-8666-666666666666'
+        bundle = self._load_stix21_content_with_object_refs(
+            'marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9',
+            internal=True,
+            carried=(
+                {
+                    'type': 'marking-definition', 'spec_version': '2.1',
+                    'id': unreadable_id,
+                    'created': '2017-01-20T00:00:00.000Z',
+                    'extensions': {
+                        'extension-definition--99999999-9999-4999-8999-999999999999': {
+                            'extension_type': 'property-extension'
+                        }
+                    }
+                },
+                *self._invalid_tlp_markings(invalid_id, 'white')
+            )
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # the marking that could not be read is named by the loader instead
+        self.assertIn(
+            unreadable_id, '\n'.join(self._reported_messages(self.parser.errors))
+        )
+
     def test_stix21_bundle_with_tlp_1_0_markings(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)

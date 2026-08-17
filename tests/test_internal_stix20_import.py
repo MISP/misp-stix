@@ -205,6 +205,53 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attribute = self.parser.misp_event.attributes[0]
         self.assertEqual([tag.name for tag in attribute.tags], ['tlp:red'])
 
+    def test_stix20_dangling_object_refs_are_reported(self):
+        # A Marking Definition reference an Internal Report leaves dangling
+        # used to be reported as an unknown object *type* - the type is known,
+        # the object under that id is what the bundle never carried.
+        dangling_refs = (
+            'indicator--22222222-2222-4222-8222-222222222222',
+            'marking-definition--33333333-3333-4333-8333-333333333333',
+            'observed-data--44444444-4444-4444-8444-444444444444'
+        )
+        bundle = self._load_stix20_content_with_object_refs(
+            *dangling_refs, internal=True
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        for object_ref in dangling_refs:
+            self._check_dangling_object_ref_error(
+                object_ref, self.parser.errors
+            )
+        # what the bundle does carry is converted all the same
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix20_resolved_object_refs_are_not_reported(self):
+        # Every reference the bundle carries an object for: nothing lost,
+        # nothing to say.
+        bundle = self._load_stix20_content_with_object_refs(internal=True)
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix20_carried_marking_refs_are_not_reported(self):
+        # A Marking Definition reference is dangling only when the bundle
+        # carried no object under that id. STIX 2.0 knows no extension on a
+        # marking, so the shapes a 2.0 Report can carry are an invalid
+        # marking - recovered and applied where it is referenced - and a TLP
+        # marking the specification defines, which it does not have to send.
+        invalid_id = 'marking-definition--66666666-6666-4666-8666-666666666666'
+        bundle = self._load_stix20_content_with_object_refs(
+            'marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9',
+            internal=True,
+            carried=tuple(self._invalid_tlp_markings(invalid_id, 'white'))
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)
