@@ -125,6 +125,20 @@ class TestSTIX2Import(TestSTIX):
         """
         return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
 
+    def _check_dangling_object_ref_error(self, object_ref, errors):
+        """A reference to an object the bundle does not carry is named."""
+        dangling_errors = self._reports_matching(
+            errors, f'Error loading the STIX object with id {object_ref}'
+        )
+        self.assertEqual(len(dangling_errors), 1)
+
+    def _check_dangling_object_ref_error_absence(self, errors):
+        """References the bundle resolves - including the observable objects
+        an Observed Data consumed - have nothing to report."""
+        self.assertEqual(
+            self._reports_matching(errors, 'Error loading the STIX object'), []
+        )
+
     def _check_dict_form_analyst_note(self, misp_note, stix_note):
         """A Note the STIX version does not know arrives as a plain dict."""
         self.assertIsInstance(stix_note, dict)
@@ -161,12 +175,79 @@ class TestSTIX2Import(TestSTIX):
 
     def _check_duplicate_object_id_warning(self, object_id, warnings):
         """The last occurrence wins, but the shadowing is never silent."""
-        duplicate_warnings = [
-            warning for warning in self._reported_messages(warnings)
-            if 'Duplicate STIX object id' in warning
-        ]
+        duplicate_warnings = self._reports_matching(
+            warnings, 'Duplicate STIX object id'
+        )
         self.assertEqual(len(duplicate_warnings), 1)
         self.assertIn(object_id, duplicate_warnings[0])
+
+    @staticmethod
+    def _invalid_tlp_markings(marking_id: str, *tlp_values) -> list:
+        """The Marking Definitions a bundle carries under a single id.
+
+        A TLP marking under an id the specification does not give it fails
+        `stix2` validation in both versions, which is what puts the objects
+        below on the invalid objects path - the shape a sender minting its
+        own TLP markings writes, with one id reused.
+        """
+        return [
+            {
+                'type': 'marking-definition', 'id': marking_id,
+                'created': '2017-01-20T00:00:00.000Z',
+                'definition_type': 'tlp', 'definition': {'tlp': tlp_value}
+            } for tlp_value in tlp_values
+        ]
+
+    def _check_duplicate_invalid_marking_warning(self, marking_id, warnings):
+        """The marking governing the data may not be the one that was sent."""
+        duplicate_warnings = self._reports_matching(
+            warnings, 'Duplicate invalid Marking Definition id'
+        )
+        self.assertEqual(len(duplicate_warnings), 1)
+        self.assertIn(marking_id, duplicate_warnings[0])
+
+    def _check_duplicate_invalid_marking_warning_absence(self, warnings):
+        """Invalid objects a bundle keeps apart, or does not apply."""
+        self.assertEqual(
+            self._reports_matching(
+                warnings, 'Duplicate invalid Marking Definition id'
+            ), []
+        )
+
+    def _check_merged_indicator_warning(
+            self, record_uuid, object_ids, discarded, warnings):
+        """An Indicator merged into an Observed Data names what it took away."""
+        merge_warnings = self._reports_matching(warnings, 'Merged MISP record')
+        self.assertEqual(len(merge_warnings), 1)
+        self.assertIn(record_uuid, merge_warnings[0])
+        for object_id in (*object_ids, *discarded):
+            self.assertIn(object_id, merge_warnings[0])
+
+    def _check_merged_indicator_warning_absence(self, warnings):
+        """An Indicator the Observed Data merging it says again in full."""
+        self.assertEqual(
+            self._reports_matching(warnings, 'Merged MISP record'), []
+        )
+
+    def _check_uuid_collision_warning(self, record_uuid, object_ids, warnings):
+        """Two STIX ids, one MISP uuid: both records stay, the loss is named."""
+        collision_warnings = self._reports_matching(warnings, 'Colliding MISP')
+        self.assertEqual(len(collision_warnings), 1)
+        self.assertIn(record_uuid, collision_warnings[0])
+        for object_id in object_ids:
+            self.assertIn(object_id, collision_warnings[0])
+
+    def _check_uuid_collision_warning_absence(self, warnings):
+        """STIX ids sharing a uuid part the conversion does not collide on."""
+        self.assertEqual(
+            self._reports_matching(warnings, 'Colliding MISP'), []
+        )
+
+    def _reports_matching(self, reports: dict, message: str) -> list:
+        return [
+            report for report in self._reported_messages(reports)
+            if message in report
+        ]
 
     def _import_bundle_with_unloadable_objects(
             self, bundle, count: int = 1, distinct_types: bool = True,
@@ -397,6 +478,80 @@ class TestSTIX20Import(TestSTIX2Import):
             )
             ext_objects_documentation.check_import_mapping('stix20')
 
+    def _load_stix20_content_with_object_refs(
+            self, *extra_refs, internal: bool = False, carried: tuple = ()):
+        """A Report listing the given references next to legitimate ones.
+
+        STIX 2.0 keeps its observable objects inside the Observed Data
+        carrying them, so an Observed Data reference is the closest a 2.0
+        Report gets to referencing an observable object. The objects given as
+        `carried` are referenced too, so a reference the bundle does carry an
+        object for can be told from one it does not.
+        """
+        from misp_stix_converter.tools import load_stix2_content
+        identity_id = 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f'
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        observed_data_id = 'observed-data--a12c56ba-5c07-4e0a-90c9-1a1cd7c1e0a4'
+        labels = ['misp:type="domain"', 'misp:category="Network activity"']
+        report_labels = ['Threat-Report']
+        if internal:
+            report_labels.append('misp:tool="MISP-STIX-Converter"')
+        return load_stix2_content(
+            {
+                'type': 'bundle', 'spec_version': '2.0',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'objects': [
+                    {
+                        'type': 'identity', 'id': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL', 'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'report',
+                        'id': 'report--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'published': '2020-10-25T16:22:00Z',
+                        'labels': report_labels,
+                        'object_refs': [
+                            indicator_id, observed_data_id,
+                            *(
+                                stix_object['id'] for stix_object in carried
+                            ),
+                            *extra_refs
+                        ]
+                    },
+                    {
+                        'type': 'indicator', 'id': indicator_id,
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'valid_from': '2020-10-25T16:22:00.000Z',
+                        'labels': labels
+                    },
+                    {
+                        'type': 'observed-data', 'id': observed_data_id,
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'first_observed': '2020-10-25T16:22:00Z',
+                        'last_observed': '2020-10-25T16:22:00Z',
+                        'number_observed': 1, 'labels': labels,
+                        'objects': {
+                            '0': {
+                                'type': 'domain-name', 'value': 'misp-project.org'
+                            }
+                        }
+                    },
+                    *carried
+                ]
+            }
+        )
+
     def _populate_galaxy_documentation(self, **kwargs):
         galaxy = kwargs.pop('galaxy')
         stix_name, stix_object = next(iter(kwargs.items()))
@@ -604,6 +759,91 @@ class TestSTIX21Import(TestSTIX2Import):
                 'import'
             )
             ext_objects_documentation.check_import_mapping('stix21')
+
+    def _load_stix21_content_with_object_refs(
+            self, *extra_refs, internal: bool = False,
+            observables: bool = True, carried: tuple = ()):
+        """A Grouping listing the given references next to legitimate ones.
+
+        The observable object is listed next to the Observed Data consuming
+        it, which is how a MISP export writes both. Dropping the pair with
+        `observables` leaves a bundle carrying no observable object at all -
+        the shape an observable reference has nothing to be looked up in.
+        The objects given as `carried` are referenced too, so a reference the
+        bundle does carry an object for can be told from one it does not.
+        """
+        from misp_stix_converter.tools import load_stix2_content
+        identity_id = 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f'
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        observed_data_id = 'observed-data--a12c56ba-5c07-4e0a-90c9-1a1cd7c1e0a4'
+        domain_id = 'domain-name--e5d2e1f0-9b2e-4a9e-8d2e-1f09b2e4a9e8'
+        labels = ['misp:type="domain"', 'misp:category="Network activity"']
+        grouping_labels = ['Threat-Report']
+        if internal:
+            grouping_labels.append('misp:tool="MISP-STIX-Converter"')
+        observed_data = [
+            {
+                'type': 'observed-data', 'spec_version': '2.1',
+                'id': observed_data_id, 'created_by_ref': identity_id,
+                'created': '2020-10-25T16:22:00.000Z',
+                'modified': '2020-10-25T16:22:00.000Z',
+                'first_observed': '2020-10-25T16:22:00Z',
+                'last_observed': '2020-10-25T16:22:00Z',
+                'number_observed': 1, 'labels': labels,
+                'object_refs': [domain_id]
+            },
+            {
+                'type': 'domain-name', 'spec_version': '2.1',
+                'id': domain_id, 'value': 'misp-project.org'
+            }
+        ] if observables else []
+        return load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'objects': [
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL', 'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'grouping', 'spec_version': '2.1',
+                        'id': 'grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'context': 'suspicious-activity',
+                        'labels': grouping_labels,
+                        'object_refs': [
+                            indicator_id,
+                            *(
+                                observable['id']
+                                for observable in observed_data
+                            ),
+                            *(
+                                stix_object['id'] for stix_object in carried
+                            ),
+                            *extra_refs
+                        ]
+                    },
+                    {
+                        'type': 'indicator', 'spec_version': '2.1',
+                        'id': indicator_id, 'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'pattern_type': 'stix',
+                        'valid_from': '2020-10-25T16:22:00.000Z',
+                        'labels': labels
+                    },
+                    *observed_data, *carried
+                ]
+            }
+        )
 
     def _populate_galaxy_documentation(self, **kwargs):
         galaxy = kwargs.pop('galaxy')

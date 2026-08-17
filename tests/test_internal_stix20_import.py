@@ -139,6 +139,119 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
     #                       MISP ATTRIBUTES IMPORT TESTS                       #
     ############################################################################
 
+    def test_stix20_duplicate_invalid_marking_definitions_are_reported(self):
+        # The invalid objects path is the loader's, not a parser's: an
+        # Internal bundle failing `stix2` parsing recovers and applies the
+        # last of the Marking Definitions sharing an id just like an External
+        # one, and pays the same warning for it.
+        from misp_stix_converter.tools import load_stix2_content
+        marking_id = 'marking-definition--11111111-1111-4111-8111-111111111111'
+        bundle = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--314e4210-e41a-4952-9f3c-135d7d577112',
+                'spec_version': '2.0',
+                'objects': [
+                    {
+                        'type': 'identity',
+                        'id': 'identity--a0c22599-9e58-4da4-96ac-7051603fa951',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-Project',
+                        'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'report',
+                        'id': 'report--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': 'identity--a0c22599-9e58-4da4-96ac-7051603fa951',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'published': '2020-10-25T16:22:00Z',
+                        'labels': [
+                            'Threat-Report', 'misp:tool="MISP-STIX-Converter"'
+                        ],
+                        'object_refs': [
+                            'observed-data--11111111-1111-4111-8111-111111111111'
+                        ]
+                    },
+                    {
+                        'type': 'observed-data',
+                        'id': 'observed-data--11111111-1111-4111-8111-111111111111',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'first_observed': '2020-10-25T16:22:00Z',
+                        'last_observed': '2020-10-25T16:22:00Z',
+                        'number_observed': 1,
+                        'objects': {
+                            '0': {'type': 'ipv4-addr', 'value': '10.0.0.1'}
+                        },
+                        'labels': [
+                            'misp:type="ip-src"',
+                            'misp:category="Network activity"'
+                        ],
+                        'object_marking_refs': [marking_id]
+                    },
+                    *self._invalid_tlp_markings(marking_id, 'white', 'red')
+                ]
+            }
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(list(self.parser.invalid_objects), [marking_id])
+        self._check_duplicate_invalid_marking_warning(
+            marking_id, self.parser.warnings
+        )
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual([tag.name for tag in attribute.tags], ['tlp:red'])
+
+    def test_stix20_dangling_object_refs_are_reported(self):
+        # A Marking Definition reference an Internal Report leaves dangling
+        # used to be reported as an unknown object *type* - the type is known,
+        # the object under that id is what the bundle never carried.
+        dangling_refs = (
+            'indicator--22222222-2222-4222-8222-222222222222',
+            'marking-definition--33333333-3333-4333-8333-333333333333',
+            'observed-data--44444444-4444-4444-8444-444444444444'
+        )
+        bundle = self._load_stix20_content_with_object_refs(
+            *dangling_refs, internal=True
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        for object_ref in dangling_refs:
+            self._check_dangling_object_ref_error(
+                object_ref, self.parser.errors
+            )
+        # what the bundle does carry is converted all the same
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix20_resolved_object_refs_are_not_reported(self):
+        # Every reference the bundle carries an object for: nothing lost,
+        # nothing to say.
+        bundle = self._load_stix20_content_with_object_refs(internal=True)
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix20_carried_marking_refs_are_not_reported(self):
+        # A Marking Definition reference is dangling only when the bundle
+        # carried no object under that id. STIX 2.0 knows no extension on a
+        # marking, so the shapes a 2.0 Report can carry are an invalid
+        # marking - recovered and applied where it is referenced - and a TLP
+        # marking the specification defines, which it does not have to send.
+        invalid_id = 'marking-definition--66666666-6666-4666-8666-666666666666'
+        bundle = self._load_stix20_content_with_object_refs(
+            'marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9',
+            internal=True,
+            carried=tuple(self._invalid_tlp_markings(invalid_id, 'white'))
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)
@@ -1767,6 +1880,64 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             coa.references[0].referenced_uuid
         )
         self.assertIn(f'Original UUID was: {vulnerability_uuid}', vulnerability.comment)
+
+    def test_stix20_bundle_with_merged_indicator_on_different_values(self):
+        # The Observed Data wins the merge, as it does for the content this
+        # was built for, but what only the Indicator carried is now named.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_merged_indicator_on_different_values()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, _ = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        record_uuid = indicator.id.split('--')[1]
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(attribute.uuid, record_uuid)
+        self.assertEqual(attribute.value, 'circl.lu')
+        self._check_merged_indicator_warning(
+            record_uuid, (indicator.id, observed_data.id),
+            ('misp-project.org',), self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_merged_indicator_on_matching_values(self):
+        # The 2 renderings a MISP record exports say the same thing, so the
+        # merge restoring that record takes nothing away.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_domain_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'circl.lu')
+        self._check_merged_indicator_warning_absence(self.parser.warnings)
+
+    def test_stix20_bundle_with_merged_indicator_on_narrowed_value(self):
+        # A value the Observed Data narrows is a value the merge takes away,
+        # so the comparison cannot settle for the pattern being contained.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_merged_indicator_on_narrowed_value()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, observed_data, indicator, _ = bundle.objects
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'www.circl.lu')
+        self._check_merged_indicator_warning(
+            indicator.id.split('--')[1], (indicator.id, observed_data.id),
+            ('circl.lu',), self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_merged_indicator_without_stix_pattern(self):
+        # No comparison to run: the whole pattern goes with the merge.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_merged_indicator_without_stix_pattern()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, observed_data, indicator, _ = bundle.objects
+        self.assertEqual(len(event.attributes), 1)
+        self.assertEqual(event.attributes[0].value, 'circl.lu')
+        self._check_merged_indicator_warning(
+            indicator.id.split('--')[1], (indicator.id, observed_data.id),
+            (indicator.pattern,), self.parser.warnings
+        )
 
     def test_stix20_bundle_with_multiple_reports_as_multiple_events(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_multiple_reports()
