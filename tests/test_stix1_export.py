@@ -8,10 +8,12 @@ from lxml import etree
 from misp_stix_converter import (InvalidMISPInputError, MISPtoSTIX1AttributesParser,
                                  MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1)
+from misp_stix_converter import misp_stix_converter as converter_module
 from misp_stix_converter.tools.stix1_framing import _handle_namespaces
 from pymisp import MISPEvent
 from shutil import copyfile
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from uuid import uuid5, UUID
 from .test_events import *
 from .test_events import _INDICATOR_ATTRIBUTE
@@ -4290,6 +4292,165 @@ class TestSTIX12MISPExport(TestSTIX12Export):
 
 
 class TestCollectionStix1Export(TestCollectionSTIX1Export):
+    def test_exports_refuse_to_overwrite_an_existing_output(self):
+        attributes = self._collection_files('test_attributes_collection')
+        events = self._collection_files('test_events_collection')
+        # A single input file reports the refusal in the result dict its write
+        # already sits in; a merged output raises it, like any other write it
+        # cannot do on that path
+        for return_format in ('xml', 'json'):
+            self._check_overwrite_policy(
+                misp_to_stix1, events[0], recorded=True,
+                return_format=return_format
+            )
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_overwrite_policy(
+                misp_attribute_collection_to_stix1, *attributes,
+                single_output=True, **kwargs
+            )
+            self._check_overwrite_policy(
+                misp_event_collection_to_stix1, *events,
+                single_output=True, **kwargs
+            )
+        self._check_destination_appearing_mid_conversion(
+            misp_event_collection_to_stix1, *events, single_output=True
+        )
+
+    def test_exports_write_owner_only_files(self):
+        attributes = self._collection_files('test_attributes_collection')
+        events = self._collection_files('test_events_collection')
+        for return_format in ('xml', 'json'):
+            self._check_output_file_mode(
+                misp_to_stix1, events[0], return_format=return_format
+            )
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_output_file_mode(
+                misp_attribute_collection_to_stix1, *attributes,
+                single_output=True, **kwargs
+            )
+            self._check_output_file_mode(
+                misp_event_collection_to_stix1, *events,
+                single_output=True, **kwargs
+            )
+        # One output per input file: each one is owner-only as well
+        self._check_output_file_mode(misp_event_collection_to_stix1, *events)
+
+    def test_interrupted_streamed_write_keeps_the_destination(self):
+        # The streamed paths are the ones that used to write the output in
+        # several steps, so an interrupted assembly left it truncated. The
+        # Attribute Collection writes nothing before its **Scratch Fragments**
+        # are all there, so the kill has to land inside the assembly itself -
+        # on the footer of the second feature it reads back
+        self._check_interrupted_write_keeps_the_destination(
+            misp_attribute_collection_to_stix1,
+            *self._collection_files('test_attributes_collection'),
+            interrupt=(converter_module.AttributeCollectionHandler, 'footer'),
+            single_output=True
+        )
+        self._check_interrupted_write_keeps_the_destination(
+            misp_event_collection_to_stix1,
+            *self._collection_files('test_events_collection'),
+            single_output=True
+        )
+
+    def test_streamed_events_assembly_converting_nothing_keeps_the_destination(self):
+        # Every input file failing leaves the streamed event assembly with a
+        # header and a footer and nothing between them: it must not report a
+        # success, nor replace the output of the export that did work
+        good, bad = self._collection_files('test_events_collection')
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, good, bad)
+            for copy in copies:
+                with open(copy, 'wt', encoding='utf-8') as f:
+                    f.write('{"Event": {"info": ')
+            output_name = Path(tmp_dir) / 'previous.out'
+            with open(output_name, 'wt', encoding='utf-8') as f:
+                f.write('IMPORTANT PRE-EXISTING CONTENT')
+            results = misp_event_collection_to_stix1(
+                *copies, single_output=True, output_name=output_name,
+                overwrite=True
+            )
+            self.assertNotIn('success', results)
+            self.assertEqual(len(results['fails']), 2)
+            with open(output_name, 'rt', encoding='utf-8') as f:
+                self.assertEqual(f.read(), 'IMPORTANT PRE-EXISTING CONTENT')
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output_name.name])
+            )
+
+    def test_attribute_collection_default_output_location(self):
+        input_files = self._collection_files('test_attributes_collection')
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_default_single_output(
+                misp_attribute_collection_to_stix1, *input_files, **kwargs
+            )
+            self._check_created_output_directory(
+                misp_attribute_collection_to_stix1, *input_files, **kwargs
+            )
+
+    def test_event_collection_default_output_location(self):
+        input_files = self._collection_files('test_events_collection')
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_default_single_output(
+                misp_event_collection_to_stix1, *input_files, **kwargs
+            )
+            self._check_created_output_directory(
+                misp_event_collection_to_stix1, *input_files, **kwargs
+            )
+
+    def test_streamed_failure_names_the_input_file_it_comes_from(self):
+        # The streamed assembly names its **Scratch Fragments** after a uuid:
+        # a failing input has to be reported by its own name, not by the
+        # fragment the previous input happened to write
+        good, bad = self._collection_files('test_attributes_collection')
+        with TemporaryDirectory() as tmp_dir:
+            good, bad = self._copy_inputs(tmp_dir, good, bad)
+            with open(bad, 'wt', encoding='utf-8') as f:
+                f.write('{"Attribute": [{"type": "md5", "value": "not a hash"')
+            results = misp_attribute_collection_to_stix1(
+                good, bad, single_output=True
+            )
+            self.assertEqual(len(results['fails']), 1)
+            self.assertIn(str(bad), results['fails'][0])
+
+    def test_streamed_fragments_are_removed_when_the_assembly_fails(self):
+        # The fragments the streamed Attribute Collection writes hold
+        # converted intelligence: an assembly that never completes must not
+        # leave them behind, wherever they were written
+        input_files = self._collection_files('test_attributes_collection')
+        recorded = {}
+        temporary_directory = converter_module.TemporaryDirectory
+
+        def _record_scratch_directory(*args, **kwargs):
+            scratch = temporary_directory(*args, **kwargs)
+            recorded['scratch'] = Path(scratch.name)
+            return scratch
+
+        def _fail_the_assembly(*args, **kwargs):
+            recorded['fragments'] = sorted(
+                path.name for path in recorded['scratch'].iterdir()
+            )
+            raise RuntimeError('Interrupted assembly')
+
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            with patch.object(
+                    converter_module, 'TemporaryDirectory',
+                    _record_scratch_directory), patch.object(
+                    converter_module, 'stix1_attributes_framing',
+                    _fail_the_assembly):
+                with self.assertRaises(RuntimeError):
+                    misp_attribute_collection_to_stix1(
+                        *copies, single_output=True
+                    )
+            self.assertTrue(recorded['fragments'])
+            self.assertFalse(recorded['scratch'].exists())
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted(copy.name for copy in copies)
+            )
+
     def test_attribute_collection_export_11(self):
         name = 'test_attributes_collection'
         output_file = self._current_path / f'{name}.json.out'
@@ -4306,7 +4467,7 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_attribute_collection_to_stix1(
                 *input_files, return_format='xml', version='1.1.1',
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4328,7 +4489,7 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_attribute_collection_to_stix1(
                 *input_files, return_format='xml', version='1.2',
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4350,7 +4511,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_event_collection_to_stix1(
                 *input_files, return_format='xml', version='1.1.1',
-                in_memory=True, single_output=True, output_name=output_file
+                in_memory=True, single_output=True, output_name=output_file,
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4388,7 +4550,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_event_collection_to_stix1(
                 *input_files, return_format='xml', version='1.2',
-                in_memory=True, single_output=True, output_name=output_file
+                in_memory=True, single_output=True, output_name=output_file,
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4422,7 +4585,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self._check_stix1_export_results(output_file, reference_file)
         self.assertEqual(
             misp_event_collection_to_stix1(
-                filename, return_format='xml', version='1.1.1'
+                filename, return_format='xml', version='1.1.1',
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4440,7 +4604,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self._check_stix1_export_results(output_file, reference_file)
         self.assertEqual(
             misp_event_collection_to_stix1(
-                filename, return_format='xml', version='1.2'
+                filename, return_format='xml', version='1.2',
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )

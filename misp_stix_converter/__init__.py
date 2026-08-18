@@ -75,13 +75,19 @@ def main():
     )
     export_parser.add_argument(
         '--output-dir', type=Path,
-        help='Output path - used in the case of multiple input files when the '
-             '`single_output` argument is not used.'
+        help='Output directory - default is the directory the input files '
+             'come from. Created if it does not exist.'
     )
     export_parser.add_argument(
         '-o', '--output-name', type=Path,
         help='Output file name - used in the case of a single input file or '
              'when the `single_output` argument is used.'
+    )
+    export_parser.add_argument(
+        '--overwrite', action='store_true',
+        help='Replace an output file that already exists - without it a '
+             'conversion writing onto an existing file fails and leaves it '
+             'as it is.'
     )
     # STIX 1 EXPORT SPECIFIC ARGUMENTS
     stix1_parser = export_parser.add_argument_group('STIX 1 specific arguments')
@@ -117,8 +123,9 @@ def main():
     )
     import_parser.add_argument(
         '-s', '--single-event', action='store_true',
-        help='Produce only one MISP event per STIX file'
-             '(in case of multiple Report, Grouping or Incident objects).'
+        help='Produce only one MISP event per STIX file, in case of '
+             'multiple Report or Grouping objects. STIX 1 always produces '
+             'one, whether this is set or not.'
     )
     import_parser.add_argument(
         '-o', '--output-name', type=Path,
@@ -127,8 +134,14 @@ def main():
     )
     import_parser.add_argument(
         '--output-dir', type=Path,
-        help='Output path - used in the case of multiple input files when the '
-             '`single_event` argument is not used.'
+        help='Output directory - default is the directory the input files '
+             'come from. Created if it does not exist.'
+    )
+    import_parser.add_argument(
+        '--overwrite', action='store_true',
+        help='Replace an output file that already exists - without it a '
+             'conversion writing onto an existing file fails and leaves it '
+             'as it is.'
     )
     import_parser.add_argument(
         '--classification', choices=['internal', 'external'], default=None,
@@ -208,12 +221,9 @@ def main():
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
-    single = (
-        stix_args.single_output if stix_args.feature == 'export'
-        else stix_args.single_event
-    )
-    if len(stix_args.file) > 1 and single and stix_args.output_dir is None:
-        stix_args.output_dir = Path(__file__).parents[1] / 'tmp'
+    # No default output location is set here: the conversion functions write
+    # next to their input files when the operator named none, so nothing lands
+    # in the installed package tree
     feature = 'MISP to STIX' if stix_args.feature == 'export' else 'STIX to MISP'
     try:
         traceback = stix_args.func(stix_args)

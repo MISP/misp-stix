@@ -73,7 +73,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 )
             )
             results = stix_2_to_misp(
-                filename, classification='internal', output_dir=Path(tmp_dir)
+                filename, classification='internal', output_dir=Path(tmp_dir),
+                overwrite=True
             )
             self.assertEqual(results['success'], 1)
             self.assertNotIn('warnings', results)
@@ -105,6 +106,60 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         bundle = TestInternalSTIX20Bundles.get_bundle_with_domain_indicator_attribute()
         with self.assertLogs('misp_stix_converter', level='WARNING'):
             self.assertTrue(is_stix2_from_misp(bundle.objects))
+
+    def test_stix20_output_writes_are_owner_only_and_refuse_to_overwrite(self):
+        from misp_stix_converter import stix_2_to_misp
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        bundles = TestInternalSTIX20Bundles
+        with TemporaryDirectory() as tmp_dir:
+            single = Path(tmp_dir) / 'single.stix20.json'
+            with open(single, 'wt', encoding='utf-8') as f:
+                f.write(
+                    bundles.get_bundle_with_domain_indicator_attribute(
+                        ).serialize()
+                )
+            self._check_output_write_safety(
+                stix_2_to_misp, single, single_event=True
+            )
+            # A bundle carrying more than one Report takes the multi-event
+            # branch, which builds its per-event file outside the output
+            # funnels
+            multiple = Path(tmp_dir) / 'multiple.stix20.json'
+            with open(multiple, 'wt', encoding='utf-8') as f:
+                f.write(bundles.get_bundle_with_multiple_reports().serialize())
+            self._check_output_write_safety(stix_2_to_misp, multiple)
+
+    def _multiple_reports_file(self, directory):
+        # 2 Reports, so `single_event` alone selects which branch builds the
+        # output path
+        from pathlib import Path
+        filename = Path(directory) / 'multiple.stix20.json'
+        with open(filename, 'wt', encoding='utf-8') as f:
+            f.write(
+                TestInternalSTIX20Bundles.
+                get_bundle_with_multiple_reports().serialize()
+            )
+        return filename
+
+    def test_stix20_output_dir_takes_a_str_and_is_created(self):
+        from misp_stix_converter import stix_2_to_misp
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp_dir:
+            self._check_output_dir_handling(
+                stix_2_to_misp, self._multiple_reports_file(tmp_dir),
+                outputs=2
+            )
+
+    def test_stix20_output_dir_refuses_an_existing_file(self):
+        from misp_stix_converter import stix_2_to_misp
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp_dir:
+            self._check_output_dir_refuses_a_file(
+                stix_2_to_misp, self._multiple_reports_file(tmp_dir),
+                Path(tmp_dir) / 'not-a-directory'
+            )
 
     def test_stix20_classification_rejects_invalid_value(self):
         from misp_stix_converter import stix_2_to_misp
