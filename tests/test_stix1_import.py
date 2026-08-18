@@ -396,19 +396,6 @@ class TestSTIX1Import(TestSTIX):
             any('parser stage crash' in error for error in results['errors'])
         )
 
-    ############################################################################
-    #                         CLASSIFICATION OVERRIDE.                         #
-    ############################################################################
-
-    def _internal_titled_package(self):
-        """A package whose header title matches the MISP export convention, so
-        content-based detection classifies it as internal - shaped with the
-        related packages the Internal parser expects."""
-        return self._internal_package(
-            Incident(), inner_title='Incident title',
-            outer_title="Export from ACME's MISP"
-        )
-
     def test_stix_1_output_writes_are_owner_only_and_refuse_to_overwrite(self):
         stix_package = STIXPackage()
         stix_package.add_course_of_action(self._course_of_action())
@@ -436,42 +423,6 @@ class TestSTIX1Import(TestSTIX):
             Incident(), inner_title='Incident title',
             outer_title="Export from ACME's MISP"
         )
-
-    def test_stix_1_output_writes_are_owner_only_and_refuse_to_overwrite(self):
-        # A converted MISP event is as sensitive as the package it came from:
-        # the file it is written to is readable by its owner alone, and one
-        # that already exists is only replaced when the caller asked for it
-        import os
-        stix_package = STIXPackage()
-        stix_package.add_course_of_action(self._course_of_action())
-        with TemporaryDirectory() as tmp_dir:
-            filename = self._write_package(
-                tmp_dir, stix_package, 'course_of_action.xml'
-            )
-            output_name = Path(tmp_dir) / 'event.misp.json'
-            umask = os.umask(0)
-            try:
-                results = stix_1_to_misp(
-                    filename, single_event=True, output_name=output_name
-                )
-            finally:
-                os.umask(umask)
-            self.assertEqual(results['success'], 1)
-            self.assertEqual(output_name.stat().st_mode & 0o777, 0o600)
-            written = output_name.read_text(encoding='utf-8')
-            with self.assertRaises(FileExistsError) as context:
-                stix_1_to_misp(
-                    filename, single_event=True, output_name=output_name
-                )
-            self.assertIn(str(output_name), str(context.exception))
-            self.assertEqual(
-                output_name.read_text(encoding='utf-8'), written
-            )
-            results = stix_1_to_misp(
-                filename, single_event=True, output_name=output_name,
-                overwrite=True
-            )
-            self.assertEqual(results['success'], 1)
 
     def test_stix_1_classification_auto_detection_warns_and_explicit_is_silent(self):
         stix_package = self._internal_titled_package()
