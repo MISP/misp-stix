@@ -169,7 +169,8 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             classification=None, cluster_distribution=0,
             cluster_sharing_group=None, debug=False, distribution=0,
             file=[Path('bundle.json')], galaxies_as_tags=False,
-            no_force_contextual_data=False, org_uuid=MISP_org_uuid,
+            max_input_size=None, no_force_contextual_data=False,
+            org_uuid=MISP_org_uuid,
             producer=None, sharing_group=None, single_event=False,
             title=None, version='2'
         )

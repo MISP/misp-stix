@@ -23,7 +23,7 @@ from pymisp import MISPAttribute, MISPObject
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
 from stix.threat_actor import ThreatActor
-from typing import Union
+from typing import Optional, Union
 from uuid import uuid4
 
 _ADDRESS_TYPING = Union[address_object.Address, address_object.EmailAddress]
@@ -60,8 +60,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def load_stix_package(self, stix_package: STIXPackage):
         self.__stix_package = stix_package
 
-    def parse_stix_content(self, filename: Union[Path, str], **kwargs):
-        self.__stix_package = load_stix1_package(filename)
+    def parse_stix_content(self, filename: Union[Path, str],
+                           max_size: Optional[int] = None, **kwargs):
+        self.__stix_package = load_stix1_package(filename, max_size=max_size)
         self.parse_stix_package(**kwargs)
 
     def _reset_bundle_state(self):
