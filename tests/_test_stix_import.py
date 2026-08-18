@@ -296,6 +296,18 @@ class TestSTIX2Import(TestSTIX):
                 filename, debug=debug, output_dir=Path(tmp_dir)
             )
 
+    def _import_bundle_with_size_limit(self, bundle, max_size: int) -> dict:
+        # The size limit is checked on the file the entry point is handed, so
+        # what the caller reads back is the error dict naming the limit the
+        # document exceeded - no part of the document is parsed.
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'oversized.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            return stix_2_to_misp(
+                filename, max_size=max_size, output_dir=Path(tmp_dir)
+            )
+
     def _check_object_attribute_uuid(self, attr, object_id, value=None):
         self.assertEqual(
             attr.uuid,
