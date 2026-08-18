@@ -12,7 +12,7 @@ from .tools.output_writing_helpers import (
     _open_output, _private_opener, _write_output)
 from .tools.stix1_framing import (
     stix1_attributes_framing, stix1_framing, _create_stix_package,
-    _validate_namespace)
+    _scoped_id_namespace, _validate_namespace)
 from .tools.stix1_loading_helpers import load_stix1_package
 from .tools.stix1_to_misp_helpers import get_stix1_parser, is_stix1_from_misp
 from .tools.stix1_writing_helpers import (
@@ -127,126 +127,127 @@ def misp_attribute_collection_to_stix1(
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
     namespace = _validate_namespace(namespace)
-    parser = MISPtoSTIX1AttributesParser(org, version)
-    if len(input_files) == 1:
-        try:
-            filename = input_files[0]
-            if isinstance(filename, str):
-                filename = Path(filename).resolve()
-            parser.parse_json_file(filename)
-            name = _check_filename(
-                filename.parent, f'{filename.name}.out', output_dir, output_name
-            )
-            _write_raw_stix(
-                parser.stix_package, name, namespace, org, return_format,
-                overwrite
-            )
-            return _generate_traceback(debug, parser, name)
-        except Exception as exception:
-            return {'fails': [f'{filename} -  {exception.__str__()}']}
-    traceback = defaultdict(list)
-    if single_output:
-        stix_package = _create_stix_package(org, version)
-        name = _check_filename(
-            _default_output_dir(*input_files),
-            _default_stix1_name(stix_package, return_format),
-            output_dir, output_name
-        )
-        if in_memory:
-            for filename in input_files:
-                try:
-                    parser.parse_json_file(filename)
-                    current = parser.stix_package
-                    for campaign in current.campaigns:
-                        stix_package.add_campaign(campaign)
-                    for course_of_action in current.courses_of_action:
-                        stix_package.add_course_of_action(course_of_action)
-                    for exploit_target in current.exploit_targets:
-                        stix_package.add_exploit_target(exploit_target)
-                    for indicator in current.indicators:
-                        stix_package.add_indicator(indicator)
-                    for observable in current.observables:
-                        stix_package.add_observable(observable)
-                    for threat_actor in current.threat_actors:
-                        stix_package.add_threat_actor(threat_actor)
-                    if current.ttps is not None:
-                        for ttp in current.ttps:
-                            stix_package.add_ttp(ttp)
-                except Exception as exception:
-                    traceback['fails'].append(f'{filename} - {exception.__str__()}')
-            if any(filename not in traceback.get('fails', []) for filename in input_files):
+    with _scoped_id_namespace(namespace, org):
+        parser = MISPtoSTIX1AttributesParser(org, version)
+        if len(input_files) == 1:
+            try:
+                filename = input_files[0]
+                if isinstance(filename, str):
+                    filename = Path(filename).resolve()
+                parser.parse_json_file(filename)
+                name = _check_filename(
+                    filename.parent, f'{filename.name}.out', output_dir, output_name
+                )
                 _write_raw_stix(
-                    stix_package, name, namespace, org, return_format,
+                    parser.stix_package, name, namespace, org, return_format,
                     overwrite
                 )
-                traceback.update(_generate_traceback(debug, parser, name))
-            return traceback
-        handler = AttributeCollectionHandler(return_format)
-        # The per-feature fragments hold converted content: they live in a
-        # scratch directory of their own, removed however the assembly ends
-        with TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
-            for filename in input_files:
-                try:
-                    parser.parse_json_file(filename)
-                    package = parser.stix_package
-                    for feature in _STIX1_features:
-                        values = getattr(package, feature)
-                        if values:
-                            content = globals()[f'write_{feature}'](values, return_format)
-                            if not content.strip():
-                                continue
-                            fragment = handler.get_filename(feature)
-                            if fragment is None:
-                                fragment = handler.set_feature(feature, uuid4())
+                return _generate_traceback(debug, parser, name)
+            except Exception as exception:
+                return {'fails': [f'{filename} -  {exception.__str__()}']}
+        traceback = defaultdict(list)
+        if single_output:
+            stix_package = _create_stix_package(org, version)
+            name = _check_filename(
+                _default_output_dir(*input_files),
+                _default_stix1_name(stix_package, return_format),
+                output_dir, output_name
+            )
+            if in_memory:
+                for filename in input_files:
+                    try:
+                        parser.parse_json_file(filename)
+                        current = parser.stix_package
+                        for campaign in current.campaigns:
+                            stix_package.add_campaign(campaign)
+                        for course_of_action in current.courses_of_action:
+                            stix_package.add_course_of_action(course_of_action)
+                        for exploit_target in current.exploit_targets:
+                            stix_package.add_exploit_target(exploit_target)
+                        for indicator in current.indicators:
+                            stix_package.add_indicator(indicator)
+                        for observable in current.observables:
+                            stix_package.add_observable(observable)
+                        for threat_actor in current.threat_actors:
+                            stix_package.add_threat_actor(threat_actor)
+                        if current.ttps is not None:
+                            for ttp in current.ttps:
+                                stix_package.add_ttp(ttp)
+                    except Exception as exception:
+                        traceback['fails'].append(f'{filename} - {exception.__str__()}')
+                if any(filename not in traceback.get('fails', []) for filename in input_files):
+                    _write_raw_stix(
+                        stix_package, name, namespace, org, return_format,
+                        overwrite
+                    )
+                    traceback.update(_generate_traceback(debug, parser, name))
+                return traceback
+            handler = AttributeCollectionHandler(return_format)
+            # The per-feature fragments hold converted content: they live in a
+            # scratch directory of their own, removed however the assembly ends
+            with TemporaryDirectory() as tmp_dir:
+                tmp_path = Path(tmp_dir)
+                for filename in input_files:
+                    try:
+                        parser.parse_json_file(filename)
+                        package = parser.stix_package
+                        for feature in _STIX1_features:
+                            values = getattr(package, feature)
+                            if values:
+                                content = globals()[f'write_{feature}'](values, return_format)
+                                if not content.strip():
+                                    continue
+                                fragment = handler.get_filename(feature)
+                                if fragment is None:
+                                    fragment = handler.set_feature(feature, uuid4())
+                                    with open(
+                                            tmp_path / fragment, 'wt',
+                                            encoding='utf-8',
+                                            opener=_private_opener) as f:
+                                        f.write(f'{handler.header(feature)}{content}')
+                                    continue
                                 with open(
-                                        tmp_path / fragment, 'wt',
+                                        tmp_path / fragment, 'at',
                                         encoding='utf-8',
                                         opener=_private_opener) as f:
-                                    f.write(f'{handler.header(feature)}{content}')
-                                continue
-                            with open(
-                                    tmp_path / fragment, 'at',
-                                    encoding='utf-8',
-                                    opener=_private_opener) as f:
-                                f.write(content)
-                except Exception as exception:
-                    traceback['fails'].append(f'{filename} - {exception.__str__()}')
-            if any(filename not in traceback.get('fails', []) for filename in input_files):
-                header, _, footer = stix1_attributes_framing(
-                    namespace, org, return_format, stix_package.version
+                                    f.write(content)
+                    except Exception as exception:
+                        traceback['fails'].append(f'{filename} - {exception.__str__()}')
+                if any(filename not in traceback.get('fails', []) for filename in input_files):
+                    header, _, footer = stix1_attributes_framing(
+                        namespace, org, return_format, stix_package.version
+                    )
+                    with _open_output(name, overwrite=overwrite) as output:
+                        output.write(header)
+                        for feature, fragment in handler.features.items():
+                            with open(tmp_path / fragment, 'rt', encoding='utf-8') as current:
+                                content = current.read() if return_format == 'xml' else current.read()[:-2]
+                            current_footer = handler.footer(feature)
+                            if return_format == 'json' and feature == list(handler.features)[-1]:
+                                current_footer = current_footer[:-2]
+                            output.write(f'{content}{current_footer}')
+                        output.write(footer)
+                    traceback.update(_generate_traceback(debug, parser, name))
+            return traceback
+        output_names = []
+        for filename in input_files:
+            try:
+                if isinstance(filename, str):
+                    filename = Path(filename).resolve()
+                parser.parse_json_file(filename)
+                name = _check_output(
+                    filename.parent, f'{filename.name}.out', output_dir
                 )
-                with _open_output(name, overwrite=overwrite) as output:
-                    output.write(header)
-                    for feature, fragment in handler.features.items():
-                        with open(tmp_path / fragment, 'rt', encoding='utf-8') as current:
-                            content = current.read() if return_format == 'xml' else current.read()[:-2]
-                        current_footer = handler.footer(feature)
-                        if return_format == 'json' and feature == list(handler.features)[-1]:
-                            current_footer = current_footer[:-2]
-                        output.write(f'{content}{current_footer}')
-                    output.write(footer)
-                traceback.update(_generate_traceback(debug, parser, name))
+                _write_raw_stix(
+                    parser.stix_package, name, namespace, org, return_format,
+                    overwrite
+                )
+                output_names.append(name)
+            except Exception as exception:
+                traceback['fails'].append(f'{filename} - {exception.__str__()}')
+        if output_names:
+            traceback.update(_generate_traceback(debug, parser, *output_names))
         return traceback
-    output_names = []
-    for filename in input_files:
-        try:
-            if isinstance(filename, str):
-                filename = Path(filename).resolve()
-            parser.parse_json_file(filename)
-            name = _check_output(
-                filename.parent, f'{filename.name}.out', output_dir
-            )
-            _write_raw_stix(
-                parser.stix_package, name, namespace, org, return_format,
-                overwrite
-            )
-            output_names.append(name)
-        except Exception as exception:
-            traceback['fails'].append(f'{filename} - {exception.__str__()}')
-    if output_names:
-        traceback.update(_generate_traceback(debug, parser, *output_names))
-    return traceback
 
 
 def misp_event_collection_to_stix1(
@@ -265,100 +266,101 @@ def misp_event_collection_to_stix1(
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
     namespace = _validate_namespace(namespace)
-    _write_args = (namespace, org, return_format, overwrite)
-    parser = MISPtoSTIX1EventsParser(org, version)
-    if len(input_files) == 1:
-        filename = input_files[0]
-        try:
-            if not isinstance(filename, Path):
-                filename = Path(filename).resolve()
-            parser.parse_json_file(filename)
-            name = _check_filename(
-                filename.parent, f'{filename.name}.out', output_dir, output_name
-            )
-            _write_raw_stix(parser.stix_package, name, *_write_args)
-            return _generate_traceback(debug, parser, name)
-        except Exception as exception:
-            return {'fails': [f'{filename} - {exception.__str__()}']}
-    traceback = defaultdict(list)
-    if single_output:
-        stix_package = _create_stix_package(org, version, header=False)
-        name = _check_filename(
-            _default_output_dir(*input_files),
-            _default_stix1_name(stix_package, return_format),
-            output_dir, output_name
-        )
-        if in_memory:
-            for filename in input_files:
-                try:
-                    if not isinstance(filename, Path):
-                        filename = Path(filename).resolve()
-                    parser.parse_json_file(filename)
-                    if parser.stix_package.related_packages is not None:
-                        for related_package in parser.stix_package.related_packages:
-                            stix_package.add_related_package(related_package)
-                    else:
-                        stix_package.add_related_package(parser.stix_package)
-                except Exception as exception:
-                    traceback['fails'].append(f'{filename} - {exception.__str__()}')
-            if any(filename not in traceback.get('fails', []) for filename in input_files):
-                _write_raw_stix(stix_package, name, *_write_args)
-                traceback.update(_generate_traceback(debug, parser, name))
-            return traceback
-        header, separator, footer = stix1_framing(
-            namespace, org, return_format, stix_package.version
-        )
-        written = False
-        with _open_output(name, overwrite=overwrite) as output:
+    with _scoped_id_namespace(namespace, org):
+        _write_args = (namespace, org, return_format, overwrite)
+        parser = MISPtoSTIX1EventsParser(org, version)
+        if len(input_files) == 1:
             filename = input_files[0]
             try:
                 if not isinstance(filename, Path):
                     filename = Path(filename).resolve()
                 parser.parse_json_file(filename)
-                content = write_events(parser.stix_package, return_format)
-                output.write(f'{header}{content}')
-                written = True
+                name = _check_filename(
+                    filename.parent, f'{filename.name}.out', output_dir, output_name
+                )
+                _write_raw_stix(parser.stix_package, name, *_write_args)
+                return _generate_traceback(debug, parser, name)
             except Exception as exception:
-                traceback['fails'].append(filename)
-            for filename in input_files[1:]:
+                return {'fails': [f'{filename} - {exception.__str__()}']}
+        traceback = defaultdict(list)
+        if single_output:
+            stix_package = _create_stix_package(org, version, header=False)
+            name = _check_filename(
+                _default_output_dir(*input_files),
+                _default_stix1_name(stix_package, return_format),
+                output_dir, output_name
+            )
+            if in_memory:
+                for filename in input_files:
+                    try:
+                        if not isinstance(filename, Path):
+                            filename = Path(filename).resolve()
+                        parser.parse_json_file(filename)
+                        if parser.stix_package.related_packages is not None:
+                            for related_package in parser.stix_package.related_packages:
+                                stix_package.add_related_package(related_package)
+                        else:
+                            stix_package.add_related_package(parser.stix_package)
+                    except Exception as exception:
+                        traceback['fails'].append(f'{filename} - {exception.__str__()}')
+                if any(filename not in traceback.get('fails', []) for filename in input_files):
+                    _write_raw_stix(stix_package, name, *_write_args)
+                    traceback.update(_generate_traceback(debug, parser, name))
+                return traceback
+            header, separator, footer = stix1_framing(
+                namespace, org, return_format, stix_package.version
+            )
+            written = False
+            with _open_output(name, overwrite=overwrite) as output:
+                filename = input_files[0]
                 try:
                     if not isinstance(filename, Path):
                         filename = Path(filename).resolve()
                     parser.parse_json_file(filename)
                     content = write_events(parser.stix_package, return_format)
-                    output.write(
-                        f'{separator}{content}' if written else content
-                    )
+                    output.write(f'{header}{content}')
                     written = True
                 except Exception as exception:
-                    traceback['fails'].append(
-                        f'{filename} - {exception.__str__()}'
-                    )
+                    traceback['fails'].append(filename)
+                for filename in input_files[1:]:
+                    try:
+                        if not isinstance(filename, Path):
+                            filename = Path(filename).resolve()
+                        parser.parse_json_file(filename)
+                        content = write_events(parser.stix_package, return_format)
+                        output.write(
+                            f'{separator}{content}' if written else content
+                        )
+                        written = True
+                    except Exception as exception:
+                        traceback['fails'].append(
+                            f'{filename} - {exception.__str__()}'
+                        )
+                if written:
+                    output.write(footer)
+                else:
+                    # No input file converted: the destination keeps whatever it
+                    # held rather than taking a header and a footer alone
+                    output.discard()
             if written:
-                output.write(footer)
-            else:
-                # No input file converted: the destination keeps whatever it
-                # held rather than taking a header and a footer alone
-                output.discard()
-        if written:
-            traceback.update(_generate_traceback(debug, parser, name))
+                traceback.update(_generate_traceback(debug, parser, name))
+            return traceback
+        output_names = []
+        for filename in input_files:
+            try:
+                if not isinstance(filename, Path):
+                    filename = Path(filename).resolve()
+                parser.parse_json_file(filename)
+                name = _check_output(
+                    filename.parent, f'{filename.name}.out', output_dir
+                )
+                _write_raw_stix(parser.stix_package, name, *_write_args)
+                output_names.append(name)
+            except Exception as exception:
+                traceback['fails'].append(f'{filename} - {exception.__str__()}')
+        if output_names:
+            traceback.update(_generate_traceback(debug, parser, *output_names))
         return traceback
-    output_names = []
-    for filename in input_files:
-        try:
-            if not isinstance(filename, Path):
-                filename = Path(filename).resolve()
-            parser.parse_json_file(filename)
-            name = _check_output(
-                filename.parent, f'{filename.name}.out', output_dir
-            )
-            _write_raw_stix(parser.stix_package, name, *_write_args)
-            output_names.append(name)
-        except Exception as exception:
-            traceback['fails'].append(f'{filename} - {exception.__str__()}')
-    if output_names:
-        traceback.update(_generate_traceback(debug, parser, *output_names))
-    return traceback
 
 
 def misp_collection_to_stix2(
@@ -492,20 +494,21 @@ def misp_to_stix1(
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
     namespace = _validate_namespace(namespace)
-    parser = MISPtoSTIX1EventsParser(org, version)
-    try:
-        if not isinstance(filename, Path):
-            filename = Path(filename).resolve()
-        parser.parse_json_file(filename)
-        name = _check_filename(
-            filename.parent, f'{filename.name}.out', output_dir, output_name
-        )
-        _write_raw_stix(
-            parser.stix_package, name, namespace, org, return_format, overwrite
-        )
-    except Exception as exception:
-        return {'fails': [f'{filename} - {exception.__str__()}']}
-    return _generate_traceback(debug, parser, name)
+    with _scoped_id_namespace(namespace, org):
+        parser = MISPtoSTIX1EventsParser(org, version)
+        try:
+            if not isinstance(filename, Path):
+                filename = Path(filename).resolve()
+            parser.parse_json_file(filename)
+            name = _check_filename(
+                filename.parent, f'{filename.name}.out', output_dir, output_name
+            )
+            _write_raw_stix(
+                parser.stix_package, name, namespace, org, return_format, overwrite
+            )
+        except Exception as exception:
+            return {'fails': [f'{filename} - {exception.__str__()}']}
+        return _generate_traceback(debug, parser, name)
 
 
 def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,

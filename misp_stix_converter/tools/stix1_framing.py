@@ -3,11 +3,12 @@
 import json
 import re
 from ..misp_stix_mapping import Mapping
+from contextlib import contextmanager
 from datetime import datetime
 from mixbox import idgen
 from mixbox.namespaces import Namespace
 from stix.core import STIXHeader, STIXPackage
-from typing import Optional
+from typing import Iterator, Optional
 from uuid import UUID, uuid4
 
 # STIX header
@@ -155,7 +156,7 @@ def stix_xml_separator():
 def _create_stix_package(
         orgname: str, version: str,  header: Optional[bool] = True,
         uuid: Optional[UUID | str] = None) -> STIXPackage:
-    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
+    parsed_orgname = _parse_orgname(orgname)
     if uuid is None:
         uuid = uuid4()
     stix_package = STIXPackage(
@@ -173,14 +174,49 @@ def _create_stix_package(
 
 def _handle_namespaces(namespace: str, orgname: str) -> tuple:
     namespace = _validate_namespace(namespace)
-    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
+    parsed_orgname = _parse_orgname(orgname)
     namespaces = {namespace: parsed_orgname}
     namespaces.update(NS_DICT)
+    _set_id_namespace(namespace, parsed_orgname)
+    return namespaces
+
+
+def _parse_orgname(orgname: str) -> str:
+    return re.sub(r'[\W]+', '', orgname.replace(' ', '_'))
+
+
+@contextmanager
+def _scoped_id_namespace(namespace: str, orgname: str) -> Iterator[None]:
+    """Hold the mixbox identifier namespace for the duration of one export.
+
+    mixbox keeps the namespace on a module-level generator, so setting it is a
+    process-wide change: every STIX 1 object built anywhere in the process
+    takes its id prefix from whatever was set last. Setting it on entry is what
+    makes a conversion generate its own organisation's ids rather than the ids
+    of whichever export ran before it, and putting back what was found - on the
+    way out of a returning export and of a raising one alike - is what keeps
+    the change from outliving the export. Exports running *at the same time*
+    still share the one generator: STIX 1 export is not thread-safe, and cannot
+    be while mixbox holds the namespace globally.
+
+    :param namespace: the Export Namespace, already validated
+    :param orgname: the organisation name the identifier prefix comes from
+    """
+    # The public getters drop the schema location, so what is saved is the
+    # generator's own Namespace: the value put back is the value found
+    previous = idgen._get_generator().namespace
+    _set_id_namespace(namespace, _parse_orgname(orgname))
+    try:
+        yield
+    finally:
+        idgen.set_id_namespace(previous)
+
+
+def _set_id_namespace(namespace: str, parsed_orgname: str):
     try:
         idgen.set_id_namespace(Namespace(namespace, parsed_orgname))
     except TypeError:
         idgen.set_id_namespace(Namespace(namespace, parsed_orgname, 'MISP'))
-    return namespaces
 
 
 def _stix1_attributes_framing(namespace: str, orgname: str, return_format: str,

@@ -234,6 +234,20 @@ response = misp_to_stix1(
 ```
 The resulting STIX1 Package is then available in a `filename.out` file
 
+**STIX 1 export is not thread-safe.** The identifier namespace an exported STIX 1
+Package uses lives in a module-level generator inside `mixbox`, so it is process-wide.
+`misp_to_stix1`, `misp_event_collection_to_stix1` and `misp_attribute_collection_to_stix1`
+set it for the duration of one conversion and put back whatever they found, which keeps
+sequential and nested exports apart — but two exports running at the same time in one
+process share that one generator and can attribute identifiers to each other's
+organisation. Convert in one thread, or in separate processes.
+
+Driving a parser yourself (the `MISPtoSTIX1EventsParser` example above) or calling the
+`stix1_framing` / `stix1_attributes_framing` helpers directly gets no such window: the
+framing helpers set the namespace and leave it set, and a parser used on its own never
+sets it at all. Wrap those calls yourself if the same process exports for more than one
+organisation.
+
 - Convert a MISP Event in STIX2:
 
 ```python
