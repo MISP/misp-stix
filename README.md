@@ -146,7 +146,7 @@ options:
   -s, --single-output   Produce only one result file (in case of multiple input file).
   -m, --in-memory       Store result in memory (in case of multiple result files) instead of storing it in tmp files.
   --output-dir OUTPUT_DIR
-                        Output path - used in the case of multiple input files when the `single_output` argument is not used.
+                        Output directory - default is the directory the input files come from. Created if it does not exist.
   -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_output` argument is used.
 
@@ -174,7 +174,7 @@ options:
   -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_event` argument is used.
   --output-dir OUTPUT_DIR
-                        Output path - used in the case of multiple input files when the `single_event` argument is not used.
+                        Output directory - default is the directory the input files come from. It has to exist when more than one MISP event comes out of a file.
   -d, --distribution {0,1,2,3,4}
                         Distribution level for the imported MISP content (default is 0) - 0: Your organisation only - 1: This community only - 2: Connected communities - 3: All communities - 4: Sharing Group
   -sg, --sharing-group SHARING_GROUP

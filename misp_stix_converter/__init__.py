@@ -75,8 +75,8 @@ def main():
     )
     export_parser.add_argument(
         '--output-dir', type=Path,
-        help='Output path - used in the case of multiple input files when the '
-             '`single_output` argument is not used.'
+        help='Output directory - default is the directory the input files '
+             'come from. Created if it does not exist.'
     )
     export_parser.add_argument(
         '-o', '--output-name', type=Path,
@@ -127,8 +127,9 @@ def main():
     )
     import_parser.add_argument(
         '--output-dir', type=Path,
-        help='Output path - used in the case of multiple input files when the '
-             '`single_event` argument is not used.'
+        help='Output directory - default is the directory the input files '
+             'come from. It has to exist when more than one MISP event comes '
+             'out of a file.'
     )
     import_parser.add_argument(
         '--classification', choices=['internal', 'external'], default=None,
@@ -208,12 +209,9 @@ def main():
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
-    single = (
-        stix_args.single_output if stix_args.feature == 'export'
-        else stix_args.single_event
-    )
-    if len(stix_args.file) > 1 and single and stix_args.output_dir is None:
-        stix_args.output_dir = Path(__file__).parents[1] / 'tmp'
+    # No default output location is set here: the conversion functions write
+    # next to their input files when the operator named none, so nothing lands
+    # in the installed package tree
     feature = 'MISP to STIX' if stix_args.feature == 'export' else 'STIX to MISP'
     try:
         traceback = stix_args.func(stix_args)

@@ -144,8 +144,8 @@ def misp_attribute_collection_to_stix1(
     if single_output:
         stix_package = _create_stix_package(org, version)
         name = _check_filename(
-            Path(__file__).resolve().parent / 'tmp',
-            f'{stix_package.id_}.stix1.{return_format}',
+            _default_output_dir(*input_files),
+            _default_stix1_name(stix_package, return_format),
             output_dir, output_name
         )
         if in_memory:
@@ -271,8 +271,8 @@ def misp_event_collection_to_stix1(
     if single_output:
         stix_package = _create_stix_package(org, version, header=False)
         name = _check_filename(
-            Path(__file__).resolve().parent / 'tmp',
-            f'{stix_package.id_}.stix1.{return_format}',
+            _default_output_dir(*input_files),
+            _default_stix1_name(stix_package, return_format),
             output_dir, output_name
         )
         if in_memory:
@@ -374,7 +374,7 @@ def misp_collection_to_stix2(
             if any(filename not in traceback.get('fails', []) for filename in input_files):
                 bundle = parser.bundle
                 name = _check_filename(
-                    Path(__file__).resolve().parents[1] / 'tmp',
+                    _default_output_dir(*input_files),
                     f"{bundle.id.split('--')[1]}.stix"
                     f"{version.replace('.', '')}.json",
                     output_dir, output_name
@@ -385,7 +385,7 @@ def misp_collection_to_stix2(
             return traceback
         bundle = Bundle_v21() if version == '2.1' else Bundle_v20()
         name = _check_filename(
-            Path(__file__).resolve().parents[1] / 'tmp',
+            _default_output_dir(*input_files),
             f"{bundle.id.split('--')[1]}.stix{version.replace('.', '')}.json",
             output_dir, output_name
         )
@@ -875,7 +875,7 @@ def _check_filename(default_dir: Path, default_name: str,
         output_name = Path(output_name).resolve()
     if output_name.is_dir():
         return output_name / default_name
-    return output_name
+    return _ensure_directory(output_name.parent) / output_name.name
 
 
 def _check_output(
@@ -886,7 +886,32 @@ def _check_output(
         output_dir = Path(output_dir).resolve()
     if output_dir.is_file():
         return output_dir
-    return output_dir / default_name
+    return _ensure_directory(output_dir) / default_name
+
+
+def _default_output_dir(*input_files: _files_type) -> Path:
+    # Where a collection export writes when the caller named no location: the
+    # directory the input files come from, like the single input entries do.
+    # Never the installed package tree - a library has no business using its
+    # own installation directory as an output or scratch area
+    filename = input_files[0]
+    if not isinstance(filename, Path):
+        filename = Path(filename)
+    return filename.resolve().parent
+
+
+def _default_stix1_name(stix_package, return_format: str) -> str:
+    # `<orgname>:STIXPackage-<uuid>` is the package id, not a filename: the
+    # organisation prefix goes with the `:` separator, which Windows and SMB
+    # shares reject
+    return f"{stix_package.id_.split(':')[-1]}.stix1.{return_format}"
+
+
+def _ensure_directory(directory: Path) -> Path:
+    # An output location the caller named is a request: a directory that does
+    # not exist yet is created rather than failing at write time
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
 
 
 _CLASSIFICATION_VALUES = ('internal', 'external')
