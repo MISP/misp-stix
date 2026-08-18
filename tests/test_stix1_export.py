@@ -9,7 +9,10 @@ from misp_stix_converter import (InvalidMISPInputError, MISPtoSTIX1AttributesPar
                                  MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1)
 from misp_stix_converter import misp_stix_converter as converter_module
-from misp_stix_converter.tools.stix1_framing import _handle_namespaces
+from misp_stix_converter.tools.stix1_framing import (
+    _handle_namespaces, _scoped_id_namespace)
+from mixbox import idgen
+from mixbox.namespaces import Namespace
 from pymisp import MISPEvent
 from shutil import copyfile
 from tempfile import TemporaryDirectory
@@ -95,7 +98,28 @@ class TestSTIX1InputContract(TestSTIX):
         self.assertIsNotNone(parser.stix_package)
 
 
-class TestSTIX1NamespaceParameter(TestSTIX):
+class _STIX1NamespaceTestCase(TestSTIX):
+    # What the two namespace test classes below share: the input files, the
+    # copy that keeps an export inside its temporary directory, and the
+    # process-global mixbox id namespace put back the way the suite found it
+    _DEFAULT_NAMESPACE = 'https://misp-project.org'
+
+    def setUp(self):
+        self._events_file = Path(__file__).parent / 'test_events_collection_1.json'
+        self._attributes_file = Path(__file__).parent / 'test_attributes_collection_1.json'
+
+    def tearDown(self):
+        # The exports restore the id namespace themselves; calling the framing
+        # helper directly does not, so the default goes back by hand
+        _handle_namespaces(self._DEFAULT_NAMESPACE, 'MISP')
+
+    def _copy_input(self, tmp_dir, input_file):
+        filename = Path(tmp_dir) / input_file.name
+        copyfile(input_file, filename)
+        return filename
+
+
+class TestSTIX1NamespaceParameter(_STIX1NamespaceTestCase):
     # Every STIX 1 export entry validates the `namespace` parameter - the
     # framing writes it into the root element as it stands - so a rejected
     # value produces no output at all.
@@ -111,22 +135,7 @@ class TestSTIX1NamespaceParameter(TestSTIX):
         '',
         None
     )
-    _DEFAULT_NAMESPACE = 'https://misp-project.org'
     _VALID_NAMESPACE = 'http://custom.example/misp'
-
-    def setUp(self):
-        self._events_file = Path(__file__).parent / 'test_events_collection_1.json'
-        self._attributes_file = Path(__file__).parent / 'test_attributes_collection_1.json'
-
-    def tearDown(self):
-        # Framing sets the process-global mixbox id namespace: put the default
-        # back, so the exports a custom namespace ran here stay contained
-        _handle_namespaces(self._DEFAULT_NAMESPACE, 'MISP')
-
-    def _copy_input(self, tmp_dir, input_file):
-        filename = Path(tmp_dir) / input_file.name
-        copyfile(input_file, filename)
-        return filename
 
     def _export_event(self, tmp_dir, **kwargs):
         filename = self._copy_input(tmp_dir, self._events_file)
@@ -200,6 +209,140 @@ class TestSTIX1NamespaceParameter(TestSTIX):
             ],
             'MISP'
         )
+
+
+class TestSTIX1IdNamespaceScope(_STIX1NamespaceTestCase):
+    # mixbox keeps the id namespace on a module-level generator, so what it
+    # holds decides the prefix of every STIX 1 id the process builds - both
+    # while an event is converted and while the package is serialised. An
+    # export therefore has to set its own and put back what it found.
+    _EXPORT_NAMESPACE = 'http://org-b.example'
+    _EXPORT_ORGNAME = 'OrgB'
+    _OTHER_NAMESPACE = 'http://org-a.example'
+    _OTHER_ORGNAME = 'OrgA'
+
+    def setUp(self):
+        super().setUp()
+        idgen.set_id_namespace(
+            Namespace(self._OTHER_NAMESPACE, self._OTHER_ORGNAME)
+        )
+
+    def _export_arguments(self):
+        return {
+            'namespace': self._EXPORT_NAMESPACE, 'org': self._EXPORT_ORGNAME
+        }
+
+    def _assert_namespace_is_restored(self):
+        self.assertEqual(idgen.get_id_namespace(), self._OTHER_NAMESPACE)
+        self.assertEqual(idgen.get_id_namespace_prefix(), self._OTHER_ORGNAME)
+
+    def _generated_id_spy(self, parser_class):
+        # An id created at the moment the input is converted takes the prefix
+        # every id that conversion builds takes
+        generated = []
+        parse_json_file = parser_class.parse_json_file
+
+        def spy(parser, filename):
+            generated.append(idgen.create_id('indicator'))
+            return parse_json_file(parser, filename)
+
+        return generated, patch.object(
+            parser_class, 'parse_json_file', autospec=True, side_effect=spy
+        )
+
+    def test_single_event_export_restores_the_previous_namespace(self):
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._copy_input(tmp_dir, self._events_file)
+            self.assertEqual(
+                misp_to_stix1(filename, **self._export_arguments()),
+                {'success': 1, 'results': [Path(f'{filename}.out')]}
+            )
+        self._assert_namespace_is_restored()
+
+    def test_event_collection_export_restores_the_previous_namespace(self):
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._copy_input(tmp_dir, self._events_file)
+            self.assertEqual(
+                misp_event_collection_to_stix1(
+                    filename, filename, single_output=True,
+                    output_dir=tmp_dir, **self._export_arguments()
+                )['success'],
+                1
+            )
+        self._assert_namespace_is_restored()
+
+    def test_attribute_collection_export_restores_the_previous_namespace(self):
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._copy_input(tmp_dir, self._attributes_file)
+            self.assertEqual(
+                misp_attribute_collection_to_stix1(
+                    filename, filename, single_output=True,
+                    output_dir=tmp_dir, **self._export_arguments()
+                )['success'],
+                1
+            )
+        self._assert_namespace_is_restored()
+
+    def test_an_export_recording_a_failure_restores_the_previous_namespace(self):
+        with TemporaryDirectory() as tmp_dir:
+            missing = Path(tmp_dir) / 'missing.json'
+            self.assertIn(
+                'fails', misp_to_stix1(missing, **self._export_arguments())
+            )
+        self._assert_namespace_is_restored()
+
+    def test_a_raising_export_restores_the_previous_namespace(self):
+        # An output file that already exists is refused by raising, from
+        # outside any `try`: the namespace goes back on that way out too
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._copy_input(tmp_dir, self._events_file)
+            taken = Path(tmp_dir) / 'taken.xml'
+            taken.write_text('mine')
+            with self.assertRaises(FileExistsError):
+                misp_event_collection_to_stix1(
+                    filename, filename, single_output=True,
+                    output_dir=tmp_dir, output_name=str(taken),
+                    **self._export_arguments()
+                )
+            self.assertEqual(taken.read_text(), 'mine')
+        self._assert_namespace_is_restored()
+
+    def test_an_export_converts_under_its_own_namespace(self):
+        # Before the scope existed the namespace was set at write time, after
+        # the input was converted, so the ids an export generated carried the
+        # *previous* export's prefix
+        for parser_class, function, input_file in (
+                (MISPtoSTIX1EventsParser, misp_to_stix1, self._events_file),
+                (MISPtoSTIX1EventsParser, misp_event_collection_to_stix1,
+                 self._events_file),
+                (MISPtoSTIX1AttributesParser,
+                 misp_attribute_collection_to_stix1, self._attributes_file)):
+            generated, spy = self._generated_id_spy(parser_class)
+            with TemporaryDirectory() as tmp_dir:
+                filename = self._copy_input(tmp_dir, input_file)
+                with spy:
+                    function(filename, **self._export_arguments())
+            self.assertEqual(len(generated), 1)
+            self.assertTrue(
+                generated[0].startswith(f'{self._EXPORT_ORGNAME}:'),
+                f'{function.__name__} generated {generated[0]}'
+            )
+
+    def test_an_export_leaves_an_enclosing_scope_generating_its_own_ids(self):
+        # The finding's interleaving scenario: an export for one organisation
+        # completes while another organisation's scope is still open
+        with _scoped_id_namespace(self._OTHER_NAMESPACE, self._OTHER_ORGNAME):
+            with TemporaryDirectory() as tmp_dir:
+                filename = self._copy_input(tmp_dir, self._events_file)
+                self.assertEqual(
+                    misp_to_stix1(filename, **self._export_arguments()),
+                    {'success': 1, 'results': [Path(f'{filename}.out')]}
+                )
+            self.assertTrue(
+                idgen.create_id('indicator').startswith(
+                    f'{self._OTHER_ORGNAME}:'
+                )
+            )
 
 
 class TestStix1Export(TestSTIX):
