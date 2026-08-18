@@ -177,7 +177,7 @@ options:
   -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_event` argument is used.
   --output-dir OUTPUT_DIR
-                        Output directory - default is the directory the input files come from. It has to exist when more than one MISP event comes out of a file.
+                        Output directory - default is the directory the input files come from. Created if it does not exist.
   --overwrite           Replace an output file that already exists - without it a conversion writing onto an existing file fails and leaves it as it is.
   -d, --distribution {0,1,2,3,4}
                         Distribution level for the imported MISP content (default is 0) - 0: Your organisation only - 1: This community only - 2: Connected communities - 3: All communities - 4: Sharing Group

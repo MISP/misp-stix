@@ -570,8 +570,6 @@ def stix_1_to_misp(filename: _files_type,
         stix_parser.parse_stix_package(**args)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    if output_dir is None:
-        output_dir = filename.parent
     if stix_parser.single_event:
         name = _check_filename(
             filename.parent, f'{filename.name}.out', output_dir, output_name
@@ -581,9 +579,10 @@ def stix_1_to_misp(filename: _files_type,
             overwrite=overwrite
         )
         return _generate_traceback(debug, stix_parser, name)
+    directory = _check_output_dir(filename.parent, output_dir)
     output_names = []
     for misp_event in stix_parser.misp_events:
-        output = output_dir / f'{filename.name}.{misp_event.uuid}.misp.out'
+        output = directory / f'{filename.name}.{misp_event.uuid}.misp.out'
         _write_output(
             output, misp_event.to_json(indent=4), overwrite=overwrite
         )
@@ -678,8 +677,6 @@ def stix_2_to_misp(filename: _files_type,
         stix_parser.parse_stix_bundle(**args)
     except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    if output_dir is None:
-        output_dir = filename.parent
     if stix_parser.single_event:
         name = _check_filename(
             filename.parent, f'{filename.name}.out', output_dir, output_name
@@ -689,9 +686,10 @@ def stix_2_to_misp(filename: _files_type,
             overwrite=overwrite
         )
         return _generate_traceback(debug, stix_parser, name)
+    directory = _check_output_dir(filename.parent, output_dir)
     output_names = []
     for misp_event in stix_parser.misp_events:
-        output = output_dir / f'{filename.name}.{misp_event.uuid}.misp.out'
+        output = directory / f'{filename.name}.{misp_event.uuid}.misp.out'
         _write_output(
             output, misp_event.to_json(indent=4), overwrite=overwrite
         )
@@ -915,12 +913,17 @@ def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
 #                              UTILITY FUNCTIONS.                              #
 ################################################################################
 
+def _as_path(location: _files_type) -> Path:
+    # Every funnel takes the `Path` or the `str` the parameters document, so
+    # none of them can leave a `str` for a caller to join a name onto
+    return location if isinstance(location, Path) else Path(location).resolve()
+
+
 def _check_filename(default_dir: Path, default_name: str,
                     output_dir: _files_type, output_name: _files_type) -> Path:
     if output_name is None:
         return _check_output(default_dir, default_name, output_dir)
-    if not isinstance(output_name, Path):
-        output_name = Path(output_name).resolve()
+    output_name = _as_path(output_name)
     if output_name.is_dir():
         return output_name / default_name
     return _ensure_directory(output_name.parent) / output_name.name
@@ -930,11 +933,22 @@ def _check_output(
         default_dir: Path, default_name: str, output_dir: _files_type) -> Path:
     if output_dir is None:
         return default_dir / default_name
-    if not isinstance(output_dir, Path):
-        output_dir = Path(output_dir).resolve()
+    output_dir = _as_path(output_dir)
     if output_dir.is_file():
         return output_dir
     return _ensure_directory(output_dir) / default_name
+
+
+def _check_output_dir(default_dir: Path, output_dir: _files_type) -> Path:
+    # Where the import entries write one file per MISP event. Unlike
+    # `_check_output` the destination can only be a directory - a single file
+    # cannot hold several events - so a location the caller named is created
+    # rather than read as an output file, and how many events a document
+    # yields is its own shape rather than a caller parameter, so it cannot
+    # decide whether a documented parameter type works
+    if output_dir is None:
+        return default_dir
+    return _ensure_directory(_as_path(output_dir))
 
 
 def _default_output_dir(*input_files: _files_type) -> Path:

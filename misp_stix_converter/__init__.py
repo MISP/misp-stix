@@ -134,8 +134,7 @@ def main():
     import_parser.add_argument(
         '--output-dir', type=Path,
         help='Output directory - default is the directory the input files '
-             'come from. It has to exist when more than one MISP event comes '
-             'out of a file.'
+             'come from. Created if it does not exist.'
     )
     import_parser.add_argument(
         '--overwrite', action='store_true',
