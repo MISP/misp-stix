@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import annotations
-from ..tools.exceptions import STIXLoadingError, _reduce_input_path
+from ..tools.exceptions import (
+    STIXInputSizeError, STIXLoadingError, _reduce_input_path)
 from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
     MarkingDefinitionLoadingError, MissingSTIXContentError,
@@ -185,9 +186,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._load_stix_bundle(bundle)
         self._set_indicator_references()
 
-    def parse_stix_content(self, filename: str, **kwargs):
+    def parse_stix_content(self, filename: str,
+                           max_size: Optional[int] = None, **kwargs):
         try:
-            bundle = load_stix2_file(filename)
+            bundle = load_stix2_file(filename, max_size=max_size)
+        except STIXInputSizeError:
+            # the size limit reports the limit it enforced, not what the
+            # document it never read holds
+            raise
         except Exception as exception:
             raise STIXLoadingError(
                 'Error while loading the STIX 2 content: '

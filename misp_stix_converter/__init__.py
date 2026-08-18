@@ -2,7 +2,7 @@ __version__ = '2026.7.8'
 
 import argparse
 from .misp2stix import InvalidMISPInputError  # noqa
-from .tools import STIXLoadingError  # noqa
+from .tools import STIXInputSizeError, STIXLoadingError  # noqa
 from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser  # noqa
 from .misp2stix import MISPtoSTIX1Mapping  # noqa
 from .misp2stix import MISPtoSTIX20Parser, MISPtoSTIX21Parser  # noqa
@@ -21,6 +21,18 @@ from .stix2misp import MissingSTIXContentError  # noqa
 from .stix2misp import STIX2PatternParser  # noqa
 from .stix2misp import MISP_org_uuid  # noqa
 from pathlib import Path
+
+
+def _max_input_size(value: str) -> int:
+    # 0 turns the limit off, and nothing below it means anything: without this
+    # `--max-input-size -1` would silently convert without a limit
+    size = int(value)
+    if size < 0:
+        raise argparse.ArgumentTypeError(
+            'the maximum input size cannot be negative - use 0 to turn the '
+            'limit off'
+        )
+    return size
 
 
 def _handle_return_message(traceback):
@@ -142,6 +154,13 @@ def main():
         help='Replace an output file that already exists - without it a '
              'conversion writing onto an existing file fails and leaves it '
              'as it is.'
+    )
+    import_parser.add_argument(
+        '--max-input-size', type=_max_input_size, default=None, metavar='MB',
+        help='Maximum accepted input size, in MB - a document larger than '
+             'this is refused before it is parsed (default is 100). Use 0 to '
+             'turn the limit off: conversion costs 2 to 7 times the input '
+             'size in memory, and a few seconds of CPU per MB of STIX 2.'
     )
     import_parser.add_argument(
         '--classification', choices=['internal', 'external'], default=None,

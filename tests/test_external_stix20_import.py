@@ -304,6 +304,157 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         load_stix2_content(stix_content)
         self.assertEqual(stix_content, original)
 
+    def test_stix20_oversized_file_is_refused_before_it_is_parsed(self):
+        # Nothing checked an input size: a document was materialised in full -
+        # at 2 to 7 times its size in memory - and only then looked at, so an
+        # oversized document cost the conversion host the whole parse.
+        from misp_stix_converter import STIXInputSizeError
+        from misp_stix_converter.tools import load_stix2_file
+        from misp_stix_converter.tools import stix2_loading_helpers
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from unittest.mock import patch
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'oversized.stix20.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            with patch.object(stix2_loading_helpers.json, 'load') as json_load:
+                with self.assertRaises(STIXInputSizeError) as context:
+                    load_stix2_file(filename, max_size=64)
+        json_load.assert_not_called()
+        self.assertIn('64 bytes', str(context.exception))
+
+    def test_stix20_oversized_content_is_refused_before_it_is_parsed(self):
+        # The in-memory path is the one MISP core and the other library
+        # consumers reach, so the limit cannot live on the file path alone.
+        from misp_stix_converter import STIXInputSizeError
+        from misp_stix_converter.tools import load_stix2_content
+        from misp_stix_converter.tools import stix2_loading_helpers
+        from unittest.mock import patch
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        with patch.object(stix2_loading_helpers.json, 'loads') as json_loads:
+            with self.assertRaises(STIXInputSizeError) as context:
+                load_stix2_content(bundle.serialize(), max_size=64)
+        json_loads.assert_not_called()
+        self.assertIn('64 bytes', str(context.exception))
+
+    def test_stix20_input_size_limit_is_raisable_and_can_be_turned_off(self):
+        from misp_stix_converter.tools import load_stix2_content
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        content = bundle.serialize()
+        for max_size in (len(content), 0):
+            self.assertEqual(
+                load_stix2_content(content, max_size=max_size).id, bundle.id
+            )
+
+    def test_stix20_input_size_limit_is_counted_in_bytes(self):
+        # The limit is a size in bytes, so a document is measured in bytes:
+        # counting the characters of a multibyte one accepted up to 4 times the
+        # limit the caller set.
+        from misp_stix_converter import STIXInputSizeError
+        from misp_stix_converter.tools import load_stix2_content
+        content = self._stix20_content_with_a_multibyte_name()
+        self.assertGreater(len(content.encode('utf-8')), len(content))
+        with self.assertRaises(STIXInputSizeError):
+            load_stix2_content(content, max_size=len(content))
+        self.assertEqual(
+            load_stix2_content(
+                content, max_size=len(content.encode('utf-8'))
+            ).id,
+            'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda'
+        )
+
+    def _stix20_content_with_a_multibyte_name(self) -> str:
+        import json
+        return json.dumps(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'spec_version': '2.0',
+                'objects': [
+                    {
+                        'type': 'identity',
+                        'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'Cliché Threat Intelligence Ünit',
+                        'identity_class': 'organization'
+                    }
+                ]
+            },
+            ensure_ascii=False
+        )
+
+    def test_stix20_default_input_size_limit_is_the_documented_one(self):
+        # The documented default is what a caller setting no limit of its own
+        # gets - the value the README and ADR-0011 name.
+        from misp_stix_converter import STIXInputSizeError
+        from misp_stix_converter.tools import input_limits, load_stix2_content
+        from unittest.mock import patch
+        self.assertEqual(input_limits._MAX_INPUT_SIZE, 100 * 1024 * 1024)
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        with patch.object(input_limits, '_MAX_INPUT_SIZE', 64):
+            with self.assertRaises(STIXInputSizeError):
+                load_stix2_content(bundle.serialize())
+
+    def test_stix20_parser_honours_the_input_size_limit(self):
+        # MISP core converts through the parser rather than through the entry
+        # functions (ADR-0009), so the limit has to be reachable there too.
+        from misp_stix_converter import STIXInputSizeError
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'oversized.stix20.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            with self.assertRaises(STIXInputSizeError) as context:
+                self.parser.parse_stix_content(filename, max_size=64)
+        self.assertIn('64 bytes', str(context.exception))
+
+    def test_stix20_entry_point_reports_the_input_size_limit(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        results = self._import_bundle_with_size_limit(bundle, 64)
+        self.assertIn('errors', results)
+        self.assertTrue(
+            any('64 bytes' in error for error in results['errors'])
+        )
+
+    def test_stix20_content_is_deserialised_exactly_once(self):
+        # A document failing the whole-bundle load was deserialised twice:
+        # `stix2` read the JSON, then the recovery path read the same string
+        # again - the second read of a document engineered to be expensive to
+        # parse costs as much as the first.
+        import json
+        from misp_stix_converter.tools import load_stix2_content
+        from misp_stix_converter.tools import stix2_loading_helpers
+        from unittest.mock import patch
+        content = json.dumps(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'spec_version': '2.0',
+                'objects': [
+                    {
+                        'type': 'indicator',
+                        'id': 'indicator--10440d97-42bb-4b17-a439'
+                              '-9dd5e17dd93e',
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'labels': ['malicious-activity'],
+                        'pattern': 'NOT A VALID PATTERN',
+                        'valid_from': '2020-10-25T16:22:00.000Z'
+                    }
+                ]
+            }
+        )
+        with patch.object(
+                stix2_loading_helpers.json, 'loads',
+                wraps=json.loads) as json_loads:
+            load_stix2_content(content)
+        self.assertEqual(json_loads.call_count, 1)
+
     def _load_stix20_content_with_invalid_markings(self, *markings):
         from misp_stix_converter.tools import load_stix2_content
         return load_stix2_content(

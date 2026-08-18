@@ -429,6 +429,94 @@ class TestSTIX1Import(TestSTIX):
             package = load_stix1_package(filename)
         self.assertEqual(package.ttps.ttp[0].title, 'MAEC carrying TTP')
 
+    def test_load_stix1_package_refuses_an_oversized_document(self):
+        """Nothing checked an input size: libxml2 built the whole tree - 2 to 7
+        times the document size in memory - before `mixbox` looked at what the
+        document even is, so an oversized document cost the whole parse."""
+        from misp_stix_converter import STIXInputSizeError
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            with patch.object(
+                    stix1_loading_helpers.STIXPackage, 'from_xml') as from_xml:
+                with self.assertRaises(STIXInputSizeError) as context:
+                    load_stix1_package(filename, max_size=64)
+        from_xml.assert_not_called()
+        self.assertIn('64 bytes', str(context.exception))
+
+    def test_load_stix1_package_input_size_limit_is_raisable(self):
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            for max_size in (filename.stat().st_size, 0):
+                package = load_stix1_package(filename, max_size=max_size)
+                self.assertEqual(len(package.courses_of_action), 1)
+
+    def test_load_stix1_package_refuses_a_document_that_is_not_a_package(self):
+        """`mixbox` checks the root element only once the tree it builds is
+        complete: reading the root element on its own refuses a document that
+        is not a STIX package without materialising any of it."""
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'not_stix.xml'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(f'<not-stix>{"a" * 4096}</not-stix>')
+            with patch.object(
+                    stix1_loading_helpers.STIXPackage, 'from_xml') as from_xml:
+                with self.assertRaises(STIXLoadingError) as context:
+                    load_stix1_package(filename)
+        from_xml.assert_not_called()
+        self.assertIn('not-stix', str(context.exception))
+
+    def test_load_stix1_package_root_element_check_accepts_a_package(self):
+        """The peek refuses only what it positively identified as something
+        else: a STIX package reaches the parser, whatever the size of the root
+        element it starts with."""
+        stix_package = STIXPackage()
+        stix_package.stix_header = STIXHeader(
+            title=f'Package with a long title: {"a" * 8192}'
+        )
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            package = load_stix1_package(filename)
+        self.assertEqual(len(package.courses_of_action), 1)
+
+    def test_parse_stix_content_honours_the_input_size_limit(self):
+        # MISP core converts through the parsers rather than through the entry
+        # functions (ADR-0009), so the limit has to be reachable there too.
+        from misp_stix_converter import STIXInputSizeError
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            parser = ExternalSTIX1toMISPParser()
+            with self.assertRaises(STIXInputSizeError) as context:
+                parser.parse_stix_content(filename, max_size=64)
+        self.assertIn('64 bytes', str(context.exception))
+
+    def test_stix_1_to_misp_reports_the_input_size_limit(self):
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            results = stix_1_to_misp(filename, max_size=64)
+        self.assertIn('errors', results)
+        self.assertTrue(
+            any('64 bytes' in error for error in results['errors'])
+        )
+
     def test_stix_1_to_misp_returns_error_dict_on_malformed_content(self):
         with TemporaryDirectory() as tmp_dir:
             filename = Path(tmp_dir) / 'malformed.xml'

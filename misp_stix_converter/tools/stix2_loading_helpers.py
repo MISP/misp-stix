@@ -2,6 +2,8 @@
 
 import json
 from .exceptions import STIXLoadingError
+from .input_limits import (
+    _check_input_file_size, _check_input_size, _utf8_size)
 from io import BytesIO
 from stix2.exceptions import InvalidValueError, ParseError
 from stix2.parsing import dict_to_stix2, parse as stix2_parser
@@ -85,32 +87,33 @@ def _handle_stix2_loading_error(
 
 
 def load_stix2_content(stix_content: BytesIO | dict | list | str,
-                       invalid_objects: Optional[dict] = None) -> _BUNDLE_TYPING:
+                       invalid_objects: Optional[dict] = None,
+                       max_size: Optional[int] = None) -> _BUNDLE_TYPING:
     if invalid_objects is None:
         invalid_objects = {}
     duplicate_invalid_ids: set = set()
-    if isinstance(stix_content, dict):
-        try:
-            bundle = dict_to_stix2(
-                stix_content, allow_custom=True, interoperability=True
-            )
-        except (InvalidValueError, KeyError, ParseError, ValueError):
-            # the 2.1 code path in `stix2` reports an object without a `type`
-            # property as a bare KeyError where the 2.0 one uses ParseError
-            bundle = _handle_stix2_loading_error(
-                stix_content, invalid_objects, duplicate_invalid_ids
-            )
-    else:
+    if not isinstance(stix_content, (dict, list)):
         if isinstance(stix_content, BytesIO):
+            # the buffer is sized before it is decoded: decoding an oversized
+            # document is already a copy of it
+            _check_input_size(stix_content.getbuffer().nbytes, max_size)
             stix_content = stix_content.getvalue().decode('utf-8')
-        try:
-            bundle = stix2_parser(
-                stix_content, allow_custom=True, interoperability=True
-            )
-        except (InvalidValueError, KeyError, ParseError, ValueError):
-            bundle = _handle_stix2_loading_error(
-                json.loads(stix_content), invalid_objects, duplicate_invalid_ids
-            )
+        else:
+            _check_input_size(_utf8_size(stix_content), max_size)
+        # `stix2`'s own parser deserialises the JSON and builds the objects in
+        # one call, so the recovery path below had to deserialise the document
+        # a second time: read it once here instead
+        stix_content = json.loads(stix_content)
+    try:
+        bundle = dict_to_stix2(
+            stix_content, allow_custom=True, interoperability=True
+        )
+    except (InvalidValueError, KeyError, ParseError, ValueError):
+        # the 2.1 code path in `stix2` reports an object without a `type`
+        # property as a bare KeyError where the 2.0 one uses ParseError
+        bundle = _handle_stix2_loading_error(
+            stix_content, invalid_objects, duplicate_invalid_ids
+        )
     # keeps the recovered invalid objects with the bundle they came from, so
     # `load_stix_bundle` sees them even when the caller does not pass the dict
     bundle._invalid_objects = invalid_objects
@@ -120,8 +123,14 @@ def load_stix2_content(stix_content: BytesIO | dict | list | str,
     return bundle
 
 
-def load_stix2_file(
-        filename, invalid_objects: Optional[dict] = None) -> _BUNDLE_TYPING:
+def load_stix2_file(filename, invalid_objects: Optional[dict] = None,
+                    max_size: Optional[int] = None) -> _BUNDLE_TYPING:
+    _check_input_file_size(filename, max_size)
     with open(filename, 'rt', encoding='utf-8') as f:
-        stix_content = f.read()
+        # the file is deserialised as it is read: holding the whole document as
+        # a string *and* as the structure it parses into doubles what the
+        # largest accepted document costs
+        stix_content = json.load(f)
+    # the size was checked on the file: what reaches the content loader is the
+    # structure it deserialised into, which no limit can un-materialise
     return load_stix2_content(stix_content, invalid_objects)

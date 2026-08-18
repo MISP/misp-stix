@@ -547,6 +547,7 @@ def stix_1_to_misp(filename: _files_type,
                    distribution: Optional[int] = 0,
                    force_contextual_data: Optional[bool] = False,
                    galaxies_as_tags: Optional[bool] = False,
+                   max_size: Optional[int] = None,
                    organisation_uuid: Optional[str] = MISP_org_uuid,
                    output_dir: Optional[_files_type]=None,
                    output_name: Optional[_files_type]=None,
@@ -559,7 +560,7 @@ def stix_1_to_misp(filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        stix_package = load_stix1_package(filename)
+        stix_package = load_stix1_package(filename, max_size=max_size)
         detected = is_stix1_from_misp(stix_package)
         parser, args = get_stix1_parser(
             detected if from_misp is None else from_misp, distribution,
@@ -601,6 +602,7 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
                            distribution: Optional[int] = 0,
                            force_contextual_data: Optional[bool] = False,
                            galaxies_as_tags: Optional[bool] = False,
+                           max_size: Optional[int] = None,
                            organisation_uuid: Optional[str] = MISP_org_uuid,
                            producer: Optional[str] = None,
                            sharing_group_id: Optional[int] = None,
@@ -610,7 +612,7 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        stix_package = load_stix1_package(filename)
+        stix_package = load_stix1_package(filename, max_size=max_size)
         detected = is_stix1_from_misp(stix_package)
         parser, args = get_stix1_parser(
             detected if from_misp is None else from_misp, distribution,
@@ -654,6 +656,7 @@ def stix_2_to_misp(filename: _files_type,
                    distribution: Optional[int] = 0,
                    force_contextual_data: Optional[bool] = False,
                    galaxies_as_tags: Optional[bool] = False,
+                   max_size: Optional[int] = None,
                    organisation_uuid: Optional[str] = MISP_org_uuid,
                    output_dir: Optional[_files_type]=None,
                    output_name: Optional[_files_type]=None,
@@ -666,7 +669,7 @@ def stix_2_to_misp(filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = load_stix2_file(filename)
+        bundle = load_stix2_file(filename, max_size=max_size)
         detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
         parser, args = get_stix2_parser(
             detected if from_misp is None else from_misp, distribution,
@@ -708,6 +711,7 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
                            distribution: Optional[int] = 0,
                            force_contextual_data: Optional[bool] = False,
                            galaxies_as_tags: Optional[bool] = False,
+                           max_size: Optional[int] = None,
                            organisation_uuid: Optional[str] = MISP_org_uuid,
                            producer: Optional[str] = None,
                            sharing_group_id: Optional[int] = None,
@@ -717,7 +721,7 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        bundle = load_stix2_file(filename)
+        bundle = load_stix2_file(filename, max_size=max_size)
         detected = is_stix2_from_misp(getattr(bundle, 'objects', []))
         parser, args = get_stix2_parser(
             detected if from_misp is None else from_misp, distribution,
@@ -816,6 +820,13 @@ def _stix_to_misp(args):
     return _process_stix_to_misp_files(args)
 
 
+def _max_size_from_args(args) -> Optional[int]:
+    # the command line names a size in MB, the library a size in bytes
+    if args.max_input_size is None:
+        return None
+    return args.max_input_size * 1024 * 1024
+
+
 def _process_stix_to_misp_files(args) -> dict:
     results = defaultdict(dict)
     success = []
@@ -828,6 +839,7 @@ def _process_stix_to_misp_files(args) -> dict:
         'distribution': args.distribution,
         'force_contextual_data': not args.no_force_contextual_data,
         'galaxies_as_tags': args.galaxies_as_tags,
+        'max_size': _max_size_from_args(args),
         'output_dir': args.output_dir,
         'organisation_uuid': args.org_uuid,
         'output_name': args.output_name,
@@ -878,6 +890,7 @@ def _process_stix_to_misp_instance(misp: PyMISP, args) -> dict:
         'distribution': args.distribution,
         'force_contextual_data': not args.no_force_contextual_data,
         'galaxies_as_tags': args.galaxies_as_tags,
+        'max_size': _max_size_from_args(args),
         'organisation_uuid': args.org_uuid,
         'producer': args.producer,
         'sharing_group_id': args.sharing_group,

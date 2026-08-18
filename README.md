@@ -164,7 +164,7 @@ STIX 1 specific arguments:
 ##### Import parameters
 
 ```bash
-usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output-dir OUTPUT_DIR] [--overwrite] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies-as-tags]
+usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output-dir OUTPUT_DIR] [--overwrite] [--max-input-size MB] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies-as-tags]
                                   [--no-force-galaxy-cluster]
                                   [--org-uuid ORG_UUID] [-cd {0,1,2,3,4}] [-csg CLUSTER_SHARING_GROUP] [-t TITLE] [-p PRODUCER] [-c CONFIG] [-u URL] [-a API_KEY] [--skip-ssl]
 
@@ -179,6 +179,8 @@ options:
   --output-dir OUTPUT_DIR
                         Output directory - default is the directory the input files come from. Created if it does not exist.
   --overwrite           Replace an output file that already exists - without it a conversion writing onto an existing file fails and leaves it as it is.
+  --max-input-size MB   Maximum accepted input size, in MB - a document larger than this is refused before it is parsed (default is 100). Use 0 to turn the limit off: conversion costs 2 to 7 times the
+                        input size in memory, and a few seconds of CPU per MB of STIX 2.
   -d, --distribution {0,1,2,3,4}
                         Distribution level for the imported MISP content (default is 0) - 0: Your organisation only - 1: This community only - 2: Connected communities - 3: All communities - 4: Sharing Group
   -sg, --sharing-group SHARING_GROUP
@@ -201,6 +203,47 @@ options:
                         Authentication key to connect to your MISP instance.
   --skip-ssl            Skip SSL certificate checking when connecting to your MISP instance.
 ```
+
+#### Conversion cost and input limits
+
+An import parses the document it is given in full before it converts it, so the
+cost of a conversion is decided by the size of the input:
+
+- **Memory**: 2 to 7 times the input size, on top of whatever the caller already
+  holds - the whole document is materialised, and nothing streams.
+- **CPU**: a few seconds of a single core per MB of STIX 2 (measured between
+  1.9 and 6.5 s/MB on indicator-heavy bundles, growing linearly with the number
+  of objects). A 100 MB TAXII poll is therefore several CPU-minutes of work,
+  produced by whoever uploads it for the price of the upload.
+
+Both STIX loaders refuse a document above a maximum input size **before parsing
+it**, so an oversized document costs a `stat()` rather than a full parse. The
+default is **100 MB**, and the caller raises it - or turns it off with `0` - per
+conversion:
+
+```python
+from misp_stix_converter import stix_2_to_misp
+
+# a 250 MB bundle this caller knows it wants
+stix_2_to_misp('bundle.json', max_size=250 * 1024 * 1024)
+# no limit at all
+stix_2_to_misp('bundle.json', max_size=0)
+```
+
+`max_size` is accepted by `stix_1_to_misp`, `stix1_to_misp_instance`,
+`stix_2_to_misp`, `stix2_to_misp_instance`, by the parsers'
+`parse_stix_content()` and by the loading helpers themselves
+(`load_stix1_package`, `load_stix2_file`, and `load_stix2_content` for the
+serialised content it is given as a string or a `BytesIO` - a `dict` or `list`
+the caller already built is past the point a limit could save anything); the
+command line names the same limit in MB with `--max-input-size`. A document
+above the limit is reported as an error, and raises `STIXInputSizeError` (a
+`STIXLoadingError`) for the callers that use the library directly.
+
+The limit bounds one conversion, not the load a host accepts: since the cost is
+linear in the input size and paid entirely in one worker, an integrator running
+imports concurrently - MISP core included - should also cap how many run at
+once.
 
 ### In Python scripts
 

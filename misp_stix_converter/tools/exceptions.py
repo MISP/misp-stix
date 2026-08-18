@@ -12,6 +12,11 @@ class STIXLoadingError(Exception):
         self.message = message
 
 
+class STIXInputSizeError(STIXLoadingError):
+    """Raised when an input document is larger than the accepted maximum,
+    instead of parsing it to find out what it holds."""
+
+
 def _reduce_input_path(message: str, filename) -> str:
     """Underlying parsing errors embed the resolved input path - keep the
     operator-facing text down to the file name."""
