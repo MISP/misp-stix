@@ -173,7 +173,7 @@ options:
   -f, --file FILE [FILE ...]
                         Path to the file(s) to convert.
   -v, --version {1,2}   STIX major version - default is 2
-  -s, --single-event    Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
+  -s, --single-event    Produce only one MISP event per STIX file, in case of multiple Report or Grouping objects. STIX 1 always produces one, whether this is set or not.
   -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_event` argument is used.
   --output-dir OUTPUT_DIR

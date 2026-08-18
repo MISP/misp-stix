@@ -27,6 +27,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def parse_stix_package(self, **kwargs):
         self._set_parameters(**kwargs)
+        # Every related package is merged into one MISP event - the titles,
+        # dates and timestamps of all of them - so this parser has no per
+        # event mode to ask for, like the External one it sits next to
+        self._set_single_event(True)
         self._set_misp_event(MISPEvent())
         for item in self.stix_package.related_packages.related_package:
             package = item.item

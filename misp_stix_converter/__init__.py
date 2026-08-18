@@ -123,8 +123,9 @@ def main():
     )
     import_parser.add_argument(
         '-s', '--single-event', action='store_true',
-        help='Produce only one MISP event per STIX file'
-             '(in case of multiple Report, Grouping or Incident objects).'
+        help='Produce only one MISP event per STIX file, in case of '
+             'multiple Report or Grouping objects. STIX 1 always produces '
+             'one, whether this is set or not.'
     )
     import_parser.add_argument(
         '-o', '--output-name', type=Path,
