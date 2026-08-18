@@ -135,7 +135,8 @@ Main feature:
 ##### Export parameters
 
 ```bash
-usage: misp_stix_converter export [-h] -f FILE [FILE ...] -v {1.1.1,1.2,2.0,2.1} [-s] [-m] [--output-dir OUTPUT_DIR] [-o OUTPUT_NAME] [--level {attribute,event}] [--format {json,xml}] [-n NAMESPACE] [-org ORG]
+usage: misp_stix_converter export [-h] -f FILE [FILE ...] -v {1.1.1,1.2,2.0,2.1} [-s] [-m] [--output-dir OUTPUT_DIR] [-o OUTPUT_NAME] [--overwrite] [--level {attribute,event}] [--format {json,xml}]
+                                  [-n NAMESPACE] [-org ORG]
 
 options:
   -h, --help            show this help message and exit
@@ -149,6 +150,7 @@ options:
                         Output directory - default is the directory the input files come from. Created if it does not exist.
   -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_output` argument is used.
+  --overwrite           Replace an output file that already exists - without it a conversion writing onto an existing file fails and leaves it as it is.
 
 STIX 1 specific arguments:
   --level {attribute,event}
@@ -162,7 +164,8 @@ STIX 1 specific arguments:
 ##### Import parameters
 
 ```bash
-usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output-dir OUTPUT_DIR] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies-as-tags] [--no-force-galaxy-cluster]
+usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output-dir OUTPUT_DIR] [--overwrite] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies-as-tags]
+                                  [--no-force-galaxy-cluster]
                                   [--org-uuid ORG_UUID] [-cd {0,1,2,3,4}] [-csg CLUSTER_SHARING_GROUP] [-t TITLE] [-p PRODUCER] [-c CONFIG] [-u URL] [-a API_KEY] [--skip-ssl]
 
 options:
@@ -175,6 +178,7 @@ options:
                         Output file name - used in the case of a single input file or when the `single_event` argument is used.
   --output-dir OUTPUT_DIR
                         Output directory - default is the directory the input files come from. It has to exist when more than one MISP event comes out of a file.
+  --overwrite           Replace an output file that already exists - without it a conversion writing onto an existing file fails and leaves it as it is.
   -d, --distribution {0,1,2,3,4}
                         Distribution level for the imported MISP content (default is 0) - 0: Your organisation only - 1: This community only - 2: Connected communities - 3: All communities - 4: Sharing Group
   -sg, --sharing-group SHARING_GROUP

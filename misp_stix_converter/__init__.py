@@ -83,6 +83,12 @@ def main():
         help='Output file name - used in the case of a single input file or '
              'when the `single_output` argument is used.'
     )
+    export_parser.add_argument(
+        '--overwrite', action='store_true',
+        help='Replace an output file that already exists - without it a '
+             'conversion writing onto an existing file fails and leaves it '
+             'as it is.'
+    )
     # STIX 1 EXPORT SPECIFIC ARGUMENTS
     stix1_parser = export_parser.add_argument_group('STIX 1 specific arguments')
     stix1_parser.add_argument(
@@ -130,6 +136,12 @@ def main():
         help='Output directory - default is the directory the input files '
              'come from. It has to exist when more than one MISP event comes '
              'out of a file.'
+    )
+    import_parser.add_argument(
+        '--overwrite', action='store_true',
+        help='Replace an output file that already exists - without it a '
+             'conversion writing onto an existing file fails and leaves it '
+             'as it is.'
     )
     import_parser.add_argument(
         '--classification', choices=['internal', 'external'], default=None,

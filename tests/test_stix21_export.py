@@ -6873,7 +6873,7 @@ class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
         self.assertEqual(
             misp_collection_to_stix2(
                 *input_files, version='2.1', in_memory=True,
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -6904,7 +6904,7 @@ class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
         self.assertEqual(
             misp_collection_to_stix2(
                 *input_files, version='2.1', in_memory=True,
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -6926,7 +6926,7 @@ class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
         self.assertEqual(
             misp_collection_to_stix2(
                 *input_files, version='2.1', in_memory=True,
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -6959,7 +6959,7 @@ class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
         self._check_stix2_results_export(output_file, reference_file)
         self.assertEqual(
             misp_collection_to_stix2(
-                filename, version='2.1'
+                filename, version='2.1', overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )

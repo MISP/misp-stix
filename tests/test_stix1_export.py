@@ -4380,7 +4380,7 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_attribute_collection_to_stix1(
                 *input_files, return_format='xml', version='1.1.1',
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4402,7 +4402,7 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_attribute_collection_to_stix1(
                 *input_files, return_format='xml', version='1.2',
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4424,7 +4424,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_event_collection_to_stix1(
                 *input_files, return_format='xml', version='1.1.1',
-                in_memory=True, single_output=True, output_name=output_file
+                in_memory=True, single_output=True, output_name=output_file,
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4462,7 +4463,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self.assertEqual(
             misp_event_collection_to_stix1(
                 *input_files, return_format='xml', version='1.2',
-                in_memory=True, single_output=True, output_name=output_file
+                in_memory=True, single_output=True, output_name=output_file,
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4496,7 +4498,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self._check_stix1_export_results(output_file, reference_file)
         self.assertEqual(
             misp_event_collection_to_stix1(
-                filename, return_format='xml', version='1.1.1'
+                filename, return_format='xml', version='1.1.1',
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -4514,7 +4517,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         self._check_stix1_export_results(output_file, reference_file)
         self.assertEqual(
             misp_event_collection_to_stix1(
-                filename, return_format='xml', version='1.2'
+                filename, return_format='xml', version='1.2',
+                overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )

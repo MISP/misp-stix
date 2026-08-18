@@ -423,7 +423,8 @@ class TestSTIX1Import(TestSTIX):
                 )
             )
             results = stix_1_to_misp(
-                filename, single_event=True, classification='internal'
+                filename, single_event=True, classification='internal',
+                overwrite=True
             )
             self.assertEqual(results['success'], 1)
             self.assertNotIn('warnings', results)

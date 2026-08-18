@@ -73,7 +73,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 )
             )
             results = stix_2_to_misp(
-                filename, classification='internal', output_dir=Path(tmp_dir)
+                filename, classification='internal', output_dir=Path(tmp_dir),
+                overwrite=True
             )
             self.assertEqual(results['success'], 1)
             self.assertNotIn('warnings', results)
