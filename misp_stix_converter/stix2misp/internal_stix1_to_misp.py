@@ -21,11 +21,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = InternalSTIX1toMISPMapping
-        self.__dates = set()
-        self.__timestamps = set()
-        self.__titles = set()
 
     def parse_stix_package(self, **kwargs):
+        self._reset_bundle_state()
         self._set_parameters(**kwargs)
         # Every related package is merged into one MISP event - the titles,
         # dates and timestamps of all of them - so this parser has no per
@@ -127,6 +125,16 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self.misp_event.info = ' - '.join(self.titles)
         self.misp_event.date = max(self.dates)
         self.misp_event.timestamp = max(self.timestamps)
+
+    def _reset_bundle_state(self):
+        super()._reset_bundle_state()
+        # Every related package of one document contributes its title, date and
+        # timestamp to the single event they are merged into - which makes them
+        # the state a second document must not inherit, or its event is named
+        # after both and dated from whichever is the later
+        self.__dates = set()
+        self.__timestamps = set()
+        self.__titles = set()
 
     ############################################################################
     #                                PROPERTIES                                #

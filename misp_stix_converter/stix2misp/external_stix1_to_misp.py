@@ -20,12 +20,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX1toMISPMapping
-        self.__dns_objects = defaultdict(dict)
-        self.__dns_ips = []
 
     def parse_stix_package(self, cluster_distribution: Optional[int] = 0,
                            cluster_sharing_group_id: Optional[int] = None,
                            organisation_uuid: Optional[str] = None, **kwargs):
+        self._reset_bundle_state()
         self._set_parameters(**kwargs)
         self._set_single_event(True)
         self._set_cluster_distribution(
@@ -100,6 +99,14 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             for ip, ip_attribute in self.dns_objects['ip'].items():
                 if ip not in self.dns_ips:
                     self.misp_event.add_attribute(**ip_attribute)
+
+    def _reset_bundle_state(self):
+        super()._reset_bundle_state()
+        # The DNS bookkeeping is only turned into MISP content once the whole
+        # package is parsed, so a second package inheriting it gets an event
+        # carrying the passive DNS records of the first one
+        self.__dns_objects = defaultdict(dict)
+        self.__dns_ips = []
 
     ############################################################################
     #                                PROPERTIES                                #

@@ -53,8 +53,9 @@ class StixObjectTypeError(Exception):
 class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self):
         super().__init__()
-        self.__galaxies = set()
-        self.__references = defaultdict(list)
+        # Every accumulator this parser keeps is created by the reset hook, so
+        # a fresh instance starts from the state a reused one is put back into
+        self._reset_bundle_state()
 
     def load_stix_package(self, stix_package: STIXPackage):
         self.__stix_package = stix_package
@@ -62,6 +63,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def parse_stix_content(self, filename: Union[Path, str], **kwargs):
         self.__stix_package = load_stix1_package(filename)
         self.parse_stix_package(**kwargs)
+
+    def _reset_bundle_state(self):
+        # An instance parsing a second package must not carry the galaxies and
+        # references of the first one into the event it builds from it. Called
+        # at the top of `parse_stix_package` rather than at loading time, where
+        # the STIX 2 parsers reset: `parse_stix_content` sets the package
+        # itself instead of going through `load_stix_package`, so parsing is
+        # the one step every entry into a conversion takes.
+        super()._reset_bundle_state()
+        self.__galaxies = set()
+        self.__references = defaultdict(list)
 
     ############################################################################
     #                                PROPERTIES                                #

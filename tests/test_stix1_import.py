@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from cybox.core import Object, Observable, Observables, RelatedObject
+from cybox.objects.address_object import Address
 from cybox.objects.domain_name_object import DomainName
 from cybox.objects.file_object import File
+from cybox.objects.uri_object import URI
+from datetime import datetime
 from misp_stix_converter import stix_1_to_misp, STIXLoadingError
 from misp_stix_converter.tools import load_stix1_package, stix1_loading_helpers
 from mixbox.namespaces import NamespaceNotFoundError
@@ -18,6 +21,8 @@ from stix.common.related import RelatedPackage, RelatedPackages
 from stix.core import STIXHeader, STIXPackage
 from stix.incident import Incident
 from stix.incident.history import History, HistoryItem, JournalEntry
+from stix.indicator import Indicator
+from stix.threat_actor import ThreatActor
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from ._test_stix import TestSTIX
@@ -25,6 +30,10 @@ from ._test_stix import TestSTIX
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
 _RELATED_UUID = '1b2c3d4e-5f6a-4b8c-9d0e-1f2a3b4c5d6e'
+_ACTOR_UUID = '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b'
+_DOMAIN_UUID = '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a'
+_IP_UUID = '3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a6b'
+_URL_UUID = '4f5a6b7c-8d9e-4f0a-8b1c-2d3e4f5a6b7c'
 
 
 class TestSTIX1Import(TestSTIX):
@@ -63,14 +72,62 @@ class TestSTIX1Import(TestSTIX):
         file_object.related_objects.append(related_object)
         return Observable(file_object)
 
-    def _parse_external_package(self, stix_package):
-        parser = ExternalSTIX1toMISPParser()
+    @staticmethod
+    def _indicator(observable_object, uuid):
+        indicator = Indicator()
+        indicator.id_ = f'MISP:Indicator-{uuid}'
+        indicator.add_observable(Observable(observable_object))
+        return indicator
+
+    @classmethod
+    def _domain_indicator(cls, value):
+        domain = DomainName()
+        domain.value = value
+        domain_object = Object(domain)
+        domain_object.id_ = f'MISP:DomainName-{_DOMAIN_UUID}'
+        return cls._indicator(domain_object, _DOMAIN_UUID)
+
+    @classmethod
+    def _ip_indicator(cls, value):
+        address = Address()
+        address.address_value = value
+        address.category = 'ipv4-addr'
+        address.is_source = False
+        address_object = Object(address)
+        address_object.id_ = f'MISP:Address-{_IP_UUID}'
+        return cls._indicator(address_object, _IP_UUID)
+
+    @classmethod
+    def _url_indicator(cls, value):
+        """A URL Indicator resolving to the IP one above: the pair the parser
+        holds back in its DNS bookkeeping until the whole package is parsed,
+        then turns into a `passive-dns` object."""
+        uri = URI()
+        uri.value = value
+        uri.type_ = URI.TYPE_URL
+        uri_object = Object(uri)
+        uri_object.id_ = f'MISP:URI-{_URL_UUID}'
+        related_object = RelatedObject()
+        related_object.idref = f'MISP:Address-{_IP_UUID}'
+        related_object.relationship = 'Resolved_To'
+        uri_object.related_objects.append(related_object)
+        return cls._indicator(uri_object, _URL_UUID)
+
+    @staticmethod
+    def _threat_actor(title):
+        threat_actor = ThreatActor()
+        threat_actor.id_ = f'MISP:ThreatActor-{_ACTOR_UUID}'
+        threat_actor.title = title
+        return threat_actor
+
+    def _parse_external_package(self, stix_package, parser=None):
+        parser = parser or ExternalSTIX1toMISPParser()
         parser.load_stix_package(stix_package)
         parser.parse_stix_package()
         return parser
 
-    def _parse_internal_package(self, stix_package):
-        parser = InternalSTIX1toMISPParser()
+    def _parse_internal_package(self, stix_package, parser=None):
+        parser = parser or InternalSTIX1toMISPParser()
         parser.load_stix_package(stix_package)
         parser.parse_stix_package()
         return parser
@@ -103,12 +160,15 @@ class TestSTIX1Import(TestSTIX):
         return filename
 
     @classmethod
-    def _internal_package(cls, incident, inner_title=None, outer_title=None):
+    def _internal_package(cls, incident, inner_title=None, outer_title=None,
+                          threat_actor=None):
         """Wrap an Incident the way the MISP STIX 1 export does: one related
         package per event, each carrying its own header, inside a wrapper
         package carrying the collection-level header."""
         inner_package = STIXPackage()
         inner_package.add_incident(incident)
+        if threat_actor is not None:
+            inner_package.add_threat_actor(threat_actor)
         if inner_title is not None:
             inner_package.stix_header = cls._stix_header(inner_title)
         stix_package = STIXPackage()
@@ -553,3 +613,98 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(
             parser.misp_event.info, 'Imported from external STIX 1.1.1 Package'
         )
+
+    ############################################################################
+    #                         PARSER STATE ISOLATION.                          #
+    ############################################################################
+
+    def _external_package_with_state(self):
+        """A package exercising every accumulator the External parser keeps: the
+        DNS bookkeeping (the URL/IP pair), the references (the related object of
+        an observable with no value of its own) and the galaxies."""
+        stix_package = STIXPackage()
+        stix_package.add_indicator(self._url_indicator('http://evil.example/a'))
+        stix_package.add_indicator(self._ip_indicator('198.51.100.4'))
+        stix_package.add_threat_actor(self._threat_actor('APT-A'))
+        stix_package.observables = Observables(
+            [self._observable_with_related_object()]
+        )
+        return stix_package
+
+    @staticmethod
+    def _event_content(misp_event):
+        # A package with no timestamp of its own leaves the event without a
+        # date and a timestamp at all, so neither can simply be read
+        return {
+            'info': misp_event.info,
+            'date': str(getattr(misp_event, 'date', None)),
+            'timestamp': getattr(misp_event, 'timestamp', None),
+            'attributes': sorted(
+                (attribute.type, attribute.value)
+                for attribute in misp_event.attributes
+            ),
+            'objects': sorted(
+                (misp_object.name, attribute.object_relation, attribute.value)
+                for misp_object in misp_event.objects
+                for attribute in misp_object.attributes
+            )
+        }
+
+    def test_external_parser_reused_for_a_second_package_starts_clean(self):
+        """The event a reused parser builds from a package has to be the event a
+        fresh parser builds from it: the first package's DNS bookkeeping,
+        references and galaxies are its own, and a second package inheriting
+        them takes in content no document of its own ever carried."""
+        first = self._external_package_with_state()
+        second = STIXPackage()
+        second.add_indicator(self._domain_indicator('circl.lu'))
+        expected = self._event_content(
+            self._parse_external_package(second).misp_event
+        )
+        parser = self._parse_external_package(first)
+        # the first package's own event is the one it gets on a fresh parser
+        self.assertEqual(
+            self._event_content(parser.misp_event),
+            self._event_content(
+                self._parse_external_package(first).misp_event
+            )
+        )
+        self._parse_external_package(second, parser)
+        self.assertEqual(self._event_content(parser.misp_event), expected)
+        self.assertEqual(parser.galaxies, set())
+        self.assertEqual(parser.references, {})
+        self.assertEqual(parser.dns_objects, {})
+        self.assertEqual(parser.dns_ips, [])
+
+    def test_internal_parser_reused_for_a_second_package_starts_clean(self):
+        """The Internal parser merges every related package of one document
+        into one event - the titles, dates and timestamps of all of them - so a
+        reused instance has to drop them between documents, or the second event
+        is named after both and dated from whichever is the later."""
+        first_incident = Incident()
+        first_incident.title = 'Event A'
+        first_incident.timestamp = datetime(2026, 7, 1, 12, 0)
+        first = self._internal_package(
+            first_incident, threat_actor=self._threat_actor('APT-A')
+        )
+        second_incident = Incident()
+        second_incident.title = 'Event B'
+        second_incident.timestamp = datetime(2026, 1, 15, 8, 0)
+        second = self._internal_package(second_incident)
+        expected = self._event_content(
+            self._parse_internal_package(second).misp_event
+        )
+        parser = self._parse_internal_package(first)
+        # the first package's own event is the one it gets on a fresh parser
+        self.assertEqual(
+            self._event_content(parser.misp_event),
+            self._event_content(
+                self._parse_internal_package(first).misp_event
+            )
+        )
+        self._parse_internal_package(second, parser)
+        self.assertEqual(self._event_content(parser.misp_event), expected)
+        self.assertEqual(parser.misp_event.info, 'Event B')
+        self.assertEqual(parser.galaxies, set())
+        self.assertEqual(parser.dates, {second_incident.timestamp.date()})
+        self.assertEqual(parser.titles, {'Event B'})
