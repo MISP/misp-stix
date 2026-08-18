@@ -29,7 +29,8 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(results['success'], 1)
             self.assertNotIn('warnings', results)
             results = stix_2_to_misp(
-                filename, classification='external', output_dir=Path(tmp_dir)
+                filename, classification='external', output_dir=Path(tmp_dir),
+                overwrite=True
             )
             self.assertEqual(results['success'], 1)
             self.assertNotIn('warnings', results)
@@ -39,7 +40,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             # escapes the entry function.
             results = stix_2_to_misp(
                 filename, classification='internal', debug=True,
-                output_dir=Path(tmp_dir)
+                output_dir=Path(tmp_dir), overwrite=True
             )
             self.assertEqual(results['success'], 1)
             self.assertTrue(

@@ -2,15 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import json
+import misp_stix_converter
 import os
 import unittest
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime, timezone
+from misp_stix_converter.misp2stix.exportparser import MISPtoSTIXParser
 from pathlib import Path
 from pymisp import MISPAttribute
+from shutil import copyfile
 from stix.core import STIXPackage
 from stix2patterns.validator import validate
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid5, UUID
 from ._test_stix import PLANTED_TEMPLATE, TestSTIX
@@ -20,6 +24,10 @@ _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
 _MISP_OBJECT_EXCLUSION_LIST = (
     'distribution', 'sharing_group_id', 'template_uuid', 'template_version'
 )
+# What an output file the caller never asked to replace holds, and the parsing
+# a conversion goes through on the way to writing one
+_PRESERVED_OUTPUT = 'IMPORTANT PRE-EXISTING CONTENT'
+_parse_json_file = MISPtoSTIXParser.parse_json_file
 
 # Object relations reaching a pattern property-name position, paired with the
 # pattern segment each one must produce. An unquoted metacharacter segment
@@ -40,12 +48,204 @@ _PATTERN_SEGMENT_RELATIONS = (
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
+    # The 2 scratch locations the defaults used to resolve to: the package
+    # directory, and its parent - `site-packages` on an install, the
+    # repository root in a source checkout
+    _package_path = Path(misp_stix_converter.__file__).parent
+    _package_tree_scratch = (_package_path / 'tmp', _package_path.parent / 'tmp')
+
     def setUp(self):
         self._current_path = Path(__file__).parent
 
     def tearDown(self):
         for filename in self._current_path.glob('test_*_collection*.json.out'):
             os.remove(filename)
+
+    def _check_created_output_directory(self, conversion, *input_files, **kwargs):
+        # An output directory the caller names but has not created yet is a
+        # request, not a mistake: it is created instead of raising at write
+        # time - whether it is named as the directory itself or as the parent
+        # of an output file name
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_dir = Path(tmp_dir) / 'missing' / 'output'
+            results = conversion(
+                *copies, single_output=True, output_dir=output_dir, **kwargs
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(output_dir.is_dir())
+            self.assertEqual(results['results'][0].parent, output_dir)
+            output_name = Path(tmp_dir) / 'missing too' / 'collection.out'
+            results = conversion(
+                *copies, single_output=True, output_name=output_name, **kwargs
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertEqual(results['results'][0], output_name)
+            self.assertTrue(output_name.is_file())
+
+    def _check_default_single_output(self, conversion, *input_files, **kwargs):
+        # A collection export called with its documented defaults writes next
+        # to the input files, under a name every filesystem accepts, and the
+        # fragments a streamed assembly wrote are gone by the time it returns.
+        # The package tree is left exactly as it was: it is not an output or a
+        # scratch location
+        package_tree = self._package_tree_content()
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            results = conversion(*copies, single_output=True, **kwargs)
+            self.assertEqual(results['success'], 1)
+            output = results['results'][0]
+            self.assertEqual(output.parent, Path(tmp_dir).resolve())
+            self.assertNotIn(':', output.name)
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output.name])
+            )
+        self.assertEqual(self._package_tree_content(), package_tree)
+
+    def _check_destination_appearing_mid_conversion(
+            self, conversion, *input_files, **kwargs):
+        # The check taken before the work cannot see a destination that appears
+        # while the conversion runs: the output file is created rather than
+        # replaced, so the collision is still refused instead of silently
+        # clobbered at the end
+        appeared = []
+
+        def _create_the_destination(parser, filename):
+            if not appeared:
+                appeared.append(filename)
+                output_name.write_text(_PRESERVED_OUTPUT, encoding='utf-8')
+            return _parse_json_file(parser, filename)
+
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_name = Path(tmp_dir) / 'previous.out'
+            with patch.object(
+                    MISPtoSTIXParser, 'parse_json_file',
+                    _create_the_destination):
+                with self.assertRaises(FileExistsError) as context:
+                    conversion(*copies, output_name=output_name, **kwargs)
+            self.assertIn(str(output_name), str(context.exception))
+            self.assertEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output_name.name])
+            )
+
+    def _check_interrupted_write_keeps_the_destination(
+            self, conversion, *input_files, interrupt=None, **kwargs):
+        # A conversion killed while it writes - `KeyboardInterrupt` is what a
+        # signal raises, and the one thing the per-input `except Exception`
+        # does not catch - leaves the file it was replacing exactly as it was,
+        # and no half-written scratch file next to it. The kill lands on the
+        # second input file's parsing, by the time the first one's content is
+        # written; `interrupt` names an (owner, attribute) pair instead, for a
+        # path whose writing all happens after the last input file is parsed
+        parsed = []
+
+        def _interrupt_the_second_input(parser, filename):
+            parsed.append(filename)
+            if len(parsed) > 1:
+                raise KeyboardInterrupt('Killed while writing')
+            return _parse_json_file(parser, filename)
+
+        def _interrupt_now(*args, **kwargs):
+            raise KeyboardInterrupt('Killed while writing')
+
+        killed = (
+            patch.object(
+                MISPtoSTIXParser, 'parse_json_file',
+                _interrupt_the_second_input
+            ) if interrupt is None
+            else patch.object(*interrupt, _interrupt_now)
+        )
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_name = self._preserved_output(tmp_dir)
+            with killed:
+                with self.assertRaises(KeyboardInterrupt):
+                    conversion(
+                        *copies, output_name=output_name, overwrite=True,
+                        **kwargs
+                    )
+            self.assertEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output_name.name])
+            )
+
+    def _check_output_file_mode(self, conversion, *input_files, **kwargs):
+        # What a conversion writes carries whatever the events do, TLP:AMBER
+        # and TLP:RED material included: a new output file is readable by its
+        # owner alone, whatever the process umask would have allowed
+        umask = os.umask(0)
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                copies = self._copy_inputs(tmp_dir, *input_files)
+                results = conversion(*copies, **kwargs)
+                self.assertEqual(results['success'], 1)
+                for output in results['results']:
+                    self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+        finally:
+            os.umask(umask)
+
+    def _check_overwrite_policy(
+            self, conversion, *input_files, recorded: bool = False, **kwargs):
+        # An **Output Location** already holding a file is only written when
+        # the caller asked for it: the refusal follows the error channel the
+        # path has for a write it cannot do - recorded per input where the
+        # write sits inside a `try`, raised where it does not - and names the
+        # file it did not touch either way
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_name = self._preserved_output(tmp_dir)
+            arguments = {'output_name': output_name, **kwargs}
+            if recorded:
+                results = conversion(*copies, **arguments)
+                self.assertNotIn('success', results)
+                message = results['fails'][0]
+            else:
+                with self.assertRaises(FileExistsError) as context:
+                    conversion(*copies, **arguments)
+                message = str(context.exception)
+            self.assertIn(str(output_name), message)
+            self.assertIn('overwrite', message)
+            self.assertEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+            results = conversion(*copies, overwrite=True, **arguments)
+            self.assertEqual(results['success'], 1)
+            self.assertEqual(results['results'][0], output_name)
+            self.assertNotEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+
+    def _collection_files(self, name: str) -> list:
+        return [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
+
+    def _copy_inputs(self, tmp_dir: str, *input_files: Path) -> list:
+        return [
+            Path(copyfile(input_file, Path(tmp_dir) / input_file.name))
+            for input_file in input_files
+        ]
+
+    def _package_tree_content(self) -> tuple:
+        # `None` for a location that does not exist - the state a default
+        # writing there would change first
+        return tuple(
+            sorted(path.name for path in scratch.iterdir())
+            if scratch.is_dir() else None
+            for scratch in self._package_tree_scratch
+        )
+
+    def _preserved_output(self, tmp_dir: str) -> Path:
+        output_name = Path(tmp_dir) / 'previous.out'
+        output_name.write_text(_PRESERVED_OUTPUT, encoding='utf-8')
+        return output_name
 
 
 class TestCollectionSTIX1Export(TestCollectionSTIXExport):

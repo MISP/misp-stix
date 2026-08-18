@@ -396,6 +396,60 @@ class TestSTIX1Import(TestSTIX):
             any('parser stage crash' in error for error in results['errors'])
         )
 
+    def test_stix_1_output_writes_are_owner_only_and_refuse_to_overwrite(self):
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, stix_package, 'course_of_action.xml'
+            )
+            self._check_output_write_safety(
+                stix_1_to_misp, filename, single_event=True
+            )
+            # Same rules on the destination the caller names as on the default
+            self._check_output_write_safety(
+                stix_1_to_misp, filename, single_event=True,
+                output_name=Path(tmp_dir) / 'event.misp.json'
+            )
+
+    def test_stix_1_internal_import_yields_one_event_by_itself(self):
+        """A STIX 1 import produces one MISP event whatever `single_event`
+        says - the Internal parser merges every related package into one, and
+        the External one forces the flag - so the entry function's per-event
+        branch was reached by the default parameters and could only crash
+        there: nothing sets `misp_events`, so it iterated a `MISPEvent`."""
+        stix_package = self._internal_titled_package()
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(tmp_dir, stix_package, 'internal.xml')
+            results = stix_1_to_misp(filename)
+            self.assertEqual(results['success'], 1)
+            self.assertEqual(len(results['results']), 1)
+            output = results['results'][0]
+            self.assertEqual(output.name, 'internal.xml.out')
+            self.assertTrue(output.is_file())
+            # The explicit flag asks for what the parser does anyway, so it
+            # writes the same file rather than a differently named one
+            self.assertEqual(
+                stix_1_to_misp(
+                    filename, single_event=True, overwrite=True
+                )['results'],
+                [output]
+            )
+
+    def test_stix_1_output_dir_takes_a_str_and_is_created(self):
+        external = STIXPackage()
+        external.add_course_of_action(self._course_of_action())
+        with TemporaryDirectory() as tmp_dir:
+            # Both classifications, since only one MISP event comes out of
+            # either: whatever `single_event` says, a STIX 1 import goes
+            # through the output funnels and never builds a per-event path
+            for name, package in (('external', external),
+                                  ('internal', self._internal_titled_package())):
+                self._check_output_dir_handling(
+                    stix_1_to_misp,
+                    self._write_package(tmp_dir, package, f'{name}.xml')
+                )
+
     ############################################################################
     #                         CLASSIFICATION OVERRIDE.                         #
     ############################################################################
@@ -423,7 +477,8 @@ class TestSTIX1Import(TestSTIX):
                 )
             )
             results = stix_1_to_misp(
-                filename, single_event=True, classification='internal'
+                filename, single_event=True, classification='internal',
+                overwrite=True
             )
             self.assertEqual(results['success'], 1)
             self.assertNotIn('warnings', results)
