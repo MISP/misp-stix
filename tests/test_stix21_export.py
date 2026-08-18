@@ -6829,6 +6829,19 @@ class TestSTIX21MISPExportInteroperability(TestSTIX21ExportInteroperability):
 
 
 class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
+    def test_collection_default_output_location(self):
+        input_files = [
+            self._current_path / f'test_events_collection_{n}.json'
+            for n in (1, 2)
+        ]
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_default_single_output(
+                misp_collection_to_stix2, *input_files, version='2.1', **kwargs
+            )
+            self._check_created_output_directory(
+                misp_collection_to_stix2, *input_files, version='2.1', **kwargs
+            )
+
     def test_export_reports_dropped_content_without_debug(self):
         # export records an error for every attribute or object it could not
         # convert, but `_generate_traceback` only attached them when `debug`

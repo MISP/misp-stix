@@ -8,10 +8,12 @@ from lxml import etree
 from misp_stix_converter import (InvalidMISPInputError, MISPtoSTIX1AttributesParser,
                                  MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1)
+from misp_stix_converter import misp_stix_converter as converter_module
 from misp_stix_converter.tools.stix1_framing import _handle_namespaces
 from pymisp import MISPEvent
 from shutil import copyfile
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from uuid import uuid5, UUID
 from .test_events import *
 from .test_events import _INDICATOR_ATTRIBUTE
@@ -4290,6 +4292,78 @@ class TestSTIX12MISPExport(TestSTIX12Export):
 
 
 class TestCollectionStix1Export(TestCollectionSTIX1Export):
+    def test_attribute_collection_default_output_location(self):
+        input_files = self._collection_files('test_attributes_collection')
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_default_single_output(
+                misp_attribute_collection_to_stix1, *input_files, **kwargs
+            )
+            self._check_created_output_directory(
+                misp_attribute_collection_to_stix1, *input_files, **kwargs
+            )
+
+    def test_event_collection_default_output_location(self):
+        input_files = self._collection_files('test_events_collection')
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_default_single_output(
+                misp_event_collection_to_stix1, *input_files, **kwargs
+            )
+            self._check_created_output_directory(
+                misp_event_collection_to_stix1, *input_files, **kwargs
+            )
+
+    def test_streamed_failure_names_the_input_file_it_comes_from(self):
+        # The streamed assembly names its **Scratch Fragments** after a uuid:
+        # a failing input has to be reported by its own name, not by the
+        # fragment the previous input happened to write
+        good, bad = self._collection_files('test_attributes_collection')
+        with TemporaryDirectory() as tmp_dir:
+            good, bad = self._copy_inputs(tmp_dir, good, bad)
+            with open(bad, 'wt', encoding='utf-8') as f:
+                f.write('{"Attribute": [{"type": "md5", "value": "not a hash"')
+            results = misp_attribute_collection_to_stix1(
+                good, bad, single_output=True
+            )
+            self.assertEqual(len(results['fails']), 1)
+            self.assertIn(str(bad), results['fails'][0])
+
+    def test_streamed_fragments_are_removed_when_the_assembly_fails(self):
+        # The fragments the streamed Attribute Collection writes hold
+        # converted intelligence: an assembly that never completes must not
+        # leave them behind, wherever they were written
+        input_files = self._collection_files('test_attributes_collection')
+        recorded = {}
+        temporary_directory = converter_module.TemporaryDirectory
+
+        def _record_scratch_directory(*args, **kwargs):
+            scratch = temporary_directory(*args, **kwargs)
+            recorded['scratch'] = Path(scratch.name)
+            return scratch
+
+        def _fail_the_assembly(*args, **kwargs):
+            recorded['fragments'] = sorted(
+                path.name for path in recorded['scratch'].iterdir()
+            )
+            raise RuntimeError('Interrupted assembly')
+
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            with patch.object(
+                    converter_module, 'TemporaryDirectory',
+                    _record_scratch_directory), patch.object(
+                    converter_module, 'stix1_attributes_framing',
+                    _fail_the_assembly):
+                with self.assertRaises(RuntimeError):
+                    misp_attribute_collection_to_stix1(
+                        *copies, single_output=True
+                    )
+            self.assertTrue(recorded['fragments'])
+            self.assertFalse(recorded['scratch'].exists())
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted(copy.name for copy in copies)
+            )
+
     def test_attribute_collection_export_11(self):
         name = 'test_attributes_collection'
         output_file = self._current_path / f'{name}.json.out'

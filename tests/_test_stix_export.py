@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import misp_stix_converter
 import os
 import unittest
 from base64 import b64encode
@@ -9,8 +10,10 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from pymisp import MISPAttribute
+from shutil import copyfile
 from stix.core import STIXPackage
 from stix2patterns.validator import validate
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid5, UUID
 from ._test_stix import PLANTED_TEMPLATE, TestSTIX
@@ -40,12 +43,78 @@ _PATTERN_SEGMENT_RELATIONS = (
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
+    # The 2 scratch locations the defaults used to resolve to: the package
+    # directory, and its parent - `site-packages` on an install, the
+    # repository root in a source checkout
+    _package_path = Path(misp_stix_converter.__file__).parent
+    _package_tree_scratch = (_package_path / 'tmp', _package_path.parent / 'tmp')
+
     def setUp(self):
         self._current_path = Path(__file__).parent
 
     def tearDown(self):
         for filename in self._current_path.glob('test_*_collection*.json.out'):
             os.remove(filename)
+
+    def _check_created_output_directory(self, conversion, *input_files, **kwargs):
+        # An output directory the caller names but has not created yet is a
+        # request, not a mistake: it is created instead of raising at write
+        # time - whether it is named as the directory itself or as the parent
+        # of an output file name
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_dir = Path(tmp_dir) / 'missing' / 'output'
+            results = conversion(
+                *copies, single_output=True, output_dir=output_dir, **kwargs
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(output_dir.is_dir())
+            self.assertEqual(results['results'][0].parent, output_dir)
+            output_name = Path(tmp_dir) / 'missing too' / 'collection.out'
+            results = conversion(
+                *copies, single_output=True, output_name=output_name, **kwargs
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertEqual(results['results'][0], output_name)
+            self.assertTrue(output_name.is_file())
+
+    def _check_default_single_output(self, conversion, *input_files, **kwargs):
+        # A collection export called with its documented defaults writes next
+        # to the input files, under a name every filesystem accepts, and the
+        # fragments a streamed assembly wrote are gone by the time it returns.
+        # The package tree is left exactly as it was: it is not an output or a
+        # scratch location
+        package_tree = self._package_tree_content()
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            results = conversion(*copies, single_output=True, **kwargs)
+            self.assertEqual(results['success'], 1)
+            output = results['results'][0]
+            self.assertEqual(output.parent, Path(tmp_dir).resolve())
+            self.assertNotIn(':', output.name)
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output.name])
+            )
+        self.assertEqual(self._package_tree_content(), package_tree)
+
+    def _collection_files(self, name: str) -> list:
+        return [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
+
+    def _copy_inputs(self, tmp_dir: str, *input_files: Path) -> list:
+        return [
+            Path(copyfile(input_file, Path(tmp_dir) / input_file.name))
+            for input_file in input_files
+        ]
+
+    def _package_tree_content(self) -> tuple:
+        # `None` for a location that does not exist - the state a default
+        # writing there would change first
+        return tuple(
+            sorted(path.name for path in scratch.iterdir())
+            if scratch.is_dir() else None
+            for scratch in self._package_tree_scratch
+        )
 
 
 class TestCollectionSTIX1Export(TestCollectionSTIXExport):
