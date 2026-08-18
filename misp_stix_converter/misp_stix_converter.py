@@ -2,7 +2,6 @@
 #!/usr/bin/env python3
 
 import json
-import os
 import urllib3
 from .misp2stix.misp_to_stix1 import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser)
@@ -25,6 +24,7 @@ from pymisp import MISPEvent, PyMISP, PyMISPError
 from stix2.base import STIXJSONEncoder
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
+from tempfile import TemporaryDirectory
 from typing import List, Optional, Union
 from uuid import uuid4
 
@@ -177,43 +177,45 @@ def misp_attribute_collection_to_stix1(
                 traceback.update(_generate_traceback(debug, parser, name))
             return traceback
         handler = AttributeCollectionHandler(return_format)
-        tmp_path = name.parent
-        for filename in input_files:
-            try:
-                parser.parse_json_file(filename)
-                package = parser.stix_package
-                for feature in _STIX1_features:
-                    values = getattr(package, feature)
-                    if values:
-                        content = globals()[f'write_{feature}'](values, return_format)
-                        if not content.strip():
-                            continue
-                        filename = handler.get_filename(feature)
-                        if filename is None:
-                            filename = handler.set_feature(feature, uuid4())
-                            with open(tmp_path / filename, 'wt', encoding='utf-8') as f:
-                                f.write(f'{handler.header(feature)}{content}')
-                            continue
-                        with open(tmp_path / filename, 'at', encoding='utf-8') as f:
-                            f.write(content)
-            except Exception as exception:
-                traceback['fails'].append(f'{filename} - {exception.__str__()}')
-        if any(filename not in traceback.get('fails', []) for filename in input_files):
-            header, _, footer = stix1_attributes_framing(
-                namespace, org, return_format, stix_package.version
-            )
-            with open(name, 'wt', encoding='utf-8') as result:
-                result.write(header)
-                for feature, filename in handler.features.items():
-                    with open(tmp_path / filename, 'rt', encoding='utf-8') as current:
-                        content = current.read() if return_format == 'xml' else current.read()[:-2]
-                    current_footer = handler.footer(feature)
-                    if return_format == 'json' and feature == list(handler.features)[-1]:
-                        current_footer = current_footer[:-2]
-                    result.write(f'{content}{current_footer}')
-                    os.remove(tmp_path / filename)
-                result.write(footer)
-            traceback.update(_generate_traceback(debug, parser, name))
+        # The per-feature fragments hold converted content: they live in a
+        # scratch directory of their own, removed however the assembly ends
+        with TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            for filename in input_files:
+                try:
+                    parser.parse_json_file(filename)
+                    package = parser.stix_package
+                    for feature in _STIX1_features:
+                        values = getattr(package, feature)
+                        if values:
+                            content = globals()[f'write_{feature}'](values, return_format)
+                            if not content.strip():
+                                continue
+                            fragment = handler.get_filename(feature)
+                            if fragment is None:
+                                fragment = handler.set_feature(feature, uuid4())
+                                with open(tmp_path / fragment, 'wt', encoding='utf-8') as f:
+                                    f.write(f'{handler.header(feature)}{content}')
+                                continue
+                            with open(tmp_path / fragment, 'at', encoding='utf-8') as f:
+                                f.write(content)
+                except Exception as exception:
+                    traceback['fails'].append(f'{filename} - {exception.__str__()}')
+            if any(filename not in traceback.get('fails', []) for filename in input_files):
+                header, _, footer = stix1_attributes_framing(
+                    namespace, org, return_format, stix_package.version
+                )
+                with open(name, 'wt', encoding='utf-8') as result:
+                    result.write(header)
+                    for feature, fragment in handler.features.items():
+                        with open(tmp_path / fragment, 'rt', encoding='utf-8') as current:
+                            content = current.read() if return_format == 'xml' else current.read()[:-2]
+                        current_footer = handler.footer(feature)
+                        if return_format == 'json' and feature == list(handler.features)[-1]:
+                            current_footer = current_footer[:-2]
+                        result.write(f'{content}{current_footer}')
+                    result.write(footer)
+                traceback.update(_generate_traceback(debug, parser, name))
         return traceback
     output_names = []
     for filename in input_files:
