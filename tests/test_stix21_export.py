@@ -6829,6 +6829,48 @@ class TestSTIX21MISPExportInteroperability(TestSTIX21ExportInteroperability):
 
 
 class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
+    def test_exports_refuse_to_overwrite_an_existing_output(self):
+        input_files = self._collection_files('test_events_collection')
+        # A single input file reports the refusal in the result dict its write
+        # already sits in; a merged output raises it, like any other write it
+        # cannot do on that path
+        self._check_overwrite_policy(
+            misp_to_stix2, input_files[0], recorded=True, version='2.1'
+        )
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_overwrite_policy(
+                misp_collection_to_stix2, *input_files, single_output=True,
+                version='2.1', **kwargs
+            )
+        self._check_destination_appearing_mid_conversion(
+            misp_collection_to_stix2, *input_files, single_output=True,
+            version='2.1'
+        )
+
+    def test_exports_write_owner_only_files(self):
+        input_files = self._collection_files('test_events_collection')
+        self._check_output_file_mode(
+            misp_to_stix2, input_files[0], version='2.1'
+        )
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_output_file_mode(
+                misp_collection_to_stix2, *input_files, single_output=True,
+                version='2.1', **kwargs
+            )
+        # One output per input file: each one is owner-only as well
+        self._check_output_file_mode(
+            misp_collection_to_stix2, *input_files, version='2.1'
+        )
+
+    def test_interrupted_streamed_write_keeps_the_destination(self):
+        # The streamed path is the one that used to write the output in
+        # several steps, so an interrupted assembly left it truncated
+        self._check_interrupted_write_keeps_the_destination(
+            misp_collection_to_stix2,
+            *self._collection_files('test_events_collection'),
+            single_output=True, version='2.1'
+        )
+
     def test_collection_default_output_location(self):
         input_files = [
             self._current_path / f'test_events_collection_{n}.json'

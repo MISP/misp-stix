@@ -23,6 +23,31 @@ class TestSTIX(unittest.TestCase):
         for element in elements:
             self.assertEqual(reference, element)
 
+    def _check_output_write_safety(self, conversion, filename, **kwargs):
+        # What a conversion writes is as sensitive as the document it came
+        # from: the file is readable by its owner alone whatever the process
+        # umask allows, and one that already exists is only replaced when the
+        # caller asked for it, with the refusal naming the file it left as it
+        # was
+        import os
+        umask = os.umask(0)
+        try:
+            results = conversion(filename, **kwargs)
+        finally:
+            os.umask(umask)
+        self.assertEqual(results['success'], 1)
+        output = results['results'][0]
+        self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+        written = output.read_text(encoding='utf-8')
+        with self.assertRaises(FileExistsError) as context:
+            conversion(filename, **kwargs)
+        self.assertIn(str(output), str(context.exception))
+        self.assertIn('overwrite', str(context.exception))
+        self.assertEqual(output.read_text(encoding='utf-8'), written)
+        results = conversion(filename, overwrite=True, **kwargs)
+        self.assertEqual(results['success'], 1)
+        self.assertEqual(results['results'][0], output)
+
     @staticmethod
     def _plant_template_definition(directory):
         """Plant a template definition outside the MISP objects directory.
