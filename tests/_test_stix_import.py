@@ -31,6 +31,10 @@ SANITISED_TAG_VALUE = 'Evil tlp:red misp-galaxy:mitre-malware=BISCUIT'
 SMUGGLING_TAG_PREDICATE = 'mitre-malware" tlp:red misp-galaxy:threat-actor="APT'
 SANITISED_TAG_PREDICATE = 'mitre-malware tlp:red misp-galaxy:threat-actor=APT'
 
+# A slot made of nothing but what a tag cannot carry: sanitising it leaves no
+# text at all, so there is no tag left to write.
+UNUSABLE_TAG_SLOT = '\x01'
+
 _GALAXY_SUMMARY_MAPPING = {
     'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
     'course-of-action': 'Course of Action (mitre-course-of-action)',

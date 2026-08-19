@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from ._test_stix_import import (
-    SMUGGLING_TAG_PREDICATE, SMUGGLING_TAG_VALUE, TestSTIX2Bundles)
+    SMUGGLING_TAG_PREDICATE, SMUGGLING_TAG_VALUE, UNUSABLE_TAG_SLOT,
+    TestSTIX2Bundles)
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -10592,6 +10593,13 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         """A galaxy type label asking for taxonomy entries of its own."""
         return cls.get_bundle_with_malformed_galaxy_labels(
             [f'misp:galaxy-type="{SMUGGLING_TAG_PREDICATE}"']
+        )
+
+    @classmethod
+    def get_bundle_with_unusable_galaxy_type(cls):
+        """A galaxy type label a taxonomy tag has nothing to carry from."""
+        return cls.get_bundle_with_malformed_galaxy_labels(
+            [f'misp:galaxy-type="{UNUSABLE_TAG_SLOT}"']
         )
 
     @classmethod

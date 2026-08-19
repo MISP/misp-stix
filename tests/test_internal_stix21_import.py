@@ -8,7 +8,8 @@ from .test_internal_stix21_bundles import (
 from ._test_stix import TestSTIX21
 from ._test_stix_import import (
     SANITISED_TAG_PREDICATE, SANITISED_TAG_VALUE, SMUGGLING_TAG_PREDICATE,
-    SMUGGLING_TAG_VALUE, TestInternalSTIX2Import, TestSTIX21Import, UUIDv4)
+    SMUGGLING_TAG_VALUE, UNUSABLE_TAG_SLOT, TestInternalSTIX2Import,
+    TestSTIX21Import, UUIDv4)
 
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
@@ -2697,6 +2698,25 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_sanitised_tag_warning(
             SMUGGLING_TAG_PREDICATE, SANITISED_TAG_PREDICATE,
             self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_unusable_galaxy_type(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_unusable_galaxy_type()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        malware = bundle.objects[-1]
+        # The predicate slot the galaxy type label fills has nothing a tag can
+        # be made of: the cluster is still created, and the tag that would name
+        # it is dropped rather than written with an empty slot.
+        cluster = event.galaxies[0].clusters[0]
+        self.assertIn(malware.name, cluster.value)
+        self.assertEqual(
+            [tag.name for tag in event.tags
+             if cluster.value in tag.name or cluster.uuid in tag.name], []
+        )
+        self._check_unusable_tag_warning(
+            UNUSABLE_TAG_SLOT, self.parser.warnings
         )
 
     def test_stix21_bundle_with_malformed_galaxy_labels_as_tags(self):
