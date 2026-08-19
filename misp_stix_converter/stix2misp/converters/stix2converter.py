@@ -340,10 +340,11 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: Union[str, None]) -> dict:
+        tag_name = self.main_parser._build_tag(
+            'misp-galaxy', object_type or stix_object.type, stix_object.name
+        )
         return {
-            'tag_names': [
-                f'misp-galaxy:{object_type or stix_object.type}="{stix_object.name}"'
-            ],
+            'tag_names': [tag_name] if tag_name is not None else [],
             'used': {self.event_uuid: False}
         }
 
@@ -466,10 +467,11 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy_as_tag_names(
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         galaxy_type, _ = self._extract_galaxy_labels(stix_object)
+        tag_name = self.main_parser._build_tag(
+            'misp-galaxy', galaxy_type, stix_object.name
+        )
         return {
-            'tag_names': [
-                f'misp-galaxy:{galaxy_type}="{stix_object.name}"'
-            ],
+            'tag_names': [tag_name] if tag_name is not None else [],
             'used': {self.event_uuid: False}
         }
 

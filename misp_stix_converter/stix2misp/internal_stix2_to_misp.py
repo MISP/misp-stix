@@ -22,7 +22,7 @@ from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21
 from stix2.v21.sro import Sighting as Sighting_v21
-from typing import Iterator, Union
+from typing import Iterator, Optional, Union
 
 _STORAGE_VARIABLE_NAMES = ('_indicator', '_observed_data')
 
@@ -306,10 +306,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         for cluster in misp_galaxy.clusters:
             misp_layer.add_tag(self._galaxy_cluster_tag(cluster))
 
-    @staticmethod
-    def _galaxy_cluster_tag(cluster) -> str:
-        tag_value = cluster.uuid if cluster.type.startswith('stix-') else cluster.value
-        return f'misp-galaxy:{cluster.type}="{tag_value}"'
+    def _galaxy_cluster_tag(self, cluster) -> Optional[str]:
+        if cluster.type.startswith('stix-'):
+            return self._build_tag('misp-galaxy', cluster.type, cluster.uuid)
+        return self._build_cluster_tag(
+            cluster.type, cluster.value, cluster.uuid
+        )
 
     def _add_object_galaxies(self, misp_object: MISPObject, galaxies: dict):
         for galaxy in self._aggregate_galaxy_clusters(galaxies):
