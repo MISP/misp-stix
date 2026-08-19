@@ -494,7 +494,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         labels = self._parse_labels(stix_object)
         galaxy_type = labels.get('misp:galaxy-type')
         if not galaxy_type:
-            raise UndefinedSTIXObjectError(stix_object.id)
+            raise UndefinedSTIXObjectError(stix_object['id'])
         return galaxy_type, labels.get('misp:galaxy-name') or None
 
     @staticmethod
@@ -527,17 +527,21 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             )
             if to_call is not None:
                 return to_call
-        raise UndefinedSTIXObjectError(stix_object.id)
+        raise UndefinedSTIXObjectError(stix_object['id'])
 
     @staticmethod
     def _parse_labels(stix_object: _SDO_TYPING) -> dict:
         """Index the `field=value` labels the Internal path dispatches on.
 
         Labels are content: an object may carry none, and any of them may be
-        missing the `=` the field/value split needs.
+        missing the `=` the field/value split needs. They are read through the
+        Mapping interface a typed object and a Dict-Form Object both offer,
+        never with attribute access: this is what every per-type converter
+        dispatches on, and a dispatch reading no field takes no branch and
+        drops the object saying nothing.
         """
         parsed_labels = {}
-        for label in getattr(stix_object, 'labels', ()):
+        for label in stix_object.get('labels', ()):
             field, separator, value = label.partition('=')
             if separator:
                 parsed_labels[field] = value.strip('"')

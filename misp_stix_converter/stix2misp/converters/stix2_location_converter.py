@@ -204,7 +204,7 @@ class InternalSTIX2LocationConverter(
             _traceback = self.main_parser._parse_traceback(exception)
             self.main_parser._add_error(
                 'Error while parsing the Location object with id '
-                f'{location.id}: {_traceback}'
+                f'{location["id"]}: {_traceback}'
             )
 
     def _create_cluster(
