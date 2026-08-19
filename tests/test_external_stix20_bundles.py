@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ._test_stix_import import SMUGGLING_PRODUCER, TestSTIX2Bundles
+from ._test_stix_import import (
+    SMUGGLING_PRODUCER, SMUGGLING_TAG_VALUE, TestSTIX2Bundles)
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -2306,6 +2307,13 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_MALWARE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_galaxy_name(cls):
+        """A Threat Actor naming itself what a taxonomy tag cannot carry."""
+        event_galaxy, attribute_galaxy = deepcopy(_THREAT_ACTOR_OBJECTS)
+        event_galaxy['name'] = SMUGGLING_TAG_VALUE
+        return cls.__assemble_galaxy_bundle(event_galaxy, attribute_galaxy)
 
     @classmethod
     def get_bundle_with_threat_actor_galaxy(cls):

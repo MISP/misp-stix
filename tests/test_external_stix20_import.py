@@ -5,8 +5,9 @@ from .test_external_stix20_bundles import (
     TestExternalSTIX20Bundles, TLP_1_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX20
 from ._test_stix_import import (
-    SANITISED_PRODUCER, SMUGGLING_PRODUCER, TestExternalSTIX2Import,
-    TestSTIX20Import, UUIDv4, MISP_org_uuid)
+    SANITISED_PRODUCER, SANITISED_TAG_VALUE, SMUGGLING_PRODUCER,
+    SMUGGLING_TAG_VALUE, TestExternalSTIX2Import, TestSTIX20Import,
+    UUIDv4, MISP_org_uuid)
 from uuid import uuid5
 
 
@@ -988,6 +989,24 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(meta['labels'], attribute_malware.labels)
         self._populate_external_galaxy_documentation(
             galaxy=event.galaxies[0], malware=event_malware
+        )
+
+    def test_stix20_bundle_with_metacharacters_in_galaxy_name_as_tags(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        # The galaxy name asks for taxonomy entries of its own inside the tag
+        # it is written into: what the event gets is one tag.
+        tags = {tag.name for tag in event.tags}
+        self.assertIn(
+            f'misp-galaxy:threat-actor="{SANITISED_TAG_VALUE}"', tags
+        )
+        self.assertNotIn(
+            f'misp-galaxy:threat-actor="{SMUGGLING_TAG_VALUE}"', tags
+        )
+        self._check_sanitised_tag_warning(
+            SMUGGLING_TAG_VALUE, SANITISED_TAG_VALUE, self.parser.warnings
         )
 
     def test_stix20_bundle_with_threat_actor_galaxy(self):

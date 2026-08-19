@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ._test_stix_import import SMUGGLING_PRODUCER, TestSTIX2Bundles, UUIDv4
+from ._test_stix_import import (
+    SMUGGLING_PRODUCER, SMUGGLING_TAG_VALUE, TestSTIX2Bundles, UUIDv4)
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -2881,6 +2882,19 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(ip_address, *acs_marking_definitions)
 
     @classmethod
+    def get_bundle_with_metacharacters_in_acs_marking(cls):
+        """An ACS Marking vocabulary field asking for taxonomy entries of its
+        own inside the tag the conversion writes it into."""
+        ip_address = deepcopy(_IP_ADDRESS_ATTRIBUTES[2])
+        acs_marking_definitions = deepcopy(_ACS_MARKING_DEFINITION_OBJECTS)
+        extension = next(
+            iter(acs_marking_definitions[0]['extensions'].values())
+        )
+        extension['control_set']['classification'] = SMUGGLING_TAG_VALUE
+        ip_address['object_marking_refs'] = [acs_marking_definitions[0]['id']]
+        return cls.__assemble_bundle(ip_address, *acs_marking_definitions)
+
+    @classmethod
     def __tlp_markings_bundle(cls, addresses, markings):
         bundle = deepcopy(cls.__bundle)
         grouping = deepcopy(cls.__grouping)
@@ -3127,6 +3141,13 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_MALWARE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_galaxy_name(cls):
+        """A Threat Actor naming itself what a taxonomy tag cannot carry."""
+        event_galaxy, attribute_galaxy = deepcopy(_THREAT_ACTOR_OBJECTS)
+        event_galaxy['name'] = SMUGGLING_TAG_VALUE
+        return cls.__assemble_galaxy_bundle(event_galaxy, attribute_galaxy)
 
     @classmethod
     def get_bundle_with_threat_actor_galaxy(cls):

@@ -19,13 +19,21 @@ from stix.coa import CourseOfAction, Objective
 from stix.common import Statement
 from stix.common.related import RelatedPackage, RelatedPackages
 from stix.core import STIXHeader, STIXPackage
+from stix.data_marking import Marking, MarkingSpecification
+from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.incident import Incident
 from stix.incident.history import History, HistoryItem, JournalEntry
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
+from stix.ttp import TTP, Behavior
+from stix.ttp.infrastructure import Infrastructure
+from stix.ttp.malware_instance import MalwareInstance
+from stix.ttp.resource import Resource
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from ._test_stix import TestSTIX
+from ._test_stix_import import (
+    SANITISED_TAG_VALUE, SMUGGLING_TAG_VALUE)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
@@ -701,6 +709,64 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(
             parser.misp_event.info, 'Imported from external STIX 1.1.1 Package'
         )
+
+    ############################################################################
+    #                              GALAXY TAGS.                                #
+    ############################################################################
+
+    @classmethod
+    def _ttp_with_malware_title(cls, title):
+        """A TTP naming a malware what a taxonomy tag value cannot carry, over
+        infrastructure the galaxy tag then lands on as an attribute."""
+        ttp = TTP()
+        ttp.id_ = f'MISP:TTP-{_ACTOR_UUID}'
+        malware_instance = MalwareInstance()
+        malware_instance.title = title
+        ttp.behavior = Behavior()
+        ttp.behavior.add_malware_instance(malware_instance)
+        address = Address()
+        address.address_value = '198.51.100.16'
+        address.category = 'ipv4-addr'
+        address_object = Object(address)
+        address_object.id_ = f'MISP:Address-{_IP_UUID}'
+        infrastructure = Infrastructure()
+        infrastructure.observable_characterization = Observables(
+            [Observable(address_object)]
+        )
+        ttp.resources = Resource()
+        ttp.resources.infrastructure = infrastructure
+        return ttp
+
+    def test_external_ttp_galaxy_title_writes_one_taxonomy_entry(self):
+        """A malware title is written into the tag the galaxy is: whatever
+        further taxonomy entries the title asks for, what is written is one."""
+        stix_package = STIXPackage()
+        stix_package.add_ttp(self._ttp_with_malware_title(SMUGGLING_TAG_VALUE))
+        parser = self._parse_external_package(stix_package)
+        attribute = parser.misp_event.attributes[0]
+        tags = {tag['name'] for tag in attribute.tags}
+        self.assertIn(f'misp-galaxy:ransomware="{SANITISED_TAG_VALUE}"', tags)
+        self.assertNotIn(
+            f'misp-galaxy:ransomware="{SMUGGLING_TAG_VALUE}"', tags
+        )
+
+    def test_external_tlp_marking_writes_one_taxonomy_entry(self):
+        """A TLP colour is written into a taxonomy tag of the library's own: it
+        names one entry of the `tlp` taxonomy, whatever the colour carries."""
+        stix_package = STIXPackage()
+        header = STIXHeader()
+        marking = MarkingSpecification()
+        tlp_marking = TLPMarkingStructure()
+        tlp_marking.color = 'AMBER" tlp:red'
+        marking.marking_structures.append(tlp_marking)
+        handling = Marking()
+        handling.add_marking(marking)
+        header.handling = handling
+        stix_package.stix_header = header
+        parser = self._parse_external_package(stix_package)
+        tags = {tag['name'] for tag in parser.misp_event.tags}
+        self.assertIn('tlp:amber tlp:red', tags)
+        self.assertNotIn('tlp:amber" tlp:red', tags)
 
     ############################################################################
     #                         PARSER STATE ISOLATION.                          #

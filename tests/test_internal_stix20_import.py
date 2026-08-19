@@ -6,7 +6,9 @@ from uuid import uuid5
 from .test_internal_stix20_bundles import (
     TestInternalSTIX20Bundles, TLP_1_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX20
-from ._test_stix_import import TestInternalSTIX2Import, TestSTIX20Import, UUIDv4
+from ._test_stix_import import (
+    SANITISED_TAG_PREDICATE, SANITISED_TAG_VALUE, SMUGGLING_TAG_PREDICATE,
+    SMUGGLING_TAG_VALUE, TestInternalSTIX2Import, TestSTIX20Import, UUIDv4)
 
 
 class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Import):
@@ -2220,6 +2222,61 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         # The galaxy is the one the type label names, name label or not.
         self._check_malware_galaxy(event.galaxies[0], malware)
         self._check_galaxy_without_name_label(malware, self.parser.warnings)
+
+    def test_stix20_bundle_with_metacharacters_in_galaxy_cluster_value(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        cluster = event.galaxies[0].clusters[0]
+        # The cluster keeps the value the bundle sent: what a tag cannot carry
+        # is not censored, the tag names the cluster by its uuid instead - the
+        # only value that keeps MISP's cluster-to-tag match working.
+        self.assertIn(SMUGGLING_TAG_VALUE, cluster.value)
+        tags = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:mitre-malware="{cluster.uuid}"', tags)
+        self.assertNotIn(
+            f'misp-galaxy:mitre-malware="{SMUGGLING_TAG_VALUE}"', tags
+        )
+        self._check_cluster_tag_by_uuid_warning(
+            cluster.value, cluster.uuid, self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_metacharacters_in_galaxy_name_as_tags(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        # The galaxy name asks for taxonomy entries of its own inside the tag
+        # it is written into: what the event gets is one tag.
+        tags = {tag.name for tag in event.tags}
+        self.assertIn(f'misp-galaxy:mitre-malware="{SANITISED_TAG_VALUE}"', tags)
+        self.assertNotIn(
+            f'misp-galaxy:mitre-malware="{SMUGGLING_TAG_VALUE}"', tags
+        )
+        self._check_sanitised_tag_warning(
+            SMUGGLING_TAG_VALUE, SANITISED_TAG_VALUE, self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_metacharacters_in_galaxy_type_as_tags(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_metacharacters_in_galaxy_type()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        malware = bundle.objects[-1]
+        # The predicate slot is the conversion's own grammar just as the value
+        # slot is: a galaxy type label cannot write taxonomy entries either.
+        tags = {tag.name for tag in event.tags}
+        self.assertIn(
+            f'misp-galaxy:{SANITISED_TAG_PREDICATE}="{malware.name}"', tags
+        )
+        self.assertNotIn(
+            f'misp-galaxy:{SMUGGLING_TAG_PREDICATE}="{malware.name}"', tags
+        )
+        self._check_sanitised_tag_warning(
+            SMUGGLING_TAG_PREDICATE, SANITISED_TAG_PREDICATE,
+            self.parser.warnings
+        )
 
     def test_stix20_bundle_with_malformed_galaxy_labels_as_tags(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_malformed_galaxy_labels(

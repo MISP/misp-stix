@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ._test_stix_import import TestSTIX2Bundles
+from ._test_stix_import import (
+    SMUGGLING_TAG_PREDICATE, SMUGGLING_TAG_VALUE, TestSTIX2Bundles)
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -10578,6 +10579,20 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_location_galaxies(cls):
         return cls.__assemble_bundle(*_LOCATION_GALAXIES)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_galaxy_name(cls):
+        """A galaxy naming itself what a taxonomy tag value cannot carry."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        malware['name'] = SMUGGLING_TAG_VALUE
+        return cls.__assemble_bundle(malware)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_galaxy_type(cls):
+        """A galaxy type label asking for taxonomy entries of its own."""
+        return cls.get_bundle_with_malformed_galaxy_labels(
+            [f'misp:galaxy-type="{SMUGGLING_TAG_PREDICATE}"']
+        )
 
     @classmethod
     def get_bundle_with_malformed_galaxy_labels(cls, labels):
