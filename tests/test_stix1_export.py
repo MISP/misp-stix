@@ -4640,6 +4640,54 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
                 sorted(copy.name for copy in copies)
             )
 
+    def _assembled_json(self, function, *input_files, **kwargs) -> dict:
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_file = Path(tmp_dir) / 'collection.json'
+            self.assertEqual(
+                function(
+                    *copies, single_output=True, return_format='json',
+                    output_name=output_file, **kwargs
+                ),
+                {'success': 1, 'results': [output_file]}
+            )
+            with open(output_file, 'rt', encoding='utf-8') as f:
+                # The assertion is the parsing itself: the assembled paths
+                # write their JSON by hand, so a document nothing can read
+                # back is what a framing mistake produces
+                return json.load(f)
+
+    def test_collection_exports_assemble_valid_json(self):
+        # The streamed Attribute Collection puts its output together out of the
+        # fragments each input file wrote: what two of them contributed to the
+        # same JSON array needs the separator between them, and a fragment is
+        # written whole - the assembly reading it back is not where to trim it
+        attributes = self._collection_files('test_attributes_collection')
+        events = self._collection_files('test_events_collection')
+        streamed = self._assembled_json(
+            misp_attribute_collection_to_stix1, *attributes
+        )
+        in_memory = self._assembled_json(
+            misp_attribute_collection_to_stix1, *attributes, in_memory=True
+        )
+        # Both paths carry the same converted content: the one that assembles
+        # the document by hand loses nothing off the ends of what it read
+        self.assertEqual(streamed['indicators'], in_memory['indicators'])
+        self.assertEqual(
+            streamed['observables']['observables'],
+            in_memory['observables']['observables']
+        )
+        streamed = self._assembled_json(
+            misp_event_collection_to_stix1, *events
+        )
+        in_memory = self._assembled_json(
+            misp_event_collection_to_stix1, *events, in_memory=True
+        )
+        self.assertEqual(
+            len(streamed['related_packages']['related_packages']),
+            len(in_memory['related_packages']['related_packages'])
+        )
+
     def _campaign_collection_files(self, tmp_dir: str) -> list:
         # A `campaign-name` attribute is what puts a Campaign in the package,
         # and the collection fixtures hold none
