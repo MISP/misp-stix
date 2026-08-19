@@ -2161,6 +2161,45 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         cluster = parser.misp_event.galaxies[0].clusters[0]
         self.assertEqual(cluster.value, 'LEAKED-B-ACTOR')
 
+    def test_stix20_reused_parser_does_not_resolve_undefined_galaxy_cluster(self):
+        # The galaxy cluster SDOs the parser loads must go the same way as the
+        # clusters built from them: bundle B *referencing* a cluster id it never
+        # defines must resolve against nothing, not against the object bundle A
+        # loaded under that id. Otherwise B's event silently shows A's cluster
+        # and B's dangling reference is never reported.
+        from stix2.parsing import dict_to_stix2
+        from misp_stix_converter import InternalSTIX2toMISPParser
+        bundle_a = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy()
+        cluster_value = bundle_a.objects[-1].x_misp_value
+        b_dict = json.loads(bundle_a.serialize())
+        b_dict['id'] = 'bundle--5b8e0f9a-0000-4000-8000-0000000000c0'
+        b_dict['objects'] = [
+            stix_object for stix_object in b_dict['objects']
+            if stix_object['type'] != 'x-misp-galaxy-cluster'
+        ]
+        for stix_object in b_dict['objects']:
+            if stix_object['type'] == 'report':
+                stix_object['id'] = 'report--5b8e0f9a-0000-4000-8000-0000000000c1'
+        bundle_b = dict_to_stix2(b_dict, allow_custom=True)
+        parser = InternalSTIX2toMISPParser()
+        parser.load_stix_bundle(bundle_a)
+        parser.parse_stix_bundle()
+        self.assertEqual(
+            parser.misp_event.galaxies[0].clusters[0].value, cluster_value
+        )
+        parser.load_stix_bundle(bundle_b)
+        parser.parse_stix_bundle()
+        event = parser.misp_event
+        self.assertEqual(len(event.galaxies), 0)
+        tag_names = {tag.name for tag in event.tags}
+        self.assertFalse(
+            [tag for tag in tag_names if cluster_value in tag]
+        )
+        self.assertIn(
+            'Error loading the STIX object of type custom-galaxy-cluster',
+            parser.errors[b_dict['id']]
+        )
+
     def test_stix20_bundle_with_stix_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_stix_galaxy()
         self.parser.load_stix_bundle(bundle)
