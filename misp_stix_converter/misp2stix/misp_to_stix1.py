@@ -1121,6 +1121,12 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
             raise InvalidMISPInputError(
                 'Input does not look like a MISP attributes collection.'
             )
+        for index, attribute in enumerate(attributes):
+            if not (isinstance(attribute, dict) and 'type' in attribute):
+                raise InvalidMISPInputError(
+                    'Input does not look like a MISP attributes collection: '
+                    f'item {index} is not a MISP attribute.'
+                )
         self._stix_package = STIXPackage()
         for attribute in attributes:
             self._resolve_attribute(attribute)
@@ -1168,10 +1174,22 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if not isinstance(json_content, dict):
             raise InvalidMISPInputError('Input does not look like a MISP event.')
         if json_content.get('response') is not None:
+            events = json_content['response']
+            if not isinstance(events, list):
+                raise InvalidMISPInputError(
+                    'Input does not look like a MISP events collection.'
+                )
+            for index, event in enumerate(events):
+                if not (isinstance(event, dict)
+                        and ('Event' in event or 'info' in event)):
+                    raise InvalidMISPInputError(
+                        'Input does not look like a MISP events collection: '
+                        f'item {index} is not a MISP event.'
+                    )
             package = _create_stix_package(
                 self._orgname, self._version, header=False
             )
-            for event in json_content['response']:
+            for event in events:
                 self.parse_misp_event(event)
                 package.add_related_package(self._stix_package)
             self._stix_package = package

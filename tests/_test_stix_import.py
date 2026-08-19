@@ -24,6 +24,13 @@ UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 SMUGGLING_PRODUCER = 'Evil" tlp:clear misp-galaxy:producer="CIRCL'
 SANITISED_PRODUCER = 'Evil tlp:clear misp-galaxy:producer=CIRCL'
 
+# The same, in the slots of the other tags a conversion writes: the value a
+# galaxy is named by, and the predicate naming the taxonomy it belongs to.
+SMUGGLING_TAG_VALUE = 'Evil" tlp:red misp-galaxy:mitre-malware="BISCUIT'
+SANITISED_TAG_VALUE = 'Evil tlp:red misp-galaxy:mitre-malware=BISCUIT'
+SMUGGLING_TAG_PREDICATE = 'mitre-malware" tlp:red misp-galaxy:threat-actor="APT'
+SANITISED_TAG_PREDICATE = 'mitre-malware tlp:red misp-galaxy:threat-actor=APT'
+
 _GALAXY_SUMMARY_MAPPING = {
     'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
     'course-of-action': 'Course of Action (mitre-course-of-action)',
@@ -250,6 +257,28 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(len(producer_warnings), 1)
         for value in (producer, sanitised):
             self.assertIn(value, producer_warnings[0])
+
+    def _check_sanitised_tag_warning(self, value, sanitised, warnings):
+        """Text a conversion wrote into a tag is one taxonomy entry of it."""
+        tag_warnings = self._reports_matching(warnings, 'Sanitised tag value')
+        self.assertEqual(len(tag_warnings), 1)
+        for reported in (value, sanitised):
+            self.assertIn(reported, tag_warnings[0])
+
+    def _check_unusable_tag_warning(self, value, warnings):
+        """Text a taxonomy tag has nothing left to carry from writes no tag."""
+        tag_warnings = self._reports_matching(warnings, 'Unusable tag value')
+        self.assertEqual(len(tag_warnings), 1)
+        self.assertIn(value, tag_warnings[0])
+
+    def _check_cluster_tag_by_uuid_warning(self, value, uuid, warnings):
+        """A cluster a tag cannot name by value is named by its uuid."""
+        tag_warnings = self._reports_matching(
+            warnings, 'Sanitised galaxy cluster tag'
+        )
+        self.assertEqual(len(tag_warnings), 1)
+        for reported in (value, uuid):
+            self.assertIn(reported, tag_warnings[0])
 
     def _check_uuid_collision_warning(self, record_uuid, object_ids, warnings):
         """Two STIX ids, one MISP uuid: both records stay, the loss is named."""
