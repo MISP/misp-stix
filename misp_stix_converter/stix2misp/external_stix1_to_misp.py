@@ -281,7 +281,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 parser = self._mapping.marking_mapping(marking._XSI_TYPE)
                 if parser is not None:
                     # A marking field a taxonomy tag can be made of nothing
-                    # from writes no tag: the one place they are filtered out.
+                    # from writes no tag: the builder returns None and the
+                    # marking is dropped here, as at every other site that
+                    # collects built tags rather than adding them one by one.
                     for tag in getattr(self, parser)(marking):
                         if tag is not None:
                             yield tag

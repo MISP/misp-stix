@@ -86,13 +86,27 @@ class STIXtoMISPParser(AbstractParser):
         :param producer: the producer name, from the `producer` parameter or
             from the Identity the bundle credits itself to - from any source
         """
-        name = _TAG_VALUE_METACHARACTERS.sub('', str(producer)).strip()
+        name = self._clean_tag_slot(producer)
         if not name:
             self._unusable_producer_warning(producer)
             return
-        if name != producer:
+        if name != str(producer):
             self._sanitised_producer_warning(producer, name)
         misp_event.add_tag(self._build_tag('misp-galaxy', 'producer', name))
+
+    @staticmethod
+    def _clean_tag_slot(slot: Any) -> str:
+        """The text a slot of the tag grammar can carry, of what it was handed.
+
+        The rule itself, held apart from the reaction to it: `_build_tag` drops
+        the tag a slot nothing survives from, `_add_producer_tag` leaves the
+        event untagged and `_build_cluster_tag` keys the tag on the cluster
+        uuid instead - three answers to the one question this asks.
+
+        :param slot: the text a document supplied for a slot of the grammar
+        :return: what of it a slot can carry, empty when nothing can
+        """
+        return _TAG_VALUE_METACHARACTERS.sub('', str(slot)).strip()
 
     def _build_tag(
             self, namespace: str, predicate: str,
@@ -117,7 +131,7 @@ class STIXtoMISPParser(AbstractParser):
         )
         cleaned = []
         for slot in slots:
-            text = _TAG_VALUE_METACHARACTERS.sub('', str(slot)).strip()
+            text = self._clean_tag_slot(slot)
             if not text:
                 self._unusable_tag_value_warning(slot)
                 return None
@@ -144,7 +158,7 @@ class STIXtoMISPParser(AbstractParser):
         :param uuid: the cluster uuid, the tag's fallback to name it with
         :return: the tag naming the cluster
         """
-        cleaned = _TAG_VALUE_METACHARACTERS.sub('', str(value)).strip()
+        cleaned = self._clean_tag_slot(value)
         if cleaned != str(value):
             self._cluster_tag_by_uuid_warning(value, uuid)
             value = uuid
