@@ -908,7 +908,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         rule_effect = privilege['rule_effect']
         yield 'rule_effect', rule_effect
         if rule_effect == 'permit':
-            tags.append(f'acs-marking:privilege_action="{privilege_action}"')
+            tag = self._build_tag(
+                'acs-marking', 'privilege_action', privilege_action
+            )
+            if tag is not None:
+                tags.append(tag)
         for field, scope in privilege['privilege_scope'].items():
             yield f'privilege_scope.{field}', scope
 
@@ -937,11 +941,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if isinstance(values, dict):
                 for field, subvalues in values.items():
                     if field in self._mapping.marking_vocabularies_fields():
-                        if isinstance(subvalues, list):
-                            for subvalue in subvalues:
-                                tags.append(f'acs-marking:{field}="{subvalue}"')
-                        else:
-                            tags.append(f'acs-marking:{field}="{subvalues}"')
+                        values = (
+                            subvalues if isinstance(subvalues, list)
+                            else [subvalues]
+                        )
+                        for subvalue in values:
+                            tag = self._build_tag(
+                                'acs-marking', field, subvalue
+                            )
+                            if tag is not None:
+                                tags.append(tag)
                     meta[f'{key}.{field}'] = subvalues
                 continue
             if key == 'access_privilege':
@@ -1388,17 +1397,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._load_marking_definition(marking)
         return True
 
-    @staticmethod
-    def _parse_confidence_level(confidence_level: int) -> str:
+    def _parse_confidence_level(self, confidence_level: int) -> str:
         if confidence_level == 100:
-            return 'misp:confidence-level="completely-confident"'
-        if confidence_level >= 75:
-            return 'misp:confidence-level="usually-confident"'
-        if confidence_level >= 50:
-            return 'misp:confidence-level="fairly-confident"'
-        if confidence_level >= 25:
-            return 'misp:confidence-level="rarely-confident"'
-        return 'misp:confidence-level="unconfident"'
+            level = 'completely-confident'
+        elif confidence_level >= 75:
+            level = 'usually-confident'
+        elif confidence_level >= 50:
+            level = 'fairly-confident'
+        elif confidence_level >= 25:
+            level = 'rarely-confident'
+        else:
+            level = 'unconfident'
+        return self._build_tag('misp', 'confidence-level', level)
 
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #

@@ -658,7 +658,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 yield from self._resolve_galaxy(names, default_value)
 
     def _resolve_galaxy(self, galaxy_name: str, default_value: str) -> list:
-        return [f'misp-galaxy:{default_value}="{galaxy_name}"']
+        tag_name = self._build_tag('misp-galaxy', default_value, galaxy_name)
+        return [tag_name] if tag_name is not None else []
 
     ############################################################################
     #                             UTILITY METHODS.                             #
