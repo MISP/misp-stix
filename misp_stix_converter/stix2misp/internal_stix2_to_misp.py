@@ -290,8 +290,22 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
                 misp_galaxy.add_galaxy_cluster(**cluster)
-                attribute.add_tag(self._galaxy_cluster_tag(cluster))
+                self._add_cluster_tag(attribute, cluster)
             attribute.add_galaxy(misp_galaxy)
+
+    def _add_cluster_tag(self, misp_layer, cluster):
+        """Tag the record with the Galaxy Cluster, if a tag can name it.
+
+        The one place a cluster tag reaches a record: a cluster type nothing
+        survives from leaves no tag to write, and the cluster is then attached
+        without one rather than the record being handed an empty tag.
+
+        :param misp_layer: the record the cluster is attached to
+        :param cluster: the Galaxy Cluster the tag names
+        """
+        tag = self._galaxy_cluster_tag(cluster)
+        if tag is not None:
+            misp_layer.add_tag(tag)
 
     def _add_event_galaxies(self, galaxies: dict):
         for galaxy_type, clusters in galaxies.items():
@@ -299,12 +313,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
                 misp_galaxy.add_galaxy_cluster(**cluster)
-                self.misp_event.add_tag(self._galaxy_cluster_tag(cluster))
+                self._add_cluster_tag(self.misp_event, cluster)
             self.misp_event.add_galaxy(misp_galaxy)
 
     def _add_galaxy_tags(self, misp_layer, misp_galaxy):
         for cluster in misp_galaxy.clusters:
-            misp_layer.add_tag(self._galaxy_cluster_tag(cluster))
+            self._add_cluster_tag(misp_layer, cluster)
 
     def _galaxy_cluster_tag(self, cluster) -> Optional[str]:
         if cluster.type.startswith('stix-'):
