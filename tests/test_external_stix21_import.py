@@ -5,8 +5,9 @@ from .test_external_stix21_bundles import (
     TestExternalSTIX21Bundles, TLP_1_0_EXPECTED_TAGS, TLP_2_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX21
 from ._test_stix_import import (
-    SANITISED_PRODUCER, SMUGGLING_PRODUCER, TestExternalSTIX2Import,
-    TestSTIX21Import, UUIDv4, MISP_org_uuid)
+    SANITISED_PRODUCER, SANITISED_TAG_VALUE, SMUGGLING_PRODUCER,
+    SMUGGLING_TAG_VALUE, TestExternalSTIX2Import, TestSTIX21Import,
+    UUIDv4, MISP_org_uuid)
 from uuid import uuid5
 
 _ACS_EXTENSION_ID = 'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce'
@@ -790,6 +791,21 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             for stix_object in (campaign, indicator, attribute_campaign):
                 self.assertIn(stix_object.id, reported)
 
+    def test_stix21_bundle_with_metacharacters_in_acs_marking(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_metacharacters_in_acs_marking()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        # A marking field is written into a taxonomy tag of the library's own:
+        # what it carries is one entry of it, whatever the field asks for.
+        tags = {tag.name for tag in event.tags}
+        self.assertIn(
+            f'acs-marking:classification="{SANITISED_TAG_VALUE}"', tags
+        )
+        self.assertNotIn(
+            f'acs-marking:classification="{SMUGGLING_TAG_VALUE}"', tags
+        )
+
     def test_stix21_bundle_with_acs_marking(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_acs_marking()
         self.parser.load_stix_bundle(bundle)
@@ -1262,6 +1278,24 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(meta['malware_types'], attribute_malware.malware_types)
         self._populate_external_galaxy_documentation(
             galaxy=event.galaxies[0], malware=event_malware
+        )
+
+    def test_stix21_bundle_with_metacharacters_in_galaxy_name_as_tags(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        # The galaxy name asks for taxonomy entries of its own inside the tag
+        # it is written into: what the event gets is one tag.
+        tags = {tag.name for tag in event.tags}
+        self.assertIn(
+            f'misp-galaxy:threat-actor="{SANITISED_TAG_VALUE}"', tags
+        )
+        self.assertNotIn(
+            f'misp-galaxy:threat-actor="{SMUGGLING_TAG_VALUE}"', tags
+        )
+        self._check_sanitised_tag_warning(
+            SMUGGLING_TAG_VALUE, SANITISED_TAG_VALUE, self.parser.warnings
         )
 
     def test_stix21_bundle_with_threat_actor_galaxy(self):
