@@ -8,6 +8,7 @@ from .misp2stix.misp_to_stix1 import (
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .stix2misp.importparser import MISP_org_uuid
+from .tools.exceptions import _reduce_input_error
 from .tools.output_writing_helpers import (
     _open_output, _private_opener, _write_output)
 from .tools.stix1_framing import (
@@ -573,7 +574,7 @@ def stix_1_to_misp(filename: _files_type,
         _handle_classification_warning(stix_parser, from_misp, detected)
         stix_parser.parse_stix_package(**args)
     except Exception as error:
-        return {'errors': [f'{filename} -  {error.__str__()}']}
+        return {'errors': [_reduce_input_error(filename, error)]}
     if stix_parser.single_event:
         name = _check_filename(
             filename.parent, f'{filename.name}.out', output_dir, output_name
@@ -625,7 +626,7 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
         _handle_classification_warning(stix_parser, from_misp, detected)
         stix_parser.parse_stix_package(**args)
     except Exception as error:
-        return {'errors': [f'{filename} -  {error.__str__()}']}
+        return {'errors': [_reduce_input_error(filename, error)]}
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
@@ -682,7 +683,7 @@ def stix_2_to_misp(filename: _files_type,
         _handle_classification_warning(stix_parser, from_misp, detected)
         stix_parser.parse_stix_bundle(**args)
     except Exception as error:
-        return {'errors': [f'{filename} -  {error.__str__()}']}
+        return {'errors': [_reduce_input_error(filename, error)]}
     if stix_parser.single_event:
         name = _check_filename(
             filename.parent, f'{filename.name}.out', output_dir, output_name
@@ -734,7 +735,7 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
         _handle_classification_warning(stix_parser, from_misp, detected)
         stix_parser.parse_stix_bundle(**args)
     except Exception as error:
-        return {'errors': [f'{filename} -  {error.__str__()}']}
+        return {'errors': [_reduce_input_error(filename, error)]}
     if stix_parser.single_event:
         misp_event = misp.add_event(stix_parser.misp_event, pythonify=True)
         if not isinstance(misp_event, MISPEvent):
