@@ -222,6 +222,26 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(len(duplicate_warnings), 1)
         self.assertIn(marking_id, duplicate_warnings[0])
 
+    # A TLP value carrying the one character the taxonomy grammar cannot
+    # escape, and the single entry it has to be read as.
+    _MARKING_WRITING_A_SECOND_TAG = 'red" misp-galaxy:threat-actor="APT1'
+    _MARKING_AS_ONE_TAG = 'tlp:red misp-galaxy:threat-actor=APT1'
+
+    def _check_marking_definition_tag_grammar(self, bundle):
+        """A marking definition is read as one taxonomy entry, never two.
+
+        The tag a marking becomes is one this library writes out of the
+        marking's own fields, so it goes through the tag builder (ADR-0012):
+        the `"` a sender put in the value would otherwise close the slot and
+        let the marking decide what else the data it governs is tagged with.
+        """
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual(
+            [tag.name for tag in attribute.tags], [self._MARKING_AS_ONE_TAG]
+        )
+
     def _check_duplicate_invalid_marking_warning_absence(self, warnings):
         """Invalid objects a bundle keeps apart, or does not apply."""
         self.assertEqual(

@@ -571,6 +571,16 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         attribute = self.parser.misp_event.attributes[0]
         self.assertEqual([tag.name for tag in attribute.tags], ['tlp:red'])
 
+    def test_stix21_marking_definition_cannot_write_a_second_tag(self):
+        self._check_marking_definition_tag_grammar(
+            self._load_stix21_content_with_invalid_markings(
+                *self._invalid_tlp_markings(
+                    'marking-definition--11111111-1111-4111-8111-111111111111',
+                    self._MARKING_WRITING_A_SECOND_TAG
+                )
+            )
+        )
+
     def test_stix21_unapplied_invalid_marking_definitions_are_not_reported(self):
         # A marking too broken to read governs nothing: loading it raises,
         # the object referring to it is reported as an error and lands with
