@@ -245,6 +245,17 @@ linear in the input size and paid entirely in one worker, an integrator running
 imports concurrently - MISP core included - should also cap how many run at
 once.
 
+#### Object template names
+
+A MISP object names the template that describes it, and that name is resolved against the
+template directories on disk. A name a document supplied that is not a plain template name -
+one holding a path separator, a `..`, or any character a template directory does not use - is
+never resolved: the object is converted under the name **`unknown-template`**, keeping the
+name the document sent in the object's `comment`. This applies on import, to an
+`x-misp-object`'s `x_misp_name`, and on export to the events and objects handed in as JSON,
+where a name stored earlier would otherwise be resolved when the event is exported. Names
+that do resolve - the templates pymisp ships and custom ones alike - are unaffected.
+
 ### In Python scripts
 
 Given a MISP Event (with its metadata fields, attributes, objects, galaxies and tags), declared in an `event` variable in Python dict format, you can get the result of a conversion into one of the supported STIX versions:
