@@ -72,8 +72,9 @@ _LOADED_FEATURES = (
     '_threat_actor', '_tool', '_vulnerability'
 )
 _SDOs = (
-    '_grouping', '_report', '_location', '_marking_definition',
-    '_relationship', '_sighting', '_observable', *_LOADED_FEATURES
+    '_custom_galaxy_cluster', '_grouping', '_report', '_location',
+    '_marking_definition', '_relationship', '_sighting', '_observable',
+    *_LOADED_FEATURES
 )
 
 # Typing
