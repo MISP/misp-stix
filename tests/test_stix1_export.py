@@ -72,6 +72,20 @@ class TestSTIX1InputContract(TestSTIX):
                 {'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)]}
             )
 
+    def test_events_parser_wrapped_attributes_list_raises(self):
+        # Right wrapper, wrong items: attributes under the `response` key.
+        with self.assertRaises(InvalidMISPInputError):
+            self._events_parser().parse_json_content(
+                {'response': [deepcopy(_INDICATOR_ATTRIBUTE)]}
+            )
+
+    def test_events_parser_wrapped_attributes_collection_raises(self):
+        # The restSearch attributes collection shape, handed to the events parser.
+        with self.assertRaises(InvalidMISPInputError):
+            self._events_parser().parse_json_content(
+                {'response': {'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)]}}
+            )
+
     def test_events_parser_bare_event_converts(self):
         parser = self._events_parser()
         parser.parse_json_content(get_base_event()['Event'])
@@ -84,6 +98,13 @@ class TestSTIX1InputContract(TestSTIX):
     def test_attributes_parser_empty_dict_raises(self):
         with self.assertRaises(InvalidMISPInputError):
             self._attributes_parser().parse_json_content({})
+
+    def test_attributes_parser_events_collection_raises(self):
+        # A valid events collection is the wrong layer for the attributes parser.
+        with self.assertRaises(InvalidMISPInputError):
+            self._attributes_parser().parse_json_content(
+                {'response': [get_base_event()]}
+            )
 
     def test_attributes_parser_bare_list_converts(self):
         parser = self._attributes_parser()
