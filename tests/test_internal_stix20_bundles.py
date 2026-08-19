@@ -3217,6 +3217,22 @@ _FILENAME_OBSERVABLE_ATTRIBUTE = [
         "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     }
 ]
+# A `location` is not a type STIX 2.0 knows, so a Bundle parsed against it
+# keeps this object as a plain dictionary - the Dict-Form Object the label
+# dispatch of every per-type converter has to read.
+_GEOLOCATION_OBJECT = {
+    "type": "location",
+    "id": "location--6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "latitude": 39.108889,
+    "longitude": -76.771389,
+    "region": "northern-america",
+    "country": "US",
+    "city": "Fort Meade",
+    "labels": ['misp:name="geolocation"', 'misp:meta-category="misc"']
+}
 _GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -8341,6 +8357,11 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
             event_report
         ]
         return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_dict_form_location(cls):
+        """A Dict-Form Object the per-type converters dispatch on labels."""
+        return cls.__assemble_bundle(deepcopy(_GEOLOCATION_OBJECT))
 
     @classmethod
     def get_bundle_with_duplicate_object_ids(cls):

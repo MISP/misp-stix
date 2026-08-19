@@ -1815,6 +1815,24 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(port.value, observables["0"].x_misp_port)
         self.assertEqual(free_tag, port.tags[0].name)
 
+    def test_stix20_bundle_with_dict_form_location(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_dict_form_location()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        location = bundle.objects[-1]
+        # The Location converter reads the object with attribute access, so a
+        # Dict-Form Object reaching it is dropped either way - but the labels it
+        # is dispatched on are read through the interface both forms share, so
+        # what names the loss is the Location converter reporting the object it
+        # was handed, not the dispatch failing to read any field at all.
+        self.assertFalse(self.parser.misp_event.objects)
+        errors = self._reported_messages(self.parser.errors)
+        self.assertEqual(len(errors), 1)
+        self.assertIn(
+            'Error while parsing the Location object with id '
+            f'{location["id"]}', errors[0]
+        )
+
     def test_stix20_bundle_with_dict_form_objects(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_dict_form_objects()
         self.parser.load_stix_bundle(bundle)
