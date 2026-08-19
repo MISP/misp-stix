@@ -329,6 +329,33 @@ class TestSTIX2Import(TestSTIX):
                 filename, debug=debug, output_dir=Path(tmp_dir)
             )
 
+    def _check_input_path_reduction(self, bundle):
+        # The error dict an entry function returns names the input file, never
+        # the directory it sits in - the loading failure a caller reads through
+        # `parse_stix_content` and the same failure read through the entry
+        # function reduce the same way. Two failures, because they leak
+        # differently: a missing file embeds the resolved path in the message
+        # the operating system raised, malformed content embeds nothing and
+        # leaves the prefix the entry function writes itself.
+        with TemporaryDirectory() as tmp_dir:
+            missing = Path(tmp_dir) / 'missing.json'
+            self._check_reduced_input_error(
+                stix_2_to_misp(missing, output_dir=Path(tmp_dir)), missing
+            )
+            malformed = Path(tmp_dir) / 'malformed.json'
+            with open(malformed, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize()[:-4])
+            self._check_reduced_input_error(
+                stix_2_to_misp(malformed, output_dir=Path(tmp_dir)), malformed
+            )
+
+    def _check_reduced_input_error(self, results: dict, filename: Path):
+        self.assertIn('errors', results)
+        self.assertEqual(len(results['errors']), 1)
+        error = results['errors'][0]
+        self.assertTrue(error.startswith(f'{filename.name} -  '), error)
+        self.assertNotIn(str(filename.parent), error)
+
     def _import_bundle_with_size_limit(self, bundle, max_size: int) -> dict:
         # The size limit is checked on the file the entry point is handed, so
         # what the caller reads back is the error dict naming the limit the

@@ -533,6 +533,30 @@ class TestSTIX1Import(TestSTIX):
             results = stix_1_to_misp(filename)
         self.assertIn('errors', results)
 
+    def test_stix_1_to_misp_reduces_the_input_path(self):
+        # The loading helpers reduce the path their own message embeds, but the
+        # error dict the entry function returns prefixed the resolved path
+        # again: what a caller reads back names the input file only.
+        with TemporaryDirectory() as tmp_dir:
+            missing = Path(tmp_dir) / 'missing.xml'
+            results = stix_1_to_misp(missing, output_dir=Path(tmp_dir))
+            self.assertEqual(len(results['errors']), 1)
+            self.assertTrue(
+                results['errors'][0].startswith('missing.xml -  '),
+                results['errors'][0]
+            )
+            self.assertNotIn(tmp_dir, results['errors'][0])
+            malformed = Path(tmp_dir) / 'malformed.xml'
+            with open(malformed, 'wt', encoding='utf-8') as f:
+                f.write('not even xml')
+            results = stix_1_to_misp(malformed, output_dir=Path(tmp_dir))
+            self.assertEqual(len(results['errors']), 1)
+            self.assertTrue(
+                results['errors'][0].startswith('malformed.xml -  '),
+                results['errors'][0]
+            )
+            self.assertNotIn(tmp_dir, results['errors'][0])
+
     def test_stix_1_to_misp_returns_error_dict_when_parsing_fails(self):
         """Only the loading call was guarded - a crash in the parsing stage
         escaped `stix_1_to_misp` as a traceback instead of the documented

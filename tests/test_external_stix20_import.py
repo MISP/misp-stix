@@ -414,6 +414,11 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 self.parser.parse_stix_content(filename, max_size=64)
         self.assertIn('64 bytes', str(context.exception))
 
+    def test_stix20_entry_point_reduces_the_input_path(self):
+        self._check_input_path_reduction(
+            TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        )
+
     def test_stix20_entry_point_reports_the_input_size_limit(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
         results = self._import_bundle_with_size_limit(bundle, 64)
