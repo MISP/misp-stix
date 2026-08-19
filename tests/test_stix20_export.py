@@ -5629,6 +5629,20 @@ class TestSTIX20MISPExportInteroperability(TestSTIX20ExportInteroperability):
 
 
 class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
+    def test_exports_reduce_the_input_path_they_report(self):
+        self._check_input_path_reduction(
+            misp_to_stix2, misp_collection_to_stix2,
+            *self._collection_files('test_events_collection'),
+            version='2.0'
+        )
+
+    def test_collections_converting_nothing_keep_the_destination(self):
+        self._check_collection_converting_nothing(
+            misp_collection_to_stix2,
+            *self._collection_files('test_events_collection'),
+            version='2.0'
+        )
+
     def test_exports_refuse_to_overwrite_an_existing_output(self):
         input_files = self._collection_files('test_events_collection')
         # A single input file reports the refusal in the result dict its write

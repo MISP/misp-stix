@@ -4456,6 +4456,29 @@ class TestSTIX12MISPExport(TestSTIX12Export):
 
 
 class TestCollectionStix1Export(TestCollectionSTIX1Export):
+    def test_exports_reduce_the_input_path_they_report(self):
+        self._check_input_path_reduction(
+            misp_to_stix1, misp_event_collection_to_stix1,
+            *self._collection_files('test_events_collection')
+        )
+        # The attributes collection reports from its own 4 sites, and takes a
+        # single input file through the branch `misp_to_stix1` is for events
+        self._check_input_path_reduction(
+            misp_attribute_collection_to_stix1,
+            misp_attribute_collection_to_stix1,
+            *self._collection_files('test_attributes_collection')
+        )
+
+    def test_collections_converting_nothing_keep_the_destination(self):
+        self._check_collection_converting_nothing(
+            misp_event_collection_to_stix1,
+            *self._collection_files('test_events_collection')
+        )
+        self._check_collection_converting_nothing(
+            misp_attribute_collection_to_stix1,
+            *self._collection_files('test_attributes_collection')
+        )
+
     def test_exports_refuse_to_overwrite_an_existing_output(self):
         attributes = self._collection_files('test_attributes_collection')
         events = self._collection_files('test_events_collection')
@@ -4576,7 +4599,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
                 good, bad, single_output=True
             )
             self.assertEqual(len(results['fails']), 1)
-            self.assertIn(str(bad), results['fails'][0])
+            self.assertIn(bad.name, results['fails'][0])
+            self.assertNotIn(good.name, results['fails'][0])
 
     def test_streamed_fragments_are_removed_when_the_assembly_fails(self):
         # The fragments the streamed Attribute Collection writes hold

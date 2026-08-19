@@ -542,7 +542,7 @@ class TestSTIX1Import(TestSTIX):
             results = stix_1_to_misp(missing, output_dir=Path(tmp_dir))
             self.assertEqual(len(results['errors']), 1)
             self.assertTrue(
-                results['errors'][0].startswith('missing.xml -  '),
+                results['errors'][0].startswith('missing.xml - '),
                 results['errors'][0]
             )
             self.assertNotIn(tmp_dir, results['errors'][0])
@@ -552,7 +552,7 @@ class TestSTIX1Import(TestSTIX):
             results = stix_1_to_misp(malformed, output_dir=Path(tmp_dir))
             self.assertEqual(len(results['errors']), 1)
             self.assertTrue(
-                results['errors'][0].startswith('malformed.xml -  '),
+                results['errors'][0].startswith('malformed.xml - '),
                 results['errors'][0]
             )
             self.assertNotIn(tmp_dir, results['errors'][0])

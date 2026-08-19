@@ -224,6 +224,69 @@ class TestCollectionSTIXExport(unittest.TestCase):
                 output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
             )
 
+    def _check_input_path_reduction(self, conversion, collection, *input_files,
+                                    **kwargs):
+        # What an export reports for an input it could not convert names that
+        # file, never the directory it sits in - the rule the import side
+        # follows too. Two failures, because they leak differently: a file that
+        # is not there embeds the resolved path in the message the operating
+        # system raised, malformed content embeds nothing and leaves only the
+        # prefix the entry function writes itself. Every collection path is
+        # covered, since each carries its own copy of the reporting call
+        with TemporaryDirectory() as tmp_dir:
+            missing = Path(tmp_dir) / 'missing.json'
+            self._check_reduced_input_fails(
+                conversion(missing, **kwargs), missing
+            )
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            for copy in copies:
+                copy.write_text('{"Event": {"info": ', encoding='utf-8')
+            self._check_reduced_input_fails(
+                conversion(copies[0], output_dir=tmp_dir, **kwargs), copies[0]
+            )
+            for index, collection_arguments in enumerate(
+                    ({}, {'single_output': True},
+                     {'single_output': True, 'in_memory': True})):
+                self._check_reduced_input_fails(
+                    collection(
+                        *copies, output_dir=Path(tmp_dir) / f'out_{index}',
+                        **collection_arguments, **kwargs
+                    ), *copies
+                )
+
+    def _check_collection_converting_nothing(self, collection, *input_files,
+                                             **kwargs):
+        # Every input file failing leaves a merged collection export with
+        # nothing to write: it must report no success and leave the output of
+        # the export that did work exactly as it was. The check for it used to
+        # ask whether an input file was one of the *messages* recorded under
+        # `fails`, which it never is - so the in-memory paths went on to build
+        # an output out of a parser that had parsed nothing, taking the STIX 2
+        # one down with an `AttributeError` from inside the entry function
+        for arguments in (
+                {'single_output': True},
+                {'single_output': True, 'in_memory': True}):
+            with TemporaryDirectory() as tmp_dir:
+                copies = self._copy_inputs(tmp_dir, *input_files)
+                for copy in copies:
+                    copy.write_text('{"Event": {"info": ', encoding='utf-8')
+                output_name = self._preserved_output(tmp_dir)
+                results = collection(
+                    *copies, output_name=output_name, overwrite=True,
+                    **arguments, **kwargs
+                )
+                self.assertNotIn('success', results)
+                self.assertEqual(len(results['fails']), len(copies))
+                self.assertEqual(
+                    output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+                )
+
+    def _check_reduced_input_fails(self, results: dict, *filenames):
+        self.assertEqual(len(results['fails']), len(filenames))
+        for fail, filename in zip(results['fails'], filenames):
+            self.assertTrue(fail.startswith(f'{filename.name} - '), fail)
+            self.assertNotIn(str(filename.parent), fail)
+
     def _collection_files(self, name: str) -> list:
         return [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
 

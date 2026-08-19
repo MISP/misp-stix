@@ -353,7 +353,7 @@ class TestSTIX2Import(TestSTIX):
         self.assertIn('errors', results)
         self.assertEqual(len(results['errors']), 1)
         error = results['errors'][0]
-        self.assertTrue(error.startswith(f'{filename.name} -  '), error)
+        self.assertTrue(error.startswith(f'{filename.name} - '), error)
         self.assertNotIn(str(filename.parent), error)
 
     def _import_bundle_with_size_limit(self, bundle, max_size: int) -> dict:
