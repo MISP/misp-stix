@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 import re
 from base64 import b64encode
 from datetime import datetime, timezone
@@ -17,7 +18,7 @@ from pymisp import MISPEvent
 from shutil import copyfile
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from uuid import uuid5, UUID
+from uuid import uuid4, uuid5, UUID
 from .test_events import *
 from .test_events import _INDICATOR_ATTRIBUTE
 from ._test_stix import TestSTIX
@@ -4637,6 +4638,63 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
             self.assertEqual(
                 sorted(path.name for path in Path(tmp_dir).iterdir()),
                 sorted(copy.name for copy in copies)
+            )
+
+    def _campaign_collection_files(self, tmp_dir: str) -> list:
+        # A `campaign-name` attribute is what puts a Campaign in the package,
+        # and the collection fixtures hold none
+        input_files = []
+        for index, campaign_name in enumerate(('MartyMcFly', 'Ali Baba'), 1):
+            filename = Path(tmp_dir) / f'test_campaigns_collection_{index}.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(
+                    {
+                        'response': {
+                            'Attribute': [
+                                {
+                                    'uuid': str(uuid4()),
+                                    'type': 'campaign-name',
+                                    'category': 'Attribution',
+                                    'value': campaign_name,
+                                    'timestamp': '1603642920'
+                                }
+                            ]
+                        }
+                    },
+                    f
+                )
+            input_files.append(filename)
+        return input_files
+
+    def test_streamed_assembly_frames_campaigns_like_every_other_feature(self):
+        # The offsets that strip the wrapper element off a serialised feature
+        # measure that element alone, so the campaigns fragment has to be
+        # serialised without the namespaces: with them, their declarations
+        # were kept and written as the text content of `<stix:Campaigns>`
+        with TemporaryDirectory() as tmp_dir:
+            input_files = self._campaign_collection_files(tmp_dir)
+            output_file = Path(tmp_dir) / 'test_campaigns_collection.xml'
+            self.assertEqual(
+                misp_attribute_collection_to_stix1(
+                    *input_files, single_output=True, output_name=output_file
+                ),
+                {'success': 1, 'results': [output_file]}
+            )
+            campaigns = etree.parse(str(output_file)).getroot().find(
+                '{http://stix.mitre.org/stix-1}Campaigns'
+            )
+            self.assertFalse((campaigns.text or '').strip())
+            self.assertEqual(
+                [child.tag for child in campaigns],
+                ['{http://stix.mitre.org/stix-1}Campaign'] * 2
+            )
+            self.assertEqual(
+                sorted(
+                    name.text for name in campaigns.iter(
+                        '{http://stix.mitre.org/Campaign-1}Name'
+                    )
+                ),
+                ['Ali Baba', 'MartyMcFly']
             )
 
     def test_attribute_collection_export_11(self):
