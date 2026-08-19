@@ -213,7 +213,14 @@ def misp_attribute_collection_to_stix1(
                                         tmp_path / fragment, 'at',
                                         encoding='utf-8',
                                         opener=_private_opener) as f:
-                                    f.write(content)
+                                    # XML elements follow each other; the items
+                                    # of a JSON array need the separator the
+                                    # writers only put between the items of one
+                                    # input file
+                                    f.write(
+                                        content if return_format == 'xml'
+                                        else f', {content}'
+                                    )
                     except Exception as exception:
                         traceback['fails'].append(
                             _reduce_input_error(filename, exception)
@@ -226,7 +233,7 @@ def misp_attribute_collection_to_stix1(
                         output.write(header)
                         for feature, fragment in handler.features.items():
                             with open(tmp_path / fragment, 'rt', encoding='utf-8') as current:
-                                content = current.read() if return_format == 'xml' else current.read()[:-2]
+                                content = current.read()
                             current_footer = handler.footer(feature)
                             if return_format == 'json' and feature == list(handler.features)[-1]:
                                 current_footer = current_footer[:-2]
