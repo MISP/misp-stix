@@ -15,8 +15,11 @@ _cybox_features = (
 
 
 def write_campaigns(campaigns: Campaigns, return_format: str = 'xml') -> str:
+    # The offsets below measure `<stix:CampaignsType>` alone: serialising the
+    # namespaces here too would leave their declarations behind as the text
+    # content of the `<stix:Campaigns>` element the fragment is written into
     if return_format == 'xml':
-        campaigns = campaigns.to_xml(include_namespaces=True).decode()
+        campaigns = campaigns.to_xml(include_namespaces=False).decode()
         return _format_xml_objects(
             campaigns, header_length=21, footer_length=23
         )
