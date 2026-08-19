@@ -76,9 +76,7 @@ class InternalSTIX2CourseOfActionConverter(InternalSTIX2Converter):
         course_of_action = self.main_parser._get_stix_object(
             course_of_action_ref
         )
-        feature = self._handle_mapping_from_labels(
-            course_of_action.labels, course_of_action.id
-        )
+        feature = self._handle_mapping_from_labels(course_of_action)
         try:
             parser = getattr(self, feature)
         except AttributeError:

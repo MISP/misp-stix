@@ -61,6 +61,17 @@ class STIX1toMISPMapping:
         handle = _AS_attribute,
         name = ('text', 'description')
     )
+    # Course of Action property -> the property holding its textual value.
+    # `title` is handled apart, since it maps to the `name` object relation.
+    __course_of_action_mapping = Mapping(
+        type_ = 'value',
+        description = 'value',
+        objective = 'description',
+        stage = 'value',
+        cost = 'value',
+        impact = 'value',
+        efficacy = 'value'
+    )
     __credential_authentication_mapping = Mapping(
         authentication_type = ('text', 'value', 'type'),
         authentication_data = ('text', 'value', 'password'),
@@ -156,6 +167,10 @@ class STIX1toMISPMapping:
     @classmethod
     def attribute_types_mapping(cls, object_type: str) -> Union[str, None]:
         return cls.__attribute_types_mapping.get(object_type)
+
+    @classmethod
+    def course_of_action_mapping(cls) -> dict:
+        return cls.__course_of_action_mapping
 
     @classmethod
     def credential_authentication_mapping(cls) -> dict:

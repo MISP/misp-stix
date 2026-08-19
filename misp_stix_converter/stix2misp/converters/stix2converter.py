@@ -340,10 +340,11 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: Union[str, None]) -> dict:
+        tag_name = self.main_parser._build_tag(
+            'misp-galaxy', object_type or stix_object.type, stix_object.name
+        )
         return {
-            'tag_names': [
-                f'misp-galaxy:{object_type or stix_object.type}="{stix_object.name}"'
-            ],
+            'tag_names': [tag_name] if tag_name is not None else [],
             'used': {self.event_uuid: False}
         }
 
@@ -368,10 +369,9 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = super()._create_attribute_dict(stix_object)
-        for label in stix_object.labels:
-            if label.startswith('misp:'):
-                feature, value = label.split('=')
-                attribute[feature.split(':')[-1]] = value.strip('"')
+        for field, value in self._parse_labels(stix_object).items():
+            if field.startswith('misp:'):
+                attribute[field.split(':')[-1]] = value
         return attribute
 
     ############################################################################
@@ -449,10 +449,14 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _parse_galaxy_as_container(
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
-        galaxy_type, galaxy_name = self._extract_galaxy_labels(
-            stix_object.labels
-        )
+        galaxy_type, galaxy_name = self._extract_galaxy_labels(stix_object)
         cluster = self._parse_galaxy_cluster(stix_object, galaxy_type)
+        if galaxy_name is None:
+            self.main_parser._add_warning(
+                'Missing MISP galaxy name label on the object with id '
+                f'{stix_object.id}'
+            )
+            galaxy_name = galaxy_type
         if galaxy_type not in self.main_parser._galaxies:
             self._create_galaxy_args(galaxy_type, galaxy_name)
         return {
@@ -462,11 +466,12 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _parse_galaxy_as_tag_names(
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
-        galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
+        galaxy_type, _ = self._extract_galaxy_labels(stix_object)
+        tag_name = self.main_parser._build_tag(
+            'misp-galaxy', galaxy_type, stix_object.name
+        )
         return {
-            'tag_names': [
-                f'misp-galaxy:{galaxy_type}="{stix_object.name}"'
-            ],
+            'tag_names': [tag_name] if tag_name is not None else [],
             'used': {self.event_uuid: False}
         }
 
@@ -483,14 +488,14 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     #                             UTILITY METHODS.                             #
     ############################################################################
 
-    @staticmethod
-    def _extract_galaxy_labels(labels: list) -> dict:
-        for label in labels[:2]:
-            if 'galaxy-type' in label:
-                galaxy_type = label.split('=')[1].strip('"')
-            elif 'galaxy-name' in label:
-                galaxy_name = label.split('=')[1].strip('"')
-        return galaxy_type, galaxy_name
+    def _extract_galaxy_labels(
+            self, stix_object: _GALAXY_OBJECTS_TYPING
+            ) -> Tuple[str, Optional[str]]:
+        labels = self._parse_labels(stix_object)
+        galaxy_type = labels.get('misp:galaxy-type')
+        if not galaxy_type:
+            raise UndefinedSTIXObjectError(stix_object['id'])
+        return galaxy_type, labels.get('misp:galaxy-name') or None
 
     @staticmethod
     def _handle_external_references(external_references: list) -> dict:
@@ -508,11 +513,8 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             meta['external_id'] = meta.pop('external_id')[0]
         return meta
 
-    def _handle_mapping_from_labels(self, labels: list, object_id: str) -> str:
-        parsed_labels = {
-            key: value.strip('"') for key, value
-            in (label.split('=') for label in labels if '=' in label)
-        }
+    def _handle_mapping_from_labels(self, stix_object: _SDO_TYPING) -> str:
+        parsed_labels = self._parse_labels(stix_object)
         if 'misp:galaxy-type' in parsed_labels:
             return '_parse_galaxy'
         if 'misp:name' in parsed_labels:
@@ -525,4 +527,22 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             )
             if to_call is not None:
                 return to_call
-        raise UndefinedSTIXObjectError(object_id)
+        raise UndefinedSTIXObjectError(stix_object['id'])
+
+    @staticmethod
+    def _parse_labels(stix_object: _SDO_TYPING) -> dict:
+        """Index the `field=value` labels the Internal path dispatches on.
+
+        Labels are content: an object may carry none, and any of them may be
+        missing the `=` the field/value split needs. They are read through the
+        Mapping interface a typed object and a Dict-Form Object both offer,
+        never with attribute access: this is what every per-type converter
+        dispatches on, and a dispatch reading no field takes no branch and
+        drops the object saying nothing.
+        """
+        parsed_labels = {}
+        for label in stix_object.get('labels', ()):
+            field, separator, value = label.partition('=')
+            if separator:
+                parsed_labels[field] = value.strip('"')
+        return parsed_labels

@@ -2,31 +2,313 @@
 # -*- coding: utf-8 -*-
 
 import json
+import misp_stix_converter
 import os
 import unittest
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime, timezone
+from misp_stix_converter.misp2stix.exportparser import MISPtoSTIXParser
 from pathlib import Path
 from pymisp import MISPAttribute
+from shutil import copyfile
 from stix.core import STIXPackage
+from stix2patterns.validator import validate
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from uuid import uuid5, UUID
-from ._test_stix import TestSTIX
+from ._test_stix import PLANTED_TEMPLATE, TestSTIX
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
 _MISP_OBJECT_EXCLUSION_LIST = (
     'distribution', 'sharing_group_id', 'template_uuid', 'template_version'
 )
+# What an output file the caller never asked to replace holds, and the parsing
+# a conversion goes through on the way to writing one
+_PRESERVED_OUTPUT = 'IMPORTANT PRE-EXISTING CONTENT'
+_parse_json_file = MISPtoSTIXParser.parse_json_file
+
+# Object relations reaching a pattern property-name position, paired with the
+# pattern segment each one must produce. An unquoted metacharacter segment
+# either breaks the pattern - the object is then reported instead of converted
+# - or, for a dotted relation, silently turns one property into a path. The
+# last pair is the benign control: a relation needing no quotes keeps the bare
+# segment it always had. Segments are spelled out rather than computed, so the
+# expectations do not restate the escaping they guard.
+_PATTERN_SEGMENT_RELATIONS = (
+    ("rel' OR file:name = 'x", r"'x_misp_rel\' OR file:name = \'x'"),
+    ('rel]', "'x_misp_rel]'"),
+    ('rel=1', "'x_misp_rel=1'"),
+    ('weird relation', "'x_misp_weird relation'"),
+    ("x'", r"'x_misp_x\''"),
+    ('a.b', "'x_misp_a.b'"),
+    ('rel-with-dash', 'x_misp_rel_with_dash')
+)
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
+    # The 2 scratch locations the defaults used to resolve to: the package
+    # directory, and its parent - `site-packages` on an install, the
+    # repository root in a source checkout
+    _package_path = Path(misp_stix_converter.__file__).parent
+    _package_tree_scratch = (_package_path / 'tmp', _package_path.parent / 'tmp')
+
     def setUp(self):
         self._current_path = Path(__file__).parent
 
     def tearDown(self):
         for filename in self._current_path.glob('test_*_collection*.json.out'):
             os.remove(filename)
+
+    def _check_created_output_directory(self, conversion, *input_files, **kwargs):
+        # An output directory the caller names but has not created yet is a
+        # request, not a mistake: it is created instead of raising at write
+        # time - whether it is named as the directory itself or as the parent
+        # of an output file name
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_dir = Path(tmp_dir) / 'missing' / 'output'
+            results = conversion(
+                *copies, single_output=True, output_dir=output_dir, **kwargs
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertTrue(output_dir.is_dir())
+            self.assertEqual(results['results'][0].parent, output_dir)
+            output_name = Path(tmp_dir) / 'missing too' / 'collection.out'
+            results = conversion(
+                *copies, single_output=True, output_name=output_name, **kwargs
+            )
+            self.assertEqual(results['success'], 1)
+            self.assertEqual(results['results'][0], output_name)
+            self.assertTrue(output_name.is_file())
+
+    def _check_default_single_output(self, conversion, *input_files, **kwargs):
+        # A collection export called with its documented defaults writes next
+        # to the input files, under a name every filesystem accepts, and the
+        # fragments a streamed assembly wrote are gone by the time it returns.
+        # The package tree is left exactly as it was: it is not an output or a
+        # scratch location
+        package_tree = self._package_tree_content()
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            results = conversion(*copies, single_output=True, **kwargs)
+            self.assertEqual(results['success'], 1)
+            output = results['results'][0]
+            self.assertEqual(output.parent, Path(tmp_dir).resolve())
+            self.assertNotIn(':', output.name)
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output.name])
+            )
+        self.assertEqual(self._package_tree_content(), package_tree)
+
+    def _check_destination_appearing_mid_conversion(
+            self, conversion, *input_files, **kwargs):
+        # The check taken before the work cannot see a destination that appears
+        # while the conversion runs: the output file is created rather than
+        # replaced, so the collision is still refused instead of silently
+        # clobbered at the end
+        appeared = []
+
+        def _create_the_destination(parser, filename):
+            if not appeared:
+                appeared.append(filename)
+                output_name.write_text(_PRESERVED_OUTPUT, encoding='utf-8')
+            return _parse_json_file(parser, filename)
+
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_name = Path(tmp_dir) / 'previous.out'
+            with patch.object(
+                    MISPtoSTIXParser, 'parse_json_file',
+                    _create_the_destination):
+                with self.assertRaises(FileExistsError) as context:
+                    conversion(*copies, output_name=output_name, **kwargs)
+            self.assertIn(str(output_name), str(context.exception))
+            self.assertEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output_name.name])
+            )
+
+    def _check_interrupted_write_keeps_the_destination(
+            self, conversion, *input_files, interrupt=None, **kwargs):
+        # A conversion killed while it writes - `KeyboardInterrupt` is what a
+        # signal raises, and the one thing the per-input `except Exception`
+        # does not catch - leaves the file it was replacing exactly as it was,
+        # and no half-written scratch file next to it. The kill lands on the
+        # second input file's parsing, by the time the first one's content is
+        # written; `interrupt` names an (owner, attribute) pair instead, for a
+        # path whose writing all happens after the last input file is parsed
+        parsed = []
+
+        def _interrupt_the_second_input(parser, filename):
+            parsed.append(filename)
+            if len(parsed) > 1:
+                raise KeyboardInterrupt('Killed while writing')
+            return _parse_json_file(parser, filename)
+
+        def _interrupt_now(*args, **kwargs):
+            raise KeyboardInterrupt('Killed while writing')
+
+        killed = (
+            patch.object(
+                MISPtoSTIXParser, 'parse_json_file',
+                _interrupt_the_second_input
+            ) if interrupt is None
+            else patch.object(*interrupt, _interrupt_now)
+        )
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_name = self._preserved_output(tmp_dir)
+            with killed:
+                with self.assertRaises(KeyboardInterrupt):
+                    conversion(
+                        *copies, output_name=output_name, overwrite=True,
+                        **kwargs
+                    )
+            self.assertEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+            self.assertEqual(
+                sorted(path.name for path in Path(tmp_dir).iterdir()),
+                sorted([copy.name for copy in copies] + [output_name.name])
+            )
+
+    def _check_output_file_mode(self, conversion, *input_files, **kwargs):
+        # What a conversion writes carries whatever the events do, TLP:AMBER
+        # and TLP:RED material included: a new output file is readable by its
+        # owner alone, whatever the process umask would have allowed
+        umask = os.umask(0)
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                copies = self._copy_inputs(tmp_dir, *input_files)
+                results = conversion(*copies, **kwargs)
+                self.assertEqual(results['success'], 1)
+                for output in results['results']:
+                    self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+        finally:
+            os.umask(umask)
+
+    def _check_overwrite_policy(
+            self, conversion, *input_files, recorded: bool = False, **kwargs):
+        # An **Output Location** already holding a file is only written when
+        # the caller asked for it: the refusal follows the error channel the
+        # path has for a write it cannot do - recorded per input where the
+        # write sits inside a `try`, raised where it does not - and names the
+        # file it did not touch either way
+        with TemporaryDirectory() as tmp_dir:
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            output_name = self._preserved_output(tmp_dir)
+            arguments = {'output_name': output_name, **kwargs}
+            if recorded:
+                results = conversion(*copies, **arguments)
+                self.assertNotIn('success', results)
+                message = results['fails'][0]
+            else:
+                with self.assertRaises(FileExistsError) as context:
+                    conversion(*copies, **arguments)
+                message = str(context.exception)
+            self.assertIn(str(output_name), message)
+            self.assertIn('overwrite', message)
+            self.assertEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+            results = conversion(*copies, overwrite=True, **arguments)
+            self.assertEqual(results['success'], 1)
+            self.assertEqual(results['results'][0], output_name)
+            self.assertNotEqual(
+                output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+            )
+
+    def _check_input_path_reduction(self, conversion, collection, *input_files,
+                                    **kwargs):
+        # What an export reports for an input it could not convert names that
+        # file, never the directory it sits in - the rule the import side
+        # follows too. Two failures, because they leak differently: a file that
+        # is not there embeds the resolved path in the message the operating
+        # system raised, malformed content embeds nothing and leaves only the
+        # prefix the entry function writes itself. Every collection path is
+        # covered, since each carries its own copy of the reporting call
+        with TemporaryDirectory() as tmp_dir:
+            missing = Path(tmp_dir) / 'missing.json'
+            self._check_reduced_input_fails(
+                conversion(missing, **kwargs), missing
+            )
+            copies = self._copy_inputs(tmp_dir, *input_files)
+            for copy in copies:
+                copy.write_text('{"Event": {"info": ', encoding='utf-8')
+            self._check_reduced_input_fails(
+                conversion(copies[0], output_dir=tmp_dir, **kwargs), copies[0]
+            )
+            for index, collection_arguments in enumerate(
+                    ({}, {'single_output': True},
+                     {'single_output': True, 'in_memory': True})):
+                self._check_reduced_input_fails(
+                    collection(
+                        *copies, output_dir=Path(tmp_dir) / f'out_{index}',
+                        **collection_arguments, **kwargs
+                    ), *copies
+                )
+
+    def _check_collection_converting_nothing(self, collection, *input_files,
+                                             **kwargs):
+        # Every input file failing leaves a merged collection export with
+        # nothing to write: it must report no success and leave the output of
+        # the export that did work exactly as it was. The check for it used to
+        # ask whether an input file was one of the *messages* recorded under
+        # `fails`, which it never is - so the in-memory paths went on to build
+        # an output out of a parser that had parsed nothing, taking the STIX 2
+        # one down with an `AttributeError` from inside the entry function
+        for arguments in (
+                {'single_output': True},
+                {'single_output': True, 'in_memory': True}):
+            with TemporaryDirectory() as tmp_dir:
+                copies = self._copy_inputs(tmp_dir, *input_files)
+                for copy in copies:
+                    copy.write_text('{"Event": {"info": ', encoding='utf-8')
+                output_name = self._preserved_output(tmp_dir)
+                results = collection(
+                    *copies, output_name=output_name, overwrite=True,
+                    **arguments, **kwargs
+                )
+                self.assertNotIn('success', results)
+                self.assertEqual(len(results['fails']), len(copies))
+                self.assertEqual(
+                    output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
+                )
+
+    def _check_reduced_input_fails(self, results: dict, *filenames):
+        self.assertEqual(len(results['fails']), len(filenames))
+        for fail, filename in zip(results['fails'], filenames):
+            self.assertTrue(fail.startswith(f'{filename.name} - '), fail)
+            self.assertNotIn(str(filename.parent), fail)
+
+    def _collection_files(self, name: str) -> list:
+        return [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
+
+    def _copy_inputs(self, tmp_dir: str, *input_files: Path) -> list:
+        return [
+            Path(copyfile(input_file, Path(tmp_dir) / input_file.name))
+            for input_file in input_files
+        ]
+
+    def _package_tree_content(self) -> tuple:
+        # `None` for a location that does not exist - the state a default
+        # writing there would change first
+        return tuple(
+            sorted(path.name for path in scratch.iterdir())
+            if scratch.is_dir() else None
+            for scratch in self._package_tree_scratch
+        )
+
+    def _preserved_output(self, tmp_dir: str) -> Path:
+        output_name = Path(tmp_dir) / 'previous.out'
+        output_name.write_text(_PRESERVED_OUTPUT, encoding='utf-8')
+        return output_name
 
 
 class TestCollectionSTIX1Export(TestCollectionSTIXExport):
@@ -73,6 +355,26 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
 
 
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
+    def _export_event_with_invalid_hash(self, version: str) -> dict:
+        # A `to_ids` file object with an invalid hash is recorded as an error
+        # and the hash is dropped: the partial failure a result dict has to
+        # report.
+        from misp_stix_converter import misp_to_stix2
+        from tempfile import TemporaryDirectory
+        from .test_events import get_event_with_file_object
+        event = get_event_with_file_object()
+        event['Event']['Object'][0]['Attribute'].append(
+            {
+                'type': 'tlsh', 'object_relation': 'tlsh',
+                'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
+            }
+        )
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'event_with_invalid_hash.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(event, f)
+            return misp_to_stix2(filename, version=version)
+
     def _check_stix2_results_export(self, to_test_file, reference_file):
         with open(to_test_file, 'rt', encoding='utf-8') as f:
             to_test = json.load(f)
@@ -120,6 +422,28 @@ class TestSTIX2Export(TestSTIX):
     def _add_object_ids_flag(event):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
+
+    def _add_metacharacter_relation(self, event, relation, value):
+        misp_object = event['Event']['Object'][0]
+        misp_object['Attribute'].append(
+            {
+                'type': 'text', 'object_relation': relation,
+                'value': value, 'to_ids': True
+            }
+        )
+        return misp_object
+
+    def _get_indicators(self):
+        return [
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object['type'] == 'indicator'
+        ]
+
+    def _object_errors(self, misp_object):
+        return [
+            error for errors in self.parser.errors.values()
+            for error in errors if misp_object['uuid'] in error
+        ]
 
     def _check_account_indicator_objects(self, misp_objects, patterns):
         gitlab_object, telegram_object = misp_objects
@@ -630,6 +954,56 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(observed_data.first_observed, timestamp)
         self.assertEqual(observed_data.last_observed, timestamp)
 
+    def _check_pattern_metacharacter_relations(self, event_getter, prefix):
+        value = 'metacharacter value'
+        for relation, segment in _PATTERN_SEGMENT_RELATIONS:
+            with self.subTest(object_relation=relation):
+                self.setUp()
+                event = event_getter()
+                self._add_object_ids_flag(event['Event'])
+                misp_object = self._add_metacharacter_relation(
+                    event, relation, value
+                )
+                self.parser.parse_misp_event(event['Event'])
+                self.assertEqual(self._object_errors(misp_object), [])
+                indicators = self._get_indicators()
+                self.assertEqual(len(indicators), 1)
+                self.assertIn(
+                    f"{prefix}:{segment} = '{value}'", indicators[0].pattern
+                )
+                self.assertTrue(
+                    validate(
+                        indicators[0].pattern,
+                        stix_version=self.parser._version
+                    )
+                )
+
+    def _check_unquotable_pattern_reported(self, event_getter, name):
+        # The quoting under test is what keeps a metacharacter relation out of
+        # the property-name position; with it neutralised the pattern fails to
+        # parse, and the object must then be *reported* and converted as a
+        # custom object rather than vanishing from the export.
+        event = event_getter()
+        self._add_object_ids_flag(event['Event'])
+        misp_object = self._add_metacharacter_relation(event, 'rel]', 'V')
+        with patch.object(
+                self.parser, '_quote_custom_property',
+                lambda relation: f'x_misp_{relation}'):
+            self.parser.parse_misp_event(event['Event'])
+        self.assertEqual(self._get_indicators(), [])
+        self.assertIn(
+            'x-misp-object',
+            [stix_object['type'] for stix_object in self.parser.stix_objects]
+        )
+        object_errors = self._object_errors(misp_object)
+        self.assertEqual(len(object_errors), 1)
+        self.assertTrue(
+            object_errors[0].startswith(
+                f"Error with the {name} object "
+                f"(uuid: {misp_object['uuid']}):"
+            )
+        )
+
     def _check_pe_and_section_observable(self, extension, pe, section):
         (_type, compilation, entrypoint, original, internal, desc, version,
          lang, prod_name, prod_version, company, _copyright, sections, imphash,
@@ -897,6 +1271,43 @@ class TestSTIX2Export(TestSTIX):
         if attribute.get('comment'):
             self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
         self.assertEqual(custom_object.x_misp_value, attribute['value'])
+
+    def _run_invalid_object_name_tests(self, event, rejected_name):
+        self.parser.parse_misp_event(event)
+        misp_object = self.parser._misp_event.objects[0]
+        custom_object = self.parser.stix_objects[-1]
+        # The name never reached template resolution: the object is generic,
+        # and carries no field that could only come from a template file.
+        self.assertEqual(misp_object.name, 'unknown-template')
+        self.assertFalse(misp_object._known_template)
+        self.assertNotEqual(
+            getattr(misp_object, 'meta-category', None),
+            PLANTED_TEMPLATE['meta-category']
+        )
+        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
+        self.assertEqual(
+            custom_object.labels[0], 'misp:name="unknown-template"'
+        )
+        # Nothing is lost: the rejected name is kept as data.
+        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        self.assertIn(event['uuid'], self.parser.warnings)
+        name_warnings = [
+            warning for warning in self.parser.warnings[event['uuid']]
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(name_warnings), 1)
+        self.assertIn(rejected_name, name_warnings[0])
+
+    def _check_invalid_object_name_collection(self, parser, rejected_name):
+        custom_object = parser.stix_objects[-1]
+        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
+        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        name_warnings = [
+            warning for warning in parser.warnings['objects collection']
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(name_warnings), 1)
+        self.assertIn(rejected_name, name_warnings[0])
 
     def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
         name = misp_object['name']

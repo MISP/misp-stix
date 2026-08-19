@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ._test_stix_import import TestSTIX2Bundles
+from ._test_stix_import import (
+    SMUGGLING_PRODUCER, SMUGGLING_TAG_VALUE, TestSTIX2Bundles)
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -813,6 +814,32 @@ _SECTOR_GALAXY = [
         "sectors": [
             "financial-services"
         ]
+    }
+]
+_DICT_FORM_OBJECTS = [
+    # STIX 2.0 has neither a Note nor an Opinion object type: parsed with
+    # `allow_custom`, both reach the loaders as plain dicts rather than typed
+    # objects.
+    {
+        "type": "note",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "abstract": "Analyst note in a STIX 2.0 Bundle",
+        "content": "Hop point observed in the same campaign",
+        "authors": ["john.doe@foo.bar"],
+        "lang": "en",
+        "object_refs": ["indicator--031778a4-057f-48e6-9db9-c8d72b81ccd5"]
+    },
+    {
+        "type": "opinion",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the range",
+        "authors": ["opinion@foo.bar"],
+        "opinion": "strongly-agree",
+        "object_refs": ["indicator--031778a4-057f-48e6-9db9-c8d72b81ccd5"]
     }
 ]
 _IP_ADDRESS_ATTRIBUTES = [
@@ -2113,6 +2140,133 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     ############################################################################
 
     @classmethod
+    def get_bundle_with_dict_form_objects(cls):
+        return cls.__assemble_bundle(
+            deepcopy(cls.__indicator), *deepcopy(_DICT_FORM_OBJECTS)
+        )
+
+    @classmethod
+    def __assemble_colliding_uuids_bundle(
+            cls, indicated: str, observed: str, record_uuid=None,
+            interoperability=False):
+        """An Indicator and an Observed Data whose ids share their uuid part.
+
+        `indicator--X` and `observed-data--X` are 2 STIX objects, but the MISP
+        records they produce keep only the part after `--`, so both claim X.
+        STIX 2.0 carries no top-level Observable, hence the pair the 2.1 file
+        builds from an Indicator and an SCO.
+        """
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(cls.__indicator)
+        if record_uuid is None:
+            record_uuid = indicator['id'].split('--')[1]
+        indicator['id'] = f'indicator--{record_uuid}'
+        indicator['pattern'] = f"[domain-name:value = '{indicated}']"
+        observed_data = {
+            "type": "observed-data",
+            "id": f"observed-data--{record_uuid}",
+            "created_by_ref": cls.__identity['id'],
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "number_observed": 1,
+            "objects": {"0": {"type": "domain-name", "value": observed}}
+        }
+        report.update(
+            cls._populate_references(indicator['id'], observed_data['id'])
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, indicator, observed_data
+        ]
+        return dict_to_stix2(
+            bundle, allow_custom=True, interoperability=interoperability
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_record_uuids(cls):
+        return cls.__assemble_colliding_uuids_bundle(
+            'first.example.com', 'second.example.com'
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_non_rfc_record_uuids(cls):
+        # A uuid no RFC version knows is replaced by a v5 one on both sides of
+        # the collision, so the warning has to name the replacement. Only the
+        # interoperability mode lets such an id through the STIX validation.
+        return cls.__assemble_colliding_uuids_bundle(
+            'first.example.com', 'second.example.com',
+            record_uuid='91ae0a21-c7ae-0c7f-b84b-b84a7ce53d1f',
+            interoperability=True
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_uuids_on_matching_values(cls):
+        return cls.__assemble_colliding_uuids_bundle(
+            'same.example.com', 'same.example.com'
+        )
+
+    @classmethod
+    def get_bundle_with_vulnerability_sharing_an_indicator_uuid(cls):
+        """A Galaxy Cluster and an attribute claiming the same uuid part."""
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(cls.__indicator)
+        vulnerability = deepcopy(_VULNERABILITY_OBJECTS[0])
+        vulnerability['id'] = (
+            f"vulnerability--{indicator['id'].split('--')[1]}"
+        )
+        report.update(
+            cls._populate_references(indicator['id'], vulnerability['id'])
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, indicator, vulnerability
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_duplicate_object_ids(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        shadowed = deepcopy(cls.__indicator)
+        indicator = deepcopy(cls.__indicator)
+        shadowed['pattern'] = "[ipv4-addr:value = '198.51.100.0/24']"
+        report.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, shadowed, indicator
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def __smuggling_identity(cls):
+        """An Identity naming itself what a taxonomy tag cannot carry."""
+        identity = deepcopy(cls.__identity)
+        identity['name'] = SMUGGLING_PRODUCER
+        return identity
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_identity_name(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(cls.__indicator)
+        report.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [cls.__smuggling_identity(), report, indicator]
+        return dict_to_stix2(bundle)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_the_only_creator_name(cls):
+        """The same Identity, as the one creator a bundle credits itself to."""
+        bundle = deepcopy(cls.__bundle)
+        identity = cls.__smuggling_identity()
+        observables = deepcopy(_IP_ADDRESS_ATTRIBUTES)
+        for stix_object in observables:
+            if 'created_by_ref' in stix_object:
+                stix_object['created_by_ref'] = identity['id']
+        bundle['objects'] = [identity, *observables]
+        return dict_to_stix2(bundle)
+
+    @classmethod
     def get_bundle_with_report_description(cls):
         bundle = deepcopy(cls.__bundle)
         indicator = deepcopy(cls.__indicator)
@@ -2153,6 +2307,13 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_MALWARE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_galaxy_name(cls):
+        """A Threat Actor naming itself what a taxonomy tag cannot carry."""
+        event_galaxy, attribute_galaxy = deepcopy(_THREAT_ACTOR_OBJECTS)
+        event_galaxy['name'] = SMUGGLING_TAG_VALUE
+        return cls.__assemble_galaxy_bundle(event_galaxy, attribute_galaxy)
 
     @classmethod
     def get_bundle_with_threat_actor_galaxy(cls):

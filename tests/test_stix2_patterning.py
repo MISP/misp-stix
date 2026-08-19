@@ -3,6 +3,7 @@ import unittest
 from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
 
 _qs = MISPtoSTIX2Parser._quote_segment
+_qcp = MISPtoSTIX2Parser._quote_custom_property
 _ev = MISPtoSTIX2Parser._escape_pattern_value
 
 
@@ -49,6 +50,30 @@ class TestQuoteSegment(unittest.TestCase):
 
     def test_embedded_backslash_escaped(self):
         self.assertEqual(_qs('a\\b'), r"'a\\b'")
+
+
+class TestQuoteCustomProperty(unittest.TestCase):
+
+    def test_hyphen_becomes_underscore_and_stays_bare(self):
+        self.assertEqual(_qcp('rel-with-dash'), 'x_misp_rel_with_dash')
+        self.assertEqual(_qcp('user-avatar'), 'x_misp_user_avatar')
+        self.assertEqual(_qcp('filename'), 'x_misp_filename')
+
+    def test_metacharacters_quoted_as_one_segment(self):
+        self.assertEqual(_qcp('a.b'), "'x_misp_a.b'")
+        self.assertEqual(_qcp('rel]'), "'x_misp_rel]'")
+        self.assertEqual(_qcp('rel=1'), "'x_misp_rel=1'")
+        self.assertEqual(_qcp('weird relation'), "'x_misp_weird relation'")
+
+    def test_apostrophe_escaped_inside_the_quoted_segment(self):
+        self.assertEqual(_qcp("x'"), r"'x_misp_x\''")
+        self.assertEqual(
+            _qcp("rel' OR file:name = 'x"),
+            r"'x_misp_rel\' OR file:name = \'x'"
+        )
+
+    def test_empty_relation_stays_bare(self):
+        self.assertEqual(_qcp(''), 'x_misp_')
 
 
 class TestCanonicalHashPatternName(unittest.TestCase):

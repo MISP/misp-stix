@@ -7,15 +7,33 @@ from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import (
     ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
-    MISP_org_uuid)
+    MISP_org_uuid, stix_2_to_misp)
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import UUID, uuid5
-from ._test_stix import TestSTIX
+from ._test_stix import PLANTED_TEMPLATE, TestSTIX
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
 
 PATTERNS = ('_ATTRIBUTES', '_OBJECTS')
 UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
+# A producer name asking for a second taxonomy entry inside the tag it is
+# written into, and what a MISP taxonomy tag value can carry of it.
+SMUGGLING_PRODUCER = 'Evil" tlp:clear misp-galaxy:producer="CIRCL'
+SANITISED_PRODUCER = 'Evil tlp:clear misp-galaxy:producer=CIRCL'
+
+# The same, in the slots of the other tags a conversion writes: the value a
+# galaxy is named by, and the predicate naming the taxonomy it belongs to.
+SMUGGLING_TAG_VALUE = 'Evil" tlp:red misp-galaxy:mitre-malware="BISCUIT'
+SANITISED_TAG_VALUE = 'Evil tlp:red misp-galaxy:mitre-malware=BISCUIT'
+SMUGGLING_TAG_PREDICATE = 'mitre-malware" tlp:red misp-galaxy:threat-actor="APT'
+SANITISED_TAG_PREDICATE = 'mitre-malware tlp:red misp-galaxy:threat-actor=APT'
+
+# A slot made of nothing but what a tag cannot carry: sanitising it leaves no
+# text at all, so there is no tag left to write.
+UNUSABLE_TAG_SLOT = '\x01'
 
 _GALAXY_SUMMARY_MAPPING = {
     'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
@@ -91,7 +109,284 @@ class TestSTIX2Bundles:
 
 
 class TestSTIX2Import(TestSTIX):
+    # Opinion is a STIX 2.1 object type, but one in a 2.0 Bundle reaches the
+    # import as a Dict-Form Object, so both versions need the mapping.
+    __opinion_mapping = {
+        'strongly-disagree': 0,
+        'disagree': 25,
+        'neutral': 50,
+        'agree': 75,
+        'strongly-agree': 100
+    }
+
+    def opinion_mapping(self, field):
+        return self.__opinion_mapping.get(field)
+
     _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
+    @staticmethod
+    def _reported_messages(reports: dict) -> list:
+        """Flatten the errors or warnings of every parsed identifier."""
+        return [
+            message for identifier_reports in reports.values()
+            for message in identifier_reports
+        ]
+
+    @staticmethod
+    def _dict_form_timestamp(timestamp: str):
+        """The `datetime` a dict-form object's timestamp string stands for.
+
+        Only typed STIX objects parse their timestamps: the ones left as plain
+        dicts keep the string the document carried.
+        """
+        return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+
+    def _check_dangling_object_ref_error(self, object_ref, errors):
+        """A reference to an object the bundle does not carry is named."""
+        dangling_errors = self._reports_matching(
+            errors, f'Error loading the STIX object with id {object_ref}'
+        )
+        self.assertEqual(len(dangling_errors), 1)
+
+    def _check_dangling_object_ref_error_absence(self, errors):
+        """References the bundle resolves - including the observable objects
+        an Observed Data consumed - have nothing to report."""
+        self.assertEqual(
+            self._reports_matching(errors, 'Error loading the STIX object'), []
+        )
+
+    def _check_dict_form_analyst_note(self, misp_note, stix_note):
+        """A Note the STIX version does not know arrives as a plain dict."""
+        self.assertIsInstance(stix_note, dict)
+        self.assertEqual(misp_note.uuid, stix_note['id'].split('--')[1])
+        self.assertEqual(misp_note.note, stix_note['content'])
+        self.assertEqual(misp_note.authors, stix_note['authors'][0])
+        self.assertEqual(misp_note.language, stix_note['lang'])
+        for field in ('created', 'modified'):
+            self.assertEqual(
+                getattr(misp_note, field),
+                self._dict_form_timestamp(stix_note[field])
+            )
+
+    def _check_dict_form_analyst_opinion(self, misp_opinion, stix_opinion):
+        """An Opinion the STIX version does not know arrives as a plain dict."""
+        self.assertIsInstance(stix_opinion, dict)
+        self.assertEqual(misp_opinion.uuid, stix_opinion['id'].split('--')[1])
+        if 'x_misp_opinion' in stix_opinion:
+            self.assertEqual(
+                misp_opinion.opinion, stix_opinion['x_misp_opinion']
+            )
+        else:
+            self.assertEqual(
+                misp_opinion.opinion,
+                self.opinion_mapping(stix_opinion['opinion'])
+            )
+        self.assertEqual(misp_opinion.comment, stix_opinion['explanation'])
+        self.assertEqual(misp_opinion.authors, stix_opinion['authors'][0])
+        for field in ('created', 'modified'):
+            self.assertEqual(
+                getattr(misp_opinion, field),
+                self._dict_form_timestamp(stix_opinion[field])
+            )
+
+    def _check_duplicate_object_id_warning(self, object_id, warnings):
+        """The last occurrence wins, but the shadowing is never silent."""
+        duplicate_warnings = self._reports_matching(
+            warnings, 'Duplicate STIX object id'
+        )
+        self.assertEqual(len(duplicate_warnings), 1)
+        self.assertIn(object_id, duplicate_warnings[0])
+
+    @staticmethod
+    def _invalid_tlp_markings(marking_id: str, *tlp_values) -> list:
+        """The Marking Definitions a bundle carries under a single id.
+
+        A TLP marking under an id the specification does not give it fails
+        `stix2` validation in both versions, which is what puts the objects
+        below on the invalid objects path - the shape a sender minting its
+        own TLP markings writes, with one id reused.
+        """
+        return [
+            {
+                'type': 'marking-definition', 'id': marking_id,
+                'created': '2017-01-20T00:00:00.000Z',
+                'definition_type': 'tlp', 'definition': {'tlp': tlp_value}
+            } for tlp_value in tlp_values
+        ]
+
+    def _check_duplicate_invalid_marking_warning(self, marking_id, warnings):
+        """The marking governing the data may not be the one that was sent."""
+        duplicate_warnings = self._reports_matching(
+            warnings, 'Duplicate invalid Marking Definition id'
+        )
+        self.assertEqual(len(duplicate_warnings), 1)
+        self.assertIn(marking_id, duplicate_warnings[0])
+
+    # A TLP value carrying the one character the taxonomy grammar cannot
+    # escape, and the single entry it has to be read as.
+    _MARKING_WRITING_A_SECOND_TAG = 'red" misp-galaxy:threat-actor="APT1'
+    _MARKING_AS_ONE_TAG = 'tlp:red misp-galaxy:threat-actor=APT1'
+
+    def _check_marking_definition_tag_grammar(self, bundle):
+        """A marking definition is read as one taxonomy entry, never two.
+
+        The tag a marking becomes is one this library writes out of the
+        marking's own fields, so it goes through the tag builder (ADR-0012):
+        the `"` a sender put in the value would otherwise close the slot and
+        let the marking decide what else the data it governs is tagged with.
+        """
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        attribute = self.parser.misp_event.attributes[0]
+        self.assertEqual(
+            [tag.name for tag in attribute.tags], [self._MARKING_AS_ONE_TAG]
+        )
+
+    def _check_duplicate_invalid_marking_warning_absence(self, warnings):
+        """Invalid objects a bundle keeps apart, or does not apply."""
+        self.assertEqual(
+            self._reports_matching(
+                warnings, 'Duplicate invalid Marking Definition id'
+            ), []
+        )
+
+    def _check_merged_indicator_warning(
+            self, record_uuid, object_ids, discarded, warnings):
+        """An Indicator merged into an Observed Data names what it took away."""
+        merge_warnings = self._reports_matching(warnings, 'Merged MISP record')
+        self.assertEqual(len(merge_warnings), 1)
+        self.assertIn(record_uuid, merge_warnings[0])
+        for object_id in (*object_ids, *discarded):
+            self.assertIn(object_id, merge_warnings[0])
+
+    def _check_merged_indicator_warning_absence(self, warnings):
+        """An Indicator the Observed Data merging it says again in full."""
+        self.assertEqual(
+            self._reports_matching(warnings, 'Merged MISP record'), []
+        )
+
+    def _check_unusable_producer_warning(self, producer, warnings):
+        """A producer name a taxonomy tag has nothing left to carry from."""
+        producer_warnings = self._reports_matching(
+            warnings, 'Unusable producer name'
+        )
+        self.assertEqual(len(producer_warnings), 1)
+        self.assertIn(producer, producer_warnings[0])
+
+    def _check_sanitised_producer_warning(self, producer, sanitised, warnings):
+        """A producer name is one taxonomy entry, whatever it carries."""
+        producer_warnings = self._reports_matching(
+            warnings, 'Sanitised producer name'
+        )
+        self.assertEqual(len(producer_warnings), 1)
+        for value in (producer, sanitised):
+            self.assertIn(value, producer_warnings[0])
+
+    def _check_sanitised_tag_warning(self, value, sanitised, warnings):
+        """Text a conversion wrote into a tag is one taxonomy entry of it."""
+        tag_warnings = self._reports_matching(warnings, 'Sanitised tag value')
+        self.assertEqual(len(tag_warnings), 1)
+        for reported in (value, sanitised):
+            self.assertIn(reported, tag_warnings[0])
+
+    def _check_unusable_tag_warning(self, value, warnings):
+        """Text a taxonomy tag has nothing left to carry from writes no tag."""
+        tag_warnings = self._reports_matching(warnings, 'Unusable tag value')
+        self.assertEqual(len(tag_warnings), 1)
+        self.assertIn(value, tag_warnings[0])
+
+    def _check_cluster_tag_by_uuid_warning(self, value, uuid, warnings):
+        """A cluster a tag cannot name by value is named by its uuid."""
+        tag_warnings = self._reports_matching(
+            warnings, 'Sanitised galaxy cluster tag'
+        )
+        self.assertEqual(len(tag_warnings), 1)
+        for reported in (value, uuid):
+            self.assertIn(reported, tag_warnings[0])
+
+    def _check_uuid_collision_warning(self, record_uuid, object_ids, warnings):
+        """Two STIX ids, one MISP uuid: both records stay, the loss is named."""
+        collision_warnings = self._reports_matching(warnings, 'Colliding MISP')
+        self.assertEqual(len(collision_warnings), 1)
+        self.assertIn(record_uuid, collision_warnings[0])
+        for object_id in object_ids:
+            self.assertIn(object_id, collision_warnings[0])
+
+    def _check_uuid_collision_warning_absence(self, warnings):
+        """STIX ids sharing a uuid part the conversion does not collide on."""
+        self.assertEqual(
+            self._reports_matching(warnings, 'Colliding MISP'), []
+        )
+
+    def _reports_matching(self, reports: dict, message: str) -> list:
+        return [
+            report for report in self._reported_messages(reports)
+            if message in report
+        ]
+
+    def _import_bundle_with_unloadable_objects(
+            self, bundle, count: int = 1, distinct_types: bool = True,
+            debug: bool = False) -> dict:
+        # Objects whose type has no loading mapping are recorded as errors and
+        # dropped: the partial failure a result dict has to report. With
+        # `distinct_types` unset they all share one type, so every dropped
+        # object produces the same error message.
+        content = json.loads(bundle.serialize())
+        content['objects'].extend(
+            {
+                'type': f'x-unloadable-type-{index if distinct_types else 0}',
+                'id': f'x-unloadable-type-{index if distinct_types else 0}'
+                      f'--2f2e4b1a-9f3d-4c5e-8a6b-0c1d2e3f4a{index:02d}',
+                'created': '2020-10-25T16:22:00.000Z',
+                'modified': '2020-10-25T16:22:00.000Z'
+            } for index in range(count)
+        )
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'unloadable.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(content, f)
+            return stix_2_to_misp(
+                filename, debug=debug, output_dir=Path(tmp_dir)
+            )
+
+    def _check_input_path_reduction(self, bundle):
+        # The error dict an entry function returns names the input file, never
+        # the directory it sits in - the loading failure a caller reads through
+        # `parse_stix_content` and the same failure read through the entry
+        # function reduce the same way. Two failures, because they leak
+        # differently: a missing file embeds the resolved path in the message
+        # the operating system raised, malformed content embeds nothing and
+        # leaves the prefix the entry function writes itself.
+        with TemporaryDirectory() as tmp_dir:
+            missing = Path(tmp_dir) / 'missing.json'
+            self._check_reduced_input_error(
+                stix_2_to_misp(missing, output_dir=Path(tmp_dir)), missing
+            )
+            malformed = Path(tmp_dir) / 'malformed.json'
+            with open(malformed, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize()[:-4])
+            self._check_reduced_input_error(
+                stix_2_to_misp(malformed, output_dir=Path(tmp_dir)), malformed
+            )
+
+    def _check_reduced_input_error(self, results: dict, filename: Path):
+        self.assertIn('errors', results)
+        self.assertEqual(len(results['errors']), 1)
+        error = results['errors'][0]
+        self.assertTrue(error.startswith(f'{filename.name} - '), error)
+        self.assertNotIn(str(filename.parent), error)
+
+    def _import_bundle_with_size_limit(self, bundle, max_size: int) -> dict:
+        # The size limit is checked on the file the entry point is handed, so
+        # what the caller reads back is the error dict naming the limit the
+        # document exceeded - no part of the document is parsed.
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'oversized.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                f.write(bundle.serialize())
+            return stix_2_to_misp(
+                filename, max_size=max_size, output_dir=Path(tmp_dir)
+            )
 
     def _check_object_attribute_uuid(self, attr, object_id, value=None):
         self.assertEqual(
@@ -297,6 +592,80 @@ class TestSTIX20Import(TestSTIX2Import):
             )
             ext_objects_documentation.check_import_mapping('stix20')
 
+    def _load_stix20_content_with_object_refs(
+            self, *extra_refs, internal: bool = False, carried: tuple = ()):
+        """A Report listing the given references next to legitimate ones.
+
+        STIX 2.0 keeps its observable objects inside the Observed Data
+        carrying them, so an Observed Data reference is the closest a 2.0
+        Report gets to referencing an observable object. The objects given as
+        `carried` are referenced too, so a reference the bundle does carry an
+        object for can be told from one it does not.
+        """
+        from misp_stix_converter.tools import load_stix2_content
+        identity_id = 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f'
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        observed_data_id = 'observed-data--a12c56ba-5c07-4e0a-90c9-1a1cd7c1e0a4'
+        labels = ['misp:type="domain"', 'misp:category="Network activity"']
+        report_labels = ['Threat-Report']
+        if internal:
+            report_labels.append('misp:tool="MISP-STIX-Converter"')
+        return load_stix2_content(
+            {
+                'type': 'bundle', 'spec_version': '2.0',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'objects': [
+                    {
+                        'type': 'identity', 'id': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL', 'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'report',
+                        'id': 'report--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'published': '2020-10-25T16:22:00Z',
+                        'labels': report_labels,
+                        'object_refs': [
+                            indicator_id, observed_data_id,
+                            *(
+                                stix_object['id'] for stix_object in carried
+                            ),
+                            *extra_refs
+                        ]
+                    },
+                    {
+                        'type': 'indicator', 'id': indicator_id,
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'valid_from': '2020-10-25T16:22:00.000Z',
+                        'labels': labels
+                    },
+                    {
+                        'type': 'observed-data', 'id': observed_data_id,
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'first_observed': '2020-10-25T16:22:00Z',
+                        'last_observed': '2020-10-25T16:22:00Z',
+                        'number_observed': 1, 'labels': labels,
+                        'objects': {
+                            '0': {
+                                'type': 'domain-name', 'value': 'misp-project.org'
+                            }
+                        }
+                    },
+                    *carried
+                ]
+            }
+        )
+
     def _populate_galaxy_documentation(self, **kwargs):
         galaxy = kwargs.pop('galaxy')
         stix_name, stix_object = next(iter(kwargs.items()))
@@ -462,17 +831,6 @@ class TestSTIX21Import(TestSTIX2Import):
     _ext_attributes_v21 = defaultdict(dict)
     _ext_objects_v21 = defaultdict(dict)
 
-    __opinion_mapping = {
-        'strongly-disagree': 0,
-        'disagree': 25,
-        'neutral': 50,
-        'agree': 75,
-        'strongly-agree': 100
-    }
-
-    def opinion_mapping(self, field):
-        return self.__opinion_mapping.get(field)
-
     @classmethod
     def tearDownClass(self):
         attributes_documentation = AttributesDocumentationUpdater(
@@ -515,6 +873,91 @@ class TestSTIX21Import(TestSTIX2Import):
                 'import'
             )
             ext_objects_documentation.check_import_mapping('stix21')
+
+    def _load_stix21_content_with_object_refs(
+            self, *extra_refs, internal: bool = False,
+            observables: bool = True, carried: tuple = ()):
+        """A Grouping listing the given references next to legitimate ones.
+
+        The observable object is listed next to the Observed Data consuming
+        it, which is how a MISP export writes both. Dropping the pair with
+        `observables` leaves a bundle carrying no observable object at all -
+        the shape an observable reference has nothing to be looked up in.
+        The objects given as `carried` are referenced too, so a reference the
+        bundle does carry an object for can be told from one it does not.
+        """
+        from misp_stix_converter.tools import load_stix2_content
+        identity_id = 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f'
+        indicator_id = 'indicator--10440d97-42bb-4b17-a439-9dd5e17dd93e'
+        observed_data_id = 'observed-data--a12c56ba-5c07-4e0a-90c9-1a1cd7c1e0a4'
+        domain_id = 'domain-name--e5d2e1f0-9b2e-4a9e-8d2e-1f09b2e4a9e8'
+        labels = ['misp:type="domain"', 'misp:category="Network activity"']
+        grouping_labels = ['Threat-Report']
+        if internal:
+            grouping_labels.append('misp:tool="MISP-STIX-Converter"')
+        observed_data = [
+            {
+                'type': 'observed-data', 'spec_version': '2.1',
+                'id': observed_data_id, 'created_by_ref': identity_id,
+                'created': '2020-10-25T16:22:00.000Z',
+                'modified': '2020-10-25T16:22:00.000Z',
+                'first_observed': '2020-10-25T16:22:00Z',
+                'last_observed': '2020-10-25T16:22:00Z',
+                'number_observed': 1, 'labels': labels,
+                'object_refs': [domain_id]
+            },
+            {
+                'type': 'domain-name', 'spec_version': '2.1',
+                'id': domain_id, 'value': 'misp-project.org'
+            }
+        ] if observables else []
+        return load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'objects': [
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL', 'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'grouping', 'spec_version': '2.1',
+                        'id': 'grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c',
+                        'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'context': 'suspicious-activity',
+                        'labels': grouping_labels,
+                        'object_refs': [
+                            indicator_id,
+                            *(
+                                observable['id']
+                                for observable in observed_data
+                            ),
+                            *(
+                                stix_object['id'] for stix_object in carried
+                            ),
+                            *extra_refs
+                        ]
+                    },
+                    {
+                        'type': 'indicator', 'spec_version': '2.1',
+                        'id': indicator_id, 'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'pattern': "[domain-name:value = 'circl.lu']",
+                        'pattern_type': 'stix',
+                        'valid_from': '2020-10-25T16:22:00.000Z',
+                        'labels': labels
+                    },
+                    *observed_data, *carried
+                ]
+            }
+        )
 
     def _populate_galaxy_documentation(self, **kwargs):
         galaxy = kwargs.pop('galaxy')
@@ -2938,6 +3381,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(cluster.description, stix_object.description)
         return cluster.meta
 
+    def _check_galaxy_with_undefined_labels(self, event, stix_object, errors):
+        """A galaxy object no label can dispatch is dropped, never silently."""
+        self.assertFalse(event.galaxies)
+        self.assertTrue(
+            any(
+                stix_object.id in error
+                for error in self._reported_messages(errors)
+            ),
+            f'{stix_object.id} was dropped without any error reported'
+        )
+
+    def _check_galaxy_without_name_label(self, stix_object, warnings):
+        """The galaxy type label alone is enough to convert the object."""
+        label_warnings = [
+            warning for warning in self._reported_messages(warnings)
+            if 'Missing MISP galaxy name label' in warning
+        ]
+        self.assertEqual(len(label_warnings), 1)
+        self.assertIn(stix_object.id, label_warnings[0])
+
     def _check_generic_malware_galaxy(self, galaxy, malware):
         meta = self._check_galaxy_fields_with_external_id(
             galaxy, malware, 'mitre-malware', 'Malware'
@@ -3242,6 +3705,70 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                     self._get_data_value(attribute.data),
                     custom_attribute['data']
                 )
+
+    def _check_custom_object_invalid_name(
+            self, misp_object, custom_object, warnings):
+        rejected_name = custom_object.x_misp_name
+        # The name never reached template resolution: the object is generic,
+        # and carries no field that could only come from a template file.
+        self.assertEqual(misp_object.name, 'unknown-template')
+        self.assertFalse(misp_object._known_template)
+        object_fields = misp_object.to_dict()
+        for template_field in ('template_uuid', 'template_version',
+                               'description'):
+            self.assertNotIn(
+                template_field, object_fields,
+                f'`{template_field}` should not be read from a file'
+            )
+        self.assertNotEqual(
+            getattr(misp_object, 'meta-category', None),
+            PLANTED_TEMPLATE['meta-category']
+        )
+        # The meta-category still comes from the STIX content itself.
+        self.assertEqual(
+            misp_object.category, custom_object.x_misp_meta_category
+        )
+        # Nothing is lost: the rejected name is kept as data.
+        self.assertIn(rejected_name, misp_object.comment)
+        name_warnings = [
+            warning for parser_warnings in warnings.values()
+            for warning in parser_warnings
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(name_warnings), 1)
+        self.assertIn(custom_object.id, name_warnings[0])
+        self.assertIn(rejected_name, name_warnings[0])
+        return misp_object
+
+    def _check_custom_object_injected_fields(
+            self, misp_object, custom_object, warnings):
+        custom_attribute = custom_object.x_misp_attributes[0]
+        attribute = misp_object.attributes[0]
+        self.assertEqual(attribute.type, custom_attribute['type'])
+        self.assertEqual(
+            attribute.object_relation, custom_attribute['object_relation']
+        )
+        self.assertEqual(attribute.value, custom_attribute['value'])
+        self.assertEqual(attribute.category, custom_attribute['category'])
+        self.assertEqual(attribute.comment, custom_attribute['comment'])
+        self.assertEqual(attribute.to_ids, custom_attribute['to_ids'])
+        self.assertEqual(attribute.uuid, custom_attribute['uuid'])
+        attribute_fields = attribute.to_dict()
+        for injected_field in ('distribution', 'sharing_group_id',
+                               'first_seen', 'deleted', 'Tag'):
+            self.assertNotIn(
+                injected_field, attribute_fields,
+                f'`{injected_field}` should not be set from STIX content'
+            )
+        dropped_fields_warnings = [
+            warning for parser_warnings in warnings.values()
+            for warning in parser_warnings
+            if all(field in warning for field
+                   in ('distribution', 'sharing_group_id', 'Tag',
+                       'first_seen', 'deleted'))
+        ]
+        self.assertEqual(len(dropped_fields_warnings), 1)
+        self.assertIn(custom_object.id, dropped_fields_warnings[0])
 
     def _check_domain_ip_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)

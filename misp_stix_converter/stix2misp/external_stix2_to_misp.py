@@ -13,25 +13,17 @@ from .converters import (
     ExternalSTIX2ToolConverter, ExternalSTIX2VulnerabilityConverter,
     STIX2ObservableObjectConverter)
 from .importparser import ExternalSTIXtoMISPParser
-from .stix2_to_misp import STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING
+from .stix2_to_misp import (
+    STIX2toMISPParser, _BUNDLE_TYPING, _NOTE_TYPING, _OBSERVABLE_TYPING,
+    _OPINION_TYPING)
 from collections import defaultdict
-from pymisp import MISPAttribute, MISPObject
-from stix2.v20.observables import (
-    _Extension as Extension_v20, _STIXBase20 as STIXBase_v20)
+from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sro import Sighting as Sighting_v20
-from stix2.v21.observables import (
-    _Extension as Extension_v21, _STIXBase21 as STIXBase_v21)
-from stix2.v21.sdo import Note, Opinion
 from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Iterator, Optional, Union
 
-_EXTENSION_TYPES = (Extension_v20, Extension_v21, STIXBase_v20, STIXBase_v21)
-_OBSERVABLE_FIELDS_TO_SKIP = (
-    'defanged', 'granular_markings', 'id', 'object_marking_refs',
-    'spec_version', 'type'
-)
 _SDO_STORAGE_FIELDS = {'_indicator': 1, '_observable': 2, '_observed_data': 4}
-_SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21]
+_SIGHTING_TYPING = Union[Sighting_v20, Sighting_v21, dict]
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
@@ -56,6 +48,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
+        self._record_uuids: dict = defaultdict(dict)
 
     def parse_stix_bundle(
             self, cluster_distribution: Optional[int] = 0,
@@ -82,13 +75,16 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
+        self._record_uuids = defaultdict(dict)
         try:
             del self.__standalone_object_refs
         except AttributeError:
             pass
 
     def _load_stix_bundle(self, bundle: _BUNDLE_TYPING):
-        stix_objects, object_refs = self._partition_stix_objects(bundle.objects)
+        stix_objects, object_refs = self._partition_stix_objects(
+            getattr(bundle, 'objects', [])
+        )
         standalone_objects = {}
         for stix_object in stix_objects:
             object_id = stix_object['id']
@@ -104,9 +100,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         for stix_object in stix_objects:
             if stix_object['type'] in ('grouping', 'report'):
                 self._load_stix_object(stix_object)
-                object_refs.update(stix_object.object_refs)
-                if hasattr(stix_object, 'object_marking_refs'):
-                    object_refs.update(stix_object.object_marking_refs)
+                object_refs.update(stix_object['object_refs'])
+                if 'object_marking_refs' in stix_object:
+                    object_refs.update(stix_object['object_marking_refs'])
                 continue
             partitioned.append(stix_object)
             if stix_object['type'] not in ('relationship', 'sighting'):
@@ -125,35 +121,35 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
 
-    def _load_analyst_note(self, note: Note):
+    def _load_analyst_note(self, note: _NOTE_TYPING):
         note_dict = self._parse_analyst_note(note)
-        if len(note.object_refs) == 1:
-            note_dict['uuid'] = self._sanitise_uuid(note.id)
-        for object_ref in note.object_refs:
-            self._analyst_data[object_ref].append(note.id)
-        super()._load_note(note.id, note_dict)
+        if len(note['object_refs']) == 1:
+            note_dict['uuid'] = self._sanitise_uuid(note['id'])
+        for object_ref in note['object_refs']:
+            self._analyst_data[object_ref].append(note['id'])
+        super()._load_note(note['id'], note_dict)
 
-    def _load_analyst_opinion(self, opinion: Opinion):
+    def _load_analyst_opinion(self, opinion: _OPINION_TYPING):
         opinion_dict = {
-            'opinion': self._mapping.opinion_mapping(opinion.opinion),
+            'opinion': self._mapping.opinion_mapping(opinion['opinion']),
             **self._parse_analyst_opinion(opinion)
         }
-        if len(opinion.object_refs) == 1:
-            opinion_dict['uuid'] = self._sanitise_uuid(opinion.id)
-        for object_ref in opinion.object_refs:
-            self._analyst_data[object_ref].append(opinion.id)
-        super()._load_opinion(opinion.id, opinion_dict)
+        if len(opinion['object_refs']) == 1:
+            opinion_dict['uuid'] = self._sanitise_uuid(opinion['id'])
+        for object_ref in opinion['object_refs']:
+            self._analyst_data[object_ref].append(opinion['id'])
+        super()._load_opinion(opinion['id'], opinion_dict)
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
-        self._check_uuid(observable.id)
+        self._check_uuid(observable['id'])
         to_load = {'used': {}, 'observable': observable}
         try:
-            self._observable[observable.id] = to_load
+            self._observable[observable['id']] = to_load
         except AttributeError:
-            self._observable = {observable.id: to_load}
+            self._observable = {observable['id']: to_load}
 
     def _load_sighting(self, sighting: _SIGHTING_TYPING):
-        sighting_of_ref = self._sanitise_uuid(sighting.sighting_of_ref)
+        sighting_of_ref = self._sanitise_uuid(sighting['sighting_of_ref'])
         try:
             self._sighting[sighting_of_ref].append(sighting)
         except AttributeError:
@@ -180,15 +176,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             if object_type in self._mapping.object_type_refs_to_skip():
                 continue
             if object_type in self._mapping.observable_object_types():
-                if (observable := self._fetch_observable(object_ref)) is not None:
-                    if self.misp_event.uuid not in observable['used']:
-                        observable['used'][self.misp_event.uuid] = False
+                if (observable := self._fetch_observable(object_ref)) is None:
+                    self._object_ref_loading_error(object_ref)
+                    continue
+                if self.misp_event.uuid not in observable['used']:
+                    observable['used'][self.misp_event.uuid] = False
                 continue
             if object_type == 'marking-definition':
-                if object_ref in self._clusters:
-                    cluster = self._clusters[object_ref]
-                    if cluster['used'].get(self.misp_event.uuid) is None:
-                        cluster['used'][self.misp_event.uuid] = False
+                self._handle_marking_definition_ref(object_ref)
                 continue
             try:
                 self._handle_object(object_type, object_ref)
@@ -321,26 +316,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     continue
                 yield indicator_id
 
-    def _fetch_observable_references(
-            self, observable: dict | _OBSERVABLE_TYPING) -> Iterator[str]:
-        for key, values in observable.items():
-            if key in _OBSERVABLE_FIELDS_TO_SKIP:
-                continue
-            if isinstance(values, dict):
-                yield from self._fetch_observable_references(values)
-                continue
-            if isinstance(values, list):
-                for value in values:
-                    if isinstance(value, _EXTENSION_TYPES):
-                        yield from self._fetch_observable_references(value)
-                        continue
-                    yield value
-                continue
-            if isinstance(values, _EXTENSION_TYPES):
-                yield from self._fetch_observable_references(values)
-                continue
-            yield values
-
     def _set_indicator_references(self):
         score = 0
         for feature, count in _SDO_STORAGE_FIELDS.items():
@@ -352,7 +327,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         self._indicator_references = {
             indicator_id: {obs_type: tuple(val[-1] for val in pattern)}
             for indicator_id, indicator in self._indicator.items()
-            if getattr(indicator, 'pattern_type', 'stix') == 'stix'
+            if indicator.get('pattern_type', 'stix') == 'stix'
             for obs_type, pattern in pattern_parser(indicator).comparisons.items()
         }
         if score in (3, 7):
@@ -377,10 +352,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                     observable['indicator_ref'].add(indicator_reference)
         if score >= 5:
             for observed_id, observed_data in self._observed_data.items():
-                if not hasattr(observed_data, 'objects'):
+                if 'objects' not in observed_data:
                     continue
                 indicator_refs = defaultdict(set)
-                for observable_id, observable in observed_data.objects.items():
+                for observable_id, observable in observed_data[
+                        'objects'].items():
                     indicator_references = set(
                         self._fetch_indicator_reference(observable)
                     )
@@ -405,3 +381,52 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
                         continue
                     for observable_id, refs in indicator_refs.items():
                         observed_data['indicator_refs'][observable_id].update(refs)
+
+    ############################################################################
+    #                     UUID SANITATION HANDLING METHODS                     #
+    ############################################################################
+
+    def _check_uuid_collision(self, record_type: str, object_id: str):
+        """Report the **Colliding Record Uuid** 2 STIX ids both produce.
+
+        The uuid computation is untouched: re-deriving one of the 2 records
+        would cost it the round-trip, and what MISP core does with a uuid it
+        already knows is its own ownership decision. Only the reporting is
+        added, and only here - an **Internal** bundle merges such a pair on
+        purpose, the **Merged Indicator** loss reported on its own
+
+        Records are tracked per record type because events, objects and
+        attributes each get their uuid namespace: an attribute sharing its
+        uuid with the object holding it costs nothing, and is the shape MISP's
+        own STIX 2.1 export writes for the address an email message comes from
+        """
+        record_uuid = self._extract_uuid(object_id)
+        known_id = self._record_uuids[record_type].setdefault(
+            record_uuid, object_id
+        )
+        if known_id != object_id:
+            # A uuid the RFC does not know is swapped for the v5 replacement
+            # `_sanitise_*` registered: the collision is keyed on what the 2
+            # ids share, but named with the uuid the records end up carrying.
+            reported_uuid = self.replacement_uuids.get(
+                record_uuid, record_uuid
+            )
+            self._add_warning(
+                f'Colliding MISP {record_type} uuid {reported_uuid} - the '
+                f'STIX objects {known_id} and {object_id} both produce it, so '
+                f'the converted content has 2 {record_type}s sharing one uuid'
+            )
+
+    def _sanitise_attribute_uuid(
+            self, object_id: str, comment: Optional[str] = None,
+            **kwargs) -> dict:
+        self._check_uuid_collision('attribute', object_id)
+        return super()._sanitise_attribute_uuid(object_id, comment, **kwargs)
+
+    def _sanitise_object_uuid(
+            self, misp_object: MISPEvent | MISPObject, object_id: str):
+        self._check_uuid_collision(
+            'event' if isinstance(misp_object, MISPEvent) else 'object',
+            object_id
+        )
+        super()._sanitise_object_uuid(misp_object, object_id)

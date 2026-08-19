@@ -3,11 +3,12 @@
 import json
 import re
 from ..misp_stix_mapping import Mapping
+from contextlib import contextmanager
 from datetime import datetime
 from mixbox import idgen
 from mixbox.namespaces import Namespace
 from stix.core import STIXHeader, STIXPackage
-from typing import Optional
+from typing import Iterator, Optional
 from uuid import UUID, uuid4
 
 # STIX header
@@ -119,6 +120,20 @@ SCHEMALOC_DICT = Mapping(
 )
 
 
+# A namespace reaches the STIX Package root element as
+# `xmlns:<org>="<namespace>"` without being escaped: a quote breaks out of the
+# attribute and declares namespace prefixes of its own, `<`, `>` and `&` make
+# the document not well-formed at all. What may get there is an absolute URI -
+# a scheme, then anything but the characters RFC 3986 excludes - with `&` and
+# the quotes taken out as well, since the value is written into markup as it
+# stands. `\s` is not enough to keep the control characters out - it misses
+# most of the C0 range, and a `\x08` in an attribute value is as invalid as
+# a `<`.
+_NAMESPACE_REGEX = re.compile(
+    r'[A-Za-z][A-Za-z0-9+.\-]*:[^\x00-\x20\x7f<>"\'&{}|\\^`]+'
+)
+
+
 def stix1_attributes_framing(namespace: str, orgname: str, return_format: str,
                              version: str) -> tuple:
     stix_package = _create_stix_package(orgname, version)
@@ -141,7 +156,7 @@ def stix_xml_separator():
 def _create_stix_package(
         orgname: str, version: str,  header: Optional[bool] = True,
         uuid: Optional[UUID | str] = None) -> STIXPackage:
-    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
+    parsed_orgname = _parse_orgname(orgname)
     if uuid is None:
         uuid = uuid4()
     stix_package = STIXPackage(
@@ -158,14 +173,50 @@ def _create_stix_package(
 
 
 def _handle_namespaces(namespace: str, orgname: str) -> tuple:
-    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
+    namespace = _validate_namespace(namespace)
+    parsed_orgname = _parse_orgname(orgname)
     namespaces = {namespace: parsed_orgname}
     namespaces.update(NS_DICT)
+    _set_id_namespace(namespace, parsed_orgname)
+    return namespaces
+
+
+def _parse_orgname(orgname: str) -> str:
+    return re.sub(r'[\W]+', '', orgname.replace(' ', '_'))
+
+
+@contextmanager
+def _scoped_id_namespace(namespace: str, orgname: str) -> Iterator[None]:
+    """Hold the mixbox identifier namespace for the duration of one export.
+
+    mixbox keeps the namespace on a module-level generator, so setting it is a
+    process-wide change: every STIX 1 object built anywhere in the process
+    takes its id prefix from whatever was set last. Setting it on entry is what
+    makes a conversion generate its own organisation's ids rather than the ids
+    of whichever export ran before it, and putting back what was found - on the
+    way out of a returning export and of a raising one alike - is what keeps
+    the change from outliving the export. Exports running *at the same time*
+    still share the one generator: STIX 1 export is not thread-safe, and cannot
+    be while mixbox holds the namespace globally.
+
+    :param namespace: the Export Namespace, already validated
+    :param orgname: the organisation name the identifier prefix comes from
+    """
+    # The public getters drop the schema location, so what is saved is the
+    # generator's own Namespace: the value put back is the value found
+    previous = idgen._get_generator().namespace
+    _set_id_namespace(namespace, _parse_orgname(orgname))
+    try:
+        yield
+    finally:
+        idgen.set_id_namespace(previous)
+
+
+def _set_id_namespace(namespace: str, parsed_orgname: str):
     try:
         idgen.set_id_namespace(Namespace(namespace, parsed_orgname))
     except TypeError:
         idgen.set_id_namespace(Namespace(namespace, parsed_orgname, 'MISP'))
-    return namespaces
 
 
 def _stix1_attributes_framing(namespace: str, orgname: str, return_format: str,
@@ -213,3 +264,21 @@ def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
     footer = f"        </{s_related}>\n    </{s_related}s>\n{s_stix}"
     separator = f"        </{s_related}>\n        <{s_related}>\n"
     return header, separator, footer
+
+
+def _validate_namespace(namespace: str) -> str:
+    """Reject a namespace the XML framing cannot write as it stands.
+
+    :param namespace: the caller-supplied STIX 1 namespace
+    :return: the namespace itself, unchanged
+    :raises ValueError: if it does not match `_NAMESPACE_REGEX`
+    """
+    if not isinstance(namespace, str) or (
+            _NAMESPACE_REGEX.fullmatch(namespace) is None):
+        raise ValueError(
+            f'Invalid `namespace` parameter: {namespace!r} - the STIX 1 '
+            'namespace must be an absolute URI: a scheme, followed by `:`, '
+            'then characters a URI allows, minus the `& " \'` a namespace '
+            'declaration cannot carry unescaped.'
+        )
+    return namespace

@@ -7,7 +7,7 @@ on:
   push:
     branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   build:
@@ -44,7 +44,9 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest tests/test_stix*_export.py
+        poetry run pytest tests/test_stix1_import.py
         poetry run pytest tests/test_*ternal_stix*_import.py
+        poetry run pytest tests/test_import_tag_grammar.py
         poetry run pytest tests/test_stix2_patterning.py
 
     - name: Upload coverage to Codecov

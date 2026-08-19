@@ -7,10 +7,6 @@ from typing import Union
 
 
 class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
-    __object_type_refs_to_skip = (
-        *STIX2toMISPMapping.object_type_refs_to_skip(),
-        *STIX2toMISPMapping.observable_object_types()
-    )
     __stix_object_loading_mapping = Mapping(
         **{
             'note': '_load_note',
@@ -25,10 +21,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             **STIX2toMISPMapping.stix_object_loading_mapping()
         }
     )
-
-    @classmethod
-    def object_type_refs_to_skip(cls) -> tuple:
-        return cls.__object_type_refs_to_skip
 
     @classmethod
     def stix_object_loading_mapping(cls, field: str) -> Union[str, None]:

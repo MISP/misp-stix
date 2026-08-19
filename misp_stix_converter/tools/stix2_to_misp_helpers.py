@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+import logging
 from ..stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
 from ..stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
+
+_logger = logging.getLogger(__name__)
 
 _MISP_STIX_tags = ('misp:tool="MISP-STIX-Converter"', 'misp:tool="misp2stix2"')
 _STIX2_event_types = ('grouping', 'report')
@@ -39,5 +42,9 @@ def is_stix2_from_misp(stix_objects: list):
         if stix_object['type'] not in _STIX2_event_types or not labels:
             continue
         if any(tag in labels for tag in _MISP_STIX_tags):
+            _logger.warning(
+                'MISP tool label found in the STIX content - a classification '
+                'signal that any producer can write.'
+            )
             return True
     return False

@@ -5875,6 +5875,14 @@ def get_event_with_credential_object():
     return event
 
 
+def get_event_with_object_with_invalid_name(name):
+    event = deepcopy(_BASE_EVENT)
+    misp_object = dict(_populate_object(_TEST_BANK_ACCOUNT_OBJECT))
+    misp_object['name'] = name
+    event['Event']['Object'] = [misp_object]
+    return event
+
+
 def get_event_with_custom_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [

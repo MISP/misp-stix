@@ -23,7 +23,7 @@ from pymisp import MISPAttribute, MISPObject
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
 from stix.threat_actor import ThreatActor
-from typing import Union
+from typing import Optional, Union
 from uuid import uuid4
 
 _ADDRESS_TYPING = Union[address_object.Address, address_object.EmailAddress]
@@ -53,15 +53,28 @@ class StixObjectTypeError(Exception):
 class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self):
         super().__init__()
-        self.__galaxies = set()
-        self.__references = defaultdict(list)
+        # Every accumulator this parser keeps is created by the reset hook, so
+        # a fresh instance starts from the state a reused one is put back into
+        self._reset_bundle_state()
 
     def load_stix_package(self, stix_package: STIXPackage):
         self.__stix_package = stix_package
 
-    def parse_stix_content(self, filename: Union[Path, str], **kwargs):
-        self.__stix_package = load_stix1_package(filename)
+    def parse_stix_content(self, filename: Union[Path, str],
+                           max_size: Optional[int] = None, **kwargs):
+        self.__stix_package = load_stix1_package(filename, max_size=max_size)
         self.parse_stix_package(**kwargs)
+
+    def _reset_bundle_state(self):
+        # An instance parsing a second package must not carry the galaxies and
+        # references of the first one into the event it builds from it. Called
+        # at the top of `parse_stix_package` rather than at loading time, where
+        # the STIX 2 parsers reset: `parse_stix_content` sets the package
+        # itself instead of going through `load_stix_package`, so parsing is
+        # the one step every entry into a conversion takes.
+        super()._reset_bundle_state()
+        self.__galaxies = set()
+        self.__references = defaultdict(list)
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -130,25 +143,27 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self.misp_event.add_object(misp_object)
 
     # Parse a course of action and add a MISP object to the event
-    def parse_course_of_action(self, course_of_action):
+    def _parse_course_of_action(self, course_of_action):
         misp_object = MISPObject('course-of-action', misp_objects_path_custom=misp_objects_path)
-        misp_object.uuid = self.fetch_uuid(course_of_action.id_)
+        misp_object.uuid = self._sanitise_uuid(course_of_action.id_)
         if course_of_action.title:
             attribute = {'type': 'text', 'object_relation': 'name',
                          'value': course_of_action.title}
             misp_object.add_attribute(**attribute)
-        for prop, properties_key in self._mapping._coa_mapping().items():
+        for prop, properties_key in self._mapping.course_of_action_mapping().items():
             if getattr(course_of_action, prop):
                 attribute = {
                     'type': 'text', 'object_relation': prop.replace('_', ''),
-                    'value': attrgetter('{}.{}'.format(prop, properties_key))(course_of_action)
+                    'value': str(
+                        attrgetter(f'{prop}.{properties_key}')(course_of_action)
+                    )
                 }
                 misp_object.add_attribute(**attribute)
         if course_of_action.parameter_observables:
             for observable in course_of_action.parameter_observables.observables:
                 properties = observable.object_.properties
                 attribute = MISPAttribute()
-                attribute.type, attribute.value, _ = self.handle_attribute_type(properties)
+                attribute.type, attribute.value, _ = self._handle_attribute_type(properties)
                 referenced_uuid = str(uuid4())
                 attribute.uuid = referenced_uuid
                 self.misp_event.add_attribute(**attribute)
@@ -643,7 +658,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 yield from self._resolve_galaxy(names, default_value)
 
     def _resolve_galaxy(self, galaxy_name: str, default_value: str) -> list:
-        return [f'misp-galaxy:{default_value}="{galaxy_name}"']
+        tag_name = self._build_tag('misp-galaxy', default_value, galaxy_name)
+        return [tag_name] if tag_name is not None else []
 
     ############################################################################
     #                             UTILITY METHODS.                             #

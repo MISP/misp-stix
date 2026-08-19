@@ -124,7 +124,7 @@ Convert MISP <-> STIX
 
 options:
   -h, --help       show this help message and exit
-  --debug          Show errors and warnings
+  --debug          Show the full list of errors - errors and warnings are reported either way, this only controls the errors level of detail
 
 Main feature:
   {export,import}
@@ -135,7 +135,8 @@ Main feature:
 ##### Export parameters
 
 ```bash
-usage: misp_stix_converter export [-h] -f FILE [FILE ...] -v {1.1.1,1.2,2.0,2.1} [-s] [-m] [--output-dir OUTPUT_DIR] [-o OUTPUT_NAME] [--level {attribute,event}] [--format {json,xml}] [-n NAMESPACE] [-org ORG]
+usage: misp_stix_converter export [-h] -f FILE [FILE ...] -v {1.1.1,1.2,2.0,2.1} [-s] [-m] [--output-dir OUTPUT_DIR] [-o OUTPUT_NAME] [--overwrite] [--level {attribute,event}] [--format {json,xml}]
+                                  [-n NAMESPACE] [-org ORG]
 
 options:
   -h, --help            show this help message and exit
@@ -146,23 +147,25 @@ options:
   -s, --single-output   Produce only one result file (in case of multiple input file).
   -m, --in-memory       Store result in memory (in case of multiple result files) instead of storing it in tmp files.
   --output-dir OUTPUT_DIR
-                        Output path - used in the case of multiple input files when the `single_output` argument is not used.
+                        Output directory - default is the directory the input files come from. Created if it does not exist.
   -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_output` argument is used.
+  --overwrite           Replace an output file that already exists - without it a conversion writing onto an existing file fails and leaves it as it is.
 
 STIX 1 specific arguments:
   --level {attribute,event}
                         MISP data structure level.
   --format {json,xml}   STIX 1 format.
   -n, --namespace NAMESPACE
-                        Namespace to be used in the STIX 1 header.
+                        Namespace to be used in the STIX 1 header - must be a URI.
   -org ORG              Organisation name to be used in the STIX 1 header.
 ```
 
 ##### Import parameters
 
 ```bash
-usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output-dir OUTPUT_DIR] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies-as-tags] [--no-force-galaxy-cluster]
+usage: misp_stix_converter import [-h] -f FILE [FILE ...] [-v {1,2}] [-s] [-o OUTPUT_NAME] [--output-dir OUTPUT_DIR] [--overwrite] [--max-input-size MB] [-d {0,1,2,3,4}] [-sg SHARING_GROUP] [--galaxies-as-tags]
+                                  [--no-force-galaxy-cluster]
                                   [--org-uuid ORG_UUID] [-cd {0,1,2,3,4}] [-csg CLUSTER_SHARING_GROUP] [-t TITLE] [-p PRODUCER] [-c CONFIG] [-u URL] [-a API_KEY] [--skip-ssl]
 
 options:
@@ -170,11 +173,14 @@ options:
   -f, --file FILE [FILE ...]
                         Path to the file(s) to convert.
   -v, --version {1,2}   STIX major version - default is 2
-  -s, --single-event    Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
+  -s, --single-event    Produce only one MISP event per STIX file, in case of multiple Report or Grouping objects. STIX 1 always produces one, whether this is set or not.
   -o, --output-name OUTPUT_NAME
                         Output file name - used in the case of a single input file or when the `single_event` argument is used.
   --output-dir OUTPUT_DIR
-                        Output path - used in the case of multiple input files when the `single_event` argument is not used.
+                        Output directory - default is the directory the input files come from. Created if it does not exist.
+  --overwrite           Replace an output file that already exists - without it a conversion writing onto an existing file fails and leaves it as it is.
+  --max-input-size MB   Maximum accepted input size, in MB - a document larger than this is refused before it is parsed (default is 100). Use 0 to turn the limit off: conversion costs 2 to 7 times the
+                        input size in memory, and a few seconds of CPU per MB of STIX 2.
   -d, --distribution {0,1,2,3,4}
                         Distribution level for the imported MISP content (default is 0) - 0: Your organisation only - 1: This community only - 2: Connected communities - 3: All communities - 4: Sharing Group
   -sg, --sharing-group SHARING_GROUP
@@ -197,6 +203,58 @@ options:
                         Authentication key to connect to your MISP instance.
   --skip-ssl            Skip SSL certificate checking when connecting to your MISP instance.
 ```
+
+#### Conversion cost and input limits
+
+An import parses the document it is given in full before it converts it, so the
+cost of a conversion is decided by the size of the input:
+
+- **Memory**: 2 to 7 times the input size, on top of whatever the caller already
+  holds - the whole document is materialised, and nothing streams.
+- **CPU**: a few seconds of a single core per MB of STIX 2 (measured between
+  1.9 and 6.5 s/MB on indicator-heavy bundles, growing linearly with the number
+  of objects). A 100 MB TAXII poll is therefore several CPU-minutes of work,
+  produced by whoever uploads it for the price of the upload.
+
+Both STIX loaders refuse a document above a maximum input size **before parsing
+it**, so an oversized document costs a `stat()` rather than a full parse. The
+default is **100 MB**, and the caller raises it - or turns it off with `0` - per
+conversion:
+
+```python
+from misp_stix_converter import stix_2_to_misp
+
+# a 250 MB bundle this caller knows it wants
+stix_2_to_misp('bundle.json', max_size=250 * 1024 * 1024)
+# no limit at all
+stix_2_to_misp('bundle.json', max_size=0)
+```
+
+`max_size` is accepted by `stix_1_to_misp`, `stix1_to_misp_instance`,
+`stix_2_to_misp`, `stix2_to_misp_instance`, by the parsers'
+`parse_stix_content()` and by the loading helpers themselves
+(`load_stix1_package`, `load_stix2_file`, and `load_stix2_content` for the
+serialised content it is given as a string or a `BytesIO` - a `dict` or `list`
+the caller already built is past the point a limit could save anything); the
+command line names the same limit in MB with `--max-input-size`. A document
+above the limit is reported as an error, and raises `STIXInputSizeError` (a
+`STIXLoadingError`) for the callers that use the library directly.
+
+The limit bounds one conversion, not the load a host accepts: since the cost is
+linear in the input size and paid entirely in one worker, an integrator running
+imports concurrently - MISP core included - should also cap how many run at
+once.
+
+#### Object template names
+
+A MISP object names the template that describes it, and that name is resolved against the
+template directories on disk. A name a document supplied that is not a plain template name -
+one holding a path separator, a `..`, or any character a template directory does not use - is
+never resolved: the object is converted under the name **`unknown-template`**, keeping the
+name the document sent in the object's `comment`. This applies on import, to an
+`x-misp-object`'s `x_misp_name`, and on export to the events and objects handed in as JSON,
+where a name stored earlier would otherwise be resolved when the event is exported. Names
+that do resolve - the templates pymisp ships and custom ones alike - are unaffected.
 
 ### In Python scripts
 
@@ -229,6 +287,20 @@ response = misp_to_stix1(
 # if everything went well, response is a dictionary where `success` = 1
 ```
 The resulting STIX1 Package is then available in a `filename.out` file
+
+**STIX 1 export is not thread-safe.** The identifier namespace an exported STIX 1
+Package uses lives in a module-level generator inside `mixbox`, so it is process-wide.
+`misp_to_stix1`, `misp_event_collection_to_stix1` and `misp_attribute_collection_to_stix1`
+set it for the duration of one conversion and put back whatever they found, which keeps
+sequential and nested exports apart — but two exports running at the same time in one
+process share that one generator and can attribute identifiers to each other's
+organisation. Convert in one thread, or in separate processes.
+
+Driving a parser yourself (the `MISPtoSTIX1EventsParser` example above) or calling the
+`stix1_framing` / `stix1_attributes_framing` helpers directly gets no such window: the
+framing helpers set the namespace and leave it set, and a parser used on its own never
+sets it at all. Wrap those calls yourself if the same process exports for more than one
+organisation.
 
 - Convert a MISP Event in STIX2:
 
@@ -314,6 +386,8 @@ stix21_response = misp_event_collection_to_stix2_1(
 )
 ```
 Again, all the responses should have a `success` field equal to 1 and the resulting STIX1 Package and STIX 2.0 & 2.1 Bundles are available in the specific output file names.
+
+Note that `success` = 1 only tells you the conversion wrote its output: a conversion that dropped part of the content says so as well. Any response - from the conversion functions in both directions - may therefore carry an `errors` field, and a `warnings` one, next to `success`, both keyed by the event or bundle identifier the messages belong to. The `debug` argument controls how detailed the `errors` field is, never whether failures are reported: by default each distinct message appears once with the number of times it happened, capped at ten messages per identifier, and `debug=True` returns the full list instead.
 
 ### Samples and examples
 

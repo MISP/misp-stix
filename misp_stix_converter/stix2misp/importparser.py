@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import traceback
 from ..abstract import AbstractParser
 from abc import ABCMeta
 from datetime import datetime
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
@@ -16,6 +17,17 @@ _DEFAULT_DISTRIBUTION = 0
 
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
+
+# What a conversion writes text into a MISP taxonomy tag with. The grammar
+# `<namespace>:<predicate>="<value>"` has no escaping of its own: a `"` closes
+# the slot it appears in, and what follows is then read as further taxonomy
+# entries of the tag - text a document chose for itself deciding what else the
+# record is tagged with. The control characters cannot be written into the XML
+# and CSV exports the tag reaches either. Both are taken out of every slot a
+# document reaches, along with the whitespace around what is left - the rest is
+# kept as it stands, inner spaces and the `:` and `=` a plain name may carry
+# included. `_build_tag` is where they all go through.
+_TAG_VALUE_METACHARACTERS = re.compile(r'["\x00-\x1f\x7f]')
 
 
 def _load_json_file(path) -> dict:
@@ -61,6 +73,96 @@ class STIXtoMISPParser(AbstractParser):
         self.__title: Union[str, None]
 
         self.__replacement_uuids: dict = {}
+
+    def _add_producer_tag(self, misp_event: MISPEvent, producer: Any):
+        """Tag the event with the producer, as one taxonomy entry at most.
+
+        Sanitised here rather than with the other parameters in
+        `_set_parameters`: a `producer` parameter a tag value cannot be made of
+        has to leave the event without a producer tag, never falling back to
+        the provenance the bundle claims for itself.
+
+        :param misp_event: the event being created
+        :param producer: the producer name, from the `producer` parameter or
+            from the Identity the bundle credits itself to - from any source
+        """
+        name = self._clean_tag_slot(producer)
+        if not name:
+            self._unusable_producer_warning(producer)
+            return
+        if name != str(producer):
+            self._sanitised_producer_warning(producer, name)
+        misp_event.add_tag(self._build_tag('misp-galaxy', 'producer', name))
+
+    @staticmethod
+    def _clean_tag_slot(slot: Any) -> str:
+        """The text a slot of the tag grammar can carry, of what it was handed.
+
+        The rule itself, held apart from the reaction to it: `_build_tag` drops
+        the tag a slot nothing survives from, `_add_producer_tag` leaves the
+        event untagged and `_build_cluster_tag` keys the tag on the cluster
+        uuid instead - three answers to the one question this asks.
+
+        :param slot: the text a document supplied for a slot of the grammar
+        :return: what of it a slot can carry, empty when nothing can
+        """
+        return _TAG_VALUE_METACHARACTERS.sub('', str(slot)).strip()
+
+    def _build_tag(
+            self, namespace: str, predicate: str,
+            value: Optional[str] = None) -> Optional[str]:
+        """Write the MISP taxonomy tag a conversion tags a record with.
+
+        The one place a tag is built out of text the converted document
+        supplied. The taxonomy grammar is the library's own and has no escaping
+        of its own: a `"` ends the slot it appears in and what follows is read
+        as further taxonomy entries, so what a slot cannot carry is taken out
+        of each of them - the predicate naming the entry as much as the value
+        it carries, both being slots the document reaches.
+
+        :param namespace: the taxonomy the tag belongs to
+        :param predicate: the entry of that taxonomy the tag is
+        :param value: the value that entry carries, for the tags that have one
+        :return: the tag, or None when a slot nothing survives from leaves no
+            tag to write
+        """
+        slots = (namespace, predicate) if value is None else (
+            namespace, predicate, value
+        )
+        cleaned = []
+        for slot in slots:
+            text = self._clean_tag_slot(slot)
+            if not text:
+                self._unusable_tag_value_warning(slot)
+                return None
+            if text != str(slot):
+                self._sanitised_tag_value_warning(slot, text)
+            cleaned.append(text)
+        if value is None:
+            return '{}:{}'.format(*cleaned)
+        return '{}:{}="{}"'.format(*cleaned)
+
+    def _build_cluster_tag(
+            self, cluster_type: str, value: str,
+            uuid: str) -> Optional[str]:
+        """Write the tag naming a Galaxy Cluster the conversion also creates.
+
+        MISP attaches a cluster to a record by matching the tag against the
+        cluster, so a tag cleaned while the cluster keeps the value it was sent
+        would name no cluster at all. The value a tag cannot be made of is
+        therefore not cleaned here but replaced by the cluster uuid, which any
+        tag can carry - the cluster keeping the value the document supplied.
+
+        :param cluster_type: the galaxy the cluster belongs to
+        :param value: the value the cluster is named by
+        :param uuid: the cluster uuid, the tag's fallback to name it with
+        :return: the tag naming the cluster
+        """
+        cleaned = self._clean_tag_slot(value)
+        if cleaned != str(value):
+            self._cluster_tag_by_uuid_warning(value, uuid)
+            value = uuid
+        return self._build_tag('misp-galaxy', cluster_type, value)
 
     def _populate_misp_event(self):
         self.misp_events.append(self.misp_event)
@@ -215,9 +317,41 @@ class STIXtoMISPParser(AbstractParser):
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
 
+    def _sanitised_producer_warning(self, producer: Any, sanitised: str):
+        self._add_warning(
+            f'Sanitised producer name: {producer} - what a MISP taxonomy tag '
+            'value cannot carry was taken out, the event is tagged as '
+            f'produced by {sanitised}'
+        )
+
+    def _cluster_tag_by_uuid_warning(self, value: Any, uuid: str):
+        self._add_warning(
+            f'Sanitised galaxy cluster tag: {value} - the cluster value '
+            'carries what a MISP taxonomy tag value cannot, the tag names the '
+            f'cluster by its uuid {uuid} instead'
+        )
+
+    def _sanitised_tag_value_warning(self, value: Any, sanitised: str):
+        self._add_warning(
+            f'Sanitised tag value: {value} - what a MISP taxonomy tag value '
+            f'cannot carry was taken out, the tag written carries {sanitised}'
+        )
+
+    def _unusable_tag_value_warning(self, value: Any):
+        self._add_warning(
+            f'Unusable tag value: {value} - nothing a MISP taxonomy tag value '
+            'can be made of, no tag is written'
+        )
+
     def _sharing_group_id_error(self, exception: Exception):
         self._add_error(
             f'Wrong sharing group id format: {exception}', 'init'
+        )
+
+    def _unusable_producer_warning(self, producer: Any):
+        self._add_warning(
+            f'Unusable producer name: {producer} - nothing a MISP taxonomy '
+            'tag value can be made of, the event carries no producer tag'
         )
 
     ############################################################################

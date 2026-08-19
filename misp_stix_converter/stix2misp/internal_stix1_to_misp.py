@@ -6,6 +6,7 @@ from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from pymisp.api import describe_types
+from stix.core import STIXPackage
 from stix.exploit_target import Vulnerability, Weakness
 from stix.indicator import Indicator, Observable
 from stix.ttp import TTP
@@ -20,12 +21,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = InternalSTIX1toMISPMapping
-        self.__dates = set()
-        self.__timestamps = set()
-        self.__titles = set()
 
     def parse_stix_package(self, **kwargs):
+        self._reset_bundle_state()
         self._set_parameters(**kwargs)
+        # Every related package is merged into one MISP event - the titles,
+        # dates and timestamps of all of them - so this parser has no per
+        # event mode to ask for, like the External one it sits next to
+        self._set_single_event(True)
         self._set_misp_event(MISPEvent())
         for item in self.stix_package.related_packages.related_package:
             package = item.item
@@ -53,7 +56,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 except AttributeError:
                     self.dates.add(stix_date)
                 self.timestamps.add(self._timestamp_from_date(stix_date))
-            self.titles.add(self._get_event_info())
+            self.titles.add(self._get_event_info(package))
             if self._event.related_indicators:
                 for indicator in self._event.related_indicators.indicator:
                     self._parse_indicator(indicator)
@@ -61,7 +64,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 for observable in self._event.related_observables.observable:
                     self._parse_observable(observable)
             if self._event.history:
-                for entry in self.event.history.history_items:
+                for entry in self._event.history.history_items:
                     journal_entry = entry.journal_entry.value
                     try:
                         entry_type, entry_value = journal_entry.split(': ')
@@ -122,6 +125,16 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self.misp_event.info = ' - '.join(self.titles)
         self.misp_event.date = max(self.dates)
         self.misp_event.timestamp = max(self.timestamps)
+
+    def _reset_bundle_state(self):
+        super()._reset_bundle_state()
+        # Every related package of one document contributes its title, date and
+        # timestamp to the single event they are merged into - which makes them
+        # the state a second document must not inherit, or its event is named
+        # after both and dated from whichever is the later
+        self.__dates = set()
+        self.__timestamps = set()
+        self.__titles = set()
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -427,9 +440,23 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             return observable_id.split("_")[0].split(":")[1]
         return self._mapping.cybox_to_misp_object()[observable_id.split('-')[0].split(':')[1]]
 
-    def _get_event_info(self):
-        if hasattr(self._event, 'title'):
+    def _get_event_info(self, package: Optional[STIXPackage] = None):
+        # `hasattr` is useless here: the Incident always carries a `title`
+        # field, set to None when absent, so only testing the value makes the
+        # fallbacks reachable. The STIX header lives on the package, not on the
+        # Incident: the per-event related package carries this event's own
+        # title, and the wrapper package only the collection-level one.
+        if getattr(self._event, 'title', None):
             return self._event.title
-        if hasattr(getattr(self._event, 'stix_header', None), 'title'):
-            return self.event.stix_header.title
+        for candidate in (package, self.stix_package):
+            title = getattr(
+                getattr(candidate, 'stix_header', None), 'title', None
+            )
+            if title:
+                return title
         return f"Imported from STIX {self.stix_version} Package generated with MISP"
+
+    def _set_distribution(self):
+        self.misp_event.distribution = self.distribution
+        if self.distribution == 4 and self.sharing_group_id is not None:
+            self.misp_event.sharing_group_id = self.sharing_group_id

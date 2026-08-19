@@ -309,9 +309,7 @@ class InternalSTIX2IdentityConverter(
     def parse(self, identity_ref: str):
         if identity_ref not in self.main_parser._creators:
             identity = self.main_parser._get_stix_object(identity_ref)
-            feature = self._handle_mapping_from_labels(
-                identity.labels, identity.id
-            )
+            feature = self._handle_mapping_from_labels(identity)
             try:
                 parser = getattr(self, feature)
             except AttributeError:

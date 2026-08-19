@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ._test_stix_import import TestSTIX2Bundles
+from ._test_stix_import import (
+    SMUGGLING_TAG_PREDICATE, SMUGGLING_TAG_VALUE, UNUSABLE_TAG_SLOT,
+    TestSTIX2Bundles)
 from base64 import b64encode
 from copy import deepcopy
 from pathlib import Path
@@ -1995,6 +1997,89 @@ _CUSTOM_OBJECTS = [
         "x_misp_name": "report"
     }
 ]
+_CUSTOM_OBJECT_WITH_INVALID_NAME = {
+    "type": "x-misp-object",
+    "id": "x-misp-object--0e9f0ad0-2f16-4bdb-a1a0-2f1a4bfd0b0e",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+    "x_misp_attributes": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "uuid": "8acaad62-227a-4988-96e7-4586847421a3"
+        }
+    ],
+    "x_misp_meta_category": "financial",
+    "x_misp_name": "../../../../../../../../planted"
+}
+_CUSTOM_OBJECT_WITH_INJECTED_FIELDS = {
+    "type": "x-misp-object",
+    "id": "x-misp-object--695e7924-2518-4054-9cea-f82853d37410",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+    "x_misp_attributes": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "category": "Financial fraud",
+            "comment": "Attribute with injected fields",
+            "to_ids": True,
+            "uuid": "8acaad62-227a-4988-96e7-4586847421a2",
+            "distribution": "3",
+            "sharing_group_id": "42",
+            "Tag": [{"name": "tlp:white"}],
+            "first_seen": "2020-10-25T16:22:00+00:00",
+            "deleted": True
+        }
+    ],
+    "x_misp_meta_category": "financial",
+    "x_misp_name": "bank-account"
+}
+_DICT_FORM_OBJECTS = [
+    # STIX 2.0 has neither a Note nor an Opinion object type: parsed with
+    # `allow_custom`, both reach the loaders as plain dicts rather than typed
+    # objects.
+    {
+        "type": "note",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "abstract": "Analyst note in a STIX 2.0 Bundle",
+        "content": "Domain used by the threat actor to host its payloads",
+        "authors": ["john.doe@foo.bar"],
+        "lang": "en",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:context-layer="Analyst Note"']
+    },
+    {
+        "type": "opinion",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the domain",
+        "authors": ["opinion@foo.bar"],
+        "opinion": "strongly-agree",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "x_misp_opinion": 90
+    },
+    {
+        "type": "note",
+        "id": "note--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "abstract": "Summary of the case",
+        "content": "A victim reported a malicious domain",
+        "object_refs": ["indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:data-layer="Event Report"']
+    }
+]
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3132,6 +3217,22 @@ _FILENAME_OBSERVABLE_ATTRIBUTE = [
         "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     }
 ]
+# A `location` is not a type STIX 2.0 knows, so a Bundle parsed against it
+# keeps this object as a plain dictionary - the Dict-Form Object the label
+# dispatch of every per-type converter has to read.
+_GEOLOCATION_OBJECT = {
+    "type": "location",
+    "id": "location--6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "latitude": 39.108889,
+    "longitude": -76.771389,
+    "region": "northern-america",
+    "country": "US",
+    "city": "Fort Meade",
+    "labels": ['misp:name="geolocation"', 'misp:meta-category="misc"']
+}
 _GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -8243,6 +8344,39 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(indicator, observed_data)
 
     @classmethod
+    def get_bundle_with_dict_form_objects(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        note, opinion, event_report = deepcopy(_DICT_FORM_OBJECTS)
+        report.update(
+            cls._populate_references(indicator['id'], event_report['id'])
+        )
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, indicator, note, opinion,
+            event_report
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_dict_form_location(cls):
+        """A Dict-Form Object the per-type converters dispatch on labels."""
+        return cls.__assemble_bundle(deepcopy(_GEOLOCATION_OBJECT))
+
+    @classmethod
+    def get_bundle_with_duplicate_object_ids(cls):
+        bundle = deepcopy(cls.__bundle)
+        report = deepcopy(cls.__report)
+        shadowed = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        shadowed['pattern'] = "[domain-name:value = 'shadowed.example.com']"
+        report.update(cls._populate_references(indicator['id']))
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, shadowed, indicator
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_bundle_with_event_report(cls):
         return cls.__assemble_bundle(*_EVENT_REPORT)
 
@@ -8256,6 +8390,47 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
             bundle,
             allow_custom=True,
             interoperability=True
+        )
+
+    @classmethod
+    def __assemble_merged_indicator_bundle(cls, **indicator_fields):
+        """An Indicator and an Observed Data sharing the uuid they merge on.
+
+        `indicator--X` and `observed-data--X` are the 2 renderings a MISP
+        object with a `to_ids` attribute exports, and the import merges them
+        back into the single record X: what the Indicator says the Observed
+        Data does not is what such a merge takes away.
+        """
+        observed_data, indicator, relationship = deepcopy(
+            _DOMAIN_OBSERVABLE_ATTRIBUTE
+        )
+        indicator.update(indicator_fields)
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
+
+    @classmethod
+    def get_bundle_with_merged_indicator_on_different_values(cls):
+        return cls.__assemble_merged_indicator_bundle(
+            pattern="[domain-name:value = 'misp-project.org']"
+        )
+
+    @classmethod
+    def get_bundle_with_merged_indicator_on_narrowed_value(cls):
+        # The Observed Data narrows what the pattern states rather than
+        # contradicting it: still a value the merge does not keep.
+        observed_data, indicator, relationship = deepcopy(
+            _DOMAIN_OBSERVABLE_ATTRIBUTE
+        )
+        observed_data['objects']['0']['value'] = 'www.circl.lu'
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
+
+    @classmethod
+    def get_bundle_with_merged_indicator_without_stix_pattern(cls):
+        # A sigma rule states no value the Observed Data could be repeating.
+        # STIX 2.0 knows no `pattern_type` and validates every pattern as a
+        # STIX one, so the rule reaches the parser as a custom property.
+        return cls.__assemble_merged_indicator_bundle(
+            pattern="[domain-name:value = 'misp-project.org']",
+            pattern_type='sigma'
         )
 
     @classmethod
@@ -8312,6 +8487,33 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_intrusion_set_galaxy(cls):
         return cls.__assemble_bundle(_INTRUSION_SET_GALAXY)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_galaxy_name(cls):
+        """A galaxy naming itself what a taxonomy tag value cannot carry."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        malware['name'] = SMUGGLING_TAG_VALUE
+        return cls.__assemble_bundle(malware)
+
+    @classmethod
+    def get_bundle_with_metacharacters_in_galaxy_type(cls):
+        """A galaxy type label asking for taxonomy entries of its own."""
+        return cls.get_bundle_with_malformed_galaxy_labels(
+            [f'misp:galaxy-type="{SMUGGLING_TAG_PREDICATE}"']
+        )
+
+    @classmethod
+    def get_bundle_with_unusable_galaxy_type(cls):
+        """A galaxy type label a taxonomy tag has nothing to carry from."""
+        return cls.get_bundle_with_malformed_galaxy_labels(
+            [f'misp:galaxy-type="{UNUSABLE_TAG_SLOT}"']
+        )
+
+    @classmethod
+    def get_bundle_with_malformed_galaxy_labels(cls, labels):
+        malware = deepcopy(_MALWARE_GALAXY)
+        malware['labels'] = labels
+        return cls.__assemble_bundle(malware)
 
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
@@ -8468,6 +8670,17 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_credential_observable_object(cls):
         return cls.__assemble_bundle(*_CREDENTIAL_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_custom_object_with_injected_fields(cls):
+        return cls.__assemble_bundle(_CUSTOM_OBJECT_WITH_INJECTED_FIELDS)
+
+    @classmethod
+    def get_bundle_with_custom_object_with_invalid_name(cls, name=None):
+        custom_object = _CUSTOM_OBJECT_WITH_INVALID_NAME
+        if name is not None:
+            custom_object = {**custom_object, 'x_misp_name': name}
+        return cls.__assemble_bundle(custom_object)
 
     @classmethod
     def get_bundle_with_custom_objects(cls):

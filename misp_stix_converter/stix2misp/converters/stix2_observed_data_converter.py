@@ -68,7 +68,9 @@ class STIX2ObservedDataConverter(metaclass=ABCMeta):
         return self.main_parser.indicator_references
 
     def _get_observed_data(self, object_id: str) -> _OBSERVED_DATA_TYPING:
-        observed_data = self.main_parser._observed_data[object_id]
+        # a reference to an Observed Data the bundle does not carry is the
+        # loading error `_handle_object` reports by id, not a raw KeyError
+        observed_data = self.main_parser._get_stix_object(object_id)
         if isinstance(observed_data, (ObservedData_v20, ObservedData_v21)):
             return observed_data
         return observed_data['observed_data']
@@ -2699,9 +2701,7 @@ class InternalSTIX2ObservedDataConverter(
     def parse(self, observed_data_ref: str):
         observed_data = self._get_observed_data(observed_data_ref)
         try:
-            feature = self._handle_mapping_from_labels(
-                observed_data.labels, observed_data.id
-            )
+            feature = self._handle_mapping_from_labels(observed_data)
         except UndefinedSTIXObjectError as error:
             raise UndefinedObservableError(error)
         version = getattr(observed_data, 'spec_version', '2.0')

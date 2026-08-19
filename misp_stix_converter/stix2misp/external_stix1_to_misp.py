@@ -20,12 +20,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX1toMISPMapping
-        self.__dns_objects = defaultdict(dict)
-        self.__dns_ips = []
 
     def parse_stix_package(self, cluster_distribution: Optional[int] = 0,
                            cluster_sharing_group_id: Optional[int] = None,
                            organisation_uuid: Optional[str] = None, **kwargs):
+        self._reset_bundle_state()
         self._set_parameters(**kwargs)
         self._set_single_event(True)
         self._set_cluster_distribution(
@@ -101,6 +100,14 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 if ip not in self.dns_ips:
                     self.misp_event.add_attribute(**ip_attribute)
 
+    def _reset_bundle_state(self):
+        super()._reset_bundle_state()
+        # The DNS bookkeeping is only turned into MISP content once the whole
+        # package is parsed, so a second package inheriting it gets an event
+        # carrying the passive DNS records of the first one
+        self.__dns_objects = defaultdict(dict)
+        self.__dns_ips = []
+
     ############################################################################
     #                                PROPERTIES                                #
     ############################################################################
@@ -156,8 +163,12 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                                 }
                             )
                         elif vulnerability.title:
-                            title = vulnerability.title
-                            galaxies.add(f'misp-galaxy:branded-vulnerability="{title}"')
+                            tag_name = self._build_tag(
+                                'misp-galaxy', 'branded-vulnerability',
+                                vulnerability.title
+                            )
+                            if tag_name is not None:
+                                galaxies.add(tag_name)
         if len(attributes) == 1:
             attributes[0].update(self._sanitise_attribute_uuid(ttp.id_))
         return attributes
@@ -269,7 +280,13 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             for marking in handling.marking_structures:
                 parser = self._mapping.marking_mapping(marking._XSI_TYPE)
                 if parser is not None:
-                    yield from getattr(self, parser)(marking)
+                    # A marking field a taxonomy tag can be made of nothing
+                    # from writes no tag: the builder returns None and the
+                    # marking is dropped here, as at every other site that
+                    # collects built tags rather than adding them one by one.
+                    for tag in getattr(self, parser)(marking):
+                        if tag is not None:
+                            yield tag
 
     def _parse_observables(self, observables: Optional[Observables] = None, to_ids: bool = False):
         for observable in observables or self.stix_package.observables:
@@ -329,7 +346,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         relationship = related_object.relationship.value.lower().replace('_', '-')
                         self.references[uuid].append(
                             {
-                                "idref": self.fetch_uuid(related_object.idref),
+                                "idref": self._sanitise_uuid(related_object.idref),
                                 "relationship": relationship
                             }
                         )
@@ -374,39 +391,49 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     #                   MARKING DEFINITIONS PARSING METHODS.                   #
     ############################################################################
 
-    @staticmethod
-    def _parse_AIS_marking(marking: AISMarkingStructure):
+    def _parse_AIS_marking(self, marking: AISMarkingStructure):
         for feature in ('is_proprietary', 'not_proprietary'):
             proprietary = getattr(marking, feature)
             if proprietary is None:
                 continue
-            yield f'ais-marking:AISMarking="{feature.title()}"'
+            yield self._build_tag(
+                'ais-marking', 'AISMarking', feature.title()
+            )
             if hasattr(proprietary, 'cisa_proprietary'):
                 cisa_proprietary = (
                     'true' if proprietary.cisa_proprietary.numerator == 1
                     else 'false'
                 )
-                yield f'ais-marking:CISA_Proprietary="{cisa_proprietary}"'
+                yield self._build_tag(
+                    'ais-marking', 'CISA_Proprietary', cisa_proprietary
+                )
             if hasattr(proprietary, 'ais_consent'):
-                consent = proprietary.ais_consent.consent
-                yield f'ais-marking:AISConsent="{consent}"'
+                yield self._build_tag(
+                    'ais-marking', 'AISConsent', proprietary.ais_consent.consent
+                )
             if hasattr(proprietary, 'tlp_marking'):
-                color = proprietary.tlp_marking.color
-                yield f'ais-marking:TLPMarking="{color}"'
+                yield self._build_tag(
+                    'ais-marking', 'TLPMarking', proprietary.tlp_marking.color
+                )
 
-    @staticmethod
-    def _parse_TLP_marking(marking: TLPMarkingStructure):
-        yield f'tlp:{marking.color.lower()}'
+    def _parse_TLP_marking(self, marking: TLPMarkingStructure):
+        yield self._build_tag('tlp', marking.color.lower())
 
     ############################################################################
     #                             UTILITY METHODS.                             #
     ############################################################################
 
     def _get_event_info(self):
-        if hasattr(self.stix_package, 'title'):
+        # Testing the value, not the attribute: a STIX header always carries a
+        # `title` field, set to None when absent, so `hasattr` would return the
+        # missing title instead of falling through.
+        if getattr(self.stix_package, 'title', None):
             return self.stix_package.title
-        if hasattr(getattr(self.stix_package, 'stix_header', None), 'title'):
-            return self.stix_package.stix_header.title
+        title = getattr(
+            getattr(self.stix_package, 'stix_header', None), 'title', None
+        )
+        if title:
+            return title
         return f"Imported from external STIX {self.stix_version} Package"
 
     @staticmethod

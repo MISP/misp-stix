@@ -3863,6 +3863,33 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         )
         objects_documentation.check_export_mapping()
 
+    # Only the JSON input path: with a MISPEvent, pymisp resolves the template
+    # while the caller builds the event, before misp-stix sees any of it.
+    def test_event_with_object_with_invalid_name(self):
+        name = '../../../../../../../../planted'
+        event = get_event_with_object_with_invalid_name(name)
+        self._run_invalid_object_name_tests(event['Event'], name)
+
+    def test_event_with_object_name_traversing_out_of_the_templates(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp_dir:
+            traversal = self._plant_template_definition(tmp_dir)
+            event = get_event_with_object_with_invalid_name(traversal)
+            self._run_invalid_object_name_tests(event['Event'], traversal)
+
+    def test_objects_collection_with_invalid_name(self):
+        name = '../../../../../../../../planted'
+        event = get_event_with_object_with_invalid_name(name)
+        misp_object = event['Event']['Object'][0]
+        for argument in (misp_object, {'Object': [misp_object]}):
+            parser = MISPtoSTIX20Parser()
+            parser.parse_misp_object(argument)
+            self._check_invalid_object_name_collection(parser, name)
+        parser = MISPtoSTIX20Parser()
+        parser.parse_misp_objects([misp_object])
+        self._check_invalid_object_name_collection(parser, name)
+        self.assertEqual(misp_object['name'], name)
+
     def test_embedded_indicator_object_galaxy(self):
         event = get_embedded_indicator_object_galaxy()
         self._test_embedded_indicator_object_galaxy(event['Event'])
@@ -3959,6 +3986,11 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         self._populate_documentation(
             misp_object=self.parser._misp_event.objects[0],
             stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_cpe_asset_indicator_metacharacter_relation(self):
+        self._check_pattern_metacharacter_relations(
+            get_event_with_cpe_asset_object, 'software'
         )
 
     def test_event_with_cpe_asset_observable_object(self):
@@ -4110,13 +4142,20 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         )
         filename['value'] = "%USERPROFILE%\\Desktop\\O'Brien\\Styx-Stealer.pdb"
         self.parser.parse_misp_event(event['Event'])
-        indicators = [
-            stix_object for stix_object in self.parser.stix_objects
-            if stix_object['type'] == 'indicator'
-        ]
+        indicators = self._get_indicators()
         self.assertEqual(len(indicators), 1)
         escaped = filename['value'].replace('\\', '\\\\').replace("'", "\\'")
         self.assertIn(f"file:name = '{escaped}'", indicators[0].pattern)
+
+    def test_event_with_file_indicator_metacharacter_relation(self):
+        self._check_pattern_metacharacter_relations(
+            get_event_with_file_object, 'file'
+        )
+
+    def test_event_with_file_indicator_unquotable_pattern_reported(self):
+        self._check_unquotable_pattern_reported(
+            get_event_with_file_object, 'file'
+        )
 
     def test_event_with_file_object_invalid_hash_single_error(self):
         # A file object with a `to_ids` flag is built as both observed-data
@@ -4389,6 +4428,11 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         self._populate_documentation(
             misp_object=self.parser._misp_event.objects[0],
             stix=self.parser.stix_objects[2:]
+        )
+
+    def test_event_with_user_account_indicator_metacharacter_relation(self):
+        self._check_pattern_metacharacter_relations(
+            get_event_with_user_account_object, 'user-account'
         )
 
     def test_event_with_user_account_observable_object(self):
@@ -5585,6 +5629,90 @@ class TestSTIX20MISPExportInteroperability(TestSTIX20ExportInteroperability):
 
 
 class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
+    def test_exports_reduce_the_input_path_they_report(self):
+        self._check_input_path_reduction(
+            misp_to_stix2, misp_collection_to_stix2,
+            *self._collection_files('test_events_collection'),
+            version='2.0'
+        )
+
+    def test_collections_converting_nothing_keep_the_destination(self):
+        self._check_collection_converting_nothing(
+            misp_collection_to_stix2,
+            *self._collection_files('test_events_collection'),
+            version='2.0'
+        )
+
+    def test_exports_refuse_to_overwrite_an_existing_output(self):
+        input_files = self._collection_files('test_events_collection')
+        # A single input file reports the refusal in the result dict its write
+        # already sits in; a merged output raises it, like any other write it
+        # cannot do on that path
+        self._check_overwrite_policy(
+            misp_to_stix2, input_files[0], recorded=True, version='2.0'
+        )
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_overwrite_policy(
+                misp_collection_to_stix2, *input_files, single_output=True,
+                version='2.0', **kwargs
+            )
+        self._check_destination_appearing_mid_conversion(
+            misp_collection_to_stix2, *input_files, single_output=True,
+            version='2.0'
+        )
+
+    def test_exports_write_owner_only_files(self):
+        input_files = self._collection_files('test_events_collection')
+        self._check_output_file_mode(
+            misp_to_stix2, input_files[0], version='2.0'
+        )
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_output_file_mode(
+                misp_collection_to_stix2, *input_files, single_output=True,
+                version='2.0', **kwargs
+            )
+        # One output per input file: each one is owner-only as well
+        self._check_output_file_mode(
+            misp_collection_to_stix2, *input_files, version='2.0'
+        )
+
+    def test_interrupted_streamed_write_keeps_the_destination(self):
+        # The streamed path is the one that used to write the output in
+        # several steps, so an interrupted assembly left it truncated
+        self._check_interrupted_write_keeps_the_destination(
+            misp_collection_to_stix2,
+            *self._collection_files('test_events_collection'),
+            single_output=True, version='2.0'
+        )
+
+    def test_collection_default_output_location(self):
+        input_files = [
+            self._current_path / f'test_events_collection_{n}.json'
+            for n in (1, 2)
+        ]
+        for kwargs in ({}, {'in_memory': True}):
+            self._check_default_single_output(
+                misp_collection_to_stix2, *input_files, version='2.0', **kwargs
+            )
+            self._check_created_output_directory(
+                misp_collection_to_stix2, *input_files, version='2.0', **kwargs
+            )
+
+    def test_export_reports_dropped_content_without_debug(self):
+        # export records an error for every attribute or object it could not
+        # convert, but `_generate_traceback` only attached them when `debug`
+        # was set - the default result claimed a plain success for a bundle
+        # rendering only part of the event.
+        results = self._export_event_with_invalid_hash('2.0')
+        self.assertEqual(results['success'], 1)
+        self.assertTrue(
+            any(
+                'Invalid TLSH value' in error
+                for errors in results['errors'].values()
+                for error in errors
+            )
+        )
+
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
         output_file = self._current_path / f'{name}.json.out'
@@ -5601,7 +5729,7 @@ class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
         self.assertEqual(
             misp_collection_to_stix2(
                 *input_files, version='2.0', in_memory=True,
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -5623,7 +5751,7 @@ class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
         self.assertEqual(
             misp_collection_to_stix2(
                 *input_files, version='2.0', in_memory=True,
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -5645,7 +5773,7 @@ class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
         self.assertEqual(
             misp_collection_to_stix2(
                 *input_files, version='2.0', in_memory=True,
-                single_output=True, output_name=output_file
+                single_output=True, output_name=output_file, overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )
@@ -5678,7 +5806,7 @@ class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
         self._check_stix2_results_export(output_file, reference_file)
         self.assertEqual(
             misp_collection_to_stix2(
-                filename, version='2.0'
+                filename, version='2.0', overwrite=True
             ),
             {'success': 1, 'results': [output_file]}
         )

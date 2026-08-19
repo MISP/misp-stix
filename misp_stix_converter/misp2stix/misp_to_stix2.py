@@ -155,14 +155,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             misp_object = misp_object['Object']
         errors = defaultdict(list)
         if isinstance(misp_object, list):
-            for obj in validate_objects(misp_object, errors):
+            objects = [
+                self._sanitise_object_template_name(obj) for obj in misp_object
+            ]
+            for obj in validate_objects(objects, errors):
                 self._bind_shared_args(
                     self._handle_identity_from_feed(obj.get('Event', event))
                 )
                 self._resolve_object(obj)
         else:
             self._bind_shared_args(self._handle_identity_from_feed(event))
-            self._resolve_object(validate_object(misp_object, errors))
+            self._resolve_object(
+                validate_object(
+                    self._sanitise_object_template_name(misp_object), errors
+                )
+            )
         if errors:
             self._handle_validation_errors(errors)
         if self._objects_to_parse:
@@ -184,7 +191,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._bind_shared_args(
                 self._handle_identity_from_feed(misp_object.get('Event', {}))
             )
-            self._resolve_object(validate_object(misp_object, errors))
+            self._resolve_object(
+                validate_object(
+                    self._sanitise_object_template_name(misp_object), errors
+                )
+            )
         if errors:
             self._handle_validation_errors(errors)
         if self._objects_to_parse:
@@ -251,7 +262,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_misp_event(self, misp_event: MISPEvent | dict):
         self._misp_event = validate_event(
-            misp_event, errors := defaultdict(list)
+            self._sanitise_event_object_names(misp_event),
+            errors := defaultdict(list)
         )
         if errors:
             self._handle_validation_errors(errors)
@@ -1636,12 +1648,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             separator: Optional[str] = ':') -> list:
         pattern = []
         for key, values in attributes.items():
-            key = key.replace('-', '_')
+            segment = self._quote_custom_property(key)
             if not isinstance(values, list):
-                pattern.append(f"{prefix}{separator}x_misp_{key} = '{values}'")
+                pattern.append(f"{prefix}{separator}{segment} = '{values}'")
                 continue
             for value in values:
-                pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
+                pattern.append(f"{prefix}{separator}{segment} = '{value}'")
         return pattern
 
     def _handle_pattern_properties(
@@ -1649,9 +1661,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             separator: Optional[str] = ':') -> list:
         pattern = []
         for key, value in attributes.items():
-            pattern.append(
-                f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'"
-            )
+            segment = self._quote_custom_property(key)
+            pattern.append(f"{prefix}{separator}{segment} = '{value}'")
         return pattern
 
     def _handle_pe_object_references(
@@ -1725,7 +1736,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     for value in values:
                         pattern.extend(
                             self._handle_custom_data_pattern(
-                                prefix, key.replace('-', '_'), value
+                                prefix, key, value
                             )
                         )
             indicator = self._handle_object_indicator(misp_object, pattern)
@@ -3188,13 +3199,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         for value in values:
                             pattern.extend(
                                 self._handle_custom_data_pattern(
-                                    prefix, key.replace('-', '_'), value
+                                    prefix, key, value
                                 )
                             )
                     else:
                         pattern.extend(
                             self._handle_custom_data_pattern(
-                                prefix, key.replace('-', '_'), values
+                                prefix, key, values
                             )
                         )
             indicator = self._handle_object_indicator(misp_object, pattern)
@@ -5190,15 +5201,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _handle_custom_data_pattern(
             prefix: str, key: str, value: str | tuple) -> list:
+        segment = MISPtoSTIX2Parser._quote_custom_property(key)
         if isinstance(value, tuple):
             value, data = value
             if not isinstance(data, str):
                 data = b64encode(data.getvalue()).decode()
             return [
-                f"{prefix}:x_misp_{key}.data = '{data}'",
-                f"{prefix}:x_misp_{key}.value = '{value}'"
+                f"{prefix}:{segment}.data = '{data}'",
+                f"{prefix}:{segment}.value = '{value}'"
             ]
-        return [f"{prefix}:x_misp_{key} = '{value}'"]
+        return [f"{prefix}:{segment} = '{value}'"]
 
     def _handle_indicator_time_fields(
             self, data_layer: MISPAttribute | MISPObject | dict) -> dict:
@@ -5361,6 +5373,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _escape_pattern_value(value: str) -> str:
         return str(value).replace('\\', '\\\\').replace("'", "\\'")
+
+    @staticmethod
+    def _quote_custom_property(relation: str) -> str:
+        return MISPtoSTIX2Parser._quote_segment(
+            f"x_misp_{relation.replace('-', '_')}"
+        )
 
     @staticmethod
     def _quote_segment(segment: str) -> str:
