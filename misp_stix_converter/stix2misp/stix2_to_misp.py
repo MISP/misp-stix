@@ -1010,16 +1010,32 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
 
     def _parse_marking_definition(
-            self, marking_definition: _MARKING_DEFINITION_TYPING) -> Union[dict, str]:
+            self,
+            marking_definition: _MARKING_DEFINITION_TYPING
+    ) -> Union[dict, str, list, tuple]:
         if 'definition_type' in marking_definition:
+            # The tag a marking is read as is one this library writes out of
+            # the two fields below, so it goes through the tag builder like
+            # every other built tag (ADR-0012): a `definition` carrying a `"`
+            # would otherwise decide what else the data it governs is tagged
+            # with. A marking naming its own type keeps the slots it named.
             definition_type = marking_definition['definition_type']
-            definition = marking_definition['definition'][definition_type]
-            if definition.startswith(f'{definition_type}:'):
-                return definition
-            return f"{definition_type}:{definition}"
+            definition = str(marking_definition['definition'][definition_type])
+            slots = (
+                definition.split(':', 1)
+                if definition.startswith(f'{definition_type}:')
+                else (definition_type, definition)
+            )
+            return self._build_tag(*slots) or ()
         if 'name' in marking_definition:
             # should be TLP 2.0 definition
-            return marking_definition['name'].lower()
+            name = marking_definition['name'].lower()
+            # A name the sender wrote as a taxonomy entry is read as its slots;
+            # one that is a bare word is no grammar to fill, only text to clean
+            return (
+                self._build_tag(*name.split(':', 1)) if ':' in name
+                else self._clean_tag_slot(name)
+            ) or ()
         if 'extensions' in marking_definition:
             clusters = []
             tags = []
