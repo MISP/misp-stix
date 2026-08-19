@@ -25,13 +25,14 @@ def _reduce_input_path(message: str, filename) -> str:
 
 
 def _reduce_input_error(filename, error: Exception) -> str:
-    """The error text the import entry functions return names the input twice:
-    the file they were handed, which they resolved, and the message the failure
-    came with, which may embed that resolved path again. Keep both down to the
-    file name - a loading failure reaching a caller through
-    `parse_stix_content` and the same failure reaching it through an entry
-    function say the same thing."""
+    """The error text an entry function reports for an input it could not
+    convert names that input twice: the file it was handed, which it resolved,
+    and the message the failure came with, which may embed that resolved path
+    again. Keep both down to the file name - a loading failure reaching a
+    caller through `parse_stix_content` and the same failure reaching it
+    through an entry function say the same thing, and so does an export
+    failing on the MISP file it read."""
     return (
-        f'{PurePath(str(filename)).name} -  '
+        f'{PurePath(str(filename)).name} - '
         f'{_reduce_input_path(str(error), filename)}'
     )

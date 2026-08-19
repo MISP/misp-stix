@@ -145,7 +145,7 @@ def misp_attribute_collection_to_stix1(
                 )
                 return _generate_traceback(debug, parser, name)
             except Exception as exception:
-                return {'fails': [f'{filename} -  {exception.__str__()}']}
+                return {'fails': [_reduce_input_error(filename, exception)]}
         traceback = defaultdict(list)
         if single_output:
             stix_package = _create_stix_package(org, version)
@@ -175,8 +175,10 @@ def misp_attribute_collection_to_stix1(
                             for ttp in current.ttps:
                                 stix_package.add_ttp(ttp)
                     except Exception as exception:
-                        traceback['fails'].append(f'{filename} - {exception.__str__()}')
-                if any(filename not in traceback.get('fails', []) for filename in input_files):
+                        traceback['fails'].append(
+                            _reduce_input_error(filename, exception)
+                        )
+                if len(traceback.get('fails', ())) < len(input_files):
                     _write_raw_stix(
                         stix_package, name, namespace, org, return_format,
                         overwrite
@@ -213,8 +215,10 @@ def misp_attribute_collection_to_stix1(
                                         opener=_private_opener) as f:
                                     f.write(content)
                     except Exception as exception:
-                        traceback['fails'].append(f'{filename} - {exception.__str__()}')
-                if any(filename not in traceback.get('fails', []) for filename in input_files):
+                        traceback['fails'].append(
+                            _reduce_input_error(filename, exception)
+                        )
+                if len(traceback.get('fails', ())) < len(input_files):
                     header, _, footer = stix1_attributes_framing(
                         namespace, org, return_format, stix_package.version
                     )
@@ -245,7 +249,7 @@ def misp_attribute_collection_to_stix1(
                 )
                 output_names.append(name)
             except Exception as exception:
-                traceback['fails'].append(f'{filename} - {exception.__str__()}')
+                traceback['fails'].append(_reduce_input_error(filename, exception))
         if output_names:
             traceback.update(_generate_traceback(debug, parser, *output_names))
         return traceback
@@ -282,7 +286,7 @@ def misp_event_collection_to_stix1(
                 _write_raw_stix(parser.stix_package, name, *_write_args)
                 return _generate_traceback(debug, parser, name)
             except Exception as exception:
-                return {'fails': [f'{filename} - {exception.__str__()}']}
+                return {'fails': [_reduce_input_error(filename, exception)]}
         traceback = defaultdict(list)
         if single_output:
             stix_package = _create_stix_package(org, version, header=False)
@@ -303,8 +307,10 @@ def misp_event_collection_to_stix1(
                         else:
                             stix_package.add_related_package(parser.stix_package)
                     except Exception as exception:
-                        traceback['fails'].append(f'{filename} - {exception.__str__()}')
-                if any(filename not in traceback.get('fails', []) for filename in input_files):
+                        traceback['fails'].append(
+                            _reduce_input_error(filename, exception)
+                        )
+                if len(traceback.get('fails', ())) < len(input_files):
                     _write_raw_stix(stix_package, name, *_write_args)
                     traceback.update(_generate_traceback(debug, parser, name))
                 return traceback
@@ -322,7 +328,9 @@ def misp_event_collection_to_stix1(
                     output.write(f'{header}{content}')
                     written = True
                 except Exception as exception:
-                    traceback['fails'].append(filename)
+                    traceback['fails'].append(
+                        _reduce_input_error(filename, exception)
+                    )
                 for filename in input_files[1:]:
                     try:
                         if not isinstance(filename, Path):
@@ -335,7 +343,7 @@ def misp_event_collection_to_stix1(
                         written = True
                     except Exception as exception:
                         traceback['fails'].append(
-                            f'{filename} - {exception.__str__()}'
+                            _reduce_input_error(filename, exception)
                         )
                 if written:
                     output.write(footer)
@@ -358,7 +366,7 @@ def misp_event_collection_to_stix1(
                 _write_raw_stix(parser.stix_package, name, *_write_args)
                 output_names.append(name)
             except Exception as exception:
-                traceback['fails'].append(f'{filename} - {exception.__str__()}')
+                traceback['fails'].append(_reduce_input_error(filename, exception))
         if output_names:
             traceback.update(_generate_traceback(debug, parser, *output_names))
         return traceback
@@ -389,7 +397,7 @@ def misp_collection_to_stix2(
             )
             return _generate_traceback(debug, parser, name)
         except Exception as exception:
-            return {'fails': [f'{filename} - {exception.__str__()}']}
+            return {'fails': [_reduce_input_error(filename, exception)]}
     traceback = defaultdict(list)
     if single_output:
         if in_memory:
@@ -399,8 +407,8 @@ def misp_collection_to_stix2(
                         filename = Path(filename).resolve()
                     parser.parse_json_file(filename)
                 except Exception as exception:
-                    traceback['fails'].append(f'{filename} - {exception.__str__()}')
-            if any(filename not in traceback.get('fails', []) for filename in input_files):
+                    traceback['fails'].append(_reduce_input_error(filename, exception))
+            if len(traceback.get('fails', ())) < len(input_files):
                 bundle = parser.bundle
                 name = _check_filename(
                     _default_output_dir(*input_files),
@@ -435,7 +443,7 @@ def misp_collection_to_stix2(
                 output.write(stix_objects[8:-8])
                 written = True
             except Exception as exception:
-                traceback['fails'].append(f'{filename} - {exception.__str__()}')
+                traceback['fails'].append(_reduce_input_error(filename, exception))
             for filename in input_files[1:]:
                 try:
                     if not isinstance(filename, Path):
@@ -450,7 +458,7 @@ def misp_collection_to_stix2(
                     written = True
                 except Exception as exception:
                     traceback['fails'].append(
-                        f'{filename} - {exception.__str__()}'
+                        _reduce_input_error(filename, exception)
                     )
             if written:
                 output.write('\n    ]\n}')
@@ -475,7 +483,7 @@ def misp_collection_to_stix2(
             )
             output_names.append(name)
         except Exception as exception:
-            traceback['fails'].append(f'{filename} - {exception.__str__()}')
+            traceback['fails'].append(_reduce_input_error(filename, exception))
     if output_names:
         traceback.update(_generate_traceback(debug, parser, *output_names))
     return traceback
@@ -508,7 +516,7 @@ def misp_to_stix1(
                 parser.stix_package, name, namespace, org, return_format, overwrite
             )
         except Exception as exception:
-            return {'fails': [f'{filename} - {exception.__str__()}']}
+            return {'fails': [_reduce_input_error(filename, exception)]}
         return _generate_traceback(debug, parser, name)
 
 
@@ -532,7 +540,7 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
             overwrite=overwrite
         )
     except Exception as exception:
-        return {'fails': [f'{filename} - {exception.__str__()}']}
+        return {'fails': [_reduce_input_error(filename, exception)]}
     return _generate_traceback(debug, parser, name)
 
 
