@@ -6275,6 +6275,36 @@ def get_event_with_registry_key_and_values_objects():
     return event
 
 
+_TEST_REGISTRY_KEY_VALUE_CUSTOM_ATTRIBUTE = {
+    "type": "text",
+    "object_relation": "benign",
+    "value": "registry key value known to be legitimate"
+}
+
+
+def get_event_with_registry_key_value_object_custom():
+    event = deepcopy(_BASE_EVENT)
+    misp_object = deepcopy(_TEST_REGISTRY_KEY_VALUE_OBJECT)
+    misp_object['Attribute'].append(
+        deepcopy(_TEST_REGISTRY_KEY_VALUE_CUSTOM_ATTRIBUTE)
+    )
+    event['Event']['Object'] = [dict(_populate_object(misp_object))]
+    return event
+
+
+def get_event_with_registry_key_and_values_objects_custom():
+    event = deepcopy(_BASE_EVENT)
+    misp_objects = deepcopy(_TEST_REGISTRY_KEY_WITH_VALUES_OBJECTS)
+    for misp_object in misp_objects[1:]:
+        misp_object['Attribute'].append(
+            deepcopy(_TEST_REGISTRY_KEY_VALUE_CUSTOM_ATTRIBUTE)
+        )
+    event['Event']['Object'] = [
+        dict(_populate_object(misp_object)) for misp_object in misp_objects
+    ]
+    return event
+
+
 def get_event_with_script_objects():
     event = deepcopy(_BASE_EVENT)
     script_to_malware_object = deepcopy(_TEST_SCRIPT_OBJECT)
