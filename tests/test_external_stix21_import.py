@@ -1313,6 +1313,32 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             SMUGGLING_TAG_VALUE, SANITISED_TAG_VALUE, self.parser.warnings
         )
 
+    def test_stix21_bundle_with_nameless_location_galaxy(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_nameless_location_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, location = bundle.objects
+        # A galaxy-mapped SDO without a name converts under the object id
+        # fallback the cluster path defines, and no error is recorded.
+        cluster = event.galaxies[0].clusters[0]
+        self.assertEqual(cluster.value, location.id)
+        self.assertFalse(self.parser.errors)
+
+    def test_stix21_bundle_with_nameless_location_galaxy_as_tags(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_nameless_location_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        _, _, location = bundle.objects
+        # A galaxy-mapped SDO without a name is written into a tag under the
+        # object id fallback - never dropped with a traceback as its record.
+        self.assertIn(
+            f'misp-galaxy:location="{location.id}"',
+            {tag.name for tag in event.tags}
+        )
+        self.assertFalse(self.parser.errors)
+
     def test_stix21_bundle_with_threat_actor_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
         self.parser.load_stix_bundle(bundle)

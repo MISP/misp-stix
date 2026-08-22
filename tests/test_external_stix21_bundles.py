@@ -3150,6 +3150,16 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_galaxy_bundle(event_galaxy, attribute_galaxy)
 
     @classmethod
+    def get_bundle_with_nameless_location_galaxy(cls):
+        """A galaxy-mapped SDO carrying no name - STIX 2.1 does not require
+        one on a Location. The description goes with it, so the cluster
+        description falls back onto the same guarded value."""
+        location = deepcopy(_LOCATION_OBJECTS[0])
+        for field in ('name', 'description'):
+            del location[field]
+        return cls.__assemble_bundle(location)
+
+    @classmethod
     def get_bundle_with_threat_actor_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_THREAT_ACTOR_OBJECTS)
 

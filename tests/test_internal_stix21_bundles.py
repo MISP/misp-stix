@@ -10613,6 +10613,28 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_MALWARE_GALAXY)
 
     @classmethod
+    def get_bundle_with_nameless_country_galaxy(cls):
+        """A galaxy Location carrying no name - STIX 2.1 requires none."""
+        location = deepcopy(_LOCATION_GALAXIES[0])
+        del location['name']
+        return cls.__assemble_bundle(location)
+
+    @classmethod
+    def get_bundle_with_nameless_malware_galaxy(cls):
+        """A galaxy malware carrying no name - STIX 2.1 requires none on a
+        malware instance."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        del malware['name']
+        return cls.__assemble_bundle(malware)
+
+    @classmethod
+    def get_bundle_with_nameless_region_galaxy(cls):
+        """A galaxy Location carrying no name - STIX 2.1 requires none."""
+        location = deepcopy(_LOCATION_GALAXIES[1])
+        del location['name']
+        return cls.__assemble_bundle(location)
+
+    @classmethod
     def get_bundle_with_sector_galaxy(cls):
         return cls.__assemble_bundle(_SECTOR_GALAXY)
 

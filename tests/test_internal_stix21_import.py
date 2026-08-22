@@ -2785,6 +2785,57 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                     self.parser.errors
                 )
 
+    def test_stix21_bundle_with_nameless_country_galaxy(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_country_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        location = bundle.objects[-1]
+        # A country cluster takes its value straight from the name, so a
+        # nameless Location falls back to the object id.
+        cluster = event.galaxies[0].clusters[0]
+        self.assertEqual(cluster.value, location.id)
+        self.assertFalse(self.parser.errors)
+
+    def test_stix21_bundle_with_nameless_malware_galaxy(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_malware_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        malware = bundle.objects[-1]
+        # A galaxy malware without a name converts under the object id
+        # fallback instead of being dropped with a traceback as its record.
+        # The cluster value also carries the external id the meta fields
+        # append, hence the containment check.
+        cluster = event.galaxies[0].clusters[0]
+        self.assertIn(malware.id, cluster.value)
+        self.assertFalse(self.parser.errors)
+
+    def test_stix21_bundle_with_nameless_malware_galaxy_as_tags(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_malware_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        malware = bundle.objects[-1]
+        # The tag the galaxy is written into carries the object id fallback
+        # in its value slot - never a traceback as the recorded error.
+        self.assertIn(
+            f'misp-galaxy:mitre-malware="{malware.id}"',
+            {tag.name for tag in event.tags}
+        )
+        self.assertFalse(self.parser.errors)
+
+    def test_stix21_bundle_with_nameless_region_galaxy(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_region_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        # A region cluster keeps its mapped region value - the name is only
+        # the mapping's fallback, which no longer crashes when it is missing.
+        cluster = event.galaxies[0].clusters[0]
+        self.assertEqual(cluster.value, '154 - Northern Europe')
+        self.assertFalse(self.parser.errors)
+
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
         self.parser.load_stix_bundle(bundle)
