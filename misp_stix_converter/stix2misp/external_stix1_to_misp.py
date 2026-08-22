@@ -450,6 +450,6 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if ttp.exploit_targets is None or ttp.exploit_targets.exploit_target is None:
             return False
         return any(
-            exploit_target.item.vulnerability is not None
+            exploit_target.item.vulnerabilities
             for exploit_target in ttp.exploit_targets.exploit_target
         )
