@@ -341,7 +341,8 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: Union[str, None]) -> dict:
         tag_name = self.main_parser._build_tag(
-            'misp-galaxy', object_type or stix_object.type, stix_object.name
+            'misp-galaxy', object_type or stix_object.type,
+            getattr(stix_object, 'name', stix_object.id)
         )
         return {
             'tag_names': [tag_name] if tag_name is not None else [],
@@ -382,7 +383,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
             description: Optional[str] = None,
             cluster_value: Optional[str] = None) -> dict:
-        value = cluster_value or stix_object.name
+        value = cluster_value or getattr(stix_object, 'name', stix_object.id)
         cluster_args = {
             'uuid': self.main_parser._sanitise_uuid(stix_object.id),
             'value': value, 'type': galaxy_type
@@ -468,7 +469,8 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         galaxy_type, _ = self._extract_galaxy_labels(stix_object)
         tag_name = self.main_parser._build_tag(
-            'misp-galaxy', galaxy_type, stix_object.name
+            'misp-galaxy', galaxy_type,
+            getattr(stix_object, 'name', stix_object.id)
         )
         return {
             'tag_names': [tag_name] if tag_name is not None else [],
