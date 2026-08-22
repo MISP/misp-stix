@@ -21,6 +21,8 @@ from stix.common.related import RelatedPackage, RelatedPackages
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
 from stix.extensions.marking.tlp import TLPMarkingStructure
+from stix.exploit_target import ExploitTarget
+from stix.exploit_target.vulnerability import Vulnerability
 from stix.incident import Incident
 from stix.incident.history import History, HistoryItem, JournalEntry
 from stix.indicator import Indicator
@@ -791,6 +793,36 @@ class TestSTIX1Import(TestSTIX):
         tags = {tag['name'] for tag in parser.misp_event.tags}
         self.assertIn('tlp:amber tlp:red', tags)
         self.assertNotIn('tlp:amber" tlp:red', tags)
+
+    ############################################################################
+    #                          TTP EXPLOIT TARGETS.                            #
+    ############################################################################
+
+    @staticmethod
+    def _ttp_with_exploit_target_cve(cve_id):
+        """A TTP whose content is an exploit target: the documented way a CVE
+        reaches a MISP `vulnerability` attribute."""
+        ttp = TTP()
+        ttp.id_ = f'MISP:TTP-{_ACTOR_UUID}'
+        vulnerability = Vulnerability()
+        vulnerability.cve_id = cve_id
+        exploit_target = ExploitTarget()
+        exploit_target.add_vulnerability(vulnerability)
+        ttp.add_exploit_target(exploit_target)
+        return ttp
+
+    def test_external_ttp_exploit_target_converts_to_vulnerability(self):
+        """A CVE carried by an exploit target lands as a `vulnerability`
+        attribute - the content check reads the `vulnerabilities` field the
+        `stix` library defines, not the `vulnerability` it does not."""
+        stix_package = STIXPackage()
+        stix_package.add_ttp(
+            self._ttp_with_exploit_target_cve('CVE-2021-44228')
+        )
+        parser = self._parse_external_package(stix_package)
+        attribute = parser.misp_event.attributes[0]
+        self.assertEqual(attribute.type, 'vulnerability')
+        self.assertEqual(attribute.value, 'CVE-2021-44228')
 
     ############################################################################
     #                         PARSER STATE ISOLATION.                          #
