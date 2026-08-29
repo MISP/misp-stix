@@ -5706,6 +5706,24 @@ class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
             version='2.0'
         )
 
+    def test_a_crashing_export_reports_the_recorded_messages(self):
+        # An export crash discards nothing the parser recorded before it: a
+        # result carrying `fails` still reports the warnings and errors that
+        # explain what the conversion had already dropped
+        event = self._event_with_recorded_messages()
+        self._check_single_export_reports_recorded_messages(
+            misp_to_stix2, event, expected_error='Invalid TLSH value',
+            version='2.0'
+        )
+        self._check_single_export_reports_recorded_messages(
+            misp_collection_to_stix2, event,
+            expected_error='Invalid TLSH value', version='2.0'
+        )
+        self._check_collection_export_reports_recorded_messages(
+            misp_collection_to_stix2, event,
+            expected_error='Invalid TLSH value', version='2.0'
+        )
+
     def test_exports_refuse_to_overwrite_an_existing_output(self):
         input_files = self._collection_files('test_events_collection')
         # A single input file reports the refusal in the result dict its write
