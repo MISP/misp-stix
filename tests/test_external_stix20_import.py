@@ -526,6 +526,11 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(
             [tag.name for tag in attribute.tags], ['tlp:red']
         )
+        # recovered and applied where it is referenced: nothing for the
+        # end-of-parse sweep to add
+        self._check_unreferenced_invalid_object_error_absence(
+            self.parser.errors
+        )
 
     def test_stix20_marking_definition_cannot_write_a_second_tag(self):
         self._check_marking_definition_tag_grammar(
@@ -691,6 +696,104 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
         self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # listed by the Report but referenced by no field, the invalid
+        # marking is never recovered: the end-of-parse sweep names it
+        self._check_unreferenced_invalid_object_error(
+            invalid_id, self.parser.errors
+        )
+
+    def test_stix20_unreferenced_invalid_objects_are_reported(self):
+        # An object the library refused to load used to be reported only when
+        # a reference asked for it: one nothing references converted without
+        # a signal, indistinguishable from a document that never carried it.
+        indicator_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        marking_id = 'marking-definition--55555555-5555-4555-8555-555555555555'
+        bundle = self._load_stix20_content_with_object_refs(
+            unlisted=(
+                self._invalid_indicator(indicator_id),
+                # an unreferenced Marking Definition is a loss like any other
+                # type, the recovery it never went through notwithstanding
+                *self._invalid_tlp_markings(marking_id, 'white')
+            )
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        for object_id in (indicator_id, marking_id):
+            self._check_unreferenced_invalid_object_error(
+                object_id, self.parser.errors
+            )
+        # a loss of content the bundle did carry, not a dangling reference
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # what the bundle does carry is converted all the same
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix20_referenced_invalid_objects_are_reported_once(self):
+        # A reference to an invalid object already names it: the end-of-parse
+        # sweep stays silent about a loss the reference surfaced.
+        indicator_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        bundle = self._load_stix20_content_with_object_refs(
+            carried=(self._invalid_indicator(indicator_id),)
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error(indicator_id, self.parser.errors)
+        self._check_unreferenced_invalid_object_error_absence(
+            self.parser.errors
+        )
+
+    def test_stix20_reused_parser_reports_only_the_current_documents_losses(self):
+        # `invalid_objects` survives on a reused parser: the sweep covers the
+        # ids the loader diverted from the document just parsed, never the
+        # earlier document's losses again.
+        from misp_stix_converter.tools import load_stix2_content
+        first_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        second_id = 'indicator--66666666-6666-4666-8666-666666666666'
+        second_bundle_id = 'bundle--6a99f66a-8d92-4653-a481-b7cbeef97e95'
+        bundles = {
+            first_id: 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            second_id: second_bundle_id
+        }
+        shared_invalid_objects: dict = {}
+        for indicator_id, bundle_id in bundles.items():
+            bundle = load_stix2_content(
+                {
+                    'type': 'bundle', 'id': bundle_id,
+                    'spec_version': '2.0',
+                    'objects': [self._invalid_indicator(indicator_id)]
+                },
+                invalid_objects=shared_invalid_objects
+            )
+            self.parser.load_stix_bundle(bundle)
+            self.parser.parse_stix_bundle()
+        # both documents' losses stayed in the shared dict the whole time
+        self.assertIn(first_id, self.parser.invalid_objects)
+        second_errors = '\n'.join(self.parser.errors[second_bundle_id])
+        self.assertIn(second_id, second_errors)
+        self.assertNotIn(first_id, second_errors)
+
+    def test_stix20_prepopulated_invalid_objects_are_not_re_reported(self):
+        # the loader deliberately supports a caller-prepopulated
+        # `invalid_objects` dict: the entries an earlier load put there are
+        # not this document's losses.
+        from misp_stix_converter.tools import load_stix2_content
+        earlier_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        indicator_id = 'indicator--66666666-6666-4666-8666-666666666666'
+        bundle = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'spec_version': '2.0',
+                'objects': [self._invalid_indicator(indicator_id)]
+            },
+            invalid_objects={earlier_id: self._invalid_indicator(earlier_id)}
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_unreferenced_invalid_object_error(
+            indicator_id, self.parser.errors
+        )
+        reported = '\n'.join(self._reported_messages(self.parser.errors))
+        self.assertNotIn(earlier_id, reported)
 
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
