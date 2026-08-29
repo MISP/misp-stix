@@ -145,7 +145,9 @@ def misp_attribute_collection_to_stix1(
                 )
                 return _generate_traceback(debug, parser, name)
             except Exception as exception:
-                return {'fails': [_reduce_input_error(filename, exception)]}
+                return _generate_failure_traceback(
+                    debug, parser, filename, exception
+                )
         traceback = defaultdict(list)
         if single_output:
             stix_package = _create_stix_package(org, version)
@@ -184,6 +186,8 @@ def misp_attribute_collection_to_stix1(
                         overwrite
                     )
                     traceback.update(_generate_traceback(debug, parser, name))
+                else:
+                    _merge_recorded_messages(traceback, debug, parser)
                 return traceback
             handler = AttributeCollectionHandler(return_format)
             # The per-feature fragments hold converted content: they live in a
@@ -240,6 +244,8 @@ def misp_attribute_collection_to_stix1(
                             output.write(f'{content}{current_footer}')
                         output.write(footer)
                     traceback.update(_generate_traceback(debug, parser, name))
+                else:
+                    _merge_recorded_messages(traceback, debug, parser)
             return traceback
         output_names = []
         for filename in input_files:
@@ -259,6 +265,8 @@ def misp_attribute_collection_to_stix1(
                 traceback['fails'].append(_reduce_input_error(filename, exception))
         if output_names:
             traceback.update(_generate_traceback(debug, parser, *output_names))
+        else:
+            _merge_recorded_messages(traceback, debug, parser)
         return traceback
 
 
@@ -293,7 +301,9 @@ def misp_event_collection_to_stix1(
                 _write_raw_stix(parser.stix_package, name, *_write_args)
                 return _generate_traceback(debug, parser, name)
             except Exception as exception:
-                return {'fails': [_reduce_input_error(filename, exception)]}
+                return _generate_failure_traceback(
+                    debug, parser, filename, exception
+                )
         traceback = defaultdict(list)
         if single_output:
             stix_package = _create_stix_package(org, version, header=False)
@@ -320,6 +330,8 @@ def misp_event_collection_to_stix1(
                 if len(traceback.get('fails', ())) < len(input_files):
                     _write_raw_stix(stix_package, name, *_write_args)
                     traceback.update(_generate_traceback(debug, parser, name))
+                else:
+                    _merge_recorded_messages(traceback, debug, parser)
                 return traceback
             header, separator, footer = stix1_framing(
                 namespace, org, return_format, stix_package.version
@@ -360,6 +372,8 @@ def misp_event_collection_to_stix1(
                     output.discard()
             if written:
                 traceback.update(_generate_traceback(debug, parser, name))
+            else:
+                _merge_recorded_messages(traceback, debug, parser)
             return traceback
         output_names = []
         for filename in input_files:
@@ -376,6 +390,8 @@ def misp_event_collection_to_stix1(
                 traceback['fails'].append(_reduce_input_error(filename, exception))
         if output_names:
             traceback.update(_generate_traceback(debug, parser, *output_names))
+        else:
+            _merge_recorded_messages(traceback, debug, parser)
         return traceback
 
 
@@ -404,7 +420,9 @@ def misp_collection_to_stix2(
             )
             return _generate_traceback(debug, parser, name)
         except Exception as exception:
-            return {'fails': [_reduce_input_error(filename, exception)]}
+            return _generate_failure_traceback(
+                debug, parser, filename, exception
+            )
     traceback = defaultdict(list)
     if single_output:
         if in_memory:
@@ -427,6 +445,8 @@ def misp_collection_to_stix2(
                     name, bundle.serialize(indent=4), overwrite=overwrite
                 )
                 traceback.update(_generate_traceback(debug, parser, name))
+            else:
+                _merge_recorded_messages(traceback, debug, parser)
             return traceback
         bundle = Bundle_v21() if version == '2.1' else Bundle_v20()
         name = _check_filename(
@@ -475,6 +495,8 @@ def misp_collection_to_stix2(
                 output.discard()
         if written:
             traceback.update(_generate_traceback(debug, parser, name))
+        else:
+            _merge_recorded_messages(traceback, debug, parser)
         return traceback
     output_names = []
     for filename in input_files:
@@ -493,6 +515,8 @@ def misp_collection_to_stix2(
             traceback['fails'].append(_reduce_input_error(filename, exception))
     if output_names:
         traceback.update(_generate_traceback(debug, parser, *output_names))
+    else:
+        _merge_recorded_messages(traceback, debug, parser)
     return traceback
 
 
@@ -523,7 +547,9 @@ def misp_to_stix1(
                 parser.stix_package, name, namespace, org, return_format, overwrite
             )
         except Exception as exception:
-            return {'fails': [_reduce_input_error(filename, exception)]}
+            return _generate_failure_traceback(
+                debug, parser, filename, exception
+            )
         return _generate_traceback(debug, parser, name)
 
 
@@ -547,7 +573,7 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
             overwrite=overwrite
         )
     except Exception as exception:
-        return {'fails': [_reduce_input_error(filename, exception)]}
+        return _generate_failure_traceback(debug, parser, filename, exception)
     return _generate_traceback(debug, parser, name)
 
 
@@ -1040,12 +1066,28 @@ def _handle_classification_warning(
         )
 
 
+def _generate_failure_traceback(
+        debug: bool, parser, filename: _files_type,
+        exception: Exception) -> dict:
+    return _merge_recorded_messages(
+        {'fails': [_reduce_input_error(filename, exception)]}, debug, parser
+    )
+
+
 def _generate_traceback(
         debug: bool, parser, *output_names: tuple, errors: dict = {}) -> dict:
     traceback = {'pymisp_errors': errors} if errors else {'success': 1}
+    _merge_recorded_messages(traceback, debug, parser)
+    traceback['results'] = list(output_names)
+    return traceback
+
+
+def _merge_recorded_messages(traceback: dict, debug: bool, parser) -> dict:
     # Warnings and errors surface regardless of `debug`: a conversion that
-    # dropped content never reports a bare success. `debug` only selects the
-    # errors detail - warnings are reported in full either way
+    # dropped content never reports a bare success - nor a bare failure, since
+    # what the parser recorded before a crash is part of what explains it.
+    # `debug` only selects the errors detail - warnings are reported in full
+    # either way
     warnings = parser.warnings
     if warnings:
         traceback['warnings'] = warnings
@@ -1055,7 +1097,6 @@ def _generate_traceback(
         traceback['errors'] = (
             dict(parser.errors) if debug else _summarise_errors(parser.errors)
         )
-    traceback['results'] = list(output_names)
     return traceback
 
 
