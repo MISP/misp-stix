@@ -142,6 +142,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
         self._analyst_data: dict = defaultdict(list)
         self._clusters: dict = {}
+        self._consumed_invalid_ids: set = set()
         self._converter_cache: dict = {}
         self._galaxies: dict = {}
         self._loaded_object_ids: set = set()
@@ -181,6 +182,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # `invalid_objects` cannot hold, since it keeps one object per id
         self._duplicate_invalid_ids = getattr(
             bundle, '_duplicate_invalid_ids', set()
+        )
+        # the ids the loader diverted from this document alone - the entries a
+        # caller-prepopulated or reused `invalid_objects` dict carries from an
+        # earlier document are never this parse's losses to report
+        self._document_invalid_ids = getattr(
+            bundle, '_document_invalid_ids', set()
         )
         self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
@@ -285,6 +292,30 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             str(2 if n_reports >= 2 else n_reports)
         )
         getattr(self, feature)()
+        self._report_unreferenced_invalid_objects()
+
+    def _report_unreferenced_invalid_objects(self):
+        """Report the invalid objects the parse never reached.
+
+        The loader diverts what `stix2` refuses to parse into
+        `invalid_objects` for the parser to report, but the parser only reads
+        that dict when a reference asks: an invalid object nothing references
+        would convert without a signal, indistinguishable from a document
+        that never carried it. Swept here once the parse is done - only the
+        parser knows which entries a reference consumed - and only over the
+        ids diverted from the document just parsed, so losses an earlier load
+        left in a shared dict are never re-reported. Every type is treated
+        alike, Marking Definitions included: `_recover_invalid_object` argues
+        about the cost of recovering an unreferenced marking, not about
+        keeping its loss silent.
+        """
+        unreferenced = self._document_invalid_ids - self._consumed_invalid_ids
+        for object_id in sorted(unreferenced):
+            self._add_error(
+                f'Unreadable STIX object with id {object_id}: the bundle '
+                'carries it, but its content is missing from the converted '
+                'event'
+            )
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
@@ -292,7 +323,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._creators = set()
         self._analyst_data = defaultdict(list)
         self._clusters = {}
+        self._consumed_invalid_ids = set()
         self._converter_cache.clear()
+        self._document_invalid_ids = set()
         self._galaxies = {}
         self._loaded_object_ids = set()
         for feature in _SDOs:
@@ -559,12 +592,24 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             recovered = self._recover_invalid_object(object_ref, object_type)
             if recovered is not None:
                 return recovered
+            self._consume_invalid_object(object_ref)
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
             recovered = self._recover_invalid_object(object_ref, object_type)
             if recovered is not None:
                 return recovered
+            self._consume_invalid_object(object_ref)
             raise ObjectRefLoadingError(object_ref)
+
+    def _consume_invalid_object(self, object_ref: str):
+        """Mark an invalid object a reference reached.
+
+        The loading error the reference produces already names the loss, so
+        the end-of-parse sweep over what the loader diverted stays silent
+        about it - one invalid object, one message, referenced or not.
+        """
+        if object_ref in self.invalid_objects:
+            self._consumed_invalid_ids.add(object_ref)
 
     def _recover_invalid_object(self, object_ref: str, object_type: str):
         """Recover a referenced object the loader could not parse.
@@ -579,6 +624,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         invalid = self.invalid_objects.get(object_ref)
         if invalid is None:
             return None
+        # consumed whether the recovery holds or raises: applied, the marking
+        # needs no message; too broken to read, the referring object's error
+        # names the loss - either way the end-of-parse sweep has nothing to add
+        self._consumed_invalid_ids.add(object_ref)
         # loading raises on a marking too broken to read, and a marking that
         # governs nothing costs nothing: the duplicate is reported once the
         # survivor is applied, not before
@@ -1432,6 +1481,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
 
     def _object_ref_loading_error(self, object_ref: str):
+        # some callers pass the `ObjectRefLoadingError` carrying the id
+        # rather than the id itself
+        object_ref = str(object_ref)
+        self._consume_invalid_object(object_ref)
         self._add_error(f'Error loading the STIX object with id {object_ref}')
 
     def _object_type_loading_error(self, object_type: str):

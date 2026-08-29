@@ -91,6 +91,9 @@ class STIX2ObservedDataConverter(metaclass=ABCMeta):
 
     def _missing_observable_object_error(
             self, observed_data_id: str, observable_object_id: str):
+        # a reference surfaced the loss and this error names it: the
+        # end-of-parse sweep over the invalid objects has nothing to add
+        self.main_parser._consume_invalid_object(observable_object_id)
         self.main_parser._add_error(
             f'Missing observable object with id {observable_object_id} '
             'mentioned as object reference in the Observed Data object '
