@@ -3,6 +3,7 @@
 
 from cybox.core import Object, Observable, Observables, RelatedObject
 from cybox.objects.address_object import Address
+from cybox.objects.dns_record_object import DNSRecord
 from cybox.objects.domain_name_object import DomainName
 from cybox.objects.file_object import File
 from cybox.objects.uri_object import URI
@@ -42,6 +43,7 @@ _ACTOR_UUID = '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b'
 _DOMAIN_UUID = '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a'
 _IP_UUID = '3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a6b'
 _URL_UUID = '4f5a6b7c-8d9e-4f0a-8b1c-2d3e4f5a6b7c'
+_DNS_RECORD_UUID = '5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d'
 
 
 class TestSTIX1Import(TestSTIX):
@@ -120,6 +122,20 @@ class TestSTIX1Import(TestSTIX):
         related_object.relationship = 'Resolved_To'
         uri_object.related_objects.append(related_object)
         return cls._indicator(uri_object, _URL_UUID)
+
+    @classmethod
+    def _dns_record_indicator(cls, domain, ip):
+        """A DNSRecord Indicator carrying both a domain name and an IP address,
+        which the parser is meant to fold into a single `passive-dns` object."""
+        dns_record = DNSRecord()
+        dns_record.domain_name = domain
+        address = Address()
+        address.address_value = ip
+        address.category = Address.CAT_IPV4
+        dns_record.ip_address = address
+        dns_record_object = Object(dns_record)
+        dns_record_object.id_ = f'MISP:DNSRecord-{_DNS_RECORD_UUID}'
+        return cls._indicator(dns_record_object, _DNS_RECORD_UUID)
 
     @staticmethod
     def _threat_actor(title):
@@ -261,6 +277,28 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(
             parser.references[_OBSERVABLE_UUID],
             [{'idref': _RELATED_UUID, 'relationship': 'contains'}]
+        )
+
+    def test_external_dns_record_with_domain_and_ip_converts_to_passive_dns(self):
+        """A DNSRecord carrying both a domain name and an IP address has to
+        become one `passive-dns` object, not have its IP half silently
+        dropped."""
+        stix_package = STIXPackage()
+        stix_package.add_indicator(
+            self._dns_record_indicator('circl.lu', '198.51.100.4')
+        )
+        parser = self._parse_external_package(stix_package)
+        misp_objects = parser.misp_event.objects
+        self.assertEqual(len(misp_objects), 1)
+        misp_object = misp_objects[0]
+        self.assertEqual(misp_object.name, 'passive-dns')
+        attributes = {
+            attribute.object_relation: attribute.value
+            for attribute in misp_object.attributes
+        }
+        self.assertEqual(
+            attributes,
+            {'rrname': 'circl.lu', 'rdata': '198.51.100.4', 'rrtype': 'A'}
         )
 
     ############################################################################

@@ -214,9 +214,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if properties.domain_name:
             relation.append(["domain", str(properties.domain_name.value), ""])
         if properties.ip_address:
-            relation.append(["ip-dst", str(properties.ip_address.value), ""])
+            relation.append(["ip-dst", str(properties.ip_address.address_value.value), ""])
         if relation:
-            if len(relation) == '2':
+            if len(relation) == 2:
                 domain = relation[0][1]
                 ip = relation[1][1]
                 attributes = [["text", domain, "rrname"], ["text", ip, "rdata"]]
