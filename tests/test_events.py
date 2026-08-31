@@ -1248,6 +1248,22 @@ _TEST_REGION_GALAXY = {
     ]
 }
 
+_TEST_MALFORMED_REGION_GALAXY = {
+    "uuid": "d151a79a-e029-11e9-9409-f3e0cf3d93bb",
+    "name": "Regions UN M49",
+    "type": "region",
+    "description": "Regions based on UN M49",
+    "GalaxyCluster": [
+        {
+            "uuid": "f93cb275-0366-4ecc-abf0-a17928d1e188",
+            "type": "region",
+            "value": "Antarctica",
+            "description": "Antarctica",
+            "meta": {}
+        }
+    ]
+}
+
 _TEST_SECTOR_GALAXY = {
     "uuid": "e1bb134c-ae4d-11e7-8aa9-f78a37325439",
     "name": "Sector",
@@ -4657,6 +4673,14 @@ def get_event_with_location_galaxies():
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_COUNTRY_GALAXY),
         deepcopy(_TEST_REGION_GALAXY)
+    ]
+    return event
+
+
+def get_event_with_malformed_region_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_MALFORMED_REGION_GALAXY)
     ]
     return event
 

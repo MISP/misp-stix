@@ -152,7 +152,11 @@ class MISPtoSTIXParser(AbstractParser):
                 galaxy_type = galaxy['type']
                 to_call = self._mapping.galaxy_types_mapping(galaxy_type)
                 if to_call is not None:
-                    getattr(self, to_call.format('event'))(galaxy)
+                    try:
+                        getattr(self, to_call.format('event'))(galaxy)
+                    except Exception as exception:
+                        self._event_galaxy_error(galaxy, exception)
+                        continue
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
                     self._handle_undefined_event_galaxy(galaxy)
@@ -367,6 +371,12 @@ class MISPtoSTIXParser(AbstractParser):
         self._add_warning(
             f'Invalid MISP object template name {name!r}: the object is '
             f'converted as a {_UNKNOWN_TEMPLATE_NAME} one.', identifier
+        )
+
+    def _event_galaxy_error(self, galaxy: dict, exception: Exception):
+        tb = self._parse_traceback(exception)
+        self._add_error(
+            f"Error with the {galaxy['type']} galaxy in event:\n{tb}."
         )
 
     def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
