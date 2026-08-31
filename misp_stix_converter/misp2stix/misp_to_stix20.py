@@ -985,7 +985,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 )
         elif isinstance(attributes.get('attachment'), tuple):
             args = self._create_attachment_args(*attributes.pop('attachment'))
-            observable_object[str(index)] = Artifact(**args)
+            str_index = str(index)
+            observable_object[str_index] = Artifact(**args)
+            file_args['content_ref'] = str_index
+            file_args['_valid_refs'][str_index] = 'artifact'
         if attributes:
             file_args.update(
                 self._parse_file_args(
