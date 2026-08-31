@@ -284,6 +284,76 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertIn(second_id, self.parser.invalid_objects)
         self.assertNotIn(first_id, self.parser.invalid_objects)
 
+    def test_stix21_indicator_references_do_not_leak_between_bundles(self):
+        # `_set_indicator_references` returned early, without resetting
+        # `_indicator_references`, whenever a bundle held no indicator to
+        # correlate - and `_reset_bundle_state` never cleared it either. A
+        # bundle carrying only observables then inherited the previous
+        # bundle's indicator mapping on a reused parser.
+        from misp_stix_converter.tools import load_stix2_content
+        identity = {
+            'type': 'identity',
+            'spec_version': '2.1',
+            'id': 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f',
+            'created': '2020-10-25T16:22:00.000Z',
+            'modified': '2020-10-25T16:22:00.000Z',
+            'name': 'CIRCL',
+            'identity_class': 'organization'
+        }
+        with_indicator = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'objects': [
+                    identity,
+                    {
+                        'type': 'indicator',
+                        'spec_version': '2.1',
+                        'id': (
+                            'indicator--10440d97-42bb-4b17-'
+                            'a439-9dd5e17dd93e'
+                        ),
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'pattern': "[ipv4-addr:value = '194.78.89.250']",
+                        'pattern_type': 'stix',
+                        'valid_from': '2020-10-25T16:22:00.000Z'
+                    },
+                    {
+                        'type': 'ipv4-addr',
+                        'spec_version': '2.1',
+                        'id': (
+                            'ipv4-addr--b6f1a83b-6d92-40dc-'
+                            '83b3-e575a04a5c29'
+                        ),
+                        'value': '194.78.89.250'
+                    }
+                ]
+            }
+        )
+        observable_only = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--6a99f66a-8d92-4653-a481-b7cbeef97e95',
+                'objects': [
+                    identity,
+                    {
+                        'type': 'ipv4-addr',
+                        'spec_version': '2.1',
+                        'id': (
+                            'ipv4-addr--f6d18c96-6d1e-4c7c-'
+                            '9c56-27c9a6f4c2a1'
+                        ),
+                        'value': '8.8.8.8'
+                    }
+                ]
+            }
+        )
+        self.parser.load_stix_bundle(with_indicator)
+        self.assertTrue(self.parser.indicator_references)
+        self.parser.load_stix_bundle(observable_only)
+        self.assertEqual(self.parser.indicator_references, {})
+
     def test_stix21_parser_inherits_the_invalid_objects_from_the_loader(self):
         # `load_stix2_file` populated its own `invalid_objects` dict, but
         # `load_stix_bundle` created another one when the argument was
