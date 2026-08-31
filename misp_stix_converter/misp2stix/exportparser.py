@@ -378,7 +378,7 @@ class MISPtoSTIXParser(AbstractParser):
         self._add_error('Missing Orgc field.')
 
     def _missing_orgc_field_error(self, orgc: dict):
-        missing = (field for field in ('name', 'uuid') if field not in orgc)
+        missing = [field for field in ('name', 'uuid') if field not in orgc]
         self._add_error(
             f"Error with the Orgc field missing its {' and '.join(missing)}"
             f"{'values' if len(missing) > 1 else 'value'}. Please make sure"
