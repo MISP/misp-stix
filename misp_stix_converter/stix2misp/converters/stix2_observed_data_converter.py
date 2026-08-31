@@ -3299,7 +3299,7 @@ class InternalSTIX2ObservedDataConverter(
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'body_multipart'):
                 for body_part in observable.body_multipart:
-                    relation, value = body_part.content_disposition.split(';')
+                    relation, _, value = body_part.content_disposition.partition(';')
                     feature = (
                         'email_attachment' if relation == 'attachment'
                         else 'attachment'
