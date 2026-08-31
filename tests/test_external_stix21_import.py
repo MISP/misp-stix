@@ -2523,6 +2523,30 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object=domain_ip_object, observed_data=[od2, domain1, ipv4, ipv6]
         )
 
+    def test_stix21_bundle_with_domain_ip_dangling_resolution(self):
+        # A standalone domain-name resolves to an ip-addr the bundle never
+        # carries. `_parse_domain_observable_object` used to dereference
+        # `_fetch_observable(...)['observable']` with no `None` check,
+        # raising a `TypeError` caught only by the generic unparsed-content
+        # handler, which dropped the domain-ip object entirely and reported
+        # a traceback instead of the specific dangling reference.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_dangling_resolution()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, grouping, domain_name = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(
+            self.parser.misp_event, grouping
+        )
+        self.assertEqual(len(misp_objects), 1)
+        domain_object = misp_objects[0]
+        self.assertEqual(domain_object.name, 'domain-ip')
+        self.assertEqual(len(domain_object.attributes), 1)
+        self.assertEqual(domain_object.attributes[0].value, domain_name.value)
+        self.assertIn(
+            f'Missing Observable object with id {domain_name.resolves_to_refs[0]}',
+            '\n'.join(self._reported_messages(self.parser.errors))
+        )
+
     def test_stix21_bundle_with_domain_ip_observables(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_observables()
         self.parser.load_stix_bundle(bundle)
