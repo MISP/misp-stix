@@ -2388,6 +2388,21 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(artifact.hashes['MD5'], md5)
         self.assertEqual(artifact.x_misp_filename, filename)
 
+    def _check_file_observable_object_attachment_only(
+            self, misp_object, observed_data):
+        _filename, _md5, _attachment = misp_object.attributes
+        _file = observed_data.objects['0']
+        self.assertEqual(_file.type, 'file')
+        self.assertEqual(_file.name, _filename.value)
+        self.assertEqual(_file.hashes['MD5'], _md5.value)
+        self.assertEqual(_file.content_ref, '1')
+        artifact = observed_data.objects['1']
+        self.assertEqual(artifact.type, 'artifact')
+        data = _attachment.data
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(artifact.payload_bin, data)
+
     def _check_hashlookup_observable_object(self, misp_object, observed_data):
         (filename, filesize, known_malicious, md5, sha1, sha256, ssdeep, tlsh,
          package_name, package_version, package_release, package_arch,
@@ -3270,6 +3285,12 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
     def _test_event_with_file_observable_object(self, event):
         misp_object, observed_data = self._run_observable_from_object_tests(event)
         self._check_file_observable_object(misp_object, observed_data)
+
+    def _test_event_with_file_observable_object_attachment_only(self, event):
+        misp_object, observed_data = self._run_observable_from_object_tests(event)
+        self._check_file_observable_object_attachment_only(
+            misp_object, observed_data
+        )
 
     def _test_event_with_http_request_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
@@ -4712,6 +4733,14 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_file_observable_object(misp_event)
+
+    def test_event_with_file_observable_object_attachment_only(self):
+        event = get_event_with_file_object_with_attachment_only()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_file_observable_object_attachment_only(
+            misp_event
+        )
 
     def test_event_with_hashlookup_indicator_object(self):
         event = get_event_with_hashlookup_object()

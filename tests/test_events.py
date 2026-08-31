@@ -2392,6 +2392,32 @@ _TEST_FILE_OBJECT = {
     ]
 }
 
+_TEST_FILE_OBJECT_WITH_ATTACHMENT_ONLY = {
+    "name": "file",
+    "meta-category": "file",
+    "description": "File object describing a file with meta-information",
+    "uuid": "5e384ae7-672c-4250-9cda-3b4da964451b",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "filename",
+            "object_relation": "filename",
+            "value": "oui"
+        },
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "8764605c6f388c89096b534d33565802"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605c",
+            "type": "attachment",
+            "object_relation": "attachment",
+            "value": "non"
+        }
+    ]
+}
+
 _TEST_FILE_FOR_PE_OBJECT = {
     "name": "file",
     "meta-category": "file",
@@ -5955,6 +5981,16 @@ def get_event_with_file_object_with_artifact():
     with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
         file_object['Attribute'][0]['data'] = b64encode(f.read()).decode()
     file_object['Attribute'][6]['data'] = "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+    event['Event']['Object'] = [file_object]
+    return event
+
+
+def get_event_with_file_object_with_attachment_only():
+    event = deepcopy(_BASE_EVENT)
+    file_object = dict(
+        _populate_object(_TEST_FILE_OBJECT_WITH_ATTACHMENT_ONLY)
+    )
+    file_object['Attribute'][2]['data'] = "Tm9uLW1hbGljaW91cyBmaWxlCg=="
     event['Event']['Object'] = [file_object]
     return event
 

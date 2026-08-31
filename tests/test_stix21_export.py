@@ -3014,6 +3014,27 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(artifact.hashes['MD5'], md5)
         self.assertEqual(artifact.x_misp_filename, filename)
 
+    def _check_file_observable_object_attachment_only(
+            self, misp_object, observables, object_refs):
+        _filename, _md5, _attachment = misp_object['Attribute']
+        _file, artifact = observables
+        file_ref, artifact_ref = object_refs
+        self._assert_multiple_equal(
+            _file.id, file_ref, f"file--{misp_object['uuid']}"
+        )
+        self.assertEqual(_file.type, 'file')
+        self.assertEqual(_file.name, _filename['value'])
+        self.assertEqual(_file.hashes['MD5'], _md5['value'])
+        self._assert_multiple_equal(
+            _file.content_ref, artifact.id, artifact_ref,
+            f"artifact--{_attachment['uuid']}"
+        )
+        self.assertEqual(artifact.type, 'artifact')
+        data = _attachment['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(artifact.payload_bin, data)
+
     def _check_hashlookup_observable_object(self, misp_object, observable, object_ref):
         (filename, filesize, known_malicious, md5, sha1, sha256, ssdeep, tlsh,
          package_name, package_version, package_release, package_arch,
@@ -4121,6 +4142,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _test_event_with_file_observable_object(self, event):
         misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
         self._check_file_observable_object(misp_object, observables, object_refs)
+
+    def _test_event_with_file_observable_object_attachment_only(self, event):
+        misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
+        self._check_file_observable_object_attachment_only(
+            misp_object, observables, object_refs
+        )
 
     def _test_event_with_hashlookup_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -5778,6 +5805,14 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_file_observable_object(misp_event)
+
+    def test_event_with_file_observable_object_attachment_only(self):
+        event = get_event_with_file_object_with_attachment_only()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_file_observable_object_attachment_only(
+            misp_event
+        )
 
     def test_event_with_geolocation_object(self):
         event = get_event_with_geolocation_object()
