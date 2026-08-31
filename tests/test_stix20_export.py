@@ -128,6 +128,19 @@ class TestSTIX20InputContract(TestSTIX20GenericExport):
         self.assertIn('attributes collection', self.parser.errors)
         self.assertNotIn('misp event', self.parser.errors)
 
+    def test_partial_orgc_reports_missing_uuid_without_crashing(self):
+        event = get_base_event()
+        del event['Event']['Orgc']['uuid']
+        # Must not raise (previously a generator was joined then len()'d).
+        self.parser.parse_json_content(event)
+        errors = ' '.join(
+            message for messages in self.parser.errors.values()
+            for message in messages
+        )
+        self.assertIn(
+            'Error with the Orgc field missing its uuidvalue.', errors
+        )
+
 
 class TestSTIX20EventExport(TestSTIX20GenericExport):
     def _check_analyst_note(self, stix_object, misp_layer):
