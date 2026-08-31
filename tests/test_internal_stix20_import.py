@@ -582,6 +582,30 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         self.assertFalse(attribute.to_ids)
 
+    def test_stix20_bundle_with_email_object_with_artifact_attachment_observable_object(self):
+        # Regression test: an email-message body_multipart part whose
+        # body_raw_ref is an `artifact` (not a `file`) used to raise
+        # AttributeError, because the content value was built with
+        # `value.split('=').strip("'")` -- .strip() called on the list
+        # returned by split(), instead of on the split-out string.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_email_object_with_artifact_attachment_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        message, artifact_object = observed_data.objects.values()
+        self.assertEqual(misp_object.name, 'email')
+        attachment = misp_object.attributes[-1]
+        self.assertEqual(attachment.type, 'email-attachment')
+        self.assertEqual(
+            attachment.value,
+            message.body_multipart[0]['content_disposition'].split('=', 1)[-1].strip("'")
+        )
+        self.assertEqual(
+            self._get_data_value(attachment.data), artifact_object.payload_bin
+        )
+
     def test_stix20_bundle_with_email_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_attribute()
         self.parser.load_stix_bundle(bundle)
