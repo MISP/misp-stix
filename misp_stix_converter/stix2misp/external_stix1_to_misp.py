@@ -126,8 +126,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_attributes_from_ttp(self, ttp: TTP, galaxies: set):
         attributes = []
-        if ttp.resources and getattr(ttp.resources, 'infrastructure', None).observable_characterization:
-            observables = ttp.resources.infrastructure.observable_characterization
+        infrastructure = getattr(ttp.resources, 'infrastructure', None) if ttp.resources else None
+        if infrastructure is not None and infrastructure.observable_characterization:
+            observables = infrastructure.observable_characterization
             if observables.observables:
                 for observable in observables.observables:
                     if not self._has_properties(observable):
