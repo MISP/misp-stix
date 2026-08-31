@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cybox.core import Object, Observable, Observables, RelatedObject
+from cybox.core import (
+    Object, Observable, ObservableComposition, Observables, RelatedObject)
 from cybox.objects.address_object import Address
 from cybox.objects.domain_name_object import DomainName
 from cybox.objects.file_object import File
@@ -17,7 +18,7 @@ from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
 from unittest.mock import patch
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement
-from stix.common.related import RelatedPackage, RelatedPackages
+from stix.common.related import RelatedIndicator, RelatedPackage, RelatedPackages
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
 from stix.extensions.marking.tlp import TLPMarkingStructure
@@ -243,6 +244,53 @@ class TestSTIX1Import(TestSTIX):
                 for attribute in misp_objects[0].attributes
             },
             self._course_of_action_attributes()
+        )
+
+    ############################################################################
+    #                     OBSERVABLE COMPOSITION INDICATOR TESTS.              #
+    ############################################################################
+
+    def test_internal_indicator_with_observable_composition_converts(self):
+        """A `to_ids` Indicator whose Observable is an Observable_Composition
+        (rather than a single Object) used to hit a typo'd method name -
+        `_get_imestamp_from_date` instead of `_timestamp_from_date` - and
+        raise an `AttributeError` while stamping the resulting MISP object.
+        This pins that path so it stays reachable."""
+        first_object = Object(File())
+        first_object.id_ = f'MISP:File-{_OBSERVABLE_UUID}'
+        first_object.properties.file_name = 'a.txt'
+        second_object = Object(File())
+        second_object.id_ = f'MISP:File-{_RELATED_UUID}'
+        second_object.properties.md5 = 'd41d8cd98f00b204e9800998ecf8427e'
+        composition = Observable()
+        composition.id_ = f'MISP:ObservableComposition-{_OBSERVABLE_UUID}'
+        composition.observable_composition = ObservableComposition(
+            observables=[Observable(first_object), Observable(second_object)]
+        )
+        indicator = Indicator()
+        indicator.id_ = f'MISP:Indicator-{_OBSERVABLE_UUID}'
+        indicator.timestamp = datetime(2020, 10, 25, 16, 22)
+        indicator.observable = composition
+        incident = Incident()
+        incident.title = 'Incident with a composed file Indicator'
+        incident.add_related_indicator(
+            RelatedIndicator(indicator, relationship='file')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        misp_objects = [
+            misp_object for misp_object in parser.misp_event.objects
+            if misp_object.name == 'file'
+        ]
+        self.assertEqual(len(misp_objects), 1)
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.value
+                for attribute in misp_objects[0].attributes
+            },
+            {
+                'filename': 'a.txt',
+                'md5': 'd41d8cd98f00b204e9800998ecf8427e'
+            }
         )
 
     ############################################################################

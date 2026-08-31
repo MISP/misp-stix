@@ -346,7 +346,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self._sanitise_object_uuid(misp_object, item.id_)
             if to_ids:
                 observables = item.observable.observable_composition.observables
-                misp_object.timestamp = self._get_imestamp_from_date(item.timestamp)
+                misp_object.timestamp = self._timestamp_from_date(item.timestamp)
             else:
                 observables = item.observable_composition.observables
             args = (misp_object, observables, to_ids)
