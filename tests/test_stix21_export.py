@@ -6476,6 +6476,18 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         for galaxy, location in zip(self.parser._misp_event.galaxies, self.parser.stix_objects[-2:]):
             self._populate_documentation(galaxy=galaxy, stix=location)
 
+    def test_event_with_malformed_region_galaxy(self):
+        # A custom region cluster whose value has no ' - ' separator (e.g.
+        # "Antarctica") must not raise an IndexError and abort the export.
+        event = get_event_with_malformed_region_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        location = self._run_galaxy_tests(event['Event'], timestamp)
+        self.assertEqual(location.type, 'location')
+        self.assertEqual(location.name, cluster['value'])
+        self.assertEqual(location.region, cluster['value'].lower())
+
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
         self._test_event_with_malware_galaxy(event['Event'])

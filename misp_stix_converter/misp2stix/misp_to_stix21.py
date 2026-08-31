@@ -1749,7 +1749,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self, cluster: MISPGalaxyCluster | dict, description: str,
             name: str, timestamp: datetime| None) -> dict:
         meta = cluster.get('meta', {})
-        region_value = cluster['value'].split(' - ')[1]
+        region_value = cluster['value'].partition(' - ')[2] or cluster['value']
         location_args = {
             'id': f"location--{cluster['uuid']}", 'type': 'location',
             'description': f"{description} | {cluster['description']}",
