@@ -943,6 +943,20 @@ _EMAIL_MESSAGE_OBJECTS = [
         "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
+_EMAIL_MESSAGE_BODY_INDICATOR = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--0d1e2f3a-4b5c-4d6e-8f7a-1b2c3d4e5f60",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2024-10-25T16:22:00.000Z",
+    "modified": "2024-10-25T16:22:00.000Z",
+    "name": "Suspicious email body pattern",
+    "description": "Email body matching known phishing campaign content.",
+    "pattern": "[email-message:body_multipart[0].body = 'Cats are funny!']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2024-10-25T16:22:00Z"
+}
 _FILE_OBJECTS = [
     {
         "type": "observed-data",
@@ -3409,6 +3423,12 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_email_message_observables_and_indicator(cls):
         return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS[1:])
+
+    @classmethod
+    def get_bundle_with_email_message_objects_and_body_indicator(cls):
+        return cls.__assemble_bundle(
+            *_EMAIL_MESSAGE_OBJECTS[:-1], _EMAIL_MESSAGE_BODY_INDICATOR
+        )
 
     @classmethod
     def get_bundle_with_file_objects_and_indicator(cls):
