@@ -3166,6 +3166,50 @@ _FILE_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a"
     }
 ]
+_FILE_WITH_UNMAPPED_HASH_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--90ffca09-cbe0-4c94-a4e8-1f0a870add6f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802",
+                    "CRC32": "deadbeef"
+                },
+                "name": "oui"
+            }
+        },
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--90ffca09-cbe0-4c94-a4e8-1f0a870add6f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--41074d15-6a68-4e97-8879-1c8007749913",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--90ffca09-cbe0-4c94-a4e8-1f0a870add6f",
+        "target_ref": "observed-data--90ffca09-cbe0-4c94-a4e8-1f0a870add6f"
+    }
+]
 _FILENAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -8751,6 +8795,18 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
             "file:content_ref.x_misp_filename = 'oui'",
             "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
             "file:content_ref.mime_type = 'application/zip')"
+        ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(observed_data, indicator, relationship)
+
+    @classmethod
+    def get_bundle_with_file_with_unmapped_hash_observable_object(cls):
+        observed_data, indicator, relationship = deepcopy(
+            _FILE_WITH_UNMAPPED_HASH_OBSERVABLE_OBJECT
+        )
+        pattern = [
+            "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+            "file:name = 'oui'"
         ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
         return cls.__assemble_bundle(observed_data, indicator, relationship)
