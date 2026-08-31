@@ -5835,6 +5835,26 @@ def get_event_with_annotation_object():
     return event
 
 
+def get_event_with_annotation_object_without_text():
+    event = deepcopy(_BASE_EVENT)
+    domain_ip = dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
+    annotation = dict(_populate_object(_TEST_ANNOTATION_OBJECT))
+    annotation['Attribute'] = [
+        attribute for attribute in annotation['Attribute']
+        if attribute['object_relation'] != 'text'
+    ]
+    annotation['ObjectReference'] = [
+        {
+            "uuid": uuid5(_TEST_UUID, domain_ip['uuid']).__str__(),
+            "object_uuid": annotation['uuid'],
+            "referenced_uuid": domain_ip['uuid'],
+            "relationship_type": "annotates"
+        }
+    ]
+    event['Event']['Object'] = [annotation, domain_ip]
+    return event
+
+
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
