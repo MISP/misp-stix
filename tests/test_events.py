@@ -5431,6 +5431,22 @@ def get_event_with_regkey_value_attribute():
     return event
 
 
+def get_event_with_regkey_value_attribute_no_separator():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "regkey|value",
+            "category": "Persistence mechanism",
+            "value": "HKLM\Software\My_App",
+            "to_ids": True,
+            "timestamp": "1603642920",
+            "comment": "Regkey | value test attribute without a `|` separator"
+        }
+    ]
+    return event
+
+
 def get_event_with_sightings():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = deepcopy(_TEST_SIGHTINGS)
