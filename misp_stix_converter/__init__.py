@@ -2,6 +2,7 @@ __version__ = '2026.7.8'
 
 import argparse
 from .misp2stix import InvalidMISPInputError  # noqa
+from .tools import STIXInputSizeError, STIXLoadingError  # noqa
 from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser  # noqa
 from .misp2stix import MISPtoSTIX1Mapping  # noqa
 from .misp2stix import MISPtoSTIX20Parser, MISPtoSTIX21Parser  # noqa
@@ -16,9 +17,22 @@ from .misp_stix_converter import _misp_to_stix, _stix_to_misp  # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser  # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping  # noqa
 from .stix2misp import ExternalSTIX2Mapping  # noqa
+from .stix2misp import MissingSTIXContentError  # noqa
 from .stix2misp import STIX2PatternParser  # noqa
 from .stix2misp import MISP_org_uuid  # noqa
 from pathlib import Path
+
+
+def _max_input_size(value: str) -> int:
+    # 0 turns the limit off, and nothing below it means anything: without this
+    # `--max-input-size -1` would silently convert without a limit
+    size = int(value)
+    if size < 0:
+        raise argparse.ArgumentTypeError(
+            'the maximum input size cannot be negative - use 0 to turn the '
+            'limit off'
+        )
+    return size
 
 
 def _handle_return_message(traceback):
@@ -39,7 +53,9 @@ def main():
         version=f'{parser.prog} {__version__}'
     )
     parser.add_argument(
-        '--debug', action='store_true', help='Show errors and warnings'
+        '--debug', action='store_true',
+        help='Show the full list of errors - errors and warnings are reported '
+             'either way, this only controls the errors level of detail'
     )
 
     # SUBPARSERS TO SEPARATE THE 2 MAIN FEATURES
@@ -71,13 +87,19 @@ def main():
     )
     export_parser.add_argument(
         '--output-dir', type=Path,
-        help='Output path - used in the case of multiple input files when the '
-             '`single_output` argument is not used.'
+        help='Output directory - default is the directory the input files '
+             'come from. Created if it does not exist.'
     )
     export_parser.add_argument(
         '-o', '--output-name', type=Path,
         help='Output file name - used in the case of a single input file or '
              'when the `single_output` argument is used.'
+    )
+    export_parser.add_argument(
+        '--overwrite', action='store_true',
+        help='Replace an output file that already exists - without it a '
+             'conversion writing onto an existing file fails and leaves it '
+             'as it is.'
     )
     # STIX 1 EXPORT SPECIFIC ARGUMENTS
     stix1_parser = export_parser.add_argument_group('STIX 1 specific arguments')
@@ -91,7 +113,7 @@ def main():
     )
     stix1_parser.add_argument(
         '-n', '--namespace', default='https://misp-project.org',
-        help='Namespace to be used in the STIX 1 header.'
+        help='Namespace to be used in the STIX 1 header - must be a URI.'
     )
     stix1_parser.add_argument(
         '-org', default='MISP',
@@ -113,8 +135,9 @@ def main():
     )
     import_parser.add_argument(
         '-s', '--single-event', action='store_true',
-        help='Produce only one MISP event per STIX file'
-             '(in case of multiple Report, Grouping or Incident objects).'
+        help='Produce only one MISP event per STIX file, in case of '
+             'multiple Report or Grouping objects. STIX 1 always produces '
+             'one, whether this is set or not.'
     )
     import_parser.add_argument(
         '-o', '--output-name', type=Path,
@@ -123,8 +146,28 @@ def main():
     )
     import_parser.add_argument(
         '--output-dir', type=Path,
-        help='Output path - used in the case of multiple input files when the '
-             '`single_event` argument is not used.'
+        help='Output directory - default is the directory the input files '
+             'come from. Created if it does not exist.'
+    )
+    import_parser.add_argument(
+        '--overwrite', action='store_true',
+        help='Replace an output file that already exists - without it a '
+             'conversion writing onto an existing file fails and leaves it '
+             'as it is.'
+    )
+    import_parser.add_argument(
+        '--max-input-size', type=_max_input_size, default=None, metavar='MB',
+        help='Maximum accepted input size, in MB - a document larger than '
+             'this is refused before it is parsed (default is 100). Use 0 to '
+             'turn the limit off: conversion costs 2 to 7 times the input '
+             'size in memory, and a few seconds of CPU per MB of STIX 2.'
+    )
+    import_parser.add_argument(
+        '--classification', choices=['internal', 'external'], default=None,
+        help='Classification of the STIX content to import: `internal` for '
+             'content exported from MISP, `external` for third-party content. '
+             'When not set, the classification is detected from the content '
+             'itself.'
     )
     import_parser.add_argument(
         '-d', '--distribution', type=int, default=0, choices=[0, 1, 2, 3, 4],
@@ -197,12 +240,9 @@ def main():
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
-    single = (
-        stix_args.single_output if stix_args.feature == 'export'
-        else stix_args.single_event
-    )
-    if len(stix_args.file) > 1 and single and stix_args.output_dir is None:
-        stix_args.output_dir = Path(__file__).parents[1] / 'tmp'
+    # No default output location is set here: the conversion functions write
+    # next to their input files when the operator named none, so nothing lands
+    # in the installed package tree
     feature = 'MISP to STIX' if stix_args.feature == 'export' else 'STIX to MISP'
     try:
         traceback = stix_args.func(stix_args)

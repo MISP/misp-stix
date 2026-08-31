@@ -2,19 +2,26 @@
 # -*- coding: utf-8 -*-
 
 from ...misp_stix_mapping import Mapping
+from ...tools.misp_object_templates import (
+    _rejected_name_note, _sanitise_template_name, _UNKNOWN_TEMPLATE_NAME)
 from ..exceptions import UnknownParsingFunctionError
 from .stix2converter import InternalSTIX2Converter
 from .stix2mapping import InternalSTIX2Mapping
-from pymisp import MISPEventReport
+from pymisp import MISPEventReport, MISPObject
 from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21
-from typing import TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _attribute_additional_fields = (
     'category', 'comment', 'data', 'to_ids', 'uuid'
+)
+# Mirrors what the export side writes into `x_misp_attributes` — anything else
+# is not part of the round-trip contract and never comes from STIX content
+_object_attribute_fields = (
+    'type', 'object_relation', 'value', *_attribute_additional_fields
 )
 _CUSTOM_OBJECT_TYPING = Union[
     CustomObject_v20, CustomObject_v21
@@ -109,15 +116,34 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                 self._create_galaxy_args(galaxy_type, custom_galaxy.x_misp_name)
 
     def _parse_custom_object(self, custom_object: _CUSTOM_OBJECT_TYPING):
-        name = custom_object.x_misp_name
+        # A name that is not a plain template name would be joined into a
+        # filesystem path by pymisp's template resolution: keep it out of that
+        # join and convert the object as a generic, template-less one.
+        name, rejected_name = _sanitise_template_name(custom_object.x_misp_name)
         misp_object = self._create_misp_object(name)
         misp_object.category = custom_object.x_misp_meta_category
         misp_object.from_dict(**self._parse_timeline(custom_object))
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
+        if rejected_name is not None:
+            self._record_rejected_template_name(misp_object, rejected_name)
+            self.main_parser._add_warning(
+                f'Invalid MISP object template name {rejected_name!r} in the '
+                f'Custom object with id {custom_object.id}: converted as a '
+                f'{_UNKNOWN_TEMPLATE_NAME} object.'
+            )
         self.main_parser._sanitise_object_uuid(misp_object, custom_object.id)
+        dropped_fields = set()
         for custom_attribute in custom_object.x_misp_attributes:
-            attribute = dict(custom_attribute)
+            attribute = {
+                field: custom_attribute[field]
+                for field in _object_attribute_fields
+                if field in custom_attribute
+            }
+            dropped_fields.update(
+                field for field in custom_attribute
+                if field not in _object_attribute_fields
+            )
             if attribute.get('uuid'):
                 attribute.update(
                     self.main_parser._sanitise_attribute_uuid(
@@ -125,7 +151,22 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                     )
                 )
             misp_object.add_attribute(**attribute)
+        if dropped_fields:
+            self.main_parser._add_warning(
+                'Dropped attribute fields that are never imported from STIX '
+                f'content, in the Custom object with id {custom_object.id}: '
+                f"{', '.join(sorted(dropped_fields))}"
+            )
         self.main_parser._add_misp_object(misp_object, custom_object)
+
+    @staticmethod
+    def _record_rejected_template_name(misp_object: MISPObject, name: Any):
+        # Nothing is silently dropped: the name the object cannot carry is
+        # kept as data, in the comment, alongside whatever comment the STIX
+        # content provided.
+        note = _rejected_name_note(name)
+        comment = getattr(misp_object, 'comment', None)
+        misp_object.comment = f'{comment}\n{note}' if comment else note
 
     @staticmethod
     def _sanitise_value(value: str) -> str:

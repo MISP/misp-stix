@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+import logging
 from ..stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
 from ..stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
 from stix.core import STIXPackage
+
+_logger = logging.getLogger(__name__)
 
 def get_stix1_parser(
         from_misp: bool, distribution: int, sharing_group_id: int | None,
@@ -35,4 +38,10 @@ def is_stix1_from_misp(stix_package: STIXPackage) -> bool:
         title = stix_package.stix_header.title
     except AttributeError:
         return False
-    return 'Export from ' in title and 'MISP' in title
+    if 'Export from ' in title and 'MISP' in title:
+        _logger.warning(
+            'MISP export title found in the STIX header - a classification '
+            'signal that any producer can write.'
+        )
+        return True
+    return False

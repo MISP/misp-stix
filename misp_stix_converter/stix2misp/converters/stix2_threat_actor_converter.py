@@ -94,9 +94,7 @@ class InternalSTIX2ThreatActorConverter(
 
     def parse(self, threat_actor_ref: str):
         threat_actor = self.main_parser._get_stix_object(threat_actor_ref)
-        feature = self._handle_mapping_from_labels(
-            threat_actor.labels, threat_actor.id
-        )
+        feature = self._handle_mapping_from_labels(threat_actor)
         try:
             parser = getattr(self, feature)
         except AttributeError:

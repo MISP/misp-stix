@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from .output_writing_helpers import _write_output
 from .stix1_framing import SCHEMALOC_DICT, _handle_namespaces
 from cybox.core.observable import Observables
 from pathlib import Path
@@ -14,8 +15,11 @@ _cybox_features = (
 
 
 def write_campaigns(campaigns: Campaigns, return_format: str = 'xml') -> str:
+    # The offsets below measure `<stix:CampaignsType>` alone: serialising the
+    # namespaces here too would leave their declarations behind as the text
+    # content of the `<stix:Campaigns>` element the fragment is written into
     if return_format == 'xml':
-        campaigns = campaigns.to_xml(include_namespaces=True).decode()
+        campaigns = campaigns.to_xml(include_namespaces=False).decode()
         return _format_xml_objects(
             campaigns, header_length=21, footer_length=23
         )
@@ -182,17 +186,20 @@ def _format_xml_objects(
 
 def _write_raw_stix(
         package: STIXPackage, filename: Path | str, namespace: str,
-        org: str, return_format: str) -> bool:
+        org: str, return_format: str, overwrite: bool = False) -> bool:
     if return_format == 'xml':
         namespaces = _handle_namespaces(namespace, org)
-        with open(filename, 'wb') as f:
-            f.write(
-                package.to_xml(
-                    auto_namespace=False,
-                    ns_dict=namespaces,
-                    schemaloc_dict=SCHEMALOC_DICT
-                )
-            )
+        _write_output(
+            filename,
+            package.to_xml(
+                auto_namespace=False,
+                ns_dict=namespaces,
+                schemaloc_dict=SCHEMALOC_DICT
+            ),
+            overwrite=overwrite
+        )
     else:
-        with open(filename, 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(package.to_dict(), indent=4))
+        _write_output(
+            filename, json.dumps(package.to_dict(), indent=4),
+            overwrite=overwrite
+        )

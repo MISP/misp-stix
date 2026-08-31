@@ -13,24 +13,26 @@ from .converters import (
     InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
     InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter)
 from .stix2_to_misp import (
-    STIX2toMISPParser, _BUNDLE_TYPING, _OBSERVABLE_TYPING, _SDO_TYPING)
+    STIX2toMISPParser, _BUNDLE_TYPING, _NOTE_TYPING, _OBSERVABLE_TYPING,
+    _OPINION_TYPING, _SDO_TYPING)
 from collections import defaultdict
 from pymisp import (
     MISPAttribute, MISPEvent, MISPEventReport, MISPGalaxy, MISPObject, MISPSighting)
 from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v20.sro import Sighting as Sighting_v20
-from stix2.v21.sdo import CustomObject as CustomObject_v21, Note, Opinion
+from stix2.v21.sdo import CustomObject as CustomObject_v21
 from stix2.v21.sro import Sighting as Sighting_v21
-from typing import Iterator, Union
+from typing import Iterator, Optional, Union
 
 _STORAGE_VARIABLE_NAMES = ('_indicator', '_observed_data')
 
 _CUSTOM_TYPING = Union[
     CustomObject_v20,
-    CustomObject_v21
+    CustomObject_v21,
+    dict
 ]
 _SIGHTING_TYPING = Union[
-    Sighting_v20, Sighting_v21
+    Sighting_v20, Sighting_v21, dict
 ]
 
 
@@ -66,109 +68,114 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._parse_stix_bundle()
 
     def _load_stix_bundle(self, bundle: _BUNDLE_TYPING) -> int:
-        for stix_object in bundle.objects:
+        for stix_object in getattr(bundle, 'objects', []):
             self._load_stix_object(stix_object)
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
     ############################################################################
 
-    def _load_analyst_note(self, note: CustomObject_v20):
+    def _load_analyst_note(self, note: _CUSTOM_TYPING):
         note_dict = {
-            'created': note.created, 'modified': note.modified,
-            'note': note.x_misp_note, 'uuid': self._sanitise_uuid(note.id)
+            'created': self._stix_date(note['created']),
+            'modified': self._stix_date(note['modified']),
+            'note': note['x_misp_note'],
+            'uuid': self._sanitise_uuid(note['id'])
         }
-        if hasattr(note, 'x_misp_author'):
-            note_dict['authors'] = note.x_misp_author
-        if hasattr(note, 'x_misp_language'):
-            note_dict['language'] = note.x_misp_language
-        self._analyst_data[note.object_ref].append(note.id)
-        super()._load_note(note.id, note_dict)
+        if 'x_misp_author' in note:
+            note_dict['authors'] = note['x_misp_author']
+        if 'x_misp_language' in note:
+            note_dict['language'] = note['x_misp_language']
+        self._analyst_data[note['object_ref']].append(note['id'])
+        super()._load_note(note['id'], note_dict)
 
-    def _load_analyst_opinion(self, opinion: CustomObject_v20):
+    def _load_analyst_opinion(self, opinion: _CUSTOM_TYPING):
         opinion_dict = {
-            'comment': getattr(opinion, 'x_misp_comment', ''),
-            'created': opinion.created, 'modified': opinion.modified,
-            'opinion': opinion.x_misp_opinion,
-            'uuid': self._sanitise_uuid(opinion.id)
+            'comment': opinion.get('x_misp_comment', ''),
+            'created': self._stix_date(opinion['created']),
+            'modified': self._stix_date(opinion['modified']),
+            'opinion': opinion['x_misp_opinion'],
+            'uuid': self._sanitise_uuid(opinion['id'])
         }
-        if hasattr(opinion, 'x_misp_author'):
-            opinion_dict['authors'] = opinion.x_misp_author
-        self._analyst_data[opinion.object_ref].append(opinion.id)
-        super()._load_opinion(opinion.id, opinion_dict)
+        if 'x_misp_author' in opinion:
+            opinion_dict['authors'] = opinion['x_misp_author']
+        self._analyst_data[opinion['object_ref']].append(opinion['id'])
+        super()._load_opinion(opinion['id'], opinion_dict)
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
-        self._check_uuid(custom_attribute.id)
+        self._check_uuid(custom_attribute['id'])
         try:
-            self._custom_attribute[custom_attribute.id] = custom_attribute
+            self._custom_attribute[custom_attribute['id']] = custom_attribute
         except AttributeError:
-            self._custom_attribute = {custom_attribute.id: custom_attribute}
+            self._custom_attribute = {custom_attribute['id']: custom_attribute}
 
     def _load_custom_galaxy_cluster(self, custom_galaxy: _CUSTOM_TYPING):
-        self._check_uuid(custom_galaxy.id)
+        self._check_uuid(custom_galaxy['id'])
         try:
-            self._custom_galaxy_cluster[custom_galaxy.id] = custom_galaxy
+            self._custom_galaxy_cluster[custom_galaxy['id']] = custom_galaxy
         except AttributeError:
-            self._custom_galaxy_cluster = {custom_galaxy.id: custom_galaxy}
+            self._custom_galaxy_cluster = {custom_galaxy['id']: custom_galaxy}
 
     def _load_custom_object(self, custom_object: _CUSTOM_TYPING):
-        self._check_uuid(custom_object.id)
+        self._check_uuid(custom_object['id'])
         try:
-            self._custom_object[custom_object.id] = custom_object
+            self._custom_object[custom_object['id']] = custom_object
         except AttributeError:
-            self._custom_object = {custom_object.id: custom_object}
+            self._custom_object = {custom_object['id']: custom_object}
 
-    def _load_custom_opinion(self, custom_object: CustomObject_v20):
+    def _load_custom_opinion(self, custom_object: _CUSTOM_TYPING):
         sighting = MISPSighting()
         sighting_args = {
-            'date_sighting': self._timestamp_from_date(custom_object.modified),
+            'date_sighting': self._timestamp_from_stix_date(
+                custom_object['modified']
+            ),
             'type': '1'
         }
-        if hasattr(custom_object, 'x_misp_source'):
-            sighting_args['source'] = custom_object.x_misp_source
-        if hasattr(custom_object, 'x_misp_author'):
+        if 'x_misp_source' in custom_object:
+            sighting_args['source'] = custom_object['x_misp_source']
+        if 'x_misp_author' in custom_object:
             sighting_args['Organisation'] = {
-                'uuid': custom_object.x_misp_author_ref.split('--')[1],
-                'name': custom_object.x_misp_author
+                'uuid': custom_object['x_misp_author_ref'].split('--')[1],
+                'name': custom_object['x_misp_author']
             }
         sighting.from_dict(**sighting_args)
-        object_ref = self._sanitise_uuid(custom_object.object_ref)
+        object_ref = self._sanitise_uuid(custom_object['object_ref'])
         try:
             self._sighting['custom_opinion'][object_ref].append(sighting)
         except AttributeError:
             self._sighting = defaultdict(lambda: defaultdict(list))
             self._sighting['custom_opinion'][object_ref].append(sighting)
 
-    def _load_note(self, note: Note):
-        if 'misp:context-layer="Analyst Note"' in getattr(note, 'labels', []):
+    def _load_note(self, note: _NOTE_TYPING):
+        if 'misp:context-layer="Analyst Note"' in note.get('labels', []):
             note_dict = {
-                'uuid': self._sanitise_uuid(note.id),
+                'uuid': self._sanitise_uuid(note['id']),
                 **self._parse_analyst_note(note)
             }
-            self._analyst_data[note.object_refs[0]].append(note.id)
-            super()._load_note(note.id, note_dict)
+            self._analyst_data[note['object_refs'][0]].append(note['id'])
+            super()._load_note(note['id'], note_dict)
         else:
-            self._check_uuid(note.id)
-            super()._load_note(note.id, note)
+            self._check_uuid(note['id'])
+            super()._load_note(note['id'], note)
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
-        self._check_uuid(observable.id)
+        self._check_uuid(observable['id'])
         try:
-            self._observable[observable.id] = observable
+            self._observable[observable['id']] = observable
         except AttributeError:
-            self._observable = {observable.id: observable}
+            self._observable = {observable['id']: observable}
 
-    def _load_opinion(self, opinion: Opinion):
-        if 'misp:context-layer="Analyst Opinion"' in getattr(opinion, 'labels', []):
+    def _load_opinion(self, opinion: _OPINION_TYPING):
+        if 'misp:context-layer="Analyst Opinion"' in opinion.get('labels', []):
             opinion_dict = {
-                'opinion': opinion.x_misp_opinion,
-                'uuid': self._sanitise_uuid(opinion.id),
+                'opinion': opinion['x_misp_opinion'],
+                'uuid': self._sanitise_uuid(opinion['id']),
                 **self._parse_analyst_opinion(opinion)
             }
-            self._analyst_data[opinion.object_refs[0]].append(opinion.id)
-            super()._load_opinion(opinion.id, opinion_dict)
+            self._analyst_data[opinion['object_refs'][0]].append(opinion['id'])
+            super()._load_opinion(opinion['id'], opinion_dict)
         else:
-            object_ref = self._sanitise_uuid(opinion.object_refs[0])
+            object_ref = self._sanitise_uuid(opinion['object_refs'][0])
             try:
                 self._sighting['opinion'][object_ref].append(opinion)
             except AttributeError:
@@ -176,7 +183,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._sighting['opinion'][object_ref].append(opinion)
 
     def _load_sighting(self, sighting: _SIGHTING_TYPING):
-        sighting_of_ref = self._sanitise_uuid(sighting.sighting_of_ref)
+        sighting_of_ref = self._sanitise_uuid(sighting['sighting_of_ref'])
         try:
             self._sighting['sighting'][sighting_of_ref].append(sighting)
         except AttributeError:
@@ -204,7 +211,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
+            if object_type in self._mapping.observable_object_types():
+                # A MISP export lists the observable objects its Observed
+                # Data consumed next to it, and those are converted with
+                # their parent: only a reference to one the bundle never
+                # carried has anything to say.
+                if not self._has_observable(object_ref):
+                    self._object_ref_loading_error(object_ref)
+                continue
             if object_type in self._mapping.object_type_refs_to_skip():
+                continue
+            if object_type == 'marking-definition':
+                self._handle_marking_definition_ref(object_ref)
                 continue
             try:
                 self._handle_object(object_type, object_ref)
@@ -243,19 +261,21 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             yield label
 
-    def _parse_opinion(self, opinion: Opinion) -> MISPSighting:
+    def _parse_opinion(self, opinion: _OPINION_TYPING) -> MISPSighting:
         misp_sighting = MISPSighting()
         sighting_args = {
-            'date_sighting': self._timestamp_from_date(opinion.modified),
-            'type': '1' if 'disagree' in opinion.opinion else '0'
+            'date_sighting': self._timestamp_from_stix_date(
+                opinion['modified']
+            ),
+            'type': '1' if 'disagree' in opinion['opinion'] else '0'
         }
-        if hasattr(opinion, 'x_misp_source'):
-            sighting_args['source'] = opinion.x_misp_source
-        if hasattr(opinion, 'x_misp_author_ref'):
-            identity = self._identity[opinion.x_misp_author_ref]
+        if 'x_misp_source' in opinion:
+            sighting_args['source'] = opinion['x_misp_source']
+        if 'x_misp_author_ref' in opinion:
+            identity = self._identity[opinion['x_misp_author_ref']]
             sighting_args['Organisation'] = {
-                'uuid': self._sanitise_uuid(identity.id),
-                'name': identity.name
+                'uuid': self._sanitise_uuid(identity['id']),
+                'name': identity['name']
             }
         misp_sighting.from_dict(**sighting_args)
         return misp_sighting
@@ -270,8 +290,22 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
                 misp_galaxy.add_galaxy_cluster(**cluster)
-                attribute.add_tag(self._galaxy_cluster_tag(cluster))
+                self._add_cluster_tag(attribute, cluster)
             attribute.add_galaxy(misp_galaxy)
+
+    def _add_cluster_tag(self, misp_layer, cluster):
+        """Tag the record with the Galaxy Cluster, if a tag can name it.
+
+        The one place a cluster tag reaches a record: a cluster type nothing
+        survives from leaves no tag to write, and the cluster is then attached
+        without one rather than the record being handed an empty tag.
+
+        :param misp_layer: the record the cluster is attached to
+        :param cluster: the Galaxy Cluster the tag names
+        """
+        tag = self._galaxy_cluster_tag(cluster)
+        if tag is not None:
+            misp_layer.add_tag(tag)
 
     def _add_event_galaxies(self, galaxies: dict):
         for galaxy_type, clusters in galaxies.items():
@@ -279,17 +313,19 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
                 misp_galaxy.add_galaxy_cluster(**cluster)
-                self.misp_event.add_tag(self._galaxy_cluster_tag(cluster))
+                self._add_cluster_tag(self.misp_event, cluster)
             self.misp_event.add_galaxy(misp_galaxy)
 
     def _add_galaxy_tags(self, misp_layer, misp_galaxy):
         for cluster in misp_galaxy.clusters:
-            misp_layer.add_tag(self._galaxy_cluster_tag(cluster))
+            self._add_cluster_tag(misp_layer, cluster)
 
-    @staticmethod
-    def _galaxy_cluster_tag(cluster) -> str:
-        tag_value = cluster.uuid if cluster.type.startswith('stix-') else cluster.value
-        return f'misp-galaxy:{cluster.type}="{tag_value}"'
+    def _galaxy_cluster_tag(self, cluster) -> Optional[str]:
+        if cluster.type.startswith('stix-'):
+            return self._build_tag('misp-galaxy', cluster.type, cluster.uuid)
+        return self._build_cluster_tag(
+            cluster.type, cluster.value, cluster.uuid
+        )
 
     def _add_object_galaxies(self, misp_object: MISPObject, galaxies: dict):
         for galaxy in self._aggregate_galaxy_clusters(galaxies):
@@ -312,9 +348,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if not all(hasattr(self, field) for field in _STORAGE_VARIABLE_NAMES):
             return
         pattern_parser = self._get_converter('indicator')._compile_stix_pattern
+        # Keyed on the bare uuid where the External parser keys the same map
+        # on the whole STIX id: an Internal Indicator and the Observed Data
+        # rendering the same MISP record share that uuid and nothing else, so
+        # it is what makes each of the 2 findable from the other. Only
+        # Indicators feed the map, so no other type can collide with them here
         self._indicator_references = {
             self._extract_uuid(indicator_id): tuple(val[-1] for val in pattern)
             for indicator_id, indicator in self._indicator.items()
-            if getattr(indicator, 'pattern_type', 'stix') == 'stix'
+            if indicator.get('pattern_type', 'stix') == 'stix'
             for pattern in pattern_parser(indicator).comparisons.values()
         }
