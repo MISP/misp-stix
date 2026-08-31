@@ -3015,6 +3015,37 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[observed_data, indicator, relationship]
         )
 
+    def test_stix20_bundle_with_file_with_unmapped_hash_observable_object(self):
+        bundle = (
+            TestInternalSTIX20Bundles
+            .get_bundle_with_file_with_unmapped_hash_observable_object()
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, relationship = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(
+            misp_object, observed_data
+        )['0']
+        attribute_types = {
+            attribute.object_relation: attribute.value
+            for attribute in misp_object.attributes
+        }
+        # Only the mapped MD5 and filename fields become attributes; the
+        # unmapped 'CRC32' hash is skipped instead of yielding `None` into
+        # the attribute stream (which used to raise a TypeError).
+        self.assertEqual(len(misp_object.attributes), 2)
+        self.assertEqual(attribute_types['md5'], observable.hashes['MD5'])
+        self.assertEqual(attribute_types['filename'], observable.name)
+        self.assertIn(self.parser.identifier, self.parser.errors)
+        self.assertTrue(
+            any(
+                'CRC32' in error
+                for error in self.parser.errors[self.parser.identifier]
+            )
+        )
+
     def test_stix20_bundle_with_artifact_payload_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_artifact_payload_indicator_object()
         self.parser.load_stix_bundle(bundle)
