@@ -405,7 +405,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         try:
             return self.__event_timestamp
         except AttributeError:
-            event_timestamp = datetime.now()
+            event_timestamp = datetime.now(UTC)
             self.__event_timestamp = event_timestamp
             return event_timestamp
 
