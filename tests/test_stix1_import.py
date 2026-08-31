@@ -20,6 +20,7 @@ from stix.common import Statement
 from stix.common.related import RelatedPackage, RelatedPackages
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
+from stix.exploit_target import ExploitTarget, Vulnerability
 from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.incident import Incident
 from stix.incident.history import History, HistoryItem, JournalEntry
@@ -773,6 +774,25 @@ class TestSTIX1Import(TestSTIX):
         self.assertNotIn(
             f'misp-galaxy:ransomware="{SMUGGLING_TAG_VALUE}"', tags
         )
+
+    def test_external_ttp_resources_with_no_infrastructure_does_not_raise(self):
+        """`resources` is a container that can carry a `tools` list without an
+        `infrastructure`: with only the exploit target left to fall back on,
+        the infrastructure lookup must not dereference the absent value."""
+        ttp = TTP()
+        ttp.id_ = f'MISP:TTP-{_ACTOR_UUID}'
+        # A `resources` container present but with no `infrastructure` set.
+        ttp.resources = Resource()
+        vulnerability = Vulnerability()
+        vulnerability.cve_id = 'CVE-2020-0001'
+        exploit_target = ExploitTarget()
+        exploit_target.add_vulnerability(vulnerability)
+        ttp.add_exploit_target(exploit_target)
+        parser = ExternalSTIX1toMISPParser()
+        attributes = parser._parse_attributes_from_ttp(ttp, set())
+        self.assertEqual(len(attributes), 1)
+        self.assertEqual(attributes[0]['type'], 'vulnerability')
+        self.assertEqual(attributes[0]['value'], 'CVE-2020-0001')
 
     def test_external_tlp_marking_writes_one_taxonomy_entry(self):
         """A TLP colour is written into a taxonomy tag of the library's own: it
