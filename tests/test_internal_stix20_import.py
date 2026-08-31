@@ -2687,6 +2687,19 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             attack_pattern=attack_pattern
         )
 
+    def test_stix20_bundle_with_attack_pattern_object_with_incomplete_reference(self):
+        bundle = (
+            TestInternalSTIX20Bundles
+            .get_bundle_with_attack_pattern_object_with_incomplete_reference()
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.errors, {})
+        event = self.parser.misp_event
+        _, report, attack_pattern = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_attack_pattern_object(misp_object, attack_pattern)
+
     def test_stix20_bundle_with_course_of_action_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_course_of_action_object()
         self.parser.load_stix_bundle(bundle)
