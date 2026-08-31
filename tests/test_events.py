@@ -6405,6 +6405,23 @@ def get_event_with_user_account_objects():
     return event
 
 
+def get_event_with_unix_user_account_object():
+    event = deepcopy(_BASE_EVENT)
+    unix_user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
+    for attribute in unix_user_account['Attribute']:
+        if attribute['object_relation'] == 'group':
+            attribute['value'] = '1000' if attribute['value'] == 'viktor-fan' else '1001'
+    unix_user_account['Attribute'].append(
+        {
+            "type": "text",
+            "object_relation": "account-type",
+            "value": "unix"
+        }
+    )
+    event['Event']['Object'] = [dict(_populate_object(unix_user_account))]
+    return event
+
+
 def get_event_with_vulnerability_and_weakness_objects():
     event = deepcopy(_BASE_EVENT)
     weakness = dict(_populate_object(_TEST_WEAKNESS_OBJECT))
