@@ -3343,6 +3343,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         file_args, observable = self._parse_file_observable_object(
             file_object
         )
+        custom = False
         try:
             extension_args, custom = self._parse_pe_extensions_observable(
                 pe_object['misp_object'], section_uuids

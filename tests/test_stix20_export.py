@@ -6,12 +6,15 @@ from misp_stix_converter import (
     InvalidMISPInputError, MISPtoSTIX20Mapping, MISPtoSTIX20Parser,
     misp_collection_to_stix2, misp_to_stix2)
 from pymisp import MISPAttribute, MISPEvent
+from unittest.mock import patch
 from .test_events import *
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
 from ._test_stix import TestSTIX20
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX20Export
+
+_parser_module = 'misp_stix_converter.misp2stix.misp_to_stix2'
 
 
 class TestSTIX20GenericExport(TestSTIX20Export, TestSTIX20):
@@ -4118,6 +4121,35 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_file_and_pe_observable_objects(self):
         event = get_event_with_file_and_pe_objects()
         self._test_event_with_file_and_pe_observable_objects(event['Event'])
+
+    def test_event_with_file_and_pe_observable_object_pe_parsing_error(self):
+        # If parsing the pe extension raises, the file object must still be
+        # produced as a plain file observable instead of crashing with an
+        # UnboundLocalError on the unset `custom` fallback variable.
+        event = get_event_with_file_and_pe_objects()
+        self._remove_object_ids_flags(event['Event'])
+        # Drop the only non-mapped file attribute so `file_args` has no
+        # `allow_custom` key yet, forcing evaluation of the `custom`
+        # fallback set by `_parse_pe_extensions_observable`.
+        file_object = event['Event']['Object'][0]
+        file_object['Attribute'] = [
+            attribute for attribute in file_object['Attribute']
+            if attribute['object_relation'] != 'entropy'
+        ]
+        with patch(
+            f'{_parser_module}.MISPtoSTIX2Parser'
+            '._parse_pe_extensions_observable',
+            side_effect=Exception('pe parsing error')
+        ):
+            self.parser.parse_misp_event(event['Event'])
+        observed_data = next(
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.type == 'observed-data'
+            and stix_object.objects['0'].type == 'file'
+        )
+        file_object = observed_data.objects['0']
+        self.assertEqual(file_object.type, 'file')
+        self.assertNotIn('extensions', file_object)
 
     def test_event_with_file_indicator_object(self):
         event = get_event_with_file_object_with_artifact()
