@@ -31,6 +31,12 @@ class TestSTIX20InputContract(TestSTIX20GenericExport):
         with self.assertRaises(InvalidMISPInputError):
             self.parser.parse_json_content({'foo': 'bar'})
 
+    def test_event_timestamp_fallback_is_timezone_aware(self):
+        # No event timestamp is available, so `event_timestamp` falls back
+        # to the current time, which must be timezone-aware like every
+        # other timestamp produced by the parser.
+        self.assertIsNotNone(self.parser.event_timestamp.tzinfo)
+
     def test_single_bare_attribute_converts(self):
         self.parser.parse_json_content(get_indicator_attribute())
         self.assertIsNotNone(self.parser.bundle)
