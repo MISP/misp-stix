@@ -9525,6 +9525,20 @@ _VULNERABILITY_OBJECT = {
     "x_misp_cvss_score": "6.8",
     "x_misp_published": "2017-10-13T07:29:00Z"
 }
+_VULNERABILITY_OBJECT_WITHOUT_EXTERNAL_REFERENCES = {
+    "type": "vulnerability",
+    "spec_version": "2.1",
+    "id": "vulnerability--5e579975-e9cc-46c6-a6ad-1611a964451b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "CVE-2017-11774",
+    "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
+    "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
+    "x_misp_created": "2017-10-13T07:29:00Z",
+    "x_misp_cvss_score": "6.8",
+    "x_misp_published": "2017-10-13T07:29:00Z"
+}
 _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -11105,6 +11119,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
         return cls.__assemble_bundle(_VULNERABILITY_OBJECT)
+
+    @classmethod
+    def get_bundle_with_vulnerability_object_without_external_references(cls):
+        return cls.__assemble_bundle(
+            _VULNERABILITY_OBJECT_WITHOUT_EXTERNAL_REFERENCES
+        )
 
     @classmethod
     def get_bundle_with_x509_indicator_object(cls):
