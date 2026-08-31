@@ -3206,6 +3206,25 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[-5:-1])
 
     @classmethod
+    def get_bundle_with_domain_ip_dangling_resolution(cls):
+        # A domain-name is referenced by the Grouping on its own - not
+        # wrapped by an Observed Data - so it is converted by
+        # `STIX2ObservableObjectConverter._parse_domain_observable_object`
+        # as unparsed content. It resolves to an ip-addr the bundle never
+        # carries: the reference is dangling and must not raise while it is
+        # dereferenced.
+        domain_name = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--0e6d0e0e-5f2b-4b3a-9f0b-6a2f2f9b5c1e",
+            "value": "dangling.example.com",
+            "resolves_to_refs": [
+                "ipv4-addr--00000000-0000-4000-8000-000000000000"
+            ]
+        }
+        return cls.__assemble_bundle(domain_name)
+
+    @classmethod
     def get_bundle_with_email_address_attributes(cls):
         return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES[:-1])
 
