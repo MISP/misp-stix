@@ -7983,6 +7983,47 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
     }
 ]
+_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_EXTENSION = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--71c74b48-1122-4b81-8f82-b6dda19f8f19",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--71c74b48-1122-4b81-8f82-b6dda19f8f19",
+            "ipv4-addr--65195b1c-8ea9-42dd-9a20-d63f5e6ecfdb",
+            "ipv4-addr--fc98adb7-c56a-46b1-a4b9-4de9df6ab653"
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--71c74b48-1122-4b81-8f82-b6dda19f8f19",
+        "src_ref": "ipv4-addr--65195b1c-8ea9-42dd-9a20-d63f5e6ecfdb",
+        "dst_ref": "ipv4-addr--fc98adb7-c56a-46b1-a4b9-4de9df6ab653",
+        "src_port": 8080,
+        "dst_port": 8080,
+        "protocols": ["tcp"]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--65195b1c-8ea9-42dd-9a20-d63f5e6ecfdb",
+        "value": "1.2.3.4"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--fc98adb7-c56a-46b1-a4b9-4de9df6ab653",
+        "value": "5.6.7.8"
+    }
+]
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "spec_version": "2.1",
@@ -11000,6 +11041,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_network_socket_observable_object(cls):
         return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_network_socket_observable_object_without_extension(cls):
+        return cls.__assemble_bundle(
+            *_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_EXTENSION
+        )
 
     @classmethod
     def get_bundle_with_news_agency_object(cls):
