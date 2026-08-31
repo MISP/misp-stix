@@ -4127,6 +4127,29 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             ]
         )
 
+    def test_stix21_bundle_with_network_socket_observable_object_without_extension(self):
+        # A `network-traffic` SCO labelled `network-socket` but missing the
+        # `socket-ext` extension must not abort the whole bundle conversion.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_network_socket_observable_object_without_extension()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        _, grouping, observed_data, network_traffic, address1, address2 = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_observed_data_object(misp_object, observed_data)
+        port_src, port_dst, ip_src, ip_dst, protocol = misp_object.attributes
+        self.assertEqual(port_src.object_relation, 'src-port')
+        self.assertEqual(port_src.value, network_traffic.src_port)
+        self.assertEqual(port_dst.object_relation, 'dst-port')
+        self.assertEqual(port_dst.value, network_traffic.dst_port)
+        self.assertEqual(ip_src.object_relation, 'ip-src')
+        self.assertEqual(ip_src.value, address1.value)
+        self.assertEqual(ip_dst.object_relation, 'ip-dst')
+        self.assertEqual(ip_dst.value, address2.value)
+        self.assertEqual(protocol.object_relation, 'protocol')
+        self.assertEqual(protocol.value, network_traffic.protocols[0].upper())
+
     def test_stix21_bundle_with_network_socket_indicator_object(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_network_socket_indicator_object()
         self.parser.load_stix_bundle(bundle)
