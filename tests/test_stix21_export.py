@@ -3844,6 +3844,18 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(note.x_misp_attachment['data'], data)
 
+    def _test_event_with_annotation_object_without_text(self, event):
+        self.parser.parse_misp_event(event)
+        annotation, domain_ip = self.parser._misp_event.objects
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        (identity, grouping, observed_data, _, _, indicator,
+         custom, *relationships) = stix_objects
+        self.assertEqual(
+            custom.id, f"x-misp-object--{annotation.uuid}"
+        )
+        self.assertFalse(any(o.type == 'note' for o in stix_objects))
+
     def _test_event_with_android_app_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
@@ -4972,6 +4984,10 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             stix=self.parser.stix_objects[2:], name='annotation',
             summary='**Note** with references to the annotated objects'
         )
+
+    def test_event_with_annotation_object_without_text(self):
+        event = get_event_with_annotation_object_without_text()
+        self._test_event_with_annotation_object_without_text(event['Event'])
 
     def test_event_with_android_app_indicator_object(self):
         event = get_event_with_android_app_object()
