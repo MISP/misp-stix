@@ -4395,6 +4395,26 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_email_artifact_object(artifact_object, observed_data, artifact)
         self._check_email_file_object(file_object, observed_data, _file)
 
+    def test_stix21_bundle_with_email_message_objects_and_body_indicator(self):
+        # Regression test: an indicator whose pattern only matches the
+        # email-message body_multipart value must flag the resulting
+        # `email-body` attribute as `to_ids` with an indicator comment,
+        # instead of always being dropped to `to_ids = False`.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_objects_and_body_indicator()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, message, *_, indicator = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        email_object = misp_objects[0]
+        self.assertEqual(email_object.name, 'email')
+        body = email_object.attributes[-1]
+        self.assertEqual(body.type, 'email-body')
+        self.assertEqual(body.object_relation, 'email-body')
+        self.assertEqual(body.value, message.body_multipart[0].body)
+        self.assertTrue(body.to_ids)
+        self.assertEqual(body.comment, f'Indicator ID: {indicator.id}')
+
     def test_stix21_bundle_with_email_message_observables_and_indicator(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_observables_and_indicator()
         self.parser.load_stix_bundle(bundle)

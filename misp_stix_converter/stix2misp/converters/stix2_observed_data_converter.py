@@ -1210,6 +1210,7 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             email_message = observable['observable']
+            email_observable = observable
             misp_object = self._parse_generic_observable_object_ref(
                 email_message, observed_data, 'email', False
             )
@@ -1257,7 +1258,7 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body,
                             **self._observables._handle_object_id(
-                                observable.get(object_ref),
+                                email_observable.get('indicator_ref'),
                                 'email-message', multipart.body,
                                 f'{object_ref} - body_multipart - '
                                 f'{index} - email-body'
