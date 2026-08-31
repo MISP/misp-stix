@@ -254,13 +254,13 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                                     continue
                                 if test_mechanism.rule.value is None:
                                     continue
-                                self.misp_event.add_attribute(
+                                test_mechanism_attribute = self.misp_event.add_attribute(
                                     **{
                                         'type': attribute_type,
                                         'value': test_mechanism.rule.value
                                     }
                                 )
-                                test_mechanisms.append(attribute.uuid)
+                                test_mechanisms.append(test_mechanism_attribute.uuid)
                         self._handle_object_case(
                             attribute_type, attribute_value, compl_data,
                             to_ids=True, object_uuid=uuid,
