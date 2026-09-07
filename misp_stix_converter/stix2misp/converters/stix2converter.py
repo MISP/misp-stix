@@ -228,12 +228,16 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             description: Optional[str] = None,
             cluster_value: Optional[str] = None) -> dict:
         value = cluster_value or getattr(stix_object, 'name', stix_object.id)
+        cluster_uuid = self.main_parser._create_v5_uuid(
+            f'{self.main_parser._extract_uuid(stix_object.id)} -'
+            f' {self.main_parser.organisation_uuid}'
+        )
+        self.main_parser._check_cluster_uuid_collision(
+            cluster_uuid, stix_object.id
+        )
         cluster_args = {
             'value': value, **self.main_parser.cluster_distribution,
-            'uuid': self.main_parser._create_v5_uuid(
-                f'{self.main_parser._extract_uuid(stix_object.id)} -'
-                f' {self.main_parser.organisation_uuid}'
-            ),
+            'uuid': cluster_uuid,
             'source': (
                 self.main_parser._handle_creator(stix_object.created_by_ref)
                 if hasattr(stix_object, 'created_by_ref') else 'misp-stix'
@@ -385,7 +389,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             cluster_value: Optional[str] = None) -> dict:
         value = cluster_value or getattr(stix_object, 'name', stix_object.id)
         cluster_args = {
-            'uuid': self.main_parser._sanitise_uuid(stix_object.id),
+            'uuid': self.main_parser._sanitise_cluster_uuid(stix_object.id),
             'value': value, 'type': galaxy_type
         }
         if description is not None:

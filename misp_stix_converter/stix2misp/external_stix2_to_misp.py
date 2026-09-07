@@ -48,7 +48,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
-        self._record_uuids: dict = defaultdict(dict)
 
     def parse_stix_bundle(
             self, cluster_distribution: Optional[int] = 0,
@@ -75,7 +74,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
-        self._record_uuids = defaultdict(dict)
         try:
             del self.__standalone_object_refs
         except AttributeError:

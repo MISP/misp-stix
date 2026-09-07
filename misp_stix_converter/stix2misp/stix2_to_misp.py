@@ -146,6 +146,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._converter_cache: dict = {}
         self._galaxies: dict = {}
         self._loaded_object_ids: set = set()
+        self._record_uuids: dict = defaultdict(dict)
 
         self._attack_pattern: dict
         self._campaign: dict
@@ -328,6 +329,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._document_invalid_ids = set()
         self._galaxies = {}
         self._loaded_object_ids = set()
+        self._record_uuids = defaultdict(dict)
         for feature in _SDOs:
             if hasattr(self, feature):
                 delattr(self, feature)
@@ -1041,11 +1043,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if key != 'extension_type':
                 meta[key] = values
+        cluster_uuid = self._extract_uuid(marking_definition['id'])
+        self._check_cluster_uuid_collision(
+            cluster_uuid, marking_definition['id']
+        )
         return self._create_misp_galaxy_cluster(
             collection_uuid=self._create_v5_uuid(name),
             meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
-            uuid=marking_definition['id'].split('--')[1],
+            uuid=cluster_uuid,
             value=extension.get(
                 'name',
                 extension.get(
@@ -1116,6 +1122,34 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
     #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
     ############################################################################
+
+    def _check_cluster_uuid_collision(self, cluster_uuid: str, object_id: str):
+        """Report the **Colliding Cluster Uuid** 2 STIX ids both produce.
+
+        The type of a galaxy-mapped STIX object never enters the cluster uuid
+        derivation, so 2 objects of different types sharing a uuid part yield
+        2 Galaxy Clusters carrying one uuid. As with the record collisions,
+        the uuid computation is untouched - re-deriving one of the 2 clusters
+        would cost it the round-trip - and only the reporting is added. The
+        bucket is keyed on the uuid the clusters actually carry, so the
+        warning names what the converted content ends up sharing
+        """
+        known_id = self._record_uuids['galaxy cluster'].setdefault(
+            cluster_uuid, object_id
+        )
+        if known_id != object_id:
+            self._add_warning(
+                f'Colliding MISP galaxy cluster uuid {cluster_uuid} - the '
+                f'STIX objects {known_id} and {object_id} both produce it, so '
+                'the converted content has 2 galaxy clusters sharing one uuid'
+            )
+
+    def _sanitise_cluster_uuid(self, object_id: str) -> str:
+        """The record-uuid sanitation, with the cluster collision check on
+        the uuid it hands out - the one the cluster ends up carrying."""
+        cluster_uuid = self._sanitise_uuid(object_id)
+        self._check_cluster_uuid_collision(cluster_uuid, object_id)
+        return cluster_uuid
 
     def _aggregate_galaxy_clusters(self, galaxies: dict):
         for galaxy_type, clusters in galaxies.items():
