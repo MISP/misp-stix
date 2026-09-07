@@ -1197,6 +1197,30 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertNotEqual(str(cluster.uuid), record_uuid)
         self._check_uuid_collision_warning_absence(self.parser.warnings)
 
+    def test_stix21_bundle_with_colliding_galaxy_cluster_uuids(self):
+        # The cluster uuid derivation never includes the STIX object's type,
+        # so a Malware and a Threat Actor sharing a uuid part yield 2 Galaxy
+        # Clusters carrying one uuid: both stay, the collision is reported.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_colliding_galaxy_cluster_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, malware, _, threat_actor, _ = bundle.objects
+        cluster_uuid = uuid5(
+            UUIDv4, f"{malware.id.split('--')[1]} - {MISP_org_uuid}"
+        )
+        event_cluster = event.galaxies[0].clusters[0]
+        attribute_cluster = event.attributes[0].galaxies[0].clusters[0]
+        self.assertEqual(event_cluster.value, malware.name)
+        self.assertEqual(attribute_cluster.value, threat_actor.name)
+        self._assert_multiple_equal(
+            event_cluster.uuid, attribute_cluster.uuid, cluster_uuid
+        )
+        self._check_uuid_collision_warning(
+            str(cluster_uuid), (malware.id, threat_actor.id),
+            self.parser.warnings
+        )
+
     def test_stix21_bundle_with_duplicate_object_ids(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
         self.parser.load_stix_bundle(bundle)

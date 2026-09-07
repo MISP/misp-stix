@@ -2305,6 +2305,15 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_galaxy_bundle(*_INTRUSION_SET_OBJECTS)
 
     @classmethod
+    def get_bundle_with_colliding_galaxy_cluster_uuids(cls):
+        """A Malware and a Threat Actor sharing a uuid part: the type never
+        enters the cluster uuid derivation, so both clusters claim one uuid."""
+        malware = deepcopy(_MALWARE_OBJECTS[0])
+        threat_actor = deepcopy(_THREAT_ACTOR_OBJECTS[0])
+        threat_actor['id'] = f"threat-actor--{malware['id'].split('--')[1]}"
+        return cls.__assemble_galaxy_bundle(malware, threat_actor)
+
+    @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_MALWARE_OBJECTS)
 

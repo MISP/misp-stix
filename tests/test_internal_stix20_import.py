@@ -2127,6 +2127,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
             self.assertEqual(sighting.Organisation['uuid'], identity.id.split('--')[1])
             self.assertEqual(sighting.Organisation['name'], identity.name)
+        # `sighting_of_ref` lookups resolve references - never MISP records
+        # claiming a uuid - so nothing here is a collision to report.
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
 
     def test_stix20_bundle_with_single_report(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_single_report()
@@ -2173,6 +2176,48 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
         self._populate_galaxy_documentation(
             galaxy=event.galaxies[0], course_of_action=course_of_action
+        )
+
+    def test_stix20_bundle_with_colliding_galaxy_cluster_uuids(self):
+        # A cluster keeps only the part after `--` of the STIX id it comes
+        # from, so 2 galaxy-mapped objects of different types sharing a uuid
+        # part yield 2 clusters carrying one uuid: the collision is reported.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_colliding_galaxy_cluster_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, malware, threat_actor = bundle.objects
+        record_uuid = malware.id.split('--')[1]
+        clusters = [
+            cluster for galaxy in event.galaxies
+            for cluster in galaxy.clusters
+        ]
+        self.assertEqual(len(clusters), 2)
+        for cluster in clusters:
+            self.assertEqual(cluster.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (malware.id, threat_actor.id), self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_colliding_custom_galaxy_cluster_uuid(self):
+        # The custom galaxy path assigns the cluster uuid the same way, so a
+        # Custom Galaxy Cluster collides with a galaxy Malware sharing its
+        # uuid part just as 2 galaxy-mapped objects do.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_colliding_custom_galaxy_cluster_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, malware, custom = bundle.objects
+        record_uuid = malware.id.split('--')[1]
+        clusters = [
+            cluster for galaxy in event.galaxies
+            for cluster in galaxy.clusters
+        ]
+        self.assertEqual(len(clusters), 2)
+        for cluster in clusters:
+            self.assertEqual(cluster.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (malware.id, custom.id), self.parser.warnings
         )
 
     def test_stix20_bundle_with_custom_galaxy(self):
