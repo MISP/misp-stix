@@ -99,6 +99,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             for ip, ip_attribute in self.dns_objects['ip'].items():
                 if ip not in self.dns_ips:
                     self.misp_event.add_attribute(**ip_attribute)
+        self._apply_event_galaxies()
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()

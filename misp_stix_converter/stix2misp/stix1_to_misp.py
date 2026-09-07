@@ -638,6 +638,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #        GALAXIES PARSING SPECIFIC METHODS USED BY BOTH SUBCLASSES.        #
     ############################################################################
 
+    def _apply_event_galaxies(self):
+        # The galaxy tags accumulated while the package is parsed only exist
+        # once the whole package is - each parser applies them to its event as
+        # its last parsing step, in a stable order the set cannot provide.
+        for tag_name in sorted(self.galaxies):
+            self.misp_event.add_tag(tag_name)
+
     @staticmethod
     def _get_galaxy_name(stix_object: _STIX_OBJECT_TYPING,
                          feature: str) -> Union[str, list, None]:
