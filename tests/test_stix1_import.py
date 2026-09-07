@@ -740,16 +740,24 @@ class TestSTIX1Import(TestSTIX):
     #                              GALAXY TAGS.                                #
     ############################################################################
 
-    @classmethod
-    def _ttp_with_malware_title(cls, title):
-        """A TTP naming a malware what a taxonomy tag value cannot carry, over
-        infrastructure the galaxy tag then lands on as an attribute."""
+    @staticmethod
+    def _ttp_with_malware(title):
+        """A TTP whose only content is the malware naming a galaxy tag: no
+        infrastructure or exploit target, so no attribute the tag could land
+        on."""
         ttp = TTP()
         ttp.id_ = f'MISP:TTP-{_ACTOR_UUID}'
         malware_instance = MalwareInstance()
         malware_instance.title = title
         ttp.behavior = Behavior()
         ttp.behavior.add_malware_instance(malware_instance)
+        return ttp
+
+    @classmethod
+    def _ttp_with_malware_title(cls, title):
+        """A TTP naming a malware what a taxonomy tag value cannot carry, over
+        infrastructure the galaxy tag then lands on as an attribute."""
+        ttp = cls._ttp_with_malware(title)
         address = Address()
         address.address_value = '198.51.100.16'
         address.category = 'ipv4-addr'
@@ -775,6 +783,38 @@ class TestSTIX1Import(TestSTIX):
         self.assertNotIn(
             f'misp-galaxy:ransomware="{SMUGGLING_TAG_VALUE}"', tags
         )
+
+    def test_external_threat_actor_galaxy_lands_on_the_event(self):
+        """A threat actor names no attribute or object of its own: the galaxy
+        tag built from its title is only kept if the event carries it."""
+        stix_package = STIXPackage()
+        stix_package.add_threat_actor(self._threat_actor('APT-A'))
+        parser = self._parse_external_package(stix_package)
+        tags = {tag['name'] for tag in parser.misp_event.tags}
+        self.assertIn('misp-galaxy:threat-actor="APT-A"', tags)
+
+    def test_external_contentless_ttp_galaxy_lands_on_the_event(self):
+        """A TTP carrying no infrastructure or exploit target yields no
+        attribute the galaxy tag could land on, so it lands on the event."""
+        stix_package = STIXPackage()
+        stix_package.add_ttp(self._ttp_with_malware('WannaCry'))
+        parser = self._parse_external_package(stix_package)
+        tags = {tag['name'] for tag in parser.misp_event.tags}
+        self.assertIn('misp-galaxy:ransomware="WannaCry"', tags)
+
+    def test_internal_threat_actor_galaxy_lands_on_the_event(self):
+        """A threat actor of a MISP-generated package is the export of an event
+        galaxy tag - the export drops the tag once the actor carries it, so the
+        import has to put it back on the event."""
+        incident = Incident()
+        incident.title = 'Event with a threat actor galaxy'
+        incident.timestamp = datetime(2026, 7, 1, 12, 0)
+        stix_package = self._internal_package(
+            incident, threat_actor=self._threat_actor('APT-A')
+        )
+        parser = self._parse_internal_package(stix_package)
+        tags = {tag['name'] for tag in parser.misp_event.tags}
+        self.assertIn('misp-galaxy:threat-actor="APT-A"', tags)
 
     def test_external_tlp_marking_writes_one_taxonomy_entry(self):
         """A TLP colour is written into a taxonomy tag of the library's own: it
@@ -849,6 +889,7 @@ class TestSTIX1Import(TestSTIX):
             'info': misp_event.info,
             'date': str(getattr(misp_event, 'date', None)),
             'timestamp': getattr(misp_event, 'timestamp', None),
+            'tags': sorted(tag['name'] for tag in misp_event.tags),
             'attributes': sorted(
                 (attribute.type, attribute.value)
                 for attribute in misp_event.attributes
