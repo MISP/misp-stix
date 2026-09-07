@@ -3069,6 +3069,23 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
+    def _test_event_with_dashed_object_relations(self, event):
+        # STIX 2.0 has no pattern_type, so the sigma and suricata objects are
+        # exported as custom objects keeping the object relations as values.
+        self._remove_object_ids_flags(event)
+        self.parser.parse_misp_event(event)
+        url_object = self.parser._misp_event.objects[-1]
+        _, _, sigma_custom, suricata_custom, observed_data = self.parser.stix_objects
+        for custom_object in (sigma_custom, suricata_custom):
+            self.assertEqual(
+                custom_object.x_misp_attributes[-1]['object_relation'],
+                'weird-relation'
+            )
+        url = observed_data.objects['0']
+        weird_attribute = url_object['Attribute'][-1]
+        self.assertEqual(url.x_misp_weird_relation, weird_attribute['value'])
+        self.assertFalse(hasattr(url, 'x_misp_weird-relation'))
+
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
         self._check_directory_observable_object(misp_object, observed_data)
@@ -4062,6 +4079,10 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_artifact_payload_object()
         self._test_event_with_artifact_payload_observable_object(event['Event'])
 
+    def test_event_with_dashed_object_relations(self):
+        event = get_event_with_dashed_object_relations()
+        self._test_event_with_dashed_object_relations(event['Event'])
+
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
         self._test_event_with_directory_indicator_object(event['Event'])
@@ -4660,6 +4681,12 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_artifact_payload_observable_object(misp_event)
+
+    def test_event_with_dashed_object_relations(self):
+        event = get_event_with_dashed_object_relations()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_dashed_object_relations(misp_event)
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()

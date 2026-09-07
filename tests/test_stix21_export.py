@@ -3952,6 +3952,25 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
+    def _test_event_with_dashed_object_relations(self, event):
+        self._remove_object_ids_flags(event)
+        self.parser.parse_misp_event(event)
+        sigma_object, suricata_object, url_object = self.parser._misp_event.objects
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        _, _, sigma_indicator, suricata_indicator, _, url = stix_objects
+        for indicator, misp_object in zip(
+                (sigma_indicator, suricata_indicator),
+                (sigma_object, suricata_object)):
+            weird_attribute = misp_object['Attribute'][-1]
+            self.assertEqual(
+                indicator.x_misp_weird_relation, weird_attribute['value']
+            )
+            self.assertFalse(hasattr(indicator, 'x_misp_weird-relation'))
+        weird_attribute = url_object['Attribute'][-1]
+        self.assertEqual(url.x_misp_weird_relation, weird_attribute['value'])
+        self.assertFalse(hasattr(url, 'x_misp_weird-relation'))
+
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
@@ -5124,6 +5143,10 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             stix=self.parser.stix_objects[2:]
         )
 
+    def test_event_with_dashed_object_relations(self):
+        event = get_event_with_dashed_object_relations()
+        self._test_event_with_dashed_object_relations(event['Event'])
+
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
         self._test_event_with_directory_indicator_object(event['Event'])
@@ -5752,6 +5775,12 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_artifact_payload_indicator_object(misp_event)
+
+    def test_event_with_dashed_object_relations(self):
+        event = get_event_with_dashed_object_relations()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_dashed_object_relations(misp_event)
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
