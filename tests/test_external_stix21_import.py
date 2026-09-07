@@ -188,6 +188,98 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
         )
 
+    def _dispatch_stix_to_misp_with_environment(
+            self, environ, config=None, url=None, api_key=None):
+        from misp_stix_converter.misp_stix_converter import _stix_to_misp
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        args = SimpleNamespace(
+            config=config, url=url, api_key=api_key, skip_ssl=False
+        )
+        prefix = 'misp_stix_converter.misp_stix_converter.'
+        with patch.dict('os.environ', environ, clear=True), \
+                patch(f'{prefix}PyMISP') as pymisp, \
+                patch(f'{prefix}_process_stix_to_misp_instance') as instance, \
+                patch(f'{prefix}_process_stix_to_misp_files') as files:
+            _stix_to_misp(args)
+        return pymisp, instance, files
+
+    def test_stix2_cli_environment_variables_reach_the_misp_connection(self):
+        # `--api-key` carries the authentication key on argv, where any local
+        # user can read it from the process list - the environment variables
+        # are the path that keeps it off the command line.
+        pymisp, instance, files = self._dispatch_stix_to_misp_with_environment(
+            {'MISP_URL': 'https://misp.example', 'MISP_API_KEY': 'secret'}
+        )
+        pymisp.assert_called_once_with('https://misp.example', 'secret', True)
+        instance.assert_called_once()
+        files.assert_not_called()
+
+    def test_stix2_cli_connection_flags_beat_the_environment_variables(self):
+        pymisp, instance, files = self._dispatch_stix_to_misp_with_environment(
+            {
+                'MISP_URL': 'https://environment.example',
+                'MISP_API_KEY': 'environment'
+            },
+            url='https://flag.example', api_key='flag'
+        )
+        pymisp.assert_called_once_with('https://flag.example', 'flag', True)
+        instance.assert_called_once()
+        files.assert_not_called()
+
+    def test_stix2_cli_connection_flags_alone_still_reach_the_instance(self):
+        pymisp, instance, files = self._dispatch_stix_to_misp_with_environment(
+            {}, url='https://flag.example', api_key='flag'
+        )
+        pymisp.assert_called_once_with('https://flag.example', 'flag', True)
+        instance.assert_called_once()
+        files.assert_not_called()
+
+    def test_stix2_cli_environment_variables_beat_the_config_file(self):
+        # same precedence as the flags they stand in for: explicit flag,
+        # then environment, then `--config` - the config file is not even
+        # opened when the environment names the connection.
+        from pathlib import Path
+        pymisp, instance, files = self._dispatch_stix_to_misp_with_environment(
+            {
+                'MISP_URL': 'https://environment.example',
+                'MISP_API_KEY': 'environment'
+            },
+            config=Path('does-not-exist.json')
+        )
+        pymisp.assert_called_once_with(
+            'https://environment.example', 'environment', True
+        )
+        instance.assert_called_once()
+        files.assert_not_called()
+
+    def test_stix2_cli_empty_environment_variables_count_as_unset(self):
+        pymisp, _, files = self._dispatch_stix_to_misp_with_environment(
+            {'MISP_URL': '', 'MISP_API_KEY': ''}
+        )
+        pymisp.assert_not_called()
+        files.assert_called_once()
+
+    def test_stix2_cli_config_file_route_untouched_without_environment(self):
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as tmp:
+            config = Path(tmp) / 'config.json'
+            config.write_text(
+                json.dumps({
+                    'url': 'https://config.example',
+                    'api_key': 'config', 'verify_cert': True
+                }),
+                encoding='utf-8'
+            )
+            pymisp, instance, files = (
+                self._dispatch_stix_to_misp_with_environment({}, config=config)
+            )
+        pymisp.assert_called_once_with('https://config.example', 'config', True)
+        instance.assert_called_once()
+        files.assert_not_called()
+
     def test_stix21_repeated_errors_are_summarised_with_their_count(self):
         # deduplicating on the message alone made a bundle dropping a dozen
         # objects read exactly like one dropping a single object: most error
