@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import warnings
 from .misp2stix.misp_to_stix1 import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser)
@@ -852,14 +853,25 @@ def _suppressed_insecure_request_warnings(verify_cert: Union[bool, str]):
         yield
 
 
+def _flag_or_env(flag_value: Optional[str], variable: str) -> Optional[str]:
+    # Flags beat environment beats config file: `MISP_URL` / `MISP_API_KEY`
+    # only fill in flags the operator left out, keeping the authentication key
+    # off `argv` and out of shell history (empty variables count as unset)
+    if flag_value is not None:
+        return flag_value
+    return os.environ.get(variable) or None
+
+
 def _stix_to_misp(args):
-    if args.config is None and args.url is None and args.api_key is None:
+    url = _flag_or_env(args.url, 'MISP_URL')
+    api_key = _flag_or_env(args.api_key, 'MISP_API_KEY')
+    if args.config is None and url is None and api_key is None:
         return _process_stix_to_misp_files(args)
     try:
-        if args.url is not None and args.api_key is not None:
+        if url is not None and api_key is not None:
             verify_cert = not args.skip_ssl
             with _suppressed_insecure_request_warnings(verify_cert):
-                misp = PyMISP(args.url, args.api_key, verify_cert)
+                misp = PyMISP(url, api_key, verify_cert)
                 return _process_stix_to_misp_instance(misp, args)
         elif args.config is not None:
             try:

@@ -227,11 +227,19 @@ def main():
         help='Config file containing the URL and the authentication key to connect to your MISP.'
     )
     import_parser.add_argument(
-        '-u', '--url', type=str, help='URL to connect to your MISP instance.'
+        '-u', '--url', type=str,
+        help=(
+            'URL to connect to your MISP instance. Defaults to the MISP_URL '
+            'environment variable when the flag is not given.'
+        )
     )
     import_parser.add_argument(
         '-a', '--api-key', type=str,
-        help='Authentication key to connect to your MISP instance.'
+        help=(
+            'Authentication key to connect to your MISP instance. Prefer the '
+            'MISP_API_KEY environment variable (or --config): a key passed '
+            'with this flag is visible in the process list and shell history.'
+        )
     )
     import_parser.add_argument(
         '--skip-ssl', action='store_true',
