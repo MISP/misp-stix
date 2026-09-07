@@ -385,7 +385,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | reddit-account |  Object and IoCs described in Indicator (pattern) |
 | registry-key |  Object and IoCs described in Indicator (pattern) |
 | registry-key with references to registry-key-value(s) | Registry Key Object referencing multiple Registry Key Value Objects |
-| registry-key-value | **X-misp-object** / **Indicator** |
+| registry-key-value | **Indicator** / **X-misp-object** |
 | telegram-account |  Object and IoCs described in Indicator (pattern) |
 | twitter-account |  Object and IoCs described in Indicator (pattern) |
 | url |  Object and IoCs described in Indicator (pattern) |
