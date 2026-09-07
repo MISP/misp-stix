@@ -2,7 +2,7 @@
 #!/usr/bin/env python3
 
 import json
-import urllib3
+import warnings
 from .misp2stix.misp_to_stix1 import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser)
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
@@ -22,6 +22,7 @@ from .tools.stix1_writing_helpers import (
 from .tools.stix2_loading_helpers import load_stix2_file
 from .tools.stix2_to_misp_helpers import get_stix2_parser, is_stix2_from_misp
 from collections import Counter, defaultdict
+from contextlib import contextmanager
 from pathlib import Path
 from pymisp import MISPEvent, PyMISP, PyMISPError
 from stix2.base import STIXJSONEncoder
@@ -29,9 +30,8 @@ from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
 from tempfile import TemporaryDirectory
 from typing import List, Optional, Union
+from urllib3.exceptions import InsecureRequestWarning
 from uuid import uuid4
-
-urllib3.disable_warnings()
 
 _default_namespace = 'https://misp-project.org'
 _default_org = 'MISP'
@@ -837,21 +837,40 @@ def _misp_to_stix(stix_args):
     )
 
 
+@contextmanager
+def _suppressed_insecure_request_warnings(verify_cert: Union[bool, str]):
+    # `verify_cert` is what PyMISP's `ssl` argument takes: a boolean, or a
+    # CA bundle path (truthy, so verification stays on and nothing is hidden).
+    # Deliberately unverified connections would flood stderr with one
+    # `InsecureRequestWarning` per request: quiet exactly that warning, only
+    # while the MISP connection is in use, leaving the filters as they were.
+    if verify_cert:
+        yield
+        return
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=InsecureRequestWarning)
+        yield
+
+
 def _stix_to_misp(args):
     if args.config is None and args.url is None and args.api_key is None:
         return _process_stix_to_misp_files(args)
     try:
         if args.url is not None and args.api_key is not None:
-            misp = PyMISP(args.url, args.api_key, not args.skip_ssl)
-            return _process_stix_to_misp_instance(misp, args)
+            verify_cert = not args.skip_ssl
+            with _suppressed_insecure_request_warnings(verify_cert):
+                misp = PyMISP(args.url, args.api_key, verify_cert)
+                return _process_stix_to_misp_instance(misp, args)
         elif args.config is not None:
             try:
                 with open(args.config, 'rt', encoding='utf-8') as f:
                     config = json.load(f)
-                misp = PyMISP(
-                    config['url'], config['api_key'], config['verify_cert']
-                )
-                return _process_stix_to_misp_instance(misp, args)
+                verify_cert = config['verify_cert']
+                with _suppressed_insecure_request_warnings(verify_cert):
+                    misp = PyMISP(
+                        config['url'], config['api_key'], verify_cert
+                    )
+                    return _process_stix_to_misp_instance(misp, args)
             except (FileNotFoundError, KeyError, json.JSONDecodeError):
                 msg = 'Unable to read configuration file to connect to MISP -'
         else:
