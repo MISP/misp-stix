@@ -1,4 +1,4 @@
-__version__ = '2026.7.8'
+__version__ = '2026.9.8'
 
 import argparse
 from .misp2stix import InvalidMISPInputError  # noqa
