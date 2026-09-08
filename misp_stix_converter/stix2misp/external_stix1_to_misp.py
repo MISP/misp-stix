@@ -99,6 +99,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             for ip, ip_attribute in self.dns_objects['ip'].items():
                 if ip not in self.dns_ips:
                     self.misp_event.add_attribute(**ip_attribute)
+        self._apply_event_galaxies()
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
@@ -450,6 +451,6 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if ttp.exploit_targets is None or ttp.exploit_targets.exploit_target is None:
             return False
         return any(
-            exploit_target.item.vulnerability is not None
+            exploit_target.item.vulnerabilities
             for exploit_target in ttp.exploit_targets.exploit_target
         )

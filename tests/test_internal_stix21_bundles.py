@@ -10562,6 +10562,51 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_ATTACK_PATTERN_GALAXY)
 
     @classmethod
+    def get_bundle_with_colliding_acs_marking_cluster_uuid(cls):
+        """An ACS marking sharing its uuid part with a galaxy Malware: the
+        marking's cluster keeps the raw uuid part, so both claim it. The
+        marking stays out of the grouping references, like every marking."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        marking = {
+            "type": "marking-definition", "spec_version": "2.1",
+            "id": f"marking-definition--{malware['id'].split('--')[1]}",
+            "created": "2020-10-25T16:22:00.000Z",
+            "extensions": {
+                "extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce": {
+                    "extension_type": "property-extension",
+                    "name": "ACS Marking"
+                }
+            }
+        }
+        bundle = deepcopy(cls.__bundle)
+        grouping = deepcopy(cls.__grouping)
+        grouping.update(cls._populate_references(malware['id']))
+        bundle['objects'] = [
+            deepcopy(cls.__identity), grouping, malware, marking
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_colliding_galaxy_cluster_uuids(cls):
+        """A galaxy Malware and a galaxy Threat Actor sharing a uuid part:
+        the clusters keep only the part after `--`, so both claim it."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        threat_actor = deepcopy(_THREAT_ACTOR_GALAXY)
+        threat_actor['id'] = f"threat-actor--{malware['id'].split('--')[1]}"
+        return cls.__assemble_bundle(malware, threat_actor)
+
+    @classmethod
+    def get_bundle_with_colliding_custom_galaxy_cluster_uuid(cls):
+        """A Custom Galaxy Cluster sharing its uuid part with a galaxy
+        Malware: the same collision through the custom galaxy path."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        custom = deepcopy(_CUSTOM_GALAXY)
+        custom['id'] = (
+            f"x-misp-galaxy-cluster--{malware['id'].split('--')[1]}"
+        )
+        return cls.__assemble_bundle(malware, custom)
+
+    @classmethod
     def get_bundle_with_course_of_action_galaxy(cls):
         return cls.__assemble_bundle(_COURSE_OF_ACTION_GALAXY)
 
@@ -10611,6 +10656,28 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_bundle(_MALWARE_GALAXY)
+
+    @classmethod
+    def get_bundle_with_nameless_country_galaxy(cls):
+        """A galaxy Location carrying no name - STIX 2.1 requires none."""
+        location = deepcopy(_LOCATION_GALAXIES[0])
+        del location['name']
+        return cls.__assemble_bundle(location)
+
+    @classmethod
+    def get_bundle_with_nameless_malware_galaxy(cls):
+        """A galaxy malware carrying no name - STIX 2.1 requires none on a
+        malware instance."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        del malware['name']
+        return cls.__assemble_bundle(malware)
+
+    @classmethod
+    def get_bundle_with_nameless_region_galaxy(cls):
+        """A galaxy Location carrying no name - STIX 2.1 requires none."""
+        location = deepcopy(_LOCATION_GALAXIES[1])
+        del location['name']
+        return cls.__assemble_bundle(location)
 
     @classmethod
     def get_bundle_with_sector_galaxy(cls):

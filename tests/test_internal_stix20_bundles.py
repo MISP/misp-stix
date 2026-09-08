@@ -8473,6 +8473,26 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_ATTACK_PATTERN_GALAXY)
 
     @classmethod
+    def get_bundle_with_colliding_galaxy_cluster_uuids(cls):
+        """A galaxy Malware and a galaxy Threat Actor sharing a uuid part:
+        the clusters keep only the part after `--`, so both claim it."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        threat_actor = deepcopy(_THREAT_ACTOR_GALAXY)
+        threat_actor['id'] = f"threat-actor--{malware['id'].split('--')[1]}"
+        return cls.__assemble_bundle(malware, threat_actor)
+
+    @classmethod
+    def get_bundle_with_colliding_custom_galaxy_cluster_uuid(cls):
+        """A Custom Galaxy Cluster sharing its uuid part with a galaxy
+        Malware: the same collision through the custom galaxy path."""
+        malware = deepcopy(_MALWARE_GALAXY)
+        custom = deepcopy(_CUSTOM_GALAXY)
+        custom['id'] = (
+            f"x-misp-galaxy-cluster--{malware['id'].split('--')[1]}"
+        )
+        return cls.__assemble_bundle(malware, custom)
+
+    @classmethod
     def get_bundle_with_course_of_action_galaxy(cls):
         return cls.__assemble_bundle(_COURSE_OF_ACTION_GALAXY)
 

@@ -6192,6 +6192,35 @@ def get_event_with_patterning_language_objects():
     return event
 
 
+def get_event_with_dashed_object_relations():
+    event = deepcopy(_BASE_EVENT)
+    patterning_objects = {
+        misp_object['name']: dict(_populate_object(misp_object))
+        for misp_object in _TEST_PATTERNING_LANGUAGE_OBJECTS
+        if misp_object['name'] in ('sigma', 'suricata')
+    }
+    sigma_object = patterning_objects['sigma']
+    suricata_object = patterning_objects['suricata']
+    url_object = dict(_populate_object(_TEST_URL_OBJECT))
+    for uuid, misp_object in zip(
+            (
+                "f6cd315f-9aa8-44f6-b78e-3f0ff4d10d4d",
+                "1ea25060-1a92-4be1-b9a4-d7fbb46e6b52",
+                "8fa4e521-4b8b-4f7e-a6ff-1b17c817a5a0"
+            ),
+            (sigma_object, suricata_object, url_object)):
+        misp_object['Attribute'].append(
+            {
+                "uuid": uuid,
+                "type": "text",
+                "object_relation": "weird-relation",
+                "value": f"custom value on the {misp_object['name']} object"
+            }
+        )
+    event['Event']['Object'] = [sigma_object, suricata_object, url_object]
+    return event
+
+
 def get_event_with_pe_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -6271,6 +6300,36 @@ def get_event_with_registry_key_and_values_objects():
     event['Event']['Object'] = [
         dict(_populate_object(misp_object))
         for misp_object in deepcopy(_TEST_REGISTRY_KEY_WITH_VALUES_OBJECTS)
+    ]
+    return event
+
+
+_TEST_REGISTRY_KEY_VALUE_CUSTOM_ATTRIBUTE = {
+    "type": "text",
+    "object_relation": "benign",
+    "value": "registry key value known to be legitimate"
+}
+
+
+def get_event_with_registry_key_value_object_custom():
+    event = deepcopy(_BASE_EVENT)
+    misp_object = deepcopy(_TEST_REGISTRY_KEY_VALUE_OBJECT)
+    misp_object['Attribute'].append(
+        deepcopy(_TEST_REGISTRY_KEY_VALUE_CUSTOM_ATTRIBUTE)
+    )
+    event['Event']['Object'] = [dict(_populate_object(misp_object))]
+    return event
+
+
+def get_event_with_registry_key_and_values_objects_custom():
+    event = deepcopy(_BASE_EVENT)
+    misp_objects = deepcopy(_TEST_REGISTRY_KEY_WITH_VALUES_OBJECTS)
+    for misp_object in misp_objects[1:]:
+        misp_object['Attribute'].append(
+            deepcopy(_TEST_REGISTRY_KEY_VALUE_CUSTOM_ATTRIBUTE)
+        )
+    event['Event']['Object'] = [
+        dict(_populate_object(misp_object)) for misp_object in misp_objects
     ]
     return event
 

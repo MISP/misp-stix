@@ -125,6 +125,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self.misp_event.info = ' - '.join(self.titles)
         self.misp_event.date = max(self.dates)
         self.misp_event.timestamp = max(self.timestamps)
+        self._apply_event_galaxies()
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()

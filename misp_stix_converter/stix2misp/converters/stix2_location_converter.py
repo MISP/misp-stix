@@ -210,12 +210,13 @@ class InternalSTIX2LocationConverter(
     def _create_cluster(
             self, location: Location, description: Optional[str] = None,
             galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        name = getattr(location, 'name', location.id)
         location_args = self._create_cluster_args(
             location, galaxy_type, description=description,
             cluster_value=(
-                location.name if galaxy_type == 'country' or
+                name if galaxy_type == 'country' or
                 not hasattr(location, 'region') else
-                self._mapping.regions_mapping(location.region, location.name)
+                self._mapping.regions_mapping(location.region, name)
             )
         )
         meta = self._handle_meta_fields(location)

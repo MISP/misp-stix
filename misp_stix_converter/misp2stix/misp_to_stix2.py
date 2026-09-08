@@ -3448,7 +3448,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             for misp_object in registry_values.values():
                 if misp_object['used']:
                     continue
-                self._parse_registry_key_value_object(misp_object['misp_object'])
+                registry_value = misp_object['misp_object']
+                try:
+                    self._parse_registry_key_value_object(registry_value)
+                except Exception as exception:
+                    self._object_error(registry_value, exception)
+                misp_object['used'] = True
         if self._objects_to_parse.get('annotation'):
             objects_to_parse = self._objects_to_parse['annotation']
             for misp_object in objects_to_parse.values():
@@ -4842,14 +4847,32 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             values_args.update(self._handle_observable_properties(attributes))
         return values_args
 
+    @staticmethod
+    def _handle_registry_key_values_args(values_args: list) -> dict:
+        # `allow_custom` must sit on the registry key, not inside the values
+        # dicts — the stix2 library re-splats each dict into a
+        # WindowsRegistryValueType call that already passes `allow_custom`
+        registry_key_args = {}
+        for value_args in values_args:
+            if value_args.pop('allow_custom', False):
+                registry_key_args['allow_custom'] = True
+        registry_key_args['values'] = values_args
+        return registry_key_args
+
     def _parse_registry_key_with_values_args(
             self, registry_key: dict, value_objects: list) -> dict:
         attributes = self._extract_object_attributes(registry_key['Attribute'])
         registry_key_args = self._parse_regkey_key_values_observable(attributes)
-        registry_key_args['values'] = [
-            self._parse_registry_key_value_args(value_object['Attribute'])
-            for value_object in value_objects
-        ]
+        registry_key_args.update(
+            self._handle_registry_key_values_args(
+                [
+                    self._parse_registry_key_value_args(
+                        value_object['Attribute']
+                    )
+                    for value_object in value_objects
+                ]
+            )
+        )
         if attributes:
             registry_key_args.update(
                 self._handle_observable_properties(attributes)

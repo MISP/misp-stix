@@ -155,6 +155,23 @@ class TestSTIX2Import(TestSTIX):
             self._reports_matching(errors, 'Error loading the STIX object'), []
         )
 
+    def _check_unreferenced_invalid_object_error(self, object_id, errors):
+        """An invalid object nothing references is a loss the end-of-parse
+        sweep names - the bundle carried it, distinct from a dangling
+        reference to an object it never sent."""
+        unreferenced_errors = self._reports_matching(
+            errors, f'Unreadable STIX object with id {object_id}'
+        )
+        self.assertEqual(len(unreferenced_errors), 1)
+
+    def _check_unreferenced_invalid_object_error_absence(self, errors):
+        """Invalid objects a reference consumed - recovered and applied, or
+        named by the loading error the reference produced - are reported
+        exactly once, never again by the end-of-parse sweep."""
+        self.assertEqual(
+            self._reports_matching(errors, 'Unreadable STIX object'), []
+        )
+
     def _check_dict_form_analyst_note(self, misp_note, stix_note):
         """A Note the STIX version does not know arrives as a plain dict."""
         self.assertIsInstance(stix_note, dict)
@@ -592,15 +609,31 @@ class TestSTIX20Import(TestSTIX2Import):
             )
             ext_objects_documentation.check_import_mapping('stix20')
 
+    @staticmethod
+    def _invalid_indicator(indicator_id: str) -> dict:
+        """An Indicator `stix2` refuses to parse, taking the invalid
+        objects path - the pattern is not STIX patterning."""
+        return {
+            'type': 'indicator', 'id': indicator_id,
+            'created': '2020-10-25T16:22:00.000Z',
+            'modified': '2020-10-25T16:22:00.000Z',
+            'labels': ['malicious-activity'],
+            'pattern': 'NOT A VALID PATTERN',
+            'valid_from': '2020-10-25T16:22:00.000Z'
+        }
+
     def _load_stix20_content_with_object_refs(
-            self, *extra_refs, internal: bool = False, carried: tuple = ()):
+            self, *extra_refs, internal: bool = False, carried: tuple = (),
+            unlisted: tuple = ()):
         """A Report listing the given references next to legitimate ones.
 
         STIX 2.0 keeps its observable objects inside the Observed Data
         carrying them, so an Observed Data reference is the closest a 2.0
         Report gets to referencing an observable object. The objects given as
         `carried` are referenced too, so a reference the bundle does carry an
-        object for can be told from one it does not.
+        object for can be told from one it does not. The objects given as
+        `unlisted` are carried but referenced by nothing, the Report's
+        `object_refs` included.
         """
         from misp_stix_converter.tools import load_stix2_content
         identity_id = 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f'
@@ -661,7 +694,7 @@ class TestSTIX20Import(TestSTIX2Import):
                             }
                         }
                     },
-                    *carried
+                    *carried, *unlisted
                 ]
             }
         )
@@ -874,9 +907,22 @@ class TestSTIX21Import(TestSTIX2Import):
             )
             ext_objects_documentation.check_import_mapping('stix21')
 
+    @staticmethod
+    def _invalid_indicator(indicator_id: str) -> dict:
+        """An Indicator `stix2` refuses to parse, taking the invalid
+        objects path - the pattern is not STIX patterning."""
+        return {
+            'type': 'indicator', 'spec_version': '2.1', 'id': indicator_id,
+            'created': '2020-10-25T16:22:00.000Z',
+            'modified': '2020-10-25T16:22:00.000Z',
+            'pattern': 'NOT A VALID PATTERN', 'pattern_type': 'stix',
+            'valid_from': '2020-10-25T16:22:00.000Z'
+        }
+
     def _load_stix21_content_with_object_refs(
             self, *extra_refs, internal: bool = False,
-            observables: bool = True, carried: tuple = ()):
+            observables: bool = True, carried: tuple = (),
+            unlisted: tuple = ()):
         """A Grouping listing the given references next to legitimate ones.
 
         The observable object is listed next to the Observed Data consuming
@@ -884,7 +930,9 @@ class TestSTIX21Import(TestSTIX2Import):
         `observables` leaves a bundle carrying no observable object at all -
         the shape an observable reference has nothing to be looked up in.
         The objects given as `carried` are referenced too, so a reference the
-        bundle does carry an object for can be told from one it does not.
+        bundle does carry an object for can be told from one it does not. The
+        objects given as `unlisted` are carried but referenced by nothing,
+        the Grouping's `object_refs` included.
         """
         from misp_stix_converter.tools import load_stix2_content
         identity_id = 'identity--55f6ea5e-2c60-40e5-964f-47a8950d210f'
@@ -954,7 +1002,7 @@ class TestSTIX21Import(TestSTIX2Import):
                         'valid_from': '2020-10-25T16:22:00.000Z',
                         'labels': labels
                     },
-                    *observed_data, *carried
+                    *observed_data, *carried, *unlisted
                 ]
             }
         )

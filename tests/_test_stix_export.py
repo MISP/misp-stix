@@ -15,6 +15,7 @@ from shutil import copyfile
 from stix.core import STIXPackage
 from stix2patterns.validator import validate
 from tempfile import TemporaryDirectory
+from typing import Optional
 from unittest.mock import patch
 from uuid import uuid5, UUID
 from ._test_stix import PLANTED_TEMPLATE, TestSTIX
@@ -28,6 +29,23 @@ _MISP_OBJECT_EXCLUSION_LIST = (
 # a conversion goes through on the way to writing one
 _PRESERVED_OUTPUT = 'IMPORTANT PRE-EXISTING CONTENT'
 _parse_json_file = MISPtoSTIXParser.parse_json_file
+
+# An `anonymised` attribute is unmapped in every export direction: parsing it
+# records the one warning a failing export must still report
+_RECORDED_EXPORT_WARNING = 'MISP Attribute type anonymised not mapped.'
+_UNMAPPED_ATTRIBUTE = {
+    'uuid': '91ae0a21-b7b6-4b16-b34c-5a1a04e39856',
+    'type': 'anonymised', 'category': 'Other',
+    'value': 'ffbb51e2-4166-4b98-a714-be5a0e6f77e1',
+    'timestamp': '1756425600', 'to_ids': False
+}
+# On a `to_ids` file object, an invalid TLSH value is recorded as an error and
+# dropped on the STIX 2 side - the hash validation STIX 1 export has no
+# equivalent of
+_INVALID_TLSH_ATTRIBUTE = {
+    'type': 'tlsh', 'object_relation': 'tlsh',
+    'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
+}
 
 # Object relations reaching a pattern property-name position, paired with the
 # pattern segment each one must produce. An unquoted metacharacter segment
@@ -281,11 +299,96 @@ class TestCollectionSTIXExport(unittest.TestCase):
                     output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
                 )
 
+    def _check_collection_export_reports_recorded_messages(
+            self, collection, json_content: dict,
+            expected_error: Optional[str] = None, **kwargs):
+        # A collection only merges the parser's recorded messages into its
+        # result once something was written: with every input file failing
+        # after it was parsed, the failure lines used to stand alone. The
+        # crash is planted after the parsing, where a write refusal or any
+        # later conversion step raises from inside the per-input `try`
+        def _crash_after_parsing(parser, filename):
+            _parse_json_file(parser, filename)
+            raise RuntimeError('Crash after the parser recorded its messages')
+
+        for arguments in (
+                {}, {'single_output': True},
+                {'single_output': True, 'in_memory': True}):
+            with TemporaryDirectory() as tmp_dir:
+                copies = self._write_json_inputs(tmp_dir, json_content)
+                with patch.object(
+                        MISPtoSTIXParser, 'parse_json_file',
+                        _crash_after_parsing):
+                    results = collection(*copies, **arguments, **kwargs)
+                self.assertNotIn('success', results)
+                self.assertEqual(len(results['fails']), len(copies))
+                self._check_recorded_messages_reported(results, expected_error)
+
+    def _check_single_export_reports_recorded_messages(
+            self, conversion, json_content: dict,
+            expected_error: Optional[str] = None, **kwargs):
+        # The crash every single-input path carries natively: the refused
+        # write sits inside the same `try` as the conversion, after the
+        # parser recorded its messages
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_json_inputs(
+                tmp_dir, json_content, count=1
+            )[0]
+            output_name = self._preserved_output(tmp_dir)
+            results = conversion(filename, output_name=output_name, **kwargs)
+            self.assertNotIn('success', results)
+            self.assertEqual(len(results['fails']), 1)
+            self._check_recorded_messages_reported(results, expected_error)
+
+    def _check_recorded_messages_reported(
+            self, results: dict, expected_error: Optional[str] = None):
+        self.assertIn('warnings', results)
+        self.assertIn(
+            _RECORDED_EXPORT_WARNING,
+            [
+                warning for warnings in results['warnings'].values()
+                for warning in warnings
+            ]
+        )
+        if expected_error is not None:
+            self.assertIn('errors', results)
+            self.assertTrue(
+                any(
+                    expected_error in error
+                    for errors in results['errors'].values()
+                    for error in errors
+                ),
+                results['errors']
+            )
+
     def _check_reduced_input_fails(self, results: dict, *filenames):
         self.assertEqual(len(results['fails']), len(filenames))
         for fail, filename in zip(results['fails'], filenames):
             self.assertTrue(fail.startswith(f'{filename.name} - '), fail)
             self.assertNotIn(str(filename.parent), fail)
+
+    def _event_with_recorded_messages(self) -> dict:
+        # One event recording on its way through any export parser: a warning
+        # for the unmapped attribute, and - on the STIX 2 side, where hashes
+        # are validated - an error for the invalid TLSH value of a `to_ids`
+        # file object
+        from .test_events import get_event_with_file_object
+        event = get_event_with_file_object()
+        event['Event']['Object'][0]['Attribute'].append(
+            dict(_INVALID_TLSH_ATTRIBUTE)
+        )
+        event['Event']['Attribute'] = [dict(_UNMAPPED_ATTRIBUTE)]
+        return event
+
+    def _write_json_inputs(
+            self, tmp_dir: str, json_content: dict, count: int = 2) -> list:
+        input_files = []
+        for n in range(1, count + 1):
+            input_file = Path(tmp_dir) / f'recorded_messages_{n}.json'
+            with open(input_file, 'wt', encoding='utf-8') as f:
+                json.dump(json_content, f)
+            input_files.append(input_file)
+        return input_files
 
     def _collection_files(self, name: str) -> list:
         return [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
@@ -364,10 +467,7 @@ class TestCollectionSTIX2Export(TestCollectionSTIXExport):
         from .test_events import get_event_with_file_object
         event = get_event_with_file_object()
         event['Event']['Object'][0]['Attribute'].append(
-            {
-                'type': 'tlsh', 'object_relation': 'tlsh',
-                'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
-            }
+            dict(_INVALID_TLSH_ATTRIBUTE)
         )
         with TemporaryDirectory() as tmp_dir:
             filename = Path(tmp_dir) / 'event_with_invalid_hash.json'
