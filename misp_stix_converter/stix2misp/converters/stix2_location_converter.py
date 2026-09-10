@@ -11,11 +11,14 @@ from .stix2mapping import (
 from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v21.sdo import Location
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
+
+# A Location in a STIX 2.0 Bundle is a plain dict rather than a typed object
+_LOCATION_TYPING = Union[Location, dict]
 
 
 class STIX2LocationMapping(STIX2Mapping, metaclass=ABCMeta):
@@ -46,19 +49,20 @@ class STIX2LocationConverter(STIX2Converter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
-    def _parse_location_object(self, location: Location):
+    def _parse_location_object(self, location: _LOCATION_TYPING):
         misp_object = self._create_misp_object('geolocation', location)
-        if hasattr(location, 'description'):
-            misp_object.comment = location.description
+        if 'description' in location:
+            misp_object.comment = location['description']
         for attribute in self._generic_parser(location):
             misp_object.add_attribute(**attribute)
-        if hasattr(location, 'precision'):
+        if 'precision' in location:
             mapping = self._mapping.accuracy_radius_attribute()
-            value = float(location.precision) / 1000
+            value = float(location['precision']) / 1000
+            object_id = location['id']
             misp_object.add_attribute(
                 **mapping, value=value,
                 uuid=self.main_parser._create_v5_uuid(
-                    f"{location.id} - {mapping['object_relation']} - {value}"
+                    f"{object_id} - {mapping['object_relation']} - {value}"
                 )
             )
         self.main_parser._add_misp_object(misp_object, location)
@@ -98,30 +102,38 @@ class ExternalSTIX2LocationConverter(
             self._parse_galaxy(location)
 
     def _create_cluster(
-            self, location: Location, description: Optional[str] = None,
+            self, location: _LOCATION_TYPING,
+            description: Optional[str] = None,
             galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         location_args = self._create_cluster_args(
             location, galaxy_type, description=description
         )
         meta = self._handle_meta_fields(location)
-        if hasattr(location, 'external_references'):
+        if 'external_references' in location:
             meta.update(
                 self._handle_external_references(
-                    location.external_references
+                    location['external_references']
                 )
             )
-        if hasattr(location, 'labels'):
-            self._handle_labels(meta, location.labels)
+        if 'labels' in location:
+            self._handle_labels(meta, location['labels'])
         if meta:
             location_args['meta'] = meta
         return self.main_parser._create_misp_galaxy_cluster(**location_args)
 
+    def _is_geolocation_object(self, location: _LOCATION_TYPING) -> bool:
+        """Decide between a geolocation object and a galaxy cluster.
 
-    def _is_geolocation_object(self, location: Location) -> bool:
-        for field in self._mapping.location_object_fields():
-            if hasattr(location, field):
-                return True
-        return False
+        The decision reads through the Mapping interface a typed Location and
+        the dict-form one a STIX 2.0 Bundle keeps both offer: with attribute
+        access a dict-form Location carried none of the fields, and every one
+        of them took the galaxy branch.
+        """
+        return any(
+            field in location
+            for field in self._mapping.location_object_fields()
+        )
+
 
 class InternalSTIX2LocationMapping(
         STIX2LocationMapping, InternalSTIX2Mapping):
@@ -208,15 +220,16 @@ class InternalSTIX2LocationConverter(
             )
 
     def _create_cluster(
-            self, location: Location, description: Optional[str] = None,
+            self, location: _LOCATION_TYPING,
+            description: Optional[str] = None,
             galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        name = getattr(location, 'name', location.id)
+        name = location.get('name', location['id'])
         location_args = self._create_cluster_args(
             location, galaxy_type, description=description,
             cluster_value=(
                 name if galaxy_type == 'country' or
-                not hasattr(location, 'region') else
-                self._mapping.regions_mapping(location.region, name)
+                'region' not in location else
+                self._mapping.regions_mapping(location['region'], name)
             )
         )
         meta = self._handle_meta_fields(location)
