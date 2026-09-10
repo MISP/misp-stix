@@ -5241,6 +5241,23 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         vulnerability = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp)
+    def _test_event_with_colliding_galaxy_meta_keys(self, event):
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        threat_actor = self.parser.stix_objects[-1]
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        # `TTP` and `ttp` share one property, the last value wins - the same
+        # rule as on observables - and the fold is reported.
+        self.assertEqual(threat_actor.x_misp_ttp, cluster['meta']['ttp'])
+        self.assertFalse(hasattr(threat_actor, 'x_misp_TTP'))
+        self._check_custom_property_names(threat_actor)
+        collision_warnings = [
+            warning for warning in self.parser.warnings[event['uuid']]
+            if 'x_misp_ttp' in warning
+        ]
+        self.assertEqual(len(collision_warnings), 1)
+        self.assertIn(f'"{cluster["value"]}"', collision_warnings[0])
+        self.assertIn('"ttp"', collision_warnings[0])
 
 
 class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
@@ -5263,6 +5280,10 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             stix=self.parser.stix_objects[-1],
             summary=', '.join(sorted(self._mapping_types.attack_pattern_types()))
         )
+
+    def test_event_with_colliding_galaxy_meta_keys(self):
+        event = get_event_with_colliding_galaxy_meta_keys()
+        self._test_event_with_colliding_galaxy_meta_keys(event['Event'])
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
@@ -5480,6 +5501,12 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_attack_pattern_galaxy(misp_event)
+
+    def test_event_with_colliding_galaxy_meta_keys(self):
+        event = get_event_with_colliding_galaxy_meta_keys()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_colliding_galaxy_meta_keys(misp_event)
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
