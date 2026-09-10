@@ -54,13 +54,21 @@ _INVALID_TLSH_ATTRIBUTE = {
 # last pair is the benign control: a relation needing no quotes keeps the bare
 # segment it always had. Segments are spelled out rather than computed, so the
 # expectations do not restate the escaping they guard.
+# The custom property name rule (ADR-0013) folds every character outside
+# [a-z0-9_] to `_`, so a metacharacter relation always reaches the pattern as
+# a bare keyword segment - pattern syntax in a relation cannot escape it.
+_DICTIONARY_META_KEYS = {
+    'Odd Key (1)': 'Odd_Key__1_',
+    'kept-Case_ok': 'kept-Case_ok'
+}
 _PATTERN_SEGMENT_RELATIONS = (
-    ("rel' OR file:name = 'x", r"'x_misp_rel\' OR file:name = \'x'"),
-    ('rel]', "'x_misp_rel]'"),
-    ('rel=1', "'x_misp_rel=1'"),
-    ('weird relation', "'x_misp_weird relation'"),
-    ("x'", r"'x_misp_x\''"),
-    ('a.b', "'x_misp_a.b'"),
+    ("rel' OR file:name = 'x", 'x_misp_rel__or_file_name____x'),
+    ('rel]', 'x_misp_rel_'),
+    ('rel=1', 'x_misp_rel_1'),
+    ('weird relation', 'x_misp_weird_relation'),
+    ("x'", 'x_misp_x_'),
+    ('a.b', 'x_misp_a_b'),
+    ('Odd.Case/Relation', 'x_misp_odd_case_relation'),
     ('rel-with-dash', 'x_misp_rel_with_dash')
 )
 
@@ -700,6 +708,16 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        if 'meta' in cluster:
+            # `x_misp_meta` is a dictionary: keys keep case and `-` (STIX §2.3),
+            # every other character outside the dictionary charset folds to `_`
+            self.assertEqual(
+                stix_object.x_misp_meta,
+                {
+                    _DICTIONARY_META_KEYS[key]: value
+                    for key, value in cluster['meta'].items()
+                }
+            )
 
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
@@ -1226,6 +1244,14 @@ class TestSTIX2Export(TestSTIX):
         for field in ('primary_motivation', 'resource_level', 'roles'):
             if field in meta:
                 self.assertEqual(getattr(stix_object, field), meta[field])
+        if 'cfr-type-of-incident' in meta:
+            # unmapped meta key with a dash: folded custom property name
+            self.assertEqual(
+                stix_object.x_misp_cfr_type_of_incident,
+                meta['cfr-type-of-incident']
+            )
+            self.assertFalse(hasattr(stix_object, 'x_misp_cfr-type-of-incident'))
+            self._check_custom_property_names(stix_object)
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
@@ -1352,6 +1378,18 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
+
+    def _check_custom_property_names(self, stix_object):
+        # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII,
+        # limited to a-z, 0-9 and `_`, 3 to 250 characters long - the prefix
+        # already guarantees the minimum.
+        custom_properties = [
+            key for key in stix_object if key.startswith('x_misp_')
+        ]
+        self.assertTrue(custom_properties)
+        for key in custom_properties:
+            self.assertRegex(key, r'^x_misp_[a-z0-9_]+$')
+            self.assertLessEqual(len(key), 250)
 
     def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
         attribute_type = attribute['type']

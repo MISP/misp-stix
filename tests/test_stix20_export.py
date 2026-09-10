@@ -2402,14 +2402,15 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(hashes['SHA-256'], sha256.value)
         self.assertEqual(hashes['ssdeep'], ssdeep.value)
         self.assertEqual(hashes['TLSH'], tlsh.value)
-        self.assertEqual(_file.x_misp_KnownMalicious, known_malicious.value)
-        self.assertEqual(_file.x_misp_PackageName, package_name.value)
-        self.assertEqual(_file.x_misp_PackageVersion, package_version.value)
-        self.assertEqual(_file.x_misp_PackageRelease, package_release.value)
-        self.assertEqual(_file.x_misp_PackageArch, package_arch.value)
-        self.assertEqual(_file.x_misp_PackageDescription, package_description.value)
-        self.assertEqual(_file.x_misp_PackageMaintainer, package_maintainer.value)
+        self.assertEqual(_file.x_misp_knownmalicious, known_malicious.value)
+        self.assertEqual(_file.x_misp_packagename, package_name.value)
+        self.assertEqual(_file.x_misp_packageversion, package_version.value)
+        self.assertEqual(_file.x_misp_packagerelease, package_release.value)
+        self.assertEqual(_file.x_misp_packagearch, package_arch.value)
+        self.assertEqual(_file.x_misp_packagedescription, package_description.value)
+        self.assertEqual(_file.x_misp_packagemaintainer, package_maintainer.value)
         self.assertEqual(_file.x_misp_source, source.value)
+        self._check_custom_property_names(_file)
 
     def _check_http_request_observable_object(self, misp_object, observed_data):
         ip_src, ip_dst, host, method, user_agent, uri, url, content = (
@@ -3069,7 +3070,7 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
-    def _test_event_with_dashed_object_relations(self, event):
+    def _test_event_with_non_conforming_object_relations(self, event):
         # STIX 2.0 has no pattern_type, so the sigma and suricata objects are
         # exported as custom objects keeping the object relations as values.
         self._remove_object_ids_flags(event)
@@ -3078,13 +3079,18 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         _, _, sigma_custom, suricata_custom, observed_data = self.parser.stix_objects
         for custom_object in (sigma_custom, suricata_custom):
             self.assertEqual(
-                custom_object.x_misp_attributes[-1]['object_relation'],
-                'weird-relation'
+                [
+                    attribute['object_relation'] for attribute
+                    in custom_object.x_misp_attributes[-2:]
+                ],
+                ['weird-relation', 'Odd.Case/Relation']
             )
         url = observed_data.objects['0']
-        weird_attribute = url_object['Attribute'][-1]
+        weird_attribute, odd_attribute = url_object['Attribute'][-2:]
         self.assertEqual(url.x_misp_weird_relation, weird_attribute['value'])
         self.assertFalse(hasattr(url, 'x_misp_weird-relation'))
+        self.assertEqual(url.x_misp_odd_case_relation, odd_attribute['value'])
+        self._check_custom_property_names(url)
 
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
@@ -4079,9 +4085,9 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_artifact_payload_object()
         self._test_event_with_artifact_payload_observable_object(event['Event'])
 
-    def test_event_with_dashed_object_relations(self):
-        event = get_event_with_dashed_object_relations()
-        self._test_event_with_dashed_object_relations(event['Event'])
+    def test_event_with_non_conforming_object_relations(self):
+        event = get_event_with_non_conforming_object_relations()
+        self._test_event_with_non_conforming_object_relations(event['Event'])
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
@@ -4682,11 +4688,11 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event.from_dict(**event)
         self._test_event_with_artifact_payload_observable_object(misp_event)
 
-    def test_event_with_dashed_object_relations(self):
-        event = get_event_with_dashed_object_relations()
+    def test_event_with_non_conforming_object_relations(self):
+        event = get_event_with_non_conforming_object_relations()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        self._test_event_with_dashed_object_relations(misp_event)
+        self._test_event_with_non_conforming_object_relations(misp_event)
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()

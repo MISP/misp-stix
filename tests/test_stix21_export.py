@@ -14,6 +14,18 @@ from ._test_stix import TestSTIX21
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX21Export
 
 
+_COUNTRY_META_PROPERTY_NAMES = {
+    'Capital': 'x_misp_capital',
+    'Continent': 'x_misp_continent',
+    'CurrencyCode': 'x_misp_currencycode',
+    'CurrencyName': 'x_misp_currencyname',
+    'ISO': 'x_misp_iso',
+    'ISO3': 'x_misp_iso3',
+    'Languages': 'x_misp_languages',
+    'Population': 'x_misp_population'
+}
+
+
 class TestSTIX21GenericExport(TestSTIX21Export, TestSTIX21):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
@@ -3030,14 +3042,15 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(hashes['SHA-256'], sha256['value'])
         self.assertEqual(hashes['SSDEEP'], ssdeep['value'])
         self.assertEqual(hashes['TLSH'], tlsh['value'])
-        self.assertEqual(observable.x_misp_KnownMalicious, known_malicious['value'])
-        self.assertEqual(observable.x_misp_PackageName, package_name['value'])
-        self.assertEqual(observable.x_misp_PackageVersion, package_version['value'])
-        self.assertEqual(observable.x_misp_PackageRelease, package_release['value'])
-        self.assertEqual(observable.x_misp_PackageArch, package_arch['value'])
-        self.assertEqual(observable.x_misp_PackageDescription, package_description['value'])
-        self.assertEqual(observable.x_misp_PackageMaintainer, package_maintainer['value'])
+        self.assertEqual(observable.x_misp_knownmalicious, known_malicious['value'])
+        self.assertEqual(observable.x_misp_packagename, package_name['value'])
+        self.assertEqual(observable.x_misp_packageversion, package_version['value'])
+        self.assertEqual(observable.x_misp_packagerelease, package_release['value'])
+        self.assertEqual(observable.x_misp_packagearch, package_arch['value'])
+        self.assertEqual(observable.x_misp_packagedescription, package_description['value'])
+        self.assertEqual(observable.x_misp_packagemaintainer, package_maintainer['value'])
         self.assertEqual(observable.x_misp_source, source['value'])
+        self._check_custom_property_names(observable)
 
     def _check_http_request_observable_object(self, misp_object, observables, object_refs):
         ip_src, ip_dst, host, method, user_agent, uri, url, content = misp_object['Attribute']
@@ -3952,7 +3965,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
-    def _test_event_with_dashed_object_relations(self, event):
+    def _test_event_with_non_conforming_object_relations(self, event):
         self._remove_object_ids_flags(event)
         self.parser.parse_misp_event(event)
         sigma_object, suricata_object, url_object = self.parser._misp_event.objects
@@ -3962,14 +3975,20 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         for indicator, misp_object in zip(
                 (sigma_indicator, suricata_indicator),
                 (sigma_object, suricata_object)):
-            weird_attribute = misp_object['Attribute'][-1]
+            weird_attribute, odd_attribute = misp_object['Attribute'][-2:]
             self.assertEqual(
                 indicator.x_misp_weird_relation, weird_attribute['value']
             )
             self.assertFalse(hasattr(indicator, 'x_misp_weird-relation'))
-        weird_attribute = url_object['Attribute'][-1]
+            self.assertEqual(
+                indicator.x_misp_odd_case_relation, odd_attribute['value']
+            )
+            self._check_custom_property_names(indicator)
+        weird_attribute, odd_attribute = url_object['Attribute'][-2:]
         self.assertEqual(url.x_misp_weird_relation, weird_attribute['value'])
         self.assertFalse(hasattr(url, 'x_misp_weird-relation'))
+        self.assertEqual(url.x_misp_odd_case_relation, odd_attribute['value'])
+        self._check_custom_property_names(url)
 
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -5143,9 +5162,9 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             stix=self.parser.stix_objects[2:]
         )
 
-    def test_event_with_dashed_object_relations(self):
-        event = get_event_with_dashed_object_relations()
-        self._test_event_with_dashed_object_relations(event['Event'])
+    def test_event_with_non_conforming_object_relations(self):
+        event = get_event_with_non_conforming_object_relations()
+        self._test_event_with_non_conforming_object_relations(event['Event'])
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
@@ -5776,11 +5795,11 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event.from_dict(**event)
         self._test_event_with_artifact_payload_indicator_object(misp_event)
 
-    def test_event_with_dashed_object_relations(self):
-        event = get_event_with_dashed_object_relations()
+    def test_event_with_non_conforming_object_relations(self):
+        event = get_event_with_non_conforming_object_relations()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        self._test_event_with_dashed_object_relations(misp_event)
+        self._test_event_with_non_conforming_object_relations(misp_event)
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
@@ -6294,8 +6313,12 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         )
         self.assertEqual(location1.labels[0], f'misp:galaxy-name="{country["name"]}"')
         self.assertEqual(location1.labels[1], f'misp:galaxy-type="{country["type"]}"')
-        for key, values in cluster['meta'].items():
-            self.assertEqual(getattr(location1, f'x_misp_{key}'), values)
+        # The country cluster's meta keys are CamelCase (`Capital`, `ISO3`),
+        # which the custom property name rule folds to lowercase.
+        for key, name in _COUNTRY_META_PROPERTY_NAMES.items():
+            self.assertEqual(getattr(location1, name), cluster['meta'][key])
+        self.assertFalse(hasattr(location1, 'x_misp_Capital'))
+        self._check_custom_property_names(location1)
         cluster = region['GalaxyCluster'][0]
         self.assertEqual(location2.id, f"{location2.type}--{cluster['uuid']}")
         self.assertEqual(location2.created, timestamp)

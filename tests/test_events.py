@@ -1273,7 +1273,11 @@ _TEST_TEA_MATRIX_GALAXY = {
             "type": "tea-matrix",
             "value": "Milk in tea",
             "description": "Milk in tea",
-            "relationship_type": "ennemy-of"
+            "relationship_type": "ennemy-of",
+            "meta": {
+                "Odd Key (1)": ["odd value"],
+                "kept-Case_ok": ["kept value"]
+            }
         }
     ]
 }
@@ -6192,7 +6196,7 @@ def get_event_with_patterning_language_objects():
     return event
 
 
-def get_event_with_dashed_object_relations():
+def get_event_with_non_conforming_object_relations():
     event = deepcopy(_BASE_EVENT)
     patterning_objects = {
         misp_object['name']: dict(_populate_object(misp_object))
@@ -6202,20 +6206,33 @@ def get_event_with_dashed_object_relations():
     sigma_object = patterning_objects['sigma']
     suricata_object = patterning_objects['suricata']
     url_object = dict(_populate_object(_TEST_URL_OBJECT))
-    for uuid, misp_object in zip(
+    for dashed_uuid, odd_uuid, misp_object in zip(
             (
                 "f6cd315f-9aa8-44f6-b78e-3f0ff4d10d4d",
                 "1ea25060-1a92-4be1-b9a4-d7fbb46e6b52",
                 "8fa4e521-4b8b-4f7e-a6ff-1b17c817a5a0"
             ),
+            (
+                "3b6e0c2a-7d41-4f0b-9c1e-5a8d2f6b4e17",
+                "c9d1f4e8-2a6b-4c3d-8e5f-7b0a1d2c3e4f",
+                "6f2a9b8c-1d4e-4a7b-b3c5-9e8d7f6a5b4c"
+            ),
             (sigma_object, suricata_object, url_object)):
-        misp_object['Attribute'].append(
-            {
-                "uuid": uuid,
-                "type": "text",
-                "object_relation": "weird-relation",
-                "value": f"custom value on the {misp_object['name']} object"
-            }
+        misp_object['Attribute'].extend(
+            (
+                {
+                    "uuid": dashed_uuid,
+                    "type": "text",
+                    "object_relation": "weird-relation",
+                    "value": f"custom value on the {misp_object['name']} object"
+                },
+                {
+                    "uuid": odd_uuid,
+                    "type": "text",
+                    "object_relation": "Odd.Case/Relation",
+                    "value": f"odd value on the {misp_object['name']} object"
+                }
+            )
         )
     event['Event']['Object'] = [sigma_object, suricata_object, url_object]
     return event
