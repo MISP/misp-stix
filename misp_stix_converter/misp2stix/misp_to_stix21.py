@@ -1849,7 +1849,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
             if cluster.get('meta'):
                 location_args.update(
-                    self._parse_meta_custom_fields(cluster['meta'])
+                    self._parse_meta_custom_fields(
+                        cluster['meta'], cluster['value']
+                    )
                 )
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)

@@ -3984,14 +3984,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         feature = 'malware_types' if self._version == '2.1' else 'labels'
         meta_args[feature] = values if isinstance(values, list) else [values]
 
-    def _parse_meta_custom_fields(self, cluster_meta: dict) -> dict:
+    def _parse_custom_meta_field(
+            self, meta_args: dict, key: str, values: str | list,
+            cluster_value: str):
+        feature = self._custom_property_name(key)
+        if feature in meta_args:
+            self._galaxy_meta_key_collision_warning(
+                cluster_value, key, feature
+            )
+        meta_args[feature] = values
+
+    def _parse_meta_custom_fields(
+            self, cluster_meta: dict, value: str) -> dict:
         meta_args = defaultdict(list)
         for key, values in cluster_meta.items():
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
                 self._parse_external_references(meta_args, values, feature)
             else:
-                meta_args[self._custom_property_name(key)] = values
+                self._parse_custom_meta_field(meta_args, key, values, value)
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
         return meta_args
@@ -4021,7 +4032,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     args.append(value)
                 getattr(self, to_call)(*args)
             else:
-                meta_args[self._custom_property_name(key)] = values
+                self._parse_custom_meta_field(meta_args, key, values, value)
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
         return meta_args
@@ -4261,7 +4272,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             meta_args = (
                 self._parse_meta_fields(cluster['meta'], object_type, value)
                 if hasattr(self._mapping, mapping) else
-                self._parse_meta_custom_fields(cluster['meta'])
+                self._parse_meta_custom_fields(cluster['meta'], value)
             )
             if object_type in _labelled_object_types and 'labels' in meta_args:
                 galaxy_args['labels'].extend(meta_args.pop('labels'))

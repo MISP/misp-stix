@@ -374,6 +374,14 @@ class MISPtoSTIXParser(AbstractParser):
             f'{galaxy_type} galaxy in event not mapped.'
         )
 
+    def _galaxy_meta_key_collision_warning(
+            self, value: str, key: str, feature: str):
+        self._add_warning(
+            f'Galaxy cluster "{value}": meta key "{key}" folds to the custom '
+            f'property "{feature}" already set by another meta key of the '
+            'same cluster, the last value wins.'
+        )
+
     def _missing_orgc_error(self):
         self._add_error('Missing Orgc field.')
 
