@@ -582,6 +582,46 @@ _ANALYST_DATA_SAMPLES = [
         "x_misp_note": "Straight to the point Event"
     }
 ]
+_ANALYST_DATA_IN_STIX_2_1_SHAPE = [
+    # The Note and Opinion objects MISP writes Analyst Data and Event Reports
+    # as in STIX 2.1, sharing the uuid parts of `_ANALYST_DATA_SAMPLES`. Parsed
+    # with `allow_custom`, one of them in a 2.0 Bundle reaches the loaders as
+    # a plain dict, the way the 2.0 custom objects do in a 2.1 Bundle.
+    {
+        "type": "note",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "content": "DNS Resolver used to resolve the malicious domain",
+        "authors": ['opinion@foo.bar'],
+        "object_refs": ['observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4'],
+        "labels": ['misp:context-layer="Analyst Note"'],
+        "lang": "en"
+    },
+    {
+        "type": "opinion",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the IP",
+        "authors": ['opinion@foo.bar'],
+        "opinion": "strongly-agree",
+        "object_refs": ['indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238'],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "x_misp_opinion": 90
+    },
+    {
+        "type": "note",
+        "id": "note--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "abstract": "Summary of the case",
+        "content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
+        "object_refs": ['indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f'],
+        "labels": ['misp:data-layer="Event Report"']
+    }
+]
 _ANDROID_APP_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
@@ -7996,7 +8036,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     }
 
     @classmethod
-    def __assemble_bundle(cls, *stix_objects):
+    def __assemble_bundle(cls, *stix_objects, unreferenced=()):
+        # `unreferenced` carries the Analyst Data custom objects the way MISP
+        # writes them: out of the report references, attached to the object
+        # they annotate through their own `object_ref`.
         bundle = deepcopy(cls.__bundle)
         report = deepcopy(cls.__report)
         report.update(
@@ -8004,7 +8047,9 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
                 *(stix_object['id'] for stix_object in stix_objects)
             )
         )
-        bundle['objects'] = [deepcopy(cls.__identity),report, *stix_objects]
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, *stix_objects, *unreferenced
+        ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
@@ -8410,6 +8455,74 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_analyst_data(cls):
         return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
+
+    @classmethod
+    def get_bundle_with_analyst_note_and_opinion_sharing_a_uuid(cls):
+        """A custom Analyst Note and a custom Analyst Opinion sharing a uuid
+        part: MISP keeps notes and opinions in tables of their own, so
+        nothing collides."""
+        indicator, opinion, observed_data, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:4]
+        )
+        note['id'] = f"x-misp-analyst-note--{opinion['id'].split('--')[1]}"
+        return cls.__assemble_bundle(
+            indicator, observed_data, unreferenced=(opinion, note)
+        )
+
+    @classmethod
+    def get_bundle_with_sighting_opinion_and_analyst_note_sharing_a_uuid(cls):
+        """A custom sighting Opinion and a custom Analyst Note sharing a uuid
+        part: the sighting merges into its attribute without a uuid of its
+        own, so the note is the only record claiming the part."""
+        indicator, note = deepcopy(_ANALYST_DATA_SAMPLES[0]), deepcopy(
+            _ANALYST_DATA_SAMPLES[3]
+        )
+        note['object_ref'] = indicator['id']
+        sighting = deepcopy(
+            next(
+                stix_object for stix_object in _BUNDLE_WITH_SIGHTINGS
+                if stix_object['type'] == 'x-misp-opinion'
+            )
+        )
+        sighting['id'] = f"x-misp-opinion--{note['id'].split('--')[1]}"
+        sighting['object_ref'] = indicator['id']
+        return cls.__assemble_bundle(indicator, unreferenced=(note, sighting))
+
+    @classmethod
+    def get_bundle_with_colliding_analyst_note_uuids(cls):
+        """A custom Analyst Note and the 2.1 Note MISP writes the same data
+        as, reaching a 2.0 Bundle as a dict, sharing a uuid part: both notes
+        keep it."""
+        indicator, _, observed_data, custom_note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:4]
+        )
+        note = deepcopy(_ANALYST_DATA_IN_STIX_2_1_SHAPE[0])
+        note['object_refs'] = [indicator['id']]
+        return cls.__assemble_bundle(
+            indicator, observed_data, note, unreferenced=(custom_note,)
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_analyst_opinion_uuids(cls):
+        """The same collision through the opinion path: a custom Analyst
+        Opinion and the 2.1 Opinion sharing a uuid part."""
+        indicator, custom_opinion, observed_data = deepcopy(
+            _ANALYST_DATA_SAMPLES[:3]
+        )
+        opinion = deepcopy(_ANALYST_DATA_IN_STIX_2_1_SHAPE[1])
+        opinion['object_refs'] = [observed_data['id']]
+        return cls.__assemble_bundle(
+            indicator, observed_data, opinion, unreferenced=(custom_opinion,)
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_event_report_uuids(cls):
+        """A custom Event Report and the 2.1 Note MISP writes an Event Report
+        as sharing a uuid part: both event reports keep it."""
+        indicator = deepcopy(_ANALYST_DATA_SAMPLES[4])
+        custom_report = deepcopy(_ANALYST_DATA_SAMPLES[7])
+        report_note = deepcopy(_ANALYST_DATA_IN_STIX_2_1_SHAPE[2])
+        return cls.__assemble_bundle(indicator, custom_report, report_note)
 
     @classmethod
     def get_bundle_with_custom_labels(cls):

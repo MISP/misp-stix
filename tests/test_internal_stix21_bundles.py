@@ -9955,7 +9955,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     }
 
     @classmethod
-    def __assemble_bundle(cls, *stix_objects):
+    def __assemble_bundle(cls, *stix_objects, unreferenced=()):
+        # `unreferenced` carries the custom objects MISP only declares for
+        # STIX 2.0 the way `get_bundle_with_dict_form_objects` does: out of
+        # the grouping references, reaching the loaders as plain dicts.
         bundle = deepcopy(cls.__bundle)
         grouping = deepcopy(cls.__grouping)
         grouping.update(
@@ -9963,7 +9966,9 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 *(stix_object['id'] for stix_object in stix_objects)
             )
         )
-        bundle['objects'] = [deepcopy(cls.__identity), grouping, *stix_objects]
+        bundle['objects'] = [
+            deepcopy(cls.__identity), grouping, *stix_objects, *unreferenced
+        ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
@@ -10429,6 +10434,75 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_analyst_data(cls):
         return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
+
+    @classmethod
+    def get_bundle_with_analyst_note_and_opinion_sharing_a_uuid(cls):
+        """An Analyst Note and an Analyst Opinion sharing a uuid part: MISP
+        keeps notes and opinions in tables of their own, so nothing collides."""
+        indicator, opinion, observed_data, network_traffic, ip_address, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:6]
+        )
+        note['id'] = f"note--{opinion['id'].split('--')[1]}"
+        return cls.__assemble_bundle(
+            indicator, opinion, observed_data, network_traffic, ip_address, note
+        )
+
+    @classmethod
+    def get_bundle_with_sighting_opinion_and_analyst_note_sharing_a_uuid(cls):
+        """A sighting Opinion and an Analyst Note sharing a uuid part: the
+        sighting merges into its attribute without a uuid of its own, so the
+        note is the only record claiming the part."""
+        indicator, note = deepcopy(_ANALYST_DATA_SAMPLES[0]), deepcopy(
+            _ANALYST_DATA_SAMPLES[5]
+        )
+        note['object_refs'] = [indicator['id']]
+        sighting = deepcopy(
+            next(
+                stix_object for stix_object in _BUNDLE_WITH_SIGHTINGS
+                if stix_object['type'] == 'opinion'
+            )
+        )
+        sighting['id'] = f"opinion--{note['id'].split('--')[1]}"
+        sighting['object_refs'] = [indicator['id']]
+        author = deepcopy(
+            next(
+                stix_object for stix_object in _BUNDLE_WITH_SIGHTINGS
+                if stix_object['id'] == sighting['x_misp_author_ref']
+            )
+        )
+        return cls.__assemble_bundle(
+            indicator, note, sighting, unreferenced=(author,)
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_analyst_note_uuids(cls):
+        """An Analyst Note and the 2.0 custom Analyst Note reaching a 2.1
+        Bundle as a dict sharing a uuid part: both notes keep it."""
+        indicator, _, observed_data, network_traffic, ip_address, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:6]
+        )
+        custom_note = deepcopy(_DICT_FORM_OBJECTS[0])
+        custom_note['id'] = f"x-misp-analyst-note--{note['id'].split('--')[1]}"
+        custom_note['object_ref'] = indicator['id']
+        return cls.__assemble_bundle(
+            indicator, observed_data, network_traffic, ip_address, note,
+            unreferenced=(custom_note,)
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_analyst_opinion_uuids(cls):
+        """An Analyst Opinion and the 2.0 custom Analyst Opinion reaching a
+        2.1 Bundle as a dict sharing a uuid part: both opinions keep it."""
+        indicator, opinion = deepcopy(_ANALYST_DATA_SAMPLES[:2])
+        domain_indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        custom_opinion = deepcopy(_DICT_FORM_OBJECTS[1])
+        custom_opinion['id'] = (
+            f"x-misp-analyst-opinion--{opinion['id'].split('--')[1]}"
+        )
+        custom_opinion['object_ref'] = domain_indicator['id']
+        return cls.__assemble_bundle(
+            indicator, opinion, domain_indicator, unreferenced=(custom_opinion,)
+        )
 
     @classmethod
     def get_bundle_with_custom_labels(cls):

@@ -2924,6 +2924,28 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*deepcopy(_ANALYST_DATA_SAMPLES))
 
     @classmethod
+    def get_bundle_with_analyst_note_and_opinion_sharing_a_uuid(cls):
+        """A Note and an Opinion sharing a uuid part: MISP keeps notes and
+        opinions in tables of their own, so nothing collides."""
+        indicator, opinion, observed_data, ip_address, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:5]
+        )
+        note['id'] = f"note--{opinion['id'].split('--')[1]}"
+        return cls.__assemble_bundle(
+            indicator, opinion, observed_data, ip_address, note
+        )
+
+    @classmethod
+    def get_bundle_with_analyst_note_on_several_objects(cls):
+        """A Note referencing 2 objects: one MISP note per object, each with
+        a uuid derived from the object it lands on."""
+        indicator, _, observed_data, ip_address, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:5]
+        )
+        note['object_refs'] = [indicator['id'], observed_data['id']]
+        return cls.__assemble_bundle(indicator, observed_data, ip_address, note)
+
+    @classmethod
     def __assemble_colliding_uuids_bundle(
             cls, observed, indicated=None, record_uuid=None,
             observable_uuid=None, interoperability=False):

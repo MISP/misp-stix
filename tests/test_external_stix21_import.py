@@ -1132,6 +1132,43 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_opinion(file_object.opinions[0], obj_opinion)
         self._check_misp_note(event.notes[0], grouping_note)
 
+    def test_stix21_bundle_with_analyst_note_and_opinion_sharing_a_uuid(self):
+        # MISP keeps notes and opinions in tables of their own, so a Note and
+        # an Opinion sharing a uuid part cost nothing: both keep it, and
+        # nothing is a collision to report.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_analyst_note_and_opinion_sharing_a_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        *_, opinion, _, _, note = bundle.objects
+        attribute1, attribute2 = event.attributes
+        self._check_misp_opinion(attribute1.opinions[0], opinion)
+        self._check_misp_note(attribute2.notes[0], note)
+        self.assertEqual(attribute1.opinions[0].uuid, attribute2.notes[0].uuid)
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_analyst_note_on_several_objects(self):
+        # A Note referencing 2 objects becomes one MISP note per object, each
+        # deriving its uuid from the object it lands on: 2 notes, 2 uuids,
+        # nothing to report.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_analyst_note_on_several_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        note = bundle.objects[-1]
+        self.assertEqual(len(event.attributes), 2)
+        for attribute in event.attributes:
+            misp_note = attribute.notes[0]
+            self.assertEqual(misp_note.note, note.content)
+            self.assertEqual(
+                misp_note.uuid,
+                str(uuid5(UUIDv4, f'{note.id} - {attribute.uuid}'))
+            )
+        self.assertEqual(
+            len({attribute.notes[0].uuid for attribute in event.attributes}), 2
+        )
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
     def test_stix21_bundle_with_event_title_and_producer(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_without_grouping()
         self.parser.load_stix_bundle(bundle)
