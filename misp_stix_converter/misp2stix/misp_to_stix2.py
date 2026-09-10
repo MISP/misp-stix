@@ -53,7 +53,11 @@ _object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
 _observed_data_time_fields = ('first_observed', 'last_observed')
 _sdo_time_fields = ('created', 'modified', *_misp_time_fields)
-_special_characters = (' ', '.')
+# STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII and
+# limited to a-z, 0-9 and `_` (ADR-0013)
+_CUSTOM_PROPERTY_FORBIDDEN_RE = re.compile(r'[^a-z0-9_]')
+# STIX 2.0 / 2.1 §2.3: dictionary keys also allow A-Z and `-`
+_DICTIONARY_KEY_FORBIDDEN_RE = re.compile(r'[^A-Za-z0-9_-]')
 _KEYWORD_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 
 _MISP_DATA_LAYER = Union[
@@ -1608,7 +1612,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _handle_observable_multiple_properties(attributes: dict) -> dict:
         properties = {'allow_custom': True}
         for key, values in attributes.items():
-            feature = f"x_misp_{key.replace('-', '_')}"
+            feature = MISPtoSTIX2Parser._custom_property_name(key)
             properties[feature] = (
                 values[0] if isinstance(values, list) and len(values) == 1
                 else values
@@ -1619,7 +1623,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self, attributes: dict, name: str) -> dict:
         properties = {'allow_custom': True}
         for key, values in attributes.items():
-            feature = f"x_misp_{key.replace('-', '_')}"
+            feature = self._custom_property_name(key)
             if key in getattr(self._mapping, f"{name}_data_fields")():
                 properties[feature] = self._handle_custom_data_field(values)
                 continue
@@ -1633,7 +1637,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _handle_observable_properties(attributes: dict) -> dict:
         properties = {'allow_custom': True}
         for key, value in attributes.items():
-            properties[f"x_misp_{key.replace('-', '_')}"] = value
+            properties[MISPtoSTIX2Parser._custom_property_name(key)] = value
         return properties
 
     def _handle_parent_process_properties(self, attributes: dict) -> dict:
@@ -3987,7 +3991,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if feature is not None:
                 self._parse_external_references(meta_args, values, feature)
             else:
-                meta_args[f"x_misp_{self._sanitise_meta_field(key)}"] = values
+                meta_args[self._custom_property_name(key)] = values
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
         return meta_args
@@ -4017,7 +4021,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     args.append(value)
                 getattr(self, to_call)(*args)
             else:
-                meta_args[f"x_misp_{self._sanitise_meta_field(key)}"] = values
+                meta_args[self._custom_property_name(key)] = values
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
         return meta_args
@@ -4789,7 +4793,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     if value in getattr(self._mapping, f"{feature}_enum_list")():
                         socket_ext[field] = value
                     else:
-                        network_traffic_args[f'x_misp_{feature}'] = value
+                        network_traffic_args[
+                            self._custom_property_name(key)
+                        ] = value
             if attributes.get('state'):
                 for state in attributes.pop('state'):
                     if state in self._mapping.network_socket_state_fields():
@@ -5385,22 +5391,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return datetime.now(UTC)
 
     @staticmethod
-    def _sanitise_meta_field(key: str, strict: Optional[bool] = False) -> str:
-        for special_character in _special_characters:
-            if special_character in key:
-                key = key.replace(special_character, '_')
-        if strict and '-' in key:
-            return key.replace('-', '_')
-        return key
+    def _sanitise_meta_field(key: str) -> str:
+        return _DICTIONARY_KEY_FORBIDDEN_RE.sub('_', key)
 
     @staticmethod
     def _escape_pattern_value(value: str) -> str:
         return str(value).replace('\\', '\\\\').replace("'", "\\'")
 
     @staticmethod
+    def _custom_property_name(relation: str) -> str:
+        # Lowercase fold, then every character outside the allowed set becomes
+        # `_`. Lossy by design; the import side keys on the folded name.
+        return f"x_misp_{_CUSTOM_PROPERTY_FORBIDDEN_RE.sub('_', relation.lower())}"
+
+    @staticmethod
     def _quote_custom_property(relation: str) -> str:
         return MISPtoSTIX2Parser._quote_segment(
-            f"x_misp_{relation.replace('-', '_')}"
+            MISPtoSTIX2Parser._custom_property_name(relation)
         )
 
     @staticmethod

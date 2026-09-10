@@ -748,7 +748,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes:
             note_args['allow_custom'] = True
             for key, values in attributes.items():
-                feature = f"x_misp_{key.replace('-', '_')}"
+                feature = self._custom_property_name(key)
                 if key in self._mapping.annotation_data_fields():
                     note_args[feature] = self._handle_custom_data_field(values)
                     continue
@@ -806,7 +806,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     indicator_args["pattern_type"] = "crs"
                 indicator_args[feature] = value
             else:
-                custom_fields[f"x_misp_{relation.replace('-', '_')}"].append(value)
+                custom_fields[self._custom_property_name(relation)].append(value)
         if references:
             indicator_args["external_references"] = references
         if custom_fields:
@@ -1422,7 +1422,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 indicator_args[feature] = value
             else:
                 custom_fields[
-                    f"x_misp_{relation.replace('-', '_')}"
+                    self._custom_property_name(relation)
                 ].append(value)
         if references:
             indicator_args['external_references'] = references
@@ -1595,7 +1595,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
-                custom_fields[f"x_misp_{relation.replace('-', '_')}"].append(value)
+                custom_fields[self._custom_property_name(relation)].append(value)
         if custom_fields:
             indicator_args.update(
                 {
@@ -1622,7 +1622,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
-                indicator_args[f"x_misp_{relation.replace('-', '_')}"] = value
+                indicator_args[self._custom_property_name(relation)] = value
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     def _parse_url_object_observable(
@@ -1672,7 +1672,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 indicator_args[feature] = value
             else:
                 custom_fields[
-                    f"x_misp_{relation.replace('-', '_')}"
+                    self._custom_property_name(relation)
                 ].append(value)
         if custom_fields:
             indicator_args.update(
@@ -1694,7 +1694,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
-                indicator_args[f"x_misp_{relation.replace('-', '_')}"] = value
+                indicator_args[self._custom_property_name(relation)] = value
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     ############################################################################
