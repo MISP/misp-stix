@@ -2,12 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import json
+import re
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
+from functools import lru_cache
 from misp_stix_converter import (
     ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
     MISP_org_uuid, stix_2_to_misp)
+from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
+from misp_stix_converter.misp2stix.stix2_mapping import MISPtoSTIX2Mapping
+from misp_stix_converter.stix2misp.converters.stix2mapping import (
+    InternalSTIX2Mapping)
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import UUID, uuid5
@@ -34,6 +40,37 @@ SANITISED_TAG_PREDICATE = 'mitre-malware tlp:red misp-galaxy:threat-actor=APT'
 # A slot made of nothing but what a tag cannot carry: sanitising it leaves no
 # text at all, so there is no tag left to write.
 UNUSABLE_TAG_SLOT = '\x01'
+
+# The misp-galaxy corpus `dash_meta_fields` is pinned to
+_GALAXY_CLUSTERS = Path(__file__).resolve().parents[1] / 'data' / 'misp-galaxy' / 'clusters'
+
+# The one spelling the import restores from a folded property name: lower
+# case, `-` as the only separator, so `x_misp_a_b` splits back to `a-b` when
+# `dash_meta_fields` lists it. Upper case, `:`, space and mixed `-`/`_`
+_LISTABLE_META_KEY = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)+$')
+
+
+@lru_cache(maxsize=1)
+def _folded_sdo_galaxy_meta_keys() -> tuple:
+    # Only the galaxies exported as an SDO carry per-key `x_misp_*` properties;
+    # the others go through `x-misp-galaxy-cluster`, whose dictionary keeps the
+    # spelling. Returns the listable keys by folded name, and the folded names
+    # an underscored key also produces.
+    sdo_mapped = MISPtoSTIX2Mapping.cluster_to_stix_object()
+    listable, underscored = {}, set()
+    for path in sorted(_GALAXY_CLUSTERS.glob('*.json')):
+        with open(path, 'rb') as f:
+            galaxy = json.load(f)
+        if galaxy['type'] not in sdo_mapped:
+            continue
+        for cluster in galaxy['values']:
+            for key in cluster.get('meta') or {}:
+                folded = MISPtoSTIX2Parser._custom_property_name(key)
+                if _LISTABLE_META_KEY.match(key):
+                    listable[folded] = key
+                elif '_' in key and '-' not in key:
+                    underscored.add(folded)
+    return listable, frozenset(underscored)
 
 _GALAXY_SUMMARY_MAPPING = {
     'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
@@ -3261,6 +3298,46 @@ class TestExternalSTIX2Import(TestSTIX2Import):
 class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
         self.parser = InternalSTIX2toMISPParser()
+
+    ################################################################################
+    #                    GALAXY META KEY FOLD CHECKING FUNCTIONS                   #
+    ################################################################################
+
+    def _load_galaxy_meta_key_fold(self):
+        if not _GALAXY_CLUSTERS.is_dir():
+            self.skipTest('misp-galaxy submodule not checked out')
+        listable, underscored = _folded_sdo_galaxy_meta_keys()
+        return set(InternalSTIX2Mapping.dash_meta_fields()), listable, underscored
+
+    def _check_dashed_galaxy_meta_keys_are_listed(self):
+        # A dashed key the list does not know imports with `_`: the rot ADR-0013
+        # accepted becomes a failing test on the next submodule bump.
+        listed, listable, _ = self._load_galaxy_meta_key_fold()
+        missing = sorted(set(listable) - listed)
+        self.assertEqual(
+            missing, [],
+            'dashed meta keys on SDO-mapped galaxies missing from '
+            f'`dash_meta_fields`: {[listable[folded] for folded in missing]}'
+        )
+
+    def _check_listed_galaxy_meta_keys_are_in_the_corpus(self):
+        # An entry no corpus key produces forces `-` on any custom cluster key
+        # that folds to it, so the list stays as small as the corpus.
+        listed, listable, _ = self._load_galaxy_meta_key_fold()
+        dead = sorted(listed - set(listable))
+        self.assertEqual(
+            dead, [], f'`dash_meta_fields` entries no corpus key produces: {dead}'
+        )
+
+    def _check_listed_galaxy_meta_keys_have_no_underscore_twin(self):
+        # `a_b` and `a-b` fold to the same name; listing it restores both as
+        # `a-b`. Neither separator can serve such a pair, so it must not exist.
+        listed, _, underscored = self._load_galaxy_meta_key_fold()
+        twins = sorted(listed & underscored)
+        self.assertEqual(
+            twins, [],
+            f'listed names an underscored corpus key also folds to: {twins}'
+        )
 
     ################################################################################
     #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #

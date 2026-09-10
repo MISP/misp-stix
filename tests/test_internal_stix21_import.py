@@ -395,6 +395,15 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.parser.errors
         )
 
+    def test_stix21_dashed_galaxy_meta_keys_are_listed(self):
+        self._check_dashed_galaxy_meta_keys_are_listed()
+
+    def test_stix21_listed_galaxy_meta_keys_are_in_the_corpus(self):
+        self._check_listed_galaxy_meta_keys_are_in_the_corpus()
+
+    def test_stix21_listed_galaxy_meta_keys_have_no_underscore_twin(self):
+        self._check_listed_galaxy_meta_keys_have_no_underscore_twin()
+
     def test_stix21_bundle_with_tlp_1_0_markings(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)
