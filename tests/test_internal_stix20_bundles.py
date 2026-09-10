@@ -3218,8 +3218,8 @@ _FILENAME_OBSERVABLE_ATTRIBUTE = [
     }
 ]
 # A `location` is not a type STIX 2.0 knows, so a Bundle parsed against it
-# keeps this object as a plain dictionary - the Dict-Form Object the label
-# dispatch of every per-type converter has to read.
+# keeps this object as a plain dictionary - the Dict-Form Object every per-type
+# converter has to read through the interface both forms share.
 _GEOLOCATION_OBJECT = {
     "type": "location",
     "id": "location--6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
@@ -3228,10 +3228,15 @@ _GEOLOCATION_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "latitude": 39.108889,
     "longitude": -76.771389,
+    "precision": 1000.0,
     "region": "northern-america",
     "country": "US",
     "city": "Fort Meade",
-    "labels": ['misp:name="geolocation"', 'misp:meta-category="misc"']
+    "street_address": "9800 Savage Rd. Suite 6272",
+    "postal_code": "MD 20755",
+    "labels": ['misp:name="geolocation"', 'misp:meta-category="misc"'],
+    "x_misp_altitude": "55",
+    "x_misp_country": "USA"
 }
 _GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
@@ -6040,6 +6045,55 @@ _LNK_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7"
     }
 ]
+# Dict-form too: the galaxy-mapped Locations of a STIX 2.0 Bundle.
+_LOCATION_GALAXIES = [
+    {
+        "type": "location",
+        "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "sweden",
+        "description": "Sweden",
+        "country": "SE",
+        "labels": ['misp:galaxy-name="Country"', 'misp:galaxy-type="country"'],
+        "x_misp_Capital": "Stockholm",
+        "x_misp_Continent": "EU",
+        "x_misp_CurrencyCode": "SEK",
+        "x_misp_CurrencyName": "Krona",
+        "x_misp_ISO": "SE",
+        "x_misp_ISO3": "SWE",
+        "x_misp_Languages": "sv-SE,se,sma,fi-SE",
+        "x_misp_Population": "9828655",
+        "x_misp_tld": ".se"
+    },
+    {
+        "type": "location",
+        "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Northern Europe",
+        "description": "Nothern Europe",
+        "region": "northern-europe",
+        "labels": ['misp:galaxy-name="Regions UN M49"', 'misp:galaxy-type="region"'],
+        "x_misp_subregion": [
+            "830 - Channel Islands",
+            "248 - Åland Islands",
+            "208 - Denmark",
+            "233 - Estonia",
+            "234 - Faroe Islands",
+            "246 - Finland",
+            "352 - Iceland",
+            "372 - Ireland",
+            "833 - Isle of Man",
+            "428 - Latvia",
+            "440 - Lithuania",
+            "578 - Norway",
+            "744 - Svalbard and Jan Mayen Islands",
+            "752 - Sweden",
+            "826 - United Kingdom of Great Britain and Northern Ireland"
+        ]
+    }
+]
 _MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -6106,6 +6160,28 @@ _MALWARE_GALAXY = {
         }
     ],
     "x_misp_mitre_platforms": ["Windows"]
+}
+# Dict-form too: STIX 2.0 has no Malware Analysis object type.
+_MALWARE_ANALYSIS_OBJECT = {
+    "type": "malware-analysis",
+    "id": "malware-analysis--f44f7eb8-0c10-4bb3-b59e-6b1d8a3f9c41",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "product": "VirusTotal",
+    "version": "3.0",
+    "configuration_version": "1.2.0",
+    "analysis_engine_version": "5.6.0",
+    "analysis_definition_version": "2020-10-20",
+    "submitted": "2020-10-25T10:00:00.000Z",
+    "analysis_started": "2020-10-25T10:05:00.000Z",
+    "analysis_ended": "2020-10-25T10:15:00.000Z",
+    "result_name": "Trojan.Generic",
+    "result": "malicious",
+    "modules": [
+        "static_analysis"
+    ],
+    "labels": ['misp:name="malware-analysis"', 'misp:meta-category="misc"']
 }
 _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
@@ -8359,9 +8435,18 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
-    def get_bundle_with_dict_form_location(cls):
-        """A Dict-Form Object the per-type converters dispatch on labels."""
+    def get_bundle_with_dict_form_geolocation_object(cls):
+        """A Dict-Form Object the Location converter dispatches on labels."""
         return cls.__assemble_bundle(deepcopy(_GEOLOCATION_OBJECT))
+
+    @classmethod
+    def get_bundle_with_dict_form_location_galaxies(cls):
+        """Dict-Form Objects the Location converter dispatches to galaxies."""
+        return cls.__assemble_bundle(*deepcopy(_LOCATION_GALAXIES))
+
+    @classmethod
+    def get_bundle_with_dict_form_malware_analysis_object(cls):
+        return cls.__assemble_bundle(deepcopy(_MALWARE_ANALYSIS_OBJECT))
 
     @classmethod
     def get_bundle_with_duplicate_object_ids(cls):

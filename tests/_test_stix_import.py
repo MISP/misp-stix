@@ -206,6 +206,57 @@ class TestSTIX2Import(TestSTIX):
                 self._dict_form_timestamp(stix_opinion[field])
             )
 
+    def _check_dict_form_object(self, misp_object, stix_object, name):
+        """A MISP object built from an SDO the STIX version does not know,
+        which arrives as a plain dict: its timestamp is the string the
+        document carried. Returns the attributes by object relation."""
+        self.assertIsInstance(stix_object, dict)
+        self.assertEqual(misp_object.name, name)
+        self.assertEqual(misp_object.uuid, stix_object['id'].split('--')[1])
+        self.assertEqual(
+            misp_object.timestamp,
+            self._dict_form_timestamp(stix_object['modified'])
+        )
+        return {
+            attribute.object_relation: attribute.value
+            for attribute in misp_object.attributes
+        }
+
+    def _check_dict_form_geolocation_object(self, misp_object, location):
+        attributes = self._check_dict_form_object(
+            misp_object, location, 'geolocation'
+        )
+        self.assertEqual(attributes['city'], location['city'])
+        self.assertEqual(attributes['countrycode'], location['country'])
+        self.assertEqual(attributes['address'], location['street_address'])
+        self.assertEqual(attributes['zipcode'], location['postal_code'])
+        self.assertEqual(float(attributes['latitude']), location['latitude'])
+        self.assertEqual(float(attributes['longitude']), location['longitude'])
+        self.assertEqual(
+            float(attributes['accuracy-radius']), location['precision'] / 1000
+        )
+        return attributes
+
+    def _check_dict_form_malware_analysis_object(
+            self, misp_object, malware_analysis):
+        attributes = self._check_dict_form_object(
+            misp_object, malware_analysis, 'malware-analysis'
+        )
+        self.assertEqual(attributes['product'], malware_analysis['product'])
+        self.assertEqual(attributes['version'], malware_analysis['version'])
+        self.assertEqual(attributes['result'], malware_analysis['result'])
+        self.assertEqual(attributes['module'], malware_analysis['modules'][0])
+        # The datetime values a dict-form object carries are strings too
+        for object_relation, field in (
+                ('submitted_time', 'submitted'),
+                ('start_time', 'analysis_started'),
+                ('end_time', 'analysis_ended')):
+            self.assertEqual(
+                attributes[object_relation],
+                self._dict_form_timestamp(malware_analysis[field])
+            )
+        return attributes
+
     def _check_duplicate_object_id_warning(self, object_id, warnings):
         """The last occurrence wins, but the shadowing is never silent."""
         duplicate_warnings = self._reports_matching(
@@ -1220,34 +1271,38 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)
         cluster = galaxy.clusters[0]
+        # Read through the Mapping interface: a typed object and the dict-form
+        # one a 2.0 Bundle keeps for a type it does not know both offer it.
         self.assertEqual(
             cluster.uuid,
-            uuid5(UUIDv4, f"{stix_object.id.split('--')[1]} - {MISP_org_uuid}")
+            uuid5(
+                UUIDv4, f"{stix_object['id'].split('--')[1]} - {MISP_org_uuid}"
+            )
         )
-        version = getattr(stix_object, 'spec_version', '2.0')
+        version = stix_object.get('spec_version', '2.0')
         self._assert_multiple_equal(
-            galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
+            galaxy.type, cluster.type, f"stix-{version}-{stix_object['type']}"
         )
         self._assert_multiple_equal(
             galaxy.version, cluster.version, ''.join(version.split('.'))
         )
-        mapping = self._galaxy_name_mapping(stix_object.type)
+        mapping = self._galaxy_name_mapping(stix_object['type'])
         self._assert_multiple_equal(
             galaxy.uuid, cluster.collection_uuid,
             uuid5(UUIDv4, galaxy.name)
         )
         self.assertEqual(galaxy.name, f"STIX {version} {mapping['name']}")
         self.assertEqual(galaxy.description, mapping['description'])
-        self.assertEqual(cluster.value, stix_object.name)
-        if hasattr(stix_object, 'description'):
-            self.assertEqual(cluster.description, stix_object.description)
+        self.assertEqual(cluster.value, stix_object['name'])
+        if 'description' in stix_object:
+            self.assertEqual(cluster.description, stix_object['description'])
         meta = cluster.meta
         for field in ('created', 'modified', 'first_seen', 'last_seen'):
-            if hasattr(stix_object, field):
-                self.assertEqual(
-                    meta[field],
-                    self._datetime_to_str(getattr(stix_object, field))
-                )
+            if field in stix_object:
+                dt_value = stix_object[field]
+                if isinstance(dt_value, str):
+                    dt_value = self._dict_form_timestamp(dt_value)
+                self.assertEqual(meta[field], self._datetime_to_str(dt_value))
         return meta
 
     ############################################################################
