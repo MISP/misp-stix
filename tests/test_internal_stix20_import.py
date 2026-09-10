@@ -3373,6 +3373,71 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[observed_data, indicator, relationship]
         )
 
+    def test_stix20_bundle_with_legacy_hashlookup_property_names(self):
+        # Bundles exported before the custom property name fold (ADR-0013)
+        # carry `x_misp_KnownMalicious`-style names; the import mapping keeps
+        # reading them into the same attributes as the folded spelling.
+        for getter in ('indicator', 'observable'):
+            attributes = self._import_object_attributes(
+                getattr(
+                    TestInternalSTIX20Bundles,
+                    f'get_bundle_with_hashlookup_{getter}_object'
+                )()
+            )
+            legacy_attributes = self._import_object_attributes(
+                getattr(
+                    TestInternalSTIX20Bundles,
+                    f'get_bundle_with_legacy_hashlookup_{getter}_object'
+                )()
+            )
+            self.assertEqual(legacy_attributes, attributes)
+
+    def test_stix20_non_conforming_object_relations_round_trip(self):
+        # CamelCase relations export as folded custom property names
+        # (`KnownMalicious` -> `x_misp_knownmalicious`); the import mappings
+        # restore the MISP spelling, on the observable and the pattern path.
+        from misp_stix_converter import MISPtoSTIX20Parser
+        from .test_events import (
+            get_event_with_hashlookup_object, get_event_with_ip_port_object,
+            get_event_with_organization_object
+        )
+        for to_ids in (False, True):
+            event = get_event_with_hashlookup_object()
+            misp_object = event['Event']['Object'][0]
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+            expected = {
+                (attribute['type'], attribute['object_relation'], attribute['value'])
+                for attribute in misp_object['Attribute']
+            }
+            export_parser = MISPtoSTIX20Parser()
+            export_parser.parse_misp_event(event['Event'])
+            self.assertEqual(
+                self._import_object_attributes(export_parser.bundle), expected
+            )
+        ip_port = get_event_with_ip_port_object()
+        ip_port['Event']['Object'][0]['Attribute'].append(
+            {
+                'uuid': '5d9c1f2e-3a4b-4c5d-8e6f-7a8b9c0d1e2f',
+                'type': 'AS', 'object_relation': 'AS', 'value': '3215'
+            }
+        )
+        organization = get_event_with_organization_object()
+        organization['Event']['Object'][0]['Attribute'].append(
+            {
+                'uuid': '0a1b2c3d-4e5f-4a6b-9c7d-8e9f0a1b2c3d',
+                'type': 'text', 'object_relation': 'VAT', 'value': 'LU12345678'
+            }
+        )
+        for event, attribute in (
+                (ip_port, ('AS', 'AS', '3215')),
+                (organization, ('text', 'VAT', 'LU12345678'))):
+            export_parser = MISPtoSTIX20Parser()
+            export_parser.parse_misp_event(event['Event'])
+            self.assertIn(
+                attribute, self._import_object_attributes(export_parser.bundle)
+            )
+
     def test_stix20_bundle_with_http_request_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_http_request_indicator_object()
         self.parser.load_stix_bundle(bundle)

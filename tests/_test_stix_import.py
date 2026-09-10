@@ -4391,6 +4391,16 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertFalse(name.to_ids)
         self._check_object_attribute_uuid(name, object_id)
 
+    def _import_object_attributes(self, bundle) -> set:
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        misp_objects = self.parser.misp_event.objects
+        self.assertEqual(len(misp_objects), 1)
+        return {
+            (attribute.type, attribute.object_relation, str(attribute.value))
+            for attribute in misp_objects[0].attributes
+        }
+
     _HASHLOOKUP_FIELDS = (
         ('filename', 'FileName'), ('size-in-bytes', 'FileSize'),
         ('md5', 'MD5'), ('sha1', 'SHA-1'), ('sha256', 'SHA-256'),
@@ -4426,13 +4436,13 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             'SHA-256': hashes['SHA-256'],
             'SSDEEP': hashes.get('SSDEEP', hashes.get('ssdeep')),
             'TLSH': hashes['TLSH'],
-            'KnownMalicious': observable.x_misp_KnownMalicious,
-            'PackageName': observable.x_misp_PackageName,
-            'PackageVersion': observable.x_misp_PackageVersion,
-            'PackageRelease': observable.x_misp_PackageRelease,
-            'PackageArch': observable.x_misp_PackageArch,
-            'PackageDescription': observable.x_misp_PackageDescription,
-            'PackageMaintainer': observable.x_misp_PackageMaintainer,
+            'KnownMalicious': observable.x_misp_knownmalicious,
+            'PackageName': observable.x_misp_packagename,
+            'PackageVersion': observable.x_misp_packageversion,
+            'PackageRelease': observable.x_misp_packagerelease,
+            'PackageArch': observable.x_misp_packagearch,
+            'PackageDescription': observable.x_misp_packagedescription,
+            'PackageMaintainer': observable.x_misp_packagemaintainer,
             'source': observable.x_misp_source
         }
         attributes_by_relation = {

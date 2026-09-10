@@ -7035,13 +7035,22 @@ _DIRECTORY_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
     }
 ]
+_LEGACY_HASHLOOKUP_PROPERTY_NAMES = {
+    'x_misp_knownmalicious': 'x_misp_KnownMalicious',
+    'x_misp_packagearch': 'x_misp_PackageArch',
+    'x_misp_packagedescription': 'x_misp_PackageDescription',
+    'x_misp_packagemaintainer': 'x_misp_PackageMaintainer',
+    'x_misp_packagename': 'x_misp_PackageName',
+    'x_misp_packagerelease': 'x_misp_PackageRelease',
+    'x_misp_packageversion': 'x_misp_PackageVersion',
+}
 _HASHLOOKUP_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_KnownMalicious = 'hashlookup-known-malicious-source' AND file:x_misp_PackageName = 'coreutils' AND file:x_misp_PackageVersion = '8.32' AND file:x_misp_PackageRelease = '4.1ubuntu1' AND file:x_misp_PackageArch = 'amd64' AND file:x_misp_PackageDescription = 'GNU core utilities' AND file:x_misp_PackageMaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
+    "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_knownmalicious = 'hashlookup-known-malicious-source' AND file:x_misp_packagename = 'coreutils' AND file:x_misp_packageversion = '8.32' AND file:x_misp_packagerelease = '4.1ubuntu1' AND file:x_misp_packagearch = 'amd64' AND file:x_misp_packagedescription = 'GNU core utilities' AND file:x_misp_packagemaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
         {"kill_chain_name": "misp-category", "phase_name": "file"}
@@ -7070,13 +7079,13 @@ _HASHLOOKUP_OBSERVABLE_OBJECT = [
                     "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
                     "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
                 },
-                "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
-                "x_misp_PackageName": "coreutils",
-                "x_misp_PackageVersion": "8.32",
-                "x_misp_PackageRelease": "4.1ubuntu1",
-                "x_misp_PackageArch": "amd64",
-                "x_misp_PackageDescription": "GNU core utilities",
-                "x_misp_PackageMaintainer": "Ubuntu Developers",
+                "x_misp_knownmalicious": "hashlookup-known-malicious-source",
+                "x_misp_packagename": "coreutils",
+                "x_misp_packageversion": "8.32",
+                "x_misp_packagerelease": "4.1ubuntu1",
+                "x_misp_packagearch": "amd64",
+                "x_misp_packagedescription": "GNU core utilities",
+                "x_misp_packagemaintainer": "Ubuntu Developers",
                 "x_misp_source": "https://www.circl.lu/services/hashlookup"
             }
         },
@@ -9154,6 +9163,23 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_hashlookup_observable_object(cls):
         return cls.__assemble_bundle(*_HASHLOOKUP_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_legacy_hashlookup_indicator_object(cls):
+        indicator = deepcopy(_HASHLOOKUP_INDICATOR_OBJECT)
+        for name, legacy_name in _LEGACY_HASHLOOKUP_PROPERTY_NAMES.items():
+            indicator['pattern'] = indicator['pattern'].replace(
+                name, legacy_name
+            )
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
+    def get_bundle_with_legacy_hashlookup_observable_object(cls):
+        stix_objects = deepcopy(_HASHLOOKUP_OBSERVABLE_OBJECT)
+        file_object = stix_objects[0]['objects']['0']
+        for name, legacy_name in _LEGACY_HASHLOOKUP_PROPERTY_NAMES.items():
+            file_object[legacy_name] = file_object.pop(name)
+        return cls.__assemble_bundle(*stix_objects)
 
     @classmethod
     def get_bundle_with_registry_key_indicator_object(cls):
