@@ -1129,20 +1129,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     }
     __dash_meta_fields = (
         'x_misp_attribution_confidence',
-        'x_misp_budapest_convention',
-        'x_misp_calling_code',
         'x_misp_cfr_suspected_state_sponsor',
         'x_misp_cfr_suspected_victims',
         'x_misp_cfr_target_category',
         'x_misp_cfr_type_of_incident',
         'x_misp_colt_average',
         'x_misp_colt_median',
-        'x_misp_iso_code',
-        'x_misp_member_of',
         'x_misp_microsoft_origin_threat',
         'x_misp_mode_of_operation',
-        'x_misp_official_languages',
-        'x_misp_official_refs',
         'x_misp_payment_method',
         'x_misp_ransomenotes_files',
         'x_misp_ransomenotes_refs',
@@ -1154,9 +1148,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         'x_misp_suspected_victims',
         'x_misp_target_category',
         'x_misp_targeted_sector',
-        'x_misp_territory_type',
-        'x_misp_threat_actor_classification',
-        'x_misp_top_level_domain'
+        'x_misp_threat_actor_classification'
     )
 
     # OBJECT ATTRIBUTES
