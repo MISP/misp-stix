@@ -1044,8 +1044,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if key != 'extension_type':
                 meta[key] = values
         cluster_uuid = self._extract_uuid(marking_definition['id'])
-        self._check_cluster_uuid_collision(
-            cluster_uuid, marking_definition['id']
+        self._check_record_uuid_collision(
+            'galaxy cluster', cluster_uuid, marking_definition['id']
         )
         return self._create_misp_galaxy_cluster(
             collection_uuid=self._create_v5_uuid(name),
@@ -1123,32 +1123,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
     ############################################################################
 
-    def _check_cluster_uuid_collision(self, cluster_uuid: str, object_id: str):
-        """Report the **Colliding Cluster Uuid** 2 STIX ids both produce.
+    def _sanitise_cluster_uuid(self, object_id: str) -> str:
+        """The record-uuid sanitation, with the collision check on the uuid
+        it hands out - the one the cluster ends up carrying.
 
         The type of a galaxy-mapped STIX object never enters the cluster uuid
         derivation, so 2 objects of different types sharing a uuid part yield
-        2 Galaxy Clusters carrying one uuid. As with the record collisions,
-        the uuid computation is untouched - re-deriving one of the 2 clusters
-        would cost it the round-trip - and only the reporting is added. The
-        bucket is keyed on the uuid the clusters actually carry, so the
-        warning names what the converted content ends up sharing
+        2 Galaxy Clusters carrying one uuid.
         """
-        known_id = self._record_uuids['galaxy cluster'].setdefault(
-            cluster_uuid, object_id
-        )
-        if known_id != object_id:
-            self._add_warning(
-                f'Colliding MISP galaxy cluster uuid {cluster_uuid} - the '
-                f'STIX objects {known_id} and {object_id} both produce it, so '
-                'the converted content has 2 galaxy clusters sharing one uuid'
-            )
-
-    def _sanitise_cluster_uuid(self, object_id: str) -> str:
-        """The record-uuid sanitation, with the cluster collision check on
-        the uuid it hands out - the one the cluster ends up carrying."""
         cluster_uuid = self._sanitise_uuid(object_id)
-        self._check_cluster_uuid_collision(cluster_uuid, object_id)
+        self._check_record_uuid_collision(
+            'galaxy cluster', cluster_uuid, object_id
+        )
         return cluster_uuid
 
     def _aggregate_galaxy_clusters(self, galaxies: dict):
@@ -1340,20 +1326,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _add_analyst_note(self, data_layer: _DATA_LAYER_TYPING, reference: str):
         note = self._note[reference]
-        if note.get('uuid') is None:
-            note['uuid'] = self._create_v5_uuid(
-                f'{reference} - {data_layer.uuid}'
-            )
-        data_layer.add_note(**note)
+        note_uuid = note.get('uuid') or self._derive_analyst_data_uuid(
+            reference, data_layer
+        )
+        self._check_record_uuid_collision('note', note_uuid, reference)
+        data_layer.add_note(**{**note, 'uuid': note_uuid})
 
     def _add_analyst_opinion(
             self, data_layer: _DATA_LAYER_TYPING, reference: str):
         opinion = self._opinion[reference]
-        if opinion.get('uuid') is None:
-            opinion['uuid'] = self._create_v5_uuid(
-                f'{reference} - {data_layer.uuid}'
-            )
-        data_layer.add_opinion(**opinion)
+        opinion_uuid = opinion.get('uuid') or self._derive_analyst_data_uuid(
+            reference, data_layer
+        )
+        self._check_record_uuid_collision('opinion', opinion_uuid, reference)
+        data_layer.add_opinion(**{**opinion, 'uuid': opinion_uuid})
 
     def _add_misp_attribute(
             self, attribute: dict, stix_object: _SDO_TYPING) -> MISPAttribute:
@@ -1371,6 +1357,29 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._add_analyst_data(misp_object, reference)
         self._add_markings_to_misp_object(misp_object, stix_object)
         return self.misp_event.add_object(misp_object)
+
+    def _check_record_uuid_collision(
+            self, record_type: str, record_uuid: str, object_id: str):
+        """Report the **Colliding Record Uuid** 2 STIX ids both produce.
+
+        Keyed on the uuid the record ends up carrying - the sanitised uuid
+        part of the STIX id, or the derivation replacing it - so the warning
+        names what the converted content actually shares. The uuid
+        computation is untouched: re-deriving one of the 2 records would cost
+        it the round-trip, and only the reporting is added.
+
+        Records are tracked per record type because MISP keeps one uuid
+        namespace per table: a note, an opinion and an event report sharing
+        one uuid cost nothing, the way an attribute sharing the uuid of the
+        object holding it does. Two notes carrying one uuid is the collision.
+        """
+        known_id = self._record_uuids[record_type].setdefault(
+            record_uuid, object_id
+        )
+        if known_id != object_id:
+            self._colliding_uuid_warning(
+                record_type, record_uuid, known_id, object_id
+            )
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
@@ -1441,6 +1450,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         cluster.from_dict(**cluster_args)
         cluster.parse_meta_as_elements()
         return cluster
+
+    def _derive_analyst_data_uuid(
+            self, reference: str, data_layer: _DATA_LAYER_TYPING) -> str:
+        """The uuid of an analyst data record its loader gave none - one
+        referencing several objects - derived per data layer it lands on, so
+        every layer gets a record of its own. The loaded dict is left as it
+        was: writing the derivation back would hand the next layer this one's
+        uuid."""
+        return str(self._create_v5_uuid(f'{reference} - {data_layer.uuid}'))
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -1513,6 +1531,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
+
+    def _colliding_uuid_warning(self, record_type: str, record_uuid: str,
+                                known_id: str, object_id: str):
+        self._add_warning(
+            f'Colliding MISP {record_type} uuid {record_uuid} - the '
+            f'STIX objects {known_id} and {object_id} both produce it, so '
+            f'the converted content has 2 {record_type}s sharing one uuid'
+        )
 
     def _object_ref_loading_error(self, object_ref: str):
         # some callers pass the `ObjectRefLoadingError` carrying the id

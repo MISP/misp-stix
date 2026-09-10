@@ -335,6 +335,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _add_event_report(
             self, event_report: MISPEventReport, stix_object_id: str):
+        # The Note and the 2.0 custom object MISP writes an Event Report as
+        # both funnel here, keeping the uuid part of their id.
+        self._check_record_uuid_collision(
+            'event report', event_report.uuid, stix_object_id
+        )
         if stix_object_id in self._analyst_data:
             for reference in self._analyst_data[stix_object_id]:
                 self._add_analyst_data(event_report, reference)

@@ -239,7 +239,9 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             f'{self.main_parser._extract_uuid(object_id)} -'
             f' {self.main_parser.organisation_uuid}'
         )
-        self.main_parser._check_cluster_uuid_collision(cluster_uuid, object_id)
+        self.main_parser._check_record_uuid_collision(
+            'galaxy cluster', cluster_uuid, object_id
+        )
         cluster_args = {
             'value': value, **self.main_parser.cluster_distribution,
             'uuid': cluster_uuid,

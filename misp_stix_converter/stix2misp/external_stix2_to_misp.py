@@ -409,10 +409,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             reported_uuid = self.replacement_uuids.get(
                 record_uuid, record_uuid
             )
-            self._add_warning(
-                f'Colliding MISP {record_type} uuid {reported_uuid} - the '
-                f'STIX objects {known_id} and {object_id} both produce it, so '
-                f'the converted content has 2 {record_type}s sharing one uuid'
+            self._colliding_uuid_warning(
+                record_type, reported_uuid, known_id, object_id
             )
 
     def _sanitise_attribute_uuid(
