@@ -22,7 +22,7 @@ from .tools.stix1_writing_helpers import (
     write_observables, write_threat_actors, write_ttps, _write_raw_stix)
 from .tools.stix2_loading_helpers import load_stix2_file
 from .tools.stix2_to_misp_helpers import get_stix2_parser, is_stix2_from_misp
-from collections import Counter, defaultdict
+from collections import defaultdict
 from contextlib import contextmanager
 from pathlib import Path
 from pymisp import MISPEvent, PyMISP, PyMISPError
@@ -1117,17 +1117,21 @@ def _merge_recorded_messages(traceback: dict, debug: bool, parser) -> dict:
     # Warnings and errors surface regardless of `debug`: a conversion that
     # dropped content never reports a bare success - nor a bare failure, since
     # what the parser recorded before a crash is part of what explains it.
-    # `debug` only selects the errors detail - warnings are reported in full
-    # either way
-    warnings = parser.warnings
-    if warnings:
-        traceback['warnings'] = warnings
-    if parser.errors:
-        # `parser.errors` is the parser's own `defaultdict` - copy it, so a
-        # caller looking up an identifier neither aliases nor grows it
-        traceback['errors'] = (
-            dict(parser.errors) if debug else _summarise_errors(parser.errors)
-        )
+    # `debug` only selects the level of detail: the raw lists, or the parser's
+    # own Diagnostics - what an in-memory consumer reads - minus their counts
+    if debug:
+        warnings = parser.warnings
+        if warnings:
+            traceback['warnings'] = warnings
+        if parser.errors:
+            # `parser.errors` is the parser's own `defaultdict` - copy it, so
+            # a caller looking up an identifier neither aliases nor grows it
+            traceback['errors'] = dict(parser.errors)
+        return traceback
+    diagnostics = parser.diagnostics()
+    for bucket in ('warnings', 'errors'):
+        if diagnostics[bucket]:
+            traceback[bucket] = diagnostics[bucket]
     return traceback
 
 
@@ -1141,32 +1145,3 @@ def _get_stix_ingestion_method(version):
     if version == '2':
         return stix2_to_misp_instance
     return stix1_to_misp_instance
-
-
-_ERRORS_SUMMARY_LIMIT = 10
-
-
-def _summarise_errors(errors: dict) -> dict:
-    # Default reporting: one entry per distinct message, capped - a single
-    # document can produce an error per object it carries - with the number
-    # of remaining messages and where to get them. Messages carrying no
-    # object id are indistinguishable, so how many times each happened is
-    # part of the signal: hundreds of objects dropped the same way must not
-    # read like one
-    summary = {}
-    for identifier, messages in errors.items():
-        occurrences = Counter(messages)
-        distinct = [
-            message if occurrence == 1 else f'{message} ({occurrence} times)'
-            for message, occurrence in occurrences.items()
-        ]
-        remaining = len(distinct) - _ERRORS_SUMMARY_LIMIT
-        if remaining > 0:
-            distinct = distinct[:_ERRORS_SUMMARY_LIMIT]
-            distinct.append(
-                f'... and {remaining} more error'
-                f"{'s' if remaining > 1 else ''} - use the debug option "
-                'to get the full list'
-            )
-        summary[identifier] = distinct
-    return summary
