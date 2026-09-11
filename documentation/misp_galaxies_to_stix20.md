@@ -1322,7 +1322,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "misp:galaxy-name=\"Threat Actor\"",
             "misp:galaxy-type=\"threat-actor\""
         ],
-        "x_misp_cfr-type-of-incident": [
+        "x_misp_cfr_type_of_incident": [
             "Denial of service"
         ]
     }
