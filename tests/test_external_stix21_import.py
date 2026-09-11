@@ -133,22 +133,52 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         # are reported at all: the default summary is deduplicated, capped -
         # a hostile bundle can produce an error per object - and names the
         # number of errors left out.
-        from misp_stix_converter.misp_stix_converter import (
-            _ERRORS_SUMMARY_LIMIT)
+        from misp_stix_converter.abstract import _DIAGNOSTICS_LIMIT
         bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
         summary = self._import_bundle_with_unloadable_objects(
-            bundle, count=_ERRORS_SUMMARY_LIMIT
+            bundle, count=_DIAGNOSTICS_LIMIT
         )['errors'][bundle.id]
         detailed = self._import_bundle_with_unloadable_objects(
-            bundle, count=_ERRORS_SUMMARY_LIMIT, debug=True
+            bundle, count=_DIAGNOSTICS_LIMIT, debug=True
         )['errors'][bundle.id]
-        self.assertGreater(len(detailed), _ERRORS_SUMMARY_LIMIT)
-        self.assertEqual(len(summary), _ERRORS_SUMMARY_LIMIT + 1)
-        self.assertEqual(summary[:-1], detailed[:_ERRORS_SUMMARY_LIMIT])
-        self.assertIn(
-            f'{len(detailed) - _ERRORS_SUMMARY_LIMIT} more', summary[-1]
+        self.assertGreater(len(detailed), _DIAGNOSTICS_LIMIT)
+        self.assertEqual(len(summary), _DIAGNOSTICS_LIMIT + 1)
+        self.assertEqual(summary[:-1], detailed[:_DIAGNOSTICS_LIMIT])
+        # The tail names the remainder and nothing else: the same text is read
+        # by in-memory consumers, which have no debug option to be pointed to.
+        self.assertEqual(
+            summary[-1],
+            f'... and {len(detailed) - _DIAGNOSTICS_LIMIT} more errors'
         )
-        self.assertIn('debug', summary[-1])
+
+    def test_stix21_warnings_are_capped_like_errors(self):
+        # A warning names the id or tag it is about, so a hostile bundle
+        # produces a distinct warning per object: `diagnostics` caps them the
+        # way it caps errors - the first recorded, a tail naming the rest -
+        # with the totals taken before the cap. `debug` lifts both caps on the
+        # entry result, which carries no totals.
+        from misp_stix_converter.abstract import _DIAGNOSTICS_LIMIT
+        count = _DIAGNOSTICS_LIMIT + 2
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
+        diagnostics = self._parse_bundle_with_duplicated_ids(bundle, count)
+        capped = diagnostics['warnings'][bundle.id]
+        self.assertEqual(len(capped), _DIAGNOSTICS_LIMIT + 1)
+        self.assertEqual(capped[-1], '... and 2 more warnings')
+        self.assertEqual(
+            capped[:-1], self.parser.warnings[bundle.id][:_DIAGNOSTICS_LIMIT]
+        )
+        self.assertEqual(diagnostics['counts'], {'warnings': count, 'errors': 0})
+        summary = self._import_bundle_with_duplicated_ids(bundle, count)
+        self.assertEqual(summary['warnings'][bundle.id], capped)
+        detailed = self._import_bundle_with_duplicated_ids(
+            bundle, count, debug=True
+        )
+        self.assertEqual(len(detailed['warnings'][bundle.id]), count)
+        self.assertEqual(
+            detailed['warnings'][bundle.id][:_DIAGNOSTICS_LIMIT], capped[:-1]
+        )
+        for results in (summary, detailed):
+            self.assertNotIn('counts', results)
 
     def test_stix2_cli_aggregation_keeps_both_errors_and_warnings(self):
         # the CLI aggregation wrote errors then warnings into the same `fails`
@@ -1380,6 +1410,36 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         shadowed = bundle.objects[2]
         self._check_duplicate_object_id_warning(
             shadowed.id, results['warnings']
+        )
+
+    def test_stix21_diagnostics_name_the_duplicate_object_id(self):
+        # What an in-memory consumer reads: the warning the entry result
+        # carries, under the bundle id, plus the totals taken before any cap -
+        # distinct warnings, error occurrences - always present.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_duplicate_object_ids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        diagnostics = self.parser.diagnostics()
+        self.assertEqual(list(diagnostics['warnings']), [bundle.id])
+        self._check_duplicate_object_id_warning(
+            bundle.objects[2].id, diagnostics['warnings']
+        )
+        self.assertEqual(diagnostics['errors'], {})
+        self.assertEqual(diagnostics['counts'], {'warnings': 1, 'errors': 0})
+
+    def test_stix21_diagnostics_of_a_clean_bundle(self):
+        # A consumer storing the Diagnostics verbatim reads the same three
+        # keys whatever happened: empty buckets and zero totals, never a
+        # missing key, for a bundle that recorded nothing.
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(
+            self.parser.diagnostics(),
+            {
+                'warnings': {}, 'errors': {},
+                'counts': {'warnings': 0, 'errors': 0}
+            }
         )
 
     def test_stix21_bundle_with_grouping_description(self):

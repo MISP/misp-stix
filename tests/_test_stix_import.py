@@ -15,6 +15,7 @@ from misp_stix_converter.misp2stix.stix2_mapping import MISPtoSTIX2Mapping
 from misp_stix_converter.stix2misp.converters.stix2mapping import (
     InternalSTIX2Mapping)
 from pathlib import Path
+from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
 from uuid import UUID, uuid5
 from ._test_stix import PLANTED_TEMPLATE, TestSTIX
@@ -446,13 +447,51 @@ class TestSTIX2Import(TestSTIX):
                 'modified': '2020-10-25T16:22:00.000Z'
             } for index in range(count)
         )
+        return self._import_content(content, debug)
+
+    @staticmethod
+    def _import_content(content: dict, debug: bool = False) -> dict:
+        """Run the entry function on a bundle rewritten as a dict."""
         with TemporaryDirectory() as tmp_dir:
-            filename = Path(tmp_dir) / 'unloadable.json'
+            filename = Path(tmp_dir) / 'rewritten_bundle.json'
             with open(filename, 'wt', encoding='utf-8') as f:
                 json.dump(content, f)
             return stix_2_to_misp(
                 filename, debug=debug, output_dir=Path(tmp_dir)
             )
+
+    @staticmethod
+    def _duplicate_object_ids(bundle, count: int) -> dict:
+        # The bundle with duplicate object ids carries one shadowed Indicator;
+        # every further pair shares a fresh id, so the bundle produces `count`
+        # distinct warnings under its own id - each names the id it is about,
+        # the shape a hostile document turns into a warning per object.
+        content = json.loads(bundle.serialize())
+        _, container, _, indicator = content['objects']
+        for index in range(1, count):
+            duplicated = dict(
+                indicator,
+                id=f'indicator--2f2e4b1a-9f3d-4c5e-8a6b-1c1d2e3f4a{index:02d}'
+            )
+            content['objects'].extend((dict(duplicated), duplicated))
+            container['object_refs'].append(duplicated['id'])
+        return content
+
+    def _import_bundle_with_duplicated_ids(
+            self, bundle, count: int, debug: bool = False) -> dict:
+        # The same bundle through the entry function: what a caller converting
+        # a file reads back, capped or in full as `debug` says
+        return self._import_content(
+            self._duplicate_object_ids(bundle, count), debug
+        )
+
+    def _parse_bundle_with_duplicated_ids(self, bundle, count: int) -> dict:
+        # And driven in memory, the way cti-transmute drives the parser: the
+        # Diagnostics are the only summary this path has
+        content = self._duplicate_object_ids(bundle, count)
+        self.parser.load_stix_bundle(dict_to_stix2(content, allow_custom=True))
+        self.parser.parse_stix_bundle()
+        return self.parser.diagnostics()
 
     def _check_input_path_reduction(self, bundle):
         # The error dict an entry function returns names the input file, never

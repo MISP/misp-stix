@@ -129,6 +129,17 @@ class TestSTIX20InputContract(TestSTIX20GenericExport):
         self.assertNotIn('misp event', self.parser.errors)
 
 
+class TestSTIX20Diagnostics(TestSTIX20GenericExport):
+    def test_diagnostics_count_error_occurrences(self):
+        self._check_diagnostics_count_error_occurrences()
+
+    def test_diagnostics_keep_warnings_in_recording_order(self):
+        self._check_diagnostics_keep_recording_order()
+
+    def test_entry_result_carries_no_counts(self):
+        self._check_entry_result_carries_no_counts('2.0')
+
+
 class TestSTIX20EventExport(TestSTIX20GenericExport):
     def _check_analyst_note(self, stix_object, misp_layer):
         self.assertEqual(
