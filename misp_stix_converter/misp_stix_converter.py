@@ -613,7 +613,9 @@ def stix_1_to_misp(filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_package(stix_package)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_package(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -665,7 +667,9 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_package(stix_package)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_package(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -722,7 +726,9 @@ def stix_2_to_misp(filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_bundle(bundle)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_bundle(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -774,7 +780,9 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_bundle(bundle)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_bundle(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -1077,24 +1085,6 @@ def _classification_as_from_misp(classification: Optional[str]) -> Optional[bool
             "must be either 'internal' or 'external'."
         )
     return classification == 'internal'
-
-
-def _handle_classification_warning(
-        parser, from_misp: Optional[bool], detected: bool):
-    if from_misp is None:
-        if detected:
-            parser._add_warning(
-                'The Internal parser was selected from the document content '
-                'itself. Use the `classification` parameter to make this '
-                'choice explicit.'
-            )
-    elif from_misp != detected:
-        parser._add_warning(
-            'The STIX document content is detected as '
-            f"{'internal' if detected else 'external'}, but is parsed as "
-            f"{'internal' if from_misp else 'external'} as requested with "
-            'the `classification` parameter.'
-        )
 
 
 def _generate_failure_traceback(

@@ -74,6 +74,31 @@ class STIXtoMISPParser(AbstractParser):
 
         self.__replacement_uuids: dict = {}
 
+    def record_classification(self, detected: bool, overridden: bool = False):
+        """Record how this parser came to be the one converting the document.
+
+        The parser knows its own kind - the External parsers carry the
+        `ExternalSTIXtoMISPParser` mixin - so the caller states only what
+        content-based detection found and whether the choice was the
+        operator's, a Classification Override. Not overridden and detected
+        records that the Internal parser was selected from content; overridden
+        and disagreeing with detection records both sides. Anything else
+        records nothing. To be called once the document is loaded, so the
+        Warning lands under its Recording Identifier - the entry functions do,
+        and an in-memory consumer running the detection itself does the same.
+
+        :param detected: whether detection classified the document as Internal
+        :param overridden: whether the classification was the operator's choice
+            rather than what detection found
+        """
+        if not overridden:
+            if detected:
+                self._classification_from_content_warning()
+            return
+        internal = not isinstance(self, ExternalSTIXtoMISPParser)
+        if detected != internal:
+            self._classification_overridden_warning(detected, internal)
+
     def _add_producer_tag(self, misp_event: MISPEvent, producer: Any):
         """Tag the event with the producer, as one taxonomy entry at most.
 
@@ -288,6 +313,22 @@ class STIXtoMISPParser(AbstractParser):
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
+
+    def _classification_from_content_warning(self):
+        self._add_warning(
+            'The Internal parser was selected from the document content '
+            'itself. Use the `classification` parameter to make this '
+            'choice explicit.'
+        )
+
+    def _classification_overridden_warning(
+            self, detected: bool, internal: bool):
+        self._add_warning(
+            'The STIX document content is detected as '
+            f"{'internal' if detected else 'external'}, but is parsed as "
+            f"{'internal' if internal else 'external'} as requested with "
+            'the `classification` parameter.'
+        )
 
     def _cluster_distribution_and_sharing_group_id_error(self):
         self._add_error(
