@@ -58,6 +58,11 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             for stix_object in (campaign, indicator, attribute_campaign):
                 self.assertIn(stix_object.id, reported)
 
+    def test_stix20_record_classification_on_external_content(self):
+        self._check_record_classification_on_external_content(
+            TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        )
+
     def test_stix20_parse_stix_content_raises_a_catchable_error(self):
         # `parse_stix_content` called `sys.exit()` when loading failed -
         # `SystemExit` derives from `BaseException`, so a caller's

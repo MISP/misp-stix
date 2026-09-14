@@ -35,7 +35,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from ._test_stix import TestSTIX
 from ._test_stix_import import (
-    SANITISED_TAG_VALUE, SMUGGLING_TAG_VALUE)
+    CLASSIFICATION_FROM_CONTENT_WARNING,
+    CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING, SANITISED_TAG_VALUE,
+    SMUGGLING_TAG_VALUE)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
@@ -680,6 +682,25 @@ class TestSTIX1Import(TestSTIX):
                     for warning in warnings
                 )
             )
+
+    def test_stix_1_record_classification_on_the_parsers(self):
+        # Driven in memory: the same two Warnings the entry function records,
+        # under `misp event`, the identifier a STIX 1 import keeps throughout
+        stix_package = self._internal_titled_package()
+        parser = InternalSTIX1toMISPParser()
+        parser.load_stix_package(stix_package)
+        parser.record_classification(True)
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {'misp event': [CLASSIFICATION_FROM_CONTENT_WARNING]}
+        )
+        parser = ExternalSTIX1toMISPParser()
+        parser.load_stix_package(stix_package)
+        parser.record_classification(True, overridden=True)
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {'misp event': [CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING]}
+        )
 
     def test_stix_1_detection_logs_a_warning(self):
         from misp_stix_converter.tools.stix1_to_misp_helpers import (

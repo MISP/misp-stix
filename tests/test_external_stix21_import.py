@@ -1090,6 +1090,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             for stix_object in (campaign, indicator, attribute_campaign):
                 self.assertIn(stix_object.id, reported)
 
+    def test_stix21_record_classification_on_external_content(self):
+        self._check_record_classification_on_external_content(
+            TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        )
+
     def test_stix21_bundle_with_metacharacters_in_acs_marking(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_metacharacters_in_acs_marking()
         self.parser.load_stix_bundle(bundle)

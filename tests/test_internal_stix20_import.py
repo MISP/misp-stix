@@ -103,6 +103,11 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 )
             )
 
+    def test_stix20_record_classification_on_internal_content(self):
+        self._check_record_classification_on_internal_content(
+            TestInternalSTIX20Bundles.get_bundle_with_domain_indicator_attribute()
+        )
+
     def test_stix20_detection_logs_a_warning(self):
         from misp_stix_converter.tools.stix2_to_misp_helpers import (
             is_stix2_from_misp)

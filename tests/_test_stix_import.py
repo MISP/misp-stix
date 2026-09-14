@@ -42,6 +42,22 @@ SANITISED_TAG_PREDICATE = 'mitre-malware tlp:red misp-galaxy:threat-actor=APT'
 # text at all, so there is no tag left to write.
 UNUSABLE_TAG_SLOT = '\x01'
 
+# The two classification Warnings `record_classification` writes: the Internal
+# parser chosen from the document content, and a detection result a
+# Classification Override overruled - one text per side the operator took.
+CLASSIFICATION_FROM_CONTENT_WARNING = (
+    'The Internal parser was selected from the document content itself. Use '
+    'the `classification` parameter to make this choice explicit.'
+)
+CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING = (
+    'The STIX document content is detected as internal, but is parsed as '
+    'external as requested with the `classification` parameter.'
+)
+CLASSIFICATION_OVERRIDDEN_TO_INTERNAL_WARNING = (
+    'The STIX document content is detected as external, but is parsed as '
+    'internal as requested with the `classification` parameter.'
+)
+
 # The misp-galaxy corpus `dash_meta_fields` is pinned to
 _GALAXY_CLUSTERS = Path(__file__).resolve().parents[1] / 'data' / 'misp-galaxy' / 'clusters'
 
@@ -492,6 +508,64 @@ class TestSTIX2Import(TestSTIX):
         self.parser.load_stix_bundle(dict_to_stix2(content, allow_custom=True))
         self.parser.parse_stix_bundle()
         return self.parser.diagnostics()
+
+    def _check_record_classification_on_internal_content(self, bundle):
+        # Driven in memory on content detection classifies as internal, the way
+        # cti-transmute drives the parser: the parser knows its own kind, the
+        # caller states what detection found and whether the choice was the
+        # operator's. Not overridden, the Internal parser says it was chosen
+        # from content - under the bundle id, the identifier loading set
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                InternalSTIX2toMISPParser, bundle, detected=True
+            ),
+            {bundle.id: [CLASSIFICATION_FROM_CONTENT_WARNING]}
+        )
+        # An override that agrees with detection records nothing
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                InternalSTIX2toMISPParser, bundle, detected=True, overridden=True
+            ),
+            {}
+        )
+        # Overridden to external, the External parser records the
+        # disagreement, naming both sides
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                ExternalSTIX2toMISPParser, bundle, detected=True, overridden=True
+            ),
+            {bundle.id: [CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING]}
+        )
+
+    def _check_record_classification_on_external_content(self, bundle):
+        # The mirror, on content detection does not classify as internal: the
+        # External parser, chosen from content or by an agreeing override, is
+        # silent; the Internal parser forced on it records the disagreement
+        for overridden in (False, True):
+            self.assertEqual(
+                self._recorded_classification_warnings(
+                    ExternalSTIX2toMISPParser, bundle,
+                    detected=False, overridden=overridden
+                ),
+                {}
+            )
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                InternalSTIX2toMISPParser, bundle, detected=False, overridden=True
+            ),
+            {bundle.id: [CLASSIFICATION_OVERRIDDEN_TO_INTERNAL_WARNING]}
+        )
+
+    @staticmethod
+    def _recorded_classification_warnings(
+            parser_class, bundle, detected: bool,
+            overridden: bool = False) -> dict:
+        # What a fresh parser of that kind has recorded once the bundle is
+        # loaded and the classification recorded, as its Diagnostics show it
+        parser = parser_class()
+        parser.load_stix_bundle(bundle)
+        parser.record_classification(detected, overridden=overridden)
+        return parser.diagnostics()['warnings']
 
     def _check_input_path_reduction(self, bundle):
         # The error dict an entry function returns names the input file, never
