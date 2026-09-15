@@ -501,8 +501,3 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if title:
                 return title
         return f"Imported from STIX {self.stix_version} Package generated with MISP"
-
-    def _set_distribution(self):
-        self.misp_event.distribution = self.distribution
-        if self.distribution == 4 and self.sharing_group_id is not None:
-            self.misp_event.sharing_group_id = self.sharing_group_id

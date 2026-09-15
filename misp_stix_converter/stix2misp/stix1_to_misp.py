@@ -788,6 +788,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         comment = getattr(misp_object, 'comment', None)
         misp_object.comment = f'{comment}\n{note}' if comment else note
 
+    def _set_distribution(self):
+        # The event JSON has to carry the distribution the caller asked for:
+        # MISP saves an event without one with the column default, org-only
+        self.misp_event.distribution = self.distribution
+        if self.distribution == 4 and self.sharing_group_id is not None:
+            self.misp_event.sharing_group_id = self.sharing_group_id
+
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
