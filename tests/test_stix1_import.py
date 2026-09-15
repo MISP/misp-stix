@@ -930,6 +930,26 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(
             parser.misp_event.info, 'Imported from external STIX 1.2 Package'
         )
+
+    def test_external_event_info_reports_the_declared_version(self):
+        """python-stix names the package version `version`: the generic event
+        info must report what the package declares, not a constant."""
+        for version in ('1.1', '1.2'):
+            with self.subTest(version=version):
+                stix_package = STIXPackage()
+                stix_package.version = version
+                parser = self._parse_external_package(stix_package)
+                self.assertEqual(
+                    parser.misp_event.info,
+                    f'Imported from external STIX {version} Package'
+                )
+
+    def test_external_event_info_falls_back_on_a_version_less_package(self):
+        """Loading a document with no version fails earlier, but a package
+        built in memory - what MISP core hands over - can carry none."""
+        stix_package = STIXPackage()
+        stix_package.version = None
+        parser = self._parse_external_package(stix_package)
         self.assertEqual(
             parser.misp_event.info, 'Imported from external STIX 1.1.1 Package'
         )
