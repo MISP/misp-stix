@@ -127,8 +127,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_attributes_from_ttp(self, ttp: TTP, galaxies: set):
         attributes = []
-        if ttp.resources and getattr(ttp.resources, 'infrastructure', None).observable_characterization:
-            observables = ttp.resources.infrastructure.observable_characterization
+        infrastructure = getattr(ttp.resources, 'infrastructure', None)
+        if infrastructure is not None and infrastructure.observable_characterization:
+            observables = infrastructure.observable_characterization
             if observables.observables:
                 for observable in observables.observables:
                     if not self._has_properties(observable):
@@ -329,6 +330,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         )
                         self.dns_objects['ip'][uuid] = attribute
                         continue
+                    self._handle_attribute_case(attribute_type, attribute_value, compl_data, attribute)
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
