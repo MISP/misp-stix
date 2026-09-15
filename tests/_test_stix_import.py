@@ -2,13 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import json
+import re
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
+from functools import lru_cache
 from misp_stix_converter import (
     ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
     MISP_org_uuid, stix_2_to_misp)
+from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
+from misp_stix_converter.misp2stix.stix2_mapping import MISPtoSTIX2Mapping
+from misp_stix_converter.stix2misp.converters.stix2mapping import (
+    InternalSTIX2Mapping)
 from pathlib import Path
+from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
 from uuid import UUID, uuid5
 from ._test_stix import PLANTED_TEMPLATE, TestSTIX
@@ -34,6 +41,53 @@ SANITISED_TAG_PREDICATE = 'mitre-malware tlp:red misp-galaxy:threat-actor=APT'
 # A slot made of nothing but what a tag cannot carry: sanitising it leaves no
 # text at all, so there is no tag left to write.
 UNUSABLE_TAG_SLOT = '\x01'
+
+# The two classification Warnings `record_classification` writes: the Internal
+# parser chosen from the document content, and a detection result a
+# Classification Override overruled - one text per side the operator took.
+CLASSIFICATION_FROM_CONTENT_WARNING = (
+    'The Internal parser was selected from the document content itself. Use '
+    'the `classification` parameter to make this choice explicit.'
+)
+CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING = (
+    'The STIX document content is detected as internal, but is parsed as '
+    'external as requested with the `classification` parameter.'
+)
+CLASSIFICATION_OVERRIDDEN_TO_INTERNAL_WARNING = (
+    'The STIX document content is detected as external, but is parsed as '
+    'internal as requested with the `classification` parameter.'
+)
+
+# The misp-galaxy corpus `dash_meta_fields` is pinned to
+_GALAXY_CLUSTERS = Path(__file__).resolve().parents[1] / 'data' / 'misp-galaxy' / 'clusters'
+
+# The one spelling the import restores from a folded property name: lower
+# case, `-` as the only separator, so `x_misp_a_b` splits back to `a-b` when
+# `dash_meta_fields` lists it. Upper case, `:`, space and mixed `-`/`_`
+_LISTABLE_META_KEY = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)+$')
+
+
+@lru_cache(maxsize=1)
+def _folded_sdo_galaxy_meta_keys() -> tuple:
+    # Only the galaxies exported as an SDO carry per-key `x_misp_*` properties;
+    # the others go through `x-misp-galaxy-cluster`, whose dictionary keeps the
+    # spelling. Returns the listable keys by folded name, and the folded names
+    # an underscored key also produces.
+    sdo_mapped = MISPtoSTIX2Mapping.cluster_to_stix_object()
+    listable, underscored = {}, set()
+    for path in sorted(_GALAXY_CLUSTERS.glob('*.json')):
+        with open(path, 'rb') as f:
+            galaxy = json.load(f)
+        if galaxy['type'] not in sdo_mapped:
+            continue
+        for cluster in galaxy['values']:
+            for key in cluster.get('meta') or {}:
+                folded = MISPtoSTIX2Parser._custom_property_name(key)
+                if _LISTABLE_META_KEY.match(key):
+                    listable[folded] = key
+                elif '_' in key and '-' not in key:
+                    underscored.add(folded)
+    return listable, frozenset(underscored)
 
 _GALAXY_SUMMARY_MAPPING = {
     'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
@@ -206,6 +260,57 @@ class TestSTIX2Import(TestSTIX):
                 self._dict_form_timestamp(stix_opinion[field])
             )
 
+    def _check_dict_form_object(self, misp_object, stix_object, name):
+        """A MISP object built from an SDO the STIX version does not know,
+        which arrives as a plain dict: its timestamp is the string the
+        document carried. Returns the attributes by object relation."""
+        self.assertIsInstance(stix_object, dict)
+        self.assertEqual(misp_object.name, name)
+        self.assertEqual(misp_object.uuid, stix_object['id'].split('--')[1])
+        self.assertEqual(
+            misp_object.timestamp,
+            self._dict_form_timestamp(stix_object['modified'])
+        )
+        return {
+            attribute.object_relation: attribute.value
+            for attribute in misp_object.attributes
+        }
+
+    def _check_dict_form_geolocation_object(self, misp_object, location):
+        attributes = self._check_dict_form_object(
+            misp_object, location, 'geolocation'
+        )
+        self.assertEqual(attributes['city'], location['city'])
+        self.assertEqual(attributes['countrycode'], location['country'])
+        self.assertEqual(attributes['address'], location['street_address'])
+        self.assertEqual(attributes['zipcode'], location['postal_code'])
+        self.assertEqual(float(attributes['latitude']), location['latitude'])
+        self.assertEqual(float(attributes['longitude']), location['longitude'])
+        self.assertEqual(
+            float(attributes['accuracy-radius']), location['precision'] / 1000
+        )
+        return attributes
+
+    def _check_dict_form_malware_analysis_object(
+            self, misp_object, malware_analysis):
+        attributes = self._check_dict_form_object(
+            misp_object, malware_analysis, 'malware-analysis'
+        )
+        self.assertEqual(attributes['product'], malware_analysis['product'])
+        self.assertEqual(attributes['version'], malware_analysis['version'])
+        self.assertEqual(attributes['result'], malware_analysis['result'])
+        self.assertEqual(attributes['module'], malware_analysis['modules'][0])
+        # The datetime values a dict-form object carries are strings too
+        for object_relation, field in (
+                ('submitted_time', 'submitted'),
+                ('start_time', 'analysis_started'),
+                ('end_time', 'analysis_ended')):
+            self.assertEqual(
+                attributes[object_relation],
+                self._dict_form_timestamp(malware_analysis[field])
+            )
+        return attributes
+
     def _check_duplicate_object_id_warning(self, object_id, warnings):
         """The last occurrence wins, but the shadowing is never silent."""
         duplicate_warnings = self._reports_matching(
@@ -358,13 +463,109 @@ class TestSTIX2Import(TestSTIX):
                 'modified': '2020-10-25T16:22:00.000Z'
             } for index in range(count)
         )
+        return self._import_content(content, debug)
+
+    @staticmethod
+    def _import_content(content: dict, debug: bool = False) -> dict:
+        """Run the entry function on a bundle rewritten as a dict."""
         with TemporaryDirectory() as tmp_dir:
-            filename = Path(tmp_dir) / 'unloadable.json'
+            filename = Path(tmp_dir) / 'rewritten_bundle.json'
             with open(filename, 'wt', encoding='utf-8') as f:
                 json.dump(content, f)
             return stix_2_to_misp(
                 filename, debug=debug, output_dir=Path(tmp_dir)
             )
+
+    @staticmethod
+    def _duplicate_object_ids(bundle, count: int) -> dict:
+        # The bundle with duplicate object ids carries one shadowed Indicator;
+        # every further pair shares a fresh id, so the bundle produces `count`
+        # distinct warnings under its own id - each names the id it is about,
+        # the shape a hostile document turns into a warning per object.
+        content = json.loads(bundle.serialize())
+        _, container, _, indicator = content['objects']
+        for index in range(1, count):
+            duplicated = dict(
+                indicator,
+                id=f'indicator--2f2e4b1a-9f3d-4c5e-8a6b-1c1d2e3f4a{index:02d}'
+            )
+            content['objects'].extend((dict(duplicated), duplicated))
+            container['object_refs'].append(duplicated['id'])
+        return content
+
+    def _import_bundle_with_duplicated_ids(
+            self, bundle, count: int, debug: bool = False) -> dict:
+        # The same bundle through the entry function: what a caller converting
+        # a file reads back, capped or in full as `debug` says
+        return self._import_content(
+            self._duplicate_object_ids(bundle, count), debug
+        )
+
+    def _parse_bundle_with_duplicated_ids(self, bundle, count: int) -> dict:
+        # And driven in memory, the way cti-transmute drives the parser: the
+        # Diagnostics are the only summary this path has
+        content = self._duplicate_object_ids(bundle, count)
+        self.parser.load_stix_bundle(dict_to_stix2(content, allow_custom=True))
+        self.parser.parse_stix_bundle()
+        return self.parser.diagnostics()
+
+    def _check_record_classification_on_internal_content(self, bundle):
+        # Driven in memory on content detection classifies as internal, the way
+        # cti-transmute drives the parser: the parser knows its own kind, the
+        # caller states what detection found and whether the choice was the
+        # operator's. Not overridden, the Internal parser says it was chosen
+        # from content - under the bundle id, the identifier loading set
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                InternalSTIX2toMISPParser, bundle, detected=True
+            ),
+            {bundle.id: [CLASSIFICATION_FROM_CONTENT_WARNING]}
+        )
+        # An override that agrees with detection records nothing
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                InternalSTIX2toMISPParser, bundle, detected=True, overridden=True
+            ),
+            {}
+        )
+        # Overridden to external, the External parser records the
+        # disagreement, naming both sides
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                ExternalSTIX2toMISPParser, bundle, detected=True, overridden=True
+            ),
+            {bundle.id: [CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING]}
+        )
+
+    def _check_record_classification_on_external_content(self, bundle):
+        # The mirror, on content detection does not classify as internal: the
+        # External parser, chosen from content or by an agreeing override, is
+        # silent; the Internal parser forced on it records the disagreement
+        for overridden in (False, True):
+            self.assertEqual(
+                self._recorded_classification_warnings(
+                    ExternalSTIX2toMISPParser, bundle,
+                    detected=False, overridden=overridden
+                ),
+                {}
+            )
+        self.assertEqual(
+            self._recorded_classification_warnings(
+                InternalSTIX2toMISPParser, bundle, detected=False, overridden=True
+            ),
+            {bundle.id: [CLASSIFICATION_OVERRIDDEN_TO_INTERNAL_WARNING]}
+        )
+
+    @staticmethod
+    def _recorded_classification_warnings(
+            parser_class, bundle, detected: bool,
+            overridden: bool = False) -> dict:
+        # What a fresh parser of that kind has recorded once the bundle is
+        # loaded and the classification recorded, as its Diagnostics show it
+        parser = parser_class()
+        parser.load_stix_bundle(bundle)
+        parser.record_classification(detected, overridden=overridden)
+        return parser.diagnostics()['warnings']
 
     def _check_input_path_reduction(self, bundle):
         # The error dict an entry function returns names the input file, never
@@ -1220,34 +1421,38 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)
         cluster = galaxy.clusters[0]
+        # Read through the Mapping interface: a typed object and the dict-form
+        # one a 2.0 Bundle keeps for a type it does not know both offer it.
         self.assertEqual(
             cluster.uuid,
-            uuid5(UUIDv4, f"{stix_object.id.split('--')[1]} - {MISP_org_uuid}")
+            uuid5(
+                UUIDv4, f"{stix_object['id'].split('--')[1]} - {MISP_org_uuid}"
+            )
         )
-        version = getattr(stix_object, 'spec_version', '2.0')
+        version = stix_object.get('spec_version', '2.0')
         self._assert_multiple_equal(
-            galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
+            galaxy.type, cluster.type, f"stix-{version}-{stix_object['type']}"
         )
         self._assert_multiple_equal(
             galaxy.version, cluster.version, ''.join(version.split('.'))
         )
-        mapping = self._galaxy_name_mapping(stix_object.type)
+        mapping = self._galaxy_name_mapping(stix_object['type'])
         self._assert_multiple_equal(
             galaxy.uuid, cluster.collection_uuid,
             uuid5(UUIDv4, galaxy.name)
         )
         self.assertEqual(galaxy.name, f"STIX {version} {mapping['name']}")
         self.assertEqual(galaxy.description, mapping['description'])
-        self.assertEqual(cluster.value, stix_object.name)
-        if hasattr(stix_object, 'description'):
-            self.assertEqual(cluster.description, stix_object.description)
+        self.assertEqual(cluster.value, stix_object['name'])
+        if 'description' in stix_object:
+            self.assertEqual(cluster.description, stix_object['description'])
         meta = cluster.meta
         for field in ('created', 'modified', 'first_seen', 'last_seen'):
-            if hasattr(stix_object, field):
-                self.assertEqual(
-                    meta[field],
-                    self._datetime_to_str(getattr(stix_object, field))
-                )
+            if field in stix_object:
+                dt_value = stix_object[field]
+                if isinstance(dt_value, str):
+                    dt_value = self._dict_form_timestamp(dt_value)
+                self.assertEqual(meta[field], self._datetime_to_str(dt_value))
         return meta
 
     ############################################################################
@@ -3208,6 +3413,46 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.parser = InternalSTIX2toMISPParser()
 
     ################################################################################
+    #                    GALAXY META KEY FOLD CHECKING FUNCTIONS                   #
+    ################################################################################
+
+    def _load_galaxy_meta_key_fold(self):
+        if not _GALAXY_CLUSTERS.is_dir():
+            self.skipTest('misp-galaxy submodule not checked out')
+        listable, underscored = _folded_sdo_galaxy_meta_keys()
+        return set(InternalSTIX2Mapping.dash_meta_fields()), listable, underscored
+
+    def _check_dashed_galaxy_meta_keys_are_listed(self):
+        # A dashed key the list does not know imports with `_`: the rot ADR-0013
+        # accepted becomes a failing test on the next submodule bump.
+        listed, listable, _ = self._load_galaxy_meta_key_fold()
+        missing = sorted(set(listable) - listed)
+        self.assertEqual(
+            missing, [],
+            'dashed meta keys on SDO-mapped galaxies missing from '
+            f'`dash_meta_fields`: {[listable[folded] for folded in missing]}'
+        )
+
+    def _check_listed_galaxy_meta_keys_are_in_the_corpus(self):
+        # An entry no corpus key produces forces `-` on any custom cluster key
+        # that folds to it, so the list stays as small as the corpus.
+        listed, listable, _ = self._load_galaxy_meta_key_fold()
+        dead = sorted(listed - set(listable))
+        self.assertEqual(
+            dead, [], f'`dash_meta_fields` entries no corpus key produces: {dead}'
+        )
+
+    def _check_listed_galaxy_meta_keys_have_no_underscore_twin(self):
+        # `a_b` and `a-b` fold to the same name; listing it restores both as
+        # `a-b`. Neither separator can serve such a pair, so it must not exist.
+        listed, _, underscored = self._load_galaxy_meta_key_fold()
+        twins = sorted(listed & underscored)
+        self.assertEqual(
+            twins, [],
+            f'listed names an underscored corpus key also folds to: {twins}'
+        )
+
+    ################################################################################
     #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
     ################################################################################
 
@@ -4336,6 +4581,16 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertFalse(name.to_ids)
         self._check_object_attribute_uuid(name, object_id)
 
+    def _import_object_attributes(self, bundle) -> set:
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        misp_objects = self.parser.misp_event.objects
+        self.assertEqual(len(misp_objects), 1)
+        return {
+            (attribute.type, attribute.object_relation, str(attribute.value))
+            for attribute in misp_objects[0].attributes
+        }
+
     _HASHLOOKUP_FIELDS = (
         ('filename', 'FileName'), ('size-in-bytes', 'FileSize'),
         ('md5', 'MD5'), ('sha1', 'SHA-1'), ('sha256', 'SHA-256'),
@@ -4371,13 +4626,13 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             'SHA-256': hashes['SHA-256'],
             'SSDEEP': hashes.get('SSDEEP', hashes.get('ssdeep')),
             'TLSH': hashes['TLSH'],
-            'KnownMalicious': observable.x_misp_KnownMalicious,
-            'PackageName': observable.x_misp_PackageName,
-            'PackageVersion': observable.x_misp_PackageVersion,
-            'PackageRelease': observable.x_misp_PackageRelease,
-            'PackageArch': observable.x_misp_PackageArch,
-            'PackageDescription': observable.x_misp_PackageDescription,
-            'PackageMaintainer': observable.x_misp_PackageMaintainer,
+            'KnownMalicious': observable.x_misp_knownmalicious,
+            'PackageName': observable.x_misp_packagename,
+            'PackageVersion': observable.x_misp_packageversion,
+            'PackageRelease': observable.x_misp_packagerelease,
+            'PackageArch': observable.x_misp_packagearch,
+            'PackageDescription': observable.x_misp_packagedescription,
+            'PackageMaintainer': observable.x_misp_packagemaintainer,
             'source': observable.x_misp_source
         }
         attributes_by_relation = {

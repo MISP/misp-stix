@@ -22,7 +22,7 @@ from .tools.stix1_writing_helpers import (
     write_observables, write_threat_actors, write_ttps, _write_raw_stix)
 from .tools.stix2_loading_helpers import load_stix2_file
 from .tools.stix2_to_misp_helpers import get_stix2_parser, is_stix2_from_misp
-from collections import Counter, defaultdict
+from collections import defaultdict
 from contextlib import contextmanager
 from pathlib import Path
 from pymisp import MISPEvent, PyMISP, PyMISPError
@@ -613,7 +613,9 @@ def stix_1_to_misp(filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_package(stix_package)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_package(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -665,7 +667,9 @@ def stix1_to_misp_instance(misp: PyMISP, filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_package(stix_package)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_package(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -722,7 +726,9 @@ def stix_2_to_misp(filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_bundle(bundle)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_bundle(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -774,7 +780,9 @@ def stix2_to_misp_instance(misp: PyMISP, filename: _files_type,
         )
         stix_parser = parser()
         stix_parser.load_stix_bundle(bundle)
-        _handle_classification_warning(stix_parser, from_misp, detected)
+        stix_parser.record_classification(
+            detected, overridden=from_misp is not None
+        )
         stix_parser.parse_stix_bundle(**args)
     except Exception as error:
         return {'errors': [_reduce_input_error(filename, error)]}
@@ -1079,24 +1087,6 @@ def _classification_as_from_misp(classification: Optional[str]) -> Optional[bool
     return classification == 'internal'
 
 
-def _handle_classification_warning(
-        parser, from_misp: Optional[bool], detected: bool):
-    if from_misp is None:
-        if detected:
-            parser._add_warning(
-                'The Internal parser was selected from the document content '
-                'itself. Use the `classification` parameter to make this '
-                'choice explicit.'
-            )
-    elif from_misp != detected:
-        parser._add_warning(
-            'The STIX document content is detected as '
-            f"{'internal' if detected else 'external'}, but is parsed as "
-            f"{'internal' if from_misp else 'external'} as requested with "
-            'the `classification` parameter.'
-        )
-
-
 def _generate_failure_traceback(
         debug: bool, parser, filename: _files_type,
         exception: Exception) -> dict:
@@ -1117,17 +1107,21 @@ def _merge_recorded_messages(traceback: dict, debug: bool, parser) -> dict:
     # Warnings and errors surface regardless of `debug`: a conversion that
     # dropped content never reports a bare success - nor a bare failure, since
     # what the parser recorded before a crash is part of what explains it.
-    # `debug` only selects the errors detail - warnings are reported in full
-    # either way
-    warnings = parser.warnings
-    if warnings:
-        traceback['warnings'] = warnings
-    if parser.errors:
-        # `parser.errors` is the parser's own `defaultdict` - copy it, so a
-        # caller looking up an identifier neither aliases nor grows it
-        traceback['errors'] = (
-            dict(parser.errors) if debug else _summarise_errors(parser.errors)
-        )
+    # `debug` only selects the level of detail: the raw lists, or the parser's
+    # own Diagnostics - what an in-memory consumer reads - minus their counts
+    if debug:
+        warnings = parser.warnings
+        if warnings:
+            traceback['warnings'] = warnings
+        if parser.errors:
+            # `parser.errors` is the parser's own `defaultdict` - copy it, so
+            # a caller looking up an identifier neither aliases nor grows it
+            traceback['errors'] = dict(parser.errors)
+        return traceback
+    diagnostics = parser.diagnostics()
+    for bucket in ('warnings', 'errors'):
+        if diagnostics[bucket]:
+            traceback[bucket] = diagnostics[bucket]
     return traceback
 
 
@@ -1141,32 +1135,3 @@ def _get_stix_ingestion_method(version):
     if version == '2':
         return stix2_to_misp_instance
     return stix1_to_misp_instance
-
-
-_ERRORS_SUMMARY_LIMIT = 10
-
-
-def _summarise_errors(errors: dict) -> dict:
-    # Default reporting: one entry per distinct message, capped - a single
-    # document can produce an error per object it carries - with the number
-    # of remaining messages and where to get them. Messages carrying no
-    # object id are indistinguishable, so how many times each happened is
-    # part of the signal: hundreds of objects dropped the same way must not
-    # read like one
-    summary = {}
-    for identifier, messages in errors.items():
-        occurrences = Counter(messages)
-        distinct = [
-            message if occurrence == 1 else f'{message} ({occurrence} times)'
-            for message, occurrence in occurrences.items()
-        ]
-        remaining = len(distinct) - _ERRORS_SUMMARY_LIMIT
-        if remaining > 0:
-            distinct = distinct[:_ERRORS_SUMMARY_LIMIT]
-            distinct.append(
-                f'... and {remaining} more error'
-                f"{'s' if remaining > 1 else ''} - use the debug option "
-                'to get the full list'
-            )
-        summary[identifier] = distinct
-    return summary

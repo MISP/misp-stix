@@ -54,8 +54,8 @@ def main():
     )
     parser.add_argument(
         '--debug', action='store_true',
-        help='Show the full list of errors - errors and warnings are reported '
-             'either way, this only controls the errors level of detail'
+        help='Show the full lists of errors and warnings - both are reported '
+             'either way, this only lifts the cap on how many are shown'
     )
 
     # SUBPARSERS TO SEPARATE THE 2 MAIN FEATURES

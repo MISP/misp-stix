@@ -582,6 +582,46 @@ _ANALYST_DATA_SAMPLES = [
         "x_misp_note": "Straight to the point Event"
     }
 ]
+_ANALYST_DATA_IN_STIX_2_1_SHAPE = [
+    # The Note and Opinion objects MISP writes Analyst Data and Event Reports
+    # as in STIX 2.1, sharing the uuid parts of `_ANALYST_DATA_SAMPLES`. Parsed
+    # with `allow_custom`, one of them in a 2.0 Bundle reaches the loaders as
+    # a plain dict, the way the 2.0 custom objects do in a 2.1 Bundle.
+    {
+        "type": "note",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "content": "DNS Resolver used to resolve the malicious domain",
+        "authors": ['opinion@foo.bar'],
+        "object_refs": ['observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4'],
+        "labels": ['misp:context-layer="Analyst Note"'],
+        "lang": "en"
+    },
+    {
+        "type": "opinion",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the IP",
+        "authors": ['opinion@foo.bar'],
+        "opinion": "strongly-agree",
+        "object_refs": ['indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238'],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "x_misp_opinion": 90
+    },
+    {
+        "type": "note",
+        "id": "note--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "abstract": "Summary of the case",
+        "content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
+        "object_refs": ['indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f'],
+        "labels": ['misp:data-layer="Event Report"']
+    }
+]
 _ANDROID_APP_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
@@ -3218,8 +3258,8 @@ _FILENAME_OBSERVABLE_ATTRIBUTE = [
     }
 ]
 # A `location` is not a type STIX 2.0 knows, so a Bundle parsed against it
-# keeps this object as a plain dictionary - the Dict-Form Object the label
-# dispatch of every per-type converter has to read.
+# keeps this object as a plain dictionary - the Dict-Form Object every per-type
+# converter has to read through the interface both forms share.
 _GEOLOCATION_OBJECT = {
     "type": "location",
     "id": "location--6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
@@ -3228,10 +3268,15 @@ _GEOLOCATION_OBJECT = {
     "modified": "2020-10-25T16:22:00.000Z",
     "latitude": 39.108889,
     "longitude": -76.771389,
+    "precision": 1000.0,
     "region": "northern-america",
     "country": "US",
     "city": "Fort Meade",
-    "labels": ['misp:name="geolocation"', 'misp:meta-category="misc"']
+    "street_address": "9800 Savage Rd. Suite 6272",
+    "postal_code": "MD 20755",
+    "labels": ['misp:name="geolocation"', 'misp:meta-category="misc"'],
+    "x_misp_altitude": "55",
+    "x_misp_country": "USA"
 }
 _GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
@@ -6040,6 +6085,55 @@ _LNK_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7"
     }
 ]
+# Dict-form too: the galaxy-mapped Locations of a STIX 2.0 Bundle.
+_LOCATION_GALAXIES = [
+    {
+        "type": "location",
+        "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "sweden",
+        "description": "Sweden",
+        "country": "SE",
+        "labels": ['misp:galaxy-name="Country"', 'misp:galaxy-type="country"'],
+        "x_misp_Capital": "Stockholm",
+        "x_misp_Continent": "EU",
+        "x_misp_CurrencyCode": "SEK",
+        "x_misp_CurrencyName": "Krona",
+        "x_misp_ISO": "SE",
+        "x_misp_ISO3": "SWE",
+        "x_misp_Languages": "sv-SE,se,sma,fi-SE",
+        "x_misp_Population": "9828655",
+        "x_misp_tld": ".se"
+    },
+    {
+        "type": "location",
+        "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Northern Europe",
+        "description": "Nothern Europe",
+        "region": "northern-europe",
+        "labels": ['misp:galaxy-name="Regions UN M49"', 'misp:galaxy-type="region"'],
+        "x_misp_subregion": [
+            "830 - Channel Islands",
+            "248 - Åland Islands",
+            "208 - Denmark",
+            "233 - Estonia",
+            "234 - Faroe Islands",
+            "246 - Finland",
+            "352 - Iceland",
+            "372 - Ireland",
+            "833 - Isle of Man",
+            "428 - Latvia",
+            "440 - Lithuania",
+            "578 - Norway",
+            "744 - Svalbard and Jan Mayen Islands",
+            "752 - Sweden",
+            "826 - United Kingdom of Great Britain and Northern Ireland"
+        ]
+    }
+]
 _MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -6106,6 +6200,28 @@ _MALWARE_GALAXY = {
         }
     ],
     "x_misp_mitre_platforms": ["Windows"]
+}
+# Dict-form too: STIX 2.0 has no Malware Analysis object type.
+_MALWARE_ANALYSIS_OBJECT = {
+    "type": "malware-analysis",
+    "id": "malware-analysis--f44f7eb8-0c10-4bb3-b59e-6b1d8a3f9c41",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "product": "VirusTotal",
+    "version": "3.0",
+    "configuration_version": "1.2.0",
+    "analysis_engine_version": "5.6.0",
+    "analysis_definition_version": "2020-10-20",
+    "submitted": "2020-10-25T10:00:00.000Z",
+    "analysis_started": "2020-10-25T10:05:00.000Z",
+    "analysis_ended": "2020-10-25T10:15:00.000Z",
+    "result_name": "Trojan.Generic",
+    "result": "malicious",
+    "modules": [
+        "static_analysis"
+    ],
+    "labels": ['misp:name="malware-analysis"', 'misp:meta-category="misc"']
 }
 _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
@@ -6919,13 +7035,22 @@ _DIRECTORY_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5f8a2b1c-3d4e-4f6a-8b9c-0d1e2f3a4b5c"
     }
 ]
+_LEGACY_HASHLOOKUP_PROPERTY_NAMES = {
+    'x_misp_knownmalicious': 'x_misp_KnownMalicious',
+    'x_misp_packagearch': 'x_misp_PackageArch',
+    'x_misp_packagedescription': 'x_misp_PackageDescription',
+    'x_misp_packagemaintainer': 'x_misp_PackageMaintainer',
+    'x_misp_packagename': 'x_misp_PackageName',
+    'x_misp_packagerelease': 'x_misp_PackageRelease',
+    'x_misp_packageversion': 'x_misp_PackageVersion',
+}
 _HASHLOOKUP_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_KnownMalicious = 'hashlookup-known-malicious-source' AND file:x_misp_PackageName = 'coreutils' AND file:x_misp_PackageVersion = '8.32' AND file:x_misp_PackageRelease = '4.1ubuntu1' AND file:x_misp_PackageArch = 'amd64' AND file:x_misp_PackageDescription = 'GNU core utilities' AND file:x_misp_PackageMaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
+    "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_knownmalicious = 'hashlookup-known-malicious-source' AND file:x_misp_packagename = 'coreutils' AND file:x_misp_packageversion = '8.32' AND file:x_misp_packagerelease = '4.1ubuntu1' AND file:x_misp_packagearch = 'amd64' AND file:x_misp_packagedescription = 'GNU core utilities' AND file:x_misp_packagemaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
         {"kill_chain_name": "misp-category", "phase_name": "file"}
@@ -6954,13 +7079,13 @@ _HASHLOOKUP_OBSERVABLE_OBJECT = [
                     "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
                     "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
                 },
-                "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
-                "x_misp_PackageName": "coreutils",
-                "x_misp_PackageVersion": "8.32",
-                "x_misp_PackageRelease": "4.1ubuntu1",
-                "x_misp_PackageArch": "amd64",
-                "x_misp_PackageDescription": "GNU core utilities",
-                "x_misp_PackageMaintainer": "Ubuntu Developers",
+                "x_misp_knownmalicious": "hashlookup-known-malicious-source",
+                "x_misp_packagename": "coreutils",
+                "x_misp_packageversion": "8.32",
+                "x_misp_packagerelease": "4.1ubuntu1",
+                "x_misp_packagearch": "amd64",
+                "x_misp_packagedescription": "GNU core utilities",
+                "x_misp_packagemaintainer": "Ubuntu Developers",
                 "x_misp_source": "https://www.circl.lu/services/hashlookup"
             }
         },
@@ -7920,7 +8045,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     }
 
     @classmethod
-    def __assemble_bundle(cls, *stix_objects):
+    def __assemble_bundle(cls, *stix_objects, unreferenced=()):
+        # `unreferenced` carries the Analyst Data custom objects the way MISP
+        # writes them: out of the report references, attached to the object
+        # they annotate through their own `object_ref`.
         bundle = deepcopy(cls.__bundle)
         report = deepcopy(cls.__report)
         report.update(
@@ -7928,7 +8056,9 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
                 *(stix_object['id'] for stix_object in stix_objects)
             )
         )
-        bundle['objects'] = [deepcopy(cls.__identity),report, *stix_objects]
+        bundle['objects'] = [
+            deepcopy(cls.__identity), report, *stix_objects, *unreferenced
+        ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
@@ -8336,6 +8466,74 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_ANALYST_DATA_SAMPLES)
 
     @classmethod
+    def get_bundle_with_analyst_note_and_opinion_sharing_a_uuid(cls):
+        """A custom Analyst Note and a custom Analyst Opinion sharing a uuid
+        part: MISP keeps notes and opinions in tables of their own, so
+        nothing collides."""
+        indicator, opinion, observed_data, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:4]
+        )
+        note['id'] = f"x-misp-analyst-note--{opinion['id'].split('--')[1]}"
+        return cls.__assemble_bundle(
+            indicator, observed_data, unreferenced=(opinion, note)
+        )
+
+    @classmethod
+    def get_bundle_with_sighting_opinion_and_analyst_note_sharing_a_uuid(cls):
+        """A custom sighting Opinion and a custom Analyst Note sharing a uuid
+        part: the sighting merges into its attribute without a uuid of its
+        own, so the note is the only record claiming the part."""
+        indicator, note = deepcopy(_ANALYST_DATA_SAMPLES[0]), deepcopy(
+            _ANALYST_DATA_SAMPLES[3]
+        )
+        note['object_ref'] = indicator['id']
+        sighting = deepcopy(
+            next(
+                stix_object for stix_object in _BUNDLE_WITH_SIGHTINGS
+                if stix_object['type'] == 'x-misp-opinion'
+            )
+        )
+        sighting['id'] = f"x-misp-opinion--{note['id'].split('--')[1]}"
+        sighting['object_ref'] = indicator['id']
+        return cls.__assemble_bundle(indicator, unreferenced=(note, sighting))
+
+    @classmethod
+    def get_bundle_with_colliding_analyst_note_uuids(cls):
+        """A custom Analyst Note and the 2.1 Note MISP writes the same data
+        as, reaching a 2.0 Bundle as a dict, sharing a uuid part: both notes
+        keep it."""
+        indicator, _, observed_data, custom_note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:4]
+        )
+        note = deepcopy(_ANALYST_DATA_IN_STIX_2_1_SHAPE[0])
+        note['object_refs'] = [indicator['id']]
+        return cls.__assemble_bundle(
+            indicator, observed_data, note, unreferenced=(custom_note,)
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_analyst_opinion_uuids(cls):
+        """The same collision through the opinion path: a custom Analyst
+        Opinion and the 2.1 Opinion sharing a uuid part."""
+        indicator, custom_opinion, observed_data = deepcopy(
+            _ANALYST_DATA_SAMPLES[:3]
+        )
+        opinion = deepcopy(_ANALYST_DATA_IN_STIX_2_1_SHAPE[1])
+        opinion['object_refs'] = [observed_data['id']]
+        return cls.__assemble_bundle(
+            indicator, observed_data, opinion, unreferenced=(custom_opinion,)
+        )
+
+    @classmethod
+    def get_bundle_with_colliding_event_report_uuids(cls):
+        """A custom Event Report and the 2.1 Note MISP writes an Event Report
+        as sharing a uuid part: both event reports keep it."""
+        indicator = deepcopy(_ANALYST_DATA_SAMPLES[4])
+        custom_report = deepcopy(_ANALYST_DATA_SAMPLES[7])
+        report_note = deepcopy(_ANALYST_DATA_IN_STIX_2_1_SHAPE[2])
+        return cls.__assemble_bundle(indicator, custom_report, report_note)
+
+    @classmethod
     def get_bundle_with_custom_labels(cls):
         indicator = deepcopy(_DOMAIN_IP_INDICATOR_ATTRIBUTE)
         indicator['labels'].append('Attribute tag')
@@ -8359,9 +8557,18 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
-    def get_bundle_with_dict_form_location(cls):
-        """A Dict-Form Object the per-type converters dispatch on labels."""
+    def get_bundle_with_dict_form_geolocation_object(cls):
+        """A Dict-Form Object the Location converter dispatches on labels."""
         return cls.__assemble_bundle(deepcopy(_GEOLOCATION_OBJECT))
+
+    @classmethod
+    def get_bundle_with_dict_form_location_galaxies(cls):
+        """Dict-Form Objects the Location converter dispatches to galaxies."""
+        return cls.__assemble_bundle(*deepcopy(_LOCATION_GALAXIES))
+
+    @classmethod
+    def get_bundle_with_dict_form_malware_analysis_object(cls):
+        return cls.__assemble_bundle(deepcopy(_MALWARE_ANALYSIS_OBJECT))
 
     @classmethod
     def get_bundle_with_duplicate_object_ids(cls):
@@ -8956,6 +9163,23 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_hashlookup_observable_object(cls):
         return cls.__assemble_bundle(*_HASHLOOKUP_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_legacy_hashlookup_indicator_object(cls):
+        indicator = deepcopy(_HASHLOOKUP_INDICATOR_OBJECT)
+        for name, legacy_name in _LEGACY_HASHLOOKUP_PROPERTY_NAMES.items():
+            indicator['pattern'] = indicator['pattern'].replace(
+                name, legacy_name
+            )
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
+    def get_bundle_with_legacy_hashlookup_observable_object(cls):
+        stix_objects = deepcopy(_HASHLOOKUP_OBSERVABLE_OBJECT)
+        file_object = stix_objects[0]['objects']['0']
+        for name, legacy_name in _LEGACY_HASHLOOKUP_PROPERTY_NAMES.items():
+            file_object[legacy_name] = file_object.pop(name)
+        return cls.__assemble_bundle(*stix_objects)
 
     @classmethod
     def get_bundle_with_registry_key_indicator_object(cls):

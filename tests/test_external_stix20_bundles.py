@@ -842,6 +842,81 @@ _DICT_FORM_OBJECTS = [
         "object_refs": ["indicator--031778a4-057f-48e6-9db9-c8d72b81ccd5"]
     }
 ]
+# STIX 2.0 knows no Location or Malware Analysis object type either: parsed
+# with `allow_custom`, both reach their per-type converter as plain dicts.
+_GEOLOCATION_OBJECTS = [
+    {
+        "type": "location",
+        "id": "location--e8f1c2a3-4b5d-4e6f-9a8b-7c6d5e4f3a2b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "name": "Paris",
+        "latitude": 48.8566,
+        "longitude": 2.3522,
+        "precision": 1000.0,
+        "city": "Paris",
+        "country": "FR",
+        "postal_code": "75000",
+        "region": "western-europe",
+        "street_address": "5 Rue de la Paix"
+    }
+]
+_LOCATION_OBJECTS = [
+    {
+        "type": "location",
+        "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "sweden",
+        "description": "Sweden",
+        "country": "SE",
+        "region": "northern-europe"
+    },
+    {
+        "administrative_area": "US-DC",
+        "country": "US",
+        "created": "2021-03-13T20:09:21.286293Z",
+        "id": "location--78a7f0f3-ea60-4ca2-894e-9e825b94b592",
+        "modified": "2021-12-01T16:19:51.601791Z",
+        "name": "District of Columbia",
+        "type": "location"
+    }
+]
+_MALWARE_ANALYSIS_OBJECTS = [
+    {
+        "type": "malware-analysis",
+        "id": "malware-analysis--f44f7eb8-0c10-4bb3-b59e-6b1d8a3f9c41",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-01-25T10:18:28.125Z",
+        "modified": "2024-01-25T10:18:29.125Z",
+        "product": "VirusTotal",
+        "version": "3.0",
+        "configuration_version": "1.2.0",
+        "analysis_engine_version": "5.6.0",
+        "analysis_definition_version": "2024-01-20",
+        "submitted": "2024-01-25T10:00:00.000Z",
+        "analysis_started": "2024-01-25T10:05:00.000Z",
+        "analysis_ended": "2024-01-25T10:15:00.000Z",
+        "result_name": "Trojan.Generic",
+        "result": "malicious",
+        "modules": [
+            "static_analysis"
+        ],
+        "sample_ref": "file--5e384ae7-672c-4250-9cda-3b4da964451a"
+    },
+    # The sample it analysed: a typed object, since STIX 2.0 knows `file`,
+    # but built by the sample converter from the dict-form analysis above.
+    {
+        "type": "file",
+        "id": "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "name": "sample.exe",
+        "hashes": {
+            "MD5": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        "size": 1024
+    }
+]
 _IP_ADDRESS_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -2144,6 +2219,21 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(
             deepcopy(cls.__indicator), *deepcopy(_DICT_FORM_OBJECTS)
         )
+
+    @classmethod
+    def get_bundle_with_dict_form_geolocation_objects(cls):
+        """A dict-form Location carrying the fields a geolocation object
+        reads."""
+        return cls.__assemble_bundle(*deepcopy(_GEOLOCATION_OBJECTS))
+
+    @classmethod
+    def get_bundle_with_dict_form_location_galaxy(cls):
+        """Dict-form Locations carrying none of them: galaxy clusters."""
+        return cls.__assemble_galaxy_bundle(*deepcopy(_LOCATION_OBJECTS))
+
+    @classmethod
+    def get_bundle_with_dict_form_malware_analysis_objects(cls):
+        return cls.__assemble_bundle(*deepcopy(_MALWARE_ANALYSIS_OBJECTS))
 
     @classmethod
     def __assemble_colliding_uuids_bundle(

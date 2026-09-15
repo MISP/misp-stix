@@ -129,6 +129,17 @@ class TestSTIX20InputContract(TestSTIX20GenericExport):
         self.assertNotIn('misp event', self.parser.errors)
 
 
+class TestSTIX20Diagnostics(TestSTIX20GenericExport):
+    def test_diagnostics_count_error_occurrences(self):
+        self._check_diagnostics_count_error_occurrences()
+
+    def test_diagnostics_keep_warnings_in_recording_order(self):
+        self._check_diagnostics_keep_recording_order()
+
+    def test_entry_result_carries_no_counts(self):
+        self._check_entry_result_carries_no_counts('2.0')
+
+
 class TestSTIX20EventExport(TestSTIX20GenericExport):
     def _check_analyst_note(self, stix_object, misp_layer):
         self.assertEqual(
@@ -2402,14 +2413,15 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(hashes['SHA-256'], sha256.value)
         self.assertEqual(hashes['ssdeep'], ssdeep.value)
         self.assertEqual(hashes['TLSH'], tlsh.value)
-        self.assertEqual(_file.x_misp_KnownMalicious, known_malicious.value)
-        self.assertEqual(_file.x_misp_PackageName, package_name.value)
-        self.assertEqual(_file.x_misp_PackageVersion, package_version.value)
-        self.assertEqual(_file.x_misp_PackageRelease, package_release.value)
-        self.assertEqual(_file.x_misp_PackageArch, package_arch.value)
-        self.assertEqual(_file.x_misp_PackageDescription, package_description.value)
-        self.assertEqual(_file.x_misp_PackageMaintainer, package_maintainer.value)
+        self.assertEqual(_file.x_misp_knownmalicious, known_malicious.value)
+        self.assertEqual(_file.x_misp_packagename, package_name.value)
+        self.assertEqual(_file.x_misp_packageversion, package_version.value)
+        self.assertEqual(_file.x_misp_packagerelease, package_release.value)
+        self.assertEqual(_file.x_misp_packagearch, package_arch.value)
+        self.assertEqual(_file.x_misp_packagedescription, package_description.value)
+        self.assertEqual(_file.x_misp_packagemaintainer, package_maintainer.value)
         self.assertEqual(_file.x_misp_source, source.value)
+        self._check_custom_property_names(_file)
 
     def _check_http_request_observable_object(self, misp_object, observed_data):
         ip_src, ip_dst, host, method, user_agent, uri, url, content = (
@@ -3069,7 +3081,7 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
-    def _test_event_with_dashed_object_relations(self, event):
+    def _test_event_with_non_conforming_object_relations(self, event):
         # STIX 2.0 has no pattern_type, so the sigma and suricata objects are
         # exported as custom objects keeping the object relations as values.
         self._remove_object_ids_flags(event)
@@ -3078,13 +3090,18 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         _, _, sigma_custom, suricata_custom, observed_data = self.parser.stix_objects
         for custom_object in (sigma_custom, suricata_custom):
             self.assertEqual(
-                custom_object.x_misp_attributes[-1]['object_relation'],
-                'weird-relation'
+                [
+                    attribute['object_relation'] for attribute
+                    in custom_object.x_misp_attributes[-2:]
+                ],
+                ['weird-relation', 'Odd.Case/Relation']
             )
         url = observed_data.objects['0']
-        weird_attribute = url_object['Attribute'][-1]
+        weird_attribute, odd_attribute = url_object['Attribute'][-2:]
         self.assertEqual(url.x_misp_weird_relation, weird_attribute['value'])
         self.assertFalse(hasattr(url, 'x_misp_weird-relation'))
+        self.assertEqual(url.x_misp_odd_case_relation, odd_attribute['value'])
+        self._check_custom_property_names(url)
 
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observed_data, pattern = self._run_indicator_from_object_tests(event)
@@ -4079,9 +4096,9 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         event = get_event_with_artifact_payload_object()
         self._test_event_with_artifact_payload_observable_object(event['Event'])
 
-    def test_event_with_dashed_object_relations(self):
-        event = get_event_with_dashed_object_relations()
-        self._test_event_with_dashed_object_relations(event['Event'])
+    def test_event_with_non_conforming_object_relations(self):
+        event = get_event_with_non_conforming_object_relations()
+        self._test_event_with_non_conforming_object_relations(event['Event'])
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
@@ -4682,11 +4699,11 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event.from_dict(**event)
         self._test_event_with_artifact_payload_observable_object(misp_event)
 
-    def test_event_with_dashed_object_relations(self):
-        event = get_event_with_dashed_object_relations()
+    def test_event_with_non_conforming_object_relations(self):
+        event = get_event_with_non_conforming_object_relations()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
-        self._test_event_with_dashed_object_relations(misp_event)
+        self._test_event_with_non_conforming_object_relations(misp_event)
 
     def test_event_with_directory_indicator_object(self):
         event = get_event_with_directory_object()
@@ -5235,6 +5252,23 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         vulnerability = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp)
+    def _test_event_with_colliding_galaxy_meta_keys(self, event):
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        threat_actor = self.parser.stix_objects[-1]
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        # `TTP` and `ttp` share one property, the last value wins - the same
+        # rule as on observables - and the fold is reported.
+        self.assertEqual(threat_actor.x_misp_ttp, cluster['meta']['ttp'])
+        self.assertFalse(hasattr(threat_actor, 'x_misp_TTP'))
+        self._check_custom_property_names(threat_actor)
+        collision_warnings = [
+            warning for warning in self.parser.warnings[event['uuid']]
+            if 'x_misp_ttp' in warning
+        ]
+        self.assertEqual(len(collision_warnings), 1)
+        self.assertIn(f'"{cluster["value"]}"', collision_warnings[0])
+        self.assertIn('"ttp"', collision_warnings[0])
 
 
 class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
@@ -5257,6 +5291,10 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             stix=self.parser.stix_objects[-1],
             summary=', '.join(sorted(self._mapping_types.attack_pattern_types()))
         )
+
+    def test_event_with_colliding_galaxy_meta_keys(self):
+        event = get_event_with_colliding_galaxy_meta_keys()
+        self._test_event_with_colliding_galaxy_meta_keys(event['Event'])
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
@@ -5474,6 +5512,12 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_attack_pattern_galaxy(misp_event)
+
+    def test_event_with_colliding_galaxy_meta_keys(self):
+        event = get_event_with_colliding_galaxy_meta_keys()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_colliding_galaxy_meta_keys(misp_event)
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()

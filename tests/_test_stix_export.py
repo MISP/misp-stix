@@ -7,6 +7,7 @@ import os
 import unittest
 from base64 import b64encode
 from collections import defaultdict
+from copy import deepcopy
 from datetime import datetime, timezone
 from misp_stix_converter.misp2stix.exportparser import MISPtoSTIXParser
 from pathlib import Path
@@ -39,6 +40,21 @@ _UNMAPPED_ATTRIBUTE = {
     'value': 'ffbb51e2-4166-4b98-a714-be5a0e6f77e1',
     'timestamp': '1756425600', 'to_ids': False
 }
+# Three attributes failing validation the same way: the message pymisp raises
+# for a missing value names neither the uuid nor the type, so they are one
+# distinct error recorded three times
+_VALUELESS_ATTRIBUTES = [
+    {'uuid': f'5d2d6f1e-0d8a-4c3b-9e7f-00000000000{index}', 'type': 'ip-src'}
+    for index in range(1, 4)
+]
+# A second unmapped type that passes validation: with the `anonymised` one
+# above, two warnings the Diagnostics list in the order they were recorded
+_UNMAPPED_PDB_ATTRIBUTE = {
+    'uuid': '6e3e7f2f-1e9b-4d4c-8f80-000000000001',
+    'type': 'pdb', 'category': 'Artifacts dropped', 'value': 'malware.pdb',
+    'timestamp': '1756425600', 'to_ids': False
+}
+_UNMAPPED_PDB_WARNING = 'MISP Attribute type pdb not mapped.'
 # On a `to_ids` file object, an invalid TLSH value is recorded as an error and
 # dropped on the STIX 2 side - the hash validation STIX 1 export has no
 # equivalent of
@@ -54,13 +70,21 @@ _INVALID_TLSH_ATTRIBUTE = {
 # last pair is the benign control: a relation needing no quotes keeps the bare
 # segment it always had. Segments are spelled out rather than computed, so the
 # expectations do not restate the escaping they guard.
+# The custom property name rule (ADR-0013) folds every character outside
+# [a-z0-9_] to `_`, so a metacharacter relation always reaches the pattern as
+# a bare keyword segment - pattern syntax in a relation cannot escape it.
+_DICTIONARY_META_KEYS = {
+    'Odd Key (1)': 'Odd_Key__1_',
+    'kept-Case_ok': 'kept-Case_ok'
+}
 _PATTERN_SEGMENT_RELATIONS = (
-    ("rel' OR file:name = 'x", r"'x_misp_rel\' OR file:name = \'x'"),
-    ('rel]', "'x_misp_rel]'"),
-    ('rel=1', "'x_misp_rel=1'"),
-    ('weird relation', "'x_misp_weird relation'"),
-    ("x'", r"'x_misp_x\''"),
-    ('a.b', "'x_misp_a.b'"),
+    ("rel' OR file:name = 'x", 'x_misp_rel__or_file_name____x'),
+    ('rel]', 'x_misp_rel_'),
+    ('rel=1', 'x_misp_rel_1'),
+    ('weird relation', 'x_misp_weird_relation'),
+    ("x'", 'x_misp_x_'),
+    ('a.b', 'x_misp_a_b'),
+    ('Odd.Case/Relation', 'x_misp_odd_case_relation'),
     ('rel-with-dash', 'x_misp_rel_with_dash')
 )
 
@@ -700,6 +724,16 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        if 'meta' in cluster:
+            # `x_misp_meta` is a dictionary: keys keep case and `-` (STIX §2.3),
+            # every other character outside the dictionary charset folds to `_`
+            self.assertEqual(
+                stix_object.x_misp_meta,
+                {
+                    _DICTIONARY_META_KEYS[key]: value
+                    for key, value in cluster['meta'].items()
+                }
+            )
 
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
@@ -1226,6 +1260,14 @@ class TestSTIX2Export(TestSTIX):
         for field in ('primary_motivation', 'resource_level', 'roles'):
             if field in meta:
                 self.assertEqual(getattr(stix_object, field), meta[field])
+        if 'cfr-type-of-incident' in meta:
+            # unmapped meta key with a dash: folded custom property name
+            self.assertEqual(
+                stix_object.x_misp_cfr_type_of_incident,
+                meta['cfr-type-of-incident']
+            )
+            self.assertFalse(hasattr(stix_object, 'x_misp_cfr-type-of-incident'))
+            self._check_custom_property_names(stix_object)
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
@@ -1353,6 +1395,18 @@ class TestSTIX2Export(TestSTIX):
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
 
+    def _check_custom_property_names(self, stix_object):
+        # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII,
+        # limited to a-z, 0-9 and `_`, 3 to 250 characters long - the prefix
+        # already guarantees the minimum.
+        custom_properties = [
+            key for key in stix_object if key.startswith('x_misp_')
+        ]
+        self.assertTrue(custom_properties)
+        for key in custom_properties:
+            self.assertRegex(key, r'^x_misp_[a-z0-9_]+$')
+            self.assertLessEqual(len(key), 250)
+
     def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
         attribute_type = attribute['type']
         category = attribute['category']
@@ -1408,6 +1462,66 @@ class TestSTIX2Export(TestSTIX):
         ]
         self.assertEqual(len(name_warnings), 1)
         self.assertIn(rejected_name, name_warnings[0])
+
+    def _check_diagnostics_count_error_occurrences(self):
+        # Most error messages carry no uuid, so three attributes failing the
+        # same way are one distinct message: how many times it happened is
+        # the volume signal, and the total counts every occurrence.
+        self.parser.parse_json_content(
+            {'Attribute': deepcopy(_VALUELESS_ATTRIBUTES)}
+        )
+        recorded = self.parser.errors['attributes collection']
+        self.assertEqual(len(recorded), 3)
+        self.assertEqual(len(set(recorded)), 1)
+        diagnostics = self.parser.diagnostics()
+        self.assertEqual(
+            diagnostics['errors'],
+            {'attributes collection': [f'{recorded[0]} (3 times)']}
+        )
+        self.assertEqual(diagnostics['warnings'], {})
+        self.assertEqual(diagnostics['counts'], {'warnings': 0, 'errors': 3})
+
+    def _check_diagnostics_keep_recording_order(self):
+        # The same two warnings recorded one way round, then the other: the
+        # Diagnostics follow the recording, not the hash of the messages, so
+        # they read the same across runs.
+        for attributes, expected in (
+                ((_UNMAPPED_PDB_ATTRIBUTE, _UNMAPPED_ATTRIBUTE),
+                 [_UNMAPPED_PDB_WARNING, _RECORDED_EXPORT_WARNING]),
+                ((_UNMAPPED_ATTRIBUTE, _UNMAPPED_PDB_ATTRIBUTE),
+                 [_RECORDED_EXPORT_WARNING, _UNMAPPED_PDB_WARNING])):
+            parser = type(self.parser)()
+            parser.parse_json_content({'Attribute': deepcopy(list(attributes))})
+            diagnostics = parser.diagnostics()
+            self.assertEqual(
+                diagnostics['warnings'], {'attributes collection': expected}
+            )
+            self.assertEqual(
+                parser.warnings, {'attributes collection': expected}
+            )
+            self.assertEqual(diagnostics['counts'], {'warnings': 2, 'errors': 0})
+
+    def _check_entry_result_carries_no_counts(self, version: str):
+        # The entry functions keep their result shape: what they merge is the
+        # parser's Diagnostics minus the totals, so a caller reading `errors`
+        # and `warnings` back gets the capped lists and nothing new next to
+        # them.
+        content = {'Attribute': [*_VALUELESS_ATTRIBUTES, _UNMAPPED_ATTRIBUTE]}
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'attributes.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(content, f)
+            results = misp_stix_converter.misp_to_stix2(
+                filename, version=version, output_dir=Path(tmp_dir)
+            )
+        self.assertEqual(results['success'], 1)
+        [error] = results['errors']['attributes collection']
+        self.assertTrue(error.endswith(' (3 times)'), error)
+        self.assertEqual(
+            results['warnings'],
+            {'attributes collection': [_RECORDED_EXPORT_WARNING]}
+        )
+        self.assertNotIn('counts', results)
 
     def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
         name = misp_object['name']
