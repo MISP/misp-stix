@@ -1,13 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cybox.core import Object, Observable, Observables, RelatedObject
-from cybox.objects.address_object import Address
+from cybox.common.object_properties import CustomProperties, Property
+from cybox.core import (
+    Object, Observable, ObservableComposition, Observables, RelatedObject)
+from cybox.objects.address_object import Address, EmailAddress
+from cybox.objects.custom_object import Custom
+from cybox.objects.dns_record_object import DNSRecord
 from cybox.objects.domain_name_object import DomainName
 from cybox.objects.file_object import File
+from cybox.objects.network_connection_object import NetworkConnection
+from cybox.objects.network_socket_object import NetworkSocket
+from cybox.objects.port_object import Port
+from cybox.objects.process_object import ImageInfo, Process
+from cybox.objects.socket_address_object import SocketAddress
 from cybox.objects.uri_object import URI
+from cybox.objects.user_account_object import UserAccount
+from cybox.objects.whois_object import (
+    WhoisEntry, WhoisRegistrant, WhoisRegistrants, WhoisRegistrar)
+from cybox.objects.win_registry_key_object import (
+    RegistryValue, RegistryValues, WinRegistryKey)
+from cybox.objects.x509_certificate_object import (
+    Validity, X509Cert, X509Certificate, X509CertificateSignature)
 from datetime import datetime
-from misp_stix_converter import stix_1_to_misp, STIXLoadingError
+from misp_stix_converter import (
+    MISPtoSTIX1EventsParser, stix_1_to_misp, STIXLoadingError)
 from misp_stix_converter.tools import load_stix1_package, stix1_loading_helpers
 from mixbox.namespaces import NamespaceNotFoundError
 from misp_stix_converter.stix2misp.external_stix1_to_misp import (
@@ -16,8 +33,9 @@ from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
 from unittest.mock import patch
 from stix.coa import CourseOfAction, Objective
-from stix.common import Statement
-from stix.common.related import RelatedPackage, RelatedPackages
+from stix.common import Statement, ToolInformation
+from stix.common.related import (
+    RelatedObservable, RelatedPackage, RelatedPackages)
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
 from stix.extensions.marking.tlp import TLPMarkingStructure
@@ -30,7 +48,7 @@ from stix.threat_actor import ThreatActor
 from stix.ttp import TTP, Behavior
 from stix.ttp.infrastructure import Infrastructure
 from stix.ttp.malware_instance import MalwareInstance
-from stix.ttp.resource import Resource
+from stix.ttp.resource import Resource, Tools
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from ._test_stix import TestSTIX
@@ -38,6 +56,12 @@ from ._test_stix_import import (
     CLASSIFICATION_FROM_CONTENT_WARNING,
     CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING, SANITISED_TAG_VALUE,
     SMUGGLING_TAG_VALUE)
+from .test_events import (
+    get_base_event, get_event_with_asn_object,
+    get_event_with_attack_pattern_object, get_event_with_domain_attribute,
+    get_event_with_domain_ip_object, get_event_with_github_username_attribute,
+    get_event_with_ip_port_attributes, get_event_with_pattern_attribute,
+    get_event_with_process_object, get_event_with_windows_service_attributes)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
@@ -183,6 +207,10 @@ class TestSTIX1Import(TestSTIX):
             inner_package.add_threat_actor(threat_actor)
         if inner_title is not None:
             inner_package.stix_header = cls._stix_header(inner_title)
+        return cls._wrapped_package(inner_package, outer_title)
+
+    @classmethod
+    def _wrapped_package(cls, inner_package, outer_title=None):
         stix_package = STIXPackage()
         if outer_title is not None:
             stix_package.stix_header = cls._stix_header(outer_title)
@@ -980,3 +1008,513 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(parser.galaxies, set())
         self.assertEqual(parser.dates, {second_incident.timestamp.date()})
         self.assertEqual(parser.titles, {'Event B'})
+
+    ############################################################################
+    #                    EXPORTED MISP CONTENT ROUND TRIP.                     #
+    ############################################################################
+
+    @staticmethod
+    def _misp_event_reaching_every_import_path():
+        """A MISP event whose STIX 1 export reaches each Internal parsing path:
+        an attribute exported as an Observable (`to_ids` unset), one as an
+        Indicator over an observable composition, one as a `Custom` CybOX
+        object, one as a File byte run and two as the two names of a Windows
+        service; an object exported as an Observable of a non-file CybOX type,
+        one as an Indicator, one as an Indicator over an observable composition
+        and one as the attack pattern of a TTP the Incident leverages."""
+        event = get_base_event()
+        domain = get_event_with_domain_attribute()['Event']['Attribute'][0]
+        domain['to_ids'] = False
+        ip_port = get_event_with_ip_port_attributes()['Event']['Attribute'][1]
+        github = get_event_with_github_username_attribute()['Event']['Attribute'][0]
+        pattern = get_event_with_pattern_attribute()['Event']['Attribute'][0]
+        services = get_event_with_windows_service_attributes()['Event']['Attribute']
+        event['Event']['Attribute'] = [domain, ip_port, github, pattern, *services]
+        domain_ip = get_event_with_domain_ip_object()['Event']['Object'][0]
+        process = get_event_with_process_object()['Event']['Object'][0]
+        for misp_object in (domain_ip, process):
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = True
+        event['Event']['Object'] = [
+            get_event_with_asn_object()['Event']['Object'][0],
+            get_event_with_attack_pattern_object()['Event']['Object'][0],
+            domain_ip, process
+        ]
+        return event
+
+    @classmethod
+    def _misp_export(cls, event):
+        """The package the MISP STIX 1 export writes for the event, framed the
+        way the collection export frames it."""
+        parser = MISPtoSTIX1EventsParser('MISP', '1.1.1')
+        parser.parse_misp_event(event)
+        return cls._wrapped_package(parser.stix_package)
+
+    def test_internal_misp_export_round_trip_converts(self):
+        event = self._misp_event_reaching_every_import_path()
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value, attribute.to_ids)
+                for attribute in parser.misp_event.attributes
+            ),
+            [
+                ('domain', 'circl.lu', False),
+                ('github-username', 'chrisr3d', False),
+                ('ip-dst|port', '5.6.7.8|5678', True),
+                ('pattern-in-file', 'P4tt3rn_1n_f1l3_t3st', True),
+                ('windows-service-displayname', 'Report for bugs', False),
+                ('windows-service-name', 'BUGREPORT', False)
+            ]
+        )
+        self.assertEqual(
+            {
+                misp_object.name: misp_object.uuid
+                for misp_object in parser.misp_event.objects
+            },
+            {
+                misp_object['name']: misp_object['uuid']
+                for misp_object in event['Event']['Object']
+            }
+        )
+        misp_objects = {
+            misp_object.name: misp_object
+            for misp_object in parser.misp_event.objects
+        }
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.value
+                for attribute in misp_objects['domain-ip'].attributes
+            },
+            {'domain': 'circl.lu', 'ip': '149.13.33.14'}
+        )
+        self.assertTrue(
+            all(attribute.to_ids for attribute in misp_objects['process'].attributes)
+        )
+        self.assertFalse(
+            any(attribute.to_ids for attribute in misp_objects['asn'].attributes)
+        )
+        self.assertIn(
+            'name',
+            [attribute.object_relation
+             for attribute in misp_objects['attack-pattern'].attributes]
+        )
+
+    def test_internal_incident_without_timestamp_converts(self):
+        """A fresh Incident is stamped with the time of its creation - one an
+        export left unstamped has none, and the merged event then has no date
+        or timestamp to take from it rather than nothing to parse."""
+        incident = Incident()
+        incident.title = 'Incident without a timestamp'
+        incident.timestamp = None
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.misp_event.info, 'Incident without a timestamp')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+
+    ############################################################################
+    #                       EXTERNAL OBSERVABLE TYPES.                         #
+    ############################################################################
+
+    @staticmethod
+    def _observable(properties, feature, uuid=_OBSERVABLE_UUID):
+        cybox_object = Object(properties)
+        cybox_object.id_ = f'MISP:{feature}-{uuid}'
+        return Observable(cybox_object)
+
+    @staticmethod
+    def _socket_address(ip, port):
+        address = Address()
+        address.address_value = ip
+        address.category = 'ipv4-addr'
+        port_object = Port()
+        port_object.port_value = port
+        socket_address = SocketAddress()
+        socket_address.ip_address = address
+        socket_address.port = port_object
+        return socket_address
+
+    @staticmethod
+    def _custom(name, *properties):
+        custom = Custom()
+        if name is not None:
+            custom.custom_name = name
+        custom.custom_properties = CustomProperties()
+        for property_name, value in properties:
+            prop = Property()
+            prop.name = property_name
+            prop.value = value
+            custom.custom_properties.append(prop)
+        return custom
+
+    @staticmethod
+    def _file_with_three_properties():
+        """Three properties, so the file lands as a `file` object rather than
+        as the `filename|md5` attribute two of them fold into."""
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.size_in_bytes = 1024
+        file_object.add_hash('8a2a5fc2ce56b3b04d58539a9d3d8d3e')
+        return file_object
+
+    def _parse_external_observable(self, properties, feature):
+        stix_package = STIXPackage()
+        stix_package.observables = Observables(
+            [self._observable(properties, feature)]
+        )
+        return self._parse_external_package(stix_package)
+
+    def _assert_single_object(self, parser, name, attributes):
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [misp_object.name for misp_object in parser.misp_event.objects],
+            [name]
+        )
+        misp_object = parser.misp_event.objects[0]
+        self.assertEqual(misp_object.uuid, _OBSERVABLE_UUID)
+        # The whole attribute set, so an attribute the conversion adds on top
+        # of the expected ones fails here rather than passing unnoticed
+        self.assertEqual(
+            {
+                attribute.object_relation: str(attribute.value)
+                for attribute in misp_object.attributes
+            },
+            attributes
+        )
+        return misp_object
+
+    def test_external_domain_observable_converts(self):
+        """An Observable of the package itself - not the one of an Indicator -
+        with a plain value lands as an attribute, `to_ids` unset."""
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        parser = self._parse_external_observable(domain, 'DomainName')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.to_ids, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('domain', 'circl.lu', False, _OBSERVABLE_UUID)]
+        )
+
+    def test_external_process_observable_converts(self):
+        process = Process()
+        process.name = 'svchost.exe'
+        process.pid = 4242
+        process.image_info = ImageInfo()
+        process.image_info.file_name = 'C:\\Windows\\svchost.exe'
+        parser = self._parse_external_observable(process, 'Process')
+        self._assert_single_object(
+            parser, 'process',
+            {
+                'name': 'svchost.exe', 'pid': '4242',
+                'image': 'C:\\Windows\\svchost.exe'
+            }
+        )
+
+    def test_external_registry_key_observable_converts(self):
+        registry_key = WinRegistryKey()
+        registry_key.hive = 'HKEY_LOCAL_MACHINE'
+        registry_key.key = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run'
+        value = RegistryValue()
+        value.name = 'Updater'
+        value.data = 'C:\\evil.exe'
+        value.datatype = 'REG_SZ'
+        registry_key.values = RegistryValues([value])
+        parser = self._parse_external_observable(
+            registry_key, 'WindowsRegistryKey'
+        )
+        self._assert_single_object(
+            parser, 'registry-key',
+            {
+                'hive': 'HKEY_LOCAL_MACHINE',
+                'key': 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',
+                'name': 'Updater', 'data': 'C:\\evil.exe', 'data-type': 'REG_SZ'
+            }
+        )
+
+    def test_external_whois_observable_converts(self):
+        whois = WhoisEntry()
+        whois.registrar_info = WhoisRegistrar()
+        whois.registrar_info.name = 'GANDI SAS'
+        whois.domain_name = URI(value='circl.lu')
+        registrant = WhoisRegistrant()
+        registrant.name = 'CIRCL'
+        registrant.email_address = EmailAddress('info@circl.lu')
+        whois.registrants = WhoisRegistrants([registrant])
+        whois.creation_date = datetime(2020, 1, 1)
+        parser = self._parse_external_observable(whois, 'Whois')
+        self._assert_single_object(
+            parser, 'whois',
+            {
+                'whois-registrar': 'GANDI SAS', 'domain': 'circl.lu',
+                'registrant-name': 'CIRCL', 'registrant-email': 'info@circl.lu',
+                'creation-date': '2020-01-01 00:00:00'
+            }
+        )
+
+    def test_external_x509_observable_converts(self):
+        x509 = X509Certificate()
+        certificate = X509Cert()
+        certificate.serial_number = '00:aa:bb'
+        certificate.issuer = 'CN=issuer'
+        certificate.subject = 'CN=subject'
+        certificate.version = '3'
+        certificate.validity = Validity()
+        certificate.validity.not_before = datetime(2020, 1, 1)
+        certificate.validity.not_after = datetime(2021, 1, 1)
+        x509.certificate = certificate
+        x509.certificate_signature = X509CertificateSignature()
+        x509.certificate_signature.signature_algorithm = 'SHA256'
+        x509.certificate_signature.signature = 'abcd'
+        parser = self._parse_external_observable(x509, 'X509Certificate')
+        misp_object = self._assert_single_object(
+            parser, 'x509',
+            {
+                'serial-number': '00:aa:bb', 'issuer': 'CN=issuer',
+                'subject': 'CN=subject', 'version': '3',
+                'x509-fingerprint-sha256': 'abcd',
+                'validity-not-before': '2020-01-01 00:00:00',
+                'validity-not-after': '2021-01-01 00:00:00'
+            }
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.value
+                for attribute in misp_object.attributes
+                if attribute.object_relation.startswith('validity-')
+            },
+            {
+                'validity-not-before': datetime(2020, 1, 1),
+                'validity-not-after': datetime(2021, 1, 1)
+            }
+        )
+
+    def test_external_network_connection_observable_converts(self):
+        connection = NetworkConnection()
+        connection.source_socket_address = self._socket_address(
+            '198.51.100.7', 49152
+        )
+        connection.destination_socket_address = self._socket_address(
+            '203.0.113.9', 443
+        )
+        connection.layer4_protocol = 'TCP'
+        parser = self._parse_external_observable(
+            connection, 'NetworkConnection'
+        )
+        self._assert_single_object(
+            parser, 'network-connection',
+            {
+                'ip-src': '198.51.100.7', 'src-port': '49152',
+                'ip-dst': '203.0.113.9', 'dst-port': '443',
+                'layer4-protocol': 'TCP'
+            }
+        )
+
+    def test_external_network_socket_observable_converts(self):
+        socket = NetworkSocket()
+        socket.local_address = self._socket_address('198.51.100.7', 8080)
+        socket.remote_address = self._socket_address('203.0.113.9', 51000)
+        socket.protocol = 'TCP'
+        socket.address_family = 'AF_INET'
+        socket.is_listening = True
+        parser = self._parse_external_observable(socket, 'NetworkSocket')
+        self._assert_single_object(
+            parser, 'network-socket',
+            {
+                'ip-src': '198.51.100.7', 'src-port': '8080',
+                'ip-dst': '203.0.113.9', 'dst-port': '51000',
+                'protocol': 'TCP', 'address-family': 'AF_INET',
+                'state': 'listening'
+            }
+        )
+
+    def test_external_user_account_observable_converts(self):
+        user_account = UserAccount()
+        user_account.username = 'jdoe'
+        user_account.full_name = 'John Doe'
+        parser = self._parse_external_observable(user_account, 'UserAccount')
+        self._assert_single_object(
+            parser, 'user-account',
+            {'username': 'jdoe', 'display-name': 'John Doe'}
+        )
+
+    def test_external_custom_object_observable_converts(self):
+        """A named `Custom` object is what the MISP export writes an object
+        no other CybOX object holds into: the name is the template, the
+        properties its attributes by object relation, typed from the template."""
+        custom = self._custom(
+            'github-user', ('username', 'chrisr3d'),
+            ('link', 'https://github.com/chrisr3d')
+        )
+        parser = self._parse_external_observable(custom, 'Custom')
+        misp_object = self._assert_single_object(
+            parser, 'github-user',
+            {'username': 'chrisr3d', 'link': 'https://github.com/chrisr3d'}
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in misp_object.attributes
+            },
+            {'username': 'github-username', 'link': 'link'}
+        )
+
+    def test_external_custom_object_of_unknown_template_converts_as_text(self):
+        """A property the template does not define - or a template pymisp
+        does not know - has no type to take from it: the attribute is text."""
+        custom = self._custom(
+            'vendor-specific-record', ('severity', 'high'), ('ticket', 'INC-42')
+        )
+        parser = self._parse_external_observable(custom, 'Custom')
+        misp_object = self._assert_single_object(
+            parser, 'vendor-specific-record',
+            {'severity': 'high', 'ticket': 'INC-42'}
+        )
+        self.assertEqual(
+            {attribute.type for attribute in misp_object.attributes}, {'text'}
+        )
+
+    def test_external_custom_object_name_never_reaches_template_resolution(self):
+        """pymisp joins the object name into a filesystem path to find its
+        template: a `Custom` name from the document is data, not a path."""
+        with TemporaryDirectory() as tmp_dir:
+            name = self._plant_template_definition(tmp_dir)
+            custom = self._custom(name, ('severity', 'high'))
+            parser = self._parse_external_observable(custom, 'Custom')
+        misp_object = self._assert_single_object(
+            parser, 'unknown-template', {'severity': 'high'}
+        )
+        self.assertFalse(misp_object._known_template)
+        self.assertIn(name, misp_object.comment)
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+            if 'Invalid MISP object template name' in warning
+        ]
+        self.assertEqual(len(warnings), 1)
+        # The rejected value and the object it came from, as ADR-0010 asks
+        self.assertIn(repr(name), warnings[0])
+        self.assertIn(f'MISP:Custom-{_OBSERVABLE_UUID}', warnings[0])
+
+    def test_external_custom_attribute_observable_converts(self):
+        """A `Custom` object with no name is the export of a MISP attribute no
+        CybOX object represents: one property, named by the attribute type."""
+        custom = self._custom(None, ('github-username', 'chrisr3d'))
+        parser = self._parse_external_observable(custom, 'Custom')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('github-username', 'chrisr3d', _OBSERVABLE_UUID)]
+        )
+
+    def test_external_custom_property_of_unknown_type_converts_as_text(self):
+        custom = self._custom(None, ('severity', 'high'))
+        parser = self._parse_external_observable(custom, 'Custom')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        attribute = parser.misp_event.attributes[0]
+        self.assertEqual((attribute.type, attribute.value), ('text', 'high'))
+        self.assertEqual(attribute.comment, 'severity')
+
+    def test_external_custom_attribute_with_several_properties_converts(self):
+        """A nameless `Custom` object carrying several properties has no
+        object to put them in: they all land on the event."""
+        custom = self._custom(
+            None, ('github-username', 'chrisr3d'), ('severity', 'high')
+        )
+        parser = self._parse_external_observable(custom, 'Custom')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ),
+            [('github-username', 'chrisr3d'), ('text', 'high')]
+        )
+
+    def test_internal_custom_object_without_properties_records_an_error(self):
+        """A `Custom` object carrying no property names neither an attribute
+        nor an object: reading one off it unguarded crashed the conversion."""
+        incident = Incident()
+        incident.title = 'Incident with an empty Custom observable'
+        custom_object = Object(self._custom(None))
+        custom_object.id_ = f'MISP:Custom-{_OBSERVABLE_UUID}'
+        observable = Observable(custom_object)
+        observable.id_ = f'MISP:Observable-{_OBSERVABLE_UUID}'
+        incident.related_observables.append(
+            RelatedObservable(observable, relationship='misc')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.misp_event.objects, [])
+        self.assertEqual(parser.misp_event.attributes, [])
+        self.assertTrue(
+            any(
+                'nothing to name a MISP object with' in error
+                for errors in parser.diagnostics()['errors'].values()
+                for error in errors
+            )
+        )
+
+    def test_internal_unnameable_composition_converts_as_unknown_template(self):
+        """The export writes the object name into the Observable id it gives
+        a composition: one this parser cannot read a name from keeps its
+        attributes, under a name that resolves no template file."""
+        incident = Incident()
+        incident.title = 'Incident with an unnameable composition'
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        domain_object = Object(domain)
+        domain_object.id_ = f'MISP:DomainName-{_DOMAIN_UUID}'
+        inner = Observable(domain_object)
+        inner.id_ = f'MISP:Observable-{_DOMAIN_UUID}'
+        composition = ObservableComposition(observables=[inner])
+        composition.operator = 'AND'
+        observable = Observable()
+        observable.id_ = f'MISP:Observable-{_OBSERVABLE_UUID}'
+        observable.observable_composition = composition
+        incident.related_observables.append(
+            RelatedObservable(observable, relationship='misc')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        misp_object = self._assert_single_object(
+            parser, 'unknown-template', {'domain': 'circl.lu'}
+        )
+        self.assertFalse(misp_object._known_template)
+        self.assertTrue(
+            any(
+                'Unable to define the MISP object name' in warning
+                for warnings in parser.diagnostics()['warnings'].values()
+                for warning in warnings
+            )
+        )
+
+    def test_external_dns_record_observable_converts(self):
+        dns_record = DNSRecord()
+        dns_record.domain_name = 'circl.lu'
+        dns_record.ip_address = '149.13.33.14'
+        parser = self._parse_external_observable(dns_record, 'DNSRecord')
+        self._assert_single_object(
+            parser, 'passive-dns',
+            {'rrname': 'circl.lu', 'rdata': '149.13.33.14', 'rrtype': 'A'}
+        )
+
+    def test_external_ttp_with_resources_and_no_infrastructure_converts(self):
+        """A TTP's resources may name tools and no infrastructure: the exploit
+        target still lands as an attribute, carrying the tool galaxy tag."""
+        ttp = self._ttp_with_exploit_target_cve('CVE-2021-44228')
+        tool = ToolInformation()
+        tool.name = 'Mimikatz'
+        ttp.resources = Resource()
+        ttp.resources.tools = Tools([tool])
+        stix_package = STIXPackage()
+        stix_package.add_ttp(ttp)
+        parser = self._parse_external_package(stix_package)
+        attribute = parser.misp_event.attributes[0]
+        self.assertEqual(attribute.type, 'vulnerability')
+        self.assertIn(
+            'misp-galaxy:tool="Mimikatz"', {tag['name'] for tag in attribute.tags}
+        )
