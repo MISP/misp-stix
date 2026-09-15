@@ -918,7 +918,7 @@ class TestSTIX1Import(TestSTIX):
         )
         self.assertEqual(
             parser.misp_event.info,
-            'Imported from STIX 1.1.1 Package generated with MISP'
+            'Imported from STIX 1.2 Package generated with MISP'
         )
 
     def test_external_event_info_falls_back_past_a_titleless_header(self):
@@ -927,6 +927,9 @@ class TestSTIX1Import(TestSTIX):
         stix_package = STIXPackage()
         stix_package.stix_header = self._stix_header(None)
         parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            parser.misp_event.info, 'Imported from external STIX 1.2 Package'
+        )
         self.assertEqual(
             parser.misp_event.info, 'Imported from external STIX 1.1.1 Package'
         )

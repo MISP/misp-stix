@@ -100,7 +100,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def stix_version(self) -> str:
-        return getattr(self.__stix_package, 'stix_version', '1.1.1')
+        # python-stix names the package version field `version`. Loading a
+        # document without one fails earlier, in mixbox, but a package built in
+        # memory and handed to `load_stix_package` - what MISP core does - can
+        # carry no version at all.
+        return self.__stix_package.version or '1.1.1'
 
     ############################################################################
     #                PARSING METHODS USED BY BOTH CHILD CLASSES                #
