@@ -201,6 +201,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 yield from self._parse_galaxy(tool, 'name', 'tool')
 
     def _parse_indicator(self, indicator: Indicator):
+        # Converted before the observable: the rules an Indicator carries are
+        # attributes of their own whatever becomes of what it describes - an
+        # observable of an unknown type loses itself, not the rules with it
+        test_mechanisms = self._parse_test_mechanisms(indicator)
         if hasattr(indicator, 'observable') and indicator.observable:
             observable = indicator.observable
             if self._has_properties(observable):
@@ -246,25 +250,6 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
-                        test_mechanisms = []
-                        if hasattr(indicator, 'test_mechanisms') and indicator.test_mechanisms:
-                            for test_mechanism in indicator.test_mechanisms:
-                                attribute_type = self._mapping.test_mechanisms_mapping(test_mechanism._XSI_TYPE)
-                                if attribute_type is None:
-                                    self._add_error(
-                                        'Unknown Test Mechanism type'
-                                        f': {test_mechanism._XSI_TYPE}'
-                                    )
-                                    continue
-                                if test_mechanism.rule.value is None:
-                                    continue
-                                self.misp_event.add_attribute(
-                                    **{
-                                        'type': attribute_type,
-                                        'value': test_mechanism.rule.value
-                                    }
-                                )
-                                test_mechanisms.append(attribute.uuid)
                         self._handle_object_case(
                             attribute_type, attribute_value, compl_data,
                             to_ids=True, object_uuid=uuid,
@@ -352,6 +337,31 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     self._record_related_objects(observable_object, uuid)
             else:
                 self._parse_description(observable)
+
+    def _parse_test_mechanisms(self, indicator: Indicator) -> list:
+        """Convert the test mechanisms of an Indicator into attributes.
+
+        :param indicator: the Indicator carrying the test mechanisms
+        :return: the uuids of the attributes the rules landed as
+        """
+        test_mechanisms = []
+        for test_mechanism in indicator.test_mechanisms or ():
+            attribute_type = self._mapping.test_mechanism_mapping(
+                test_mechanism._XSI_TYPE
+            )
+            if attribute_type is None:
+                self._add_error(
+                    f'Unknown Test Mechanism type: {test_mechanism._XSI_TYPE}'
+                )
+                continue
+            rule = getattr(test_mechanism.rule, 'value', None)
+            if rule is None:
+                continue
+            misp_attribute = self.misp_event.add_attribute(
+                **{'type': attribute_type, 'value': rule}
+            )
+            test_mechanisms.append(misp_attribute.uuid)
+        return test_mechanisms
 
     def _parse_threat_actor(self, threat_actor: ThreatActor):
         if getattr(threat_actor, 'title', None) is not None:
