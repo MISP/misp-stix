@@ -156,16 +156,16 @@ class TestSTIX1Import(TestSTIX):
         threat_actor.title = title
         return threat_actor
 
-    def _parse_external_package(self, stix_package, parser=None):
+    def _parse_external_package(self, stix_package, parser=None, **kwargs):
         parser = parser or ExternalSTIX1toMISPParser()
         parser.load_stix_package(stix_package)
-        parser.parse_stix_package()
+        parser.parse_stix_package(**kwargs)
         return parser
 
-    def _parse_internal_package(self, stix_package, parser=None):
+    def _parse_internal_package(self, stix_package, parser=None, **kwargs):
         parser = parser or InternalSTIX1toMISPParser()
         parser.load_stix_package(stix_package)
-        parser.parse_stix_package()
+        parser.parse_stix_package(**kwargs)
         return parser
 
     @staticmethod
@@ -740,6 +740,51 @@ class TestSTIX1Import(TestSTIX):
     def test_stix_1_classification_rejects_invalid_value(self):
         with self.assertRaises(ValueError):
             stix_1_to_misp('unused.xml', classification='banana')
+
+    ############################################################################
+    #                          EVENT DISTRIBUTION.                             #
+    ############################################################################
+
+    def _external_package(self):
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(self._course_of_action())
+        return stix_package
+
+    def test_external_event_takes_the_distribution_parameter(self):
+        """An event JSON without a distribution is saved by MISP with the
+        column default, org-only: the caller's choice has to be on the event."""
+        parser = self._parse_external_package(
+            self._external_package(), distribution=3
+        )
+        self.assertEqual(parser.misp_event.distribution, 3)
+        self.assertFalse(hasattr(parser.misp_event, 'sharing_group_id'))
+
+    def test_external_event_takes_the_sharing_group_parameters(self):
+        parser = self._parse_external_package(
+            self._external_package(), distribution=4, sharing_group_id=7
+        )
+        self.assertEqual(parser.misp_event.distribution, 4)
+        self.assertEqual(parser.misp_event.sharing_group_id, 7)
+
+    def test_external_sharing_group_distribution_needs_a_sharing_group(self):
+        parser = self._parse_external_package(
+            self._external_package(), distribution=4
+        )
+        self.assertEqual(parser.misp_event.distribution, 0)
+        self.assertIn(
+            'Invalid Sharing Group ID - cannot be None when distribution is 4',
+            parser.diagnostics()['errors']['init']
+        )
+
+    def test_internal_event_takes_the_distribution_parameters(self):
+        stix_package = self._internal_package(Incident())
+        parser = self._parse_internal_package(stix_package, distribution=3)
+        self.assertEqual(parser.misp_event.distribution, 3)
+        parser = self._parse_internal_package(
+            stix_package, distribution=4, sharing_group_id=7
+        )
+        self.assertEqual(parser.misp_event.distribution, 4)
+        self.assertEqual(parser.misp_event.sharing_group_id, 7)
 
     ############################################################################
     #                           EVENT INFO FALLBACK.                           #
