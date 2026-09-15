@@ -96,17 +96,23 @@ class TestSTIX1Import(TestSTIX):
         return course_of_action
 
     @staticmethod
-    def _observable_with_related_object():
-        """An Observable whose own properties yield no attribute value, so the
-        related objects are turned into MISP references rather than folded into
-        the passive-dns special case."""
-        file_object = Object(File())
-        file_object.id_ = f'MISP:File-{_OBSERVABLE_UUID}'
+    def _object_with_related_object(properties, related_uuid=_RELATED_UUID,
+                                    relationship='Contains'):
+        cybox_object = Object(properties)
+        cybox_object.id_ = f'MISP:File-{_OBSERVABLE_UUID}'
         related_object = RelatedObject()
-        related_object.idref = f'MISP:Address-{_RELATED_UUID}'
-        related_object.relationship = 'Contains'
-        file_object.related_objects.append(related_object)
-        return Observable(file_object)
+        related_object.idref = f'MISP:Address-{related_uuid}'
+        if relationship is not None:
+            related_object.relationship = relationship
+        cybox_object.related_objects.append(related_object)
+        return cybox_object
+
+    @classmethod
+    def _observable_with_related_object(cls):
+        """An Observable whose own properties yield no attribute value, so the
+        related objects are recorded as MISP references rather than folded into
+        the passive-dns special case."""
+        return Observable(cls._object_with_related_object(File()))
 
     @staticmethod
     def _indicator(observable_object, uuid):
@@ -287,12 +293,102 @@ class TestSTIX1Import(TestSTIX):
             [self._observable_with_related_object()]
         )
         parser = self._parse_external_package(stix_package)
-        # `references` is parser-internal bookkeeping - nothing in the library
-        # reads it back yet - so this pins the sanitised idref at the only place
-        # it is observable.
+        # An Observable with no value of its own yields no MISP object the
+        # reference could land on: the record is kept, with the sanitised
+        # idref, and that is where it stops.
         self.assertEqual(
             parser.references[_OBSERVABLE_UUID],
             [{'idref': _RELATED_UUID, 'relationship': 'contains'}]
+        )
+        self.assertEqual(parser.misp_event.objects, [])
+
+    def _assert_file_object_references(self, parser, referenced_uuid):
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        misp_object = parser.misp_event.get_objects_by_name('file')[0]
+        self.assertEqual(misp_object.uuid, _OBSERVABLE_UUID)
+        self.assertEqual(
+            [
+                (reference.relationship_type, reference.referenced_uuid)
+                for reference in misp_object.references
+            ],
+            [('contains', referenced_uuid)]
+        )
+
+    def test_external_object_with_related_object_carries_the_reference(self):
+        """The legacy importer applied the related objects it recorded as
+        object references once the whole package was parsed: an Observable
+        that yields a MISP object carries them as its references."""
+        stix_package = STIXPackage()
+        stix_package.observables = Observables(
+            [
+                Observable(
+                    self._object_with_related_object(
+                        self._file_with_three_properties()
+                    )
+                )
+            ]
+        )
+        parser = self._parse_external_package(stix_package)
+        self._assert_file_object_references(parser, _RELATED_UUID)
+
+    def test_external_indicator_object_with_related_object_carries_the_reference(self):
+        stix_package = STIXPackage()
+        stix_package.add_indicator(
+            self._indicator(
+                self._object_with_related_object(
+                    self._file_with_three_properties()
+                ),
+                _OBSERVABLE_UUID
+            )
+        )
+        parser = self._parse_external_package(stix_package)
+        self._assert_file_object_references(parser, _RELATED_UUID)
+
+    def test_external_related_object_without_a_relationship_converts(self):
+        """A related object naming no relationship still names a reference:
+        reading the relationship off it unguarded crashed the conversion."""
+        stix_package = STIXPackage()
+        stix_package.observables = Observables(
+            [
+                Observable(
+                    self._object_with_related_object(
+                        self._file_with_three_properties(), relationship=None
+                    )
+                )
+            ]
+        )
+        parser = self._parse_external_package(stix_package)
+        misp_object = parser.misp_event.get_objects_by_name('file')[0]
+        self.assertEqual(
+            [
+                (reference.relationship_type, reference.referenced_uuid)
+                for reference in misp_object.references
+            ],
+            [('related-to', _RELATED_UUID)]
+        )
+
+    def test_external_reference_to_an_attribute_names_the_attribute_uuid(self):
+        """A related object that became an attribute rather than an object is
+        referenced by the attribute uuid, which MISP accepts."""
+        stix_package = STIXPackage()
+        stix_package.add_indicator(self._ip_indicator('198.51.100.4'))
+        stix_package.observables = Observables(
+            [
+                Observable(
+                    self._object_with_related_object(
+                        self._file_with_three_properties(), _IP_UUID
+                    )
+                )
+            ]
+        )
+        parser = self._parse_external_package(stix_package)
+        self._assert_file_object_references(parser, _IP_UUID)
+        self.assertEqual(
+            [
+                (attribute.type, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('ip-dst', _IP_UUID)]
         )
 
     ############################################################################
