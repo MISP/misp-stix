@@ -714,6 +714,30 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 yield ['text', getattr(certificate, prop).value, prop.replace('_', '-')]
 
     ############################################################################
+    #                      OBJECT REFERENCES APPLICATION.                      #
+    ############################################################################
+
+    def _apply_object_references(self):
+        # The related objects recorded while the package is parsed name their
+        # source by the uuid of its CybOX object - the uuid of the MISP object
+        # it became, which only exists once the whole package is parsed. A
+        # source that became an attribute has nothing that can hold a reference
+        # in MISP, so its records stay records; a target that did is referenced
+        # by the attribute uuid, which MISP accepts.
+        misp_objects = {
+            misp_object.uuid: misp_object
+            for misp_object in self.misp_event.objects
+        }
+        for object_uuid, references in self.references.items():
+            misp_object = misp_objects.get(object_uuid)
+            if misp_object is None:
+                continue
+            for reference in references:
+                misp_object.add_reference(
+                    reference['idref'], reference['relationship']
+                )
+
+    ############################################################################
     #        GALAXIES PARSING SPECIFIC METHODS USED BY BOTH SUBCLASSES.        #
     ############################################################################
 

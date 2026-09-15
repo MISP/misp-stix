@@ -5,7 +5,7 @@ from .importparser import ExternalSTIXtoMISPParser
 from .stix1_mapping import ExternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
-from cybox.core import Observable, Observables
+from cybox.core import Object, Observable, Observables
 from pymisp.abstract import misp_objects_path
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix.data_marking import MarkingSpecification
@@ -100,6 +100,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 if ip not in self.dns_ips:
                     self.misp_event.add_attribute(**ip_attribute)
         self._set_distribution()
+        self._apply_object_references()
         self._apply_event_galaxies()
 
     def _reset_bundle_state(self):
@@ -269,6 +270,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                             to_ids=True, object_uuid=uuid,
                             test_mechanisms=test_mechanisms
                         )
+                        self._record_related_objects(observable.object_, uuid)
                     else:
                         # it is a list of attribute values, so we add single attributes
                         for value in attribute_value:
@@ -339,21 +341,15 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                             attribute_type, attribute_value, compl_data,
                             to_ids=to_ids, object_uuid=uuid
                         )
+                        self._record_related_objects(observable_object, uuid)
                     else:
                         # it is a list of attribute values, so we add single attributes
                         for value in attribute_value:
                             self.misp_event.add_attribute(
                                 **{'type': attribute_type, 'value': value, 'to_ids': to_ids}
                             )
-                elif observable_object.related_objects:
-                    for related_object in observable_object.related_objects:
-                        relationship = related_object.relationship.value.lower().replace('_', '-')
-                        self.references[uuid].append(
-                            {
-                                "idref": self._sanitise_uuid(related_object.idref),
-                                "relationship": relationship
-                            }
-                        )
+                else:
+                    self._record_related_objects(observable_object, uuid)
             else:
                 self._parse_description(observable)
 
@@ -439,6 +435,27 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if title:
             return title
         return f"Imported from external STIX {self.stix_version} Package"
+
+    def _record_related_objects(self, observable_object: Object, uuid: str):
+        # Recorded rather than applied: the objects they point to may not be
+        # parsed yet, so they are turned into MISP object references once the
+        # whole package is - a related object embedded rather than referenced
+        # carries its own id, one carrying neither names nothing to reference
+        if not observable_object.related_objects:
+            return
+        for related_object in observable_object.related_objects:
+            if related_object.idref is None:
+                continue
+            relationship = getattr(related_object.relationship, 'value', None)
+            self.references[uuid].append(
+                {
+                    'idref': self._sanitise_uuid(related_object.idref),
+                    'relationship': (
+                        relationship.lower().replace('_', '-')
+                        if relationship else 'related-to'
+                    )
+                }
+            )
 
     @staticmethod
     def _has_properties(observable):
