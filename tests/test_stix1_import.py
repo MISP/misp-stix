@@ -9,6 +9,7 @@ from cybox.objects.custom_object import Custom
 from cybox.objects.dns_record_object import DNSRecord
 from cybox.objects.domain_name_object import DomainName
 from cybox.objects.file_object import File
+from cybox.objects.library_object import Library
 from cybox.objects.network_connection_object import NetworkConnection
 from cybox.objects.network_socket_object import NetworkSocket
 from cybox.objects.port_object import Port
@@ -39,6 +40,10 @@ from stix.common.related import (
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
 from stix.extensions.marking.tlp import TLPMarkingStructure
+from stix.extensions.test_mechanism.generic_test_mechanism import (
+    GenericTestMechanism)
+from stix.extensions.test_mechanism.yara_test_mechanism import (
+    YaraTestMechanism)
 from stix.exploit_target import ExploitTarget
 from stix.exploit_target.vulnerability import Vulnerability
 from stix.incident import Incident
@@ -1641,6 +1646,110 @@ class TestSTIX1Import(TestSTIX):
         self._assert_single_object(
             parser, 'passive-dns',
             {'rrname': 'circl.lu', 'rdata': '149.13.33.14', 'rrtype': 'A'}
+        )
+
+    @staticmethod
+    def _yara_test_mechanism():
+        test_mechanism = YaraTestMechanism()
+        test_mechanism.rule = 'rule evil { condition: true }'
+        return test_mechanism
+
+    def test_external_indicator_with_yara_test_mechanism_converts(self):
+        """The yara rule an Indicator carries as a test mechanism lands as a
+        `yara` attribute the object the Indicator yields is detected with."""
+        indicator = self._indicator(
+            Object(self._file_with_three_properties()), _OBSERVABLE_UUID
+        )
+        indicator.observable.object_.id_ = f'MISP:File-{_OBSERVABLE_UUID}'
+        indicator.add_test_mechanism(self._yara_test_mechanism())
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        misp_object = self._assert_single_object(
+            parser, 'file',
+            {
+                'filename': 'evil.exe', 'size-in-bytes': '1024',
+                'md5': '8a2a5fc2ce56b3b04d58539a9d3d8d3e'
+            }
+        )
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('yara', 'rule evil { condition: true }')]
+        )
+        self.assertEqual(
+            [
+                (reference.relationship_type, reference.referenced_uuid)
+                for reference in misp_object.references
+            ],
+            [('detected-with', parser.misp_event.attributes[0].uuid)]
+        )
+
+    def test_external_attribute_indicator_with_yara_test_mechanism_converts(self):
+        """The legacy importer converted an Indicator's test mechanisms
+        whatever the Indicator yielded: one yielding an attribute keeps its
+        yara rule too, as a `yara` attribute next to it."""
+        indicator = self._ip_indicator('198.51.100.4')
+        indicator.add_test_mechanism(self._yara_test_mechanism())
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ),
+            [
+                ('ip-dst', '198.51.100.4'),
+                ('yara', 'rule evil { condition: true }')
+            ]
+        )
+
+    def test_external_yara_survives_an_unconvertible_observable(self):
+        """The rules are converted before the observable, as the legacy
+        importer did: an observable of a type the parser does not map loses
+        itself, not the yara rule the Indicator carries with it."""
+        library_object = Object(Library())
+        library_object.id_ = f'MISP:Library-{_OBSERVABLE_UUID}'
+        indicator = self._indicator(library_object, _OBSERVABLE_UUID)
+        indicator.add_test_mechanism(self._yara_test_mechanism())
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('yara', 'rule evil { condition: true }')]
+        )
+        self.assertTrue(
+            any(
+                'LibraryObjectType' in error
+                for errors in parser.diagnostics()['errors'].values()
+                for error in errors
+            )
+        )
+
+    def test_external_unknown_test_mechanism_records_an_error(self):
+        indicator = self._domain_indicator('circl.lu')
+        indicator.add_test_mechanism(GenericTestMechanism())
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('domain', 'circl.lu')]
+        )
+        self.assertIn(
+            'Unknown Test Mechanism type: genericTM:GenericTestMechanismType',
+            parser.diagnostics()['errors']['misp event']
         )
 
     def test_external_ttp_with_resources_and_no_infrastructure_converts(self):
