@@ -93,7 +93,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def __init__(self, orgname: str, version: str):
         super().__init__()
         self._orgname = orgname
-        self._orgname_id = re.sub('[\W]+', '', orgname.replace(" ", "_"))
+        self._orgname_id = re.sub(r'[\W]+', '', orgname.replace(" ", "_"))
         self._version = version
         self._mapping = MISPtoSTIX1Mapping
 
