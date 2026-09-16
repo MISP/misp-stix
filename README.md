@@ -258,6 +258,40 @@ that do resolve - the templates pymisp ships and custom ones alike - are unaffec
 
 ### In Python scripts
 
+#### Public surface
+
+Two modules are supported places to import from: the package itself, and
+`misp_stix_converter.tools`. Each declares what it holds in an `__all__`, and
+everything below them - `misp2stix`, `stix2misp`, the per-converter modules -
+is internal: reachable, but free to move from one release to the next.
+
+The package holds the conversion functions, the parser and mapping classes of
+both directions, the exceptions they raise, `__version__`, and the `main` the
+`misp_stix_converter` command runs:
+
+```python
+from misp_stix_converter import misp_to_stix1, misp_to_stix2, misp_collection_to_stix2
+from misp_stix_converter import stix_1_to_misp, stix_2_to_misp
+from misp_stix_converter import MISPtoSTIX1EventsParser, MISPtoSTIX20Parser, MISPtoSTIX21Parser
+from misp_stix_converter import ExternalSTIX1toMISPParser, InternalSTIX1toMISPParser
+from misp_stix_converter import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser
+from misp_stix_converter import MISPtoSTIX21Mapping, InternalSTIX2toMISPMapping
+from misp_stix_converter import InvalidMISPInputError, MissingSTIXContentError
+from misp_stix_converter import STIXInputSizeError, STIXLoadingError
+```
+
+`misp_stix_converter.tools` holds the steps a caller drives itself rather than
+through a conversion function - loading a document, deciding whether it came
+from MISP, and writing a STIX 1 Package by parts (the `write_*` helpers, one
+per collection type, with their headers and footers):
+
+```python
+from misp_stix_converter.tools import load_stix1_package, load_stix2_content, load_stix2_file
+from misp_stix_converter.tools import is_stix1_from_misp, is_stix2_from_misp
+from misp_stix_converter.tools import stix1_framing, stix1_attributes_framing
+from misp_stix_converter.tools import stix20_framing, stix21_framing
+```
+
 Given a MISP Event (with its metadata fields, attributes, objects, galaxies and tags), declared in an `event` variable in Python dict format, you can get the result of a conversion into one of the supported STIX versions:
 
 - Convert a MISP Event in STIX1:
@@ -361,7 +395,7 @@ bundle21 = parser21.bundle
 But in order to parse multiple data collections, you can also use the following helpers:
 
 ```python
-from misp_stix_converter import misp_event_collection_to_stix1, misp_event_collection_to_stix2
+from misp_stix_converter import misp_event_collection_to_stix1, misp_collection_to_stix2
 
 input_filenames = [filename for filename in Path(_PATH_TO_YOUR_MISP_FILES_).glob('*.json')]
 
@@ -372,12 +406,12 @@ stix1_response = misp_event_collection_to_stix1(
     version='1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
 
-stix20_response = misp_event_collection_to_stix2(
+stix20_response = misp_collection_to_stix2(
     *input_filenames,
     version='2.0' # STIX 2 version
 )
 
-stix21_response = misp_event_collection_to_stix2_1(
+stix21_response = misp_collection_to_stix2(
     *input_filenames,
     version='2.1',
     single_output=True, # For a single resulting file
