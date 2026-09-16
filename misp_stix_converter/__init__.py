@@ -11,9 +11,11 @@ from .misp2stix import MISPtoSTIX20Mapping, MISPtoSTIX21Mapping  # noqa
 from .misp_stix_converter import (  # noqa
     misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
-    stix_1_to_misp, stix_2_to_misp, stix2_to_misp_instance)
+    stix_1_to_misp, stix_2_to_misp, stix1_to_misp_instance,
+    stix2_to_misp_instance)
 # Command line methods
 from .misp_stix_converter import _misp_to_stix, _stix_to_misp  # noqa
+from .stix2misp import ExternalSTIX1toMISPParser, InternalSTIX1toMISPParser  # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser  # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping  # noqa
 from .stix2misp import ExternalSTIX2Mapping  # noqa
@@ -21,6 +23,33 @@ from .stix2misp import MissingSTIXContentError  # noqa
 from .stix2misp import STIX2PatternParser  # noqa
 from .stix2misp import MISP_org_uuid  # noqa
 from pathlib import Path
+
+# What the package supports being imported from it. Everything deeper than
+# this module and `misp_stix_converter.tools` - the other declared surface,
+# which carries its own `__all__` - is internal, whether or not it is
+# reachable. The underscore-prefixed command line methods above are internal
+# too, which is what their name says. `tests/test_public_surface.py` holds
+# this list to its promises.
+__all__ = [
+    '__version__', 'main',
+    # Exceptions
+    'InvalidMISPInputError', 'MissingSTIXContentError',
+    'STIXInputSizeError', 'STIXLoadingError',
+    # MISP to STIX
+    'MISPtoSTIX1AttributesParser', 'MISPtoSTIX1EventsParser',
+    'MISPtoSTIX1Mapping', 'MISPtoSTIX20Parser', 'MISPtoSTIX20Mapping',
+    'MISPtoSTIX21Parser', 'MISPtoSTIX21Mapping',
+    # STIX to MISP
+    'ExternalSTIX1toMISPParser', 'InternalSTIX1toMISPParser',
+    'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser',
+    'ExternalSTIX2Mapping', 'ExternalSTIX2toMISPMapping',
+    'InternalSTIX2toMISPMapping', 'STIX2PatternParser', 'MISP_org_uuid',
+    # Conversion functions
+    'misp_attribute_collection_to_stix1', 'misp_collection_to_stix2',
+    'misp_event_collection_to_stix1', 'misp_to_stix1', 'misp_to_stix2',
+    'stix_1_to_misp', 'stix_2_to_misp', 'stix1_to_misp_instance',
+    'stix2_to_misp_instance'
+]
 
 
 def _max_input_size(value: str) -> int:
