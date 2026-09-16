@@ -28,6 +28,13 @@ packages = [
     { include = "misp_stix_converter" }
 ]
 
+# The galaxy trees are generated into the package directory and may sit in a
+# checkout, but they are not part of the library: without this the build
+# sweeps them into the wheel, since they are not ignored either.
+exclude = [
+    "misp_stix_converter/data/STIX_2*"
+]
+
 [tool.poetry.urls]
 "Source" = "https://github.com/MISP/misp-stix"
 "Bug Tracker" = "https://github.com/MISP/misp-stix/issues"
