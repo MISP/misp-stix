@@ -4878,6 +4878,16 @@ def get_indicator_attribute_with_location_galaxy():
     return attribute
 
 
+def get_indicator_attribute_with_threat_actor_galaxy():
+    attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+    attribute['Galaxy'] = [deepcopy(_TEST_THREAT_ACTOR_GALAXY)]
+    attribute['Tag'] = [
+        {'name': 'tlp:white'},
+        {'name': 'misp-galaxy:threat-actor="Cutting Kitten"'}
+    ]
+    return attribute
+
+
 def get_embedded_indicator_attribute_galaxy():
     attribute = get_indicator_attribute_with_galaxy()
     attribute['Galaxy'].append(deepcopy(_TEST_TEA_MATRIX_GALAXY))
@@ -4914,6 +4924,14 @@ def get_embedded_observable_attribute_galaxy():
     event['Event']['Attribute'] = [attribute]
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
+def get_embedded_threat_actor_attribute_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        get_indicator_attribute_with_threat_actor_galaxy()
     ]
     return event
 

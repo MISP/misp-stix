@@ -739,6 +739,18 @@ class TestStix1Export(TestSTIX):
             modified_value = self._datetime_from_str(modified_value)
         self.assertEqual(properties.modified_time.value, modified_value)
 
+    def _check_attributed_threat_actor(self, incident, galaxy, threat_actor_id):
+        related_threat_actor = incident.attributed_threat_actors.threat_actor[0]
+        self.assertEqual(related_threat_actor.relationship.value, galaxy['name'])
+        self.assertEqual(related_threat_actor.item.idref, threat_actor_id)
+
+    def _check_handling_markings(self, stix_object, expected):
+        markings = tuple(
+            self._get_marking_value(marking)
+            for marking in stix_object.handling[0].marking_structures
+        )
+        self.assertEqual(markings, expected)
+
     def _check_related_object(self, related_ttp, galaxy_name, cluster_uuid, timestamp=None, object_type='TTP'):
         self.assertEqual(related_ttp.relationship.value, galaxy_name)
         self.assertEqual(related_ttp.item.idref, f"{_ORGNAME_ID}:{object_type}-{cluster_uuid}")
@@ -786,6 +798,18 @@ class TestStix1Export(TestSTIX):
             timestamp=attribute['timestamp']
         )
         return ttp
+
+    def _check_threat_actor_from_galaxy(self, stix_package, galaxy):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(len(stix_package.threat_actors), 1)
+        threat_actor = stix_package.threat_actors[0]
+        threat_actor_id = f"{_ORGNAME_ID}:ThreatActor-{cluster['uuid']}"
+        self.assertEqual(threat_actor.id_, threat_actor_id)
+        self.assertEqual(threat_actor.title, cluster['value'])
+        self.assertEqual(threat_actor.description.value, cluster['description'])
+        intended_effect = threat_actor.intended_effects[0]
+        self.assertEqual(intended_effect.value, cluster['meta']['cfr-type-of-incident'][0])
+        return threat_actor_id
 
     def _check_ttp_fields_from_galaxy(self, stix_package, cluster_uuid, galaxy_name):
         ttp = self._check_ttp_length(stix_package, 1)[0]
@@ -1351,6 +1375,34 @@ class TestStix1Export(TestSTIX):
             attribute_cluster['uuid']
         )
         self._check_coa_taken(incident.coa_taken[0], coa_cluster['uuid'])
+
+    def _test_embedded_threat_actor_attribute_galaxy(self, event):
+        galaxy = event['Attribute'][0]['Galaxy'][0]
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        stix_package = self.parser.stix_package
+        threat_actor_id = self._check_threat_actor_from_galaxy(
+            stix_package, galaxy
+        )
+        # A STIX 1 Indicator has no threat actor slot: the actor is attributed
+        # to the Incident, the way an event-level one is
+        incident = stix_package.incidents[0]
+        self._check_attributed_threat_actor(incident, galaxy, threat_actor_id)
+        # A converted galaxy takes its `misp-galaxy:` tag with it: only the
+        # attribute's other tag reaches the Indicator's handling
+        self._check_handling_markings(
+            incident.related_indicators.indicator[0].item, ('WHITE',)
+        )
+
+    def _test_attributes_collection_with_threat_actor_galaxy(self, version, attribute):
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content([attribute])
+        self.assertEqual(parser.errors, {})
+        stix_package = parser.stix_package
+        # No Incident to attribute the actor to: it stands in the STIX Package
+        # on its own, and takes its `misp-galaxy:` tag with it
+        self._check_threat_actor_from_galaxy(stix_package, attribute['Galaxy'][0])
+        self._check_handling_markings(stix_package.indicators[0], ('WHITE',))
 
     def _test_embedded_observable_attribute_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -2395,20 +2447,14 @@ class TestStix1Export(TestSTIX):
 
     def _test_event_with_threat_actor_galaxy(self, event):
         galaxy = event['Galaxy'][0]
-        cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
-        self.assertEqual(len(stix_package.threat_actors), 1)
-        threat_actor = stix_package.threat_actors[0]
-        threat_actor_id = f"{_ORGNAME_ID}:ThreatActor-{cluster['uuid']}"
-        self.assertEqual(threat_actor.id_, threat_actor_id)
-        self.assertEqual(threat_actor.title, cluster['value'])
-        self.assertEqual(threat_actor.description.value, cluster['description'])
-        intended_effect = threat_actor.intended_effects[0]
-        self.assertEqual(intended_effect.value, cluster['meta']['cfr-type-of-incident'][0])
-        related_threat_actor = stix_package.incidents[0].attributed_threat_actors.threat_actor[0]
-        self.assertEqual(related_threat_actor.relationship.value, galaxy['name'])
-        self.assertEqual(related_threat_actor.item.idref, threat_actor_id)
+        threat_actor_id = self._check_threat_actor_from_galaxy(
+            stix_package, galaxy
+        )
+        self._check_attributed_threat_actor(
+            stix_package.incidents[0], galaxy, threat_actor_id
+        )
 
     def _test_event_with_tool_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -2479,6 +2525,15 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_embedded_observable_attribute_galaxy(self):
         event = get_embedded_observable_attribute_galaxy()
         self._test_embedded_observable_attribute_galaxy(event['Event'])
+
+    def test_attributes_collection_with_threat_actor_galaxy(self):
+        self._test_attributes_collection_with_threat_actor_galaxy(
+            '1.1.1', get_indicator_attribute_with_threat_actor_galaxy()
+        )
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        self._test_embedded_threat_actor_attribute_galaxy(event['Event'])
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
@@ -2901,6 +2956,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_attribute_galaxy(misp_event)
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_attribute_galaxy(misp_event)
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
@@ -3491,6 +3552,15 @@ class TestSTIX12JSONExport(TestSTIX12Export):
         event = get_embedded_observable_attribute_galaxy()
         self._test_embedded_observable_attribute_galaxy(event['Event'])
 
+    def test_attributes_collection_with_threat_actor_galaxy(self):
+        self._test_attributes_collection_with_threat_actor_galaxy(
+            '1.2', get_indicator_attribute_with_threat_actor_galaxy()
+        )
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        self._test_embedded_threat_actor_attribute_galaxy(event['Event'])
+
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
         self._test_event_with_as_attribute(event['Event'])
@@ -3912,6 +3982,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_attribute_galaxy(misp_event)
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_attribute_galaxy(misp_event)
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
