@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 from cybox.common import Hash, HashList
 from cybox.common.object_properties import CustomProperties, Property
 from cybox.core import (
@@ -29,13 +30,16 @@ from cybox.objects.x509_certificate_object import (
     Validity, X509Cert, X509Certificate, X509CertificateSignature)
 from datetime import datetime
 from misp_stix_converter import (
-    MISPtoSTIX1EventsParser, stix_1_to_misp, STIXLoadingError)
-from misp_stix_converter.tools import load_stix1_package, stix1_loading_helpers
+    MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser,
+    MissingSTIXContentError, stix_1_to_misp, STIXLoadingError)
+from misp_stix_converter.tools import (
+    is_stix1_from_misp, load_stix1_package, stix1_loading_helpers)
 from mixbox.namespaces import NamespaceNotFoundError
 from misp_stix_converter.stix2misp.external_stix1_to_misp import (
     ExternalSTIX1toMISPParser)
 from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
+from pymisp import MISPEvent
 from unittest.mock import patch
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement, ToolInformation
@@ -240,6 +244,36 @@ class TestSTIX1Import(TestSTIX):
         stix_package.related_packages.append(RelatedPackage(inner_package))
         return stix_package
 
+    @staticmethod
+    def _header_only_package(title):
+        """A package carrying a header and nothing below it."""
+        stix_package = STIXPackage()
+        stix_package.stix_header = STIXHeader()
+        stix_package.stix_header.title = title
+        return stix_package
+
+    @classmethod
+    def _incident_with_content(cls):
+        """An Incident given one attribute to convert: a conversion yielding no
+        attribute, object or galaxy is refused, so the tests reading the event
+        metadata off a bare Incident give it something to yield."""
+        incident = Incident()
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        incident.related_observables.append(
+            RelatedObservable(
+                cls._observable(domain, 'DomainName', _DOMAIN_UUID),
+                relationship='Network activity'
+            )
+        )
+        return incident
+
+    @staticmethod
+    def _load_misp_event(filename):
+        misp_event = MISPEvent()
+        misp_event.load_file(filename)
+        return misp_event
+
     ############################################################################
     #                          COURSE OF ACTION TESTS.                         #
     ############################################################################
@@ -308,6 +342,8 @@ class TestSTIX1Import(TestSTIX):
         stix_package.observables = Observables(
             [self._observable_with_related_object()]
         )
+        # something for the package to convert to: the record alone is none
+        stix_package.add_indicator(self._domain_indicator('circl.lu'))
         parser = self._parse_external_package(stix_package)
         # An Observable with no value of its own yields no MISP object the
         # reference could land on: the record is kept, with the sanitised
@@ -412,7 +448,7 @@ class TestSTIX1Import(TestSTIX):
     ############################################################################
 
     def test_internal_incident_history_converts(self):
-        incident = Incident()
+        incident = self._incident_with_content()
         incident.title = 'Incident carrying a History section'
         history = History()
         for value in ('MISP Tag: tlp:amber', 'Event Threat Level: High'):
@@ -783,7 +819,7 @@ class TestSTIX1Import(TestSTIX):
         content-based detection classifies it as internal - shaped with the
         related packages the Internal parser expects."""
         return self._internal_package(
-            Incident(), inner_title='Incident title',
+            self._incident_with_content(), inner_title='Incident title',
             outer_title="Export from ACME's MISP"
         )
 
@@ -809,6 +845,10 @@ class TestSTIX1Import(TestSTIX):
 
     def test_stix_1_classification_forced_external_warns_on_mismatch(self):
         stix_package = self._internal_titled_package()
+        # The External parser reads the wrapper package only, and a MISP export
+        # carries nothing there: a conversion yielding nothing is refused, so
+        # the wrapper is given something the warning can be reported next to
+        stix_package.add_course_of_action(self._course_of_action())
         with TemporaryDirectory() as tmp_dir:
             filename = self._write_package(tmp_dir, stix_package, 'internal.xml')
             results = stix_1_to_misp(
@@ -843,8 +883,6 @@ class TestSTIX1Import(TestSTIX):
         )
 
     def test_stix_1_detection_logs_a_warning(self):
-        from misp_stix_converter.tools.stix1_to_misp_helpers import (
-            is_stix1_from_misp)
         stix_package = self._internal_titled_package()
         with self.assertLogs('misp_stix_converter', level='WARNING'):
             self.assertTrue(is_stix1_from_misp(stix_package))
@@ -852,6 +890,87 @@ class TestSTIX1Import(TestSTIX):
     def test_stix_1_classification_rejects_invalid_value(self):
         with self.assertRaises(ValueError):
             stix_1_to_misp('unused.xml', classification='banana')
+
+    def test_stix_1_detection_reads_the_related_package_headers(self):
+        """The collection export titles the packages it relates and leaves the
+        wrapper around them untitled - the shape of this repo's own
+        `test_event*_stix1*.xml` - so a wrapper carrying no title of its own is
+        classified from the headers inside it: a MISP export when every one of
+        them is titled as one, and another producer's document as soon as one
+        related package is theirs."""
+        stix_package = self._internal_package(
+            self._incident_with_content(),
+            inner_title="Export from ACME's MISP"
+        )
+        with self.assertLogs('misp_stix_converter', level='WARNING'):
+            self.assertTrue(is_stix1_from_misp(stix_package))
+        stix_package.related_packages.append(
+            RelatedPackage(self._header_only_package('Threat report'))
+        )
+        self.assertFalse(is_stix1_from_misp(stix_package))
+        self.assertFalse(
+            is_stix1_from_misp(self._internal_package(Incident()))
+        )
+
+    def test_stix_1_misp_export_without_a_wrapper_title_converts(self):
+        """The reference export of the event export tests carries its MISP
+        title in the related package only: classified External, it converted
+        to an event holding nothing, reported as a success."""
+        filename = Path(__file__).parent / 'test_event1_stix11.xml'
+        with TemporaryDirectory() as tmp_dir:
+            results = stix_1_to_misp(
+                filename, output_name=Path(tmp_dir) / 'event.misp.json'
+            )
+            self.assertEqual(results['success'], 1)
+            misp_event = self._load_misp_event(results['results'][0])
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value)
+                for attribute in misp_event.attributes
+            ),
+            [('AS', 'AS174'), ('domain', 'circl.lu')]
+        )
+        self.assertIn(
+            CLASSIFICATION_FROM_CONTENT_WARNING,
+            results['warnings']['misp event']
+        )
+
+    ############################################################################
+    #                            EMPTY CONVERSION.                             #
+    ############################################################################
+
+    def test_conversion_yielding_nothing_raises(self):
+        """An event with no attribute, object or galaxy is what a document the
+        parser could read nothing from produces - a package made of a header,
+        a MISP export parsed as External - and reporting it as a success shows
+        the user an imported event holding nothing. The error is the one MISP
+        core already reads as `contains nothing to import`."""
+        with self.assertRaises(MissingSTIXContentError) as context:
+            self._parse_external_package(
+                self._header_only_package('Threat report')
+            )
+        self.assertEqual(
+            str(context.exception),
+            'The STIX 1.2 package converted to no MISP attribute, object or '
+            'galaxy.'
+        )
+        with self.assertRaises(MissingSTIXContentError):
+            self._parse_internal_package(self._internal_package(Incident()))
+        with self.assertRaises(MissingSTIXContentError):
+            self._parse_external_package(self._internal_titled_package())
+
+    def test_stix_1_to_misp_reports_a_conversion_yielding_nothing(self):
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_package(
+                tmp_dir, self._header_only_package('Threat report'), 'empty.xml'
+            )
+            results = stix_1_to_misp(filename)
+            self.assertEqual(list(results), ['errors'])
+            self.assertIn(
+                'converted to no MISP attribute, object or galaxy',
+                results['errors'][0]
+            )
+            self.assertFalse((Path(tmp_dir) / 'empty.xml.out').exists())
 
     ############################################################################
     #                          EVENT DISTRIBUTION.                             #
@@ -889,7 +1008,7 @@ class TestSTIX1Import(TestSTIX):
         )
 
     def test_internal_event_takes_the_distribution_parameters(self):
-        stix_package = self._internal_package(Incident())
+        stix_package = self._internal_package(self._incident_with_content())
         parser = self._parse_internal_package(stix_package, distribution=3)
         self.assertEqual(parser.misp_event.distribution, 3)
         parser = self._parse_internal_package(
@@ -908,7 +1027,7 @@ class TestSTIX1Import(TestSTIX):
         title - not from the collection-level wrapper header."""
         parser = self._parse_internal_package(
             self._internal_package(
-                Incident(),
+                self._incident_with_content(),
                 inner_title="Export from ACME's MISP",
                 outer_title='Collection level title'
             )
@@ -918,14 +1037,15 @@ class TestSTIX1Import(TestSTIX):
     def test_internal_event_info_falls_back_to_wrapper_header_title(self):
         parser = self._parse_internal_package(
             self._internal_package(
-                Incident(), outer_title='Collection level title'
+                self._incident_with_content(),
+                outer_title='Collection level title'
             )
         )
         self.assertEqual(parser.misp_event.info, 'Collection level title')
 
     def test_internal_event_info_falls_back_to_generic_message(self):
         parser = self._parse_internal_package(
-            self._internal_package(Incident())
+            self._internal_package(self._incident_with_content())
         )
         self.assertEqual(
             parser.misp_event.info,
@@ -935,7 +1055,7 @@ class TestSTIX1Import(TestSTIX):
     def test_external_event_info_falls_back_past_a_titleless_header(self):
         """A STIX header always carries a `title` field, so a header present but
         untitled must not become the event info."""
-        stix_package = STIXPackage()
+        stix_package = self._external_package()
         stix_package.stix_header = self._stix_header(None)
         parser = self._parse_external_package(stix_package)
         self.assertEqual(
@@ -947,7 +1067,7 @@ class TestSTIX1Import(TestSTIX):
         info must report what the package declares, not a constant."""
         for version in ('1.1', '1.2'):
             with self.subTest(version=version):
-                stix_package = STIXPackage()
+                stix_package = self._external_package()
                 stix_package.version = version
                 parser = self._parse_external_package(stix_package)
                 self.assertEqual(
@@ -958,7 +1078,7 @@ class TestSTIX1Import(TestSTIX):
     def test_external_event_info_falls_back_on_a_version_less_package(self):
         """Loading a document with no version fails earlier, but a package
         built in memory - what MISP core hands over - can carry none."""
-        stix_package = STIXPackage()
+        stix_package = self._external_package()
         stix_package.version = None
         parser = self._parse_external_package(stix_package)
         self.assertEqual(
@@ -1128,7 +1248,7 @@ class TestSTIX1Import(TestSTIX):
     def test_external_tlp_marking_writes_one_taxonomy_entry(self):
         """A TLP colour is written into a taxonomy tag of the library's own: it
         names one entry of the `tlp` taxonomy, whatever the colour carries."""
-        stix_package = STIXPackage()
+        stix_package = self._external_package()
         header = STIXHeader()
         marking = MarkingSpecification()
         tlp_marking = TLPMarkingStructure()
@@ -1247,7 +1367,7 @@ class TestSTIX1Import(TestSTIX):
         first = self._internal_package(
             first_incident, threat_actor=self._threat_actor('APT-A')
         )
-        second_incident = Incident()
+        second_incident = self._incident_with_content()
         second_incident.title = 'Event B'
         second_incident.timestamp = datetime(2026, 1, 15, 8, 0)
         second = self._internal_package(second_incident)
@@ -1365,12 +1485,195 @@ class TestSTIX1Import(TestSTIX):
         """A fresh Incident is stamped with the time of its creation - one an
         export left unstamped has none, and the merged event then has no date
         or timestamp to take from it rather than nothing to parse."""
-        incident = Incident()
+        incident = self._incident_with_content()
         incident.title = 'Incident without a timestamp'
         incident.timestamp = None
         parser = self._parse_internal_package(self._internal_package(incident))
         self.assertEqual(parser.misp_event.info, 'Incident without a timestamp')
         self.assertEqual(parser.diagnostics()['errors'], {})
+
+    ############################################################################
+    #                 EXPORTED ATTRIBUTES COLLECTION ROUND TRIP.               #
+    ############################################################################
+
+    @staticmethod
+    def _exported_attributes(*numbers):
+        """The attributes the attributes collection fixtures were exported
+        from, by uuid: type, value and `to_ids` for each, the category for the
+        `to_ids` ones - the only ones the export writes it for - and the
+        timestamp the Indicators are stamped with."""
+        attributes = {}
+        for number in numbers:
+            filename = Path(__file__).parent / f'test_attributes_collection_{number}.json'
+            with open(filename, 'rb') as f:
+                for attribute in json.load(f)['response']['Attribute']:
+                    attributes[attribute['uuid']] = attribute
+        return attributes
+
+    def test_internal_attributes_collection_export_reads_back(self):
+        """The attribute-level export - what `stix1_attributes_framing` frames -
+        carries its Indicators and Observables on the package itself, with no
+        related packages: the Internal parser iterated the ones it did not have
+        and died on the `None`. Read back from the reference files the export
+        tests check the export against."""
+        exported = self._exported_attributes(1, 2)
+        for version in ('11', '12'):
+            with self.subTest(version=version):
+                filename = Path(__file__).parent / f'test_attributes_collection_stix{version}.xml'
+                with TemporaryDirectory() as tmp_dir:
+                    results = stix_1_to_misp(
+                        filename,
+                        output_name=Path(tmp_dir) / 'attributes.misp.json'
+                    )
+                    self.assertEqual(results['success'], 1)
+                    self.assertNotIn('errors', results)
+                    misp_event = self._load_misp_event(results['results'][0])
+                self.assertEqual(misp_event.info, "Export from MISP's MISP")
+                self.assertEqual(
+                    {
+                        attribute.uuid: (
+                            attribute.type, attribute.value, attribute.to_ids
+                        )
+                        for attribute in misp_event.attributes
+                    },
+                    {
+                        uuid: (
+                            attribute['type'], attribute['value'],
+                            bool(attribute.get('to_ids'))
+                        )
+                        for uuid, attribute in exported.items()
+                    }
+                )
+                self.assertEqual(
+                    {
+                        attribute.uuid: (
+                            attribute.category,
+                            int(attribute.timestamp.timestamp())
+                        )
+                        for attribute in misp_event.attributes
+                        if attribute.to_ids
+                    },
+                    {
+                        uuid: (attribute['category'], int(attribute['timestamp']))
+                        for uuid, attribute in exported.items()
+                        if attribute.get('to_ids')
+                    }
+                )
+
+    def test_internal_attributes_collection_reads_the_category_off_the_title(self):
+        """With no Incident to relate an Indicator to under its category, an
+        Attribute Collection writes `{category}: {value} (MISP Attribute)` as
+        the title - the one place the category travels. An Observable gets
+        neither title nor relationship, and pymisp's default for the type
+        stands in."""
+        exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        exporter.parse_json_content(
+            [
+                {
+                    'uuid': _DOMAIN_UUID, 'type': 'domain',
+                    'category': 'Payload delivery', 'value': 'circl.lu',
+                    'to_ids': True, 'timestamp': '1603642920'
+                },
+                {
+                    'uuid': _IP_UUID, 'type': 'ip-dst',
+                    'category': 'Payload delivery', 'value': '198.51.100.4',
+                    'to_ids': False
+                }
+            ]
+        )
+        parser = self._parse_internal_package(exporter.stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            parser.misp_event.info,
+            'Imported from STIX 1.2 Package generated with MISP'
+        )
+        self.assertEqual(
+            {
+                attribute.uuid: (
+                    attribute.type, attribute.category,
+                    attribute.value, attribute.to_ids
+                )
+                for attribute in parser.misp_event.attributes
+            },
+            {
+                _DOMAIN_UUID: ('domain', 'Payload delivery', 'circl.lu', True),
+                _IP_UUID: ('ip-dst', 'Network activity', '198.51.100.4', False)
+            }
+        )
+
+    def test_internal_attributes_collection_exploit_target_attributes_convert(self):
+        """A `vulnerability` or `weakness` attribute is exported as a TTP with
+        an exploit target, as a vulnerability galaxy is: in an event export
+        the Incident leverages the former and the Indicators only indicate
+        the latter, which is what tells them apart. An Attribute Collection
+        has no Incident, so the title the export gives each TTP tells them
+        apart instead - and the attributes come back as the event path brings
+        them, the weakness as the `weakness` object it makes of one."""
+        cluster_uuid = '9d0e1f2a-3b4c-4d5e-8f6a-7b8c9d0e1f2a'
+        exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        exporter.parse_json_content(
+            [
+                {
+                    'uuid': _DOMAIN_UUID, 'type': 'vulnerability',
+                    'category': 'External analysis',
+                    'value': 'CVE-2021-44228', 'to_ids': False
+                },
+                {
+                    'uuid': _IP_UUID, 'type': 'weakness',
+                    'category': 'External analysis', 'value': 'CWE-79',
+                    'to_ids': False
+                },
+                {
+                    'uuid': _URL_UUID, 'type': 'domain',
+                    'category': 'Network activity', 'value': 'circl.lu',
+                    'to_ids': True,
+                    'Galaxy': [
+                        {
+                            'type': 'branded-vulnerability',
+                            'name': 'Branded Vulnerability',
+                            'GalaxyCluster': [
+                                {
+                                    'uuid': cluster_uuid,
+                                    'type': 'branded-vulnerability',
+                                    'value': 'Log4Shell',
+                                    'description': 'Log4j remote code execution',
+                                    'meta': {'aliases': ['CVE-2021-44228']}
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        )
+        parser = self._parse_internal_package(exporter.stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            {
+                attribute.uuid: (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            },
+            {
+                _DOMAIN_UUID: ('vulnerability', 'CVE-2021-44228'),
+                _URL_UUID: ('domain', 'circl.lu')
+            }
+        )
+        self.assertEqual(
+            [
+                (
+                    misp_object.name, misp_object.uuid,
+                    [
+                        (attribute.object_relation, attribute.value)
+                        for attribute in misp_object.attributes
+                    ]
+                )
+                for misp_object in parser.misp_event.objects
+            ],
+            [('weakness', _IP_UUID, [('id', 'CWE-79')])]
+        )
+        self.assertIn(
+            'misp-galaxy:branded-vulnerability="Log4Shell"',
+            {tag['name'] for tag in parser.misp_event.tags}
+        )
 
     ############################################################################
     #                       EXTERNAL OBSERVABLE TYPES.                         #
@@ -1719,7 +2022,10 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_custom_object_without_properties_records_an_error(self):
         """A `Custom` object carrying no property names neither an attribute
-        nor an object: reading one off it unguarded crashed the conversion."""
+        nor an object: reading one off it unguarded crashed the conversion.
+        Being the one thing the package carries, the conversion yields nothing
+        and is refused - naming the error recorded on the way, which is what
+        tells this document from one carrying nothing at all."""
         incident = Incident()
         incident.title = 'Incident with an empty Custom observable'
         custom_object = Object(self._custom(None))
@@ -1729,7 +2035,16 @@ class TestSTIX1Import(TestSTIX):
         incident.related_observables.append(
             RelatedObservable(observable, relationship='misc')
         )
-        parser = self._parse_internal_package(self._internal_package(incident))
+        parser = InternalSTIX1toMISPParser()
+        with self.assertRaises(MissingSTIXContentError) as context:
+            self._parse_internal_package(
+                self._internal_package(incident), parser
+            )
+        self.assertEqual(
+            str(context.exception),
+            'The STIX 1.2 package converted to no MISP attribute, object or '
+            'galaxy - 1 error recorded.'
+        )
         self.assertEqual(parser.misp_event.objects, [])
         self.assertEqual(parser.misp_event.attributes, [])
         self.assertTrue(
