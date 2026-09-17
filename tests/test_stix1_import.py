@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cybox.common import Hash, HashList
 from cybox.common.object_properties import CustomProperties, Property
 from cybox.core import (
     Object, Observable, ObservableComposition, Observables, RelatedObject)
@@ -19,6 +20,9 @@ from cybox.objects.uri_object import URI
 from cybox.objects.user_account_object import UserAccount
 from cybox.objects.whois_object import (
     WhoisEntry, WhoisRegistrant, WhoisRegistrants, WhoisRegistrar)
+from cybox.objects.win_executable_file_object import (
+    Entropy, PESection, PESectionHeaderStruct, PESectionList,
+    WinExecutableFile)
 from cybox.objects.win_registry_key_object import (
     RegistryValue, RegistryValues, WinRegistryKey)
 from cybox.objects.x509_certificate_object import (
@@ -75,6 +79,10 @@ _ACTOR_UUID = '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b'
 _DOMAIN_UUID = '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a'
 _IP_UUID = '3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a6b'
 _URL_UUID = '4f5a6b7c-8d9e-4f0a-8b1c-2d3e4f5a6b7c'
+_MD5_HASH = '8a2a5fc2ce56b3b04d58539a9d3d8d3e'
+# `Type=Other` with the value in `Simple_Hash_Value`: how MISP's own STIX 1
+# export wrote an ssdeep hash, cybox naming nothing better for its length
+_SSDEEP_HASH = '6144:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
 
 
 class TestSTIX1Import(TestSTIX):
@@ -1323,8 +1331,29 @@ class TestSTIX1Import(TestSTIX):
         file_object = File()
         file_object.file_name = 'evil.exe'
         file_object.size_in_bytes = 1024
-        file_object.add_hash('8a2a5fc2ce56b3b04d58539a9d3d8d3e')
+        file_object.add_hash(_MD5_HASH)
         return file_object
+
+    @staticmethod
+    def _pe_with_section(*hashes):
+        """A Windows executable with one section: a `file` object including a
+        `pe` object, itself including the `pe-section` the hashes go to."""
+        section = PESection()
+        section.entropy = Entropy()
+        section.entropy.value = 7.83
+        section.section_header = PESectionHeaderStruct()
+        section.section_header.name = '.text'
+        section.section_header.size_of_raw_data = 4096
+        if hashes:
+            section.data_hashes = HashList()
+            section.data_hashes.hashes = list(hashes)
+        pe_file = WinExecutableFile()
+        pe_file.file_name = 'evil.exe'
+        pe_file.size_in_bytes = 1024
+        pe_file.add_hash(_MD5_HASH)
+        pe_file.sections = PESectionList()
+        pe_file.sections.append(section)
+        return pe_file
 
     def _parse_external_observable(self, properties, feature):
         stix_package = STIXPackage()
@@ -1671,6 +1700,129 @@ class TestSTIX1Import(TestSTIX):
             {'rrname': 'circl.lu', 'rdata': '149.13.33.14', 'rrtype': 'A'}
         )
 
+    def _assert_pe_section(self, parser, hashes):
+        """The whole document converted: the three objects, the `pe` one
+        including the section, and the section holding exactly `hashes` on
+        top of its header fields, each typed after its relation."""
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            sorted(misp_object.name for misp_object in parser.misp_event.objects),
+            ['file', 'pe', 'pe-section']
+        )
+        pe_object = parser.misp_event.get_objects_by_name('pe')[0]
+        section = parser.misp_event.get_objects_by_name('pe-section')[0]
+        self.assertEqual(
+            [
+                (reference.relationship_type, reference.referenced_uuid)
+                for reference in pe_object.references
+            ],
+            [('includes', section.uuid)]
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: str(attribute.value)
+                for attribute in section.attributes
+            },
+            {
+                'entropy': '7.83', 'name': '.text', 'size-in-bytes': '4096',
+                **hashes
+            }
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in section.attributes
+                if attribute.object_relation in hashes
+            },
+            {relation: relation for relation in hashes}
+        )
+
+    def test_external_pe_section_with_well_known_hashes_converts(self):
+        hashes = {
+            'md5': _MD5_HASH,
+            'sha1': 'da39a3ee5e6b4b0d3255bfef95601890afd80709',
+            'sha256': (
+                'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+            ),
+            'sha512': (
+                'cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce'
+                '47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e'
+            )
+        }
+        parser = self._parse_external_observable(
+            self._pe_with_section(
+                *(Hash(value, exact=True) for value in hashes.values())
+            ),
+            'WinExecutableFile'
+        )
+        self._assert_pe_section(parser, hashes)
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def test_external_pe_section_with_an_other_typed_ssdeep_hash_converts(self):
+        """MISP's own STIX 1 export wrote ssdeep hashes as `Type=Other`, which
+        names no `pe-section` relation: added by relation alone, pymisp had no
+        type to give the attribute, raised, and one hash cost the document.
+        The shape of the value - `blocksize:hash:hash` - names the relation."""
+        parser = self._parse_external_observable(
+            self._pe_with_section(
+                Hash(_MD5_HASH, exact=True),
+                Hash(_SSDEEP_HASH, Hash.TYPE_OTHER, exact=True)
+            ),
+            'WinExecutableFile'
+        )
+        self._assert_pe_section(
+            parser, {'md5': _MD5_HASH, 'ssdeep': _SSDEEP_HASH}
+        )
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def test_external_pe_section_hash_of_unknown_type_costs_that_hash_only(self):
+        """A hash whose type the `pe-section` template has no relation for, and
+        whose value names none either, is the one thing not converted: dropped
+        with a warning naming it and the object it came from, as ADR-0010 asks
+        of rejected content, while the rest of the document survives."""
+        md6 = 'b' * 64
+        parser = self._parse_external_observable(
+            self._pe_with_section(
+                Hash(_MD5_HASH, exact=True), Hash(md6, Hash.TYPE_MD6, exact=True)
+            ),
+            'WinExecutableFile'
+        )
+        self._assert_pe_section(parser, {'md5': _MD5_HASH})
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('md6'), warnings[0])
+        self.assertIn(md6, warnings[0])
+        self.assertIn(f'MISP:WinExecutableFile-{_OBSERVABLE_UUID}', warnings[0])
+
+    def test_external_pe_section_without_hashes_converts(self):
+        """MISP's export writes a section with no hash attribute without any
+        hash list: iterating the missing list crashed the conversion."""
+        parser = self._parse_external_observable(
+            self._pe_with_section(), 'WinExecutableFile'
+        )
+        self._assert_pe_section(parser, {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def test_external_file_with_an_other_typed_ssdeep_hash_converts(self):
+        """The same `Type=Other` ssdeep on a plain file went through the same
+        hash helper: `filename|other` is no MISP attribute type, pymisp
+        refused it. `filename|ssdeep` is."""
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.add_hash(Hash(_SSDEEP_HASH, Hash.TYPE_OTHER, exact=True))
+        parser = self._parse_external_observable(file_object, 'File')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('filename|ssdeep', f'evil.exe|{_SSDEEP_HASH}')]
+        )
+
     @staticmethod
     def _yara_test_mechanism():
         test_mechanism = YaraTestMechanism()
@@ -1692,7 +1844,7 @@ class TestSTIX1Import(TestSTIX):
             parser, 'file',
             {
                 'filename': 'evil.exe', 'size-in-bytes': '1024',
-                'md5': '8a2a5fc2ce56b3b04d58539a9d3d8d3e'
+                'md5': _MD5_HASH
             }
         )
         self.assertEqual(
