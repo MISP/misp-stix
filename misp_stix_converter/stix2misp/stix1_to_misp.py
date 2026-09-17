@@ -25,6 +25,7 @@ from pathlib import Path
 from pymisp.abstract import misp_objects_path
 from pymisp.api import describe_types
 from pymisp import MISPAttribute, MISPObject
+import re
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
 from stix.threat_actor import ThreatActor
@@ -50,6 +51,8 @@ _SIMPLE_PROPERTIES_TYPING = Union[
 ]
 _STIX_OBJECT_TYPING = Union[CourseOfAction, ThreatActor]
 _MISP_types = describe_types['types']
+# `blocksize:hash:hash`, the shape of an ssdeep value, both hashes in base64
+_SSDEEP_PATTERN = re.compile(r'^\d+:[0-9A-Za-z+/]*:[0-9A-Za-z+/]*$')
 
 
 class StixObjectTypeError(Exception):
@@ -407,6 +410,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             hash_value = hash_property.simple_hash_value.value
         except AttributeError:
             hash_value = hash_property.fuzzy_hash_value.value
+        if (hash_type == 'other' and isinstance(hash_value, str)
+                and _SSDEEP_PATTERN.match(hash_value)):
+            # `Other` is the type cybox gives a value of no well-known length,
+            # and how MISP's own STIX 1 export wrote ssdeep: the shape names it
+            hash_type = 'ssdeep'
         return hash_type, hash_value, hash_type
 
     # Return type & value of a hostname attribute
@@ -488,20 +496,31 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 pe_object.add_attribute(relation, value, type=attribute_type)
         misp_object = self.misp_event.add_object(pe_object)
         if properties.sections:
+            object_id = getattr(properties.parent, 'id_', None)
             for section in properties.sections:
-                section_uuid = self._handle_pe_section(section)
+                section_uuid = self._handle_pe_section(section, object_id)
                 misp_object.add_reference(section_uuid, 'includes')
         file_type, file_value, _ = self._handle_file(properties, False)
         return file_type, file_value, {'pe_uuid': misp_object.uuid}
 
-    def _handle_pe_section(self, section: win_executable_file_object.PESection) -> str:
+    def _handle_pe_section(self, section: win_executable_file_object.PESection,
+                           object_id: Optional[str]) -> str:
         section_object = MISPObject('pe-section', misp_objects_path_custom=misp_objects_path)
         header_hashes = section.header_hashes
         if header_hashes is None:
             header_hashes = section.data_hashes
-        for _hash in header_hashes:
-            hash_type, hash_value, _ = self._handle_hashes_attribute(_hash)
-            section_object.add_attribute(hash_type, hash_value)
+        if header_hashes:
+            # The relation alone is what types the attribute, so a hash type
+            # the template has no relation for has no type: pymisp refuses it
+            template_types = _template_attribute_types('pe-section')
+            for _hash in header_hashes:
+                hash_type, hash_value, _ = self._handle_hashes_attribute(_hash)
+                if hash_type not in template_types:
+                    self._unknown_pe_section_hash_type_warning(
+                        hash_type, hash_value, object_id
+                    )
+                    continue
+                section_object.add_attribute(hash_type, hash_value)
         if section.entropy:
             section_object.add_attribute("entropy", section.entropy.value.value)
         if section.section_header:
@@ -827,12 +846,23 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
 
+    @staticmethod
+    def _object_origin(object_id: Optional[str]) -> str:
+        return f' in the object with id {object_id}' if object_id else ''
+
     def _invalid_template_name_warning(
             self, rejected_name: str, object_id: Optional[str] = None):
-        origin = f' in the object with id {object_id}' if object_id else ''
         self._add_warning(
-            f'Invalid MISP object template name {rejected_name!r}{origin}: '
+            f'Invalid MISP object template name {rejected_name!r}'
+            f'{self._object_origin(object_id)}: '
             f'converted as a {_UNKNOWN_TEMPLATE_NAME} object.'
+        )
+
+    def _unknown_pe_section_hash_type_warning(
+            self, hash_type: str, hash_value: str, object_id: Optional[str]):
+        self._add_warning(
+            f'Unknown PE section hash type {hash_type!r}'
+            f'{self._object_origin(object_id)}: {hash_value} not converted.'
         )
 
     def _unnamed_object_error(self, object_uuid: Optional[str]):
