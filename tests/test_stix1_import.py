@@ -77,7 +77,8 @@ from .test_events import (
     get_event_with_course_of_action_object, get_event_with_domain_attribute,
     get_event_with_domain_ip_object, get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
-    get_event_with_pattern_attribute, get_event_with_process_object,
+    get_event_with_pattern_attribute, get_event_with_pe_objects,
+    get_event_with_process_object,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
     get_event_with_vulnerability_galaxy,
     get_event_with_windows_service_attributes)
@@ -1592,6 +1593,47 @@ class TestSTIX1Import(TestSTIX):
                     ]
                 )
                 self.assertEqual(self._galaxy_tags(parser.misp_event), set())
+
+    def test_internal_misp_export_pe_section_header_with_one_field_round_trips(self):
+        """The export writes a section header as soon as the `pe-section`
+        object carries a `name` or a `size-in-bytes`, each set on its own; the
+        import read both fields of the header it found. A section carrying one
+        of them cost the whole document when the `pe` object was an Indicator,
+        and the section - as a recorded error - when it was an Observable. An
+        absent header field is an absent attribute, nothing more."""
+        for field in ('name', 'size-in-bytes'):
+            for to_ids in (True, False):
+                event = get_event_with_pe_objects()
+                pe_object, section = event['Event']['Object']
+                for attribute in pe_object['Attribute']:
+                    if attribute['object_relation'] == 'original-filename':
+                        attribute['to_ids'] = to_ids
+                section['Attribute'] = [
+                    attribute for attribute in section['Attribute']
+                    if attribute['object_relation'] == field
+                ]
+                with self.subTest(field=field, to_ids=to_ids):
+                    parser = self._parse_internal_package(self._misp_export(event))
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    sections = parser.misp_event.get_objects_by_name('pe-section')
+                    self.assertEqual(
+                        [
+                            {
+                                attribute.object_relation: str(attribute.value)
+                                for attribute in converted.attributes
+                            }
+                            for converted in sections
+                        ],
+                        [{field: section['Attribute'][0]['value']}]
+                    )
+                    converted_pe = parser.misp_event.get_objects_by_name('pe')[0]
+                    self.assertIn(
+                        ('includes', sections[0].uuid),
+                        [
+                            (reference.relationship_type, reference.referenced_uuid)
+                            for reference in converted_pe.references
+                        ]
+                    )
 
     def test_internal_misp_object_ttp_with_unconvertible_content_records_an_error(self):
         """A TTP the export titles as a MISP attribute or object is read for
