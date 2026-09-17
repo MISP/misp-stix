@@ -679,6 +679,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return threat_actor.id_
         return f"{self._orgname_id}:ThreatActor-{cluster['uuid']}"
 
+    def _parse_threat_actor_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
+        # A STIX 1 Indicator has no threat actor slot: the actor lands where
+        # an event-level one does
+        self._parse_threat_actor_galaxy(galaxy)
+
     def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         galaxy_name = galaxy['name']
         for cluster in galaxy['GalaxyCluster']:
@@ -2235,6 +2240,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
+
+    def _parse_threat_actor_event_galaxy(self, galaxy: dict):
+        self._parse_threat_actor_galaxy(galaxy)
 
     def _parse_threat_actor_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:

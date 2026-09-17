@@ -267,7 +267,7 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
             ),
             **dict.fromkeys(
                 MISPtoSTIXMapping.threat_actor_types(),
-                '_parse_threat_actor_galaxy'
+                '_parse_threat_actor_{}_galaxy'
             ),
             **dict.fromkeys(
                 MISPtoSTIXMapping.tool_types(), '_parse_tool_{}_galaxy'
