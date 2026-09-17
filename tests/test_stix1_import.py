@@ -55,6 +55,7 @@ from stix.incident.history import History, HistoryItem, JournalEntry
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP, Behavior
+from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.infrastructure import Infrastructure
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
@@ -67,10 +68,12 @@ from ._test_stix_import import (
     SMUGGLING_TAG_VALUE)
 from .test_events import (
     get_base_event, get_event_with_asn_object,
-    get_event_with_attack_pattern_object, get_event_with_domain_attribute,
+    get_event_with_attack_pattern_galaxy, get_event_with_attack_pattern_object,
+    get_event_with_course_of_action_galaxy, get_event_with_domain_attribute,
     get_event_with_domain_ip_object, get_event_with_github_username_attribute,
-    get_event_with_ip_port_attributes, get_event_with_pattern_attribute,
-    get_event_with_process_object, get_event_with_windows_service_attributes)
+    get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
+    get_event_with_pattern_attribute, get_event_with_process_object,
+    get_event_with_tool_galaxy, get_event_with_windows_service_attributes)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
@@ -1005,9 +1008,9 @@ class TestSTIX1Import(TestSTIX):
         parser = self._parse_external_package(stix_package)
         attribute = parser.misp_event.attributes[0]
         tags = {tag['name'] for tag in attribute.tags}
-        self.assertIn(f'misp-galaxy:ransomware="{SANITISED_TAG_VALUE}"', tags)
+        self.assertIn(f'misp-galaxy:mitre-malware="{SANITISED_TAG_VALUE}"', tags)
         self.assertNotIn(
-            f'misp-galaxy:ransomware="{SMUGGLING_TAG_VALUE}"', tags
+            f'misp-galaxy:mitre-malware="{SMUGGLING_TAG_VALUE}"', tags
         )
 
     def test_external_threat_actor_galaxy_lands_on_the_event(self):
@@ -1026,7 +1029,7 @@ class TestSTIX1Import(TestSTIX):
         stix_package.add_ttp(self._ttp_with_malware('WannaCry'))
         parser = self._parse_external_package(stix_package)
         tags = {tag['name'] for tag in parser.misp_event.tags}
-        self.assertIn('misp-galaxy:ransomware="WannaCry"', tags)
+        self.assertIn('misp-galaxy:mitre-malware="WannaCry"', tags)
 
     def test_internal_threat_actor_galaxy_lands_on_the_event(self):
         """A threat actor of a MISP-generated package is the export of an event
@@ -1041,6 +1044,86 @@ class TestSTIX1Import(TestSTIX):
         parser = self._parse_internal_package(stix_package)
         tags = {tag['name'] for tag in parser.misp_event.tags}
         self.assertIn('misp-galaxy:threat-actor="APT-A"', tags)
+
+    @staticmethod
+    def _galaxy_tags(misp_event):
+        return {
+            tag['name'] for tag in misp_event.tags
+            if tag['name'].startswith('misp-galaxy:')
+        }
+
+    def test_external_galaxy_tags_name_galaxies_that_exist(self):
+        """A STIX 1 construct carries a cluster value and no galaxy: the tag
+        written for it names the galaxy the construct stands for, which has to
+        be one MISP has - `misp-attack-pattern`, `ransomware` and `tool` named
+        none, or none the MITRE clusters a document carries live in. No course
+        of action here: an external one is an object, never a galaxy."""
+        ttp = TTP()
+        ttp.id_ = f'MISP:TTP-{_ACTOR_UUID}'
+        attack_pattern = AttackPattern()
+        attack_pattern.title = 'DLL Search Order Hijacking - T1038'
+        malware_instance = MalwareInstance()
+        malware_instance.title = 'Elise - S0081'
+        ttp.behavior = Behavior()
+        ttp.behavior.add_attack_pattern(attack_pattern)
+        ttp.behavior.add_malware_instance(malware_instance)
+        tool = ToolInformation()
+        tool.name = 'ifconfig - S0101'
+        ttp.resources = Resource()
+        ttp.resources.tools = Tools([tool])
+        vulnerability = Vulnerability()
+        vulnerability.title = 'Ghost'
+        exploit_target = ExploitTarget()
+        exploit_target.add_vulnerability(vulnerability)
+        ttp.add_exploit_target(exploit_target)
+        stix_package = STIXPackage()
+        stix_package.add_ttp(ttp)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            self._galaxy_tags(parser.misp_event),
+            {
+                'misp-galaxy:mitre-attack-pattern='
+                '"DLL Search Order Hijacking - T1038"',
+                'misp-galaxy:mitre-malware="Elise - S0081"',
+                'misp-galaxy:mitre-tool="ifconfig - S0101"',
+                'misp-galaxy:branded-vulnerability="Ghost"'
+            }
+        )
+
+    def test_internal_galaxy_tags_name_galaxies_that_exist(self):
+        """The MISP export writes each cluster's value and never its galaxy:
+        the tags the import writes back name the galaxy each construct stands
+        for, and it has to be one MISP has - a MISP export used to re-import
+        with `course-of-action` and `misp-attack-pattern` tags naming no galaxy
+        at all, and `ransomware` and `tool` ones naming no cluster."""
+        event = get_base_event()
+        event['Event']['Attribute'] = [
+            {
+                'uuid': _IP_UUID, 'type': 'ip-src', 'value': '203.0.113.0',
+                'category': 'Network activity', 'to_ids': True,
+                'Galaxy': [
+                    get_event()['Event']['Galaxy'][0] for get_event in (
+                        get_event_with_attack_pattern_galaxy,
+                        get_event_with_course_of_action_galaxy,
+                        get_event_with_malware_galaxy,
+                        get_event_with_tool_galaxy
+                    )
+                ]
+            }
+        ]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            self._galaxy_tags(parser.misp_event),
+            {
+                'misp-galaxy:mitre-attack-pattern='
+                '"Access Token Manipulation - T1134"',
+                'misp-galaxy:mitre-course-of-action='
+                '"Automated Exfiltration Mitigation - T1020"',
+                'misp-galaxy:mitre-malware="BISCUIT - S0017"',
+                'misp-galaxy:mitre-tool="cmd - S0106"'
+            }
+        )
 
     def test_external_tlp_marking_writes_one_taxonomy_entry(self):
         """A TLP colour is written into a taxonomy tag of the library's own: it
@@ -1941,5 +2024,6 @@ class TestSTIX1Import(TestSTIX):
         attribute = parser.misp_event.attributes[0]
         self.assertEqual(attribute.type, 'vulnerability')
         self.assertIn(
-            'misp-galaxy:tool="Mimikatz"', {tag['name'] for tag in attribute.tags}
+            'misp-galaxy:mitre-tool="Mimikatz"',
+            {tag['name'] for tag in attribute.tags}
         )
