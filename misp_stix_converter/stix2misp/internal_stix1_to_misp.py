@@ -101,12 +101,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if package.courses_of_action:
                 for course_of_action in package.courses_of_action:
                     self.galaxies.update(
-                        self._parse_galaxy(course_of_action, 'title', 'course-of-action')
+                        self._parse_galaxy(course_of_action, 'title', 'course_of_action')
                     )
             if package.threat_actors:
                 for threat_actor in package.threat_actors:
                     self.galaxies.update(
-                        self._parse_galaxy(threat_actor, 'title', 'threat-actor')
+                        self._parse_galaxy(threat_actor, 'title', 'threat_actor')
                     )
             if package.ttps:
                 for ttp in package.ttps.ttp:
@@ -202,18 +202,18 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if ttp.behavior:
             if ttp.behavior.attack_patterns:
                 for attack_pattern in ttp.behavior.attack_patterns:
-                    self.galaxies.update(self._parse_galaxy(attack_pattern, 'title', 'misp-attack-pattern'))
+                    self.galaxies.update(self._parse_galaxy(attack_pattern, 'title', 'attack_pattern'))
             if ttp.behavior.malware_instances:
                 for malware_instance in ttp.behavior.malware_instances:
                     if not malware_instance._XSI_TYPE or 'stix-maec' not in malware_instance._XSI_TYPE:
-                        self.galaxies.update(self._parse_galaxy(malware_instance, 'title', 'ransomware'))
+                        self.galaxies.update(self._parse_galaxy(malware_instance, 'title', 'malware'))
         elif ttp.exploit_targets:
             if ttp.exploit_targets.exploit_target:
                 for exploit_target in ttp.exploit_targets.exploit_target:
                     if exploit_target.item.vulnerabilities:
                         for vulnerability in exploit_target.item.vulnerabilities:
                             self.galaxies.update(
-                                self._parse_galaxy(vulnerability, 'title', 'branded-vulnerability')
+                                self._parse_galaxy(vulnerability, 'title', 'vulnerability')
                             )
         elif ttp.resources:
             if ttp.resources.tools:

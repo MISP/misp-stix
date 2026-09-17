@@ -167,12 +167,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                                 }
                             )
                         elif vulnerability.title:
-                            tag_name = self._build_tag(
-                                'misp-galaxy', 'branded-vulnerability',
-                                vulnerability.title
+                            galaxies.update(
+                                self._resolve_galaxy(
+                                    vulnerability.title, 'vulnerability'
+                                )
                             )
-                            if tag_name is not None:
-                                galaxies.add(tag_name)
         if len(attributes) == 1:
             attributes[0].update(self._sanitise_attribute_uuid(ttp.id_))
         return attributes
@@ -192,10 +191,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if ttp.behavior:
             if ttp.behavior.attack_patterns:
                 for attack_pattern in ttp.behavior.attack_patterns:
-                    yield from self._parse_galaxy(attack_pattern, 'title', 'misp-attack-pattern')
+                    yield from self._parse_galaxy(attack_pattern, 'title', 'attack_pattern')
             if ttp.behavior.malware_instances:
                 for malware_instance in ttp.behavior.malware_instances:
-                    yield from self._parse_galaxy(malware_instance, 'title', 'ransomware')
+                    yield from self._parse_galaxy(malware_instance, 'title', 'malware')
         if ttp.resources and ttp.resources.tools:
             for tool in ttp.resources.tools:
                 yield from self._parse_galaxy(tool, 'name', 'tool')
@@ -365,22 +364,22 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_threat_actor(self, threat_actor: ThreatActor):
         if getattr(threat_actor, 'title', None) is not None:
-            self.galaxies.update(self._parse_galaxy(threat_actor, 'title', 'threat-actor'))
+            self.galaxies.update(self._parse_galaxy(threat_actor, 'title', 'threat_actor'))
         elif getattr(threat_actor, 'identity', None) is not None:
             identity = threat_actor.identity
             if getattr(identity, 'name', None) is not None:
-                self.galaxies.update(self._resolve_galaxy(identity.name, 'threat-actor'))
+                self.galaxies.update(self._resolve_galaxy(identity.name, 'threat_actor'))
             elif hasattr(identity, 'specification') and getattr(identity.specification, 'party_name', None) is not None:
                 party_name = identity.specification.party_name
                 if getattr(party_name, 'person_names', None) is not None:
                     for person_name in party_name.person_names:
                         self.galaxies.update(
-                            self._resolve_galaxy(person_name.name_elements[0].value, 'threat-actor')
+                            self._resolve_galaxy(person_name.name_elements[0].value, 'threat_actor')
                         )
                 elif getattr(party_name, 'organisation_names', None) is not None:
                     for organisation_name in party_name.organisation_names:
                         self.galaxies.update(
-                            self._resolve_galaxy(organisation_name.name_elements[0].value, 'threat-actor')
+                            self._resolve_galaxy(organisation_name.name_elements[0].value, 'threat_actor')
                         )
 
     def _parse_ttp(self, ttp: TTP):

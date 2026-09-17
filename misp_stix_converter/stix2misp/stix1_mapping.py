@@ -94,6 +94,18 @@ class STIX1toMISPMapping:
         size_in_bytes = ('size-in-bytes', 'size_in_bytes.value', 'size-in-bytes'),
         peak_entropy = ('float', 'peak_entropy.value', 'entropy')
     )
+    # The galaxy each STIX 1 construct is imported as a cluster of: the export
+    # writes the cluster's value and never its galaxy, so the import names one
+    # the cluster can be looked up in - the consolidated MITRE ATT&CK galaxy
+    # where MITRE has one, the single MISP galaxy of the type otherwise.
+    __galaxy_types_mapping = Mapping(
+        attack_pattern = 'mitre-attack-pattern',
+        course_of_action = 'mitre-course-of-action',
+        malware = 'mitre-malware',
+        threat_actor = 'threat-actor',
+        tool = 'mitre-tool',
+        vulnerability = 'branded-vulnerability'
+    )
     __network_connection_fields = ('source_socket_address', 'destination_socket_address')
     __network_fields = ('src', 'dst')
     __network_reference_mapping = Mapping(
@@ -188,6 +200,10 @@ class STIX1toMISPMapping:
     @classmethod
     def file_mapping(cls) -> dict:
         return cls._file_mapping
+
+    @classmethod
+    def galaxy_types_mapping(cls, construct: str) -> str:
+        return cls.__galaxy_types_mapping[construct]
 
     @classmethod
     def network_fields(cls) -> tuple:

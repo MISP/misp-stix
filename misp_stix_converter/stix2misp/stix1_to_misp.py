@@ -781,17 +781,20 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 return [value.value for value in getattr(stix_object, feature)]
 
     def _parse_galaxy(self, stix_object: _STIX_OBJECT_TYPING,
-                      feature: str, default_value: str):
+                      feature: str, construct: str):
         names = self._get_galaxy_name(stix_object, feature)
         if names:
             if isinstance(names, list):
                 for name in names:
-                    yield from self._resolve_galaxy(name, default_value)
+                    yield from self._resolve_galaxy(name, construct)
             else:
-                yield from self._resolve_galaxy(names, default_value)
+                yield from self._resolve_galaxy(names, construct)
 
-    def _resolve_galaxy(self, galaxy_name: str, default_value: str) -> list:
-        tag_name = self._build_tag('misp-galaxy', default_value, galaxy_name)
+    def _resolve_galaxy(self, galaxy_name: str, construct: str) -> list:
+        tag_name = self._build_tag(
+            'misp-galaxy', self._mapping.galaxy_types_mapping(construct),
+            galaxy_name
+        )
         return [tag_name] if tag_name is not None else []
 
     ############################################################################
