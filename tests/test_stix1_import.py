@@ -73,11 +73,14 @@ from ._test_stix_import import (
 from .test_events import (
     get_base_event, get_event_with_asn_object,
     get_event_with_attack_pattern_galaxy, get_event_with_attack_pattern_object,
-    get_event_with_course_of_action_galaxy, get_event_with_domain_attribute,
+    get_event_with_course_of_action_galaxy,
+    get_event_with_course_of_action_object, get_event_with_domain_attribute,
     get_event_with_domain_ip_object, get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
     get_event_with_pattern_attribute, get_event_with_process_object,
-    get_event_with_tool_galaxy, get_event_with_windows_service_attributes)
+    get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
+    get_event_with_vulnerability_galaxy,
+    get_event_with_windows_service_attributes)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
@@ -1479,6 +1482,136 @@ class TestSTIX1Import(TestSTIX):
             'name',
             [attribute.object_relation
              for attribute in misp_objects['attack-pattern'].attributes]
+        )
+
+    def test_internal_misp_export_event_galaxies_round_trip_as_tags(self):
+        """The export writes an event galaxy the way it writes the MISP object
+        of the same kind - a TTP the Incident leverages, a Course of Action it
+        takes - and the import told the two apart by that reference alone: an
+        attack pattern or vulnerability cluster came back as an object, a
+        malware or tool one as nothing at all. Each cluster is its tag, and
+        only its tag."""
+        for get_event in (
+                get_event_with_attack_pattern_galaxy,
+                get_event_with_course_of_action_galaxy,
+                get_event_with_malware_galaxy,
+                get_event_with_threat_actor_galaxy,
+                get_event_with_tool_galaxy,
+                get_event_with_vulnerability_galaxy):
+            event = get_event()
+            galaxy = event['Event']['Galaxy'][0]
+            cluster = galaxy['GalaxyCluster'][0]
+            with self.subTest(galaxy=galaxy['type']):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._galaxy_tags(parser.misp_event),
+                    {f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'}
+                )
+                self.assertEqual(parser.misp_event.objects, [])
+                self.assertEqual(parser.misp_event.attributes, [])
+
+    def test_internal_misp_export_course_of_action_object_round_trips(self):
+        """A `course-of-action` object is written as a Course of Action the
+        Incident takes, as a course of action galaxy is - and every Course of
+        Action of the package came back as a galaxy tag, the object lost. The
+        object carries the fields a cluster has none of, and the Incident
+        takes it stamped with the object's timestamp: it comes back as the
+        object it was, next to the tag the cluster is."""
+        event = get_event_with_course_of_action_object()
+        event['Event']['Galaxy'] = get_event_with_course_of_action_galaxy()['Event']['Galaxy']
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        misp_object = event['Event']['Object'][0]
+        self.assertEqual(
+            [
+                (
+                    converted.name, converted.uuid,
+                    {
+                        attribute.object_relation: attribute.value
+                        for attribute in converted.attributes
+                    }
+                )
+                for converted in parser.misp_event.objects
+            ],
+            [
+                (
+                    'course-of-action', misp_object['uuid'],
+                    {
+                        attribute['object_relation']: attribute['value']
+                        for attribute in misp_object['Attribute']
+                    }
+                )
+            ]
+        )
+        self.assertEqual(
+            self._galaxy_tags(parser.misp_event),
+            {
+                'misp-galaxy:mitre-course-of-action='
+                '"Automated Exfiltration Mitigation - T1020"'
+            }
+        )
+
+    def test_internal_misp_export_course_of_action_object_is_told_by_either_signal(self):
+        """The two things a `course-of-action` object leaves on the export and
+        a cluster does not - the fields beyond a name and a description, the
+        timestamp the Incident takes it with - each tell it on their own: an
+        object stripped of one still comes back as an object."""
+        for stripped in ('timestamp', 'fields'):
+            event = get_event_with_course_of_action_object()
+            misp_object = event['Event']['Object'][0]
+            if stripped == 'timestamp':
+                del misp_object['timestamp']
+            else:
+                misp_object['Attribute'] = [
+                    attribute for attribute in misp_object['Attribute']
+                    if attribute['object_relation'] in ('name', 'description')
+                ]
+            with self.subTest(stripped=stripped):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (
+                            converted.name,
+                            {
+                                attribute.object_relation: attribute.value
+                                for attribute in converted.attributes
+                            }
+                        )
+                        for converted in parser.misp_event.objects
+                    ],
+                    [
+                        (
+                            'course-of-action',
+                            {
+                                attribute['object_relation']: attribute['value']
+                                for attribute in misp_object['Attribute']
+                            }
+                        )
+                    ]
+                )
+                self.assertEqual(self._galaxy_tags(parser.misp_event), set())
+
+    def test_internal_misp_object_ttp_with_unconvertible_content_records_an_error(self):
+        """A TTP the export titles as a MISP attribute or object is read for
+        the attack pattern, vulnerability or weakness those are written as:
+        one carrying anything else was dropped without a word."""
+        ttp = self._ttp_with_malware('Elise - S0081')
+        ttp.title = 'misc: malware (MISP Object)'
+        inner_package = STIXPackage()
+        inner_package.add_incident(self._incident_with_content())
+        inner_package.add_ttp(ttp)
+        parser = self._parse_internal_package(
+            self._wrapped_package(inner_package)
+        )
+        self.assertEqual(parser.misp_event.objects, [])
+        self.assertEqual(self._galaxy_tags(parser.misp_event), set())
+        self.assertIn(
+            f'Unable to convert the TTP with id MISP:TTP-{_ACTOR_UUID}: no '
+            'attack pattern, vulnerability or weakness to read a MISP '
+            'attribute or object from',
+            parser.diagnostics()['errors']['misp event']
         )
 
     def test_internal_incident_without_timestamp_converts(self):
