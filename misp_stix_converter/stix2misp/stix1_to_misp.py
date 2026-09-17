@@ -525,9 +525,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if section.entropy:
             section_object.add_attribute("entropy", section.entropy.value.value)
         if section.section_header:
+            # Every header field is optional, and MISP's export writes the
+            # header as soon as the section carries a name or a size
             section_header = section.section_header
-            section_object.add_attribute("name", section_header.name.value)
-            section_object.add_attribute("size-in-bytes", section_header.size_of_raw_data.value)
+            if section_header.name:
+                section_object.add_attribute("name", section_header.name.value)
+            if section_header.size_of_raw_data:
+                section_object.add_attribute("size-in-bytes", section_header.size_of_raw_data.value)
         return self.misp_event.add_object(section_object).uuid
 
     # Return type & value of a names pipe attribute
