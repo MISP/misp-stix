@@ -9,6 +9,7 @@ from pymisp import MISPAttribute, MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from pymisp.api import describe_types
 from datetime import datetime
+from stix.coa import CourseOfAction
 from stix.common.related import RelatedIndicator, RelatedObservable
 from stix.core import STIXPackage
 from stix.exploit_target import Vulnerability, Weakness
@@ -19,9 +20,10 @@ from typing import Optional
 
 _MISP_categories = describe_types.get('categories')
 _MISP_objects_path = resources_path / 'objects'
-# How the export titles the TTP a `vulnerability` or `weakness` attribute is
-# written as, as against the `(MISP Galaxy)` a galaxy cluster is written with
-_MISP_ATTRIBUTE_TITLE_SUFFIX = ' (MISP Attribute)'
+# How the export titles the TTP it writes a galaxy cluster as, against the
+# `(MISP Attribute)` and `(MISP Object)` it titles the TTP of an attribute or
+# an object with: what tells a cluster from the content written next to it
+_MISP_GALAXY_TITLE_SUFFIX = ' (MISP Galaxy)'
 
 
 class InternalSTIX1toMISPParser(STIX1toMISPParser):
@@ -63,10 +65,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         its Observables, and there is no Incident to relate them to under
         their category: an Indicator carries it in the title the export
         writes, an Observable nowhere. The `vulnerability` and `weakness`
-        attributes are TTPs, as in an event export - which has the Incident
-        leverage them, where the galaxy TTPs next to them are only indicated
-        by the Indicators: here the title the export gives each TTP is what
-        tells the two apart.
+        attributes are TTPs, next to the galaxy TTPs the Indicators indicate,
+        and the package context reads the title the export gives each.
 
         :param package: the package the attributes are written on
         """
@@ -81,13 +81,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if package.observables:
             for observable in package.observables:
                 self._parse_attribute_observable(observable)
-        object_references = tuple(
-            self._extract_uuid(ttp.id_) for ttp in (
-                package.ttps.ttp if package.ttps else ()
-            )
-            if (ttp.title or '').endswith(_MISP_ATTRIBUTE_TITLE_SUFFIX)
-        )
-        self._parse_package_context(package, object_references)
+        self._parse_package_context(package)
 
     def _parse_event_package(self, package: STIXPackage):
         """Convert one related package of a MISP event export: its Incident
@@ -96,28 +90,22 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         :param package: the package the event was exported as
         """
         self._event = package.incidents[0]
-        object_references = []
+        # The export writes the Course of Action of a `course-of-action`
+        # object and the one of an event galaxy alike: on the package, taken
+        # by the Incident through a stub carrying the reference - and the
+        # timestamp of the object, which a galaxy cluster has none of. The
+        # package loop below parses the referenced ones; a Course of Action
+        # written in full where the stub goes is parsed for what it carries
+        object_courses_of_action = set()
         for coa_taken in self._event.coa_taken:
             course_of_action = coa_taken.course_of_action
-            # The export writes the COA taken as a reference to a Course
-            # of Action of the package, which the package loop below
-            # parses: a stub carrying only the reference has nothing more
             if course_of_action.id_ is None and course_of_action.idref:
+                if course_of_action.timestamp is not None:
+                    object_courses_of_action.add(
+                        self._extract_uuid(course_of_action.idref)
+                    )
                 continue
             self._parse_course_of_action(course_of_action)
-        if self._event.attributed_threat_actors:
-            object_references.extend(
-                threat_actor.item.idref for threat_actor
-                in self._event.attributed_threat_actors.threat_actor
-            )
-        if self._event.leveraged_ttps and self._event.leveraged_ttps.ttp:
-            object_references.extend(
-                ttp.item.idref for ttp in self._event.leveraged_ttps.ttp
-            )
-        object_references = tuple(
-            '-'.join(part for part in reference.split('-')[-5:])
-            for reference in object_references if reference is not None
-        )
         if self._event.timestamp:
             self._record_date_and_timestamp(self._event.timestamp)
         self.titles.add(self._get_event_info(package))
@@ -154,22 +142,30 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if self._event.information_source and self._event.information_source.references:
             for reference in self._event.information_source.references:
                 self.misp_event.add_attribute(**{'type': 'link', 'value': reference})
-        self._parse_package_context(package, object_references)
+        self._parse_package_context(
+            package, frozenset(object_courses_of_action)
+        )
 
     def _parse_package_context(self, package: STIXPackage,
-                               object_references: tuple = ()):
+                               object_courses_of_action: frozenset = frozenset()):
         """Convert the context objects a package carries next to its content.
 
-        Courses of action and threat actors are galaxies. So is a TTP, unless
-        the Incident leverages it: the export writes the attack pattern,
-        vulnerability and weakness MISP objects as the TTPs an Incident
-        leverages, and those come back as the objects they were.
+        Threat actors are galaxies. Courses of action and TTPs are galaxies
+        or MISP objects, and the export writes both kinds alike, referenced
+        from the Incident the same way: a TTP is told by the title the export
+        gives it, a Course of Action by what it carries - the fields a cluster
+        has none of, or the timestamp of the object the Incident took it with.
 
         :param package: the package the context objects are written on
-        :param object_references: the uuids of the TTPs the Incident leverages
+        :param object_courses_of_action: the uuids of the Courses of Action
+            the Incident took stamped with the timestamp of a MISP object
         """
         if package.courses_of_action:
             for course_of_action in package.courses_of_action:
+                if self._is_course_of_action_object(
+                        course_of_action, object_courses_of_action):
+                    self._parse_course_of_action(course_of_action)
+                    continue
                 self.galaxies.update(
                     self._parse_galaxy(course_of_action, 'title', 'course_of_action')
                 )
@@ -180,23 +176,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 )
         if package.ttps:
             for ttp in package.ttps.ttp:
-                ttp_id = '-'.join((part for part in ttp.id_.split('-')[-5:]))
-                if ttp_id not in object_references:
+                if (ttp.title or '').endswith(_MISP_GALAXY_TITLE_SUFFIX):
                     self._parse_ttp(ttp)
-                    continue
-                if ttp.behavior:
-                    if ttp.behavior.attack_patterns:
-                        for attack_pattern in ttp.behavior.attack_patterns:
-                            self._parse_attack_pattern_object(attack_pattern, ttp_id)
-                    continue
-                if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
-                    for exploit_target in ttp.exploit_targets.exploit_target:
-                        if exploit_target.item.vulnerabilities:
-                            for vulnerability in exploit_target.item.vulnerabilities:
-                                self._parse_vulnerability_object(vulnerability, ttp_id)
-                        if exploit_target.item.weaknesses:
-                            for weakness in exploit_target.item.weaknesses:
-                                self._parse_weakness_object(weakness, ttp_id)
+                else:
+                    self._parse_ttp_object(ttp)
                 # if ttp.handling:
                 #     self.parse_tlp_marking(ttp.handling)
 
@@ -260,6 +243,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self._parse_misp_object_observable(observable)
 
     def _parse_ttp(self, ttp: TTP):
+        """Convert the TTP a galaxy cluster was exported as: the galaxy tag
+        its attack pattern, malware, vulnerability or tool names.
+
+        :param ttp: the TTP, titled `(MISP Galaxy)`
+        """
         if ttp.behavior:
             if ttp.behavior.attack_patterns:
                 for attack_pattern in ttp.behavior.attack_patterns:
@@ -280,6 +268,33 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if ttp.resources.tools:
                 for tool in ttp.resources.tools:
                     self.galaxies.update(self._parse_galaxy(tool, 'name', 'tool'))
+
+    def _parse_ttp_object(self, ttp: TTP):
+        """Convert the TTP a MISP attribute or object was exported as: the
+        attack pattern, vulnerability or weakness it carries. One carrying
+        none of the three has nothing the parser reads an attribute or an
+        object from, and the error records it.
+
+        :param ttp: the TTP, titled `(MISP Attribute)` or `(MISP Object)`
+        """
+        ttp_id = self._extract_uuid(ttp.id_)
+        converted = False
+        if ttp.behavior and ttp.behavior.attack_patterns:
+            for attack_pattern in ttp.behavior.attack_patterns:
+                self._parse_attack_pattern_object(attack_pattern, ttp_id)
+            converted = True
+        if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
+            for exploit_target in ttp.exploit_targets.exploit_target:
+                if exploit_target.item.vulnerabilities:
+                    for vulnerability in exploit_target.item.vulnerabilities:
+                        self._parse_vulnerability_object(vulnerability, ttp_id)
+                    converted = True
+                if exploit_target.item.weaknesses:
+                    for weakness in exploit_target.item.weaknesses:
+                        self._parse_weakness_object(weakness, ttp_id)
+                    converted = True
+        if not converted:
+            self._unconverted_ttp_error(ttp.id_)
 
     def _parse_vulnerability_object(self, vulnerability: Vulnerability, ttp_id: str):
         attributes = []
@@ -589,6 +604,35 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         # same way, and only the composition branch below uses the name
         if "ObservableComposition" in observable_id:
             return observable_id.split("_")[0].split(":")[1]
+
+    def _is_course_of_action_object(
+            self, course_of_action: CourseOfAction,
+            object_courses_of_action: frozenset) -> bool:
+        """Tell the Course of Action a `course-of-action` object was exported
+        as from the one a galaxy cluster was.
+
+        A cluster is written as a title and a description, and taken by the
+        Incident through a bare reference: a field beyond those two, or a
+        reference stamped with the object's timestamp, is the object's.
+
+        :param course_of_action: the Course of Action the package carries
+        :param object_courses_of_action: the uuids of the Courses of Action
+            the Incident took stamped with the timestamp of a MISP object
+        :return: whether the Course of Action is a MISP object
+        """
+        if self._extract_uuid(course_of_action.id_) in object_courses_of_action:
+            return True
+        return any(
+            getattr(course_of_action, field) is not None
+            for field in self._mapping.course_of_action_mapping()
+            if field != 'description'
+        )
+
+    def _unconverted_ttp_error(self, ttp_id: str):
+        self._add_error(
+            f'Unable to convert the TTP with id {ttp_id}: no attack pattern, '
+            'vulnerability or weakness to read a MISP attribute or object from'
+        )
 
     def _unnamed_composition_warning(self, object_id: str):
         self._add_warning(
