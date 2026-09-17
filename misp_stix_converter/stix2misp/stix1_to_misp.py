@@ -5,6 +5,7 @@ from ..tools.misp_object_templates import (
     _rejected_name_note, _sanitise_template_name, _template_attribute_types,
     _UNKNOWN_TEMPLATE_NAME)
 from ..tools.stix1_loading_helpers import load_stix1_package
+from .exceptions import MissingSTIXContentError
 from .importparser import STIXtoMISPParser
 from abc import ABCMeta
 from base64 import b64decode, b64encode
@@ -770,6 +771,35 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # its last parsing step, in a stable order the set cannot provide.
         for tag_name in sorted(self.galaxies):
             self.misp_event.add_tag(tag_name)
+
+    def _refuse_empty_event(self):
+        """Refuse the event a package converted nothing into.
+
+        An event with no attribute, object or galaxy is what a document the
+        parser could read nothing from yields - a MISP export parsed as
+        External finds nothing at package level, a package made of a header
+        has nothing below it - and a caller told the conversion succeeded
+        writes it as an imported event holding nothing. Raised as the error
+        MISP core already reads as `contains nothing to import`, so that the
+        consumers driving the parser themselves refuse it as the entry
+        functions do. The errors recorded are counted in the message: a
+        document carrying nothing and one carrying only what the parser could
+        not read are refused alike, and the count is what tells the reader of
+        the message which one they hold - the errors recorded on the instance,
+        which under Parser Reuse are the ones of every document it converted.
+
+        :raises MissingSTIXContentError: if nothing converted
+        """
+        if self.misp_event.attributes or self.misp_event.objects or self.galaxies:
+            return
+        message = (
+            f'The STIX {self.stix_version} package converted to no MISP '
+            'attribute, object or galaxy'
+        )
+        errors = sum(len(recorded) for recorded in self.errors.values())
+        if errors:
+            message = f"{message} - {errors} error{'s' if errors > 1 else ''} recorded"
+        raise MissingSTIXContentError(f'{message}.')
 
     @staticmethod
     def _get_galaxy_name(stix_object: _STIX_OBJECT_TYPING,

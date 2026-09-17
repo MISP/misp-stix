@@ -102,6 +102,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         self._set_distribution()
         self._apply_object_references()
         self._apply_event_galaxies()
+        self._refuse_empty_event()
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()

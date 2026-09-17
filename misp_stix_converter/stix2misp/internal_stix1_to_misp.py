@@ -8,6 +8,8 @@ from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from pymisp.api import describe_types
+from datetime import datetime
+from stix.common.related import RelatedIndicator, RelatedObservable
 from stix.core import STIXPackage
 from stix.exploit_target import Vulnerability, Weakness
 from stix.indicator import Indicator, Observable
@@ -17,6 +19,9 @@ from typing import Optional
 
 _MISP_categories = describe_types.get('categories')
 _MISP_objects_path = resources_path / 'objects'
+# How the export titles the TTP a `vulnerability` or `weakness` attribute is
+# written as, as against the `(MISP Galaxy)` a galaxy cluster is written with
+_MISP_ATTRIBUTE_TITLE_SUFFIX = ' (MISP Attribute)'
 
 
 class InternalSTIX1toMISPParser(STIX1toMISPParser):
@@ -32,103 +37,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         # event mode to ask for, like the External one it sits next to
         self._set_single_event(True)
         self._set_misp_event(MISPEvent())
-        for item in self.stix_package.related_packages.related_package:
-            package = item.item
-            self._event = package.incidents[0]
-            object_references = []
-            for coa_taken in self._event.coa_taken:
-                course_of_action = coa_taken.course_of_action
-                # The export writes the COA taken as a reference to a Course
-                # of Action of the package, which the package loop below
-                # parses: a stub carrying only the reference has nothing more
-                if course_of_action.id_ is None and course_of_action.idref:
-                    continue
-                self._parse_course_of_action(course_of_action)
-            if self._event.attributed_threat_actors:
-                object_references.extend(
-                    threat_actor.item.idref for threat_actor
-                    in self._event.attributed_threat_actors.threat_actor
-                )
-            if self._event.leveraged_ttps and self._event.leveraged_ttps.ttp:
-                object_references.extend(
-                    ttp.item.idref for ttp in self._event.leveraged_ttps.ttp
-                )
-            object_references = tuple(
-                '-'.join(part for part in reference.split('-')[-5:])
-                for reference in object_references if reference is not None
-            )
-            if self._event.timestamp:
-                stix_date = self._event.timestamp
-                try:
-                    self.dates.add(stix_date.date())
-                except AttributeError:
-                    self.dates.add(stix_date)
-                self.timestamps.add(self._timestamp_from_date(stix_date))
-            self.titles.add(self._get_event_info(package))
-            if self._event.related_indicators:
-                for indicator in self._event.related_indicators.indicator:
-                    self._parse_indicator(indicator)
-            if self._event.related_observables:
-                for observable in self._event.related_observables.observable:
-                    self._parse_observable(observable)
-            if self._event.history:
-                for entry in self._event.history.history_items:
-                    journal_entry = entry.journal_entry.value
-                    try:
-                        entry_type, entry_value = journal_entry.split(': ')
-                        if entry_type == "MISP Tag":
-                            self.misp_event.add_tag(entry_value)
-                        elif entry_type.startswith('attribute['):
-                            _, category, attribute_type = entry_type.split('[')
-                            self.misp_event.add_attribute(
-                                **{
-                                    'type': attribute_type[:-1],
-                                    'category': category[:-1],
-                                    'value': entry_value
-                                }
-                            )
-                        elif entry_type == "Event Threat Level":
-                            threat_level = self._mapping.threat_level_mapping(
-                                entry_value
-                            )
-                            if threat_level is not None:
-                                self.misp_event.threat_level_id = threat_level
-                    except ValueError:
-                        continue
-            if self._event.information_source and self._event.information_source.references:
-                for reference in self._event.information_source.references:
-                    self.misp_event.add_attribute(**{'type': 'link', 'value': reference})
-            if package.courses_of_action:
-                for course_of_action in package.courses_of_action:
-                    self.galaxies.update(
-                        self._parse_galaxy(course_of_action, 'title', 'course_of_action')
-                    )
-            if package.threat_actors:
-                for threat_actor in package.threat_actors:
-                    self.galaxies.update(
-                        self._parse_galaxy(threat_actor, 'title', 'threat_actor')
-                    )
-            if package.ttps:
-                for ttp in package.ttps.ttp:
-                    ttp_id = '-'.join((part for part in ttp.id_.split('-')[-5:]))
-                    if ttp_id not in object_references:
-                        self._parse_ttp(ttp)
-                        continue
-                    if ttp.behavior:
-                        if ttp.behavior.attack_patterns:
-                            for attack_pattern in ttp.behavior.attack_patterns:
-                                self._parse_attack_pattern_object(attack_pattern, ttp_id)
-                        continue
-                    if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
-                        for exploit_target in ttp.exploit_targets.exploit_target:
-                            if exploit_target.item.vulnerabilities:
-                                for vulnerability in exploit_target.item.vulnerabilities:
-                                    self._parse_vulnerability_object(vulnerability, ttp_id)
-                            if exploit_target.item.weaknesses:
-                                for weakness in exploit_target.item.weaknesses:
-                                    self._parse_weakness_object(weakness, ttp_id)
-                    # if ttp.handling:
-                    #     self.parse_tlp_marking(ttp.handling)
+        # The event export relates one package per event to the wrapper it
+        # writes; an Attribute Collection writes its content on the package
+        # itself, with no Incident to relate anything to
+        if self.stix_package.related_packages:
+            for item in self.stix_package.related_packages.related_package:
+                self._parse_event_package(item.item)
+        else:
+            self._parse_attributes_collection(self.stix_package)
         self._set_distribution()
         self.misp_event.info = ' - '.join(self.titles)
         # An Incident exported without a timestamp gives the event none
@@ -138,6 +54,151 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self.misp_event.timestamp = max(self.timestamps)
         self._apply_object_references()
         self._apply_event_galaxies()
+        self._refuse_empty_event()
+
+    def _parse_attributes_collection(self, package: STIXPackage):
+        """Convert the package an Attribute Collection writes.
+
+        The `to_ids` attributes are the Indicators of the package, the others
+        its Observables, and there is no Incident to relate them to under
+        their category: an Indicator carries it in the title the export
+        writes, an Observable nowhere. The `vulnerability` and `weakness`
+        attributes are TTPs, as in an event export - which has the Incident
+        leverage them, where the galaxy TTPs next to them are only indicated
+        by the Indicators: here the title the export gives each TTP is what
+        tells the two apart.
+
+        :param package: the package the attributes are written on
+        """
+        if package.timestamp:
+            self._record_date_and_timestamp(package.timestamp)
+        self.titles.add(self._get_package_title(package))
+        if package.indicators:
+            for indicator in package.indicators:
+                self._parse_attribute_indicator(
+                    indicator, self._category_from_title(indicator.title)
+                )
+        if package.observables:
+            for observable in package.observables:
+                self._parse_attribute_observable(observable)
+        object_references = tuple(
+            self._extract_uuid(ttp.id_) for ttp in (
+                package.ttps.ttp if package.ttps else ()
+            )
+            if (ttp.title or '').endswith(_MISP_ATTRIBUTE_TITLE_SUFFIX)
+        )
+        self._parse_package_context(package, object_references)
+
+    def _parse_event_package(self, package: STIXPackage):
+        """Convert one related package of a MISP event export: its Incident
+        and the context objects it leverages.
+
+        :param package: the package the event was exported as
+        """
+        self._event = package.incidents[0]
+        object_references = []
+        for coa_taken in self._event.coa_taken:
+            course_of_action = coa_taken.course_of_action
+            # The export writes the COA taken as a reference to a Course
+            # of Action of the package, which the package loop below
+            # parses: a stub carrying only the reference has nothing more
+            if course_of_action.id_ is None and course_of_action.idref:
+                continue
+            self._parse_course_of_action(course_of_action)
+        if self._event.attributed_threat_actors:
+            object_references.extend(
+                threat_actor.item.idref for threat_actor
+                in self._event.attributed_threat_actors.threat_actor
+            )
+        if self._event.leveraged_ttps and self._event.leveraged_ttps.ttp:
+            object_references.extend(
+                ttp.item.idref for ttp in self._event.leveraged_ttps.ttp
+            )
+        object_references = tuple(
+            '-'.join(part for part in reference.split('-')[-5:])
+            for reference in object_references if reference is not None
+        )
+        if self._event.timestamp:
+            self._record_date_and_timestamp(self._event.timestamp)
+        self.titles.add(self._get_event_info(package))
+        if self._event.related_indicators:
+            for indicator in self._event.related_indicators.indicator:
+                self._parse_indicator(indicator)
+        if self._event.related_observables:
+            for observable in self._event.related_observables.observable:
+                self._parse_observable(observable)
+        if self._event.history:
+            for entry in self._event.history.history_items:
+                journal_entry = entry.journal_entry.value
+                try:
+                    entry_type, entry_value = journal_entry.split(': ')
+                    if entry_type == "MISP Tag":
+                        self.misp_event.add_tag(entry_value)
+                    elif entry_type.startswith('attribute['):
+                        _, category, attribute_type = entry_type.split('[')
+                        self.misp_event.add_attribute(
+                            **{
+                                'type': attribute_type[:-1],
+                                'category': category[:-1],
+                                'value': entry_value
+                            }
+                        )
+                    elif entry_type == "Event Threat Level":
+                        threat_level = self._mapping.threat_level_mapping(
+                            entry_value
+                        )
+                        if threat_level is not None:
+                            self.misp_event.threat_level_id = threat_level
+                except ValueError:
+                    continue
+        if self._event.information_source and self._event.information_source.references:
+            for reference in self._event.information_source.references:
+                self.misp_event.add_attribute(**{'type': 'link', 'value': reference})
+        self._parse_package_context(package, object_references)
+
+    def _parse_package_context(self, package: STIXPackage,
+                               object_references: tuple = ()):
+        """Convert the context objects a package carries next to its content.
+
+        Courses of action and threat actors are galaxies. So is a TTP, unless
+        the Incident leverages it: the export writes the attack pattern,
+        vulnerability and weakness MISP objects as the TTPs an Incident
+        leverages, and those come back as the objects they were.
+
+        :param package: the package the context objects are written on
+        :param object_references: the uuids of the TTPs the Incident leverages
+        """
+        if package.courses_of_action:
+            for course_of_action in package.courses_of_action:
+                self.galaxies.update(
+                    self._parse_galaxy(course_of_action, 'title', 'course_of_action')
+                )
+        if package.threat_actors:
+            for threat_actor in package.threat_actors:
+                self.galaxies.update(
+                    self._parse_galaxy(threat_actor, 'title', 'threat_actor')
+                )
+        if package.ttps:
+            for ttp in package.ttps.ttp:
+                ttp_id = '-'.join((part for part in ttp.id_.split('-')[-5:]))
+                if ttp_id not in object_references:
+                    self._parse_ttp(ttp)
+                    continue
+                if ttp.behavior:
+                    if ttp.behavior.attack_patterns:
+                        for attack_pattern in ttp.behavior.attack_patterns:
+                            self._parse_attack_pattern_object(attack_pattern, ttp_id)
+                    continue
+                if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
+                    for exploit_target in ttp.exploit_targets.exploit_target:
+                        if exploit_target.item.vulnerabilities:
+                            for vulnerability in exploit_target.item.vulnerabilities:
+                                self._parse_vulnerability_object(vulnerability, ttp_id)
+                        if exploit_target.item.weaknesses:
+                            for weakness in exploit_target.item.weaknesses:
+                                self._parse_weakness_object(weakness, ttp_id)
+                # if ttp.handling:
+                #     self.parse_tlp_marking(ttp.handling)
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
@@ -185,14 +246,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self.misp_event.add_object(attack_pattern_object)
 
     # Parse indicators of a STIX document coming from our exporter
-    def _parse_indicator(self, indicator: Indicator):
+    def _parse_indicator(self, indicator: RelatedIndicator):
         # define is an indicator will be imported as attribute or object
         if indicator.relationship in _MISP_categories:
             self._parse_misp_attribute_indicator(indicator)
         else:
             self._parse_misp_object_indicator(indicator)
 
-    def _parse_observable(self, observable: Observable):
+    def _parse_observable(self, observable: RelatedObservable):
         if observable.relationship in _MISP_categories:
             self._parse_misp_attribute_observable(observable)
         else:
@@ -264,28 +325,60 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     ############################################################################
 
     # Parse STIX objects that we know will give MISP attributes
-    def _parse_misp_attribute_indicator(self, indicator: Indicator):
-        item = indicator.item
-        if item.observable:
-            misp_attribute = {
-                'to_ids': True, 'category': str(indicator.relationship),
-                'timestamp': self._timestamp_from_date(item.timestamp)
-            }
-            misp_attribute.update(self._sanitise_attribute_uuid(item.id_))
-            observable = item.observable
-            self._parse_misp_attribute(observable, misp_attribute, item.id_, to_ids=True)
+    def _parse_misp_attribute_indicator(self, indicator: RelatedIndicator):
+        self._parse_attribute_indicator(
+            indicator.item, str(indicator.relationship)
+        )
 
-    def _parse_misp_attribute_observable(self, observable):
+    def _parse_misp_attribute_observable(self, observable: RelatedObservable):
         if observable.item:
-            misp_attribute = {
-                'to_ids': False, 'category': str(observable.relationship)
-            }
-            misp_attribute.update(
-                self._sanitise_attribute_uuid(observable.item.id_)
+            self._parse_attribute_observable(
+                observable.item, str(observable.relationship)
             )
-            self._parse_misp_attribute(
-                observable.item, misp_attribute, observable.item.id_
+
+    def _parse_attribute_indicator(
+            self, indicator: Indicator, category: Optional[str] = None):
+        """Convert the Indicator a `to_ids` attribute was exported as.
+
+        :param indicator: the Indicator itself - the item of the Related
+            Indicator an event export relates to its Incident, the Indicator
+            an Attribute Collection writes on the package
+        :param category: the MISP category, from the relationship of the
+            former or the title of the latter - None when neither names one,
+            and pymisp's default for the type stands in
+        """
+        # An Indicator carrying rules and no observable converts to nothing
+        if not indicator.observable:
+            return
+        misp_attribute = {'to_ids': True}
+        if category is not None:
+            misp_attribute['category'] = category
+        if indicator.timestamp:
+            misp_attribute['timestamp'] = self._timestamp_from_date(
+                indicator.timestamp
             )
+        misp_attribute.update(self._sanitise_attribute_uuid(indicator.id_))
+        self._parse_misp_attribute(
+            indicator.observable, misp_attribute, indicator.id_, to_ids=True
+        )
+
+    def _parse_attribute_observable(
+            self, observable: Observable, category: Optional[str] = None):
+        """Convert the Observable an attribute with `to_ids` unset was
+        exported as.
+
+        :param observable: the Observable itself - the item of the Related
+            Observable an event export relates to its Incident, the Observable
+            an Attribute Collection writes on the package
+        :param category: the MISP category the relationship of the former
+            carries - the latter carries none, and pymisp's default for the
+            type stands in
+        """
+        misp_attribute = {'to_ids': False}
+        if category is not None:
+            misp_attribute['category'] = category
+        misp_attribute.update(self._sanitise_attribute_uuid(observable.id_))
+        self._parse_misp_attribute(observable, misp_attribute, observable.id_)
 
     def _parse_misp_attribute(
             self, observable: Observable, misp_attribute: dict,
@@ -441,6 +534,23 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     #                             UTILITY METHODS.                             #
     ############################################################################
 
+    @staticmethod
+    def _category_from_title(title: Optional[str]) -> Optional[str]:
+        """Read the MISP category off the title of an Attribute Collection
+        Indicator.
+
+        The export writes `{category}: {value} (MISP Attribute)`: the one place
+        the category travels when there is no Incident to relate the Indicator
+        to under it. A title of another shape names no category.
+
+        :param title: the Indicator title
+        :return: the category, None when the title names none
+        """
+        if not title:
+            return None
+        category = title.split(': ', 1)[0]
+        return category if category in _MISP_categories else None
+
     # Return type & value of a composite attribute in MISP
     @staticmethod
     def _composite_type(attributes: dict):
@@ -490,11 +600,16 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def _get_event_info(self, package: Optional[STIXPackage] = None):
         # `hasattr` is useless here: the Incident always carries a `title`
         # field, set to None when absent, so only testing the value makes the
-        # fallbacks reachable. The STIX header lives on the package, not on the
-        # Incident: the per-event related package carries this event's own
-        # title, and the wrapper package only the collection-level one.
+        # fallbacks reachable.
         if getattr(self._event, 'title', None):
             return self._event.title
+        return self._get_package_title(package)
+
+    def _get_package_title(self, package: Optional[STIXPackage]):
+        # The STIX header lives on the package, not on the Incident: the
+        # per-event related package carries this event's own title, and the
+        # wrapper package only the collection-level one - which is the one
+        # title an Attribute Collection writes.
         for candidate in (package, self.stix_package):
             title = getattr(
                 getattr(candidate, 'stix_header', None), 'title', None
@@ -502,3 +617,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if title:
                 return title
         return f"Imported from STIX {self.stix_version} Package generated with MISP"
+
+    def _record_date_and_timestamp(self, stix_date: datetime):
+        # The date and timestamp the event takes are the latest of the
+        # Incidents merged into it - or of the one package an Attribute
+        # Collection writes them on
+        try:
+            self.dates.add(stix_date.date())
+        except AttributeError:
+            self.dates.add(stix_date)
+        self.timestamps.add(self._timestamp_from_date(stix_date))
