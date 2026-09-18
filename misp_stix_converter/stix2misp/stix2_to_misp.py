@@ -1555,6 +1555,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'Unknown STIX Marking Definition extension: {identifier}'
         )
 
+    def _unknown_custom_property_warning(
+            self, name: str, object_id: str, field: str, relation: str):
+        self._add_warning(
+            f'Unknown custom property "{field}" on the MISP object "{name}" '
+            f'converted from {object_id}: neither the object template nor '
+            'the import mapping knows the object relation it carries, so it '
+            'is imported as a text attribute with the object relation '
+            f'"{relation}".'
+        )
+
     def _unknown_network_protocol_warning(
             self, protocol: str, object_id: str,
             object_type: Optional[str] = 'indicator'):

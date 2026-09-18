@@ -3,6 +3,9 @@
 
 from ._galaxy_definitions import GALAXY_DEFINITIONS
 from ..exceptions import UndefinedSTIXObjectError
+from ...tools.misp_object_templates import (
+    _custom_property_name, _custom_property_relation,
+    _CUSTOM_PROPERTY_PREFIX, _template_custom_properties)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -17,7 +20,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
     ObservedData as ObservedData_v21, ThreatActor as ThreatActor_v21,
     Tool as Tool_v21, Vulnerability as Vulnerability_v21)
-from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, Iterator, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -102,7 +105,11 @@ class STIX2Converter(metaclass=ABCMeta):
     ############################################################################
 
     def _generic_parser(
-            self, stix_object, feature: Optional[str] = None) -> Iterator[dict]:
+            self, stix_object, feature: Optional[str] = None,
+            name: Optional[str] = None) -> Iterator[dict]:
+        # `name` is the MISP object template the attributes are for, given
+        # when it is not the `feature` spelt with `-`: only the Internal
+        # converter reads it, to restore object relations from the template.
         if feature is None:
             feature = stix_object['type'].replace('-', '_')
         mapping = getattr(self._mapping, f'{feature}_object_mapping')
@@ -386,6 +393,97 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             if field.startswith('misp:'):
                 attribute[field.split(':')[-1]] = value
         return attribute
+
+    ############################################################################
+    #                   OBJECT RELATIONS RESTORATION METHODS.                   #
+    ############################################################################
+
+    def _generic_parser(
+            self, stix_object, feature: Optional[str] = None,
+            name: Optional[str] = None) -> Iterator[dict]:
+        # The walk the base converter does, with every custom property
+        # resolved against the object template first, and the ones the static
+        # table does not list read after them instead of being dropped.
+        if feature is None:
+            feature = stix_object['type'].replace('-', '_')
+        if name is None:
+            name = feature.replace('_', '-')
+        mapping = getattr(self._mapping, f'{feature}_object_mapping')()
+        object_id = stix_object['id']
+        for field, attribute in mapping.items():
+            if field in stix_object:
+                yield from self._populate_object_attributes_with_data(
+                    self._object_relation_mapping(
+                        name, field, attribute, object_id
+                    ),
+                    stix_object[field], object_id
+                )
+        for field in self._unlisted_custom_properties(stix_object, mapping):
+            yield from self._populate_object_attributes_with_data(
+                self._object_relation_mapping(name, field, None, object_id),
+                stix_object[field], object_id
+            )
+
+    def _populate_object_attributes_with_data(
+            self, mapping: dict, values: Any, object_id: str) -> Iterator[dict]:
+        # A custom property carrying an attachment is a `value` and `data`
+        # dictionary: the uuid is seeded on the value, as for any attribute
+        for value in (values if isinstance(values, list) else (values,)):
+            reference = value['value'] if isinstance(value, dict) else value
+            yield self._populate_object_attribute_with_data(
+                value, mapping, uuid=self.main_parser._create_v5_uuid(
+                    f"{object_id} - {mapping['object_relation']} - {reference}"
+                )
+            )
+
+    def _object_relation_mapping(
+            self, name: str, field: str, mapping: Optional[dict],
+            object_id: str) -> Optional[dict]:
+        """Pick the MISP attribute a property of an object's STIX form maps to.
+
+        A custom property carries a MISP object relation folded to the STIX
+        charset (ADR-0013). The object template is the exact inverse of that
+        fold, so it is asked first for the original spelling and the type;
+        the static mapping table comes next, for what the template cannot
+        say - a relation it has dropped since; failing both, the value
+        survives as a text attribute under the folded relation and the loss
+        of spelling and type is reported. Any other property maps through the
+        static table alone.
+
+        :param name: the MISP object template name
+        :param field: the STIX property, or pattern segment, being read
+        :param mapping: the static table entry for that property, if any
+        :param object_id: the STIX object the property comes from
+        :return: the `type` and `object_relation` the attribute takes
+        """
+        if not field.startswith(_CUSTOM_PROPERTY_PREFIX):
+            return mapping
+        # Re-folding the name reads the spellings exported before the fold
+        # (`x_misp_KnownMalicious`) through the template as well
+        folded = _custom_property_name(_custom_property_relation(field))
+        attribute = _template_custom_properties(name).get(folded)
+        if attribute is not None:
+            return attribute
+        if mapping is not None:
+            return mapping
+        relation = _custom_property_relation(folded)
+        self.main_parser._unknown_custom_property_warning(
+            name, object_id, field, relation
+        )
+        return {'type': 'text', 'object_relation': relation}
+
+    @staticmethod
+    def _unlisted_custom_properties(
+            stix_object, mapping: dict) -> Iterator[str]:
+        """Walk the custom properties a static mapping table does not list.
+
+        :param stix_object: the STIX object, or observable, being read
+        :param mapping: the static table the reader iterates
+        :return: the `x_misp_` properties the table would skip
+        """
+        for field in stix_object:
+            if field.startswith(_CUSTOM_PROPERTY_PREFIX) and field not in mapping:
+                yield field
 
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #

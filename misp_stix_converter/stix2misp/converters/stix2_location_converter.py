@@ -53,7 +53,7 @@ class STIX2LocationConverter(STIX2Converter, metaclass=ABCMeta):
         misp_object = self._create_misp_object('geolocation', location)
         if 'description' in location:
             misp_object.comment = location['description']
-        for attribute in self._generic_parser(location):
+        for attribute in self._generic_parser(location, name='geolocation'):
             misp_object.add_attribute(**attribute)
         if 'precision' in location:
             mapping = self._mapping.accuracy_radius_attribute()

@@ -3122,7 +3122,7 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._observables._parse_generic_observable_with_data(
-            observable, name.replace('-', '_'), observed_data.id
+            observable, name, observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3219,13 +3219,15 @@ class InternalSTIX2ObservedDataConverter(
         object_id = observed_data.id
         for observable in observed_data.objects.values():
             if observable.type == 'domain-name':
-                for field, attribute in mapping.items():
-                    if hasattr(observable, field):
-                        attributes = self._observables._handle_object_attributes(
-                            attribute, getattr(observable, field), object_id
-                        )
-                        for attribute in attributes:
-                            misp_object.add_attribute(**attribute)
+                fields = self._observables._parse_object_fields(
+                    observable, 'domain-ip', mapping, object_id
+                )
+                for attribute, value in fields:
+                    attributes = self._observables._handle_object_attributes(
+                        attribute, value, object_id
+                    )
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
                 if hasattr(observable, 'resolves_to_refs'):
                     attribute = self._mapping.ip_attribute()
                     for reference in observable.resolves_to_refs:
@@ -3421,7 +3423,7 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._observables._parse_generic_observable(
-            observable, name.replace('-', '_'), observed_data.id
+            observable, name, observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3490,7 +3492,7 @@ class InternalSTIX2ObservedDataConverter(
                     misp_object.add_attribute(**attribute)
                 continue
             attributes = self._observables._parse_generic_observable(
-                observable, 'http_request', object_id
+                observable, 'http-request', object_id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
@@ -3597,7 +3599,7 @@ class InternalSTIX2ObservedDataConverter(
                             }
                         )
                 attributes = self._observables._parse_generic_observable(
-                    observable, 'ip_port', observed_data.id
+                    observable, 'ip-port', observed_data.id
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -3782,7 +3784,7 @@ class InternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object(name, observed_data)
         observable = observables[observable_id]
         attributes = self._observables._parse_generic_observable(
-            observable, name.replace('-', '_'), observed_data.id
+            observable, name, observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3977,7 +3979,7 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._observables._parse_registry_key_observable(
-            observable, observed_data.id
+            observable, observed_data.id, name='registry-key-value'
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -4029,7 +4031,7 @@ class InternalSTIX2ObservedDataConverter(
         )
         object_id = observed_data.id
         attributes = self._observables._parse_generic_observable_with_data(
-            observable, 'user_account', object_id
+            observable, 'user-account', object_id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)

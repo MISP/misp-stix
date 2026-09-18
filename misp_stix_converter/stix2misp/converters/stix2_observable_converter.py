@@ -1104,30 +1104,29 @@ class InternalSTIX2ObservableConverter(
         }
 
     def _has_domain_custom_fields(self, observable: DomainName_v21) -> bool:
-        for feature in self._mapping.domain_ip_object_mapping():
+        mapping = self._mapping.domain_ip_object_mapping()
+        for feature in mapping:
             if feature == 'value':
                 continue
             if hasattr(observable, feature):
                 return True
-        return False
+        return any(self._unlisted_custom_properties(observable, mapping))
 
     def _parse_asn_observable(self, observable: _AUTONOMOUS_SYSTEM_TYPING,
                               object_id: str) -> Iterator[dict]:
-        for field, mapping in self._mapping.asn_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        yield from self._parse_generic_observable(observable, 'asn', object_id)
 
     def _parse_domain_ip_observable(
             self, observable: _DOMAIN_TYPING) -> Iterator[dict]:
         if self._has_domain_custom_fields(observable):
-            mapping = self._mapping.domain_ip_object_mapping
-            for field, attribute in mapping().items():
-                if hasattr(observable, field):
-                    yield from self._populate_object_attributes(
-                        attribute, getattr(observable, field), observable.id
-                    )
+            fields = self._parse_object_fields(
+                observable, 'domain-ip',
+                self._mapping.domain_ip_object_mapping(), observable.id
+            )
+            for attribute, value in fields:
+                yield from self._populate_object_attributes(
+                    attribute, value, observable.id
+                )
         else:
             yield {
                 'value': observable.value,
@@ -1137,11 +1136,7 @@ class InternalSTIX2ObservableConverter(
 
     def _parse_email_observable(self, observable: _EMAIL_MESSAGE_TYPING,
                                 object_id: str) -> Iterator[dict]:
-        for field, mapping in self._mapping.email_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        yield from self._parse_generic_observable(observable, 'email', object_id)
         if hasattr(observable, 'additional_header_fields'):
             mapping = self._mapping.email_additional_header_fields_mapping
             email_header = observable.additional_header_fields
@@ -1207,11 +1202,13 @@ class InternalSTIX2ObservableConverter(
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 yield self._handle_hash_attribute(hash_type, value, object_id)
-        for field, mapping in self._mapping.file_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes_with_data(
-                    mapping, getattr(observable, field), object_id
-                )
+        fields = self._parse_object_fields(
+            observable, 'file', self._mapping.file_object_mapping(), object_id
+        )
+        for mapping, value in fields:
+            yield from self._handle_object_attributes_with_data(
+                mapping, value, object_id
+            )
 
     def _parse_file_parent_observable(self, observable: _DIRECTORY_TYPING,
                                       observed_data_id: str) -> dict:
@@ -1229,12 +1226,11 @@ class InternalSTIX2ObservableConverter(
 
     def _parse_generic_observable(self, observable: _OBSERVABLE_TYPING,
                                   name: str, object_id: str) -> Iterator[dict]:
-        feature = f'{name}_object_mapping'
-        for field, mapping in getattr(self._mapping, feature)().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        fields = self._parse_object_fields(
+            observable, name, self._object_mapping(name), object_id
+        )
+        for mapping, value in fields:
+            yield from self._handle_object_attributes(mapping, value, object_id)
 
     def _parse_artifact_observable(
             self, observable: _ARTIFACT_TYPING, object_id: str) -> Iterator[dict]:
@@ -1249,11 +1245,9 @@ class InternalSTIX2ObservableConverter(
                 yield self._handle_hash_attribute(
                     hash_type, hash_value, object_id
                 )
-        for field, mapping in self._mapping.artifact_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        yield from self._parse_generic_observable(
+            observable, 'artifact', object_id
+        )
 
     def _parse_hashlookup_observable(
             self, observable: _FILE_TYPING, object_id: str) -> Iterator[dict]:
@@ -1262,22 +1256,56 @@ class InternalSTIX2ObservableConverter(
                 yield self._handle_hash_attribute(
                     hash_type, value, object_id, mapping='hashlookup'
                 )
-        for field, mapping in self._mapping.hashlookup_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        yield from self._parse_generic_observable(
+            observable, 'hashlookup', object_id
+        )
 
     def _parse_generic_observable_with_data(
             self, observable: _USER_ACCOUNT_TYPING,
             name: str, observed_data_id: str) -> Iterator[dict]:
-        feature = f'{name}_object_mapping'
         object_id = getattr(observable, 'id', observed_data_id)
-        for feature, mapping in getattr(self._mapping, feature)().items():
-            if hasattr(observable, feature):
-                yield from self._handle_object_attributes_with_data(
-                    mapping, getattr(observable, feature), object_id
+        fields = self._parse_object_fields(
+            observable, name, self._object_mapping(name), object_id
+        )
+        for mapping, value in fields:
+            yield from self._handle_object_attributes_with_data(
+                mapping, value, object_id
+            )
+
+    def _parse_object_fields(
+            self, observable: _OBSERVABLE_TYPING, name: str, mapping: dict,
+            object_id: str) -> Iterator[tuple[dict, Any]]:
+        """Walk the properties of the observable carrying a MISP object.
+
+        The table's fields come first, in table order, each custom one
+        resolved against the object template; then the custom properties the
+        table does not list, which used to be dropped in silence.
+
+        :param observable: the observable carrying the object's attributes
+        :param name: the MISP object template name
+        :param mapping: the static table for that object
+        :param object_id: the STIX object the attributes derive from, or the
+            deep prefix naming the part of it - what a warning points at
+        :return: the attribute mapping and the value of every property read
+        """
+        for field, attribute in mapping.items():
+            if hasattr(observable, field):
+                yield (
+                    self._object_relation_mapping(
+                        name, field, attribute, object_id
+                    ),
+                    getattr(observable, field)
                 )
+        for field in self._unlisted_custom_properties(observable, mapping):
+            yield (
+                self._object_relation_mapping(name, field, None, object_id),
+                observable[field]
+            )
+
+    def _object_mapping(self, name: str) -> dict:
+        return getattr(
+            self._mapping, f"{name.replace('-', '_')}_object_mapping"
+        )()
 
     def _parse_http_request_observable(
             self, extension: _HTTP_REQUEST_EXTENSION_TYPING,
@@ -1329,19 +1357,13 @@ class InternalSTIX2ObservableConverter(
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 yield self._handle_hash_attribute(hash_type, value, object_id)
-        for field, mapping in self._mapping.lnk_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        yield from self._parse_generic_observable(observable, 'lnk', object_id)
 
     def _parse_netflow_observable(self, observable: _NETWORK_TRAFFIC_TYPING,
                                   object_id: str) -> Iterator[dict]:
-        for feature, mapping in self._mapping.netflow_object_mapping().items():
-            if hasattr(observable, feature):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, feature), object_id
-                )
+        yield from self._parse_generic_observable(
+            observable, 'netflow', object_id
+        )
         protocols = {protocol: False for protocol in observable.protocols}
         if hasattr(observable, 'extensions'):
             if observable.extensions.get('tcp-ext'):
@@ -1484,28 +1506,31 @@ class InternalSTIX2ObservableConverter(
                         feature=feature
                     )
                 )
-        for field, mapping in self._mapping.pe_object_mapping().items():
-            if hasattr(extension, field):
-                value = getattr(extension, field)
-                yield self._populate_object_attribute(
-                    value, mapping, self._handle_object_id(
-                        value, object_id, mapping['object_relation'],
-                        feature=feature
-                    )
+        fields = self._parse_object_fields(
+            extension, 'pe', self._mapping.pe_object_mapping(), feature
+        )
+        for mapping, value in fields:
+            yield self._populate_object_attribute(
+                value, mapping, self._handle_object_id(
+                    value, object_id, mapping['object_relation'],
+                    feature=feature
                 )
+            )
 
     def _parse_pe_section_observable(self, section: _SECTION_TYPING, index: int,
                                      object_id: str,) -> Iterator[dict]:
         feature = f'{object_id} - windows-pebinary-ext - sections - {index}'
-        for field, mapping in self._mapping.pe_section_object_mapping().items():
-            if hasattr(section, field):
-                value = getattr(section, field)
-                yield self._populate_object_attribute(
-                    value, mapping, self._handle_object_id(
-                        value, object_id, mapping['object_relation'],
-                        feature=feature
-                    )
+        fields = self._parse_object_fields(
+            section, 'pe-section', self._mapping.pe_section_object_mapping(),
+            feature
+        )
+        for mapping, value in fields:
+            yield self._populate_object_attribute(
+                value, mapping, self._handle_object_id(
+                    value, object_id, mapping['object_relation'],
+                    feature=feature
                 )
+            )
         if hasattr(section, 'hashes'):
             for hash_type, hash_value in section.hashes.items():
                 mapping = self._mapping.file_hashes_mapping(hash_type)
@@ -1521,11 +1546,9 @@ class InternalSTIX2ObservableConverter(
 
     def _parse_process_observable(self, observable: _PROCESS_TYPING,
                                   object_id: str) -> Iterator[dict]:
-        for field, mapping in self._mapping.process_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        yield from self._parse_generic_observable(
+            observable, 'process', object_id
+        )
         if hasattr(observable, 'arguments'):
             value = ' '.join(observable.arguments)
             yield {
@@ -1546,14 +1569,17 @@ class InternalSTIX2ObservableConverter(
                 )
             }
 
-    def _parse_registry_key_observable(self, observable: _REGISTRY_KEY_TYPING,
-                                       object_id: str) -> Iterator[dict]:
-        mapping = self._mapping.registry_key_object_mapping
-        for field, attribute in mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    attribute, getattr(observable, field), object_id
-                )
+    def _parse_registry_key_observable(
+            self, observable: _REGISTRY_KEY_TYPING, object_id: str,
+            name: str = 'registry-key') -> Iterator[dict]:
+        fields = self._parse_object_fields(
+            observable, name, self._mapping.registry_key_object_mapping(),
+            object_id
+        )
+        for attribute, value in fields:
+            yield from self._handle_object_attributes(
+                attribute, value, object_id
+            )
         if len(observable.get('values', [])) == 1:
             key_value = observable['values'][0]
             values_mapping = self._mapping.registry_key_values_object_mapping
@@ -1570,8 +1596,4 @@ class InternalSTIX2ObservableConverter(
                 yield self._handle_hash_attribute(
                     hash_type, hash_value, object_id, 'x509'
                 )
-        for field, mapping in self._mapping.x509_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._handle_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
+        yield from self._parse_generic_observable(observable, 'x509', object_id)
