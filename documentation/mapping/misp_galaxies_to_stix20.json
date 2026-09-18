@@ -1180,7 +1180,10 @@
             ],
             "x_misp_cfr_type_of_incident": [
                 "Denial of service"
-            ]
+            ],
+            "x_misp_original_names": {
+                "x_misp_cfr_type_of_incident": "cfr-type-of-incident"
+            }
         }
     },
     "Tool": {
