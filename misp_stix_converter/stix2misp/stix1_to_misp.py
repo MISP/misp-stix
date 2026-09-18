@@ -29,8 +29,9 @@ from pymisp import MISPAttribute, MISPObject
 import re
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
+from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 from uuid import uuid4
 
 _ADDRESS_TYPING = Union[address_object.Address, address_object.EmailAddress]
@@ -164,6 +165,35 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             for test_mechanism in test_mechanisms:
                 misp_object.add_reference(test_mechanism, 'detected-with')
         self.misp_event.add_object(misp_object)
+
+    def _read_test_mechanisms(
+            self, indicator: Indicator) -> Iterator[tuple[str, str]]:
+        """Read the rules an Indicator carries as test mechanisms.
+
+        A Yara mechanism carries one rule, a Snort one a list of them - the
+        two python-stix shapes - and each rule reads as the MISP attribute
+        type the mechanism maps to, with the rule text. A mechanism of a type
+        the mapping does not know records an error and reads as nothing.
+
+        :param indicator: the Indicator carrying the test mechanisms
+        :return: the `(attribute_type, rule)` pairs, one per rule
+        """
+        for test_mechanism in indicator.test_mechanisms or ():
+            attribute_type = self._mapping.test_mechanism_mapping(
+                test_mechanism._XSI_TYPE
+            )
+            if attribute_type is None:
+                self._add_error(
+                    f'Unknown Test Mechanism type: {test_mechanism._XSI_TYPE}'
+                )
+                continue
+            rules = getattr(test_mechanism, 'rules', None)
+            if rules is None:
+                rules = (test_mechanism.rule,)
+            for rule in rules:
+                value = getattr(rule, 'value', None)
+                if value is not None:
+                    yield attribute_type, value
 
     # Parse a course of action and add a MISP object to the event
     def _parse_course_of_action(self, course_of_action):

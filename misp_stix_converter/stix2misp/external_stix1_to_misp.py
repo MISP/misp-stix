@@ -345,18 +345,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         :return: the uuids of the attributes the rules landed as
         """
         test_mechanisms = []
-        for test_mechanism in indicator.test_mechanisms or ():
-            attribute_type = self._mapping.test_mechanism_mapping(
-                test_mechanism._XSI_TYPE
-            )
-            if attribute_type is None:
-                self._add_error(
-                    f'Unknown Test Mechanism type: {test_mechanism._XSI_TYPE}'
-                )
-                continue
-            rule = getattr(test_mechanism.rule, 'value', None)
-            if rule is None:
-                continue
+        for attribute_type, rule in self._read_test_mechanisms(indicator):
             misp_attribute = self.misp_event.add_attribute(
                 **{'type': attribute_type, 'value': rule}
             )

@@ -53,6 +53,13 @@ class STIX1toMISPMapping:
         WindowsExecutableFileObjectType = _file_attribute_type,
         WindowsRegistryKeyObjectType = {"type": "regkey", "relation": ""}
     )
+    # Test mechanism type -> the MISP attribute type its rules land as
+    __test_mechanism_mapping = Mapping(
+        **{
+            'snortTM:SnortTestMechanismType': 'snort',
+            'yaraTM:YaraTestMechanismType': 'yara'
+        }
+    )
 
     # Objects mappings
     _AS_attribute = ('AS', 'asn')
@@ -246,6 +253,10 @@ class STIX1toMISPMapping:
         return cls.__regkey_value_mapping
 
     @classmethod
+    def test_mechanism_mapping(cls, test_mechanism_type: str) -> Union[str, None]:
+        return cls.__test_mechanism_mapping.get(test_mechanism_type)
+
+    @classmethod
     def user_account_object_mapping(cls) -> dict:
         return cls.__user_account_object_mapping
 
@@ -277,19 +288,10 @@ class ExternalSTIX1toMISPMapping(STIX1toMISPMapping):
             'tlpMarking:TLPMarkingStructureType': '_parse_TLP_marking'
         }
     )
-    __test_mechanism_mapping = Mapping(
-        **{
-            'yaraTM:YaraTestMechanismType': 'yara'
-        }
-    )
 
     @classmethod
     def marking_mapping(cls, marking_type: str) -> Union[str, None]:
         return cls.__marking_mapping.get(marking_type)
-
-    @classmethod
-    def test_mechanism_mapping(cls, test_mechanism_type: str) -> Union[str, None]:
-        return cls.__test_mechanism_mapping.get(test_mechanism_type)
 
 
 class InternalSTIX1toMISPMapping(STIX1toMISPMapping):

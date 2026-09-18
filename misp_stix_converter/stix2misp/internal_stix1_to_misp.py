@@ -479,6 +479,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self, indicator: Indicator, category: Optional[str] = None):
         """Convert the Indicator a `to_ids` attribute was exported as.
 
+        Most attributes are the observable the Indicator carries. A `snort`
+        or `yara` attribute is the rule it carries as a test mechanism instead,
+        with no observable - the one shape the export writes an Indicator with
+        no observable in - and reads back one attribute per rule: a Snort
+        mechanism may carry several, never written by us, and the Indicator's
+        uuid goes to the first. An Indicator carrying no observable and no
+        rule is no export of ours, and the error records it.
+
         :param indicator: the Indicator itself - the item of the Related
             Indicator an event export relates to its Incident, the Indicator
             an Attribute Collection writes on the package
@@ -486,9 +494,6 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             former or the title of the latter - None when neither names one,
             and pymisp's default for the type stands in
         """
-        # An Indicator carrying rules and no observable converts to nothing
-        if not indicator.observable:
-            return
         misp_attribute = {'to_ids': True}
         if category is not None:
             misp_attribute['category'] = category
@@ -496,10 +501,21 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             misp_attribute['timestamp'] = self._timestamp_from_date(
                 indicator.timestamp
             )
-        misp_attribute.update(self._sanitise_attribute_uuid(indicator.id_))
-        self._parse_misp_attribute(
-            indicator.observable, misp_attribute, indicator.id_, to_ids=True
-        )
+        if indicator.observable:
+            misp_attribute.update(self._sanitise_attribute_uuid(indicator.id_))
+            self._parse_misp_attribute(
+                indicator.observable, misp_attribute, indicator.id_, to_ids=True
+            )
+            return
+        rules = list(self._read_test_mechanisms(indicator))
+        if not rules:
+            self._unconverted_indicator_error(indicator.id_)
+            return
+        for index, (attribute_type, rule) in enumerate(rules):
+            attribute = {'type': attribute_type, 'value': rule, **misp_attribute}
+            if index == 0:
+                attribute.update(self._sanitise_attribute_uuid(indicator.id_))
+            self.misp_event.add_attribute(**attribute)
 
     def _parse_attribute_observable(
             self, observable: Observable, category: Optional[str] = None):
@@ -810,6 +826,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self._add_error(
             f'Unable to convert the Victim identity with id {identity_id}: '
             f'{reason}'
+        )
+
+    def _unconverted_indicator_error(self, indicator_id: str):
+        self._add_error(
+            f'Unable to convert the Indicator with id {indicator_id}: no '
+            'observable or test mechanism rule to read a MISP attribute from'
         )
 
     def _unconverted_ttp_error(self, ttp_id: str):
