@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import importlib
+import inspect
 import json
+import pkgutil
 import re
 from base64 import b64encode
 from collections import defaultdict
@@ -10,11 +13,17 @@ from functools import lru_cache
 from misp_stix_converter import (
     ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
     MISP_org_uuid, stix_2_to_misp)
+from misp_stix_converter.misp_stix_mapping import Mapping
 from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
 from misp_stix_converter.misp2stix.stix2_mapping import MISPtoSTIX2Mapping
+from misp_stix_converter.stix2misp import converters
 from misp_stix_converter.stix2misp.converters.stix2mapping import (
     InternalSTIX2Mapping)
+from misp_stix_converter.tools.misp_object_templates import (
+    _custom_property_name, _custom_property_relation,
+    _template_custom_properties)
 from pathlib import Path
+from pymisp import AbstractMISP
 from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
 from uuid import UUID, uuid5
@@ -88,6 +97,52 @@ def _folded_sdo_galaxy_meta_keys() -> tuple:
                 elif '_' in key and '-' not in key:
                     underscored.add(folded)
     return listable, frozenset(underscored)
+
+
+@lru_cache(maxsize=1)
+def _shipped_object_templates() -> tuple:
+    # The name and the attributes of every template pymisp ships, read straight
+    # from the definition files rather than through the template reader under
+    # test, in name order.
+    templates = []
+    for path in sorted(AbstractMISP().misp_objects_path.iterdir()):
+        definition = path / 'definition.json'
+        if definition.is_file():
+            with open(definition, 'rb') as f:
+                templates.append((path.name, json.load(f)['attributes']))
+    return tuple(templates)
+
+
+_OBJECT_TABLE_NAME = re.compile(r'^(.+)_(?:object|pattern)_mapping$')
+
+
+@lru_cache(maxsize=1)
+def _internal_object_tables() -> tuple:
+    # Every `<object>_object_mapping` and `<object>_pattern_mapping` table an
+    # Internal mapping class holds, found by walking the converters package so
+    # a class added later is covered without being listed here. Each entry
+    # names the class, the table, the `<object>` part and the table itself.
+    tables = []
+    for module_info in pkgutil.iter_modules(converters.__path__):
+        module = importlib.import_module(
+            f'{converters.__name__}.{module_info.name}'
+        )
+        for class_name, cls in inspect.getmembers(module, inspect.isclass):
+            if cls.__module__ != module.__name__:
+                continue
+            if not class_name.startswith('Internal'):
+                continue
+            if not class_name.endswith('Mapping'):
+                continue
+            for attribute, table in vars(cls).items():
+                if not isinstance(table, Mapping):
+                    continue
+                table_name = attribute.rsplit('__', 1)[-1]
+                match = _OBJECT_TABLE_NAME.match(table_name)
+                if match is not None:
+                    tables.append((class_name, table_name, match.group(1), table))
+    return tuple(tables)
+
 
 _GALAXY_SUMMARY_MAPPING = {
     'attack-pattern': 'Attack Pattern (mitre-attack-pattern)',
@@ -386,6 +441,14 @@ class TestSTIX2Import(TestSTIX):
         self.assertEqual(
             self._reports_matching(warnings, 'Merged MISP record'), []
         )
+
+    def _check_unknown_custom_property_warning(
+            self, name, field, relation, warnings):
+        """A custom property no template nor table knows names what it became."""
+        reports = self._reports_matching(warnings, 'Unknown custom property')
+        self.assertEqual(len(reports), 1, reports)
+        for text in (f'"{field}"', f'"{name}"', f'"{relation}"'):
+            self.assertIn(text, reports[0])
 
     def _check_unusable_producer_warning(self, producer, warnings):
         """A producer name a taxonomy tag has nothing left to carry from."""
@@ -3453,6 +3516,129 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
 
     ################################################################################
+    #             OBJECT TEMPLATE RELATION RESTORATION CHECKING FUNCTIONS          #
+    ################################################################################
+
+    # Tables of an observable the object references beside its own carrier,
+    # whose properties are not named after the relation they restore: a parent
+    # process carries `x_misp_guid` for `parent-guid`, so no template is their
+    # inverse and the import never resolves them against one.
+    _REFERENCED_OBSERVABLE_TABLES = ('parent_process_object_mapping',)
+    # Tables named after something other than the MISP object template.
+    _TABLE_TEMPLATE_NAMES = {'location': 'geolocation'}
+    # The static entries allowed to say what the template no longer does: a
+    # relation a template dropped, kept so the bundles exported while it was
+    # there keep importing. Any other disagreement fails.
+    _RELATIONS_THE_TEMPLATE_DROPPED = {('lnk', 'x_misp_lnk_icon_text')}
+
+    def _check_every_template_relation_folds_back(self):
+        # The template is the complete inverse of the ADR-0013 fold: every
+        # relation of every template pymisp ships comes back, original
+        # spelling and template type, from the custom property name the export
+        # gives it. The count is taken from the templates, not hard-coded.
+        relations = 0
+        for name, attributes in _shipped_object_templates():
+            restored = _template_custom_properties(name)
+            for relation, attribute in attributes.items():
+                self.assertEqual(
+                    restored.get(_custom_property_name(relation)),
+                    {
+                        'type': attribute['misp-attribute'],
+                        'object_relation': relation
+                    },
+                    f'{name}: {relation}'
+                )
+                relations += 1
+            self.assertEqual(len(restored), len(attributes), name)
+        self.assertGreater(relations, 0)
+
+    def _check_no_template_folds_two_relations_to_one_name(self):
+        # Two relations of one template folding to one name would leave the
+        # template unable to tell them apart: none does, and none may.
+        for name, attributes in _shipped_object_templates():
+            folded = defaultdict(list)
+            for relation in attributes:
+                folded[_custom_property_name(relation)].append(relation)
+            collisions = {
+                field: relations for field, relations in folded.items()
+                if len(relations) > 1
+            }
+            self.assertEqual(
+                collisions, {},
+                f'{name}: relations folding to one custom property name'
+            )
+
+    def _check_static_custom_property_entries_agree_with_the_template(self):
+        # The template takes precedence over the static tables, so an entry
+        # they keep for a custom property has to say what the template says -
+        # relation and type - or the two sources drift apart in silence.
+        disagreements = set()
+        entries = 0
+        for class_name, table_name, feature, table in _internal_object_tables():
+            if table_name in self._REFERENCED_OBSERVABLE_TABLES:
+                continue
+            name = self._TABLE_TEMPLATE_NAMES.get(
+                feature, feature.replace('_', '-')
+            )
+            restored = _template_custom_properties(name)
+            for field, entry in table.items():
+                if not field.startswith('x_misp_'):
+                    continue
+                entries += 1
+                expected = restored.get(
+                    _custom_property_name(_custom_property_relation(field))
+                )
+                if expected is None:
+                    disagreements.add((name, field))
+                    continue
+                self.assertEqual(
+                    (entry.get('type'), entry.get('object_relation')),
+                    (expected['type'], expected['object_relation']),
+                    f'{class_name}.{table_name}: {field}'
+                )
+        self.assertGreater(entries, 0)
+        self.assertEqual(disagreements, self._RELATIONS_THE_TEMPLATE_DROPPED)
+
+    def _round_trip_object_attributes(
+            self, export_parser, event: dict, to_ids: bool = False,
+            pattern_path: bool = False, name=None) -> set:
+        # One MISP object through the export and back, `to_ids` set the same
+        # way on every attribute, into a fresh parser so the diagnostics are
+        # this round trip's own. A `to_ids` object exports to an Observed
+        # Data and an Indicator the import merges into one record, reading
+        # the Observed Data only: `pattern_path` drops the Observed Data and
+        # its observables so the Indicator alone is left to parse.
+        for attribute in event['Event']['Object'][0]['Attribute']:
+            attribute['to_ids'] = to_ids
+        export_parser.parse_misp_event(event['Event'])
+        bundle = export_parser.bundle
+        if pattern_path:
+            bundle = self._indicator_only_bundle(bundle)
+        self.parser = InternalSTIX2toMISPParser()
+        return self._import_object_attributes(bundle, name=name)
+
+    @staticmethod
+    def _indicator_only_bundle(bundle):
+        kept = [
+            stix_object for stix_object in bundle.objects
+            if stix_object.type in ('identity', 'report', 'grouping', 'indicator')
+        ]
+        kept_ids = {stix_object.id for stix_object in kept}
+        return type(bundle)(
+            *(
+                stix_object.new_version(
+                    object_refs=[
+                        object_ref for object_ref in stix_object.object_refs
+                        if object_ref in kept_ids
+                    ]
+                )
+                if stix_object.type in ('report', 'grouping') else stix_object
+                for stix_object in kept
+            ),
+            allow_custom=True
+        )
+
+    ################################################################################
     #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
     ################################################################################
 
@@ -4581,10 +4767,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertFalse(name.to_ids)
         self._check_object_attribute_uuid(name, object_id)
 
-    def _import_object_attributes(self, bundle) -> set:
+    def _import_object_attributes(self, bundle, name=None) -> set:
+        # The attributes of the one MISP object the bundle yields - or of the
+        # one carrying `name`, when the event holds others alongside
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
-        misp_objects = self.parser.misp_event.objects
+        misp_objects = [
+            misp_object for misp_object in self.parser.misp_event.objects
+            if name is None or misp_object.name == name
+        ]
         self.assertEqual(len(misp_objects), 1)
         return {
             (attribute.type, attribute.object_relation, str(attribute.value))
@@ -5020,7 +5211,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             misp_object.timestamp, identity.created, identity.modified
         )
         self._check_object_labels(misp_object, identity.labels)
-        name, description, business, registration_number, phone, website, logo = misp_object.attributes
+        # The logo is a custom property the object template restores along
+        # with the other ones, ahead of the contact information
+        name, description, business, registration_number, logo, phone, website = misp_object.attributes
         self.assertEqual(name.value, identity.name)
         self.assertEqual(description.value, identity.description)
         self.assertEqual([business.value], identity.sectors)
@@ -5028,8 +5221,11 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(phone_info, f"{phone.object_relation}: {phone.value}")
         self.assertEqual(website_info, f"{website.object_relation}: {website.value}")
         self.assertEqual(registration_number.value, identity.x_misp_registration_number)
+        self.assertEqual(logo.type, 'attachment')
+        self.assertEqual(logo.object_relation, 'logo')
         self.assertEqual(logo.value, identity.x_misp_logo['value'])
         self.assertEqual(self._get_data_value(logo.data), identity.x_misp_logo['data'])
+        self._check_object_attribute_uuid(logo, identity.id)
 
     def _check_lnk_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 10)
@@ -5400,17 +5596,27 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             misp_object.timestamp, identity.created, identity.modified
         )
         self._check_object_labels(misp_object, identity.labels)
-        name, address, email, phone, attachment = misp_object.attributes
+        # `x_misp_link` was never in the static table and used to be dropped
+        # in silence: the object template restores it, along with the
+        # attachment, ahead of the contact information
+        name, attachment, link, address, email, phone = misp_object.attributes
         self.assertEqual(name.value, identity.name)
         address_info, email_info, phone_info = identity.contact_information.split(' / ')
         self.assertEqual(address_info, f'{address.object_relation}: {address.value}')
         self.assertEqual(email_info, f'{email.object_relation}: {email.value}')
         self.assertEqual(phone_info, f'{phone.object_relation}: {phone.value}')
+        self.assertEqual(attachment.type, 'attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
         self.assertEqual(attachment.value, identity.x_misp_attachment['value'])
         self.assertEqual(
             self._get_data_value(attachment.data),
             identity.x_misp_attachment['data']
         )
+        self._check_object_attribute_uuid(attachment, identity.id)
+        self.assertEqual(link.type, 'link')
+        self.assertEqual(link.object_relation, 'link')
+        self.assertEqual(link.value, identity.x_misp_link)
+        self._check_object_attribute_uuid(link, identity.id)
 
     def _check_organization_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
