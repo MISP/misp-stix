@@ -41,6 +41,7 @@ from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
 from pymisp import MISPEvent
 from unittest.mock import patch
+from stix.campaign import Campaign
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement, ToolInformation
 from stix.common.related import (
@@ -54,7 +55,11 @@ from stix.extensions.test_mechanism.yara_test_mechanism import (
     YaraTestMechanism)
 from stix.exploit_target import ExploitTarget
 from stix.exploit_target.vulnerability import Vulnerability
+from stix.extensions.identity.ciq_identity_3_0 import (
+    CIQIdentity3_0Instance, ElectronicAddressIdentifier, PartyName,
+    STIXCIQIdentity3_0)
 from stix.incident import Incident
+from stix.incident.affected_asset import AffectedAsset
 from stix.incident.history import History, HistoryItem, JournalEntry
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
@@ -73,12 +78,13 @@ from ._test_stix_import import (
 from .test_events import (
     get_base_event, get_event_with_asn_object,
     get_event_with_attack_pattern_galaxy, get_event_with_attack_pattern_object,
+    get_event_with_campaign_name_attribute,
     get_event_with_course_of_action_galaxy,
     get_event_with_course_of_action_object, get_event_with_domain_attribute,
     get_event_with_domain_ip_object, get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
-    get_event_with_process_object,
+    get_event_with_process_object, get_event_with_target_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
     get_event_with_vulnerability_galaxy,
     get_event_with_windows_service_attributes)
@@ -1485,6 +1491,171 @@ class TestSTIX1Import(TestSTIX):
              for attribute in misp_objects['attack-pattern'].attributes]
         )
 
+    def test_internal_misp_export_target_attributes_round_trip(self):
+        """The export writes a `target-*` attribute as a Victim of the
+        Incident - a CIQ identity filling the one field its type is told by,
+        named with the Record Title - and a `target-machine` as an Affected
+        Asset whose description folds the comment behind the value. The import
+        never visited either: six attributes exported, none read back."""
+        event = get_event_with_target_attributes()
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        exported = {
+            attribute['type']: attribute
+            for attribute in event['Event']['Attribute']
+        }
+        converted = {
+            attribute.type: attribute
+            for attribute in parser.misp_event.attributes
+        }
+        self.assertEqual(set(converted), set(exported))
+        for attribute_type, attribute in exported.items():
+            with self.subTest(type=attribute_type):
+                converted_attribute = converted[attribute_type]
+                self.assertEqual(converted_attribute.value, attribute['value'])
+                self.assertEqual(converted_attribute.category, 'Targeting data')
+                self.assertFalse(converted_attribute.to_ids)
+                if attribute_type == 'target-machine':
+                    self.assertEqual(
+                        converted_attribute.comment, attribute['comment']
+                    )
+                else:
+                    self.assertEqual(converted_attribute.uuid, attribute['uuid'])
+
+    def test_internal_affected_asset_description_is_split_on_the_last_parenthesis(self):
+        """The export writes `{value} ({comment})` as the description of the
+        Affected Asset a `target-machine` is - the value alone when the
+        attribute carries no comment. The last ` (` is the export's own,
+        whatever parentheses the value holds; the element has no id, so the
+        uuid is pymisp's."""
+        incident = self._incident_with_content()
+        for description in ('plain.machine', 'machine (v2) (Comment on the machine)'):
+            affected_asset = AffectedAsset()
+            affected_asset.description = description
+            incident.add_affected_asset(affected_asset)
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            sorted(
+                (attribute.value, attribute.to_dict().get('comment'))
+                for attribute in parser.misp_event.attributes
+                if attribute.type == 'target-machine'
+            ),
+            [
+                ('machine (v2)', 'Comment on the machine'),
+                ('plain.machine', None)
+            ]
+        )
+
+    def test_internal_misp_export_campaign_name_attribute_round_trips(self):
+        """A `campaign-name` attribute is written as a Campaign on the package
+        - the value as its name, the Record Title, the uuid, the timestamp -
+        and the package context never visited the Campaigns."""
+        event = get_event_with_campaign_name_attribute()
+        attribute = event['Event']['Attribute'][0]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (
+                    converted.uuid, converted.type, converted.category,
+                    converted.value, converted.to_ids,
+                    int(converted.timestamp.timestamp())
+                )
+                for converted in parser.misp_event.attributes
+            ],
+            [
+                (
+                    attribute['uuid'], 'campaign-name', 'Attribution',
+                    'MartyMcFly', False, int(attribute['timestamp'])
+                )
+            ]
+        )
+
+    def test_internal_victim_of_an_unreadable_shape_records_an_error(self):
+        """A Victim is read for the one CIQ identity field the export fills -
+        which tells the `target-*` type - and the Record Title it is named
+        with - which tells the category. One filling no field or several, or
+        named with no Record Title, is no export of ours: the error names it
+        where the import dropped it without a word, and the rest of the event
+        converts."""
+        no_field = 'no single CIQ identity field to read a target attribute from'
+        for shape, reason in (
+                ('empty specification', no_field),
+                ('two fields', no_field),
+                ('no Record Title', 'no MISP category to read off its name')):
+            incident = self._incident_with_content()
+            identity = CIQIdentity3_0Instance()
+            identity.id_ = f'MISP:Identity-{_ACTOR_UUID}'
+            identity.name = (
+                'Some organisation' if shape == 'no Record Title'
+                else 'Targeting data: nobody (MISP Attribute)'
+            )
+            identity.specification = STIXCIQIdentity3_0()
+            if shape != 'empty specification':
+                identity.specification.add_electronic_address_identifier(
+                    ElectronicAddressIdentifier(value='target@email.test')
+                )
+            if shape == 'two fields':
+                identity.specification.party_name = PartyName(
+                    organisation_names=['Blizzard']
+                )
+            incident.add_victim(identity)
+            with self.subTest(shape=shape):
+                parser = self._parse_internal_package(
+                    self._internal_package(incident)
+                )
+                self.assertEqual(
+                    [attribute.type for attribute in parser.misp_event.attributes],
+                    ['domain']
+                )
+                self.assertIn(
+                    'Unable to convert the Victim identity with id '
+                    f'MISP:Identity-{_ACTOR_UUID}: {reason}',
+                    parser.diagnostics()['errors']['misp event']
+                )
+
+    def test_internal_affected_asset_without_description_records_an_error(self):
+        """The description is all an Affected Asset carries of the
+        `target-machine` it was: one with none is no export of ours, and the
+        error names the Incident, the one id near it."""
+        incident = self._incident_with_content()
+        incident.add_affected_asset(AffectedAsset())
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(
+            [attribute.type for attribute in parser.misp_event.attributes],
+            ['domain']
+        )
+        self.assertIn(
+            'Unable to convert an Affected Asset of the Incident with id '
+            f'{incident.id_}: no description to read a target-machine '
+            'attribute from',
+            parser.diagnostics()['errors']['misp event']
+        )
+
+    def test_internal_campaign_without_name_records_an_error(self):
+        """The name is where the export writes the value of a `campaign-name`:
+        a Campaign carrying none is no export of ours, and the error names
+        it."""
+        campaign = Campaign()
+        campaign.id_ = f'MISP:Campaign-{_ACTOR_UUID}'
+        campaign.title = 'Attribution: nothing (MISP Attribute)'
+        inner_package = STIXPackage()
+        inner_package.add_incident(self._incident_with_content())
+        inner_package.add_campaign(campaign)
+        parser = self._parse_internal_package(
+            self._wrapped_package(inner_package)
+        )
+        self.assertEqual(
+            [attribute.type for attribute in parser.misp_event.attributes],
+            ['domain']
+        )
+        self.assertIn(
+            f'Unable to convert the Campaign with id MISP:Campaign-{_ACTOR_UUID}: '
+            'no name to read a campaign-name attribute from',
+            parser.diagnostics()['errors']['misp event']
+        )
+
     def test_internal_misp_export_event_galaxies_round_trip_as_tags(self):
         """The export writes an event galaxy the way it writes the MISP object
         of the same kind - a TTP the Incident leverages, a Course of Action it
@@ -1651,8 +1822,8 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(self._galaxy_tags(parser.misp_event), set())
         self.assertIn(
             f'Unable to convert the TTP with id MISP:TTP-{_ACTOR_UUID}: no '
-            'attack pattern, vulnerability or weakness to read a MISP '
-            'attribute or object from',
+            'attack pattern, vulnerability, weakness or victim targeting to '
+            'read a MISP attribute or object from',
             parser.diagnostics()['errors']['misp event']
         )
 
@@ -1775,6 +1946,45 @@ class TestSTIX1Import(TestSTIX):
                 _IP_UUID: ('ip-dst', 'Network activity', '198.51.100.4', False)
             }
         )
+
+    def test_internal_attributes_collection_target_attributes_round_trip(self):
+        """An Attribute Collection has no Incident to make a Victim of: the
+        export writes a `target-*` attribute as a TTP targeting the same CIQ
+        identity, the Record Title on both and the timestamp on the TTP. The
+        TTP reached the object reader, which recorded it as an error and lost
+        the attribute. The `target-machine` the collection export cannot
+        write is another ticket's."""
+        attributes = [
+            attribute for attribute
+            in get_event_with_target_attributes()['Event']['Attribute']
+            if attribute['type'] != 'target-machine'
+        ]
+        attributes[0]['timestamp'] = '1603642920'
+        exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        exporter.parse_json_content(attributes)
+        parser = self._parse_internal_package(exporter.stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            {
+                converted.uuid: (
+                    converted.type, converted.category,
+                    converted.value, converted.to_ids
+                )
+                for converted in parser.misp_event.attributes
+            },
+            {
+                attribute['uuid']: (
+                    attribute['type'], attribute['category'],
+                    attribute['value'], False
+                )
+                for attribute in attributes
+            }
+        )
+        stamped = next(
+            converted for converted in parser.misp_event.attributes
+            if converted.uuid == attributes[0]['uuid']
+        )
+        self.assertEqual(int(stamped.timestamp.timestamp()), 1603642920)
 
     def test_internal_attributes_collection_exploit_target_attributes_convert(self):
         """A `vulnerability` or `weakness` attribute is exported as a TTP with
