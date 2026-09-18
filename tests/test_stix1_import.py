@@ -45,12 +45,14 @@ from stix.campaign import Campaign
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement, ToolInformation
 from stix.common.related import (
-    RelatedObservable, RelatedPackage, RelatedPackages)
+    RelatedIndicator, RelatedObservable, RelatedPackage, RelatedPackages)
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
 from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.extensions.test_mechanism.generic_test_mechanism import (
     GenericTestMechanism)
+from stix.extensions.test_mechanism.snort_test_mechanism import (
+    SnortTestMechanism)
 from stix.extensions.test_mechanism.yara_test_mechanism import (
     YaraTestMechanism)
 from stix.exploit_target import ExploitTarget
@@ -85,6 +87,7 @@ from .test_events import (
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
     get_event_with_process_object, get_event_with_target_attributes,
+    get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
     get_event_with_vulnerability_galaxy,
     get_event_with_windows_service_attributes)
@@ -100,6 +103,12 @@ _MD5_HASH = '8a2a5fc2ce56b3b04d58539a9d3d8d3e'
 # `Type=Other` with the value in `Simple_Hash_Value`: how MISP's own STIX 1
 # export wrote an ssdeep hash, cybox naming nothing better for its length
 _SSDEEP_HASH = '6144:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
+# Two rules on one Snort test mechanism: the export writes one, python-stix
+# lets a mechanism carry a list
+_SNORT_RULES = (
+    'alert tcp any any -> any any (msg:"first")',
+    'alert udp any any -> any any (msg:"second")'
+)
 
 
 class TestSTIX1Import(TestSTIX):
@@ -1572,6 +1581,124 @@ class TestSTIX1Import(TestSTIX):
             ]
         )
 
+    def _assert_attributes_round_trip(self, parser, attributes, to_ids):
+        """The attributes come back with the uuid, type, category and value
+        they went out with, and the timestamp when exported as Indicators -
+        an Observable travels with none."""
+        self.assertEqual(
+            {
+                converted.uuid: (
+                    converted.type, converted.category,
+                    converted.value, converted.to_ids
+                )
+                for converted in parser.misp_event.attributes
+            },
+            {
+                attribute['uuid']: (
+                    attribute['type'], attribute['category'],
+                    attribute['value'], to_ids
+                )
+                for attribute in attributes
+            }
+        )
+        if to_ids:
+            self.assertEqual(
+                {
+                    converted.uuid: int(converted.timestamp.timestamp())
+                    for converted in parser.misp_event.attributes
+                },
+                {
+                    attribute['uuid']: int(attribute['timestamp'])
+                    for attribute in attributes
+                }
+            )
+
+    def test_internal_misp_export_test_mechanism_attributes_round_trip(self):
+        """A `snort` or `yara` attribute with `to_ids` set is exported as an
+        Indicator carrying the rule as a test mechanism and no observable -
+        the one shape the export writes an Indicator with no observable in -
+        and the import returned on the missing observable without a word.
+        With `to_ids` unset both take the Custom observable route, which
+        round-tripped already."""
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_test_mechanism_attributes()
+                for attribute in event['Event']['Attribute']:
+                    attribute['to_ids'] = to_ids
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self._assert_attributes_round_trip(
+                    parser, event['Event']['Attribute'], to_ids
+                )
+
+    def test_internal_snort_mechanism_with_several_rules_yields_one_attribute_per_rule(self):
+        """The export writes one rule per Snort mechanism; python-stix lets a
+        mechanism carry several. Each is a `snort` attribute of its own under
+        the Indicator's category, the Indicator's uuid on the first - the rest
+        take pymisp's."""
+        incident = self._incident_with_content()
+        indicator = Indicator()
+        indicator.id_ = f'MISP:Indicator-{_IP_UUID}'
+        test_mechanism = SnortTestMechanism()
+        test_mechanism.rules = list(_SNORT_RULES)
+        indicator.add_test_mechanism(test_mechanism)
+        incident.related_indicators.append(
+            RelatedIndicator(indicator, relationship='Network activity')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        snort_attributes = [
+            attribute for attribute in parser.misp_event.attributes
+            if attribute.type == 'snort'
+        ]
+        self.assertEqual(
+            [
+                (attribute.category, attribute.value, attribute.to_ids)
+                for attribute in snort_attributes
+            ],
+            [('Network activity', rule, True) for rule in _SNORT_RULES]
+        )
+        self.assertEqual(
+            [attribute.uuid == _IP_UUID for attribute in snort_attributes],
+            [True, False]
+        )
+
+    def test_internal_indicator_with_neither_observable_nor_rule_records_an_error(self):
+        """An Indicator with no observable carries rules in a MISP export; one
+        carrying neither - no mechanism at all, or a mechanism of a known type
+        with no rule text - is no export of ours, and the error names it where
+        the import returned without a word. The rest of the event converts."""
+        for shape in ('no mechanism', 'yara mechanism with no rule'):
+            with self.subTest(shape=shape):
+                incident = self._incident_with_content()
+                indicator = Indicator()
+                indicator.id_ = f'MISP:Indicator-{_IP_UUID}'
+                if shape != 'no mechanism':
+                    indicator.add_test_mechanism(YaraTestMechanism())
+                incident.related_indicators.append(
+                    RelatedIndicator(indicator, relationship='Network activity')
+                )
+                parser = self._parse_internal_package(
+                    self._internal_package(incident)
+                )
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('domain', 'circl.lu')]
+                )
+                self.assertEqual(
+                    parser.diagnostics()['errors'],
+                    {
+                        'misp event': [
+                            'Unable to convert the Indicator with id '
+                            f'MISP:Indicator-{_IP_UUID}: no observable or test '
+                            'mechanism rule to read a MISP attribute from'
+                        ]
+                    }
+                )
+
     def test_internal_victim_of_an_unreadable_shape_records_an_error(self):
         """A Victim is read for the one CIQ identity field the export fills -
         which tells the `target-*` type - and the Record Title it is named
@@ -1985,6 +2112,18 @@ class TestSTIX1Import(TestSTIX):
             if converted.uuid == attributes[0]['uuid']
         )
         self.assertEqual(int(stamped.timestamp.timestamp()), 1603642920)
+
+    def test_internal_attributes_collection_test_mechanism_attributes_round_trip(self):
+        """An Attribute Collection writes the same Indicator on the package -
+        the rule as a test mechanism, no observable, the category in the
+        title - and the package path returned on the missing observable
+        alike."""
+        attributes = get_event_with_test_mechanism_attributes()['Event']['Attribute']
+        exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        exporter.parse_json_content(attributes)
+        parser = self._parse_internal_package(exporter.stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self._assert_attributes_round_trip(parser, attributes, True)
 
     def test_internal_attributes_collection_exploit_target_attributes_convert(self):
         """A `vulnerability` or `weakness` attribute is exported as a TTP with
@@ -2708,6 +2847,31 @@ class TestSTIX1Import(TestSTIX):
         self.assertIn(
             'Unknown Test Mechanism type: genericTM:GenericTestMechanismType',
             parser.diagnostics()['errors']['misp event']
+        )
+
+    def test_external_indicator_with_snort_test_mechanism_converts(self):
+        """A Snort mechanism was the one test mechanism type the mapping did
+        not know: an Indicator carrying one recorded an error and lost the
+        rules. Each rule lands as a `snort` attribute next to what the
+        observable yields - python-stix lets a Snort mechanism carry
+        several."""
+        indicator = self._ip_indicator('198.51.100.4')
+        test_mechanism = SnortTestMechanism()
+        test_mechanism.rules = list(_SNORT_RULES)
+        indicator.add_test_mechanism(test_mechanism)
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ),
+            [
+                ('ip-dst', '198.51.100.4'),
+                *(('snort', rule) for rule in _SNORT_RULES)
+            ]
         )
 
     def test_external_ttp_with_resources_and_no_infrastructure_converts(self):
