@@ -2079,13 +2079,10 @@ class TestSTIX1Import(TestSTIX):
         export writes a `target-*` attribute as a TTP targeting the same CIQ
         identity, the Record Title on both and the timestamp on the TTP. The
         TTP reached the object reader, which recorded it as an error and lost
-        the attribute. The `target-machine` the collection export cannot
-        write is another ticket's."""
-        attributes = [
-            attribute for attribute
-            in get_event_with_target_attributes()['Event']['Attribute']
-            if attribute['type'] != 'target-machine'
-        ]
+        the attribute. The `target-machine`, with no Incident to write an
+        Affected_Asset on, is the Custom observable every type with no native
+        slot takes on that parser, and reads back like one."""
+        attributes = get_event_with_target_attributes()['Event']['Attribute']
         attributes[0]['timestamp'] = '1603642920'
         exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
         exporter.parse_json_content(attributes)
@@ -2100,8 +2097,11 @@ class TestSTIX1Import(TestSTIX):
                 for converted in parser.misp_event.attributes
             },
             {
+                # The machine's fixture carries no category: pymisp's default
+                # for the type stands in
                 attribute['uuid']: (
-                    attribute['type'], attribute['category'],
+                    attribute['type'],
+                    attribute.get('category', 'Targeting data'),
                     attribute['value'], False
                 )
                 for attribute in attributes

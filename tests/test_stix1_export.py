@@ -1394,6 +1394,51 @@ class TestStix1Export(TestSTIX):
             incident.related_indicators.indicator[0].item, ('WHITE',)
         )
 
+    def _test_attributes_collection_with_target_attributes(self, version, attributes):
+        email, external, location, machine, org, user = attributes
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content(attributes)
+        self.assertEqual(parser.errors, {})
+        stix_package = parser.stix_package
+        # No Incident to hold an Affected_Asset: the machine falls back to the
+        # Custom observable, like every type with no slot on this parser
+        observables = stix_package.observables.observables
+        self.assertEqual(len(observables), 1)
+        properties = self._check_observable_features(
+            observables[0], machine, 'Custom'
+        )
+        self._check_custom_property(
+            machine, properties.custom_properties.property_[0]
+        )
+        # The other five stand as TTPs targeting the victim identity
+        ttps = self._check_ttp_length(stix_package, 5)
+        for ttp, attribute in zip(ttps, (email, external, location, org, user)):
+            self._check_ttp_fields(
+                ttp, attribute['uuid'],
+                f"{attribute['category']}: {attribute['value']}", 'Attribute'
+            )
+            self._check_identity_features(
+                ttp.victim_targeting.identity, attribute
+            )
+        # The comment travels the Custom way: nowhere on a plain observable,
+        # as the Indicator's description once the attribute is `to_ids`
+        self.assertIsNone(observables[0].description)
+        machine = {**machine, 'to_ids': True}
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content([machine])
+        self.assertEqual(parser.errors, {})
+        indicator = parser.stix_package.indicators[0]
+        self.assertEqual(
+            indicator.id_, f"{_ORGNAME_ID}:Indicator-{machine['uuid']}"
+        )
+        self.assertEqual(indicator.description.value, machine['comment'])
+        properties = self._check_observable_features(
+            indicator.observable, machine, 'Custom'
+        )
+        self._check_custom_property(
+            machine, properties.custom_properties.property_[0]
+        )
+
     def _test_attributes_collection_with_threat_actor_galaxy(self, version, attribute):
         parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
         parser.parse_json_content([attribute])
@@ -2647,6 +2692,12 @@ class TestSTIX11JSONExport(TestSTIX11Export):
         event = get_event_with_target_attributes()
         self._test_event_with_target_attributes(event['Event'])
 
+    def test_attributes_collection_with_target_attributes(self):
+        event = get_event_with_target_attributes()
+        self._test_attributes_collection_with_target_attributes(
+            '1.1.1', event['Event']['Attribute']
+        )
+
     def test_event_with_test_mechanism_attributes(self):
         event = get_event_with_test_mechanism_attributes()
         self._test_event_with_test_mechanism_attributes(event['Event'])
@@ -3672,6 +3723,12 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_event_with_target_attributes(self):
         event = get_event_with_target_attributes()
         self._test_event_with_target_attributes(event['Event'])
+
+    def test_attributes_collection_with_target_attributes(self):
+        event = get_event_with_target_attributes()
+        self._test_attributes_collection_with_target_attributes(
+            '1.2', event['Event']['Attribute']
+        )
 
     def test_event_with_test_mechanism_attributes(self):
         event = get_event_with_test_mechanism_attributes()
