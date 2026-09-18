@@ -9,14 +9,17 @@ from pymisp import MISPAttribute, MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from pymisp.api import describe_types
 from datetime import datetime
+from stix.campaign import Campaign
 from stix.coa import CourseOfAction
+from stix.common.identity import Identity
 from stix.common.related import RelatedIndicator, RelatedObservable
 from stix.core import STIXPackage
 from stix.exploit_target import Vulnerability, Weakness
+from stix.incident.affected_asset import AffectedAsset
 from stix.indicator import Indicator, Observable
 from stix.ttp import TTP
 from stix.ttp.attack_pattern import AttackPattern
-from typing import Optional
+from typing import Iterator, Optional
 
 _MISP_categories = describe_types.get('categories')
 _MISP_objects_path = resources_path / 'objects'
@@ -24,6 +27,9 @@ _MISP_objects_path = resources_path / 'objects'
 # `(MISP Attribute)` and `(MISP Object)` it titles the TTP of an attribute or
 # an object with: what tells a cluster from the content written next to it
 _MISP_GALAXY_TITLE_SUFFIX = ' (MISP Galaxy)'
+# What the export puts before the value of a `target-external` attribute in
+# the name line of the CIQ identity it writes the attribute as
+_MISP_EXTERNAL_TARGET_PREFIX = 'External target: '
 
 
 class InternalSTIX1toMISPParser(STIX1toMISPParser):
@@ -115,6 +121,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if self._event.related_observables:
             for observable in self._event.related_observables.observable:
                 self._parse_observable(observable)
+        # The `target-*` attributes: five kinds as the Victims of the
+        # Incident, the `target-machine` as its Affected Assets
+        if self._event.victims:
+            for victim in self._event.victims:
+                self._parse_victim_identity(victim)
+        if self._event.affected_assets:
+            for affected_asset in self._event.affected_assets:
+                self._parse_affected_asset(affected_asset)
         if self._event.history:
             for entry in self._event.history.history_items:
                 journal_entry = entry.journal_entry.value
@@ -150,16 +164,20 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                                object_courses_of_action: frozenset = frozenset()):
         """Convert the context objects a package carries next to its content.
 
-        Threat actors are galaxies. Courses of action and TTPs are galaxies
-        or MISP objects, and the export writes both kinds alike, referenced
-        from the Incident the same way: a TTP is told by the title the export
-        gives it, a Course of Action by what it carries - the fields a cluster
-        has none of, or the timestamp of the object the Incident took it with.
+        Campaigns are `campaign-name` attributes. Threat actors are galaxies.
+        Courses of action and TTPs are galaxies or MISP objects, and the
+        export writes both kinds alike, referenced from the Incident the same
+        way: a TTP is told by the title the export gives it, a Course of
+        Action by what it carries - the fields a cluster has none of, or the
+        timestamp of the object the Incident took it with.
 
         :param package: the package the context objects are written on
         :param object_courses_of_action: the uuids of the Courses of Action
             the Incident took stamped with the timestamp of a MISP object
         """
+        if package.campaigns:
+            for campaign in package.campaigns:
+                self._parse_campaign(campaign)
         if package.courses_of_action:
             for course_of_action in package.courses_of_action:
                 if self._is_course_of_action_object(
@@ -213,6 +231,36 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     #                       STIX OBJECTS PARSING METHODS                       #
     ############################################################################
 
+    def _parse_affected_asset(self, affected_asset: AffectedAsset):
+        """Convert the Affected Asset a `target-machine` attribute was
+        exported as: a description alone - `{value} ({comment})` when the
+        attribute carried a comment - with no id and no Record Title.
+
+        The last ` (` is the export's own, so a value holding parentheses
+        and the comment behind it come back apart - and a value ending in
+        `)` with no comment loses its tail to the comment. Nothing derives
+        the uuid: two identical machines would share it, so pymisp's random
+        one stands in. An Affected Asset with no description is no export of
+        ours, and the error records it.
+
+        :param affected_asset: the Affected Asset of the Incident
+        """
+        description = affected_asset.description
+        if description is None or not description.value:
+            self._add_error(
+                'Unable to convert an Affected Asset of the Incident with id '
+                f'{self._event.id_}: no description to read a target-machine '
+                'attribute from'
+            )
+            return
+        value, comment = self._split_affected_asset_description(
+            description.value
+        )
+        misp_attribute = {'type': 'target-machine', 'value': value}
+        if comment is not None:
+            misp_attribute['comment'] = comment
+        self.misp_event.add_attribute(**misp_attribute)
+
     def _parse_attack_pattern_object(self, attack_pattern: AttackPattern, ttp_id: str):
         attributes = []
         for key, relation in self._mapping.attack_pattern_object_mapping().items():
@@ -227,6 +275,34 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             for attribute in attributes:
                 attack_pattern_object.add_attribute(*attribute)
             self.misp_event.add_object(attack_pattern_object)
+
+    def _parse_campaign(self, campaign: Campaign):
+        """Convert the Campaign a `campaign-name` attribute was exported as:
+        the value as its name, the category off the Record Title, the uuid
+        and the timestamp. The comment it writes as the description and the
+        tags as the handling are not read, as no Indicator's are either. A
+        Campaign with no name is no export of ours, and the error records it.
+
+        :param campaign: the Campaign the package carries
+        """
+        if not campaign.names:
+            self._add_error(
+                f'Unable to convert the Campaign with id {campaign.id_}: '
+                'no name to read a campaign-name attribute from'
+            )
+            return
+        misp_attribute = {
+            'type': 'campaign-name', 'value': campaign.names[0].value
+        }
+        category = self._category_from_title(campaign.title)
+        if category is not None:
+            misp_attribute['category'] = category
+        if campaign.timestamp:
+            misp_attribute['timestamp'] = self._timestamp_from_date(
+                campaign.timestamp
+            )
+        misp_attribute.update(self._sanitise_attribute_uuid(campaign.id_))
+        self.misp_event.add_attribute(**misp_attribute)
 
     # Parse indicators of a STIX document coming from our exporter
     def _parse_indicator(self, indicator: RelatedIndicator):
@@ -271,9 +347,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def _parse_ttp_object(self, ttp: TTP):
         """Convert the TTP a MISP attribute or object was exported as: the
-        attack pattern, vulnerability or weakness it carries. One carrying
-        none of the three has nothing the parser reads an attribute or an
-        object from, and the error records it.
+        attack pattern, vulnerability or weakness it carries, or the identity
+        it targets - how an Attribute Collection, with no Incident to make a
+        Victim of, writes a `target-*` attribute. One carrying none of the
+        four has nothing the parser reads an attribute or an object from, and
+        the error records it.
 
         :param ttp: the TTP, titled `(MISP Attribute)` or `(MISP Object)`
         """
@@ -282,6 +360,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if ttp.behavior and ttp.behavior.attack_patterns:
             for attack_pattern in ttp.behavior.attack_patterns:
                 self._parse_attack_pattern_object(attack_pattern, ttp_id)
+            converted = True
+        if ttp.victim_targeting and ttp.victim_targeting.identity:
+            self._parse_victim_identity(
+                ttp.victim_targeting.identity, ttp.timestamp
+            )
             converted = True
         if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
             for exploit_target in ttp.exploit_targets.exploit_target:
@@ -295,6 +378,47 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     converted = True
         if not converted:
             self._unconverted_ttp_error(ttp.id_)
+
+    def _parse_victim_identity(
+            self, identity: Identity, timestamp: Optional[datetime] = None):
+        """Convert the CIQ identity a `target-*` attribute was exported as:
+        the Victim of the Incident an Event Collection writes, the identity a
+        TTP targets in an Attribute Collection.
+
+        The type is told by the one CIQ identity field the export fills, and
+        the five are disjoint: an electronic address identifier is a
+        `target-email`, a name line a `target-external`, an address a
+        `target-location`, an organisation name a `target-org`, a person name
+        a `target-user`. The category is read off the Record Title the
+        identity is named with. An identity filling no field or several, or
+        named with no Record Title, is no export of ours - a hand-edited or
+        misclassified document - and the error records it.
+
+        :param identity: the CIQ identity
+        :param timestamp: the timestamp of the TTP targeting the identity - a
+            Victim travels with none
+        """
+        targets = list(self._read_target_identity_fields(identity))
+        if len(targets) != 1:
+            self._unconverted_identity_error(
+                identity.id_,
+                'no single CIQ identity field to read a target attribute from'
+            )
+            return
+        category = self._category_from_title(identity.name)
+        if category is None:
+            self._unconverted_identity_error(
+                identity.id_, 'no MISP category to read off its name'
+            )
+            return
+        attribute_type, value = targets[0]
+        misp_attribute = {
+            'type': attribute_type, 'value': value, 'category': category
+        }
+        if timestamp:
+            misp_attribute['timestamp'] = self._timestamp_from_date(timestamp)
+        misp_attribute.update(self._sanitise_attribute_uuid(identity.id_))
+        self.misp_event.add_attribute(**misp_attribute)
 
     def _parse_vulnerability_object(self, vulnerability: Vulnerability, ttp_id: str):
         attributes = []
@@ -628,10 +752,71 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if field != 'description'
         )
 
+    @staticmethod
+    def _read_target_identity_fields(
+            identity: Identity) -> Iterator[tuple[str, str]]:
+        """Read the `target-*` type and the value off each CIQ identity field
+        the identity fills - the export fills one, with one value.
+
+        :param identity: the CIQ identity, or a plain Identity carrying no
+            specification and filling no field
+        :return: the type and the value of each filled field
+        """
+        specification = getattr(identity, 'specification', None)
+        if specification is None:
+            return
+        for identifier in specification.electronic_address_identifiers or ():
+            if identifier.value:
+                yield 'target-email', identifier.value
+        party_name = specification.party_name
+        if party_name is not None:
+            for name_line in party_name.name_lines or ():
+                if name_line.value:
+                    yield 'target-external', name_line.value.removeprefix(
+                        _MISP_EXTERNAL_TARGET_PREFIX
+                    )
+            for organisation_name in party_name.organisation_names or ():
+                for element in organisation_name.name_elements or ():
+                    if element.value:
+                        yield 'target-org', element.value
+            for person_name in party_name.person_names or ():
+                for element in person_name.name_elements or ():
+                    if element.value:
+                        yield 'target-user', element.value
+        for address in specification.addresses or ():
+            free_text_address = address.free_text_address
+            if free_text_address is not None:
+                for address_line in free_text_address.address_lines or ():
+                    if address_line:
+                        yield 'target-location', address_line
+
+    @staticmethod
+    def _split_affected_asset_description(
+            description: str) -> tuple[str, Optional[str]]:
+        """Split the description of an Affected Asset into the value and the
+        comment the export folded behind it as `{value} ({comment})`.
+
+        :param description: the description
+        :return: the value and the comment - the whole description and None
+            when it folds no comment, or nothing before the fold
+        """
+        if description.endswith(')') and ' (' in description:
+            value, comment = description[:-1].rsplit(' (', 1)
+            if value:
+                return value, comment
+        return description, None
+
+    def _unconverted_identity_error(self, identity_id: str, reason: str):
+        self._add_error(
+            f'Unable to convert the Victim identity with id {identity_id}: '
+            f'{reason}'
+        )
+
     def _unconverted_ttp_error(self, ttp_id: str):
         self._add_error(
             f'Unable to convert the TTP with id {ttp_id}: no attack pattern, '
-            'vulnerability or weakness to read a MISP attribute or object from'
+            'vulnerability, weakness or victim targeting to read a MISP '
+            'attribute or object from'
         )
 
     def _unnamed_composition_warning(self, object_id: str):
