@@ -5805,6 +5805,19 @@ def get_embedded_observable_object_galaxy():
     return event
 
 
+def get_embedded_threat_actor_object_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    misp_object = dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
+    attribute = misp_object['Attribute'][0]
+    attribute['Galaxy'] = [deepcopy(_TEST_THREAT_ACTOR_GALAXY)]
+    attribute['Tag'] = [
+        {'name': 'tlp:white'},
+        {'name': 'misp-galaxy:threat-actor="Cutting Kitten"'}
+    ]
+    event['Event']['Object'] = [misp_object]
+    return event
+
+
 def get_event_with_account_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [

@@ -740,6 +740,7 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(properties.modified_time.value, modified_value)
 
     def _check_attributed_threat_actor(self, incident, galaxy, threat_actor_id):
+        self.assertEqual(len(incident.attributed_threat_actors.threat_actor), 1)
         related_threat_actor = incident.attributed_threat_actors.threat_actor[0]
         self.assertEqual(related_threat_actor.relationship.value, galaxy['name'])
         self.assertEqual(related_threat_actor.item.idref, threat_actor_id)
@@ -2088,6 +2089,30 @@ class TestStix1Export(TestSTIX):
             cluster['uuid']
         )
 
+    def _test_embedded_threat_actor_object_galaxy(self, event):
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Object'][0])
+        galaxy = misp_object['Attribute'][0]['Galaxy'][0]
+        orgc = event['Orgc']['name']
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(self.parser.warnings, {})
+        stix_package = self.parser.stix_package
+        threat_actor_id = self._check_threat_actor_from_galaxy(
+            stix_package, galaxy
+        )
+        # An object's Indicator has no threat actor slot any more than an
+        # attribute's: the actor an object attribute carries is attributed
+        # to the Incident
+        incident = stix_package.incidents[0]
+        self._check_attributed_threat_actor(incident, galaxy, threat_actor_id)
+        indicator = self._check_indicator_object_features(
+            incident.related_indicators.indicator[0], misp_object, orgc
+        )
+        # The `misp-galaxy:` tag goes with the converted galaxy: only the
+        # object attribute's other tag reaches the Indicator's handling
+        self._check_handling_markings(indicator, ('WHITE',))
+
     def _test_event_with_asn_object_indicator(self, event):
         properties, attributes = self._run_indicator_from_object_tests(event, 'AS')
         self._check_asn_properties(properties, attributes)
@@ -2754,6 +2779,10 @@ class TestSTIX11JSONExport(TestSTIX11Export):
         event = get_embedded_observable_object_galaxy()
         self._test_embedded_observable_object_galaxy(event['Event'])
 
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        self._test_embedded_threat_actor_object_galaxy(event['Event'])
+
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
         self._test_event_with_asn_object_indicator(event['Event'])
@@ -3263,6 +3292,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_object_galaxy(misp_event)
+
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_object_galaxy(misp_event)
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
@@ -3786,6 +3821,10 @@ class TestSTIX12JSONExport(TestSTIX12Export):
         event = get_embedded_observable_object_galaxy()
         self._test_embedded_observable_object_galaxy(event['Event'])
 
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        self._test_embedded_threat_actor_object_galaxy(event['Event'])
+
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
         self._test_event_with_asn_object_indicator(event['Event'])
@@ -4295,6 +4334,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_object_galaxy(misp_event)
+
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_object_galaxy(misp_event)
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
