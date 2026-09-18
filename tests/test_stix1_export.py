@@ -1793,11 +1793,11 @@ class TestStix1Export(TestSTIX):
         snort_indicator = self._check_indicator_attribute_features(r_snort, snort, orgc)
         snort_tm = snort_indicator.test_mechanisms[0]
         self.assertEqual(snort_tm._XSI_TYPE, 'snortTM:SnortTestMechanismType')
-        self.assertEqual(snort_tm.rules[0].value['value'], snort['value'])
+        self.assertEqual(snort_tm.rules[0].value, snort['value'])
         yara_indicator = self._check_indicator_attribute_features(r_yara, yara, orgc)
         yara_tm = yara_indicator.test_mechanisms[0]
         self.assertEqual(yara_tm._XSI_TYPE, 'yaraTM:YaraTestMechanismType')
-        self.assertEqual(yara_tm.rule.value['value'], yara['value'])
+        self.assertEqual(yara_tm.rule.value, yara['value'])
 
     def _test_event_with_undefined_attributes(self, event):
         header, comment = event['Attribute']

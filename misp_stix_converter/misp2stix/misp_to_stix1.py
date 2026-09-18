@@ -470,12 +470,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_snort_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             test_mechanism = SnortTestMechanism()
-            test_mechanism.rules = [
-                {
-                    "value": attribute['value'],
-                    "encoded": True
-                }
-            ]
+            # The rule text itself: python-stix wraps it in the CDATA the
+            # schema wants, and a dict here was written as its Python repr
+            test_mechanism.rules = [attribute['value']]
             self._handle_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(attribute)
@@ -585,10 +582,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_yara_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             test_mechanism = YaraTestMechanism()
-            test_mechanism.rule = {
-                "value": attribute['value'],
-                "encoded": True
-            }
+            # The rule text itself, as for a `snort` attribute
+            test_mechanism.rule = attribute['value']
             self._handle_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(attribute)
