@@ -1127,8 +1127,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __attributes_mapping = {
         'vulnerability': '_parse_vulnerability_attribute'
     }
+    # Legacy only, frozen: the galaxy cluster meta keys whose `-` the import
+    # restores from the property name alone, for the bundles exported before
+    # `x_misp_original_names` carried the spelling. Takes no new entry - a key
+    # a bundle exports from now on travels with its spelling, and an entry
+    # added here would force `-` on any custom cluster key that folds to the
+    # same name. `test_stix2X_dash_meta_fields_are_frozen`.
     __dash_meta_fields = (
         'x_misp_attribution_confidence',
+        # The `country` galaxy maps to an SDO in 2.1 only, so ticket 38 pruned
+        # this one as dead on a 2.0-only reading: a 2.1 bundle from before the
+        # channel does carry it, and needs the `-` back.
+        'x_misp_budapest_convention',
         'x_misp_cfr_suspected_state_sponsor',
         'x_misp_cfr_suspected_victims',
         'x_misp_cfr_target_category',

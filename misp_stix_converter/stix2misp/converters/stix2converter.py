@@ -5,7 +5,8 @@ from ._galaxy_definitions import GALAXY_DEFINITIONS
 from ..exceptions import UndefinedSTIXObjectError
 from ...tools.misp_object_templates import (
     _custom_property_name, _custom_property_relation,
-    _CUSTOM_PROPERTY_PREFIX, _template_custom_properties)
+    _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY,
+    _template_custom_properties)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -20,7 +21,8 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
     ObservedData as ObservedData_v21, ThreatActor as ThreatActor_v21,
     Tool as Tool_v21, Vulnerability as Vulnerability_v21)
-from typing import Any, Iterator, Optional, Tuple, TYPE_CHECKING, Union
+from typing import (
+    Any, Iterable, Iterator, Optional, Tuple, TYPE_CHECKING, Union)
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -516,12 +518,12 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         )
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        original_names = self._read_original_names(stix_object)
         for key, value in stix_object.items():
-            if key.startswith('x_misp_'):
-                separator = (
-                    '-' if key in self._mapping.dash_meta_fields() else '_'
-                )
-                yield separator.join(key.split('_')[2:]), value
+            if key == _ORIGINAL_NAMES_PROPERTY:
+                continue
+            if key.startswith(_CUSTOM_PROPERTY_PREFIX):
+                yield self._restore_meta_key(key, original_names), value
 
     @staticmethod
     def _handle_cluster_value(cluster_args: dict, external_id: str):
@@ -559,6 +561,52 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         else:
             feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
             clusters[object_id] = getattr(self, feature)(stix_object)
+
+    def _read_original_names(
+            self, stix_object,
+            names: Optional[Iterable[str]] = None) -> Optional[dict]:
+        """Read the spellings the export carried for the names it folded.
+
+        :param stix_object: the STIX object carrying the channel, if any
+        :param names: the names the object writes, as the channel keys them -
+            its own properties by default, or the keys of its `x_misp_meta`
+            dictionary when the channel spells those instead
+        :return: the MISP spelling per wire name, or `None` when the object
+            carries no channel - it is then older than the channel, or the
+            fold changed none of its names
+        """
+        original_names = stix_object.get(_ORIGINAL_NAMES_PROPERTY)
+        if original_names is None:
+            return None
+        if names is None:
+            names = stix_object
+        unknown = [name for name in original_names if name not in names]
+        if unknown:
+            self.main_parser._unknown_original_names_warning(
+                stix_object['id'], unknown
+            )
+        return original_names
+
+    def _restore_meta_key(
+            self, field: str, original_names: Optional[dict]) -> str:
+        """Spell a leftover galaxy meta key as MISP had it.
+
+        The channel is the exact inverse of the fold: on an object carrying
+        it, a name it lists comes back as listed and any other was written
+        verbatim. Without a channel, `dash_meta_fields` restores the `-` the
+        names it lists lost in the bundles exported before the channel
+        existed (ADR-0013); the list is frozen there.
+
+        :param field: the custom property carrying the meta key
+        :param original_names: the channel, or `None` when the object has none
+        :return: the meta key
+        """
+        relation = _custom_property_relation(field)
+        if original_names is not None:
+            return original_names.get(field, relation)
+        if field in self._mapping.dash_meta_fields():
+            return relation.replace('_', '-')
+        return relation
 
     def _parse_galaxy_as_container(
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:

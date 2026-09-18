@@ -4,6 +4,7 @@
 from __future__ import annotations
 from ..tools.exceptions import (
     STIXInputSizeError, STIXLoadingError, _reduce_input_path)
+from ..tools.misp_object_templates import _ORIGINAL_NAMES_PROPERTY
 from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
     MarkingDefinitionLoadingError, MissingSTIXContentError,
@@ -1563,6 +1564,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             'the import mapping knows the object relation it carries, so it '
             'is imported as a text attribute with the object relation '
             f'"{relation}".'
+        )
+
+    def _unknown_original_names_warning(self, object_id: str, names: list):
+        quoted = ', '.join(f'"{name}"' for name in names)
+        self._add_warning(
+            f'Ignored the {_ORIGINAL_NAMES_PROPERTY} '
+            f"{'entries' if len(names) > 1 else 'entry'} {quoted} of "
+            f'{object_id}: the object carries no such property or meta key '
+            'to spell.'
         )
 
     def _unknown_network_protocol_warning(

@@ -107,7 +107,9 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                 )
             }
             if hasattr(custom_galaxy, 'x_misp_meta'):
-                cluster_args['meta'] = custom_galaxy.x_misp_meta
+                cluster_args['meta'] = self._restore_meta_dictionary(
+                    custom_galaxy
+                )
             clusters[custom_ref] = {
                 'used': {self.event_uuid: False},
                 'cluster': self.main_parser._create_misp_galaxy_cluster(
@@ -160,6 +162,18 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                 f"{', '.join(sorted(dropped_fields))}"
             )
         self.main_parser._add_misp_object(misp_object, custom_object)
+
+    def _restore_meta_dictionary(
+            self, custom_galaxy: _CUSTOM_OBJECT_TYPING) -> dict:
+        # The `x_misp_meta` keys the export folded to the STIX dictionary
+        # charset come back as MISP spelled them, from the channel - which
+        # keys on the dictionary key here, not on a property name; the others
+        # were written verbatim.
+        meta = custom_galaxy.x_misp_meta
+        original_names = self._read_original_names(custom_galaxy, meta) or {}
+        return {
+            original_names.get(key, key): value for key, value in meta.items()
+        }
 
     @staticmethod
     def _record_rejected_template_name(misp_object: MISPObject, name: Any):
