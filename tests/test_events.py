@@ -4733,6 +4733,48 @@ def get_event_with_colliding_galaxy_meta_keys():
     return event
 
 
+def get_event_with_galaxy_meta_keys_outside_the_charset():
+    # Leftover meta keys the custom property name fold changes: upper case,
+    # `:`, space, and the `-` of `cfr-type-of-incident` the base cluster
+    # already carries. `target_category` is the control: the fold leaves it
+    # as it is, so the channel does not list it - even though
+    # `dash_meta_fields` lists the name it folds to.
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta'].update(
+        {
+            'Capital': 'Tehran',
+            'origin:Storm-0558': ['China'],
+            'Procedure Examples': ['Spear phishing'],
+            'target_category': ['Government']
+        }
+    )
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_galaxy_meta_key_folding_to_the_channel():
+    # A meta key whose folded name is the channel's own property name. The
+    # channel owns it - handing it a meta value would destroy the spelling
+    # record of every other key - so the key is dropped with a warning, not a
+    # traceback. `cfr-type-of-incident` is there to be the record it protects.
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['Original Names'] = ['not a spelling']
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset():
+    # An `x_misp_meta` key a STIX dictionary cannot carry as MISP spells it
+    # (§2.3 allows `-` and case, not `:`), next to the two the base cluster has
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_TEA_MATRIX_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['origin:Storm-0558'] = ['China']
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
 def get_event_with_tool_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [

@@ -400,14 +400,65 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.parser.errors
         )
 
-    def test_stix21_dashed_galaxy_meta_keys_are_listed(self):
-        self._check_dashed_galaxy_meta_keys_are_listed()
+    def test_stix21_dash_meta_fields_are_frozen(self):
+        self._check_dash_meta_fields_are_frozen()
 
-    def test_stix21_listed_galaxy_meta_keys_are_in_the_corpus(self):
-        self._check_listed_galaxy_meta_keys_are_in_the_corpus()
+    def test_stix21_galaxy_meta_keys_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_galaxy_meta_keys_round_trip(MISPtoSTIX21Parser())
 
-    def test_stix21_listed_galaxy_meta_keys_have_no_underscore_twin(self):
-        self._check_listed_galaxy_meta_keys_have_no_underscore_twin()
+    def test_stix21_custom_galaxy_meta_keys_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_custom_galaxy_meta_keys_round_trip(MISPtoSTIX21Parser())
+
+    def test_stix21_pre_channel_galaxy_meta_keys(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_pre_channel_galaxy_meta_keys(MISPtoSTIX21Parser())
+
+    def test_stix21_unknown_original_names_entry(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_unknown_original_names_entry(MISPtoSTIX21Parser())
+
+    def test_stix21_unknown_original_names_entry_on_a_custom_galaxy(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_unknown_original_names_entry_on_a_custom_galaxy(
+            MISPtoSTIX21Parser()
+        )
+
+    def test_stix21_colliding_galaxy_meta_keys_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_colliding_galaxy_meta_keys_round_trip(MISPtoSTIX21Parser())
+
+    def test_stix21_country_galaxy_meta_keys_round_trip(self):
+        # `country` maps to an SDO in 2.1 only (`location`), so its meta keys
+        # travel as custom properties here and inside the `x_misp_meta`
+        # dictionary in 2.0. That divergence is why we recorded `Capital` as
+        # never lowercased while counting it as lost, and why the dashed
+        # `budapest-convention` was pruned from `dash_meta_fields` as dead
+        # while 2.1 still needed it. The channel settles both.
+        from copy import deepcopy
+        from misp_stix_converter import MISPtoSTIX21Parser
+        from .test_events import _BASE_EVENT, _TEST_COUNTRY_GALAXY
+        event = deepcopy(_BASE_EVENT)
+        galaxy = deepcopy(_TEST_COUNTRY_GALAXY)
+        galaxy['GalaxyCluster'][0]['meta']['budapest-convention'] = ['Ratified']
+        event['Event']['Galaxy'] = [galaxy]
+        expected = galaxy['GalaxyCluster'][0]['meta']
+        meta = self._round_trip_galaxy_cluster_meta(
+            MISPtoSTIX21Parser(), event
+        )
+        self.assertEqual(meta, expected)
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+        # A 2.1 country bundle from before the channel - 2026.9.16 shipped
+        # them - still needs the list to give `budapest-convention` its `-`
+        # back, which is why that entry is restored rather than left pruned.
+        legacy = self._round_trip_galaxy_cluster_meta(
+            MISPtoSTIX21Parser(), event, edit_channel=lambda channel: None,
+            keep_dash_meta_fields=True
+        )
+        self.assertEqual(legacy['budapest-convention'], ['Ratified'])
+        self.assertEqual(legacy['capital'], 'Stockholm')
 
     def test_stix21_every_template_relation_folds_back(self):
         self._check_every_template_relation_folds_back()

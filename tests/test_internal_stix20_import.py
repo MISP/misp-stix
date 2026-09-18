@@ -368,14 +368,34 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.parser.errors
         )
 
-    def test_stix20_dashed_galaxy_meta_keys_are_listed(self):
-        self._check_dashed_galaxy_meta_keys_are_listed()
+    def test_stix20_dash_meta_fields_are_frozen(self):
+        self._check_dash_meta_fields_are_frozen()
 
-    def test_stix20_listed_galaxy_meta_keys_are_in_the_corpus(self):
-        self._check_listed_galaxy_meta_keys_are_in_the_corpus()
+    def test_stix20_galaxy_meta_keys_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_galaxy_meta_keys_round_trip(MISPtoSTIX20Parser())
 
-    def test_stix20_listed_galaxy_meta_keys_have_no_underscore_twin(self):
-        self._check_listed_galaxy_meta_keys_have_no_underscore_twin()
+    def test_stix20_custom_galaxy_meta_keys_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_custom_galaxy_meta_keys_round_trip(MISPtoSTIX20Parser())
+
+    def test_stix20_pre_channel_galaxy_meta_keys(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_pre_channel_galaxy_meta_keys(MISPtoSTIX20Parser())
+
+    def test_stix20_unknown_original_names_entry(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_unknown_original_names_entry(MISPtoSTIX20Parser())
+
+    def test_stix20_unknown_original_names_entry_on_a_custom_galaxy(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_unknown_original_names_entry_on_a_custom_galaxy(
+            MISPtoSTIX20Parser()
+        )
+
+    def test_stix20_colliding_galaxy_meta_keys_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_colliding_galaxy_meta_keys_round_trip(MISPtoSTIX20Parser())
 
     def test_stix20_every_template_relation_folds_back(self):
         self._check_every_template_relation_folds_back()

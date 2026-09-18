@@ -6325,11 +6325,18 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(location1.labels[0], f'misp:galaxy-name="{country["name"]}"')
         self.assertEqual(location1.labels[1], f'misp:galaxy-type="{country["type"]}"')
         # The country cluster's meta keys are CamelCase (`Capital`, `ISO3`),
-        # which the custom property name rule folds to lowercase.
+        # which the custom property name rule folds to lowercase. `country`
+        # maps to an SDO in 2.1 only, so this is the one galaxy whose keys the
+        # fold changes here and not in 2.0: the channel carries all 8, and
+        # `tld` - which the fold leaves alone - stays out of it.
         for key, name in _COUNTRY_META_PROPERTY_NAMES.items():
             self.assertEqual(getattr(location1, name), cluster['meta'][key])
         self.assertFalse(hasattr(location1, 'x_misp_Capital'))
         self._check_custom_property_names(location1)
+        self._check_original_names(
+            location1,
+            {name: key for key, name in _COUNTRY_META_PROPERTY_NAMES.items()}
+        )
         cluster = region['GalaxyCluster'][0]
         self.assertEqual(location2.id, f"{location2.type}--{cluster['uuid']}")
         self.assertEqual(location2.created, timestamp)
@@ -6438,16 +6445,23 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         vulnerability = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp)
+
     def _test_event_with_colliding_galaxy_meta_keys(self, event):
         cluster = event['Galaxy'][0]['GalaxyCluster'][0]
         self.parser.parse_misp_event(event)
         threat_actor = self.parser.stix_objects[-1]
         self.assertEqual(threat_actor.type, 'threat-actor')
         # `TTP` and `ttp` share one property, the last value wins - the same
-        # rule as on observables - and the fold is reported.
+        # rule as on observables - and the fold is reported. The channel can
+        # carry one spelling per name: it follows the value the property keeps,
+        # written as MISP spelled it, so `TTP` is not listed.
         self.assertEqual(threat_actor.x_misp_ttp, cluster['meta']['ttp'])
         self.assertFalse(hasattr(threat_actor, 'x_misp_TTP'))
         self._check_custom_property_names(threat_actor)
+        self._check_original_names(
+            threat_actor,
+            {'x_misp_cfr_type_of_incident': 'cfr-type-of-incident'}
+        )
         collision_warnings = [
             warning for warning in self.parser.warnings[event['uuid']]
             if 'x_misp_ttp' in warning
@@ -6455,6 +6469,61 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(len(collision_warnings), 1)
         self.assertIn(f'"{cluster["value"]}"', collision_warnings[0])
         self.assertIn('"ttp"', collision_warnings[0])
+        self.assertIn('only its spelling is carried', collision_warnings[0])
+
+    def _test_event_with_galaxy_meta_key_folding_to_the_channel(self, event):
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        threat_actor = self.parser.stix_objects[-1]
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        # The channel keeps the name and the spelling record it carries; the
+        # colliding key is dropped, and said so rather than raising.
+        self._check_original_names(
+            threat_actor,
+            {'x_misp_cfr_type_of_incident': 'cfr-type-of-incident'}
+        )
+        self.assertEqual(dict(self.parser.errors), {})
+        reserved_warnings = [
+            warning for warning in self.parser.warnings[event['uuid']]
+            if 'x_misp_original_names' in warning
+        ]
+        self.assertEqual(len(reserved_warnings), 1)
+        self.assertIn(f'"{cluster["value"]}"', reserved_warnings[0])
+        self.assertIn('"Original Names"', reserved_warnings[0])
+        self.assertIn('the key is dropped', reserved_warnings[0])
+
+    def _test_event_with_galaxy_meta_keys_outside_the_charset(self, event):
+        galaxy = event['Galaxy'][0]
+        meta = galaxy['GalaxyCluster'][0]['meta']
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        threat_actor = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        self._check_galaxy_features(threat_actor, galaxy, timestamp)
+        # Every leftover key lands under its folded name, with the value MISP
+        # had; the channel lists the ones the fold changed, by folded name,
+        # and not the control the fold left alone.
+        self.assertEqual(threat_actor.x_misp_capital, meta['Capital'])
+        self.assertEqual(
+            threat_actor.x_misp_origin_storm_0558, meta['origin:Storm-0558']
+        )
+        self.assertEqual(
+            threat_actor.x_misp_procedure_examples, meta['Procedure Examples']
+        )
+        self.assertEqual(
+            threat_actor.x_misp_target_category, meta['target_category']
+        )
+        self._check_original_names(
+            threat_actor,
+            {
+                'x_misp_capital': 'Capital',
+                'x_misp_cfr_type_of_incident': 'cfr-type-of-incident',
+                'x_misp_origin_storm_0558': 'origin:Storm-0558',
+                'x_misp_procedure_examples': 'Procedure Examples'
+            }
+        )
+        self.assertEqual(self.parser.warnings, {})
 
 
 class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
@@ -6481,6 +6550,22 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
     def test_event_with_colliding_galaxy_meta_keys(self):
         event = get_event_with_colliding_galaxy_meta_keys()
         self._test_event_with_colliding_galaxy_meta_keys(event['Event'])
+
+    def test_event_with_galaxy_meta_keys_outside_the_charset(self):
+        event = get_event_with_galaxy_meta_keys_outside_the_charset()
+        self._test_event_with_galaxy_meta_keys_outside_the_charset(
+            event['Event']
+        )
+
+    def test_event_with_galaxy_meta_key_folding_to_the_channel(self):
+        event = get_event_with_galaxy_meta_key_folding_to_the_channel()
+        self._test_event_with_galaxy_meta_key_folding_to_the_channel(
+            event['Event']
+        )
+
+    def test_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset(self):
+        event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
+        self._test_event_with_custom_galaxy(event['Event'])
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
@@ -6741,6 +6826,24 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_colliding_galaxy_meta_keys(misp_event)
+
+    def test_event_with_galaxy_meta_keys_outside_the_charset(self):
+        event = get_event_with_galaxy_meta_keys_outside_the_charset()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxy_meta_keys_outside_the_charset(misp_event)
+
+    def test_event_with_galaxy_meta_key_folding_to_the_channel(self):
+        event = get_event_with_galaxy_meta_key_folding_to_the_channel()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxy_meta_key_folding_to_the_channel(misp_event)
+
+    def test_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset(self):
+        event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_custom_galaxy(misp_event)
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()

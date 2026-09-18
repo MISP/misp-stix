@@ -9,23 +9,23 @@ import re
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
+from contextlib import ExitStack
 from functools import lru_cache
 from misp_stix_converter import (
     ExternalSTIX2Mapping, ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser,
     MISP_org_uuid, stix_2_to_misp)
 from misp_stix_converter.misp_stix_mapping import Mapping
-from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
-from misp_stix_converter.misp2stix.stix2_mapping import MISPtoSTIX2Mapping
 from misp_stix_converter.stix2misp import converters
 from misp_stix_converter.stix2misp.converters.stix2mapping import (
     InternalSTIX2Mapping)
 from misp_stix_converter.tools.misp_object_templates import (
     _custom_property_name, _custom_property_relation,
-    _template_custom_properties)
+    _ORIGINAL_NAMES_PROPERTY, _template_custom_properties)
 from pathlib import Path
 from pymisp import AbstractMISP
 from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from uuid import UUID, uuid5
 from ._test_stix import PLANTED_TEMPLATE, TestSTIX
 from .update_documentation import (
@@ -67,36 +67,38 @@ CLASSIFICATION_OVERRIDDEN_TO_INTERNAL_WARNING = (
     'internal as requested with the `classification` parameter.'
 )
 
-# The misp-galaxy corpus `dash_meta_fields` is pinned to
-_GALAXY_CLUSTERS = Path(__file__).resolve().parents[1] / 'data' / 'misp-galaxy' / 'clusters'
-
-# The one spelling the import restores from a folded property name: lower
-# case, `-` as the only separator, so `x_misp_a_b` splits back to `a-b` when
-# `dash_meta_fields` lists it. Upper case, `:`, space and mixed `-`/`_`
-_LISTABLE_META_KEY = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)+$')
-
-
-@lru_cache(maxsize=1)
-def _folded_sdo_galaxy_meta_keys() -> tuple:
-    # Only the galaxies exported as an SDO carry per-key `x_misp_*` properties;
-    # the others go through `x-misp-galaxy-cluster`, whose dictionary keeps the
-    # spelling. Returns the listable keys by folded name, and the folded names
-    # an underscored key also produces.
-    sdo_mapped = MISPtoSTIX2Mapping.cluster_to_stix_object()
-    listable, underscored = {}, set()
-    for path in sorted(_GALAXY_CLUSTERS.glob('*.json')):
-        with open(path, 'rb') as f:
-            galaxy = json.load(f)
-        if galaxy['type'] not in sdo_mapped:
-            continue
-        for cluster in galaxy['values']:
-            for key in cluster.get('meta') or {}:
-                folded = MISPtoSTIX2Parser._custom_property_name(key)
-                if _LISTABLE_META_KEY.match(key):
-                    listable[folded] = key
-                elif '_' in key and '-' not in key:
-                    underscored.add(folded)
-    return listable, frozenset(underscored)
+# `dash_meta_fields` is legacy-only since the `x_misp_original_names` channel:
+# it restores the `-` of the keys it lists in the bundles exported before the
+# channel, and takes no new entry - a key the corpus gains from now on travels
+# with its spelling. Pinned here so a change to it is a conscious step rather
+# than a corpus bump;
+# 22 entries: the 21 ticket left, plus `x_misp_budapest_convention`, which
+# it pruned as dead on a 2.0-only reading of a galaxy that maps to an SDO in
+# 2.1 - the legacy bundles this list exists for do carry it.
+_FROZEN_DASH_META_FIELDS = (
+    'x_misp_attribution_confidence',
+    'x_misp_budapest_convention',
+    'x_misp_cfr_suspected_state_sponsor',
+    'x_misp_cfr_suspected_victims',
+    'x_misp_cfr_target_category',
+    'x_misp_cfr_type_of_incident',
+    'x_misp_colt_average',
+    'x_misp_colt_median',
+    'x_misp_microsoft_origin_threat',
+    'x_misp_mode_of_operation',
+    'x_misp_payment_method',
+    'x_misp_ransomenotes_files',
+    'x_misp_ransomenotes_refs',
+    'x_misp_ransomnotes_filenames',
+    'x_misp_ransomnotes_files',
+    'x_misp_ransomnotes_filesnames',
+    'x_misp_ransomnotes_refs',
+    'x_misp_spoken_language',
+    'x_misp_suspected_victims',
+    'x_misp_target_category',
+    'x_misp_targeted_sector',
+    'x_misp_threat_actor_classification'
+)
 
 
 @lru_cache(maxsize=1)
@@ -3479,41 +3481,182 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     #                    GALAXY META KEY FOLD CHECKING FUNCTIONS                   #
     ################################################################################
 
-    def _load_galaxy_meta_key_fold(self):
-        if not _GALAXY_CLUSTERS.is_dir():
-            self.skipTest('misp-galaxy submodule not checked out')
-        listable, underscored = _folded_sdo_galaxy_meta_keys()
-        return set(InternalSTIX2Mapping.dash_meta_fields()), listable, underscored
-
-    def _check_dashed_galaxy_meta_keys_are_listed(self):
-        # A dashed key the list does not know imports with `_`: the rot ADR-0013
-        # accepted becomes a failing test on the next submodule bump.
-        listed, listable, _ = self._load_galaxy_meta_key_fold()
-        missing = sorted(set(listable) - listed)
+    def _check_dash_meta_fields_are_frozen(self):
+        # The list serves the bundles exported before the channel and nothing
+        # else: it no longer follows the corpus, and an entry added to it would
+        # force `-` on a custom cluster key that folds to the same name.
         self.assertEqual(
-            missing, [],
-            'dashed meta keys on SDO-mapped galaxies missing from '
-            f'`dash_meta_fields`: {[listable[folded] for folded in missing]}'
+            sorted(InternalSTIX2Mapping.dash_meta_fields()),
+            sorted(_FROZEN_DASH_META_FIELDS)
         )
 
-    def _check_listed_galaxy_meta_keys_are_in_the_corpus(self):
-        # An entry no corpus key produces forces `-` on any custom cluster key
-        # that folds to it, so the list stays as small as the corpus.
-        listed, listable, _ = self._load_galaxy_meta_key_fold()
-        dead = sorted(listed - set(listable))
-        self.assertEqual(
-            dead, [], f'`dash_meta_fields` entries no corpus key produces: {dead}'
+    def _round_trip_galaxy_cluster_meta(
+            self, export_parser, event: dict, edit_channel=None,
+            keep_dash_meta_fields: bool = False) -> dict:
+        # One galaxy cluster through the export and back, into a fresh parser
+        # so the diagnostics are this round trip's own. `dash_meta_fields` is
+        # emptied unless a test asks for it: a key coming back spelled as MISP
+        # had it then proves the channel alone carried the spelling.
+        # `edit_channel` rewrites the channel of every object carrying one
+        # before the import reads it, for the bundles no export produces - one
+        # from before the channel, or one whose channel has gone stale.
+        export_parser.parse_misp_event(event['Event'])
+        bundle = export_parser.bundle
+        if edit_channel is not None:
+            bundle = self._rewrite_original_names(bundle, edit_channel)
+        self.parser = InternalSTIX2toMISPParser()
+        with ExitStack() as stack:
+            if not keep_dash_meta_fields:
+                stack.enter_context(
+                    patch.object(
+                        InternalSTIX2Mapping, 'dash_meta_fields',
+                        classmethod(lambda cls: ())
+                    )
+                )
+            self.parser.load_stix_bundle(bundle)
+            self.parser.parse_stix_bundle()
+        return dict(self.parser.misp_event.galaxies[0].clusters[0].meta)
+
+    @staticmethod
+    def _rewrite_original_names(bundle, edit_channel):
+        """The same bundle, with every channel passed through `edit_channel`.
+
+        :param bundle: the exported bundle
+        :param edit_channel: takes the channel of one object and returns the
+            channel to write, or `None` to drop the property
+        """
+        def rewritten(stix_object):
+            if _ORIGINAL_NAMES_PROPERTY not in stix_object:
+                return stix_object
+            fields = {
+                field: value for field, value in stix_object.items()
+                if field != _ORIGINAL_NAMES_PROPERTY
+            }
+            channel = edit_channel(stix_object[_ORIGINAL_NAMES_PROPERTY])
+            if channel is not None:
+                fields[_ORIGINAL_NAMES_PROPERTY] = channel
+            return type(stix_object)(**fields, allow_custom=True)
+
+        return type(bundle)(
+            *(rewritten(stix_object) for stix_object in bundle.objects),
+            allow_custom=True
         )
 
-    def _check_listed_galaxy_meta_keys_have_no_underscore_twin(self):
-        # `a_b` and `a-b` fold to the same name; listing it restores both as
-        # `a-b`. Neither separator can serve such a pair, so it must not exist.
-        listed, _, underscored = self._load_galaxy_meta_key_fold()
-        twins = sorted(listed & underscored)
-        self.assertEqual(
-            twins, [],
-            f'listed names an underscored corpus key also folds to: {twins}'
+    def _check_galaxy_meta_keys_round_trip(self, export_parser):
+        """Every leftover meta key back as MISP spelled it, channel only."""
+        from .test_events import (
+            get_event_with_galaxy_meta_keys_outside_the_charset)
+        event = get_event_with_galaxy_meta_keys_outside_the_charset()
+        expected = event['Event']['Galaxy'][0]['GalaxyCluster'][0]['meta']
+        meta = self._round_trip_galaxy_cluster_meta(export_parser, event)
+        for key, value in expected.items():
+            self.assertIn(key, meta)
+            if key != 'synonyms':
+                self.assertEqual(meta[key], value)
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def _check_custom_galaxy_meta_keys_round_trip(self, export_parser):
+        """The `x_misp_meta` keys of a custom galaxy cluster, channel only."""
+        from .test_events import (
+            get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset)
+        event = (
+            get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
         )
+        expected = event['Event']['Galaxy'][0]['GalaxyCluster'][0]['meta']
+        meta = self._round_trip_galaxy_cluster_meta(export_parser, event)
+        self.assertEqual(meta, expected)
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def _check_pre_channel_galaxy_meta_keys(self, export_parser):
+        """A bundle with no channel reads as it did: the list restores the `-`
+        of the names it lists, every other key keeps its folded spelling."""
+        from .test_events import (
+            get_event_with_galaxy_meta_keys_outside_the_charset)
+        event = get_event_with_galaxy_meta_keys_outside_the_charset()
+        meta = self._round_trip_galaxy_cluster_meta(
+            export_parser, event, edit_channel=lambda channel: None,
+            keep_dash_meta_fields=True
+        )
+        # `cfr-type-of-incident` is listed, so its `-` comes back
+        self.assertIn('cfr-type-of-incident', meta)
+        # the rest imports folded
+        for key in ('capital', 'origin_storm_0558', 'procedure_examples'):
+            self.assertIn(key, meta)
+        for key in ('Capital', 'origin:Storm-0558', 'Procedure Examples'):
+            self.assertNotIn(key, meta)
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def _check_unknown_original_names_entry(self, export_parser):
+        """A channel entry naming nothing the object carries is reported."""
+        from .test_events import (
+            get_event_with_galaxy_meta_keys_outside_the_charset)
+        event = get_event_with_galaxy_meta_keys_outside_the_charset()
+        meta = self._round_trip_galaxy_cluster_meta(
+            export_parser, event,
+            edit_channel=lambda channel: {
+                **channel, 'x_misp_never_written': 'Never Written'
+            }
+        )
+        # The entry is ignored, the keys the object does carry are unaffected
+        self.assertNotIn('Never Written', meta)
+        self.assertEqual(meta['Capital'], 'Tehran')
+        reports = self._reports_matching(
+            self.parser.warnings, _ORIGINAL_NAMES_PROPERTY
+        )
+        self.assertEqual(len(reports), 1, reports)
+        self.assertIn('"x_misp_never_written"', reports[0])
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def _check_unknown_original_names_entry_on_a_custom_galaxy(
+            self, export_parser):
+        """The same report on the `x-misp-galaxy-cluster` path, where the
+        channel spells `x_misp_meta` keys rather than property names."""
+        from .test_events import (
+            get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset)
+        event = (
+            get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
+        )
+        expected = event['Event']['Galaxy'][0]['GalaxyCluster'][0]['meta']
+        meta = self._round_trip_galaxy_cluster_meta(
+            export_parser, event,
+            edit_channel=lambda channel: {
+                **channel, 'never-written': 'Never Written'
+            }
+        )
+        self.assertNotIn('Never Written', meta)
+        self.assertEqual(meta, expected)
+        reports = self._reports_matching(
+            self.parser.warnings, _ORIGINAL_NAMES_PROPERTY
+        )
+        self.assertEqual(len(reports), 1, reports)
+        self.assertIn('"never-written"', reports[0])
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def _check_colliding_galaxy_meta_keys_round_trip(self, export_parser):
+        """On a collision the channel carries one spelling: the one whose
+        value the surviving property holds, whichever of the two that is."""
+        from copy import deepcopy
+        from .test_events import _BASE_EVENT, _TEST_THREAT_ACTOR_GALAXY
+        # `TTP` last: the changed key wins, so the channel spells it `TTP`
+        # and the import gives that back. `ttp` last: the unchanged key wins,
+        # the channel has nothing to say, and `ttp` comes back folded - which
+        # is its own spelling. Either way one value is lost.
+        for order, survivor in ((('ttp', 'TTP'), 'TTP'), (('TTP', 'ttp'), 'ttp')):
+            event = deepcopy(_BASE_EVENT)
+            galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+            meta = galaxy['GalaxyCluster'][0]['meta']
+            for key in order:
+                meta[key] = [f'value of {key}']
+            event['Event']['Galaxy'] = [galaxy]
+            imported = self._round_trip_galaxy_cluster_meta(
+                export_parser, event
+            )
+            self.assertEqual(imported[survivor], [f'value of {survivor}'])
+            self.assertEqual(
+                [key for key in imported if key.lower() == 'ttp'], [survivor]
+            )
 
     ################################################################################
     #             OBJECT TEMPLATE RELATION RESTORATION CHECKING FUNCTIONS          #

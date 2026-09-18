@@ -75,7 +75,8 @@ _INVALID_TLSH_ATTRIBUTE = {
 # a bare keyword segment - pattern syntax in a relation cannot escape it.
 _DICTIONARY_META_KEYS = {
     'Odd Key (1)': 'Odd_Key__1_',
-    'kept-Case_ok': 'kept-Case_ok'
+    'kept-Case_ok': 'kept-Case_ok',
+    'origin:Storm-0558': 'origin_Storm-0558'
 }
 _PATTERN_SEGMENT_RELATIONS = (
     ("rel' OR file:name = 'x", 'x_misp_rel__or_file_name____x'),
@@ -734,6 +735,14 @@ class TestSTIX2Export(TestSTIX):
                     for key, value in cluster['meta'].items()
                 }
             )
+            self._check_original_names(
+                stix_object,
+                {
+                    _DICTIONARY_META_KEYS[key]: key
+                    for key in cluster['meta']
+                    if _DICTIONARY_META_KEYS[key] != key
+                }
+            )
 
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
@@ -1261,13 +1270,18 @@ class TestSTIX2Export(TestSTIX):
             if field in meta:
                 self.assertEqual(getattr(stix_object, field), meta[field])
         if 'cfr-type-of-incident' in meta:
-            # unmapped meta key with a dash: folded custom property name
+            # unmapped meta key with a dash: folded custom property name, its
+            # spelling carried on the channel
             self.assertEqual(
                 stix_object.x_misp_cfr_type_of_incident,
                 meta['cfr-type-of-incident']
             )
             self.assertFalse(hasattr(stix_object, 'x_misp_cfr-type-of-incident'))
             self._check_custom_property_names(stix_object)
+            self.assertEqual(
+                stix_object.x_misp_original_names['x_misp_cfr_type_of_incident'],
+                'cfr-type-of-incident'
+            )
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
@@ -1290,6 +1304,9 @@ class TestSTIX2Export(TestSTIX):
             self.assertEqual(
                 stix_object.x_misp_mitre_platforms, meta['mitre_platforms']
             )
+            # The fold leaves every leftover key of this cluster as it is, so
+            # there is no spelling to carry and no channel
+            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
         if meta.get('tool_version') is not None:
             self.assertEqual(stix_object.tool_version, meta['tool_version'])
         if meta.get('kill_chain') is not None:
@@ -1406,6 +1423,24 @@ class TestSTIX2Export(TestSTIX):
         for key in custom_properties:
             self.assertRegex(key, r'^x_misp_[a-z0-9_]+$')
             self.assertLessEqual(len(key), 250)
+
+    def _check_original_names(self, stix_object, expected):
+        # `x_misp_original_names` maps a wire name the fold changed - a custom
+        # property name, or an `x_misp_meta` key - to the MISP spelling, and
+        # lists nothing the fold left alone. Its keys are dictionary keys:
+        # STIX 2.0 / 2.1 §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`; a custom
+        # property name is always one.
+        if not expected:
+            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
+            return
+        original_names = stix_object.x_misp_original_names
+        self.assertEqual(original_names, expected)
+        carried = set(stix_object) | set(getattr(stix_object, 'x_misp_meta', ()))
+        for name, original in original_names.items():
+            self.assertRegex(name, r'^[A-Za-z0-9_-]+$')
+            self.assertIn(name, carried)
+            self.assertNotEqual(name, original)
+            self.assertNotEqual(name, f'x_misp_{original}')
 
     def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
         attribute_type = attribute['type']
