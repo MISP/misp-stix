@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Optional, Tuple
+from functools import lru_cache
+from types import MappingProxyType
+from typing import Any, Mapping, Optional, Tuple
 
 # A MISP object template is a directory named after the template, so a template
 # name is a single path component. pymisp resolves a template by joining the
@@ -19,6 +21,37 @@ _TEMPLATE_NAME_REGEX = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]*')
 # Stands in for a name that cannot be a template name: the object is then built
 # as a generic, template-less one, and the rejected name is kept as data.
 _UNKNOWN_TEMPLATE_NAME = 'unknown-template'
+
+# A MISP object relation or galaxy meta key no STIX property maps travels as a
+# custom property named after it. STIX 2.0 §7.1 and 2.1 §11.1.1 bind such a
+# name to `a-z`, `0-9` and `_`, so the relation is lowercased and every other
+# character folds to `_`. The fold is lossy by design: the rule lives here,
+# next to the template reader, because the template is its inverse - no
+# shipped template holds two relations folding to one name - and the import
+# rebuilds the original spelling and type from it.
+_CUSTOM_PROPERTY_PREFIX = 'x_misp_'
+_CUSTOM_PROPERTY_FORBIDDEN_RE = re.compile(r'[^a-z0-9_]')
+
+
+def _custom_property_name(relation: str) -> str:
+    """Name the custom property carrying a MISP relation or meta key.
+
+    :param relation: a MISP object relation or galaxy cluster meta key
+    :return: the `x_misp_` name, folded to the STIX custom property charset
+    """
+    folded = _CUSTOM_PROPERTY_FORBIDDEN_RE.sub('_', relation.lower())
+    return f'{_CUSTOM_PROPERTY_PREFIX}{folded}'
+
+
+def _custom_property_relation(field: str) -> str:
+    """Read the folded relation a custom property name carries.
+
+    :param field: an `x_misp_` custom property name
+    :return: the name without its prefix - the folded relation, which is the
+        object relation an attribute falls back to when no template nor
+        mapping table restores the original spelling
+    """
+    return field[len(_CUSTOM_PROPERTY_PREFIX):]
 
 
 def _is_template_name(name: Any) -> bool:
@@ -65,6 +98,33 @@ def _template_attribute_types(name: str) -> dict:
         object_relation: attribute['misp-attribute']
         for object_relation, attribute in definition.get('attributes', {}).items()
     }
+
+
+@lru_cache(maxsize=None)
+def _template_custom_properties(name: str) -> Mapping[str, dict]:
+    """Invert the custom property name fold through the object template.
+
+    Every relation a template defines has one custom property name, and no
+    shipped template gives two relations the same one, so the template is the
+    complete inverse of the fold: from the folded name back to the original
+    spelling and the type the template assigns. Read once per template, and
+    refreshed with the misp-objects pymisp ships.
+
+    :param name: a MISP object template name
+    :return: the MISP attribute - `type` and `object_relation` - per custom
+        property name, empty when the name is not a template pymisp knows
+    """
+    if not _is_template_name(name):
+        return MappingProxyType({})
+    return MappingProxyType(
+        {
+            _custom_property_name(object_relation): {
+                'type': attribute_type, 'object_relation': object_relation
+            }
+            for object_relation, attribute_type
+            in _template_attribute_types(name).items()
+        }
+    )
 
 
 def _sanitise_template_name(name: Any) -> Tuple[str, Optional[Any]]:

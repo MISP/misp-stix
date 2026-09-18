@@ -6,6 +6,7 @@ import os
 import re
 from .exceptions import InvalidHashValueError, InvalidMISPInputError
 from .exportparser import MISPtoSTIXParser
+from ..tools.misp_object_templates import _custom_property_name
 from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
@@ -53,9 +54,6 @@ _object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
 _observed_data_time_fields = ('first_observed', 'last_observed')
 _sdo_time_fields = ('created', 'modified', *_misp_time_fields)
-# STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII and
-# limited to a-z, 0-9 and `_` (ADR-0013)
-_CUSTOM_PROPERTY_FORBIDDEN_RE = re.compile(r'[^a-z0-9_]')
 # STIX 2.0 / 2.1 §2.3: dictionary keys also allow A-Z and `-`
 _DICTIONARY_KEY_FORBIDDEN_RE = re.compile(r'[^A-Za-z0-9_-]')
 _KEYWORD_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
@@ -5411,9 +5409,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _custom_property_name(relation: str) -> str:
-        # Lowercase fold, then every character outside the allowed set becomes
-        # `_`. Lossy by design; the import side keys on the folded name.
-        return f"x_misp_{_CUSTOM_PROPERTY_FORBIDDEN_RE.sub('_', relation.lower())}"
+        # The one seam every site builds a custom property name through
+        # The fold itself lives with the object templates, which are its
+        # inverse on the import side.
+        return _custom_property_name(relation)
 
     @staticmethod
     def _quote_custom_property(relation: str) -> str:
