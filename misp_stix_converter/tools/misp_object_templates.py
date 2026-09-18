@@ -32,6 +32,15 @@ _UNKNOWN_TEMPLATE_NAME = 'unknown-template'
 _CUSTOM_PROPERTY_PREFIX = 'x_misp_'
 _CUSTOM_PROPERTY_FORBIDDEN_RE = re.compile(r'[^a-z0-9_]')
 
+# The fold's side channel, for the names no template can invert - galaxy meta
+# keys are free-form. A dictionary, per STIX object, from a name as written on
+# the wire (a custom property name, prefix included, or an `x_misp_meta` key on
+# a custom galaxy cluster - both valid dictionary keys) to the key as MISP
+# spelled it, which a dictionary value may carry verbatim. Present only when
+# the fold changed at least one name on the object, so a name a present
+# channel does not list was written as MISP had it.
+_ORIGINAL_NAMES_PROPERTY = 'x_misp_original_names'
+
 
 def _custom_property_name(relation: str) -> str:
     """Name the custom property carrying a MISP relation or meta key.
