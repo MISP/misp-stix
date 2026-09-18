@@ -6,7 +6,8 @@ import os
 import re
 from .exceptions import InvalidHashValueError, InvalidMISPInputError
 from .exportparser import MISPtoSTIXParser
-from ..tools.misp_object_templates import _custom_property_name
+from ..tools.misp_object_templates import (
+    _custom_property_name, _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY)
 from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
@@ -3986,11 +3987,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self, meta_args: dict, key: str, values: str | list,
             cluster_value: str):
         feature = self._custom_property_name(key)
+        if feature == _ORIGINAL_NAMES_PROPERTY:
+            # The channel owns this name: handing it a meta value would
+            # destroy the spelling record of every other key on the cluster.
+            # Reported rather than dropped in silence, as for a collision.
+            self._galaxy_meta_key_reserved_warning(
+                cluster_value, key, feature
+            )
+            return
         if feature in meta_args:
             self._galaxy_meta_key_collision_warning(
                 cluster_value, key, feature
             )
         meta_args[feature] = values
+        self._record_original_name(meta_args, feature, key)
 
     def _parse_meta_custom_fields(
             self, cluster_meta: dict, value: str) -> dict:
@@ -4240,10 +4250,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'interoperability': True
         }
         if cluster.get('meta'):
-            custom_args['x_misp_meta'] = {
-                self._sanitise_meta_field(key): value for key, value
-                in cluster['meta'].items()
-            }
+            meta = {}
+            for key, value in cluster['meta'].items():
+                field = self._sanitise_meta_field(key)
+                meta[field] = value
+                # A dictionary key has no prefix to strip before comparing
+                self._record_original_name(custom_args, field, key, prefix='')
+            custom_args['x_misp_meta'] = meta
         if timestamp is None:
             if not cluster.get('timestamp'):
                 return custom_args
@@ -5398,6 +5411,32 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if misp_data_layer.get('timestamp') is not None:
             return self._datetime_from_timestamp(misp_data_layer['timestamp'])
         return datetime.now(UTC)
+
+    @staticmethod
+    def _record_original_name(
+            args: dict, name: str, original: str,
+            prefix: str = _CUSTOM_PROPERTY_PREFIX):
+        """Carry the MISP spelling of a name the fold changed.
+
+        The channel lists the names the fold changed and nothing else: a
+        name it does not list was written as MISP spelled it. Two keys
+        folding to one name resolve last-value-wins, so the entry follows
+        the key whose value the name ends up carrying.
+
+        :param args: the STIX object arguments the name was set in
+        :param name: the name as written on the wire
+        :param original: the key as MISP spelled it
+        :param prefix: what the wire name adds to the key - the custom
+            property prefix, or nothing for a dictionary key
+        """
+        if name != f'{prefix}{original}':
+            args.setdefault(_ORIGINAL_NAMES_PROPERTY, {})[name] = original
+            return
+        original_names = args.get(_ORIGINAL_NAMES_PROPERTY)
+        if original_names is not None:
+            original_names.pop(name, None)
+            if not original_names:
+                del args[_ORIGINAL_NAMES_PROPERTY]
 
     @staticmethod
     def _sanitise_meta_field(key: str) -> str:

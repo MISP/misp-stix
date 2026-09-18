@@ -374,12 +374,22 @@ class MISPtoSTIXParser(AbstractParser):
             f'{galaxy_type} galaxy in event not mapped.'
         )
 
+    def _galaxy_meta_key_reserved_warning(
+            self, value: str, key: str, feature: str):
+        self._add_warning(
+            f'Galaxy cluster "{value}": meta key "{key}" folds to the custom '
+            f'property "{feature}", which carries the spelling of the keys '
+            'the fold changed on this cluster and cannot also carry a meta '
+            'value, so the key is dropped.'
+        )
+
     def _galaxy_meta_key_collision_warning(
             self, value: str, key: str, feature: str):
         self._add_warning(
             f'Galaxy cluster "{value}": meta key "{key}" folds to the custom '
             f'property "{feature}" already set by another meta key of the '
-            'same cluster, the last value wins.'
+            'same cluster, the last value wins and only its spelling is '
+            'carried.'
         )
 
     def _missing_orgc_error(self):

@@ -93,7 +93,8 @@ class CustomMispObject():
         ('x_misp_type', StringProperty(required=True)),
         ('x_misp_value', StringProperty(required=True)),
         ('x_misp_description', StringProperty(required=True)),
-        ('x_misp_meta', DictionaryProperty())
+        ('x_misp_meta', DictionaryProperty()),
+        ('x_misp_original_names', DictionaryProperty())
     ]
 )
 class CustomGalaxyCluster:
