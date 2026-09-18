@@ -621,7 +621,7 @@ The detailed mapping for galaxies, with explanations and examples, is available 
 
 When importing STIX 2.x content into MISP, the converter first determines the origin of the bundle to apply the appropriate parsing strategy:
 
-- **Internal**: The bundle was originally produced by MISP (detected via the `misp:tool="MISP-STIX-Converter"` label on the `Report` or `Grouping` object). The import performs a faithful round-trip, reconstructing MISP attributes, objects, and galaxy clusters from MISP-specific custom types (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`).
+- **Internal**: The bundle was originally produced by MISP (detected via the `misp:tool="MISP-STIX-Converter"` label on the `Report` or `Grouping` object). The import performs a faithful round-trip, reconstructing MISP attributes, objects, and galaxy clusters from MISP-specific custom types (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`). The object relations the export folded into custom property names (`KnownMalicious` travels as `x_misp_knownmalicious`) come back with their original spelling and type from the MISP object template pymisp ships, whatever the relation; a custom property no template nor mapping knows is kept as a `text` attribute under the folded name, and a warning names the object and the property.
 
 - **External**: The bundle was produced by a third-party tool. Standard STIX SDOs and SCOs are mapped to MISP attributes, objects, and galaxies using heuristics. SDOs that represent threat intelligence concepts (`AttackPattern`, `Malware`, `ThreatActor`, etc.) are imported as new MISP Galaxy Clusters.
 
