@@ -1158,6 +1158,11 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         indicator.add_test_mechanism(test_mechanism)
         self._stix_package.add_indicator(indicator)
 
+    def _parse_target_machine(self, attribute: dict):
+        # No Incident to hold an Affected_Asset: the machine falls back to the
+        # Custom observable, like every type with no native slot on this parser
+        self._parse_custom_attribute(attribute)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
