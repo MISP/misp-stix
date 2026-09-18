@@ -22,7 +22,7 @@ class InternalSTIX2NoteMapping(InternalSTIX2Mapping):
             'type': 'datetime', 'object_relation': 'creation-date'
         },
         x_misp_format=InternalSTIX2Mapping.format_attribute(),
-        x_misp_modification_data={
+        x_misp_modification_date={
             'type': 'datetime', 'object_relation': 'modification-date'
         },
         x_misp_ref={'type': 'link', 'object_relation': 'ref'},

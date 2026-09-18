@@ -1517,8 +1517,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_community_id=__community_id_attribute,
         x_misp_direction={'type': 'text', 'object_relation': 'direction'},
         x_misp_flow_count={'type': 'counter', 'object_relation': 'flow-count'},
-        x_misp_ip_protocol_number={'type': 'size-in-bytes', 'object_relation': 'ip-protocol-number'},
-        x_misp_ip_version={'type': 'counter', 'object_relation': 'ip_version'}
+        x_misp_ip_protocol_number={'type': 'integer', 'object_relation': 'ip-protocol-number'},
+        x_misp_ip_version={'type': 'integer', 'object_relation': 'ip_version'}
     )
     __network_connection_object_mapping = Mapping(
         src_port=STIX2Mapping.src_port_attribute(),
@@ -1547,7 +1547,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         account_login=__account_name_attribute,
         x_misp_archive=__archive_attribute,
         x_misp_attachment=__attachment_attribute,
-        x_misp_badge={'type': 'link', 'object_relation': 'badge'},
+        x_misp_badge={'type': 'float', 'object_relation': 'badge'},
         x_misp_bio=__bio_attribute,
         x_misp_comments={'type': 'text', 'object_relation': 'comments'},
         x_misp_cover_photo={'type': 'attachment', 'object_relation': 'cover-photo'},
@@ -1622,8 +1622,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_attachment=__attachment_attribute,
         x_misp_description=STIX2Mapping.description_attribute(),
         x_misp_link=__link_attribute,
-        x_misp_moderator_of={'type': '', 'object_relation': 'moderator-of'},
-        x_misp_trophies={'type': '', 'object_relation': 'trophies'},
+        x_misp_moderator_of={'type': 'text', 'object_relation': 'moderator-of'},
+        x_misp_trophies={'type': 'text', 'object_relation': 'trophies'},
         x_misp_url=STIX2Mapping.url_attribute()
     )
     __registry_key_object_mapping = Mapping(
@@ -1652,7 +1652,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_followers=__followers_attribute,
         x_misp_following=__following_attribute,
         x_misp_hashtag={'type': 'text', 'object_relation': 'hashtag'},
-        x_misp_joined_date={'type': 'text', 'object_relation': 'joined-date'},
+        x_misp_joined_date={'type': 'datetime', 'object_relation': 'joined-date'},
         x_misp_likes=__likes_attribute,
         x_misp_link=__link_attribute,
         x_misp_listed={'type': 'text', 'object_relation': 'listed'},

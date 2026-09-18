@@ -139,7 +139,7 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
         description={'type': 'text', 'object_relation': 'text'},
         roles=__employee_type_attribute,
         x_misp_business_unit={
-            'type': 'target-org', 'object_relation': 'business_unit'
+            'type': 'target-org', 'object_relation': 'business-unit'
         },
         x_misp_employee_type=__employee_type_attribute,
         x_misp_first_name={
@@ -245,7 +245,7 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
             'type': 'passport-country', 'object_relation': 'passport-country'
         },
         x_misp_passport_creation={
-            'type': 'passport-creation', 'object_relation': 'passport-creation'
+            'type': 'datetime', 'object_relation': 'passport-creation'
         },
         x_misp_passport_expiration={
             'type': 'passport-expiration',
