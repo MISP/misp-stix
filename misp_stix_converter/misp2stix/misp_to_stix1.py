@@ -2341,16 +2341,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             account_object.group_id.condition = 'Equals'
         if attributes.get('group'):
             self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
-            group_list = UnixGroupList()
-            groups = attributes.pop('group')
-            try:
-                for group in groups:
-                    unix_group = UnixGroup()
-                    unix_group.group_id = group
-                    group_list.append(unix_group)
-                account_object.group_list = group_list
-            except ValueError:
-                attributes['group'] = groups
         return account_object
 
     def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:

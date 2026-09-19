@@ -2271,6 +2271,28 @@ class TestStix1Export(TestSTIX):
         windows_properties = self._check_observable_features(windows_observable.item, windows, 'WindowsUserAccount')
         self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
 
+    def _test_event_with_unix_user_account_object(self, event):
+        self._remove_ids_flags(event)
+        unix = deepcopy(event['Object'][0])
+        self.parser.parse_misp_event(event)
+        incident = self.parser.stix_package.incidents[0]
+        unix_observable = incident.related_observables.observable[0]
+        self.assertEqual(unix_observable.relationship, unix['meta-category'])
+        observable_object = unix_observable.item.object_
+        self.assertEqual(
+            observable_object.id_,
+            f"{_ORGNAME_ID}:UnixUserAccount-{unix['uuid']}"
+        )
+        properties = observable_object.properties
+        self.assertEqual(properties._XSI_TYPE, 'UnixUserAccountObjectType')
+        username, user_id, display_name, password, group1, group2, group_id, home_dir, avatar, _ = unix['Attribute']
+        self.assertEqual(properties.username.value, username['value'])
+        group_list = properties.group_list
+        self.assertEqual(len(group_list), 2)
+        first_group, second_group = group_list
+        self.assertEqual(first_group.group_id.value, int(group1['value']))
+        self.assertEqual(second_group.group_id.value, int(group2['value']))
+
     def _test_event_with_vulnerability_and_weakness_related_object(self, event):
         vulnerability, weakness = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
@@ -2787,6 +2809,10 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_event_with_user_account_objects_observable(self):
         event = get_event_with_user_account_objects()
         self._test_event_with_user_account_objects_observable(event['Event'])
+
+    def test_event_with_unix_user_account_object(self):
+        event = get_event_with_unix_user_account_object()
+        self._test_event_with_unix_user_account_object(event['Event'])
 
     def test_event_with_vulnerability_and_weakness_related_object(self):
         event = get_event_with_vulnerability_and_weakness_objects()
@@ -3362,6 +3388,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event.from_dict(**event)
         self._test_event_with_user_account_objects_observable(misp_event)
 
+    def test_event_with_unix_user_account_object(self):
+        event = get_event_with_unix_user_account_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_unix_user_account_object(misp_event)
+
     def test_event_with_vulnerability_and_weakness_related_object(self):
         event = get_event_with_vulnerability_and_weakness_objects()
         misp_event = MISPEvent()
@@ -3798,6 +3830,10 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_event_with_user_account_objects_observable(self):
         event = get_event_with_user_account_objects()
         self._test_event_with_user_account_objects_observable(event['Event'])
+
+    def test_event_with_unix_user_account_object(self):
+        event = get_event_with_unix_user_account_object()
+        self._test_event_with_unix_user_account_object(event['Event'])
 
     def test_event_with_vulnerability_and_weakness_related_object(self):
         event = get_event_with_vulnerability_and_weakness_objects()
@@ -4372,6 +4408,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_user_account_objects_observable(misp_event)
+
+    def test_event_with_unix_user_account_object(self):
+        event = get_event_with_unix_user_account_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_unix_user_account_object(misp_event)
 
     def test_event_with_vulnerability_and_weakness_related_object(self):
         event = get_event_with_vulnerability_and_weakness_objects()
