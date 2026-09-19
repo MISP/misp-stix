@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from cybox.common import Hash
 from cybox.common.object_properties import CustomProperties, Property
 from cybox.core import (
     Object, Observable, ObservableComposition, Observables, RelatedObject)
@@ -32,9 +33,11 @@ from misp_stix_converter.stix2misp.external_stix1_to_misp import (
     ExternalSTIX1toMISPParser)
 from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
+from misp_stix_converter.stix2misp.stix1_mapping import (
+    ExternalSTIX1toMISPMapping)
 from unittest.mock import patch
 from stix.coa import CourseOfAction, Objective
-from stix.common import Statement, ToolInformation
+from stix.common import EncodedCDATA, Statement, ToolInformation
 from stix.common.related import (
     RelatedObservable, RelatedPackage, RelatedPackages)
 from stix.core import STIXHeader, STIXPackage
@@ -395,6 +398,67 @@ class TestSTIX1Import(TestSTIX):
             ],
             [('ip-dst', _IP_UUID)]
         )
+
+    ############################################################################
+    #                          TEST MECHANISM TESTS.                          #
+    ############################################################################
+
+    @staticmethod
+    def _object_indicator_with_test_mechanism():
+        """A File observable with enough properties (a filename and two
+        hashes) that its value resolves to a list of attribute dicts - the
+        object case - carrying a Yara test mechanism with a rule value, which
+        is the only combination that reaches the `test_mechanisms.append(...)`
+        line."""
+        file_ = File()
+        file_.file_name = 'test.exe'
+        file_.add_hash(Hash('d41d8cd98f00b204e9800998ecf8427e', type_='MD5'))
+        file_.add_hash(
+            Hash('da39a3ee5e6b4b0d3255bfef95601890afd80709', type_='SHA1')
+        )
+        file_object = Object(file_)
+        file_object.id_ = f'MISP:File-{_OBSERVABLE_UUID}'
+        indicator = Indicator()
+        indicator.id_ = f'MISP:Indicator-{_OBSERVABLE_UUID}'
+        indicator.add_observable(Observable(file_object))
+        test_mechanism = YaraTestMechanism()
+        test_mechanism.rule = EncodedCDATA(value='rule test {}', encoded=True)
+        indicator.add_test_mechanism(test_mechanism)
+        return indicator
+
+    def test_external_object_indicator_with_test_mechanism_converts(self):
+        """Regression test for the `attribute.uuid` `NameError` in the object
+        case of `_parse_indicator`: `attribute` is never bound on this branch,
+        so any external STIX 1 indicator resolving to an object and carrying a
+        test mechanism used to crash outright.
+
+        `test_mechanisms_mapping` is patched in because the mapping class only
+        defines `test_mechanism_mapping` (singular) - a separate, pre-existing
+        typo on the line just above the one this test targets, out of scope
+        here - which would otherwise raise its own `AttributeError` before
+        this code is ever reached.
+        """
+        stix_package = STIXPackage()
+        stix_package.add_indicator(self._object_indicator_with_test_mechanism())
+        with patch.object(
+            ExternalSTIX1toMISPMapping, 'test_mechanisms_mapping',
+            classmethod(ExternalSTIX1toMISPMapping.test_mechanism_mapping.__func__),
+            create=True
+        ):
+            parser = self._parse_external_package(stix_package)
+        self.assertEqual(len(parser.misp_event.objects), 1)
+        misp_object = parser.misp_event.objects[0]
+        self.assertEqual(len(parser.misp_event.attributes), 1)
+        yara_attribute = parser.misp_event.attributes[0]
+        self.assertEqual(yara_attribute.type, 'yara')
+        self.assertEqual(yara_attribute.value, 'rule test {}')
+        self.assertEqual(len(misp_object.references), 1)
+        reference = misp_object.references[0]
+        self.assertEqual(reference.relationship_type, 'detected-with')
+        # The reference has to point at the uuid of the attribute the test
+        # mechanism's rule was turned into - not at some other uuid, and not
+        # crash trying to read one off an unbound name.
+        self.assertEqual(reference.referenced_uuid, yara_attribute.uuid)
 
     ############################################################################
     #                          INCIDENT HISTORY TESTS.                         #
