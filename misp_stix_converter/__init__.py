@@ -1,4 +1,4 @@
-__version__ = '2026.7.8'
+__version__ = '2026.9.16'
 
 import argparse
 from .misp2stix import InvalidMISPInputError  # noqa
@@ -11,9 +11,11 @@ from .misp2stix import MISPtoSTIX20Mapping, MISPtoSTIX21Mapping  # noqa
 from .misp_stix_converter import (  # noqa
     misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
-    stix_1_to_misp, stix_2_to_misp, stix2_to_misp_instance)
+    stix_1_to_misp, stix_2_to_misp, stix1_to_misp_instance,
+    stix2_to_misp_instance)
 # Command line methods
 from .misp_stix_converter import _misp_to_stix, _stix_to_misp  # noqa
+from .stix2misp import ExternalSTIX1toMISPParser, InternalSTIX1toMISPParser  # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser  # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping  # noqa
 from .stix2misp import ExternalSTIX2Mapping  # noqa
@@ -21,6 +23,33 @@ from .stix2misp import MissingSTIXContentError  # noqa
 from .stix2misp import STIX2PatternParser  # noqa
 from .stix2misp import MISP_org_uuid  # noqa
 from pathlib import Path
+
+# What the package supports being imported from it. Everything deeper than
+# this module and `misp_stix_converter.tools` - the other declared surface,
+# which carries its own `__all__` - is internal, whether or not it is
+# reachable. The underscore-prefixed command line methods above are internal
+# too, which is what their name says. `tests/test_public_surface.py` holds
+# this list to its promises.
+__all__ = [
+    '__version__', 'main',
+    # Exceptions
+    'InvalidMISPInputError', 'MissingSTIXContentError',
+    'STIXInputSizeError', 'STIXLoadingError',
+    # MISP to STIX
+    'MISPtoSTIX1AttributesParser', 'MISPtoSTIX1EventsParser',
+    'MISPtoSTIX1Mapping', 'MISPtoSTIX20Parser', 'MISPtoSTIX20Mapping',
+    'MISPtoSTIX21Parser', 'MISPtoSTIX21Mapping',
+    # STIX to MISP
+    'ExternalSTIX1toMISPParser', 'InternalSTIX1toMISPParser',
+    'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser',
+    'ExternalSTIX2Mapping', 'ExternalSTIX2toMISPMapping',
+    'InternalSTIX2toMISPMapping', 'STIX2PatternParser', 'MISP_org_uuid',
+    # Conversion functions
+    'misp_attribute_collection_to_stix1', 'misp_collection_to_stix2',
+    'misp_event_collection_to_stix1', 'misp_to_stix1', 'misp_to_stix2',
+    'stix_1_to_misp', 'stix_2_to_misp', 'stix1_to_misp_instance',
+    'stix2_to_misp_instance'
+]
 
 
 def _max_input_size(value: str) -> int:
@@ -54,8 +83,8 @@ def main():
     )
     parser.add_argument(
         '--debug', action='store_true',
-        help='Show the full list of errors - errors and warnings are reported '
-             'either way, this only controls the errors level of detail'
+        help='Show the full lists of errors and warnings - both are reported '
+             'either way, this only lifts the cap on how many are shown'
     )
 
     # SUBPARSERS TO SEPARATE THE 2 MAIN FEATURES
@@ -227,11 +256,19 @@ def main():
         help='Config file containing the URL and the authentication key to connect to your MISP.'
     )
     import_parser.add_argument(
-        '-u', '--url', type=str, help='URL to connect to your MISP instance.'
+        '-u', '--url', type=str,
+        help=(
+            'URL to connect to your MISP instance. Defaults to the MISP_URL '
+            'environment variable when the flag is not given.'
+        )
     )
     import_parser.add_argument(
         '-a', '--api-key', type=str,
-        help='Authentication key to connect to your MISP instance.'
+        help=(
+            'Authentication key to connect to your MISP instance. Prefer the '
+            'MISP_API_KEY environment variable (or --config): a key passed '
+            'with this flag is visible in the process list and shell history.'
+        )
     )
     import_parser.add_argument(
         '--skip-ssl', action='store_true',

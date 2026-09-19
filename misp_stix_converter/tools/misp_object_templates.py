@@ -42,6 +42,31 @@ def _rejected_name_note(name: Any) -> str:
     return f'Original MISP object name: {name}'
 
 
+def _template_attribute_types(name: str) -> dict:
+    """Read the attribute types a template defines, by object relation.
+
+    pymisp types an object attribute from the template it resolved for the
+    object, and refuses one whose object relation the template does not define.
+    A converter that builds attributes from content-supplied relations has to
+    know which of them the template can type, so it can fall back to `text`
+    for the rest rather than have pymisp refuse them. pymisp exposes the
+    resolved template as `_definition` only, so the private read lives here,
+    next to the name guard, rather than at each call site.
+
+    :param name: a template name `_is_template_name` accepts
+    :return: the MISP attribute type per object relation, empty when the
+        template is unknown to pymisp
+    """
+    from pymisp import MISPObject
+    from pymisp.abstract import misp_objects_path
+    misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
+    definition = getattr(misp_object, '_definition', None) or {}
+    return {
+        object_relation: attribute['misp-attribute']
+        for object_relation, attribute in definition.get('attributes', {}).items()
+    }
+
+
 def _sanitise_template_name(name: Any) -> Tuple[str, Optional[Any]]:
     """Pick the name to use for template resolution, and report a rejection.
 

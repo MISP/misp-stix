@@ -246,7 +246,8 @@ class DocumentationUpdater:
                 )
             )
         return ' / '.join(
-            f'**{object_type.capitalize()}**' for object_type in object_types
+            f'**{object_type.capitalize()}**'
+            for object_type in sorted(object_types)
         )
 
     def _define_import_summary(self, stix_mapping):

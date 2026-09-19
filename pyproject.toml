@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "misp-stix"
-version = "2026.7.8"
+version = "2026.9.16"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
@@ -28,6 +28,13 @@ packages = [
     { include = "misp_stix_converter" }
 ]
 
+# The galaxy trees are generated into the package directory and may sit in a
+# checkout, but they are not part of the library: without this the build
+# sweeps them into the wheel, since they are not ignored either.
+exclude = [
+    "misp_stix_converter/data/STIX_2*"
+]
+
 [tool.poetry.urls]
 "Source" = "https://github.com/MISP/misp-stix"
 "Bug Tracker" = "https://github.com/MISP/misp-stix/issues"
@@ -43,14 +50,14 @@ cybox = "^2.1.0.21"
 mixbox = "^1.0.5"
 maec = "^4.1.0.17"
 stix-edh = "1.0.3"
-setuptools = "*"
+setuptools = ">=83"
 pycountry = "^24.6.1"
 stix2 = "^3.0.2"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^3.8.3"
-pytest = "^7.1.2"
+pytest = "^9.0.3"
 
 [build-system]
-requires = ["poetry_core>=1.2", "setuptools"]
+requires = ["poetry_core>=1.2", "setuptools>=83"]
 build-backend = "poetry.core.masonry.api"

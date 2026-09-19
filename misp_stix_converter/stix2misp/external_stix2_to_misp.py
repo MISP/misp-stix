@@ -48,7 +48,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._mapping = ExternalSTIX2toMISPMapping
-        self._record_uuids: dict = defaultdict(dict)
 
     def parse_stix_bundle(
             self, cluster_distribution: Optional[int] = 0,
@@ -75,7 +74,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
-        self._record_uuids = defaultdict(dict)
         try:
             del self.__standalone_object_refs
         except AttributeError:
@@ -411,10 +409,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
             reported_uuid = self.replacement_uuids.get(
                 record_uuid, record_uuid
             )
-            self._add_warning(
-                f'Colliding MISP {record_type} uuid {reported_uuid} - the '
-                f'STIX objects {known_id} and {object_id} both produce it, so '
-                f'the converted content has 2 {record_type}s sharing one uuid'
+            self._colliding_uuid_warning(
+                record_type, reported_uuid, known_id, object_id
             )
 
     def _sanitise_attribute_uuid(
