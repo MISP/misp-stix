@@ -74,7 +74,7 @@ _LOADED_FEATURES = (
 _SDOs = (
     '_custom_galaxy_cluster', '_grouping', '_report', '_location',
     '_marking_definition', '_relationship', '_sighting', '_observable',
-    *_LOADED_FEATURES
+    '_indicator_references', *_LOADED_FEATURES
 )
 
 # Typing
