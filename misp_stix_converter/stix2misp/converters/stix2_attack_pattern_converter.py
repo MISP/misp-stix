@@ -153,6 +153,8 @@ class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
         if hasattr(attack_pattern, 'external_references'):
             for reference in attack_pattern.external_references:
                 attribute = self._parse_attack_pattern_reference(reference)
+                if attribute is None:
+                    continue
                 misp_object.add_attribute(
                     **attribute,
                     uuid=self.main_parser._create_v5_uuid(
@@ -163,13 +165,15 @@ class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
         self.main_parser._add_misp_object(misp_object, attack_pattern)
 
     def _parse_attack_pattern_reference(
-            self, reference: _EXTERNAL_REFERENCE_TYPING) -> dict:
+            self, reference: _EXTERNAL_REFERENCE_TYPING) -> Optional[dict]:
         if reference.source_name == 'url':
             return {
                 'value': reference.url,
                 **self._mapping.references_attribute()
             }
-        external_id = reference.external_id
+        external_id = getattr(reference, 'external_id', None)
+        if external_id is None:
+            return None
         return {
             'value': external_id.split('-')[1]
             if external_id.startswith('CAPEC-') else external_id,
