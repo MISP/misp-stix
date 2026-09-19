@@ -5,7 +5,7 @@ from .importparser import ExternalSTIXtoMISPParser
 from .stix1_mapping import ExternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
-from cybox.core import Observable, Observables
+from cybox.core import Object, Observable, Observables
 from pymisp.abstract import misp_objects_path
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix.data_marking import MarkingSpecification
@@ -99,6 +99,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             for ip, ip_attribute in self.dns_objects['ip'].items():
                 if ip not in self.dns_ips:
                     self.misp_event.add_attribute(**ip_attribute)
+        self._set_distribution()
+        self._apply_object_references()
+        self._apply_event_galaxies()
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
@@ -126,8 +129,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_attributes_from_ttp(self, ttp: TTP, galaxies: set):
         attributes = []
-        if ttp.resources and getattr(ttp.resources, 'infrastructure', None).observable_characterization:
-            observables = ttp.resources.infrastructure.observable_characterization
+        infrastructure = getattr(ttp.resources, 'infrastructure', None)
+        if infrastructure is not None and infrastructure.observable_characterization:
+            observables = infrastructure.observable_characterization
             if observables.observables:
                 for observable in observables.observables:
                     if not self._has_properties(observable):
@@ -197,6 +201,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 yield from self._parse_galaxy(tool, 'name', 'tool')
 
     def _parse_indicator(self, indicator: Indicator):
+        # Converted before the observable: the rules an Indicator carries are
+        # attributes of their own whatever becomes of what it describes - an
+        # observable of an unknown type loses itself, not the rules with it
+        test_mechanisms = self._parse_test_mechanisms(indicator)
         if hasattr(indicator, 'observable') and indicator.observable:
             observable = indicator.observable
             if self._has_properties(observable):
@@ -242,30 +250,12 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
-                        test_mechanisms = []
-                        if hasattr(indicator, 'test_mechanisms') and indicator.test_mechanisms:
-                            for test_mechanism in indicator.test_mechanisms:
-                                attribute_type = self._mapping.test_mechanisms_mapping(test_mechanism._XSI_TYPE)
-                                if attribute_type is None:
-                                    self._add_error(
-                                        'Unknown Test Mechanism type'
-                                        f': {test_mechanism._XSI_TYPE}'
-                                    )
-                                    continue
-                                if test_mechanism.rule.value is None:
-                                    continue
-                                test_mechanism_attribute = self.misp_event.add_attribute(
-                                    **{
-                                        'type': attribute_type,
-                                        'value': test_mechanism.rule.value
-                                    }
-                                )
-                                test_mechanisms.append(test_mechanism_attribute.uuid)
                         self._handle_object_case(
                             attribute_type, attribute_value, compl_data,
                             to_ids=True, object_uuid=uuid,
                             test_mechanisms=test_mechanisms
                         )
+                        self._record_related_objects(observable.object_, uuid)
                     else:
                         # it is a list of attribute values, so we add single attributes
                         for value in attribute_value:
@@ -328,6 +318,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         )
                         self.dns_objects['ip'][uuid] = attribute
                         continue
+                    self._handle_attribute_case(attribute_type, attribute_value, compl_data, attribute)
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
@@ -335,23 +326,42 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                             attribute_type, attribute_value, compl_data,
                             to_ids=to_ids, object_uuid=uuid
                         )
+                        self._record_related_objects(observable_object, uuid)
                     else:
                         # it is a list of attribute values, so we add single attributes
                         for value in attribute_value:
                             self.misp_event.add_attribute(
                                 **{'type': attribute_type, 'value': value, 'to_ids': to_ids}
                             )
-                elif observable_object.related_objects:
-                    for related_object in observable_object.related_objects:
-                        relationship = related_object.relationship.value.lower().replace('_', '-')
-                        self.references[uuid].append(
-                            {
-                                "idref": self._sanitise_uuid(related_object.idref),
-                                "relationship": relationship
-                            }
-                        )
+                else:
+                    self._record_related_objects(observable_object, uuid)
             else:
                 self._parse_description(observable)
+
+    def _parse_test_mechanisms(self, indicator: Indicator) -> list:
+        """Convert the test mechanisms of an Indicator into attributes.
+
+        :param indicator: the Indicator carrying the test mechanisms
+        :return: the uuids of the attributes the rules landed as
+        """
+        test_mechanisms = []
+        for test_mechanism in indicator.test_mechanisms or ():
+            attribute_type = self._mapping.test_mechanism_mapping(
+                test_mechanism._XSI_TYPE
+            )
+            if attribute_type is None:
+                self._add_error(
+                    f'Unknown Test Mechanism type: {test_mechanism._XSI_TYPE}'
+                )
+                continue
+            rule = getattr(test_mechanism.rule, 'value', None)
+            if rule is None:
+                continue
+            misp_attribute = self.misp_event.add_attribute(
+                **{'type': attribute_type, 'value': rule}
+            )
+            test_mechanisms.append(misp_attribute.uuid)
+        return test_mechanisms
 
     def _parse_threat_actor(self, threat_actor: ThreatActor):
         if getattr(threat_actor, 'title', None) is not None:
@@ -436,6 +446,27 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             return title
         return f"Imported from external STIX {self.stix_version} Package"
 
+    def _record_related_objects(self, observable_object: Object, uuid: str):
+        # Recorded rather than applied: the objects they point to may not be
+        # parsed yet, so they are turned into MISP object references once the
+        # whole package is - a related object embedded rather than referenced
+        # carries its own id, one carrying neither names nothing to reference
+        if not observable_object.related_objects:
+            return
+        for related_object in observable_object.related_objects:
+            if related_object.idref is None:
+                continue
+            relationship = getattr(related_object.relationship, 'value', None)
+            self.references[uuid].append(
+                {
+                    'idref': self._sanitise_uuid(related_object.idref),
+                    'relationship': (
+                        relationship.lower().replace('_', '-')
+                        if relationship else 'related-to'
+                    )
+                }
+            )
+
     @staticmethod
     def _has_properties(observable):
         if not hasattr(observable, 'object_') or not observable.object_:
@@ -450,6 +481,6 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if ttp.exploit_targets is None or ttp.exploit_targets.exploit_target is None:
             return False
         return any(
-            exploit_target.item.vulnerability is not None
+            exploit_target.item.vulnerabilities
             for exploit_target in ttp.exploit_targets.exploit_target
         )

@@ -91,7 +91,6 @@ class STIX1toMISPMapping:
         file_path = ('text', 'file_path.value', 'path'),
         full_path = ('text', 'full_path.value', 'fullpath'),
         file_format = ('mime-type', 'file_format.value', 'mimetype'),
-        byte_runs = ('pattern-in-file', 'byte_runs[0].byte_run_data', 'pattern-in-file'),
         size_in_bytes = ('size-in-bytes', 'size_in_bytes.value', 'size-in-bytes'),
         peak_entropy = ('float', 'peak_entropy.value', 'entropy')
     )
@@ -116,10 +115,8 @@ class STIX1toMISPMapping:
         size_of_optional_header = ('counter', 'size-of-optional-header')
     )
     __pe_mapping = Mapping(
-        **{
-            'file_name': ('filename', 'original-filename'),
-            'type': ('text', 'type')
-        }
+        file_name = ('filename', 'original-filename'),
+        type_ = ('text', 'type')
     )
     __process_mapping = Mapping(
         creation_time = ('datetime', 'creation-time'),
@@ -146,7 +143,7 @@ class STIX1toMISPMapping:
         script_path = ('text', 'shell')
     )
     __whois_mapping = Mapping(
-        registrar_info = ('whois-registrar', 'value', 'whois-registrar'),
+        registrar_info = ('whois-registrar', 'name.value', 'whois-registrar'),
         ip_address = ('ip-src', 'address_value.value', 'ip-address'),
         domain_name = ('domain', 'value.value', 'domain')
     )
@@ -302,7 +299,7 @@ class InternalSTIX1toMISPMapping(STIX1toMISPMapping):
     )
 
     @classmethod
-    def attack_pattern_object_mappin(cls) -> dict:
+    def attack_pattern_object_mapping(cls) -> dict:
         return cls.__attack_pattern_object_mapping
 
     @classmethod
