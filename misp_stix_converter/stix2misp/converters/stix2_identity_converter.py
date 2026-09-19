@@ -192,6 +192,7 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
             'phone-number': __phone_number_type
         }
     )
+    __organization_vat_attribute = {'type': 'text', 'object_relation': 'VAT'}
     __organization_object_mapping = Mapping(
         **STIX2IdentityMapping.organization_object_mapping(),
         x_misp_role=STIX2IdentityMapping.role_attribute(),
@@ -202,7 +203,9 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
         x_misp_type_of_organization={
             'type': 'text', 'object_relation': 'type-of-organization'
         },
-        x_misp_VAT={'type': 'text', 'object_relation': 'VAT'}
+        x_misp_vat=__organization_vat_attribute,
+        # spelling exported before the custom property name fold (ADR-0013)
+        x_misp_VAT=__organization_vat_attribute
     )
     __person_contact_information_mapping = Mapping(
         **{

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from ..tools.misp_object_templates import (
+    _sanitise_template_name, _UNKNOWN_TEMPLATE_NAME)
 from .stix1_mapping import InternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
@@ -35,7 +37,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self._event = package.incidents[0]
             object_references = []
             for coa_taken in self._event.coa_taken:
-                self._parse_course_of_action(coa_taken.course_of_action)
+                course_of_action = coa_taken.course_of_action
+                # The export writes the COA taken as a reference to a Course
+                # of Action of the package, which the package loop below
+                # parses: a stub carrying only the reference has nothing more
+                if course_of_action.id_ is None and course_of_action.idref:
+                    continue
+                self._parse_course_of_action(course_of_action)
             if self._event.attributed_threat_actors:
                 object_references.extend(
                     threat_actor.item.idref for threat_actor
@@ -123,8 +131,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     #     self.parse_tlp_marking(ttp.handling)
         self._set_distribution()
         self.misp_event.info = ' - '.join(self.titles)
-        self.misp_event.date = max(self.dates)
-        self.misp_event.timestamp = max(self.timestamps)
+        # An Incident exported without a timestamp gives the event none
+        if self.dates:
+            self.misp_event.date = max(self.dates)
+        if self.timestamps:
+            self.misp_event.timestamp = max(self.timestamps)
+        self._apply_object_references()
+        self._apply_event_galaxies()
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
@@ -181,9 +194,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def _parse_observable(self, observable: Observable):
         if observable.relationship in _MISP_categories:
-            self.parse_misp_attribute_observable(observable)
+            self._parse_misp_attribute_observable(observable)
         else:
-            self.parse_misp_object_observable(observable)
+            self._parse_misp_object_observable(observable)
 
     def _parse_ttp(self, ttp: TTP):
         if ttp.behavior:
@@ -228,7 +241,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 vulnerability_object = MISPObject('vulnerability')
                 vulnerability_object.uuid = ttp_id
                 for attribute in attributes:
-                    vulnerability_object.add_attribute(*attribute)
+                    vulnerability_object.add_attribute(**attribute)
                 self.misp_event.add_object(vulnerability_object)
 
     def _parse_weakness_object(self, weakness: Weakness, ttp_id: str):
@@ -258,9 +271,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 'to_ids': True, 'category': str(indicator.relationship),
                 'timestamp': self._timestamp_from_date(item.timestamp)
             }
-            misp_attribute.update(self._sanitise_attribute_uuid(indicator.id_))
+            misp_attribute.update(self._sanitise_attribute_uuid(item.id_))
             observable = item.observable
-            self._parse_misp_attribute(observable, misp_attribute, indicator.id_, to_ids=True)
+            self._parse_misp_attribute(observable, misp_attribute, item.id_, to_ids=True)
 
     def _parse_misp_attribute_observable(self, observable):
         if observable.item:
@@ -270,7 +283,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             misp_attribute.update(
                 self._sanitise_attribute_uuid(observable.item.id_)
             )
-            self._parse_misp_attribute(observable.item, misp_attribute, observable.id_)
+            self._parse_misp_attribute(
+                observable.item, misp_attribute, observable.item.id_
+            )
 
     def _parse_misp_attribute(
             self, observable: Observable, misp_attribute: dict,
@@ -293,7 +308,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 properties = observables.object_.properties
                 try:
                     attribute_type, attribute_value, _ = self._handle_attribute_type(
-                        properties, observable_id=observable.id_
+                        properties
                     )
                     attribute_dict[attribute_type] = attribute_value
                 except StixObjectTypeError as xsi_type:
@@ -307,7 +322,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         name = self._define_name(indicator.item.observable, indicator.relationship)
         if name == 'passive-dns' and str(indicator.relationship) != "misc":
             self._add_error(
-                f'Unable to parse the Indicator object with id {indicator.id_}'
+                'Unable to parse the Indicator object '
+                f'with id {indicator.item.id_}'
             )
         else:
             self._fill_misp_object(indicator.item, name, to_ids=True)
@@ -315,11 +331,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def _parse_misp_object_observable(self, observable: Observable):
         name = self._define_name(observable.item, observable.relationship)
         try:
-            self._fill_misp_object(observable, name)
+            self._fill_misp_object(observable.item, name)
         except Exception:
             self._add_error(
                 'Unable to parse the Observable '
-                f'object with id {observable.id_}'
+                f'object with id {observable.item.id_}'
             )
 
     ############################################################################
@@ -342,8 +358,20 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             )
         )
         if composition:
+            if name is None:
+                # A composition the export named in no way this parser reads:
+                # the attributes are kept, under a name that resolves nothing
+                self._unnamed_composition_warning(item.id_)
+                name = _UNKNOWN_TEMPLATE_NAME
+            # The name is read from the Observable id the export wrote it in,
+            # and pymisp joins it into a filesystem path to find the template:
+            # a name that is not a plain template name is kept out of that join
+            name, rejected_name = _sanitise_template_name(name)
             misp_object = MISPObject(name, misp_objects_path_custom=_MISP_objects_path)
             self._sanitise_object_uuid(misp_object, item.id_)
+            if rejected_name is not None:
+                self._invalid_template_name_warning(rejected_name, item.id_)
+                self._record_rejected_template_name(misp_object, rejected_name)
             if to_ids:
                 observables = item.observable.observable_composition.observables
                 misp_object.timestamp = self._timestamp_from_date(item.timestamp)
@@ -351,7 +379,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 observables = item.observable_composition.observables
             args = (misp_object, observables, to_ids)
             self._handle_file_composition(*args) if name == 'file' else self._handle_composition(*args)
-            self.misp_event.add_object(**misp_object)
+            self.misp_event.add_object(misp_object)
         else:
             properties = item.observable.object_.properties if to_ids else item.object_.properties
             self._parse_observable_object(properties, to_ids, self._sanitise_uuid(item.id_))
@@ -430,15 +458,34 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 ip_value = attributes["ip-dst"]
             return "domain|ip", f"{attributes['domain']}|{ip_value}"
 
-    def _define_name(self, observable: Observable, relationship):
+    def _define_name(self, observable: Observable, relationship) -> Optional[str]:
+        """Name the MISP object an Observable came from.
+
+        Only an observable composition needs one: the export writes the object
+        name into the Observable id it gives the composition, and a simple
+        Observable takes its name from the CybOX properties themselves, in
+        `_handle_attribute_type`.
+
+        :param observable: the Observable the MISP object was exported as
+        :param relationship: the MISP meta-category the export wrote
+        :return: the object template name, None when the Observable names none
+        """
         observable_id = observable.id_
         if relationship == "file":
             return "registry-key" if "WinRegistryKey" in observable_id else "file"
         if "Custom" in observable_id:
             return observable_id.split("Custom")[0].split(":")[1]
-        if relationship == "network" and "ObservableComposition" in observable_id:
+        # Whatever the meta-category: the export names every composition the
+        # same way, and only the composition branch below uses the name
+        if "ObservableComposition" in observable_id:
             return observable_id.split("_")[0].split(":")[1]
-        return self._mapping.cybox_to_misp_object()[observable_id.split('-')[0].split(':')[1]]
+
+    def _unnamed_composition_warning(self, object_id: str):
+        self._add_warning(
+            f'Unable to define the MISP object name of the Observable '
+            f'composition with id {object_id}: converted as a '
+            f'{_UNKNOWN_TEMPLATE_NAME} object.'
+        )
 
     def _get_event_info(self, package: Optional[STIXPackage] = None):
         # `hasattr` is useless here: the Incident always carries a `title`
@@ -455,8 +502,3 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if title:
                 return title
         return f"Imported from STIX {self.stix_version} Package generated with MISP"
-
-    def _set_distribution(self):
-        self.misp_event.distribution = self.distribution
-        if self.distribution == 4 and self.sharing_group_id is not None:
-            self.misp_event.sharing_group_id = self.sharing_group_id

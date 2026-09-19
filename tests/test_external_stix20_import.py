@@ -58,6 +58,11 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             for stix_object in (campaign, indicator, attribute_campaign):
                 self.assertIn(stix_object.id, reported)
 
+    def test_stix20_record_classification_on_external_content(self):
+        self._check_record_classification_on_external_content(
+            TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        )
+
     def test_stix20_parse_stix_content_raises_a_catchable_error(self):
         # `parse_stix_content` called `sys.exit()` when loading failed -
         # `SystemExit` derives from `BaseException`, so a caller's
@@ -123,22 +128,52 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         # are reported at all: the default summary is deduplicated, capped -
         # a hostile bundle can produce an error per object - and names the
         # number of errors left out.
-        from misp_stix_converter.misp_stix_converter import (
-            _ERRORS_SUMMARY_LIMIT)
+        from misp_stix_converter.abstract import _DIAGNOSTICS_LIMIT
         bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
         summary = self._import_bundle_with_unloadable_objects(
-            bundle, count=_ERRORS_SUMMARY_LIMIT
+            bundle, count=_DIAGNOSTICS_LIMIT
         )['errors'][bundle.id]
         detailed = self._import_bundle_with_unloadable_objects(
-            bundle, count=_ERRORS_SUMMARY_LIMIT, debug=True
+            bundle, count=_DIAGNOSTICS_LIMIT, debug=True
         )['errors'][bundle.id]
-        self.assertGreater(len(detailed), _ERRORS_SUMMARY_LIMIT)
-        self.assertEqual(len(summary), _ERRORS_SUMMARY_LIMIT + 1)
-        self.assertEqual(summary[:-1], detailed[:_ERRORS_SUMMARY_LIMIT])
-        self.assertIn(
-            f'{len(detailed) - _ERRORS_SUMMARY_LIMIT} more', summary[-1]
+        self.assertGreater(len(detailed), _DIAGNOSTICS_LIMIT)
+        self.assertEqual(len(summary), _DIAGNOSTICS_LIMIT + 1)
+        self.assertEqual(summary[:-1], detailed[:_DIAGNOSTICS_LIMIT])
+        # The tail names the remainder and nothing else: the same text is read
+        # by in-memory consumers, which have no debug option to be pointed to.
+        self.assertEqual(
+            summary[-1],
+            f'... and {len(detailed) - _DIAGNOSTICS_LIMIT} more errors'
         )
-        self.assertIn('debug', summary[-1])
+
+    def test_stix20_warnings_are_capped_like_errors(self):
+        # A warning names the id or tag it is about, so a hostile bundle
+        # produces a distinct warning per object: `diagnostics` caps them the
+        # way it caps errors - the first recorded, a tail naming the rest -
+        # with the totals taken before the cap. `debug` lifts both caps on the
+        # entry result, which carries no totals.
+        from misp_stix_converter.abstract import _DIAGNOSTICS_LIMIT
+        count = _DIAGNOSTICS_LIMIT + 2
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_duplicate_object_ids()
+        diagnostics = self._parse_bundle_with_duplicated_ids(bundle, count)
+        capped = diagnostics['warnings'][bundle.id]
+        self.assertEqual(len(capped), _DIAGNOSTICS_LIMIT + 1)
+        self.assertEqual(capped[-1], '... and 2 more warnings')
+        self.assertEqual(
+            capped[:-1], self.parser.warnings[bundle.id][:_DIAGNOSTICS_LIMIT]
+        )
+        self.assertEqual(diagnostics['counts'], {'warnings': count, 'errors': 0})
+        summary = self._import_bundle_with_duplicated_ids(bundle, count)
+        self.assertEqual(summary['warnings'][bundle.id], capped)
+        detailed = self._import_bundle_with_duplicated_ids(
+            bundle, count, debug=True
+        )
+        self.assertEqual(len(detailed['warnings'][bundle.id]), count)
+        self.assertEqual(
+            detailed['warnings'][bundle.id][:_DIAGNOSTICS_LIMIT], capped[:-1]
+        )
+        for results in (summary, detailed):
+            self.assertNotIn('counts', results)
 
     def test_stix20_repeated_errors_are_summarised_with_their_count(self):
         # deduplicating on the message alone made a bundle dropping a dozen
@@ -526,6 +561,11 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(
             [tag.name for tag in attribute.tags], ['tlp:red']
         )
+        # recovered and applied where it is referenced: nothing for the
+        # end-of-parse sweep to add
+        self._check_unreferenced_invalid_object_error_absence(
+            self.parser.errors
+        )
 
     def test_stix20_marking_definition_cannot_write_a_second_tag(self):
         self._check_marking_definition_tag_grammar(
@@ -691,6 +731,104 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
         self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # listed by the Report but referenced by no field, the invalid
+        # marking is never recovered: the end-of-parse sweep names it
+        self._check_unreferenced_invalid_object_error(
+            invalid_id, self.parser.errors
+        )
+
+    def test_stix20_unreferenced_invalid_objects_are_reported(self):
+        # An object the library refused to load used to be reported only when
+        # a reference asked for it: one nothing references converted without
+        # a signal, indistinguishable from a document that never carried it.
+        indicator_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        marking_id = 'marking-definition--55555555-5555-4555-8555-555555555555'
+        bundle = self._load_stix20_content_with_object_refs(
+            unlisted=(
+                self._invalid_indicator(indicator_id),
+                # an unreferenced Marking Definition is a loss like any other
+                # type, the recovery it never went through notwithstanding
+                *self._invalid_tlp_markings(marking_id, 'white')
+            )
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        for object_id in (indicator_id, marking_id):
+            self._check_unreferenced_invalid_object_error(
+                object_id, self.parser.errors
+            )
+        # a loss of content the bundle did carry, not a dangling reference
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # what the bundle does carry is converted all the same
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix20_referenced_invalid_objects_are_reported_once(self):
+        # A reference to an invalid object already names it: the end-of-parse
+        # sweep stays silent about a loss the reference surfaced.
+        indicator_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        bundle = self._load_stix20_content_with_object_refs(
+            carried=(self._invalid_indicator(indicator_id),)
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error(indicator_id, self.parser.errors)
+        self._check_unreferenced_invalid_object_error_absence(
+            self.parser.errors
+        )
+
+    def test_stix20_reused_parser_reports_only_the_current_documents_losses(self):
+        # `invalid_objects` survives on a reused parser: the sweep covers the
+        # ids the loader diverted from the document just parsed, never the
+        # earlier document's losses again.
+        from misp_stix_converter.tools import load_stix2_content
+        first_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        second_id = 'indicator--66666666-6666-4666-8666-666666666666'
+        second_bundle_id = 'bundle--6a99f66a-8d92-4653-a481-b7cbeef97e95'
+        bundles = {
+            first_id: 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+            second_id: second_bundle_id
+        }
+        shared_invalid_objects: dict = {}
+        for indicator_id, bundle_id in bundles.items():
+            bundle = load_stix2_content(
+                {
+                    'type': 'bundle', 'id': bundle_id,
+                    'spec_version': '2.0',
+                    'objects': [self._invalid_indicator(indicator_id)]
+                },
+                invalid_objects=shared_invalid_objects
+            )
+            self.parser.load_stix_bundle(bundle)
+            self.parser.parse_stix_bundle()
+        # both documents' losses stayed in the shared dict the whole time
+        self.assertIn(first_id, self.parser.invalid_objects)
+        second_errors = '\n'.join(self.parser.errors[second_bundle_id])
+        self.assertIn(second_id, second_errors)
+        self.assertNotIn(first_id, second_errors)
+
+    def test_stix20_prepopulated_invalid_objects_are_not_re_reported(self):
+        # the loader deliberately supports a caller-prepopulated
+        # `invalid_objects` dict: the entries an earlier load put there are
+        # not this document's losses.
+        from misp_stix_converter.tools import load_stix2_content
+        earlier_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        indicator_id = 'indicator--66666666-6666-4666-8666-666666666666'
+        bundle = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--28b47d33-6a17-4de2-8f4b-d3d1091f7bda',
+                'spec_version': '2.0',
+                'objects': [self._invalid_indicator(indicator_id)]
+            },
+            invalid_objects={earlier_id: self._invalid_indicator(earlier_id)}
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_unreferenced_invalid_object_error(
+            indicator_id, self.parser.errors
+        )
+        reported = '\n'.join(self._reported_messages(self.parser.errors))
+        self.assertNotIn(earlier_id, reported)
 
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
@@ -775,6 +913,30 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertNotEqual(str(cluster.uuid), record_uuid)
         self._check_uuid_collision_warning_absence(self.parser.warnings)
 
+    def test_stix20_bundle_with_colliding_galaxy_cluster_uuids(self):
+        # The cluster uuid derivation never includes the STIX object's type,
+        # so a Malware and a Threat Actor sharing a uuid part yield 2 Galaxy
+        # Clusters carrying one uuid: both stay, the collision is reported.
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_colliding_galaxy_cluster_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, malware, _, threat_actor, _ = bundle.objects
+        cluster_uuid = uuid5(
+            UUIDv4, f"{malware.id.split('--')[1]} - {MISP_org_uuid}"
+        )
+        event_cluster = event.galaxies[0].clusters[0]
+        attribute_cluster = event.attributes[0].galaxies[0].clusters[0]
+        self.assertEqual(event_cluster.value, malware.name)
+        self.assertEqual(attribute_cluster.value, threat_actor.name)
+        self._assert_multiple_equal(
+            event_cluster.uuid, attribute_cluster.uuid, cluster_uuid
+        )
+        self._check_uuid_collision_warning(
+            str(cluster_uuid), (malware.id, threat_actor.id),
+            self.parser.warnings
+        )
+
     def test_stix20_bundle_with_duplicate_object_ids(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_duplicate_object_ids()
         self.parser.load_stix_bundle(bundle)
@@ -805,6 +967,36 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         shadowed = bundle.objects[2]
         self._check_duplicate_object_id_warning(
             shadowed.id, results['warnings']
+        )
+
+    def test_stix20_diagnostics_name_the_duplicate_object_id(self):
+        # What an in-memory consumer reads: the warning the entry result
+        # carries, under the bundle id, plus the totals taken before any cap -
+        # distinct warnings, error occurrences - always present.
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_duplicate_object_ids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        diagnostics = self.parser.diagnostics()
+        self.assertEqual(list(diagnostics['warnings']), [bundle.id])
+        self._check_duplicate_object_id_warning(
+            bundle.objects[2].id, diagnostics['warnings']
+        )
+        self.assertEqual(diagnostics['errors'], {})
+        self.assertEqual(diagnostics['counts'], {'warnings': 1, 'errors': 0})
+
+    def test_stix20_diagnostics_of_a_clean_bundle(self):
+        # A consumer storing the Diagnostics verbatim reads the same three
+        # keys whatever happened: empty buckets and zero totals, never a
+        # missing key, for a bundle that recorded nothing.
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(
+            self.parser.diagnostics(),
+            {
+                'warnings': {}, 'errors': {},
+                'counts': {'warnings': 0, 'errors': 0}
+            }
         )
 
     def test_stix20_bundle_with_event_title_and_producer(self):
@@ -964,6 +1156,37 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._populate_external_galaxy_documentation(
             galaxy=event.galaxies[0], course_of_action=event_coa
         )
+
+    def test_stix20_bundle_with_dict_form_location_galaxy(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_dict_form_location_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, event_location, indicator, attribute_location, _ = bundle.objects
+        self._check_misp_event_features(event, report)
+        # A Location in a STIX 2.0 Bundle is a plain dict: read through the
+        # interface both forms share, it converts the way its typed 2.1
+        # counterpart does. STIX 2.1 knows every type these converters take,
+        # so it has no dict-form object to test the same way.
+        self.assertIsInstance(event_location, dict)
+        self.assertEqual(self.parser.errors, {})
+        country_meta = self._check_galaxy_features(
+            event.galaxies, event_location
+        )
+        self.assertEqual(country_meta['country'], event_location['country'])
+        self.assertEqual(country_meta['region'], event_location['region'])
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertIsInstance(attribute_location, dict)
+        region_meta = self._check_galaxy_features(
+            attribute.galaxies, attribute_location
+        )
+        self.assertEqual(
+            region_meta['administrative_area'],
+            attribute_location['administrative_area']
+        )
+        self.assertEqual(region_meta['country'], attribute_location['country'])
 
     def test_stix20_bundle_with_intrusion_set_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_intrusion_set_galaxy()
@@ -1565,6 +1788,54 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._populate_ext_observed_data_documentation(
             attribute=s_attribute, observed_data=observed_data3
         )
+
+    def test_stix20_bundle_with_dict_form_location_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_dict_form_geolocation_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, location = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        # A Location in a STIX 2.0 Bundle is a plain dict: the fields deciding
+        # it is a geolocation object rather than a galaxy are read through the
+        # interface both forms share, so it converts the way its typed 2.1
+        # counterpart does - a 2.0 only case, as the dict-form location galaxy
+        # test states.
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(len(misp_content), 1)
+        self._check_dict_form_geolocation_object(misp_content[0], location)
+
+    def test_stix20_bundle_with_dict_form_malware_analysis_object(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_dict_form_malware_analysis_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, malware_analysis, sample = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        # A Malware Analysis in a STIX 2.0 Bundle is a plain dict too - a 2.0
+        # only case, as the dict-form location galaxy test states.
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(len(misp_content), 2)
+        analysis_object, file_object = misp_content
+        self._check_dict_form_malware_analysis_object(
+            analysis_object, malware_analysis
+        )
+        # The sample is built by the sample converter, which reads the
+        # timeline of the dict-form analysis it was handed
+        self.assertEqual(len(analysis_object.references), 1)
+        reference = analysis_object.references[0]
+        self.assertEqual(reference.relationship_type, 'analyses')
+        self.assertEqual(reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(file_object.name, 'file')
+        self.assertEqual(file_object.uuid, sample.id.split('--')[1])
+        self.assertEqual(
+            file_object.timestamp,
+            self._dict_form_timestamp(malware_analysis['modified'])
+        )
+        md5, filename, size = file_object.attributes
+        self.assertEqual(md5.value, sample.hashes['MD5'])
+        self.assertEqual(filename.value, sample.name)
+        self.assertEqual(size.value, sample.size)
 
     def test_stix20_bundle_with_directory_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_directory_objects()

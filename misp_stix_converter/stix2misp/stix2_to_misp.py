@@ -142,9 +142,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
         self._analyst_data: dict = defaultdict(list)
         self._clusters: dict = {}
+        self._consumed_invalid_ids: set = set()
         self._converter_cache: dict = {}
         self._galaxies: dict = {}
         self._loaded_object_ids: set = set()
+        self._record_uuids: dict = defaultdict(dict)
 
         self._attack_pattern: dict
         self._campaign: dict
@@ -181,6 +183,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # `invalid_objects` cannot hold, since it keeps one object per id
         self._duplicate_invalid_ids = getattr(
             bundle, '_duplicate_invalid_ids', set()
+        )
+        # the ids the loader diverted from this document alone - the entries a
+        # caller-prepopulated or reused `invalid_objects` dict carries from an
+        # earlier document are never this parse's losses to report
+        self._document_invalid_ids = getattr(
+            bundle, '_document_invalid_ids', set()
         )
         self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
@@ -285,6 +293,30 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             str(2 if n_reports >= 2 else n_reports)
         )
         getattr(self, feature)()
+        self._report_unreferenced_invalid_objects()
+
+    def _report_unreferenced_invalid_objects(self):
+        """Report the invalid objects the parse never reached.
+
+        The loader diverts what `stix2` refuses to parse into
+        `invalid_objects` for the parser to report, but the parser only reads
+        that dict when a reference asks: an invalid object nothing references
+        would convert without a signal, indistinguishable from a document
+        that never carried it. Swept here once the parse is done - only the
+        parser knows which entries a reference consumed - and only over the
+        ids diverted from the document just parsed, so losses an earlier load
+        left in a shared dict are never re-reported. Every type is treated
+        alike, Marking Definitions included: `_recover_invalid_object` argues
+        about the cost of recovering an unreferenced marking, not about
+        keeping its loss silent.
+        """
+        unreferenced = self._document_invalid_ids - self._consumed_invalid_ids
+        for object_id in sorted(unreferenced):
+            self._add_error(
+                f'Unreadable STIX object with id {object_id}: the bundle '
+                'carries it, but its content is missing from the converted '
+                'event'
+            )
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
@@ -292,9 +324,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._creators = set()
         self._analyst_data = defaultdict(list)
         self._clusters = {}
+        self._consumed_invalid_ids = set()
         self._converter_cache.clear()
+        self._document_invalid_ids = set()
         self._galaxies = {}
         self._loaded_object_ids = set()
+        self._record_uuids = defaultdict(dict)
         for feature in _SDOs:
             if hasattr(self, feature):
                 delattr(self, feature)
@@ -559,12 +594,24 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             recovered = self._recover_invalid_object(object_ref, object_type)
             if recovered is not None:
                 return recovered
+            self._consume_invalid_object(object_ref)
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
             recovered = self._recover_invalid_object(object_ref, object_type)
             if recovered is not None:
                 return recovered
+            self._consume_invalid_object(object_ref)
             raise ObjectRefLoadingError(object_ref)
+
+    def _consume_invalid_object(self, object_ref: str):
+        """Mark an invalid object a reference reached.
+
+        The loading error the reference produces already names the loss, so
+        the end-of-parse sweep over what the loader diverted stays silent
+        about it - one invalid object, one message, referenced or not.
+        """
+        if object_ref in self.invalid_objects:
+            self._consumed_invalid_ids.add(object_ref)
 
     def _recover_invalid_object(self, object_ref: str, object_type: str):
         """Recover a referenced object the loader could not parse.
@@ -579,6 +626,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         invalid = self.invalid_objects.get(object_ref)
         if invalid is None:
             return None
+        # consumed whether the recovery holds or raises: applied, the marking
+        # needs no message; too broken to read, the referring object's error
+        # names the loss - either way the end-of-parse sweep has nothing to add
+        self._consumed_invalid_ids.add(object_ref)
         # loading raises on a marking too broken to read, and a marking that
         # governs nothing costs nothing: the duplicate is reported once the
         # survivor is applied, not before
@@ -992,11 +1043,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if key != 'extension_type':
                 meta[key] = values
+        cluster_uuid = self._extract_uuid(marking_definition['id'])
+        self._check_record_uuid_collision(
+            'galaxy cluster', cluster_uuid, marking_definition['id']
+        )
         return self._create_misp_galaxy_cluster(
             collection_uuid=self._create_v5_uuid(name),
             meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
-            uuid=marking_definition['id'].split('--')[1],
+            uuid=cluster_uuid,
             value=extension.get(
                 'name',
                 extension.get(
@@ -1067,6 +1122,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
     #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
     ############################################################################
+
+    def _sanitise_cluster_uuid(self, object_id: str) -> str:
+        """The record-uuid sanitation, with the collision check on the uuid
+        it hands out - the one the cluster ends up carrying.
+
+        The type of a galaxy-mapped STIX object never enters the cluster uuid
+        derivation, so 2 objects of different types sharing a uuid part yield
+        2 Galaxy Clusters carrying one uuid.
+        """
+        cluster_uuid = self._sanitise_uuid(object_id)
+        self._check_record_uuid_collision(
+            'galaxy cluster', cluster_uuid, object_id
+        )
+        return cluster_uuid
 
     def _aggregate_galaxy_clusters(self, galaxies: dict):
         for galaxy_type, clusters in galaxies.items():
@@ -1257,20 +1326,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _add_analyst_note(self, data_layer: _DATA_LAYER_TYPING, reference: str):
         note = self._note[reference]
-        if note.get('uuid') is None:
-            note['uuid'] = self._create_v5_uuid(
-                f'{reference} - {data_layer.uuid}'
-            )
-        data_layer.add_note(**note)
+        note_uuid = note.get('uuid') or self._derive_analyst_data_uuid(
+            reference, data_layer
+        )
+        self._check_record_uuid_collision('note', note_uuid, reference)
+        data_layer.add_note(**{**note, 'uuid': note_uuid})
 
     def _add_analyst_opinion(
             self, data_layer: _DATA_LAYER_TYPING, reference: str):
         opinion = self._opinion[reference]
-        if opinion.get('uuid') is None:
-            opinion['uuid'] = self._create_v5_uuid(
-                f'{reference} - {data_layer.uuid}'
-            )
-        data_layer.add_opinion(**opinion)
+        opinion_uuid = opinion.get('uuid') or self._derive_analyst_data_uuid(
+            reference, data_layer
+        )
+        self._check_record_uuid_collision('opinion', opinion_uuid, reference)
+        data_layer.add_opinion(**{**opinion, 'uuid': opinion_uuid})
 
     def _add_misp_attribute(
             self, attribute: dict, stix_object: _SDO_TYPING) -> MISPAttribute:
@@ -1288,6 +1357,29 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._add_analyst_data(misp_object, reference)
         self._add_markings_to_misp_object(misp_object, stix_object)
         return self.misp_event.add_object(misp_object)
+
+    def _check_record_uuid_collision(
+            self, record_type: str, record_uuid: str, object_id: str):
+        """Report the **Colliding Record Uuid** 2 STIX ids both produce.
+
+        Keyed on the uuid the record ends up carrying - the sanitised uuid
+        part of the STIX id, or the derivation replacing it - so the warning
+        names what the converted content actually shares. The uuid
+        computation is untouched: re-deriving one of the 2 records would cost
+        it the round-trip, and only the reporting is added.
+
+        Records are tracked per record type because MISP keeps one uuid
+        namespace per table: a note, an opinion and an event report sharing
+        one uuid cost nothing, the way an attribute sharing the uuid of the
+        object holding it does. Two notes carrying one uuid is the collision.
+        """
+        known_id = self._record_uuids[record_type].setdefault(
+            record_uuid, object_id
+        )
+        if known_id != object_id:
+            self._colliding_uuid_warning(
+                record_type, record_uuid, known_id, object_id
+            )
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
@@ -1358,6 +1450,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         cluster.from_dict(**cluster_args)
         cluster.parse_meta_as_elements()
         return cluster
+
+    def _derive_analyst_data_uuid(
+            self, reference: str, data_layer: _DATA_LAYER_TYPING) -> str:
+        """The uuid of an analyst data record its loader gave none - one
+        referencing several objects - derived per data layer it lands on, so
+        every layer gets a record of its own. The loaded dict is left as it
+        was: writing the derivation back would hand the next layer this one's
+        uuid."""
+        return str(self._create_v5_uuid(f'{reference} - {data_layer.uuid}'))
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -1431,7 +1532,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
 
+    def _colliding_uuid_warning(self, record_type: str, record_uuid: str,
+                                known_id: str, object_id: str):
+        self._add_warning(
+            f'Colliding MISP {record_type} uuid {record_uuid} - the '
+            f'STIX objects {known_id} and {object_id} both produce it, so '
+            f'the converted content has 2 {record_type}s sharing one uuid'
+        )
+
     def _object_ref_loading_error(self, object_ref: str):
+        # some callers pass the `ObjectRefLoadingError` carrying the id
+        # rather than the id itself
+        object_ref = str(object_ref)
+        self._consume_invalid_object(object_ref)
         self._add_error(f'Error loading the STIX object with id {object_ref}')
 
     def _object_type_loading_error(self, object_type: str):
