@@ -1693,6 +1693,13 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(properties.key.value, regkey)
         self.assertEqual(properties.values[0].data.value, value)
 
+    def _test_event_with_regkey_value_attribute_no_separator(self, event):
+        # No `|` separator in the value: the key must not be silently
+        # mis-split on an incidental `_` in the registry key name.
+        properties, attribute = self._run_indicator_tests(event, 'WindowsRegistryKey')
+        self.assertEqual(properties.key.value, attribute['value'])
+        self.assertFalse(properties.values)
+
     def _test_event_with_size_in_bytes_attribute(self, event):
         properties, attribute = self._run_observable_tests(event, 'File')
         self.assertEqual(properties.size_in_bytes.value, int(attribute['value']))
@@ -2583,6 +2590,10 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_event_with_regkey_value_attribute(self):
         event = get_event_with_regkey_value_attribute()
         self._test_event_with_regkey_value_attribute(event['Event'])
+
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        self._test_event_with_regkey_value_attribute_no_separator(event['Event'])
 
     def test_event_with_size_in_bytes_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
