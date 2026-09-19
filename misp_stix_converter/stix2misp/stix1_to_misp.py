@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
+from ..tools.misp_object_templates import (
+    _rejected_name_note, _sanitise_template_name, _template_attribute_types,
+    _UNKNOWN_TEMPLATE_NAME)
 from ..tools.stix1_loading_helpers import load_stix1_package
 from .importparser import STIXtoMISPParser
 from abc import ABCMeta
@@ -9,7 +12,8 @@ from collections import defaultdict
 from cybox.common import Hash
 from cybox.objects import (
     account_object, address_object, artifact_object, as_object,
-    email_message_object, dns_record_object, domain_name_object, file_object,
+    custom_object, email_message_object, dns_record_object,
+    domain_name_object, file_object,
     hostname_object, http_session_object, link_object, mutex_object,
     network_connection_object, network_socket_object, pipe_object,
     process_object, socket_address_object, system_object, uri_object,
@@ -19,6 +23,7 @@ from cybox.objects import (
 from operator import attrgetter
 from pathlib import Path
 from pymisp.abstract import misp_objects_path
+from pymisp.api import describe_types
 from pymisp import MISPAttribute, MISPObject
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
@@ -44,6 +49,7 @@ _SIMPLE_PROPERTIES_TYPING = Union[
     file_object.File, network_socket_object.NetworkSocket
 ]
 _STIX_OBJECT_TYPING = Union[CourseOfAction, ThreatActor]
+_MISP_types = describe_types['types']
 
 
 class StixObjectTypeError(Exception):
@@ -94,7 +100,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def stix_version(self) -> str:
-        return getattr(self.__stix_package, 'stix_version', '1.1.1')
+        # python-stix names the package version field `version`. Loading a
+        # document without one fails earlier, in mixbox, but a package built in
+        # memory and handed to `load_stix_package` - what MISP core does - can
+        # carry no version at all.
+        return self.__stix_package.version or '1.1.1'
 
     ############################################################################
     #                PARSING METHODS USED BY BOTH CHILD CLASSES                #
@@ -123,6 +133,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
     def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[]):
+        if not name:
+            # An observable carrying nothing to name an object with is the
+            # observable there is nothing to convert from
+            self._unnamed_object_error(object_uuid)
+            return
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid:
             misp_object.uuid = object_uuid
@@ -130,6 +145,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             attribute['to_ids'] = to_ids
             misp_object.add_attribute(**attribute)
         if isinstance(compl_data, dict):
+            if "rejected_name" in compl_data:
+                self._record_rejected_template_name(
+                    misp_object, compl_data['rejected_name']
+                )
             # if some complementary data is a dictionary containing an uuid,
             # it means we are using it to add an object reference
             if "pe_uuid" in compl_data:
@@ -204,9 +223,60 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
         if properties.custom_properties:
             for prop in properties.custom_properties:
-                if prop.name in self._mapping.credential_custom_types:
+                if prop.name in self._mapping.credential_custom_types():
                     attributes.append(['text', prop.value, prop.name])
         return attributes[0] if len(attributes) == 1 else ("credential", self._return_object_attributes(attributes), "")
+
+    # Return type & value of a custom attribute, or name & attributes of a
+    # custom object: the `Custom` CybOX object is what the MISP export writes
+    # an attribute or an object no other CybOX object holds into - an
+    # attribute as one property named by its type, an object named by its
+    # template with one property per attribute, named by its object relation.
+    def _handle_custom(self, properties: custom_object.Custom) -> tuple:
+        custom_properties = properties.custom_properties or ()
+        if properties.custom_name is not None:
+            return self._handle_custom_object(
+                properties.custom_name, custom_properties,
+                getattr(properties.parent, 'id_', None)
+            )
+        attributes = [
+            (prop.name, prop.value, '') if prop.name in _MISP_types
+            else ('text', prop.value, prop.name)
+            for prop in custom_properties
+        ]
+        if not attributes:
+            # A Custom object carrying no property names no attribute: the
+            # caller handles the same nothing an unparsable observable yields
+            return None, None, ''
+        if len(attributes) == 1:
+            return attributes[0]
+        # Several properties on a nameless object have no object to land in:
+        # they are added to the event, and one is returned as the attribute
+        # the caller expects - as `_handle_whois` does with a failed object
+        last_attribute = attributes.pop(-1)
+        for attribute_type, attribute_value, comment in attributes:
+            misp_attribute = {'comment': comment} if comment else {}
+            self.misp_event.add_attribute(
+                attribute_type, attribute_value, **misp_attribute
+            )
+        return last_attribute
+
+    def _handle_custom_object(self, custom_name: str, custom_properties: list,
+                              object_id: str) -> tuple:
+        # A name that is not a plain template name would be joined into a
+        # filesystem path by pymisp's template resolution: keep it out of that
+        # join and convert the object as a generic, template-less one.
+        name, rejected_name = _sanitise_template_name(custom_name)
+        template_types = _template_attribute_types(name)
+        attributes = [
+            (template_types.get(prop.name, 'text'), prop.value, prop.name)
+            for prop in custom_properties
+        ]
+        compl_data = {}
+        if rejected_name is not None:
+            self._invalid_template_name_warning(rejected_name, object_id)
+            compl_data['rejected_name'] = rejected_name
+        return name, self._return_object_attributes(attributes), compl_data
 
     # Return type & attributes of a dns object
     def _handle_dns(self, properties: dns_record_object.DNSRecord) -> tuple:
@@ -214,7 +284,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if properties.domain_name:
             relation.append(["domain", str(properties.domain_name.value), ""])
         if properties.ip_address:
-            relation.append(["ip-dst", str(properties.ip_address.address_value.value), ""])
+            relation.append(
+                ["ip-dst", properties.ip_address.address_value.value, ""]
+            )
         if relation:
             if len(relation) == 2:
                 domain = relation[0][1]
@@ -267,6 +339,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_file(self, properties: file_object.File, is_object: bool) -> tuple:
         b_hash, b_file = False, False
         attributes = list(self._fetch_attributes_with_keys(properties, 'file_mapping'))
+        if properties.byte_runs:
+            attributes.append(
+                (
+                    'pattern-in-file', properties.byte_runs[0].byte_run_data,
+                    'pattern-in-file'
+                )
+            )
         if properties.hashes:
             b_hash = True
             for hash_property in properties.hashes:
@@ -377,7 +456,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Return type & attributes of a network connection object
     def _handle_network_connection(self, properties: network_connection_object.NetworkConnection) -> tuple:
-        attributes = list(self._handle_network(properties, 'network_connection_addresses'))
+        attributes = list(self._handle_network(properties, 'network_connection_fields'))
         for feature in ('layer3_protocol', 'layer4_protocol', 'layer7_protocol'):
             if getattr(properties, feature):
                 attributes.append(
@@ -388,7 +467,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Return type & attributes of a network socket objet
     def _handle_network_socket(self, properties: network_socket_object.NetworkSocket) -> tuple:
-        attributes = list(self._handle_network(properties, 'network_socket_addresses'))
+        attributes = list(self._handle_network(properties, 'network_socket_fields'))
         attributes.extend(self._fetch_attributes_with_keys(properties, 'network_socket_mapping'))
         for prop in ('is_listening', 'is_blocking'):
             if getattr(properties, prop):
@@ -453,7 +532,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_process(self, properties: process_object.Process):
         attributes = list(
             self._fetch_attributes_with_partial_key_parsing(
-                properties, '_process_mapping'
+                properties, 'process_mapping'
             )
         )
         if properties.child_pid_list:
@@ -474,7 +553,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 misp_object = MISPObject(object_name, misp_objects_path_custom=misp_objects_path)
                 for attribute in object_attributes:
                     misp_object.add_attribute(**attribute)
-                self.misp_event.add_object(**misp_object)
+                self.misp_event.add_object(misp_object)
                 references.append(misp_object.uuid)
             return "process", self._return_object_attributes(attributes), {"process_uuid": references}
         return "process", self._return_object_attributes(attributes), ""
@@ -483,14 +562,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_regkey(self, properties: win_registry_key_object.WinRegistryKey):
         attributes = list(
             self._fetch_attributes_with_partial_key_parsing(
-                properties, '_regkey_mapping'
+                properties, 'regkey_mapping'
             )
         )
         if properties.values:
             value = properties.values[0]
             attributes.extend(
                 self._fetch_attributes_with_partial_key_parsing(
-                    value, '_regkey_value_mapping'
+                    value, 'regkey_value_mapping'
                 )
             )
         if len(attributes) in (2,3):
@@ -540,17 +619,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 properties, 'user_account_object_mapping'
             )
         )
-        return 'user-account', self.return_attributes(attributes), ''
+        return 'user-account', self._return_object_attributes(attributes), ''
 
     # Parse a whois object:
     # Return type & attributes of a whois object if we have the required fields
     # Otherwise create attributes and return type & value of the last attribute to avoid crashing the parent function
     def _handle_whois(self, properties: whois_object.WhoisEntry):
-        attributes = list(self._fetch_attributes_with_key_parsing(properties, '_whois_mapping'))
+        attributes = list(self._fetch_attributes_with_key_parsing(properties, 'whois_mapping'))
         required_one_of = True if attributes else False
         if properties.registrants:
             registrant = properties.registrants[0]
-            attributes.append(self._fetch_attributes_with_key_parsing(registrant, '_whois_registrant_mapping'))
+            attributes.extend(self._fetch_attributes_with_key_parsing(registrant, 'whois_registrant_mapping'))
         if properties.creation_date:
             attributes.append(("datetime", properties.creation_date.value.strftime('%Y-%m-%d'), "creation-date"))
             required_one_of = True
@@ -583,6 +662,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # Return type & value of a windows service object
     @staticmethod
     def _handle_windows_service(properties: win_service_object.WinService) -> tuple:
+        if properties.service_name:
+            return "windows-service-name", properties.service_name.value, ""
+        if properties.display_name:
+            return "windows-service-displayname", properties.display_name.value, ""
         if properties.name:
             return "windows-service-name", properties.name.value, ""
 
@@ -598,7 +681,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return 'user-account', self._return_object_attributes(attributes), ''
 
     def _handle_x509(self, properties: x509_certificate_object.X509Certificate) -> tuple:
-        attributes = list(self.handle_x509_certificate(properties))
+        attributes = list(self._handle_x509_certificate(properties))
         if properties.raw_certificate:
             raw = properties.raw_certificate.value
             try:
@@ -618,25 +701,56 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         certificate = properties.certificate
         if certificate.validity:
             validity = certificate.validity
-            for prop in self._mapping._x509_datetime_types():
+            for prop in self._mapping.x509_datetime_types():
                 if getattr(validity, prop):
                     yield ['datetime', getattr(validity, prop).value, f"validity-{prop.replace('_', '-')}"]
         if certificate.subject_public_key:
             subject_pubkey = certificate.subject_public_key
             if subject_pubkey.rsa_public_key:
                 rsa_pubkey = subject_pubkey.rsa_public_key
-                for prop in self._mapping._x509_pubkey_types():
+                for prop in self._mapping.x509_pubkey_types():
                     if getattr(rsa_pubkey, prop):
                        yield ['text', getattr(rsa_pubkey, prop).value, f'pubkey-info-{prop}']
             if subject_pubkey.public_key_algorithm:
                 yield ["text", subject_pubkey.public_key_algorithm.value, "pubkey-info-algorithm"]
-        for prop in self._mapping._x509_certificate_types():
+        for prop in self._mapping.x509_certificate_types():
             if getattr(certificate, prop):
                 yield ['text', getattr(certificate, prop).value, prop.replace('_', '-')]
 
     ############################################################################
+    #                      OBJECT REFERENCES APPLICATION.                      #
+    ############################################################################
+
+    def _apply_object_references(self):
+        # The related objects recorded while the package is parsed name their
+        # source by the uuid of its CybOX object - the uuid of the MISP object
+        # it became, which only exists once the whole package is parsed. A
+        # source that became an attribute has nothing that can hold a reference
+        # in MISP, so its records stay records; a target that did is referenced
+        # by the attribute uuid, which MISP accepts.
+        misp_objects = {
+            misp_object.uuid: misp_object
+            for misp_object in self.misp_event.objects
+        }
+        for object_uuid, references in self.references.items():
+            misp_object = misp_objects.get(object_uuid)
+            if misp_object is None:
+                continue
+            for reference in references:
+                misp_object.add_reference(
+                    reference['idref'], reference['relationship']
+                )
+
+    ############################################################################
     #        GALAXIES PARSING SPECIFIC METHODS USED BY BOTH SUBCLASSES.        #
     ############################################################################
+
+    def _apply_event_galaxies(self):
+        # The galaxy tags accumulated while the package is parsed only exist
+        # once the whole package is - each parser applies them to its event as
+        # its last parsing step, in a stable order the set cannot provide.
+        for tag_name in sorted(self.galaxies):
+            self.misp_event.add_tag(tag_name)
 
     @staticmethod
     def _get_galaxy_name(stix_object: _STIX_OBJECT_TYPING,
@@ -694,9 +808,39 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             for attribute in attributes
         )
 
+    @staticmethod
+    def _record_rejected_template_name(misp_object: MISPObject, name: str):
+        # Nothing is silently dropped: the name the object cannot carry is
+        # kept as data, appended to whatever comment it already has.
+        note = _rejected_name_note(name)
+        comment = getattr(misp_object, 'comment', None)
+        misp_object.comment = f'{comment}\n{note}' if comment else note
+
+    def _set_distribution(self):
+        # The event JSON has to carry the distribution the caller asked for:
+        # MISP saves an event without one with the column default, org-only
+        self.misp_event.distribution = self.distribution
+        if self.distribution == 4 and self.sharing_group_id is not None:
+            self.misp_event.sharing_group_id = self.sharing_group_id
+
     ############################################################################
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
+
+    def _invalid_template_name_warning(
+            self, rejected_name: str, object_id: Optional[str] = None):
+        origin = f' in the object with id {object_id}' if object_id else ''
+        self._add_warning(
+            f'Invalid MISP object template name {rejected_name!r}{origin}: '
+            f'converted as a {_UNKNOWN_TEMPLATE_NAME} object.'
+        )
+
+    def _unnamed_object_error(self, object_uuid: Optional[str]):
+        origin = f' with id {object_uuid}' if object_uuid else ''
+        self._add_error(
+            f'Unable to convert the Observable{origin}: '
+            'nothing to name a MISP object with'
+        )
 
     def _stix_object_type_error(self, xsi_type: str, object_id: str):
         self._add_error(f"Unknown Observable type within STIX object with id {object_id}: {xsi_type}")

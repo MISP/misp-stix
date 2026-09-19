@@ -1129,28 +1129,26 @@ class InternalSTIX2Mapping(STIX2Mapping):
     }
     __dash_meta_fields = (
         'x_misp_attribution_confidence',
-        'x_misp_calling_code',
         'x_misp_cfr_suspected_state_sponsor',
         'x_misp_cfr_suspected_victims',
         'x_misp_cfr_target_category',
         'x_misp_cfr_type_of_incident',
         'x_misp_colt_average',
         'x_misp_colt_median',
-        'x_misp_iso_code',
-        'x_misp_member_of',
+        'x_misp_microsoft_origin_threat',
         'x_misp_mode_of_operation',
-        'x_misp_official_languages',
-        'x_misp_official_refs',
         'x_misp_payment_method',
+        'x_misp_ransomenotes_files',
         'x_misp_ransomenotes_refs',
         'x_misp_ransomnotes_filenames',
+        'x_misp_ransomnotes_files',
+        'x_misp_ransomnotes_filesnames',
         'x_misp_ransomnotes_refs',
         'x_misp_spoken_language',
         'x_misp_suspected_victims',
         'x_misp_target_category',
-        'x_misp_territory_type',
-        'x_misp_threat_actor_classification',
-        'x_misp_top_level_domain'
+        'x_misp_targeted_sector',
+        'x_misp_threat_actor_classification'
     )
 
     # OBJECT ATTRIBUTES
@@ -1366,18 +1364,46 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'TLSH': __hashlookup_tlsh_attribute
         }
     )
+    __hashlookup_known_malicious_attribute = {
+        'type': 'text', 'object_relation': 'KnownMalicious'
+    }
+    __hashlookup_package_arch_attribute = {
+        'type': 'text', 'object_relation': 'PackageArch'
+    }
+    __hashlookup_package_description_attribute = {
+        'type': 'text', 'object_relation': 'PackageDescription'
+    }
+    __hashlookup_package_maintainer_attribute = {
+        'type': 'text', 'object_relation': 'PackageMaintainer'
+    }
+    __hashlookup_package_name_attribute = {
+        'type': 'text', 'object_relation': 'PackageName'
+    }
+    __hashlookup_package_release_attribute = {
+        'type': 'text', 'object_relation': 'PackageRelease'
+    }
+    __hashlookup_package_version_attribute = {
+        'type': 'text', 'object_relation': 'PackageVersion'
+    }
     __hashlookup_object_mapping = Mapping(
         **{
             'name': {'type': 'filename', 'object_relation': 'FileName'},
             'size': {'type': 'size-in-bytes', 'object_relation': 'FileSize'},
-            'x_misp_KnownMalicious': {'type': 'text', 'object_relation': 'KnownMalicious'},
-            'x_misp_PackageArch': {'type': 'text', 'object_relation': 'PackageArch'},
-            'x_misp_PackageDescription': {'type': 'text', 'object_relation': 'PackageDescription'},
-            'x_misp_PackageMaintainer': {'type': 'text', 'object_relation': 'PackageMaintainer'},
-            'x_misp_PackageName': {'type': 'text', 'object_relation': 'PackageName'},
-            'x_misp_PackageRelease': {'type': 'text', 'object_relation': 'PackageRelease'},
-            'x_misp_PackageVersion': {'type': 'text', 'object_relation': 'PackageVersion'},
-            'x_misp_source': {'type': 'text', 'object_relation': 'source'}
+            'x_misp_knownmalicious': __hashlookup_known_malicious_attribute,
+            'x_misp_packagearch': __hashlookup_package_arch_attribute,
+            'x_misp_packagedescription': __hashlookup_package_description_attribute,
+            'x_misp_packagemaintainer': __hashlookup_package_maintainer_attribute,
+            'x_misp_packagename': __hashlookup_package_name_attribute,
+            'x_misp_packagerelease': __hashlookup_package_release_attribute,
+            'x_misp_packageversion': __hashlookup_package_version_attribute,
+            'x_misp_source': {'type': 'text', 'object_relation': 'source'},
+            'x_misp_KnownMalicious': __hashlookup_known_malicious_attribute,
+            'x_misp_PackageArch': __hashlookup_package_arch_attribute,
+            'x_misp_PackageDescription': __hashlookup_package_description_attribute,
+            'x_misp_PackageMaintainer': __hashlookup_package_maintainer_attribute,
+            'x_misp_PackageName': __hashlookup_package_name_attribute,
+            'x_misp_PackageRelease': __hashlookup_package_release_attribute,
+            'x_misp_PackageVersion': __hashlookup_package_version_attribute
         }
     )
     __github_user_object_mapping = Mapping(
@@ -1425,17 +1451,20 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_link=__link_attribute,
         x_misp_username=STIX2Mapping.username_attribute()
     )
+    __ip_port_as_attribute = {'type': 'AS', 'object_relation': 'AS'}
     __ip_port_object_mapping = Mapping(
         dst_port=STIX2Mapping.dst_port_attribute(),
         src_port=STIX2Mapping.src_port_attribute(),
         start=__first_seen_attribute,
         end=__last_seen_attribute,
-        x_misp_AS={'type': 'AS', 'object_relation': 'AS'},
+        x_misp_as=__ip_port_as_attribute,
         x_misp_country_code={'type': 'text', 'object_relation': 'country-code'},
         x_misp_domain=STIX2Mapping.domain_attribute(),
         x_misp_hostname=__hostname_attribute,
         x_misp_ip=STIX2Mapping.ip_attribute(),
-        x_misp_text=STIX2Mapping.text_attribute()
+        x_misp_text=STIX2Mapping.text_attribute(),
+        # spelling exported before the custom property name fold (ADR-0013)
+        x_misp_AS=__ip_port_as_attribute
     )
     __lnk_object_mapping = Mapping(
         name=STIX2Mapping.filename_attribute(),

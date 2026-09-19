@@ -149,14 +149,14 @@
                 "misp:galaxy-name=\"Country\"",
                 "misp:galaxy-type=\"country\""
             ],
-            "x_misp_Capital": "Stockholm",
-            "x_misp_Continent": "EU",
-            "x_misp_CurrencyCode": "SEK",
-            "x_misp_CurrencyName": "Krona",
-            "x_misp_ISO": "SE",
-            "x_misp_ISO3": "SWE",
-            "x_misp_Languages": "sv-SE,se,sma,fi-SE",
-            "x_misp_Population": "9828655",
+            "x_misp_capital": "Stockholm",
+            "x_misp_continent": "EU",
+            "x_misp_currencycode": "SEK",
+            "x_misp_currencyname": "Krona",
+            "x_misp_iso": "SE",
+            "x_misp_iso3": "SWE",
+            "x_misp_languages": "sv-SE,se,sma,fi-SE",
+            "x_misp_population": "9828655",
             "x_misp_tld": ".se"
         }
     },
@@ -1372,7 +1372,7 @@
                 "misp:galaxy-name=\"Threat Actor\"",
                 "misp:galaxy-type=\"threat-actor\""
             ],
-            "x_misp_cfr-type-of-incident": [
+            "x_misp_cfr_type_of_incident": [
                 "Denial of service"
             ]
         }

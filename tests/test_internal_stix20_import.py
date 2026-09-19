@@ -103,6 +103,11 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 )
             )
 
+    def test_stix20_record_classification_on_internal_content(self):
+        self._check_record_classification_on_internal_content(
+            TestInternalSTIX20Bundles.get_bundle_with_domain_indicator_attribute()
+        )
+
     def test_stix20_detection_logs_a_warning(self):
         from misp_stix_converter.tools.stix2_to_misp_helpers import (
             is_stix2_from_misp)
@@ -262,6 +267,11 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         attribute = self.parser.misp_event.attributes[0]
         self.assertEqual([tag.name for tag in attribute.tags], ['tlp:red'])
+        # recovered and applied where it is referenced: nothing for the
+        # end-of-parse sweep to add
+        self._check_unreferenced_invalid_object_error_absence(
+            self.parser.errors
+        )
 
     def test_stix20_dangling_object_refs_are_reported(self):
         # A Marking Definition reference an Internal Report leaves dangling
@@ -309,6 +319,63 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
         self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # listed by the Report but referenced by no field, the invalid
+        # marking is never recovered: the end-of-parse sweep names it
+        self._check_unreferenced_invalid_object_error(
+            invalid_id, self.parser.errors
+        )
+
+    def test_stix20_unreferenced_invalid_objects_are_reported(self):
+        # An object the library refused to load used to be reported only when
+        # a reference asked for it: one nothing references converted without
+        # a signal, indistinguishable from a document that never carried it.
+        # The invalid objects path is the loader's, shared with the External
+        # parser - the sweep reporting what it diverted is shared too.
+        indicator_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        marking_id = 'marking-definition--55555555-5555-4555-8555-555555555555'
+        bundle = self._load_stix20_content_with_object_refs(
+            internal=True,
+            unlisted=(
+                self._invalid_indicator(indicator_id),
+                # an unreferenced Marking Definition is a loss like any other
+                # type, the recovery it never went through notwithstanding
+                *self._invalid_tlp_markings(marking_id, 'white')
+            )
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        for object_id in (indicator_id, marking_id):
+            self._check_unreferenced_invalid_object_error(
+                object_id, self.parser.errors
+            )
+        # a loss of content the bundle did carry, not a dangling reference
+        self._check_dangling_object_ref_error_absence(self.parser.errors)
+        # what the bundle does carry is converted all the same
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+
+    def test_stix20_referenced_invalid_objects_are_reported_once(self):
+        # A reference to an invalid object already names it: the end-of-parse
+        # sweep stays silent about a loss the reference surfaced.
+        indicator_id = 'indicator--44444444-4444-4444-8444-444444444444'
+        bundle = self._load_stix20_content_with_object_refs(
+            internal=True,
+            carried=(self._invalid_indicator(indicator_id),)
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_dangling_object_ref_error(indicator_id, self.parser.errors)
+        self._check_unreferenced_invalid_object_error_absence(
+            self.parser.errors
+        )
+
+    def test_stix20_dashed_galaxy_meta_keys_are_listed(self):
+        self._check_dashed_galaxy_meta_keys_are_listed()
+
+    def test_stix20_listed_galaxy_meta_keys_are_in_the_corpus(self):
+        self._check_listed_galaxy_meta_keys_are_in_the_corpus()
+
+    def test_stix20_listed_galaxy_meta_keys_have_no_underscore_twin(self):
+        self._check_listed_galaxy_meta_keys_have_no_underscore_twin()
 
     def test_stix20_bundle_with_tlp_1_0_markings(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_tlp_1_0_markings()
@@ -1765,6 +1832,97 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_misp_opinion(event_report.opinions[0], report_opinion)
         self._check_misp_note(event.notes[0], grouping_note)
 
+    def test_stix20_bundle_with_analyst_note_and_opinion_sharing_a_uuid(self):
+        # MISP keeps notes and opinions in tables of their own, so an Analyst
+        # Note and an Analyst Opinion sharing a uuid part cost nothing: both
+        # keep it, and nothing is a collision to report.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_analyst_note_and_opinion_sharing_a_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        *_, opinion, note = bundle.objects
+        attribute1, attribute2 = event.attributes
+        self._check_misp_opinion(attribute1.opinions[0], opinion)
+        self._check_misp_note(attribute2.notes[0], note)
+        self.assertEqual(attribute1.opinions[0].uuid, attribute2.notes[0].uuid)
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix20_bundle_with_sighting_opinion_and_analyst_note_sharing_a_uuid(self):
+        # The Opinion MISP writes a sighting as merges into its attribute
+        # without a uuid of its own, so sharing a uuid part with an Analyst
+        # Note leaves the note the only record claiming it: nothing to report.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_sighting_opinion_and_analyst_note_sharing_a_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        note = bundle.objects[3]
+        attribute = event.attributes[0]
+        self.assertEqual(len(attribute.sightings), 1)
+        self.assertEqual(attribute.sightings[0].type, '1')
+        self._check_misp_note(attribute.notes[0], note)
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix20_bundle_with_colliding_analyst_note_uuids(self):
+        # A custom Analyst Note and the 2.1 Note MISP writes the same data as
+        # both keep the uuid part of their id, so 2 notes carry one uuid: both
+        # stay, the collision is reported.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_colliding_analyst_note_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        *_, note, custom_note = bundle.objects
+        record_uuid = custom_note['id'].split('--')[1]
+        notes = [
+            misp_note for attribute in event.attributes
+            for misp_note in attribute.notes
+        ]
+        self.assertEqual(len(notes), 2)
+        for misp_note in notes:
+            self.assertEqual(misp_note.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (note['id'], custom_note['id']), self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_colliding_analyst_opinion_uuids(self):
+        # The same collision through the opinion path: a custom Analyst
+        # Opinion and the 2.1 Opinion sharing a uuid part.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_colliding_analyst_opinion_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        *_, opinion, custom_opinion = bundle.objects
+        record_uuid = custom_opinion['id'].split('--')[1]
+        opinions = [
+            misp_opinion for attribute in event.attributes
+            for misp_opinion in attribute.opinions
+        ]
+        self.assertEqual(len(opinions), 2)
+        for misp_opinion in opinions:
+            self.assertEqual(misp_opinion.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (opinion['id'], custom_opinion['id']),
+            self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_colliding_event_report_uuids(self):
+        # A custom Event Report and the 2.1 Note MISP writes an Event Report
+        # as both keep the uuid part of their id, so 2 event reports carry one
+        # uuid: both stay, the collision is reported. No 2.1 twin: the custom
+        # Event Report is not converted from a 2.1 Bundle.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_colliding_event_report_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        *_, custom_report, report_note = bundle.objects
+        record_uuid = custom_report['id'].split('--')[1]
+        self.assertEqual(len(event.event_reports), 2)
+        for event_report in event.event_reports:
+            self.assertEqual(event_report.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (custom_report['id'], report_note['id']),
+            self.parser.warnings
+        )
+
     def test_stix20_bundle_with_custom_labels(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_labels()
         self.parser.load_stix_bundle(bundle)
@@ -1815,22 +1973,78 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(port.value, observables["0"].x_misp_port)
         self.assertEqual(free_tag, port.tags[0].name)
 
-    def test_stix20_bundle_with_dict_form_location(self):
-        bundle = TestInternalSTIX20Bundles.get_bundle_with_dict_form_location()
+    def test_stix20_bundle_with_dict_form_geolocation_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_dict_form_geolocation_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
-        location = bundle.objects[-1]
-        # The Location converter reads the object with attribute access, so a
-        # Dict-Form Object reaching it is dropped either way - but the labels it
-        # is dispatched on are read through the interface both forms share, so
-        # what names the loss is the Location converter reporting the object it
-        # was handed, not the dispatch failing to read any field at all.
-        self.assertFalse(self.parser.misp_event.objects)
-        errors = self._reported_messages(self.parser.errors)
-        self.assertEqual(len(errors), 1)
-        self.assertIn(
-            'Error while parsing the Location object with id '
-            f'{location["id"]}', errors[0]
+        event = self.parser.misp_event
+        _, report, location = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        # A Location in a STIX 2.0 Bundle is a plain dict: the labels it is
+        # dispatched on and the fields the converter reads both go through the
+        # interface a typed object shares, so it converts the way its typed
+        # 2.1 counterpart does. STIX 2.1 knows every type these converters
+        # take, so it has no dict-form object to test the same way.
+        self.assertEqual(self.parser.errors, {})
+        attributes = self._check_dict_form_geolocation_object(
+            misp_object, location
+        )
+        self.assertEqual(attributes['region'], location['region'])
+        self.assertEqual(attributes['altitude'], location['x_misp_altitude'])
+        self.assertEqual(attributes['country'], location['x_misp_country'])
+        accuracy = misp_object.attributes[-1]
+        self.assertEqual(accuracy.object_relation, 'accuracy-radius')
+        self._check_object_attribute_uuid(accuracy, location['id'])
+
+    def test_stix20_bundle_with_dict_form_location_galaxies(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_dict_form_location_galaxies()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, location1, location2 = bundle.objects
+        self._check_misp_event_features(event, report)
+        # Dict-form Locations the galaxy labels dispatch: the cluster value,
+        # description and meta fields are read the same way - a 2.0 only case,
+        # as the dict-form geolocation object test states.
+        self.assertEqual(self.parser.errors, {})
+        country, region = event.galaxies
+        self.assertIsInstance(location1, dict)
+        cluster = country.clusters[0]
+        self._assert_multiple_equal(country.type, cluster.type, 'country')
+        self.assertEqual(country.name, 'Country')
+        self.assertEqual(cluster.value, location1['name'])
+        self.assertEqual(cluster.description, location1['description'])
+        self.assertTrue(cluster.meta)
+        for field, value in cluster.meta.items():
+            self.assertEqual(value, location1[f'x_misp_{field}'])
+        self.assertIsInstance(location2, dict)
+        cluster = region.clusters[0]
+        self._assert_multiple_equal(region.type, cluster.type, 'region')
+        self.assertEqual(region.name, 'Regions UN M49')
+        self.assertEqual(cluster.value, f"154 - {location2['name']}")
+        self.assertEqual(cluster.description, location2['description'])
+        self.assertEqual(
+            cluster.meta['subregion'], location2['x_misp_subregion']
+        )
+        tag_names = {tag.name for tag in event.tags}
+        for galaxy in (country, region):
+            cluster = galaxy.clusters[0]
+            self.assertIn(
+                f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names
+            )
+
+    def test_stix20_bundle_with_dict_form_malware_analysis_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_dict_form_malware_analysis_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, malware_analysis = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        # A Malware Analysis in a STIX 2.0 Bundle is a plain dict too - a 2.0
+        # only case, as the dict-form geolocation object test states.
+        self.assertEqual(self.parser.errors, {})
+        self._check_dict_form_malware_analysis_object(
+            misp_object, malware_analysis
         )
 
     def test_stix20_bundle_with_dict_form_objects(self):
@@ -2074,6 +2288,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
             self.assertEqual(sighting.Organisation['uuid'], identity.id.split('--')[1])
             self.assertEqual(sighting.Organisation['name'], identity.name)
+        # `sighting_of_ref` lookups resolve references - never MISP records
+        # claiming a uuid - so nothing here is a collision to report.
+        self._check_uuid_collision_warning_absence(self.parser.warnings)
 
     def test_stix20_bundle_with_single_report(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_single_report()
@@ -2120,6 +2337,48 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
         self._populate_galaxy_documentation(
             galaxy=event.galaxies[0], course_of_action=course_of_action
+        )
+
+    def test_stix20_bundle_with_colliding_galaxy_cluster_uuids(self):
+        # A cluster keeps only the part after `--` of the STIX id it comes
+        # from, so 2 galaxy-mapped objects of different types sharing a uuid
+        # part yield 2 clusters carrying one uuid: the collision is reported.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_colliding_galaxy_cluster_uuids()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, malware, threat_actor = bundle.objects
+        record_uuid = malware.id.split('--')[1]
+        clusters = [
+            cluster for galaxy in event.galaxies
+            for cluster in galaxy.clusters
+        ]
+        self.assertEqual(len(clusters), 2)
+        for cluster in clusters:
+            self.assertEqual(cluster.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (malware.id, threat_actor.id), self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_colliding_custom_galaxy_cluster_uuid(self):
+        # The custom galaxy path assigns the cluster uuid the same way, so a
+        # Custom Galaxy Cluster collides with a galaxy Malware sharing its
+        # uuid part just as 2 galaxy-mapped objects do.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_colliding_custom_galaxy_cluster_uuid()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, _, malware, custom = bundle.objects
+        record_uuid = malware.id.split('--')[1]
+        clusters = [
+            cluster for galaxy in event.galaxies
+            for cluster in galaxy.clusters
+        ]
+        self.assertEqual(len(clusters), 2)
+        for cluster in clusters:
+            self.assertEqual(cluster.uuid, record_uuid)
+        self._check_uuid_collision_warning(
+            record_uuid, (malware.id, custom.id), self.parser.warnings
         )
 
     def test_stix20_bundle_with_custom_galaxy(self):
@@ -3127,6 +3386,71 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             misp_object=json.loads(misp_object.to_json()),
             observed_data=[observed_data, indicator, relationship]
         )
+
+    def test_stix20_bundle_with_legacy_hashlookup_property_names(self):
+        # Bundles exported before the custom property name fold (ADR-0013)
+        # carry `x_misp_KnownMalicious`-style names; the import mapping keeps
+        # reading them into the same attributes as the folded spelling.
+        for getter in ('indicator', 'observable'):
+            attributes = self._import_object_attributes(
+                getattr(
+                    TestInternalSTIX20Bundles,
+                    f'get_bundle_with_hashlookup_{getter}_object'
+                )()
+            )
+            legacy_attributes = self._import_object_attributes(
+                getattr(
+                    TestInternalSTIX20Bundles,
+                    f'get_bundle_with_legacy_hashlookup_{getter}_object'
+                )()
+            )
+            self.assertEqual(legacy_attributes, attributes)
+
+    def test_stix20_non_conforming_object_relations_round_trip(self):
+        # CamelCase relations export as folded custom property names
+        # (`KnownMalicious` -> `x_misp_knownmalicious`); the import mappings
+        # restore the MISP spelling, on the observable and the pattern path.
+        from misp_stix_converter import MISPtoSTIX20Parser
+        from .test_events import (
+            get_event_with_hashlookup_object, get_event_with_ip_port_object,
+            get_event_with_organization_object
+        )
+        for to_ids in (False, True):
+            event = get_event_with_hashlookup_object()
+            misp_object = event['Event']['Object'][0]
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+            expected = {
+                (attribute['type'], attribute['object_relation'], attribute['value'])
+                for attribute in misp_object['Attribute']
+            }
+            export_parser = MISPtoSTIX20Parser()
+            export_parser.parse_misp_event(event['Event'])
+            self.assertEqual(
+                self._import_object_attributes(export_parser.bundle), expected
+            )
+        ip_port = get_event_with_ip_port_object()
+        ip_port['Event']['Object'][0]['Attribute'].append(
+            {
+                'uuid': '5d9c1f2e-3a4b-4c5d-8e6f-7a8b9c0d1e2f',
+                'type': 'AS', 'object_relation': 'AS', 'value': '3215'
+            }
+        )
+        organization = get_event_with_organization_object()
+        organization['Event']['Object'][0]['Attribute'].append(
+            {
+                'uuid': '0a1b2c3d-4e5f-4a6b-9c7d-8e9f0a1b2c3d',
+                'type': 'text', 'object_relation': 'VAT', 'value': 'LU12345678'
+            }
+        )
+        for event, attribute in (
+                (ip_port, ('AS', 'AS', '3215')),
+                (organization, ('text', 'VAT', 'LU12345678'))):
+            export_parser = MISPtoSTIX20Parser()
+            export_parser.parse_misp_event(event['Event'])
+            self.assertIn(
+                attribute, self._import_object_attributes(export_parser.bundle)
+            )
 
     def test_stix20_bundle_with_http_request_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_http_request_indicator_object()

@@ -2924,6 +2924,28 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*deepcopy(_ANALYST_DATA_SAMPLES))
 
     @classmethod
+    def get_bundle_with_analyst_note_and_opinion_sharing_a_uuid(cls):
+        """A Note and an Opinion sharing a uuid part: MISP keeps notes and
+        opinions in tables of their own, so nothing collides."""
+        indicator, opinion, observed_data, ip_address, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:5]
+        )
+        note['id'] = f"note--{opinion['id'].split('--')[1]}"
+        return cls.__assemble_bundle(
+            indicator, opinion, observed_data, ip_address, note
+        )
+
+    @classmethod
+    def get_bundle_with_analyst_note_on_several_objects(cls):
+        """A Note referencing 2 objects: one MISP note per object, each with
+        a uuid derived from the object it lands on."""
+        indicator, _, observed_data, ip_address, note = deepcopy(
+            _ANALYST_DATA_SAMPLES[:5]
+        )
+        note['object_refs'] = [indicator['id'], observed_data['id']]
+        return cls.__assemble_bundle(indicator, observed_data, ip_address, note)
+
+    @classmethod
     def __assemble_colliding_uuids_bundle(
             cls, observed, indicated=None, record_uuid=None,
             observable_uuid=None, interoperability=False):
@@ -3139,6 +3161,15 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_galaxy_bundle(*_LOCATION_OBJECTS)
 
     @classmethod
+    def get_bundle_with_colliding_galaxy_cluster_uuids(cls):
+        """A Malware and a Threat Actor sharing a uuid part: the type never
+        enters the cluster uuid derivation, so both clusters claim one uuid."""
+        malware = deepcopy(_MALWARE_OBJECTS[0])
+        threat_actor = deepcopy(_THREAT_ACTOR_OBJECTS[0])
+        threat_actor['id'] = f"threat-actor--{malware['id'].split('--')[1]}"
+        return cls.__assemble_galaxy_bundle(malware, threat_actor)
+
+    @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_MALWARE_OBJECTS)
 
@@ -3148,6 +3179,16 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         event_galaxy, attribute_galaxy = deepcopy(_THREAT_ACTOR_OBJECTS)
         event_galaxy['name'] = SMUGGLING_TAG_VALUE
         return cls.__assemble_galaxy_bundle(event_galaxy, attribute_galaxy)
+
+    @classmethod
+    def get_bundle_with_nameless_location_galaxy(cls):
+        """A galaxy-mapped SDO carrying no name - STIX 2.1 does not require
+        one on a Location. The description goes with it, so the cluster
+        description falls back onto the same guarded value."""
+        location = deepcopy(_LOCATION_OBJECTS[0])
+        for field in ('name', 'description'):
+            del location[field]
+        return cls.__assemble_bundle(location)
 
     @classmethod
     def get_bundle_with_threat_actor_galaxy(cls):

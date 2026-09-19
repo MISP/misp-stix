@@ -4480,6 +4480,28 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
             *self._collection_files('test_attributes_collection')
         )
 
+    def test_a_crashing_export_reports_the_recorded_messages(self):
+        # An export crash discards nothing the parser recorded before it: a
+        # result carrying `fails` still reports the warnings that explain
+        # what the conversion had already dropped
+        event = self._event_with_recorded_messages()
+        attributes = {'Attribute': list(event['Event']['Attribute'])}
+        self._check_single_export_reports_recorded_messages(
+            misp_to_stix1, event
+        )
+        self._check_single_export_reports_recorded_messages(
+            misp_event_collection_to_stix1, event
+        )
+        self._check_single_export_reports_recorded_messages(
+            misp_attribute_collection_to_stix1, attributes
+        )
+        self._check_collection_export_reports_recorded_messages(
+            misp_event_collection_to_stix1, event
+        )
+        self._check_collection_export_reports_recorded_messages(
+            misp_attribute_collection_to_stix1, attributes
+        )
+
     def test_exports_refuse_to_overwrite_an_existing_output(self):
         attributes = self._collection_files('test_attributes_collection')
         events = self._collection_files('test_events_collection')
