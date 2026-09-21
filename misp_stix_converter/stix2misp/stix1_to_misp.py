@@ -141,7 +141,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
-    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[]):
+    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], comment=None):
         if not name:
             # An observable carrying nothing to name an object with is the
             # observable there is nothing to convert from
@@ -150,6 +150,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid:
             misp_object.uuid = object_uuid
+        if comment is not None:
+            misp_object.comment = comment
         for attribute in attribute_value:
             attribute['to_ids'] = to_ids
             misp_object.add_attribute(**attribute)

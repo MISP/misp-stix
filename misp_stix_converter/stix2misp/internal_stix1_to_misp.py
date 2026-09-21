@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ..tools.misp_object_templates import (
-    _sanitise_template_name, _UNKNOWN_TEMPLATE_NAME)
+    _sanitise_template_name, _template_description, _UNKNOWN_TEMPLATE_NAME)
 from .stix1_mapping import InternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
@@ -129,6 +129,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if self._event.affected_assets:
             for affected_asset in self._event.affected_assets:
                 self._parse_affected_asset(affected_asset)
+        # The event tags: the handling the export writes them on, plus the
+        # `misp:tool` journal entry below. Nothing dedupes them here - pymisp
+        # adds a tag name it already has once
+        for tag in self._read_markings(self._event.handling):
+            self.misp_event.add_tag(tag)
         if self._event.history:
             for entry in self._event.history.history_items:
                 journal_entry = entry.journal_entry.value
@@ -278,10 +283,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def _parse_campaign(self, campaign: Campaign):
         """Convert the Campaign a `campaign-name` attribute was exported as:
-        the value as its name, the category off the Record Title, the uuid
-        and the timestamp. The comment it writes as the description and the
-        tags as the handling are not read, as no Indicator's are either. A
-        Campaign with no name is no export of ours, and the error records it.
+        the value as its name, the category off the Record Title, the uuid,
+        the timestamp, the comment it writes as the description and the tags
+        as the handling. The description needs no guard as an Indicator's
+        does: the export writes it only when the attribute has a comment of
+        its own. A Campaign with no name is no export of ours, and the error
+        records it.
 
         :param campaign: the Campaign the package carries
         """
@@ -301,6 +308,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             misp_attribute['timestamp'] = self._timestamp_from_date(
                 campaign.timestamp
             )
+        comment = self._read_comment(campaign.description)
+        if comment is not None:
+            misp_attribute['comment'] = comment
+        tags = tuple(self._read_markings(campaign.handling))
+        if tags:
+            misp_attribute['Tag'] = list(tags)
         misp_attribute.update(self._sanitise_attribute_uuid(campaign.id_))
         self.misp_event.add_attribute(**misp_attribute)
 
@@ -353,34 +366,50 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         four has nothing the parser reads an attribute or an object from, and
         the error records it.
 
+        The context the TTP carries is read once here and handed to whichever
+        of the four builds the record: the tags off the TTP's handling, the
+        comment off the description of the Exploit Target the attribute was
+        written into. The tags reach a record that takes them - a `target-*`
+        attribute, a `vulnerability` attribute carrying its id alone - and
+        the warning records the ones that land on a MISP object instead.
+
         :param ttp: the TTP, titled `(MISP Attribute)` or `(MISP Object)`
         """
         ttp_id = self._extract_uuid(ttp.id_)
+        tags = tuple(self._read_markings(ttp.handling))
         converted = False
         if ttp.behavior and ttp.behavior.attack_patterns:
             for attack_pattern in ttp.behavior.attack_patterns:
                 self._parse_attack_pattern_object(attack_pattern, ttp_id)
+                if tags:
+                    self._object_markings_warning()
             converted = True
         if ttp.victim_targeting and ttp.victim_targeting.identity:
             self._parse_victim_identity(
-                ttp.victim_targeting.identity, ttp.timestamp
+                ttp.victim_targeting.identity, ttp.timestamp, tags
             )
             converted = True
         if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
             for exploit_target in ttp.exploit_targets.exploit_target:
+                comment = self._read_comment(exploit_target.item.description)
                 if exploit_target.item.vulnerabilities:
                     for vulnerability in exploit_target.item.vulnerabilities:
-                        self._parse_vulnerability_object(vulnerability, ttp_id)
+                        self._parse_vulnerability_object(
+                            vulnerability, ttp_id, comment, tags
+                        )
                     converted = True
                 if exploit_target.item.weaknesses:
                     for weakness in exploit_target.item.weaknesses:
-                        self._parse_weakness_object(weakness, ttp_id)
+                        self._parse_weakness_object(
+                            weakness, ttp_id, comment, tags
+                        )
                     converted = True
         if not converted:
             self._unconverted_ttp_error(ttp.id_)
 
     def _parse_victim_identity(
-            self, identity: Identity, timestamp: Optional[datetime] = None):
+            self, identity: Identity, timestamp: Optional[datetime] = None,
+            tags: tuple = ()):
         """Convert the CIQ identity a `target-*` attribute was exported as:
         the Victim of the Incident an Event Collection writes, the identity a
         TTP targets in an Attribute Collection.
@@ -397,6 +426,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         :param identity: the CIQ identity
         :param timestamp: the timestamp of the TTP targeting the identity - a
             Victim travels with none
+        :param tags: the tags the TTP targeting the identity carries on its
+            handling - a Victim carries none, the Incident holding it does
         """
         targets = list(self._read_target_identity_fields(identity))
         if len(targets) != 1:
@@ -417,10 +448,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         }
         if timestamp:
             misp_attribute['timestamp'] = self._timestamp_from_date(timestamp)
+        if tags:
+            misp_attribute['Tag'] = list(tags)
         misp_attribute.update(self._sanitise_attribute_uuid(identity.id_))
         self.misp_event.add_attribute(**misp_attribute)
 
-    def _parse_vulnerability_object(self, vulnerability: Vulnerability, ttp_id: str):
+    def _parse_vulnerability_object(
+            self, vulnerability: Vulnerability, ttp_id: str,
+            comment: Optional[str] = None, tags: tuple = ()):
         attributes = []
         for key, mapping in self._mapping.vulnerability_object_mapping().items():
             value = getattr(vulnerability, key)
@@ -436,15 +471,25 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if len(attributes) == 1 and attributes[0]['object_relation'] == 'id':
                 attributes = attributes[0]
                 attributes['uuid'] = ttp_id
+                if comment is not None:
+                    attributes['comment'] = comment
+                if tags:
+                    attributes['Tag'] = list(tags)
                 self.misp_event.add_attribute(**attributes)
             else:
                 vulnerability_object = MISPObject('vulnerability')
                 vulnerability_object.uuid = ttp_id
+                if comment is not None:
+                    vulnerability_object.comment = comment
+                if tags:
+                    self._object_markings_warning()
                 for attribute in attributes:
                     vulnerability_object.add_attribute(**attribute)
                 self.misp_event.add_object(vulnerability_object)
 
-    def _parse_weakness_object(self, weakness: Weakness, ttp_id: str):
+    def _parse_weakness_object(
+            self, weakness: Weakness, ttp_id: str,
+            comment: Optional[str] = None, tags: tuple = ()):
         attributes = []
         for key, relation in self._mapping.weakness_object_mapping().items():
             value = getattr(weakness, key)
@@ -455,6 +500,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if attributes:
             weakness_object = MISPObject('weakness')
             weakness_object.uuid = ttp_id
+            if comment is not None:
+                weakness_object.comment = comment
+            if tags:
+                self._object_markings_warning()
             for attribute in attributes:
                 weakness_object.add_attribute(*attribute)
             self.misp_event.add_object(weakness_object)
@@ -487,6 +536,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         uuid goes to the first. An Indicator carrying no observable and no
         rule is no export of ours, and the error records it.
 
+        The comment and the tags come back with it: the export writes the
+        comment as the description, falling back to the Record Title when
+        there is none, and the tags as the handling. An Indicator yielding
+        several attributes gives each of them both - a uuid is an identity
+        and goes to the first alone, a comment and a tag are context the
+        Indicator carried for every rule it held.
+
         :param indicator: the Indicator itself - the item of the Related
             Indicator an event export relates to its Incident, the Indicator
             an Attribute Collection writes on the package
@@ -501,6 +557,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             misp_attribute['timestamp'] = self._timestamp_from_date(
                 indicator.timestamp
             )
+        comment = self._read_comment(indicator.description, indicator.title)
+        if comment is not None:
+            misp_attribute['comment'] = comment
+        tags = tuple(self._read_markings(indicator.handling))
+        if tags:
+            misp_attribute['Tag'] = list(tags)
         if indicator.observable:
             misp_attribute.update(self._sanitise_attribute_uuid(indicator.id_))
             self._parse_misp_attribute(
@@ -567,6 +629,17 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     # Parse STIX object that we know will give MISP objects
     def _parse_misp_object_indicator(self, indicator: Indicator):
+        """Convert the Indicator a `to_ids` MISP object was exported as.
+
+        The comment comes back through the object template: the export writes
+        it as the description and falls back to the template's own
+        description, which every MISP object carries, when the object has no
+        comment of its own. The handling does not - it holds the tags of
+        every attribute the object held merged into one set, and a MISP
+        object takes no tag - so the warning records what is dropped.
+
+        :param indicator: the Related Indicator the Incident carries
+        """
         name = self._define_name(indicator.item.observable, indicator.relationship)
         if name == 'passive-dns' and str(indicator.relationship) != "misc":
             self._add_error(
@@ -574,7 +647,15 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 f'with id {indicator.item.id_}'
             )
         else:
-            self._fill_misp_object(indicator.item, name, to_ids=True)
+            if any(self._read_markings(indicator.item.handling)):
+                self._object_markings_warning()
+            self._fill_misp_object(
+                indicator.item, name, to_ids=True,
+                comment=self._read_comment(
+                    indicator.item.description,
+                    indicator.item.title, _template_description(name)
+                )
+            )
 
     def _parse_misp_object_observable(self, observable: Observable):
         name = self._define_name(observable.item, observable.relationship)
@@ -591,7 +672,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     ############################################################################
 
     # Create a MISP object, its attributes, and add it in the MISP event
-    def _fill_misp_object(self, item, name, to_ids=False):
+    def _fill_misp_object(self, item, name, to_ids=False, comment=None):
         composition = any(
             (
                 (
@@ -617,6 +698,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             name, rejected_name = _sanitise_template_name(name)
             misp_object = MISPObject(name, misp_objects_path_custom=_MISP_objects_path)
             self._sanitise_object_uuid(misp_object, item.id_)
+            if comment is not None:
+                misp_object.comment = comment
             if rejected_name is not None:
                 self._invalid_template_name_warning(rejected_name, item.id_)
                 self._record_rejected_template_name(misp_object, rejected_name)
@@ -630,7 +713,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self.misp_event.add_object(misp_object)
         else:
             properties = item.observable.object_.properties if to_ids else item.object_.properties
-            self._parse_observable_object(properties, to_ids, self._sanitise_uuid(item.id_))
+            self._parse_observable_object(
+                properties, to_ids, self._sanitise_uuid(item.id_), comment
+            )
 
     def _handle_composition(self, misp_object, observables, to_ids):
         for observable in observables:
@@ -677,13 +762,18 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         return misp_object
 
     # Create a MISP attribute and add it in its MISP object
-    def _parse_observable_object(self, properties, to_ids, uuid):
+    def _parse_observable_object(self, properties, to_ids, uuid, comment=None):
         attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties)
         if isinstance(attribute_value, (str, int)):
             attribute = {'to_ids': to_ids, 'uuid': uuid}
+            if comment is not None:
+                attribute['comment'] = comment
             self._handle_attribute_case(attribute_type, attribute_value, compl_data, attribute)
         else:
-            self._handle_object_case(attribute_type, attribute_value, compl_data, to_ids=to_ids, object_uuid=uuid)
+            self._handle_object_case(
+                attribute_type, attribute_value, compl_data, to_ids=to_ids,
+                object_uuid=uuid, comment=comment
+            )
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -705,6 +795,31 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             return None
         category = title.split(': ', 1)[0]
         return category if category in _MISP_categories else None
+
+    @staticmethod
+    def _read_comment(
+            description: str, *written_without_a_comment: Optional[str]
+    ) -> Optional[str]:
+        """Read the comment a MISP record carried off a STIX description.
+
+        The export writes the comment as the description, and on two shapes
+        writes something else there when the record has no comment: the
+        Record Title on an Indicator, the object template's own description
+        on the Indicator a MISP object was exported as. Those stand in for
+        `no comment`, so a description equal to one of them reads as none -
+        at the cost of losing a comment whose author typed exactly that.
+
+        :param description: the STIX description field, or None - a
+            structured text, or the plain string a package built in memory
+            and handed to `load_stix_package` carries
+        :param written_without_a_comment: what the export writes there when
+            the record has no comment, if anything
+        :return: the comment, None when the record carried none
+        """
+        value = getattr(description, 'value', description)
+        if not isinstance(value, str) or not value:
+            return None
+        return None if value in written_without_a_comment else value
 
     # Return type & value of a composite attribute in MISP
     @staticmethod
