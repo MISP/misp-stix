@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from ..tools.misp_object_templates import (
-    _sanitise_template_name, _UNKNOWN_TEMPLATE_NAME)
+    _sanitise_template_name, _template_attribute_types,
+    _UNKNOWN_TEMPLATE_NAME)
 from .stix1_mapping import InternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
@@ -743,6 +744,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         return misp_object
 
     def  _handle_file_composition(self, misp_object, observables, to_ids):
+        template_types = _template_attribute_types('file')
         for observable in observables:
             try:
                 attribute_type, attribute_value, compl_data = self._handle_attribute_type(
@@ -752,10 +754,21 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._stix_object_type_error(xsi_type, observable.id_)
                 continue
             if isinstance(attribute_value, str):
+                # The MISP type the content named is the object relation too:
+                # a type the `file` template does not define is checked
+                # against MISP's own, rather than handed to pymisp, which
+                # refuses it and costs the whole object
+                attribute = self._read_derived_attribute(
+                    attribute_type, attribute_value, template_types,
+                    observable.id_
+                )
+                if attribute is None:
+                    continue
+                attribute_type, attribute_value, relation = attribute
                 misp_object.add_attribute(
                     **{
                         'type': attribute_type, 'value': attribute_value,
-                        'object_relation': attribute_type, 'to_ids': to_ids,
+                        'object_relation': relation, 'to_ids': to_ids,
                         'data': compl_data
                     }
                 )

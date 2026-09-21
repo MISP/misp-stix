@@ -539,14 +539,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     {'idref': referenced_id, 'relationship': 'attachment'}
                 )
 
-    def _fetch_file_attributes(self, properties: file_object.File) -> list:
+    def _fetch_file_attributes(self, properties: file_object.File,
+                               object_id: Optional[str] = None) -> list:
         """Read every attribute a file - or the file half of a Windows
         executable - carries, before any folding of a short attribute list
         into a single attribute.
 
         :param properties: the file properties
+        :param object_id: the id of the object the properties belong to
         :return: the `(type, value, relation)` of each attribute
         """
+        template_types = _template_attribute_types('file')
         attributes = list(self._fetch_attributes_with_keys(properties, 'file_mapping'))
         if properties.byte_runs:
             attributes.append(
@@ -567,7 +570,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Return type & attributes of a file object
     def _handle_file(self, properties: file_object.File, is_object: bool) -> tuple:
-        attributes = self._fetch_file_attributes(properties)
+        attributes = self._fetch_file_attributes(
+            properties, getattr(properties.parent, 'id_', None)
+        )
+        attributes.extend(self._read_custom_properties(properties, 'file'))
         b_hash = bool(properties.hashes)
         b_file = bool(getattr(properties.file_name, 'value', None))
         if len(attributes) == 1:
@@ -886,7 +892,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # the template has no relation for has no type: pymisp refuses it
             hash_type, hash_value, _ = self._handle_hashes_attribute(_hash)
             if hash_type not in template_types:
-                self._unknown_pe_section_hash_type_warning(
+                self._unstorable_attribute_warning(
                     hash_type, hash_value, object_id
                 )
                 continue
@@ -1082,6 +1088,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return 'user-account', self._return_object_attributes(attributes), ''
 
     def _handle_x509(self, properties: x509_certificate_object.X509Certificate) -> tuple:
+        object_id = getattr(properties.parent, 'id_', None)
         attributes = list(self._handle_x509_certificate(properties))
         if properties.raw_certificate:
             raw = properties.raw_certificate.value
@@ -1092,8 +1099,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             attributes.append(["text", raw, relation])
         if properties.certificate_signature:
             signature = properties.certificate_signature
-            attribute_type = f"x509-fingerprint-{signature.signature_algorithm.value.lower()}"
-            attributes.append([attribute_type, signature.signature.value, attribute_type])
+            # The signature algorithm the document names is what types the
+            # fingerprint, and MISP has an attribute type for three of them
+            relation = f"x509-fingerprint-{signature.signature_algorithm.value.lower()}"
+            attribute = self._read_derived_attribute(
+                relation, signature.signature.value,
+                _template_attribute_types('x509'), object_id
+            )
+            if attribute is not None:
+                attributes.append(attribute)
+        attributes.extend(self._read_custom_properties(properties, 'x509'))
         return "x509", self._return_object_attributes(attributes), ""
 
     def _handle_x509_certificate(self, properties: x509_certificate_object.X509Certificate):
@@ -1255,6 +1270,32 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     getattr(properties, field).value, relation
                 )
 
+    def _read_derived_attribute(
+            self, relation: str, value, template_types: dict,
+            object_id: Optional[str]) -> Optional[tuple]:
+        """Type an attribute whose object relation the document supplies.
+
+        A cybox hash type and a certificate signature algorithm name the
+        relation their attribute takes, and they name it with the MISP type
+        it takes too - neither vocabulary is MISP's, so a name outside both
+        the template and the MISP attribute types is what pymisp refuses, and
+        refusing it costs the whole object. Skipping the one attribute is the
+        loss the document asks for.
+
+        :param relation: the object relation the content names, which is the
+            MISP type it names as well
+        :param value: the attribute value
+        :param template_types: the attribute types the template defines
+        :param object_id: the id of the object the attribute belongs to
+        :return: the `(type, value, relation)` of the attribute, None when
+            nothing can type it
+        """
+        if relation in template_types:
+            return (template_types[relation], value, relation)
+        if relation in _MISP_types:
+            return (relation, value, relation)
+        self._unstorable_attribute_warning(relation, value, object_id)
+
     @classmethod
     def _read_object_comment(
             cls, name: Optional[str], description,
@@ -1365,6 +1406,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._add_warning(
             f'Unknown PE section hash type {hash_type!r}'
             f'{self._object_origin(object_id)}: {hash_value} not converted.'
+        )
+
+    def _unstorable_attribute_warning(
+            self, relation: str, value, object_id: Optional[str]):
+        # The relation is what names the attribute in the message: a value
+        # MISP has no type for and a value no MISP attribute can hold are the
+        # same loss to the reader, and the relation is what tells them which
+        # attribute they lost
+        self._add_warning(
+            f'{relation!r} cannot be stored as a MISP attribute'
+            f'{self._object_origin(object_id)}: {value} not converted.'
         )
 
     def _unnamed_object_error(self, object_uuid: Optional[str]):
