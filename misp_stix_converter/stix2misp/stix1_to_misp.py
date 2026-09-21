@@ -3,7 +3,7 @@
 
 from ..tools.misp_object_templates import (
     _rejected_name_note, _sanitise_template_name, _template_attribute_types,
-    _UNKNOWN_TEMPLATE_NAME)
+    _template_description, _UNKNOWN_TEMPLATE_NAME)
 from ..tools.stix1_loading_helpers import load_stix1_package
 from .exceptions import MissingSTIXContentError
 from .importparser import STIXtoMISPParser
@@ -141,7 +141,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
-    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], comment=None):
+    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None):
         if not name:
             # An observable carrying nothing to name an object with is the
             # observable there is nothing to convert from
@@ -150,6 +150,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid:
             misp_object.uuid = object_uuid
+        # The name is only final here - what the export wrote the object as
+        # names it, not the Observable id - so the description the export
+        # writes for an object carrying no comment is told from a comment
+        # against the template of the object the content actually builds
+        comment = self._read_object_comment(name, description, title)
         if comment is not None:
             misp_object.comment = comment
         for attribute in attribute_value:
@@ -972,6 +977,45 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if getattr(properties, field):
                 attribute_type, relation = attribute
                 yield (attribute_type, getattr(properties, field).value, relation)
+
+    @classmethod
+    def _read_object_comment(
+            cls, name: Optional[str], description,
+            title: Optional[str]) -> Optional[str]:
+        """Read the comment a MISP object carried, guarded against the
+        description its own template gives every object made from it.
+
+        :param name: the object template name, None when the shape names none
+        :param description: the STIX description field, or None
+        :param title: the Record Title, where the shape carries one
+        :return: the comment, None when the object carried none
+        """
+        return cls._read_comment(description, title, _template_description(name))
+
+    @staticmethod
+    def _read_comment(
+            description, *written_without_a_comment: Optional[str]
+    ) -> Optional[str]:
+        """Read the comment a MISP record carried off a STIX description.
+
+        The export writes the comment as the description, and on two shapes
+        writes something else there when the record has no comment: the
+        Record Title on an Indicator, the object template's own description
+        on the Indicator a MISP object was exported as. Those stand in for
+        `no comment`, so a description equal to one of them reads as none -
+        at the cost of losing a comment whose author typed exactly that.
+
+        :param description: the STIX description field, or None - a
+            structured text, or the plain string a package built in memory
+            and handed to `load_stix_package` carries
+        :param written_without_a_comment: what the export writes there when
+            the record has no comment, if anything
+        :return: the comment, None when the record carried none
+        """
+        value = getattr(description, 'value', description)
+        if not isinstance(value, str) or not value:
+            return None
+        return None if value in written_without_a_comment else value
 
     @staticmethod
     def _return_object_attributes(attributes: Union[list, tuple]) -> tuple:

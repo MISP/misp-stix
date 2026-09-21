@@ -110,7 +110,7 @@ def _template_attribute_types(name: str) -> dict:
 
 
 @lru_cache(maxsize=None)
-def _template_description(name: str) -> Optional[str]:
+def _template_description(name: Optional[str]) -> Optional[str]:
     """Read the description a template gives every object made from it.
 
     A MISP object carries its template's description in its own `description`
@@ -118,7 +118,8 @@ def _template_description(name: str) -> Optional[str]:
     no comment - so the import needs the template's own text to tell the two
     apart and read back only a description the object's author wrote.
 
-    :param name: a MISP object template name
+    :param name: a MISP object template name, or None where the shape the
+        object came from names none
     :return: the template description, None when the name is not a template
         pymisp knows or the template gives no description
     """

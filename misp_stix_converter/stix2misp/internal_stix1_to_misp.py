@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ..tools.misp_object_templates import (
-    _sanitise_template_name, _template_description, _UNKNOWN_TEMPLATE_NAME)
+    _sanitise_template_name, _UNKNOWN_TEMPLATE_NAME)
 from .stix1_mapping import InternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
@@ -634,9 +634,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         The comment comes back through the object template: the export writes
         it as the description and falls back to the template's own
         description, which every MISP object carries, when the object has no
-        comment of its own. The handling does not - it holds the tags of
-        every attribute the object held merged into one set, and a MISP
-        object takes no tag - so the warning records what is dropped.
+        comment of its own. The description travels raw, and the template it
+        is told from is the one of the object the content builds - the name
+        here only names the compositions. The handling does not come back - it
+        holds the tags of every attribute the object held merged into one set,
+        and a MISP object takes no tag - so the warning records what is
+        dropped.
 
         :param indicator: the Related Indicator the Incident carries
         """
@@ -651,10 +654,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._object_markings_warning()
             self._fill_misp_object(
                 indicator.item, name, to_ids=True,
-                comment=self._read_comment(
-                    indicator.item.description,
-                    indicator.item.title, _template_description(name)
-                )
+                description=indicator.item.description,
+                title=indicator.item.title
             )
 
     def _parse_misp_object_observable(self, observable: Observable):
@@ -672,7 +673,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     ############################################################################
 
     # Create a MISP object, its attributes, and add it in the MISP event
-    def _fill_misp_object(self, item, name, to_ids=False, comment=None):
+    def _fill_misp_object(self, item, name, to_ids=False, description=None,
+                          title=None):
         composition = any(
             (
                 (
@@ -698,6 +700,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             name, rejected_name = _sanitise_template_name(name)
             misp_object = MISPObject(name, misp_objects_path_custom=_MISP_objects_path)
             self._sanitise_object_uuid(misp_object, item.id_)
+            comment = self._read_object_comment(name, description, title)
             if comment is not None:
                 misp_object.comment = comment
             if rejected_name is not None:
@@ -714,7 +717,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         else:
             properties = item.observable.object_.properties if to_ids else item.object_.properties
             self._parse_observable_object(
-                properties, to_ids, self._sanitise_uuid(item.id_), comment
+                properties, to_ids, self._sanitise_uuid(item.id_),
+                name=name, description=description, title=title
             )
 
     def _handle_composition(self, misp_object, observables, to_ids):
@@ -762,17 +766,22 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         return misp_object
 
     # Create a MISP attribute and add it in its MISP object
-    def _parse_observable_object(self, properties, to_ids, uuid, comment=None):
+    def _parse_observable_object(self, properties, to_ids, uuid, name=None,
+                                 description=None, title=None):
         attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties)
         if isinstance(attribute_value, (str, int)):
             attribute = {'to_ids': to_ids, 'uuid': uuid}
+            # An object whose content folds into a single attribute has no
+            # template of its own to tell the description from a comment: the
+            # name the Observable carries is the only one there is
+            comment = self._read_object_comment(name, description, title)
             if comment is not None:
                 attribute['comment'] = comment
             self._handle_attribute_case(attribute_type, attribute_value, compl_data, attribute)
         else:
             self._handle_object_case(
                 attribute_type, attribute_value, compl_data, to_ids=to_ids,
-                object_uuid=uuid, comment=comment
+                object_uuid=uuid, description=description, title=title
             )
 
     ############################################################################
@@ -795,31 +804,6 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             return None
         category = title.split(': ', 1)[0]
         return category if category in _MISP_categories else None
-
-    @staticmethod
-    def _read_comment(
-            description: str, *written_without_a_comment: Optional[str]
-    ) -> Optional[str]:
-        """Read the comment a MISP record carried off a STIX description.
-
-        The export writes the comment as the description, and on two shapes
-        writes something else there when the record has no comment: the
-        Record Title on an Indicator, the object template's own description
-        on the Indicator a MISP object was exported as. Those stand in for
-        `no comment`, so a description equal to one of them reads as none -
-        at the cost of losing a comment whose author typed exactly that.
-
-        :param description: the STIX description field, or None - a
-            structured text, or the plain string a package built in memory
-            and handed to `load_stix_package` carries
-        :param written_without_a_comment: what the export writes there when
-            the record has no comment, if anything
-        :return: the comment, None when the record carried none
-        """
-        value = getattr(description, 'value', description)
-        if not isinstance(value, str) or not value:
-            return None
-        return None if value in written_without_a_comment else value
 
     # Return type & value of a composite attribute in MISP
     @staticmethod
