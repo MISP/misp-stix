@@ -8,9 +8,6 @@ from collections import defaultdict
 from cybox.core import Object, Observable, Observables
 from pymisp.abstract import misp_objects_path
 from pymisp import MISPAttribute, MISPEvent, MISPObject
-from stix.data_marking import MarkingSpecification
-from stix.extensions.marking.ais import AISMarkingStructure
-from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP
@@ -265,19 +262,6 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             else:
                 self._parse_description(indicator)
 
-    def _parse_marking(self, handling: MarkingSpecification):
-        if getattr(handling, 'marking_structures', None):
-            for marking in handling.marking_structures:
-                parser = self._mapping.marking_mapping(marking._XSI_TYPE)
-                if parser is not None:
-                    # A marking field a taxonomy tag can be made of nothing
-                    # from writes no tag: the builder returns None and the
-                    # marking is dropped here, as at every other site that
-                    # collects built tags rather than adding them one by one.
-                    for tag in getattr(self, parser)(marking):
-                        if tag is not None:
-                            yield tag
-
     def _parse_observables(self, observables: Optional[Observables] = None, to_ids: bool = False):
         for observable in observables or self.stix_package.observables:
             if self._has_properties(observable):
@@ -385,38 +369,6 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     self.misp_event.add_attribute(**misp_attribute)
                 return
         self.galaxies.update(galaxies)
-
-    ############################################################################
-    #                   MARKING DEFINITIONS PARSING METHODS.                   #
-    ############################################################################
-
-    def _parse_AIS_marking(self, marking: AISMarkingStructure):
-        for feature in ('is_proprietary', 'not_proprietary'):
-            proprietary = getattr(marking, feature)
-            if proprietary is None:
-                continue
-            yield self._build_tag(
-                'ais-marking', 'AISMarking', feature.title()
-            )
-            if hasattr(proprietary, 'cisa_proprietary'):
-                cisa_proprietary = (
-                    'true' if proprietary.cisa_proprietary.numerator == 1
-                    else 'false'
-                )
-                yield self._build_tag(
-                    'ais-marking', 'CISA_Proprietary', cisa_proprietary
-                )
-            if hasattr(proprietary, 'ais_consent'):
-                yield self._build_tag(
-                    'ais-marking', 'AISConsent', proprietary.ais_consent.consent
-                )
-            if hasattr(proprietary, 'tlp_marking'):
-                yield self._build_tag(
-                    'ais-marking', 'TLPMarking', proprietary.tlp_marking.color
-                )
-
-    def _parse_TLP_marking(self, marking: TLPMarkingStructure):
-        yield self._build_tag('tlp', marking.color.lower())
 
     ############################################################################
     #                             UTILITY METHODS.                             #

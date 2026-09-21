@@ -29,6 +29,10 @@ from pymisp import MISPAttribute, MISPObject
 import re
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
+from stix.data_marking import Marking, MarkingSpecification
+from stix.extensions.marking.ais import AISMarkingStructure
+from stix.extensions.marking.simple_marking import SimpleMarkingStructure
+from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
 from typing import Iterator, Optional, Union
@@ -197,6 +201,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Parse a course of action and add a MISP object to the event
     def _parse_course_of_action(self, course_of_action):
+        if any(self._read_markings(getattr(course_of_action, 'handling', None))):
+            self._object_markings_warning()
         misp_object = MISPObject('course-of-action', misp_objects_path_custom=misp_objects_path)
         misp_object.uuid = self._sanitise_uuid(course_of_action.id_)
         if course_of_action.title:
@@ -222,6 +228,84 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self.misp_event.add_attribute(**attribute)
                 misp_object.add_reference(referenced_uuid, 'observable', None, **attribute)
         self.misp_event.add_object(misp_object)
+
+    ############################################################################
+    #                   MARKING DEFINITIONS PARSING METHODS.                   #
+    ############################################################################
+
+    def _parse_AIS_marking(self, marking: AISMarkingStructure) -> Iterator[str]:
+        for feature in ('is_proprietary', 'not_proprietary'):
+            proprietary = getattr(marking, feature)
+            if proprietary is None:
+                continue
+            yield self._build_tag(
+                'ais-marking', 'AISMarking', feature.title()
+            )
+            if hasattr(proprietary, 'cisa_proprietary'):
+                cisa_proprietary = (
+                    'true' if proprietary.cisa_proprietary.numerator == 1
+                    else 'false'
+                )
+                yield self._build_tag(
+                    'ais-marking', 'CISA_Proprietary', cisa_proprietary
+                )
+            if hasattr(proprietary, 'ais_consent'):
+                yield self._build_tag(
+                    'ais-marking', 'AISConsent', proprietary.ais_consent.consent
+                )
+            if hasattr(proprietary, 'tlp_marking'):
+                yield self._build_tag(
+                    'ais-marking', 'TLPMarking', proprietary.tlp_marking.color
+                )
+
+    def _read_markings(self, handling: Optional[Marking]) -> Iterator[str]:
+        """Read every tag the Handling of a STIX object carries.
+
+        A Handling holds one Marking Specification per set of markings, and
+        the export writes a single one holding a TLP structure for the TLP
+        tags and a Simple Marking per other tag. The colour comes back as a
+        Built Tag, the statements as Copied Tags.
+
+        :param handling: the Handling, None where the object carries none
+        :return: the tags, in the order the markings hold them
+        """
+        for marking_specification in handling or ():
+            yield from self._parse_marking(marking_specification)
+
+    def _parse_marking(self, handling: MarkingSpecification) -> Iterator[str]:
+        if getattr(handling, 'marking_structures', None):
+            for marking in handling.marking_structures:
+                parser = self._mapping.marking_mapping(marking._XSI_TYPE)
+                if parser is not None:
+                    # A marking field a taxonomy tag can be made of nothing
+                    # from writes no tag: the builder returns None and the
+                    # marking is dropped here, as at every other site that
+                    # collects built tags rather than adding them one by one.
+                    for tag in getattr(self, parser)(marking):
+                        if tag is not None:
+                            yield tag
+
+    @staticmethod
+    def _parse_simple_marking(
+            marking: SimpleMarkingStructure) -> Iterator[str]:
+        """Read the statement of a Simple Marking as the tag it is.
+
+        The export writes one of these per tag that is not a TLP colour, the
+        tag name whole, so the statement is a Copied Tag: added unread and
+        unaltered, never through `_build_tag`, which is for the tags the
+        conversion authors itself. A statement nothing survives from - absent,
+        empty, whitespace alone - is dropped rather than added as an empty
+        tag, as a built tag with an empty slot is.
+
+        :param marking: the Simple Marking structure
+        :return: the statement, when there is one
+        """
+        statement = marking.statement
+        if statement is not None and statement.strip():
+            yield statement
+
+    def _parse_TLP_marking(self, marking: TLPMarkingStructure) -> Iterator[str]:
+        yield self._build_tag('tlp', marking.color.lower())
 
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
@@ -923,6 +1007,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'Invalid MISP object template name {rejected_name!r}'
             f'{self._object_origin(object_id)}: '
             f'converted as a {_UNKNOWN_TEMPLATE_NAME} object.'
+        )
+
+    def _object_markings_warning(self):
+        # One per converted document however many objects hit it: a MISP
+        # object takes no tag, and the markings the export wrote hold the
+        # tags of every attribute it held merged into one set, so there is
+        # neither a field to write them to nor a way to tell them apart.
+        self._add_warning(
+            'MISP objects carry no tag: the markings written on the STIX '
+            'objects a MISP object was exported as are not read back.'
         )
 
     def _unknown_pe_section_hash_type_warning(

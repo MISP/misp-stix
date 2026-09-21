@@ -60,6 +60,14 @@ class STIX1toMISPMapping:
             'yaraTM:YaraTestMechanismType': 'yara'
         }
     )
+    # Marking structure type -> the method reading the tags it carries
+    __marking_mapping = Mapping(
+        **{
+            'AIS:AISMarkingStructure': '_parse_AIS_marking',
+            'simpleMarking:SimpleMarkingStructureType': '_parse_simple_marking',
+            'tlpMarking:TLPMarkingStructureType': '_parse_TLP_marking'
+        }
+    )
 
     # Objects mappings
     _AS_attribute = ('AS', 'asn')
@@ -229,6 +237,10 @@ class STIX1toMISPMapping:
         return cls.__network_socket_fields
 
     @classmethod
+    def marking_mapping(cls, marking_type: str) -> Union[str, None]:
+        return cls.__marking_mapping.get(marking_type)
+
+    @classmethod
     def network_socket_mapping(cls) -> dict:
         return cls.__network_socket_mapping
 
@@ -282,16 +294,7 @@ class STIX1toMISPMapping:
 
 
 class ExternalSTIX1toMISPMapping(STIX1toMISPMapping):
-    __marking_mapping = Mapping(
-        **{
-            'AIS:AISMarkingStructure': '_parse_AIS_marking',
-            'tlpMarking:TLPMarkingStructureType': '_parse_TLP_marking'
-        }
-    )
-
-    @classmethod
-    def marking_mapping(cls, marking_type: str) -> Union[str, None]:
-        return cls.__marking_mapping.get(marking_type)
+    pass
 
 
 class InternalSTIX1toMISPMapping(STIX1toMISPMapping):
