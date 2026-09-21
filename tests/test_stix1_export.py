@@ -2324,6 +2324,35 @@ class TestStix1Export(TestSTIX):
         )
         self._check_pe_and_section_properties(properties, *misp_objects)
 
+    def _test_event_with_pe_object_without_pe_headers_observable(self, event):
+        """The PE header the export writes the `pe` hashes on is created for
+        two relations only - `entrypoint-address` and `number-sections` - and
+        written whatever the object carries: a `pe` carrying an
+        `authentihash` or an `impfuzzy` and neither of those two, the common
+        case, cost the whole object and every section under it, with one
+        recorded error. The hashes create the header they are written on."""
+        pe_object = event['Object'][0]
+        expected = {
+            attribute['object_relation']: attribute['value']
+            for attribute in pe_object['Attribute']
+            if attribute['object_relation'] in (
+                'authentihash', 'impfuzzy', 'imphash', 'pehash'
+            )
+        }
+        properties, _ = self._run_observable_from_objects_tests(
+            event, 'WindowsExecutableFile'
+        )
+        self.assertEqual(self.parser.errors, {})
+        file_header = properties.headers.file_header
+        self.assertEqual(
+            sorted(
+                hash_property.simple_hash_value.value
+                for hash_property in file_header.hashes
+            ),
+            sorted(expected.values())
+        )
+        self.assertIsNone(file_header.number_of_sections)
+
     def _test_event_with_process_object_indicator(self, event):
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -2890,6 +2919,18 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_event_with_pe_and_section_object_observable(self):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_object_observable(event['Event'])
+
+    def test_event_with_pe_object_without_pe_headers_observable(self):
+        event = get_event_with_pe_object_without_pe_headers()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
+
+    def test_event_with_pe_object_with_one_header_hash_observable(self):
+        event = get_event_with_pe_object_with_one_header_hash()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
 
     def test_event_with_process_object_indicator(self):
         event = get_event_with_process_object()
@@ -3932,6 +3973,18 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_event_with_pe_and_section_object_observable(self):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_object_observable(event['Event'])
+
+    def test_event_with_pe_object_without_pe_headers_observable(self):
+        event = get_event_with_pe_object_without_pe_headers()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
+
+    def test_event_with_pe_object_with_one_header_hash_observable(self):
+        event = get_event_with_pe_object_with_one_header_hash()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
 
     def test_event_with_process_object_indicator(self):
         event = get_event_with_process_object()

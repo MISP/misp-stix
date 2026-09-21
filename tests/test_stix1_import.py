@@ -22,8 +22,8 @@ from cybox.objects.user_account_object import UserAccount
 from cybox.objects.whois_object import (
     WhoisEntry, WhoisRegistrant, WhoisRegistrants, WhoisRegistrar)
 from cybox.objects.win_executable_file_object import (
-    Entropy, PESection, PESectionHeaderStruct, PESectionList,
-    WinExecutableFile)
+    Entropy, PEFileHeader, PEHeaders, PESection, PESectionHeaderStruct,
+    PESectionList, WinExecutableFile)
 from cybox.objects.win_registry_key_object import (
     RegistryValue, RegistryValues, WinRegistryKey)
 from cybox.objects.x509_certificate_object import (
@@ -32,6 +32,7 @@ from datetime import datetime
 from misp_stix_converter import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser,
     MissingSTIXContentError, stix_1_to_misp, STIXLoadingError)
+from misp_stix_converter.abstract import _UUIDv4
 from misp_stix_converter.tools import (
     is_stix1_from_misp, load_stix1_package, stix1_loading_helpers)
 from misp_stix_converter.tools.misp_object_templates import (
@@ -43,6 +44,7 @@ from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
 from pymisp import MISPEvent
 from unittest.mock import patch
+from uuid import uuid5
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement, ToolInformation
@@ -88,11 +90,12 @@ from .test_events import (
     get_event_with_course_of_action_object, get_event_with_domain_attribute,
     get_event_with_domain_ip_object, get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
+    get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
     get_event_with_process_object, get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
-    get_event_with_vulnerability_galaxy,
+    get_event_with_vulnerability_galaxy, get_event_with_x509_object,
     get_event_with_windows_service_attributes)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
@@ -1938,6 +1941,181 @@ class TestSTIX1Import(TestSTIX):
                         ]
                     )
 
+    @staticmethod
+    def _converted_content(misp_object):
+        """The relation, type and value of every attribute an object came back
+        with - a datetime spelt the way the MISP JSON spells it, pymisp having
+        parsed it into a `datetime`."""
+        content = []
+        for attribute in misp_object.attributes:
+            value = attribute.value
+            if isinstance(value, datetime):
+                value = value.strftime('%Y-%m-%dT%H:%M:%SZ')
+            content.append(
+                (attribute.object_relation, attribute.type, str(value))
+            )
+        return sorted(content)
+
+    @staticmethod
+    def _exported_content(misp_object: dict):
+        """The same, off the MISP object the event carried."""
+        return sorted(
+            (
+                attribute['object_relation'], attribute['type'],
+                attribute['value']
+            )
+            for attribute in misp_object['Attribute']
+        )
+
+    @staticmethod
+    def _references(misp_object):
+        return [
+            (reference.relationship_type, reference.referenced_uuid)
+            for reference in misp_object.references
+        ]
+
+    def test_internal_misp_export_pe_objects_round_trip(self):
+        """A `pe` object with no file content is one `WinExecutableFile`
+        spread over six carriers, of which the import read two: thirteen of
+        the fifteen attributes were dropped in silence, and the object's uuid
+        went to an empty `file` object the event never had. Every carrier is
+        read now, the `pe` keeps its uuid, and the section takes a uuid
+        derived from it - cybox `PESection` carries none."""
+        event = get_event_with_pe_objects()
+        pe_object, section_object = event['Event']['Object']
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            sorted(misp_object.name for misp_object in parser.misp_event.objects),
+            ['pe', 'pe-section']
+        )
+        converted_pe = parser.misp_event.get_objects_by_name('pe')[0]
+        converted_section = parser.misp_event.get_objects_by_name('pe-section')[0]
+        self.assertEqual(converted_pe.uuid, pe_object['uuid'])
+        self.assertEqual(
+            converted_section.uuid,
+            str(uuid5(_UUIDv4, f"{pe_object['uuid']} - pe - sections - 0"))
+        )
+        self.assertEqual(
+            self._converted_content(converted_pe),
+            self._exported_content(pe_object)
+        )
+        self.assertEqual(
+            self._converted_content(converted_section),
+            self._exported_content(section_object)
+        )
+        self.assertEqual(
+            self._references(converted_pe),
+            [('includes', converted_section.uuid)]
+        )
+
+    def test_internal_misp_export_full_pe_object_round_trips(self):
+        """Every relation the `pe` template defines, over every carrier the
+        export spreads them on: the four hashes typed by the length of their
+        value on the PE file header, the nine the version info resource folds
+        the spelling of, and the custom properties the rest travel as, the
+        ones carrying several values included."""
+        event = get_event_with_full_pe_object()
+        pe_object = event['Event']['Object'][0]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        converted_pe = parser.misp_event.get_objects_by_name('pe')[0]
+        self.assertEqual(converted_pe.uuid, pe_object['uuid'])
+        self.assertEqual(
+            self._converted_content(converted_pe),
+            self._exported_content(pe_object)
+        )
+
+    def test_internal_misp_export_file_and_pe_objects_round_trip(self):
+        """A `file` and the `pe` under it are one `WinExecutableFile`: the
+        file keeps the uuid and the `pe` takes a derived one, its
+        `original-filename` read off the version info resource rather than
+        off the file's own name."""
+        event = get_event_with_file_and_pe_objects()
+        file_object, pe_object, section_object = event['Event']['Object']
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        converted_file = parser.misp_event.get_objects_by_name('file')[0]
+        converted_pe = parser.misp_event.get_objects_by_name('pe')[0]
+        converted_section = parser.misp_event.get_objects_by_name('pe-section')[0]
+        self.assertEqual(converted_file.uuid, file_object['uuid'])
+        self.assertEqual(
+            converted_pe.uuid,
+            str(uuid5(_UUIDv4, f"{file_object['uuid']} - pe"))
+        )
+        self.assertEqual(
+            converted_section.uuid,
+            str(uuid5(_UUIDv4, f"{file_object['uuid']} - pe - sections - 0"))
+        )
+        for converted, exported in (
+                (converted_file, file_object), (converted_pe, pe_object),
+                (converted_section, section_object)):
+            with self.subTest(name=exported['name']):
+                self.assertEqual(
+                    self._converted_content(converted),
+                    self._exported_content(exported)
+                )
+        self.assertEqual(
+            self._references(converted_file), [('includes', converted_pe.uuid)]
+        )
+        self.assertEqual(
+            self._references(converted_pe),
+            [('includes', converted_section.uuid)]
+        )
+
+    def test_internal_misp_export_file_with_one_attribute_keeps_its_pe(self):
+        """One or two file attributes fold into a single MISP attribute, which
+        has nowhere to reference the `pe` from: the `pe` sat in the event
+        referenced by nothing. A file carrying a `pe` is an object however few
+        attributes it has."""
+        event = get_event_with_file_and_pe_objects()
+        file_object = event['Event']['Object'][0]
+        file_object['Attribute'] = [
+            attribute for attribute in file_object['Attribute']
+            if attribute['object_relation'] == 'filename'
+        ]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            sorted(misp_object.name for misp_object in parser.misp_event.objects),
+            ['file', 'pe', 'pe-section']
+        )
+        self.assertEqual(parser.misp_event.attributes, [])
+        converted_file = parser.misp_event.get_objects_by_name('file')[0]
+        converted_pe = parser.misp_event.get_objects_by_name('pe')[0]
+        self.assertEqual(converted_file.uuid, file_object['uuid'])
+        self.assertEqual(
+            self._converted_content(converted_file),
+            self._exported_content(file_object)
+        )
+        self.assertEqual(
+            self._references(converted_file), [('includes', converted_pe.uuid)]
+        )
+
+    def test_internal_misp_export_pe_objects_to_ids_round_trips(self):
+        """The export folds the file, the `pe` and every section into one
+        `to_ids` decision: the import applied it to the file's attributes only,
+        and the two halves of one object disagreed, in both directions."""
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_file_and_pe_objects()
+                for misp_object in event['Event']['Object']:
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    {
+                        (misp_object.name, attribute.to_ids)
+                        for misp_object in parser.misp_event.objects
+                        for attribute in misp_object.attributes
+                    },
+                    {('file', to_ids), ('pe', to_ids), ('pe-section', to_ids)}
+                )
+
     def test_internal_misp_object_ttp_with_unconvertible_content_records_an_error(self):
         """A TTP the export titles as a MISP attribute or object is read for
         the attack pattern, vulnerability or weakness those are written as:
@@ -2133,6 +2311,41 @@ class TestSTIX1Import(TestSTIX):
             comments[event['Event']['Object'][0]['uuid']], 'object comment'
         )
         self.assertIsNone(comments[_PLAIN_OBJECT_UUID])
+
+    def test_internal_object_comment_is_guarded_against_its_own_template(self):
+        """The template the description is told from is the one of the object
+        the content builds, not the one the Observable id names: `_define_name`
+        names compositions, `Custom`, `file` and `registry-key` and nothing
+        else, so an `x509` was guarded against no template at all and a `pe`
+        against the `file` one. Both came back carrying the template
+        description as a comment their author never wrote."""
+        for getter, name, description in (
+                (
+                    get_event_with_pe_objects, 'pe',
+                    'Object describing a Portable Executable'
+                ),
+                (
+                    get_event_with_x509_object, 'x509',
+                    'x509 object describing a X.509 certificate'
+                )):
+            # The template description the export writes, spelt out rather
+            # than read through the helper the conversion itself reads it with
+            self.assertEqual(_template_description(name), description)
+            for comment in ('a comment of my own', None):
+                with self.subTest(name=name, comment=comment):
+                    event = getter()
+                    misp_object = event['Event']['Object'][0]
+                    misp_object['description'] = description
+                    if comment is not None:
+                        misp_object['comment'] = comment
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = True
+                    parser = self._parse_internal_package(self._misp_export(event))
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    converted = parser.misp_event.get_objects_by_name(name)[0]
+                    self.assertEqual(
+                        getattr(converted, 'comment', None), comment
+                    )
 
     def test_internal_object_tags_are_dropped_with_one_warning(self):
         """A MISP object takes no tag, and the handling the export writes
@@ -2975,6 +3188,153 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(len(warnings), 1)
         self.assertIn(repr('md6'), warnings[0])
         self.assertIn(md6, warnings[0])
+        self.assertIn(f'MISP:WinExecutableFile-{_OBSERVABLE_UUID}', warnings[0])
+
+    @staticmethod
+    def _pe_with_header_hashes(*hashes):
+        """A Windows executable no file attribute is read from: the `pe`
+        object itself, its hashes on the PE file header the export writes
+        them to."""
+        pe_file = WinExecutableFile()
+        pe_file.headers = PEHeaders()
+        pe_file.headers.file_header = PEFileHeader()
+        pe_file.headers.file_header.number_of_sections = 2
+        if hashes:
+            pe_file.headers.file_header.hashes = HashList()
+            pe_file.headers.file_header.hashes.hashes = list(hashes)
+        return pe_file
+
+    def test_external_pe_header_hashes_convert_under_their_own_relations(self):
+        """cybox names no hash type for any of the four `pe` relations the
+        export writes as header hashes: it types each of them by the length of
+        its value, and the same table backwards is the whole inverse. None of
+        them was read at all, and the `pe` carried the uuid of an empty `file`
+        object rather than its own."""
+        pehash = 'a' * 40
+        authentihash = 'b' * 64
+        parser = self._parse_external_observable(
+            self._pe_with_header_hashes(
+                Hash(_MD5_HASH, exact=True), Hash(pehash, exact=True),
+                Hash(authentihash, exact=True),
+                Hash(_SSDEEP_HASH, Hash.TYPE_OTHER, exact=True)
+            ),
+            'WinExecutableFile'
+        )
+        misp_object = self._assert_single_object(
+            parser, 'pe',
+            {
+                'number-sections': '2', 'imphash': _MD5_HASH,
+                'pehash': pehash, 'authentihash': authentihash,
+                'impfuzzy': _SSDEEP_HASH
+            }
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in misp_object.attributes
+            },
+            {
+                'number-sections': 'counter', 'imphash': 'imphash',
+                'pehash': 'pehash', 'authentihash': 'authentihash',
+                'impfuzzy': 'impfuzzy'
+            }
+        )
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def test_external_pe_header_hash_written_the_way_older_exports_wrote_it(self):
+        """`authentihash` was the one hash relation missing from the export's
+        single-value fields, so its value reached the hash wrapped in a list,
+        the length measured was the list's - 1 - and the hash went out
+        `Type=Other`, the type `impfuzzy` falls back to. The shape of the
+        value tells the two apart, and the list the XML flattens but a JSON or
+        an in-memory package keeps is no attribute value."""
+        authentihash = 'b' * 64
+        parser = self._parse_external_observable(
+            self._pe_with_header_hashes(
+                Hash([authentihash], Hash.TYPE_OTHER, exact=True)
+            ),
+            'WinExecutableFile'
+        )
+        misp_object = self._assert_single_object(
+            parser, 'pe',
+            {'number-sections': '2', 'authentihash': authentihash}
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in misp_object.attributes
+            },
+            {'number-sections': 'counter', 'authentihash': 'authentihash'}
+        )
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def test_external_pe_header_hash_of_unknown_type_costs_that_hash_only(self):
+        """A header hash of a type the table does not name - no export writes
+        one, a hand-edited or a third-party document can - names no relation,
+        and the relation is what types the attribute: dropped with a warning
+        naming it and the object it came from, the rest of the object read."""
+        sha224 = 'c' * 56
+        parser = self._parse_external_observable(
+            self._pe_with_header_hashes(
+                Hash(_MD5_HASH, exact=True),
+                Hash(sha224, Hash.TYPE_SHA224, exact=True)
+            ),
+            'WinExecutableFile'
+        )
+        self._assert_single_object(
+            parser, 'pe', {'number-sections': '2', 'imphash': _MD5_HASH}
+        )
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('sha224'), warnings[0])
+        self.assertIn(sha224, warnings[0])
+        self.assertIn(f'MISP:WinExecutableFile-{_OBSERVABLE_UUID}', warnings[0])
+
+    def test_external_pe_properties_convert_under_the_names_they_carry(self):
+        """The export writes a `pe` relation no cybox field holds as a custom
+        property named after the relation itself, and the import read the
+        properties of `Custom` objects alone: the whole bag was dropped. A
+        name the template cannot type keeps its spelling and travels as a
+        `text` attribute, with a warning - a `text` attribute validates under
+        any relation."""
+        pdb = 'C:\\projects\\putty\\Release\\putty.pdb'
+        pe_file = WinExecutableFile()
+        pe_file.custom_properties = CustomProperties()
+        for name, value in (
+                ('pdb', pdb), ('compilation-timestamp', '2019-03-16T12:31:22'),
+                ('not-a-pe-relation', 'whatever')):
+            prop = Property()
+            prop.name = name
+            prop.value = value
+            pe_file.custom_properties.append(prop)
+        parser = self._parse_external_observable(pe_file, 'WinExecutableFile')
+        misp_object = self._assert_single_object(
+            parser, 'pe',
+            {
+                'pdb': pdb, 'compilation-timestamp': '2019-03-16 12:31:22',
+                'not-a-pe-relation': 'whatever'
+            }
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in misp_object.attributes
+            },
+            {
+                'pdb': 'pdb', 'compilation-timestamp': 'datetime',
+                'not-a-pe-relation': 'text'
+            }
+        )
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('not-a-pe-relation'), warnings[0])
+        self.assertIn('whatever', warnings[0])
         self.assertIn(f'MISP:WinExecutableFile-{_OBSERVABLE_UUID}', warnings[0])
 
     def test_external_pe_section_without_hashes_converts(self):

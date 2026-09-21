@@ -3409,6 +3409,171 @@ _TEST_PE_OBJECT = {
     ]
 }
 
+_TEST_FULL_PE_OBJECT = {
+    "name": "pe",
+    "meta-category": "file",
+    "description": "Object describing a Portable Executable",
+    "uuid": "ad5d5f31-1f54-4fc5-9c7e-9d0f9f1f2a26",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "type",
+            "value": "exe"
+        },
+        {
+            "type": "counter",
+            "object_relation": "number-sections",
+            "value": "8"
+        },
+        {
+            "type": "text",
+            "object_relation": "entrypoint-address",
+            "value": "5369222868"
+        },
+        {
+            "type": "imphash",
+            "object_relation": "imphash",
+            "value": "23ea835ab4b9017c74dfb023d2301c99"
+        },
+        {
+            "type": "pehash",
+            "object_relation": "pehash",
+            "value": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+        },
+        {
+            "type": "authentihash",
+            "object_relation": "authentihash",
+            "value": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b"
+        },
+        {
+            "type": "impfuzzy",
+            "object_relation": "impfuzzy",
+            "value": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+        },
+        {
+            "type": "text",
+            "object_relation": "company-name",
+            "value": "Simoe Tatham"
+        },
+        {
+            "type": "text",
+            "object_relation": "file-description",
+            "value": "SSH, Telnet and Rlogin client"
+        },
+        {
+            "type": "text",
+            "object_relation": "file-version",
+            "value": "Release 0.71 (with embedded help)"
+        },
+        {
+            "type": "filename",
+            "object_relation": "internal-filename",
+            "value": "PuTTy"
+        },
+        {
+            "type": "text",
+            "object_relation": "lang-id",
+            "value": "080904B0"
+        },
+        {
+            "type": "text",
+            "object_relation": "legal-copyright",
+            "value": "Copyright \u00a9 1997-2019 Simon Tatham."
+        },
+        {
+            "type": "filename",
+            "object_relation": "original-filename",
+            "value": "PuTTy"
+        },
+        {
+            "type": "text",
+            "object_relation": "product-name",
+            "value": "PuTTy suite"
+        },
+        {
+            "type": "text",
+            "object_relation": "product-version",
+            "value": "Release 0.71"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "compilation-timestamp",
+            "value": "2019-03-16T12:31:22Z"
+        },
+        {
+            "type": "text",
+            "object_relation": "entrypoint-section-at-position",
+            "value": ".text|0"
+        },
+        {
+            "type": "hex",
+            "object_relation": "characteristics-hex",
+            "value": "0102"
+        },
+        {
+            "type": "text",
+            "object_relation": "machine-type",
+            "value": "Intel 386 or later processors"
+        },
+        {
+            "type": "hex",
+            "object_relation": "machine-type-hex",
+            "value": "014c"
+        },
+        {
+            "type": "counter",
+            "object_relation": "number-of-symbols",
+            "value": "42"
+        },
+        {
+            "type": "hex",
+            "object_relation": "pointer-to-symbol-table",
+            "value": "1a2b3c4d"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "size-of-optional-header",
+            "value": "224"
+        },
+        {
+            "type": "text",
+            "object_relation": "text",
+            "value": "Portable Executable of the PuTTy suite"
+        },
+        {
+            "type": "text",
+            "object_relation": "characteristics",
+            "value": "EXECUTABLE_IMAGE"
+        },
+        {
+            "type": "text",
+            "object_relation": "characteristics",
+            "value": "32BIT_MACHINE"
+        },
+        {
+            "type": "pdb",
+            "object_relation": "pdb",
+            "value": "C:\\projects\\putty\\Release\\putty.pdb"
+        },
+        {
+            "type": "pdb",
+            "object_relation": "pdb",
+            "value": "C:\\projects\\putty\\Debug\\putty.pdb"
+        },
+        {
+            "type": "md5",
+            "object_relation": "richpe",
+            "value": "5f2b7b1bd3c2a4f0a1b0c9d8e7f60504"
+        },
+        {
+            "type": "md5",
+            "object_relation": "richpe",
+            "value": "9a8b7c6d5e4f30211f0e0d0c0b0a0908"
+        }
+    ]
+}
+
 _TEST_PE_SECTION_OBJECT = {
     "name": "pe-section",
     "meta-category": "file",
@@ -6320,6 +6485,47 @@ def get_event_with_non_conforming_object_relations():
             )
         )
     event['Event']['Object'] = [sigma_object, suricata_object, url_object]
+    return event
+
+
+def get_event_with_full_pe_object():
+    """A `pe` object carrying every relation its template defines - the four
+    hashes the export writes as PE header hashes, the nine the version info
+    resource carries, and the ones no cybox field holds, repeated values
+    included. Import-only: the export documentation is hand-maintained, and
+    the export tests unpack `_TEST_PE_OBJECT` positionally."""
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_FULL_PE_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_pe_object_without_pe_headers():
+    """The same `pe` object without either relation the export writes a PE
+    header for: the header hashes it carries have nowhere to be written unless
+    the export creates the header where it writes them."""
+    event = get_event_with_full_pe_object()
+    pe_object = event['Event']['Object'][0]
+    pe_object['Attribute'] = [
+        attribute for attribute in pe_object['Attribute']
+        if attribute['object_relation'] not in (
+            'entrypoint-address', 'number-sections'
+        )
+    ]
+    return event
+
+
+def get_event_with_pe_object_with_one_header_hash():
+    """The same `pe` object reduced to a single header hash: the export
+    builds a PE header for neither of the two relations it is built for, so
+    the hash has no header at all to be written on."""
+    event = get_event_with_pe_object_without_pe_headers()
+    pe_object = event['Event']['Object'][0]
+    pe_object['Attribute'] = [
+        attribute for attribute in pe_object['Attribute']
+        if attribute['object_relation'] == 'authentihash'
+    ]
     return event
 
 
