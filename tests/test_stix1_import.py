@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import inspect
 import json
+from collections import Counter
 from cybox.common import Hash, HashList
 from cybox.common.object_properties import CustomProperties, Property
 from cybox.core import (
@@ -36,12 +38,14 @@ from misp_stix_converter.abstract import _UUIDv4
 from misp_stix_converter.tools import (
     is_stix1_from_misp, load_stix1_package, stix1_loading_helpers)
 from misp_stix_converter.tools.misp_object_templates import (
-    _template_description)
+    _template_attribute_types, _template_description)
 from mixbox.namespaces import NamespaceNotFoundError
 from misp_stix_converter.stix2misp.external_stix1_to_misp import (
     ExternalSTIX1toMISPParser)
 from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
+from misp_stix_converter.stix2misp.stix1_mapping import (
+    InternalSTIX1toMISPMapping, STIX1toMISPMapping)
 from pymisp import MISPEvent
 from unittest.mock import patch
 from uuid import uuid5
@@ -82,19 +86,26 @@ from ._test_stix_import import (
     CLASSIFICATION_FROM_CONTENT_WARNING,
     CLASSIFICATION_OVERRIDDEN_TO_EXTERNAL_WARNING, SANITISED_TAG_VALUE,
     SMUGGLING_TAG_VALUE)
+from . import test_events
 from .test_events import (
     get_base_event, get_event_with_asn_object,
     get_event_with_attack_pattern_galaxy, get_event_with_attack_pattern_object,
     get_event_with_campaign_name_attribute,
     get_event_with_course_of_action_galaxy,
-    get_event_with_course_of_action_object, get_event_with_domain_attribute,
-    get_event_with_domain_ip_object, get_event_with_github_username_attribute,
+    get_event_with_course_of_action_object, get_event_with_credential_object,
+    get_event_with_domain_attribute,
+    get_event_with_domain_ip_object,
+    get_event_with_email_with_display_names_object,
+    get_event_with_file_object, get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
     get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
+    get_event_with_mutex_object,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
-    get_event_with_process_object, get_event_with_target_attributes,
+    get_event_with_process_object, get_event_with_process_object_v2,
+    get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
+    get_event_with_user_account_object, get_event_with_user_account_objects,
     get_event_with_vulnerability_galaxy, get_event_with_x509_object,
     get_event_with_windows_service_attributes)
 
@@ -119,7 +130,160 @@ _SNORT_RULES = (
 )
 
 
+# What a STIX 1 round trip of every MISP object fixture still loses, per
+# object: its name, the object relations that do not come back, the ones that
+# come back under a name the MISP object never had, and the ticket that owns
+# the gap. 642 of 697 object attributes survive; the rest is the campaign's
+# remaining work, and this table is where its progress is visible.
+_CORPUS_ROUND_TRIP_LOSSES = {
+    ('get_event_with_account_objects_with_attachment', -1): (
+        'export error: ValueError', (), (), 'ticket 24'
+    ),
+    ('get_event_with_attack_pattern_object', 0): (
+        'attack-pattern',
+        ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
+        (), 'ticket 21'
+    ),
+    ('get_event_with_credential_object', 0): (
+        'credential', ('format', 'password', 'text', 'type'), (),
+        'tickets 21 and 23'
+    ),
+    ('get_event_with_domain_ip_object_custom', 0): (
+        'domain-ip', ('hostname',), (), 'ticket 21'
+    ),
+    ('get_event_with_email_object', 0): (
+        'email', ('bcc',), (), 'ticket 21'
+    ),
+    ('get_event_with_email_with_display_names_object', 0): (
+        'email', ('bcc',), (), 'ticket 21'
+    ),
+    ('get_event_with_escaped_values_v20', 1): (
+        'credential', ('text',), (), 'tickets 21 and 23'
+    ),
+    # `_handle_composition` reads the `src`/`dst` prefix off the Observable
+    # id, where the export writes it on the CybOX object id: unticketed
+    ('get_event_with_escaped_values_v20', 5): (
+        'ip-port', ('dst-port',), ('port',), 'unticketed'
+    ),
+    ('get_event_with_escaped_values_v20', 14): (
+        'user-account', ('password',), (), 'ticket 21'
+    ),
+    ('get_event_with_escaped_values_v21', 1): (
+        'credential', ('text',), (), 'tickets 21 and 23'
+    ),
+    ('get_event_with_escaped_values_v21', 5): (
+        'ip-port', ('dst-port',), ('port',), 'unticketed'
+    ),
+    ('get_event_with_escaped_values_v21', 14): (
+        'user-account', ('password',), (), 'ticket 21'
+    ),
+    ('get_event_with_file_object', 0): (
+        'file', ('creation-time', 'modification-time'), (), 'ticket 21'
+    ),
+    ('get_event_with_file_object_with_artifact', 0): (
+        'file', ('creation-time', 'modification-time'), (), 'ticket 21'
+    ),
+    ('get_event_with_ip_port_object', 0): (
+        'ip-port', ('dst-port', 'first-seen'), ('port',),
+        'ticket 21, and unticketed for the port'
+    ),
+    ('get_event_with_network_socket_object', 0): (
+        'network-socket', ('socket-type',), (), 'ticket 21'
+    ),
+    ('get_event_with_non_conforming_object_relations', 2): (
+        'url', ('Odd.Case/Relation', 'weird-relation'), (), 'ticket 22'
+    ),
+    ('get_event_with_object_confidence_tags', 0): (
+        'ip-port', ('dst-port', 'first-seen'), ('port',),
+        'ticket 21, and unticketed for the port'
+    ),
+    ('get_event_with_object_references', 0): (
+        'attack-pattern',
+        ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
+        (), 'ticket 21'
+    ),
+    ('get_event_with_object_references', 4): (
+        'ip-port', ('dst-port', 'first-seen'), ('port',),
+        'ticket 21, and unticketed for the port'
+    ),
+    ('get_event_with_process_object', 0): (
+        'process', ('hidden',), (), 'ticket 21'
+    ),
+    ('get_event_with_process_object_v2', 0): (
+        'process', ('hidden',), (), 'ticket 21'
+    ),
+    ('get_event_with_registry_key_and_values_objects', 0): (
+        'registry-key', ('hive', 'key', 'last-modified'), (), 'ticket 21'
+    ),
+    ('get_event_with_registry_key_and_values_objects_custom', 0): (
+        'registry-key', ('hive', 'key', 'last-modified'), (), 'ticket 21'
+    ),
+    ('get_event_with_registry_key_object', 0): (
+        'registry-key', ('last-modified',), (), 'ticket 21'
+    ),
+    ('get_event_with_user_account_object', 0): (
+        'user-account', ('account-type', 'password'), (), 'ticket 21'
+    ),
+    ('get_event_with_user_account_objects', 0): (
+        'user-account', ('password',), (), 'ticket 21'
+    ),
+    ('get_event_with_user_account_objects', 1): (
+        'user-account', ('account-type', 'password'), (), 'ticket 21'
+    ),
+    # `group` is on the wire, in a `group_list` carrier no handler visits -
+    # ADR-0015 point 2's family, not a relation the export never wrote
+    ('get_event_with_user_account_objects', 2): (
+        'user-account', ('group', 'group', 'password'), (),
+        'ticket 21 for the password, unticketed for the groups'
+    ),
+    ('get_event_with_vulnerability_and_weakness_objects', 0): (
+        'vulnerability', ('created', 'cvss-score', 'references', 'references'),
+        (), 'ticket 21'
+    ),
+    ('get_event_with_vulnerability_object', 0): (
+        'vulnerability', ('created', 'cvss-score', 'references', 'references'),
+        (), 'ticket 21'
+    ),
+    ('get_event_with_x509_object', 0): (
+        'x509', ('signature_algorithm',), (), 'ticket 21'
+    )
+}
+
+
 class TestSTIX1Import(TestSTIX):
+
+    # Every STIX 1 import mapping table, the object template of the object the
+    # handler reading it names, and the shape of its entries: `relation` for a
+    # table naming an object relation alone - the template types those -
+    # `type-relation` and `type-feature-relation` for the two tuple shapes,
+    # and `key` for the one table whose relation is the key itself.
+    _IMPORT_MAPPING_TABLES = (
+        ('as_mapping', ('asn',), 'type-relation'),
+        ('attack_pattern_object_mapping', ('attack-pattern',), 'relation'),
+        ('course_of_action_mapping', ('course-of-action',), 'key'),
+        (
+            'credential_authentication_mapping', ('credential',),
+            'type-feature-relation'
+        ),
+        ('email_mapping', ('email',), 'type-feature-relation'),
+        ('file_mapping', ('file',), 'type-feature-relation'),
+        (
+            'network_reference_mapping',
+            ('network-connection', 'network-socket'), 'type-feature-relation'
+        ),
+        ('network_socket_mapping', ('network-socket',), 'type-feature-relation'),
+        ('pe_header_mapping', ('pe',), 'relation'),
+        ('pe_mapping', ('pe',), 'relation'),
+        ('pe_resource_mapping', ('pe',), 'relation'),
+        ('process_mapping', ('process',), 'type-relation'),
+        ('regkey_mapping', ('registry-key',), 'type-relation'),
+        ('regkey_value_mapping', ('registry-key',), 'type-relation'),
+        ('user_account_object_mapping', ('user-account',), 'type-relation'),
+        ('vulnerability_object_mapping', ('vulnerability',), 'type-relation'),
+        ('weakness_object_mapping', ('weakness',), 'relation'),
+        ('whois_mapping', ('whois',), 'type-feature-relation'),
+        ('whois_registrant_mapping', ('whois',), 'type-feature-relation')
+    )
 
     ############################################################################
     #                            UTILITY FUNCTIONS.                            #
@@ -2116,6 +2280,301 @@ class TestSTIX1Import(TestSTIX):
                     {('file', to_ids), ('pe', to_ids), ('pe-section', to_ids)}
                 )
 
+    def _assert_relations_round_trip(self, converted, exported, relations):
+        """Every named relation back under its own spelling, with the type and
+        the value the MISP object had."""
+        content = self._converted_content(converted)
+        self.assertEqual(
+            [entry for entry in content if entry[0] in relations],
+            [
+                entry for entry in self._exported_content(exported)
+                if entry[0] in relations
+            ]
+        )
+
+    @staticmethod
+    def _object_fixtures():
+        """Every MISP event fixture carrying objects: the corpus the round
+        trip baseline below is measured over."""
+        for name, fixture in sorted(vars(test_events).items()):
+            if not name.startswith('get_event_with_'):
+                continue
+            if not inspect.isfunction(fixture):
+                continue
+            if inspect.signature(fixture).parameters:
+                continue
+            event = fixture()
+            if event.get('Event', {}).get('Object'):
+                yield name, event
+
+    @staticmethod
+    def _pair_objects(exported: list, converted: list):
+        """Pair each exported MISP object with the one it came back as - by
+        uuid, then by name, so an object taking a derived uuid by design is
+        still measured on its content."""
+        remaining = list(converted)
+        for misp_object in exported:
+            match = None
+            for candidate in remaining:
+                if candidate.uuid == misp_object['uuid']:
+                    match = candidate
+                    break
+            if match is None:
+                for candidate in remaining:
+                    if candidate.name == misp_object['name']:
+                        match = candidate
+                        break
+            if match is not None:
+                remaining.remove(match)
+            yield misp_object, match
+
+    def test_internal_misp_export_object_corpus_round_trip_baseline(self):
+        """The ledger of what a STIX 1 round trip of the whole fixture corpus
+        still loses: 642 of the 697 object attributes come back, and every row
+        below names the ticket that owns its gap. `n -> n` is not the
+        assertion - the campaign is not over - and the table is what fails on
+        a regression and on an improvement nobody wrote down."""
+        losses = {}
+        for name, event in self._object_fixtures():
+            exported = event['Event']['Object']
+            try:
+                stix_package = self._misp_export(event)
+            except Exception as exception:
+                losses[(name, -1)] = (
+                    f'export error: {type(exception).__name__}', (), ()
+                )
+                continue
+            parser = self._parse_internal_package(stix_package)
+            for index, (misp_object, converted) in enumerate(
+                    self._pair_objects(exported, parser.misp_event.objects)):
+                in_relations = Counter(
+                    attribute['object_relation']
+                    for attribute in misp_object['Attribute']
+                )
+                out_relations = Counter(
+                    attribute.object_relation
+                    for attribute in converted.attributes
+                ) if converted is not None else Counter()
+                lost = tuple(sorted((in_relations - out_relations).elements()))
+                gained = tuple(sorted((out_relations - in_relations).elements()))
+                if lost or gained:
+                    losses[(name, index)] = (misp_object['name'], lost, gained)
+        # The last element of each row names the owning ticket, which is
+        # documentation rather than measurement: it is not compared
+        self.assertEqual(
+            losses,
+            {key: row[:-1] for key, row in _CORPUS_ROUND_TRIP_LOSSES.items()}
+        )
+
+    @staticmethod
+    def _cybox_hash_types():
+        """Every hash type cybox's own vocabulary holds, lowercased the way
+        the import reads them."""
+        return sorted(
+            str(getattr(Hash, name)).lower()
+            for name in vars(Hash) if name.startswith('TYPE_')
+        )
+
+    def _table_entries(self, table: dict, shape: str):
+        """The MISP type and the object relation each entry of an import
+        mapping table names - `None` for a type the table leaves to the
+        template. A relation carrying a `{}` is one per network feature."""
+        for key, entry in table.items():
+            if shape == 'relation':
+                attribute_type, relation = None, entry
+            elif shape == 'key':
+                # The relations of a `course-of-action` are the keys
+                # themselves, and every one of them is text
+                attribute_type, relation = 'text', key.replace('_', '')
+            elif shape == 'type-relation':
+                attribute_type, relation = entry
+            else:
+                attribute_type, _, relation = entry
+            if '{}' in relation:
+                for feature in STIX1toMISPMapping.network_fields():
+                    yield (
+                        attribute_type.format(feature), relation.format(feature)
+                    )
+                continue
+            yield attribute_type, relation
+
+    def test_import_mapping_tables_agree_with_the_object_templates(self):
+        """The template of the object a handler builds is what types the
+        relations the document supplies, so a table naming a relation the
+        template does not define - or typing one against the template - is
+        the two sources drifting apart in silence: `whois-registrar`, the
+        attribute type, stood where the `registrar` relation belongs, and
+        pymisp logged every whois registrar as invalid."""
+        disagreements = set()
+        entries = 0
+        for table_name, names, shape in self._IMPORT_MAPPING_TABLES:
+            table = getattr(InternalSTIX1toMISPMapping, table_name)()
+            for attribute_type, relation in self._table_entries(table, shape):
+                entries += 1
+                for name in names:
+                    template_types = _template_attribute_types(name)
+                    if relation not in template_types:
+                        disagreements.add((table_name, name, relation))
+                        continue
+                    if attribute_type is None:
+                        continue
+                    self.assertEqual(
+                        template_types[relation], attribute_type,
+                        f'{table_name}: {relation} on the {name} template'
+                    )
+        # The hashes a `pe` header carries are named by a table of their own,
+        # read through a per-key accessor: every cybox hash type it names a
+        # relation for names a `pe` relation like any other
+        pe_types = _template_attribute_types('pe')
+        for hash_type in self._cybox_hash_types():
+            relation = STIX1toMISPMapping.pe_header_hash_mapping(hash_type)
+            if relation is None:
+                continue
+            entries += 1
+            if relation not in pe_types:
+                disagreements.add(('pe_header_hash_mapping', 'pe', relation))
+        self.assertGreater(entries, 0)
+        self.assertEqual(disagreements, set())
+
+    def test_internal_misp_export_property_bags_round_trip(self):
+        """Every MISP object relation the export has no CybOX slot for travels
+        as a custom property named after the relation itself, and the import
+        read the bag of `Custom` objects and of a `pe` alone: eight more
+        object types lost every relation the bag carried, in silence. The
+        template of the object the handler builds is what types them back."""
+        for fixture, name, relations in (
+                (get_event_with_asn_object, 'asn', ('subnet-announced',)),
+                (
+                    get_event_with_email_with_display_names_object, 'email',
+                    (
+                        'from-display-name', 'to-display-name',
+                        'cc-display-name', 'bcc-display-name'
+                    )
+                ),
+                (
+                    get_event_with_file_object, 'file',
+                    ('attachment', 'malware-sample', 'file-encoding')
+                ),
+                (
+                    get_event_with_mutex_object, 'mutex',
+                    ('name', 'description', 'operating-system')
+                ),
+                (
+                    get_event_with_process_object_v2, 'process',
+                    ('parent-image', 'parent-command-line', 'parent-process-name')
+                ),
+                (
+                    get_event_with_user_account_objects, 'user-account',
+                    (
+                        'user-id', 'group-id', 'user-avatar', 'account-type',
+                        'password_last_changed'
+                    )
+                ),
+                (
+                    get_event_with_user_account_object, 'user-account',
+                    (
+                        'user-id', 'group', 'user-avatar',
+                        'password_last_changed'
+                    )
+                ),
+                (
+                    get_event_with_x509_object, 'x509',
+                    ('x509-fingerprint-md5',)
+                )):
+            with self.subTest(name=name):
+                event = fixture()
+                exported = event['Event']['Object'][0]
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted = parser.misp_event.get_objects_by_name(name)[0]
+                self.assertEqual(converted.uuid, exported['uuid'])
+                self._assert_relations_round_trip(
+                    converted, exported, relations
+                )
+
+    def test_internal_misp_export_asn_and_mutex_objects_round_trip_whole(self):
+        """The two carriers the bag completes: every attribute they hold is
+        back, under its own relation. A `mutex` object stopped folding into a
+        single `mutex` attribute on the way - the properties are counted
+        before the fold, and two attributes are an object."""
+        for fixture, name in (
+                (get_event_with_asn_object, 'asn'),
+                (get_event_with_mutex_object, 'mutex')):
+            with self.subTest(name=name):
+                event = fixture()
+                exported = event['Event']['Object'][0]
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                converted = parser.misp_event.get_objects_by_name(name)[0]
+                self.assertEqual(
+                    self._converted_content(converted),
+                    self._exported_content(exported)
+                )
+
+    def test_internal_misp_export_credential_object_still_comes_back_as_a_user_account(self):
+        """The export writes a `credential` object as a `UserAccount`, which
+        the import types as a `user-account`: the template name is lost on the
+        wire, and the properties are typed by a template defining neither of
+        them - two `text` attributes and two warnings, under the right
+        relations on the wrong object. Value and spelling survive; the object
+        name is ticket 23's."""
+        event = get_event_with_credential_object()
+        exported = event['Event']['Object'][0]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [misp_object.name for misp_object in parser.misp_event.objects],
+            ['user-account']
+        )
+        converted = parser.misp_event.objects[0]
+        self._assert_relations_round_trip(
+            converted, exported, ('origin', 'notification')
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in converted.attributes
+                if attribute.object_relation in ('origin', 'notification')
+            },
+            {'origin': 'text', 'notification': 'text'}
+        )
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 2)
+        for warning in warnings:
+            self.assertIn('is no user-account object relation', warning)
+
+    def test_internal_misp_export_file_and_pe_split_the_property_bag(self):
+        """A `file` and the `pe` under it are one `WinExecutableFile` with one
+        property bag: the whole of it went to the `pe`, so a `file` relation
+        no CybOX field holds came back on the wrong object. The `pe` takes
+        every name its own template types, the `file` what the `file`
+        template types, and what neither names stays on the `pe`."""
+        event = get_event_with_file_and_pe_objects()
+        file_object, pe_object, _ = event['Event']['Object']
+        file_object['Attribute'].append(
+            {
+                'type': 'text', 'object_relation': 'file-encoding',
+                'value': 'UTF-8'
+            }
+        )
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        converted_file = parser.misp_event.get_objects_by_name('file')[0]
+        converted_pe = parser.misp_event.get_objects_by_name('pe')[0]
+        self.assertEqual(
+            self._converted_content(converted_file),
+            self._exported_content(file_object)
+        )
+        self.assertEqual(
+            self._converted_content(converted_pe),
+            self._exported_content(pe_object)
+        )
+
     def test_internal_misp_object_ttp_with_unconvertible_content_records_an_error(self):
         """A TTP the export titles as a MISP attribute or object is read for
         the attack pattern, vulnerability or weakness those are written as:
@@ -2875,6 +3334,55 @@ class TestSTIX1Import(TestSTIX):
             }
         )
 
+    def test_external_x509_signature_of_unknown_algorithm_costs_that_hash_only(self):
+        """The signature algorithm the document names types the fingerprint,
+        and MISP has an attribute type for three of them: a `sha512`
+        signature built `x509-fingerprint-sha512`, which is neither an `x509`
+        relation nor a MISP type - pymisp refused it and the whole object was
+        lost. The one attribute nothing can type is the whole loss."""
+        x509 = X509Certificate()
+        certificate = X509Cert()
+        certificate.subject = 'CN=subject'
+        x509.certificate = certificate
+        x509.certificate_signature = X509CertificateSignature()
+        x509.certificate_signature.signature_algorithm = 'SHA512'
+        x509.certificate_signature.signature = 'abcd'
+        parser = self._parse_external_observable(x509, 'X509Certificate')
+        self._assert_single_object(parser, 'x509', {'subject': 'CN=subject'})
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('x509-fingerprint-sha512'), warnings[0])
+        self.assertIn('abcd', warnings[0])
+        self.assertIn(f'MISP:X509Certificate-{_OBSERVABLE_UUID}', warnings[0])
+
+    def test_external_x509_custom_properties_convert_under_their_own_names(self):
+        """cybox holds one signature, so the export writes the other
+        fingerprints of an `x509` object as custom properties named after
+        their relation: the bag was never read."""
+        x509 = X509Certificate()
+        x509.custom_properties = CustomProperties()
+        for name, value in (
+                ('x509-fingerprint-md5', _MD5_HASH), ('is_ca', 'True')):
+            prop = Property()
+            prop.name = name
+            prop.value = value
+            x509.custom_properties.append(prop)
+        parser = self._parse_external_observable(x509, 'X509Certificate')
+        misp_object = self._assert_single_object(
+            parser, 'x509', {'x509-fingerprint-md5': _MD5_HASH, 'is_ca': 'True'}
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in misp_object.attributes
+            },
+            {'x509-fingerprint-md5': 'x509-fingerprint-md5', 'is_ca': 'boolean'}
+        )
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
     def test_external_network_connection_observable_converts(self):
         connection = NetworkConnection()
         connection.source_socket_address = self._socket_address(
@@ -2946,8 +3454,10 @@ class TestSTIX1Import(TestSTIX):
         )
 
     def test_external_custom_object_of_unknown_template_converts_as_text(self):
-        """A property the template does not define - or a template pymisp
-        does not know - has no type to take from it: the attribute is text."""
+        """A template pymisp does not ship - a custom one, local to the
+        instance the document came from - types nothing: every attribute is
+        text, and the object is worth one warning rather than one per
+        relation, which would repeat the same nothing."""
         custom = self._custom(
             'vendor-specific-record', ('severity', 'high'), ('ticket', 'INC-42')
         )
@@ -2959,6 +3469,41 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(
             {attribute.type for attribute in misp_object.attributes}, {'text'}
         )
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('vendor-specific-record'), warnings[0])
+        self.assertIn(f'MISP:Custom-{_OBSERVABLE_UUID}', warnings[0])
+
+    def test_external_custom_object_property_off_its_template_converts_as_text(self):
+        """A template pymisp ships types the relations it defines, and a name
+        it does not define keeps its spelling as a `text` attribute, which any
+        relation validates as - with the warning the same name gets on a typed
+        CybOX object. One precedence for every carrier."""
+        custom = self._custom(
+            'github-user', ('username', 'chrisr3d'), ('severity', 'high')
+        )
+        parser = self._parse_external_observable(custom, 'Custom')
+        misp_object = self._assert_single_object(
+            parser, 'github-user', {'username': 'chrisr3d', 'severity': 'high'}
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in misp_object.attributes
+            },
+            {'username': 'github-username', 'severity': 'text'}
+        )
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('severity'), warnings[0])
+        self.assertIn('is no github-user object relation', warnings[0])
+        self.assertIn(f'MISP:Custom-{_OBSERVABLE_UUID}', warnings[0])
 
     def test_external_custom_object_name_never_reaches_template_resolution(self):
         """pymisp joins the object name into a filesystem path to find its
@@ -3367,6 +3912,91 @@ class TestSTIX1Import(TestSTIX):
             ],
             [('filename|ssdeep', f'evil.exe|{_SSDEEP_HASH}')]
         )
+
+    def test_external_file_with_an_other_typed_hash_converts(self):
+        """`Other` is a MISP attribute type of its own, and no `file` object
+        relation: a hash of no well-known length and of no shape naming a
+        relation keeps working off-template, as it does today. A uniform skip
+        would start dropping values that survive."""
+        digest = 'f' * 24
+        file_object = File()
+        file_object.add_hash(Hash(_MD5_HASH, exact=True))
+        file_object.add_hash(Hash(digest, Hash.TYPE_OTHER, exact=True))
+        parser = self._parse_external_observable(file_object, 'File')
+        misp_object = self._assert_single_object(
+            parser, 'file', {'md5': _MD5_HASH, 'other': digest}
+        )
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.type
+                for attribute in misp_object.attributes
+            },
+            {'md5': 'md5', 'other': 'other'}
+        )
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def test_external_file_hash_of_unknown_type_costs_that_hash_only(self):
+        """The cybox hash type is the MISP type and the object relation of the
+        attribute a file hash builds, and cybox's vocabulary is not MISP's:
+        an `MD6` hash was handed to pymisp, which refused it and cost the
+        whole `file` object. The one hash nothing can type is the whole
+        loss."""
+        md6 = 'b' * 64
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.add_hash(Hash(_MD5_HASH, exact=True))
+        file_object.add_hash(Hash(md6, Hash.TYPE_MD6, exact=True))
+        parser = self._parse_external_observable(file_object, 'File')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('filename|md5', f'evil.exe|{_MD5_HASH}')]
+        )
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('md6'), warnings[0])
+        self.assertIn(md6, warnings[0])
+        self.assertIn(f'MISP:File-{_OBSERVABLE_UUID}', warnings[0])
+
+    def test_external_property_value_that_is_no_attribute_value_is_dropped(self):
+        """The export writes one property per value, and every value it writes
+        is a string - a package built in memory and handed to
+        `load_stix_package`, the path MISP core takes, carries whatever it was
+        built with. A one-element list is the value it holds - the
+        `_hash_value` precedent - and a list holding several is no attribute
+        value: refused rather than coerced, since `str()` would store it as
+        its Python repr."""
+        file_object = File()
+        file_object.custom_properties = CustomProperties()
+        for name, value in (
+                ('magic', ['ELF 64-bit LSB executable']),
+                ('state', ['no', 'value'])):
+            prop = Property()
+            prop.name = name
+            prop.value = value
+            file_object.custom_properties.append(prop)
+        parser = self._parse_external_observable(file_object, 'File')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('text', 'ELF 64-bit LSB executable')]
+        )
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(repr('state'), warnings[0])
+        self.assertIn(f'MISP:File-{_OBSERVABLE_UUID}', warnings[0])
 
     @staticmethod
     def _yara_test_mechanism():
