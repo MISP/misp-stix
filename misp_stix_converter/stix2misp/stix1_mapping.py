@@ -92,7 +92,6 @@ class STIX1toMISPMapping:
         authentication_data = ('text', 'value', 'password'),
         structured_authentication_mechanism = ('text', 'description.value', 'format')
     )
-    __credential_custom_types = ("username", "origin", "notification")
     __email_mapping = Mapping(
         boundary = ("email-mime-boundary", 'value', "mime-boundary"),
         from_ = ("email-src", "address_value.value", "from"),
@@ -228,10 +227,6 @@ class STIX1toMISPMapping:
     @classmethod
     def credential_authentication_mapping(cls) -> dict:
         return cls.__credential_authentication_mapping
-
-    @classmethod
-    def credential_custom_types(cls) -> tuple:
-        return cls.__credential_custom_types
 
     @classmethod
     def email_mapping(cls) -> dict:

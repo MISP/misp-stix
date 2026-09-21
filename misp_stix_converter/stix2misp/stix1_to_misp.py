@@ -404,9 +404,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return "ip-src" if properties.is_source else "ip-dst", properties.address_value.value, 'ip'
 
     def _handle_as(self, properties: as_object.AS) -> tuple:
-        attributes = tuple(
+        attributes = list(
             self._fetch_attributes_with_partial_key_parsing(properties, 'as_mapping')
         )
+        attributes.extend(self._read_custom_properties(properties, 'asn'))
         return attributes[0] if len(attributes) == 1 else ('asn', self._return_object_attributes(attributes), '')
 
     # Return type & value of an attachment attribute
@@ -425,10 +426,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attributes.extend(
                     self._fetch_attributes_with_key_parsing(authentication, 'credential_authentication_mapping')
                 )
-        if properties.custom_properties:
-            for prop in properties.custom_properties:
-                if prop.name in self._mapping.credential_custom_types():
-                    attributes.append(['text', prop.value, prop.name])
+        attributes.extend(self._read_custom_properties(properties, 'credential'))
         return attributes[0] if len(attributes) == 1 else ("credential", self._return_object_attributes(attributes), "")
 
     # Return type & value of a custom attribute, or name & attributes of a
@@ -472,14 +470,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # join and convert the object as a generic, template-less one.
         name, rejected_name = _sanitise_template_name(custom_name)
         template_types = _template_attribute_types(name)
-        attributes = [
-            (template_types.get(prop.name, 'text'), prop.value, prop.name)
-            for prop in custom_properties
-        ]
         compl_data = {}
         if rejected_name is not None:
             self._invalid_template_name_warning(rejected_name, object_id)
             compl_data['rejected_name'] = rejected_name
+        elif not template_types:
+            # A template pymisp does not ship - a custom one, local to the
+            # instance the document came from - types nothing
+            self._unshipped_template_warning(name, object_id)
+        attributes = self._read_property_bag(
+            custom_properties, template_types, name, object_id
+        )
         return name, self._return_object_attributes(attributes), compl_data
 
     # Return type & attributes of a dns object
@@ -521,6 +522,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             attributes = []
         if properties.attachments:
             attributes.extend(self._handle_email_attachment(properties))
+        attributes.extend(self._read_custom_properties(properties, 'email'))
         return attributes[0] if len(attributes) == 1 else ("email", self._return_object_attributes(attributes), "")
 
     # Return type & value of an email attachment
@@ -560,7 +562,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
         if properties.hashes:
             for hash_property in properties.hashes:
-                attributes.append(self._handle_hashes_attribute(hash_property))
+                _, hash_value, relation = self._handle_hashes_attribute(
+                    hash_property
+                )
+                attribute = self._read_derived_attribute(
+                    relation, hash_value, template_types, object_id
+                )
+                if attribute is not None:
+                    attributes.append(attribute)
         if properties.file_name:
             value = properties.file_name.value
             if value:
@@ -679,10 +688,28 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_link(properties: link_object.Link) -> tuple:
         return "link", properties.value.value, "link"
 
-    # Return type & value of a mutex attribute
+    # Return type & value of a mutex attribute, or the attributes of a mutex
+    # object: the properties the name travels with are what tells them apart
     def _handle_mutex(self, properties: mutex_object.Mutex) -> tuple:
         event_types = self._mapping.event_types(properties._XSI_TYPE)
-        return event_types['type'], properties.name.value, event_types['relation']
+        attributes = list(self._read_custom_properties(properties, 'mutex'))
+        if not attributes:
+            return (
+                event_types['type'], properties.name.value,
+                event_types['relation']
+            )
+        # cybox holds the name in one field either way: it is the whole of a
+        # mutex attribute, and the `name` relation of a mutex object - which
+        # the template types, as it types every other relation here
+        template_types = _template_attribute_types('mutex')
+        attributes.insert(
+            0,
+            (
+                template_types.get('name', 'text'), properties.name.value,
+                'name'
+            )
+        )
+        return 'mutex', self._return_object_attributes(attributes), ''
 
     def _handle_network(self, properties: _NETWORK_PROPERTIES_TYPING, mapping: str):
         for feature, field in zip(self._mapping.network_fields(), getattr(self._mapping, mapping)()):
@@ -706,6 +733,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attributes.append(
                     ('text', attrgetter(f"{feature}.value")(properties), feature.replace('_', '-'))
                 )
+        attributes.extend(
+            self._read_custom_properties(properties, 'network-connection')
+        )
         if attributes:
             return "network-connection", self._return_object_attributes(attributes), ""
 
@@ -716,6 +746,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for prop in ('is_listening', 'is_blocking'):
             if getattr(properties, prop):
                 attributes.append(("text", prop.split('_')[1], "state"))
+        attributes.extend(
+            self._read_custom_properties(properties, 'network-socket')
+        )
         if attributes:
             return "network-socket", self._return_object_attributes(attributes), ""
 
@@ -736,8 +769,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             from - their uuids are derived from the observable's
         """
         object_id = getattr(properties.parent, 'id_', None)
+        file_attributes = self._fetch_file_attributes(properties, object_id)
+        pe_properties, file_properties = self._read_shared_property_bag(
+            properties, object_id, bool(file_attributes)
+        )
         attributes = self._return_object_attributes(
-            self._read_pe_attributes(properties, object_id)
+            self._read_pe_attributes(properties, object_id, pe_properties)
         )
         sections = tuple(
             self._return_object_attributes(
@@ -745,23 +782,66 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
             for section in properties.sections or ()
         )
-        file_attributes = self._fetch_file_attributes(properties)
         if not file_attributes:
             return 'pe', attributes, {'pe_sections': sections}
         # A file carrying a `pe` is an object however few attributes it has:
         # folded into a single attribute, it has nowhere to reference the `pe`
         # from, and the `pe` would sit in the event referenced by nothing
+        file_attributes.extend(file_properties)
         return 'file', self._return_object_attributes(file_attributes), {
             'pe': {'attributes': attributes, 'sections': sections}
         }
 
+    def _read_shared_property_bag(
+            self, properties: win_executable_file_object.WinExecutableFile,
+            object_id: Optional[str], has_file: bool) -> tuple:
+        """Split the one property bag a `file` and the `pe` under it share.
+
+        The export writes every relation no cybox field holds as a custom
+        property named after the relation itself, and one `WinExecutableFile`
+        carries both objects: the bag holds the leftovers of both. The `pe`
+        takes every name its own template types - `compilation-timestamp` and
+        `text`, the two names both templates have, included - then the `file`
+        takes what the `file` template types, and what neither of them names
+        stays on the `pe` as a `text` attribute, which any relation validates
+        as. A Windows executable carrying no file attribute is the `pe`
+        itself, and the whole bag is its own.
+
+        :param properties: the Windows executable file properties
+        :param object_id: the id of the object the properties belong to
+        :param has_file: whether there is a `file` object to move a relation
+            of its own to
+        :return: the `(type, value, relation)` of the `pe` attributes, and of
+            the `file` ones
+        """
+        pe_types = _template_attribute_types('pe')
+        file_types = _template_attribute_types('file') if has_file else {}
+        pe_bag, file_bag = [], []
+        for prop in properties.custom_properties or ():
+            bag = (
+                file_bag if prop.name not in pe_types and prop.name in file_types
+                else pe_bag
+            )
+            bag.append(prop)
+        return (
+            list(
+                self._read_property_bag(pe_bag, pe_types, 'pe', object_id)
+            ),
+            list(
+                self._read_property_bag(file_bag, file_types, 'file', object_id)
+            )
+        )
+
     def _read_pe_attributes(
             self, properties: win_executable_file_object.WinExecutableFile,
-            object_id: Optional[str]) -> Iterator[tuple]:
+            object_id: Optional[str],
+            pe_properties: list) -> Iterator[tuple]:
         """Read every carrier the export spreads a `pe` object over.
 
         :param properties: the Windows executable file properties
         :param object_id: the id of the object the properties belong to
+        :param pe_properties: the share of the property bag the `pe` takes,
+            already read
         :return: the `(type, value, relation)` of each `pe` attribute
         """
         template_types = _template_attribute_types('pe')
@@ -791,9 +871,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             yield from self._fetch_attributes_with_template_types(
                 resource, 'pe_resource_mapping', template_types
             )
-        yield from self._read_pe_properties(
-            properties, template_types, object_id
-        )
+        yield from pe_properties
 
     def _read_pe_header_hashes(
             self, file_header: win_executable_file_object.PEFileHeader,
@@ -844,36 +922,6 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if _SHA256_PATTERN.match(hash_value):
                 return 'authentihash'
         return self._mapping.pe_header_hash_mapping(hash_type)
-
-    def _read_pe_properties(
-            self, properties: win_executable_file_object.WinExecutableFile,
-            template_types: dict, object_id: Optional[str]) -> Iterator[tuple]:
-        """Read the custom properties the export writes a `pe` relation no
-        cybox field holds into - one property per value, named after the
-        relation itself.
-
-        A `file` and the `pe` under it are one `WinExecutableFile` with one
-        property bag, and the whole bag goes to the `pe`: every property the
-        `pe` template can type under its own relation, `compilation-timestamp`
-        and `text` - the two names both templates have - included, and every
-        other name as a `text` attribute, which any relation validates as. The
-        `file`'s own leftover relations are in that second group when there is
-        a `file`: they keep their value and their spelling, under the wrong
-        parent, until ticket 18 reads a typed object's properties for itself.
-
-        :param properties: the Windows executable file properties
-        :param template_types: the attribute types the `pe` template defines
-        :param object_id: the id of the object the properties belong to
-        :return: the `(type, value, relation)` of each property
-        """
-        for prop in properties.custom_properties or ():
-            if prop.name not in template_types:
-                self._off_template_pe_property_warning(
-                    prop.name, prop.value, object_id
-                )
-                yield ('text', prop.value, prop.name)
-                continue
-            yield (template_types[prop.name], prop.value, prop.name)
 
     def _read_pe_section(self, section: win_executable_file_object.PESection,
                          object_id: Optional[str]) -> Iterator[tuple]:
@@ -953,6 +1001,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attributes.append(["filename", properties.image_info.file_name.value, "image"])
             if properties.image_info.command_line:
                 attributes.append(["text", properties.image_info.command_line.value, "command-line"])
+        attributes.extend(self._read_custom_properties(properties, 'process'))
         if properties.network_connection_list:
             references = []
             for connection in properties.network_connection_list:
@@ -979,6 +1028,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     value, 'regkey_value_mapping'
                 )
             )
+        attributes.extend(
+            self._read_custom_properties(properties, 'registry-key')
+        )
         if len(attributes) in (2,3):
             d_regkey = {key: value for (_, value, key) in attributes}
             if 'hive' in d_regkey and 'key' in d_regkey:
@@ -1017,14 +1069,20 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             attributes.append(['text', properties.user_id.value, 'user-id'])
         if properties.group_id:
             attributes.append(['text', properties.group_id.value, 'group-id'])
+        attributes.extend(
+            self._read_custom_properties(properties, 'user-account')
+        )
         return 'user-account', self._return_object_attributes(attributes), ''
 
     # Parse a user account object
     def _handle_user(self, properties: user_account_object.UserAccount) -> tuple:
-        attributes = tuple(
+        attributes = list(
             self._fetch_attributes_with_partial_key_parsing(
                 properties, 'user_account_object_mapping'
             )
+        )
+        attributes.extend(
+            self._read_custom_properties(properties, 'user-account')
         )
         return 'user-account', self._return_object_attributes(attributes), ''
 
@@ -1052,6 +1110,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             relation = "comment" if attributes else attribute_type
             attributes.append([attribute_type, properties.remarks.value, relation])
             required_one_of = True
+        attributes.extend(self._read_custom_properties(properties, 'whois'))
         # Testing if we have the required attribute types for Object whois
         if required_one_of:
             # if yes, we return the object type and the attributes
@@ -1085,6 +1144,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
         if properties.security_id:
             attributes.append(['text', properties.security_id.value, 'user-id'])
+        attributes.extend(
+            self._read_custom_properties(properties, 'user-account')
+        )
         return 'user-account', self._return_object_attributes(attributes), ''
 
     def _handle_x509(self, properties: x509_certificate_object.X509Certificate) -> tuple:
@@ -1270,6 +1332,78 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     getattr(properties, field).value, relation
                 )
 
+    @staticmethod
+    def _property_value(value):
+        """Read the value a custom property carries, guarded against what is
+        no attribute value.
+
+        The export writes one property per value, and every value it writes is
+        a string - except the one relation it wrote wrapped in a list, the
+        `_hash_value` precedent. A package built in memory and handed to
+        `load_stix_package`, the path MISP core takes, carries whatever it was
+        built with: anything else is refused rather than coerced, since
+        `str()` would store `False` as `'False'` and a dictionary as its
+        Python repr.
+
+        :param value: the property value
+        :return: the value, None when it is no MISP attribute value
+        """
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+        return value if isinstance(value, str) else None
+
+    def _read_custom_properties(self, properties, name: str) -> Iterator[tuple]:
+        """Read the property bag a typed CybOX object carries.
+
+        Every MISP object relation the STIX 1 export has no native CybOX slot
+        for travels as a custom property named after the relation verbatim -
+        no prefix, no charset fold. The object template the handler is about
+        to return is what types them back, and the export wrote no table this
+        could read instead: a relation the template does not define keeps its
+        spelling as a `text` attribute, which any relation validates as.
+
+        :param properties: the cybox properties carrying the bag
+        :param name: the template name of the object the properties build
+        :return: the `(type, value, relation)` of each property
+        """
+        yield from self._read_property_bag(
+            properties.custom_properties, _template_attribute_types(name),
+            name, getattr(properties.parent, 'id_', None)
+        )
+
+    def _read_property_bag(
+            self, custom_properties, template_types: dict, name: str,
+            object_id: Optional[str]) -> Iterator[tuple]:
+        """Read a bag of custom properties against the template typing them.
+
+        A template that types nothing - one pymisp does not ship, or the name
+        standing in for one it must not resolve - makes every name
+        off-template: the caller warns once for the object rather than have
+        every name repeat the same nothing.
+
+        :param custom_properties: the property bag, None where the object
+            carries none
+        :param template_types: the attribute types the template defines
+        :param name: the template name, for the warning
+        :param object_id: the id of the object the properties belong to
+        :return: the `(type, value, relation)` of each property
+        """
+        for prop in custom_properties or ():
+            value = self._property_value(prop.value)
+            if value is None:
+                self._unstorable_attribute_warning(
+                    prop.name, prop.value, object_id
+                )
+                continue
+            if prop.name in template_types:
+                yield (template_types[prop.name], value, prop.name)
+                continue
+            if template_types:
+                self._off_template_property_warning(
+                    prop.name, value, name, object_id
+                )
+            yield ('text', value, prop.name)
+
     def _read_derived_attribute(
             self, relation: str, value, template_types: dict,
             object_id: Optional[str]) -> Optional[tuple]:
@@ -1390,22 +1524,28 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'{self._object_origin(object_id)}: {hash_value} not converted.'
         )
 
-    def _off_template_pe_property_warning(
-            self, property_name: str, value: str, object_id: Optional[str]):
-        # Not `unknown`: a `file` and the `pe` under it share one property
-        # bag, so a name the `pe` template cannot type is as often a `file`
-        # relation as a name no template has
+    def _off_template_property_warning(
+            self, property_name: str, value: str, name: str,
+            object_id: Optional[str]):
+        # Not `unknown`: several objects can share one property bag - a `file`
+        # and the `pe` under it are one CybOX object - so a name the template
+        # cannot type is as often another object's relation as a name no
+        # template has
         self._add_warning(
-            f'{property_name!r} is no pe object relation'
+            f'{property_name!r} is no {name} object relation'
             f'{self._object_origin(object_id)}: {value} converted as a text '
-            'attribute of the pe object.'
+            f'attribute of the {name} object.'
         )
 
-    def _unknown_pe_section_hash_type_warning(
-            self, hash_type: str, hash_value: str, object_id: Optional[str]):
+    def _unshipped_template_warning(self, name: str, object_id: Optional[str]):
+        # One per object, not one per relation: with no template to type
+        # anything, every relation the object carries is off-template. Not an
+        # `Unknown Template`, which is the name pymisp must not resolve: this
+        # name is kept, and the object carries it
         self._add_warning(
-            f'Unknown PE section hash type {hash_type!r}'
-            f'{self._object_origin(object_id)}: {hash_value} not converted.'
+            f'No MISP object template named {name!r}'
+            f'{self._object_origin(object_id)}: every attribute it carries '
+            'converted as a text attribute.'
         )
 
     def _unstorable_attribute_warning(
