@@ -1874,6 +1874,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     for single_value in value:
                         self._add_custom_property(file_object, object_relation, single_value)
             if hashes:
+                # The gate above creates the headers for five relations and
+                # the file header for one of them, so a `pe` carrying a header
+                # hash and no `number-sections` had nowhere to write the hash
+                # list to - no file header, and no headers at all for an
+                # `authentihash` or an `impfuzzy` alone. Created here, where
+                # the hashes are, the object no longer costs a document.
+                if file_object.headers is None:
+                    file_object.headers = PEHeaders()
+                if file_object.headers.file_header is None:
+                    file_object.headers.file_header = PEFileHeader()
                 hashlist = HashList()
                 hashlist.hashes = hashes
                 file_object.headers.file_header.hashes = hashlist
