@@ -393,6 +393,7 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         }
     )
     __pe_single_fields = (
+        'authentihash',
         'company-name',
         'entrypoint-address',
         'file-description',
