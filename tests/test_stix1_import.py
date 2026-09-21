@@ -2814,6 +2814,11 @@ class TestSTIX1Import(TestSTIX):
         )
 
     def test_external_whois_observable_converts(self):
+        """The registrar comes back under `registrar`, the relation the
+        `whois` template defines: the table named it `whois-registrar`, which
+        is the attribute type and no relation of that template - pymisp logged
+        it as invalid and kept the attribute under a name MISP has no field
+        for."""
         whois = WhoisEntry()
         whois.registrar_info = WhoisRegistrar()
         whois.registrar_info.name = 'GANDI SAS'
@@ -2827,7 +2832,7 @@ class TestSTIX1Import(TestSTIX):
         self._assert_single_object(
             parser, 'whois',
             {
-                'whois-registrar': 'GANDI SAS', 'domain': 'circl.lu',
+                'registrar': 'GANDI SAS', 'domain': 'circl.lu',
                 'registrant-name': 'CIRCL', 'registrant-email': 'info@circl.lu',
                 'creation-date': '2020-01-01 00:00:00'
             }

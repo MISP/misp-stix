@@ -199,7 +199,7 @@ class STIX1toMISPMapping:
         script_path = ('text', 'shell')
     )
     __whois_mapping = Mapping(
-        registrar_info = ('whois-registrar', 'name.value', 'whois-registrar'),
+        registrar_info = ('whois-registrar', 'name.value', 'registrar'),
         ip_address = ('ip-src', 'address_value.value', 'ip-address'),
         domain_name = ('domain', 'value.value', 'domain')
     )
