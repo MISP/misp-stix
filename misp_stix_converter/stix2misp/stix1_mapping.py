@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ..misp_stix_mapping import Mapping
-from typing import Union
+from typing import Optional, Union
 
 
 class STIX1toMISPMapping:
@@ -134,16 +134,45 @@ class STIX1toMISPMapping:
         address_family = ('text', 'address_family.value', 'address-family'),
         domain = ('text', 'domain.value', 'domain-family')
     )
+    # PE file header field -> the `pe` object relation it is read as. The
+    # template types every one of them, so a relation it retypes later is
+    # self-correcting and no type is spelt here.
     __pe_header_mapping = Mapping(
-        characteristics = ('hex', 'characteristics-hex'),
-        machine = ('hex', 'machine-hex'),
-        number_of_sections = ('counter', 'number-of-sections'),
-        pointer_to_symbol_table = ('hex', 'pointer-to-symbol-table'),
-        size_of_optional_header = ('counter', 'size-of-optional-header')
+        characteristics = 'characteristics-hex',
+        machine = 'machine-type-hex',
+        number_of_sections = 'number-sections',
+        pointer_to_symbol_table = 'pointer-to-symbol-table',
+        size_of_optional_header = 'size-of-optional-header'
+    )
+    # The cybox type `_set_hash_type` gives each `pe` header hash, by the
+    # length of its value alone -> the relation it came from. cybox has a type
+    # for none of them, so the length table is the whole typing and reading it
+    # backwards the whole inverse; a type outside the table names no relation.
+    # `Other` is what the table falls back to, and what an `authentihash` an
+    # export older than 2026.9.21 wrote: the shape of the value tells those
+    # two apart, in `_pe_header_hash_relation`.
+    __pe_header_hash_mapping = Mapping(
+        md5 = 'imphash',
+        sha1 = 'pehash',
+        sha256 = 'authentihash',
+        other = 'impfuzzy'
     )
     __pe_mapping = Mapping(
-        file_name = ('filename', 'original-filename'),
-        type_ = ('text', 'type')
+        type_ = 'type'
+    )
+    # PE version info resource field -> the `pe` object relation it is read
+    # as: the export folds the relation into the field name - `company-name`
+    # into `companyname` - and no template can invert that fold.
+    __pe_resource_mapping = Mapping(
+        companyname = 'company-name',
+        filedescription = 'file-description',
+        fileversion = 'file-version',
+        internalname = 'internal-filename',
+        langid = 'lang-id',
+        legalcopyright = 'legal-copyright',
+        originalfilename = 'original-filename',
+        productname = 'product-name',
+        productversion = 'product-version'
     )
     __process_mapping = Mapping(
         creation_time = ('datetime', 'creation-time'),
@@ -245,12 +274,20 @@ class STIX1toMISPMapping:
         return cls.__network_socket_mapping
 
     @classmethod
+    def pe_header_hash_mapping(cls, hash_type: str) -> Optional[str]:
+        return cls.__pe_header_hash_mapping.get(hash_type)
+
+    @classmethod
     def pe_header_mapping(cls) -> dict:
         return cls.__pe_header_mapping
 
     @classmethod
     def pe_mapping(cls) -> dict:
         return cls.__pe_mapping
+
+    @classmethod
+    def pe_resource_mapping(cls) -> dict:
+        return cls.__pe_resource_mapping
 
     @classmethod
     def process_mapping(cls) -> dict:

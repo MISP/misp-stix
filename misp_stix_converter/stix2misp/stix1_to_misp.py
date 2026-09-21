@@ -59,6 +59,9 @@ _STIX_OBJECT_TYPING = Union[CourseOfAction, ThreatActor]
 _MISP_types = describe_types['types']
 # `blocksize:hash:hash`, the shape of an ssdeep value, both hashes in base64
 _SSDEEP_PATTERN = re.compile(r'^\d+:[0-9A-Za-z+/]*:[0-9A-Za-z+/]*$')
+# The length of an `authentihash`, the one `pe` header hash a `Type=Other` can
+# hold besides the `impfuzzy` that type is the fallback for
+_SHA256_PATTERN = re.compile(r'^[0-9a-fA-F]{64}$')
 
 
 class StixObjectTypeError(Exception):
@@ -167,8 +170,15 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
             # if some complementary data is a dictionary containing an uuid,
             # it means we are using it to add an object reference
-            if "pe_uuid" in compl_data:
-                misp_object.add_reference(compl_data['pe_uuid'], 'includes')
+            if "pe" in compl_data:
+                pe_object = self._build_pe_object(
+                    compl_data['pe'], to_ids, object_uuid
+                )
+                misp_object.add_reference(pe_object.uuid, 'includes')
+            if "pe_sections" in compl_data:
+                self._build_pe_sections(
+                    misp_object, compl_data['pe_sections'], to_ids, object_uuid
+                )
             if "process_uuid" in compl_data:
                 for uuid in compl_data["process_uuid"]:
                     misp_object.add_reference(uuid, 'connected-to')
@@ -176,6 +186,75 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             for test_mechanism in test_mechanisms:
                 misp_object.add_reference(test_mechanism, 'detected-with')
         self.misp_event.add_object(misp_object)
+
+    def _build_object(self, name: str, attributes: tuple, to_ids: bool,
+                      object_uuid: Optional[str] = None) -> MISPObject:
+        """Build a MISP object out of attributes read from a carrier holding
+        several of them, and add it to the event.
+
+        :param name: the object template name
+        :param attributes: the attributes, as `_return_object_attributes`
+            returns them
+        :param to_ids: the `to_ids` flag the whole carrier was written with
+        :param object_uuid: the uuid the object takes, None to have pymisp
+            give it a random one
+        :return: the object added to the event
+        """
+        misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
+        if object_uuid is not None:
+            misp_object.uuid = object_uuid
+        for attribute in attributes:
+            misp_object.add_attribute(**{**attribute, 'to_ids': to_ids})
+        return self.misp_event.add_object(misp_object)
+
+    def _build_pe_object(self, pe: dict, to_ids: bool,
+                         object_uuid: Optional[str]) -> MISPObject:
+        """Build the `pe` object a `file` includes, and the sections under it.
+
+        :param pe: the attributes of the `pe` and of each of its sections
+        :param to_ids: the `to_ids` flag the Windows executable was written
+            with - one flag for the file, the `pe` and every section
+        :param object_uuid: the uuid of the `file` object, the `pe` and the
+            section uuids are derived from
+        :return: the `pe` object
+        """
+        pe_object = self._build_object(
+            'pe', pe['attributes'], to_ids,
+            self._derived_uuid(object_uuid, 'pe')
+        )
+        self._build_pe_sections(pe_object, pe['sections'], to_ids, object_uuid)
+        return pe_object
+
+    def _build_pe_sections(self, pe_object: MISPObject, sections: tuple,
+                           to_ids: bool, object_uuid: Optional[str]):
+        """Build the `pe-section` objects under a `pe`, and reference them.
+
+        :param pe_object: the `pe` object including the sections
+        :param sections: the attributes of each section
+        :param to_ids: the `to_ids` flag the Windows executable was written
+            with
+        :param object_uuid: the uuid of the object the observable landed as,
+            every section uuid is derived from - never a derived uuid itself
+        """
+        for index, attributes in enumerate(sections):
+            section = self._build_object(
+                'pe-section', attributes, to_ids,
+                self._derived_uuid(object_uuid, f'pe - sections - {index}')
+            )
+            pe_object.add_reference(section.uuid, 'includes')
+
+    def _derived_uuid(self, object_uuid: Optional[str],
+                      feature: str) -> Optional[str]:
+        """Derive the uuid of an object the STIX 1 shape carries no id for.
+
+        :param object_uuid: the uuid of the object the observable landed as
+        :param feature: what the derived object is under it
+        :return: the derived uuid, None when there is nothing to derive it
+            from and pymisp gives the object a random one
+        """
+        if object_uuid is None:
+            return None
+        return str(self._create_v5_uuid(f'{object_uuid} - {feature}'))
 
     def _read_test_mechanisms(
             self, indicator: Indicator) -> Iterator[tuple[str, str]]:
@@ -460,9 +539,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     {'idref': referenced_id, 'relationship': 'attachment'}
                 )
 
-    # Return type & attributes of a file object
-    def _handle_file(self, properties: file_object.File, is_object: bool) -> tuple:
-        b_hash, b_file = False, False
+    def _fetch_file_attributes(self, properties: file_object.File) -> list:
+        """Read every attribute a file - or the file half of a Windows
+        executable - carries, before any folding of a short attribute list
+        into a single attribute.
+
+        :param properties: the file properties
+        :return: the `(type, value, relation)` of each attribute
+        """
         attributes = list(self._fetch_attributes_with_keys(properties, 'file_mapping'))
         if properties.byte_runs:
             attributes.append(
@@ -472,15 +556,20 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
             )
         if properties.hashes:
-            b_hash = True
             for hash_property in properties.hashes:
                 attributes.append(self._handle_hashes_attribute(hash_property))
         if properties.file_name:
             value = properties.file_name.value
             if value:
-                b_file = True
                 attribute_type, relation = self._mapping.event_types(properties._XSI_TYPE)
                 attributes.append([attribute_type, value, relation])
+        return attributes
+
+    # Return type & attributes of a file object
+    def _handle_file(self, properties: file_object.File, is_object: bool) -> tuple:
+        attributes = self._fetch_file_attributes(properties)
+        b_hash = bool(properties.hashes)
+        b_file = bool(getattr(properties.file_name, 'value', None))
         if len(attributes) == 1:
             attribute = attributes[0]
             return attribute[0] if attribute[2] != "fullpath" else "filename", attribute[1], ""
@@ -524,14 +613,33 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # it could be malware-sample as well, but STIX is losing this information
         return f"filename|{hash_type}", value, ""
 
-    # Return type & value of a hash attribute
     @staticmethod
-    def _handle_hashes_attribute(hash_property: Hash) -> tuple:
-        hash_type = hash_property.type_.value.lower()
+    def _hash_value(hash_property: Hash):
+        """Read the value of a hash, whichever of the two fields cybox holds
+        it in.
+
+        An export older than 2026.9.21 wrote a `pe` `authentihash` with its
+        value wrapped in a list - the one relation missing from the export's
+        single-value fields. XML serialisation flattens that list, a package
+        read from JSON or handed over in memory keeps it, and a list is no
+        attribute value: the one element it holds is.
+
+        :param hash_property: the cybox hash
+        :return: the hash value
+        """
         try:
-            hash_value = hash_property.simple_hash_value.value
+            value = hash_property.simple_hash_value.value
         except AttributeError:
-            hash_value = hash_property.fuzzy_hash_value.value
+            value = hash_property.fuzzy_hash_value.value
+        if isinstance(value, list) and len(value) == 1:
+            return value[0]
+        return value
+
+    # Return type & value of a hash attribute
+    @classmethod
+    def _handle_hashes_attribute(cls, hash_property: Hash) -> tuple:
+        hash_type = hash_property.type_.value.lower()
+        hash_value = cls._hash_value(hash_property)
         if (hash_type == 'other' and isinstance(hash_value, str)
                 and _SSDEEP_PATTERN.match(hash_value)):
             # `Other` is the type cybox gives a value of no well-known length,
@@ -607,53 +715,201 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Return type & attributes of the file defining a portable executable object
     def _handle_pe(self, properties: win_executable_file_object.WinExecutableFile) -> tuple:
-        pe_object = MISPObject('pe', misp_objects_path_custom=misp_objects_path)
-        for attribute in self._fetch_attributes_with_partial_key_parsing(properties, 'pe_mapping'):
-            attribute_type, value, relation = attribute
-            pe_object.add_attribute(relation, value, type=attribute_type)
-        if getattr(properties.headers, 'file_header', None) is not None:
-            header = properties.headers.file_header
-            for attribute in self._fetch_attributes_with_partial_key_parsing(header, 'pe_header_mapping'):
-                attribute_type, value, relation = attribute
-                pe_object.add_attribute(relation, value, type=attribute_type)
-        misp_object = self.misp_event.add_object(pe_object)
-        if properties.sections:
-            object_id = getattr(properties.parent, 'id_', None)
-            for section in properties.sections:
-                section_uuid = self._handle_pe_section(section, object_id)
-                misp_object.add_reference(section_uuid, 'includes')
-        file_type, file_value, _ = self._handle_file(properties, False)
-        return file_type, file_value, {'pe_uuid': misp_object.uuid}
+        """Read the `pe` object, its sections, and the file carrying them.
 
-    def _handle_pe_section(self, section: win_executable_file_object.PESection,
-                           object_id: Optional[str]) -> str:
-        section_object = MISPObject('pe-section', misp_objects_path_custom=misp_objects_path)
+        One `WinExecutableFile` holds a `pe` object - spread over its type, its
+        headers, its version info resource and its custom properties - the
+        `pe-section` objects under it, and the `file` object the `pe` was
+        exported under, if there is one. A Windows executable no file attribute
+        is read from is the `pe` itself: its uuid goes to the `pe`, rather than
+        to an empty `file` object the event never had.
+
+        :param properties: the Windows executable file properties
+        :return: the name of the object the observable's own uuid goes to, its
+            attributes, and what the caller builds the `pe` and its sections
+            from - their uuids are derived from the observable's
+        """
+        object_id = getattr(properties.parent, 'id_', None)
+        attributes = self._return_object_attributes(
+            self._read_pe_attributes(properties, object_id)
+        )
+        sections = tuple(
+            self._return_object_attributes(
+                self._read_pe_section(section, object_id)
+            )
+            for section in properties.sections or ()
+        )
+        file_attributes = self._fetch_file_attributes(properties)
+        if not file_attributes:
+            return 'pe', attributes, {'pe_sections': sections}
+        # A file carrying a `pe` is an object however few attributes it has:
+        # folded into a single attribute, it has nowhere to reference the `pe`
+        # from, and the `pe` would sit in the event referenced by nothing
+        return 'file', self._return_object_attributes(file_attributes), {
+            'pe': {'attributes': attributes, 'sections': sections}
+        }
+
+    def _read_pe_attributes(
+            self, properties: win_executable_file_object.WinExecutableFile,
+            object_id: Optional[str]) -> Iterator[tuple]:
+        """Read every carrier the export spreads a `pe` object over.
+
+        :param properties: the Windows executable file properties
+        :param object_id: the id of the object the properties belong to
+        :return: the `(type, value, relation)` of each `pe` attribute
+        """
+        template_types = _template_attribute_types('pe')
+        yield from self._fetch_attributes_with_template_types(
+            properties, 'pe_mapping', template_types
+        )
+        headers = properties.headers
+        if headers is not None:
+            optional_header = headers.optional_header
+            if getattr(optional_header, 'address_of_entry_point', None):
+                yield (
+                    template_types.get('entrypoint-address', 'text'),
+                    optional_header.address_of_entry_point.value,
+                    'entrypoint-address'
+                )
+            file_header = headers.file_header
+            if file_header is not None:
+                yield from self._fetch_attributes_with_template_types(
+                    file_header, 'pe_header_mapping', template_types
+                )
+                yield from self._read_pe_header_hashes(
+                    file_header, template_types, object_id
+                )
+        # The export writes the version info resource alone, but a third-party
+        # document holds it among the other resources of the executable
+        for resource in properties.resources or ():
+            yield from self._fetch_attributes_with_template_types(
+                resource, 'pe_resource_mapping', template_types
+            )
+        yield from self._read_pe_properties(
+            properties, template_types, object_id
+        )
+
+    def _read_pe_header_hashes(
+            self, file_header: win_executable_file_object.PEFileHeader,
+            template_types: dict, object_id: Optional[str]) -> Iterator[tuple]:
+        """Read the `pe` hashes the export writes on the PE file header.
+
+        cybox has no hash type for any of the relations they come from, so the
+        export types each of them by the length of its value: the same table
+        backwards names the relation each hash goes back to. A type the table
+        does not name - a hand-edited document, or a third-party one - names
+        no relation, and the relation is what types the attribute.
+
+        :param file_header: the PE file header carrying the hashes
+        :param template_types: the attribute types the `pe` template defines
+        :param object_id: the id of the object the header belongs to
+        :return: the `(type, value, relation)` of each header hash
+        """
+        for hash_property in file_header.hashes or ():
+            hash_type = hash_property.type_.value.lower()
+            hash_value = self._hash_value(hash_property)
+            relation = self._pe_header_hash_relation(hash_type, hash_value)
+            if relation is None:
+                self._unknown_pe_header_hash_type_warning(
+                    hash_type, hash_value, object_id
+                )
+                continue
+            yield (template_types.get(relation, 'text'), hash_value, relation)
+
+    def _pe_header_hash_relation(self, hash_type: str,
+                                 hash_value) -> Optional[str]:
+        """Name the `pe` relation a PE header hash came from.
+
+        The cybox type names it, except for `Other`: the type the length table
+        falls back to for an `impfuzzy`, and the one an export older than
+        2026.9.21 gave an `authentihash`, whose value it measured the length of
+        wrapped in a list. A value of the `blocksize:hash:hash` shape an
+        `impfuzzy` always has is one, a value of the length an `authentihash`
+        has is one, and what is neither reads as the `impfuzzy` the fallback
+        was written for.
+
+        :param hash_type: the cybox hash type, lowercased
+        :param hash_value: the hash value
+        :return: the object relation, None when the type names none
+        """
+        if hash_type == 'other' and isinstance(hash_value, str):
+            if _SSDEEP_PATTERN.match(hash_value):
+                return 'impfuzzy'
+            if _SHA256_PATTERN.match(hash_value):
+                return 'authentihash'
+        return self._mapping.pe_header_hash_mapping(hash_type)
+
+    def _read_pe_properties(
+            self, properties: win_executable_file_object.WinExecutableFile,
+            template_types: dict, object_id: Optional[str]) -> Iterator[tuple]:
+        """Read the custom properties the export writes a `pe` relation no
+        cybox field holds into - one property per value, named after the
+        relation itself.
+
+        A `file` and the `pe` under it are one `WinExecutableFile` with one
+        property bag, and the whole bag goes to the `pe`: every property the
+        `pe` template can type under its own relation, `compilation-timestamp`
+        and `text` - the two names both templates have - included, and every
+        other name as a `text` attribute, which any relation validates as. The
+        `file`'s own leftover relations are in that second group when there is
+        a `file`: they keep their value and their spelling, under the wrong
+        parent, until ticket 18 reads a typed object's properties for itself.
+
+        :param properties: the Windows executable file properties
+        :param template_types: the attribute types the `pe` template defines
+        :param object_id: the id of the object the properties belong to
+        :return: the `(type, value, relation)` of each property
+        """
+        for prop in properties.custom_properties or ():
+            if prop.name not in template_types:
+                self._off_template_pe_property_warning(
+                    prop.name, prop.value, object_id
+                )
+                yield ('text', prop.value, prop.name)
+                continue
+            yield (template_types[prop.name], prop.value, prop.name)
+
+    def _read_pe_section(self, section: win_executable_file_object.PESection,
+                         object_id: Optional[str]) -> Iterator[tuple]:
+        """Read the `pe-section` object a PE section holds.
+
+        :param section: the PE section
+        :param object_id: the id of the object the section belongs to
+        :return: the `(type, value, relation)` of each section attribute
+        """
+        template_types = _template_attribute_types('pe-section')
         header_hashes = section.header_hashes
         if header_hashes is None:
             header_hashes = section.data_hashes
-        if header_hashes:
+        for _hash in header_hashes or ():
             # The relation alone is what types the attribute, so a hash type
             # the template has no relation for has no type: pymisp refuses it
-            template_types = _template_attribute_types('pe-section')
-            for _hash in header_hashes:
-                hash_type, hash_value, _ = self._handle_hashes_attribute(_hash)
-                if hash_type not in template_types:
-                    self._unknown_pe_section_hash_type_warning(
-                        hash_type, hash_value, object_id
-                    )
-                    continue
-                section_object.add_attribute(hash_type, hash_value)
+            hash_type, hash_value, _ = self._handle_hashes_attribute(_hash)
+            if hash_type not in template_types:
+                self._unknown_pe_section_hash_type_warning(
+                    hash_type, hash_value, object_id
+                )
+                continue
+            yield (template_types[hash_type], hash_value, hash_type)
         if section.entropy:
-            section_object.add_attribute("entropy", section.entropy.value.value)
+            yield (
+                template_types.get('entropy', 'text'),
+                section.entropy.value.value, 'entropy'
+            )
         if section.section_header:
             # Every header field is optional, and MISP's export writes the
             # header as soon as the section carries a name or a size
             section_header = section.section_header
             if section_header.name:
-                section_object.add_attribute("name", section_header.name.value)
+                yield (
+                    template_types.get('name', 'text'),
+                    section_header.name.value, 'name'
+                )
             if section_header.size_of_raw_data:
-                section_object.add_attribute("size-in-bytes", section_header.size_of_raw_data.value)
-        return self.misp_event.add_object(section_object).uuid
+                yield (
+                    template_types.get('size-in-bytes', 'text'),
+                    section_header.size_of_raw_data.value, 'size-in-bytes'
+                )
 
     # Return type & value of a names pipe attribute
     @staticmethod
@@ -978,6 +1234,27 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attribute_type, relation = attribute
                 yield (attribute_type, getattr(properties, field).value, relation)
 
+    def _fetch_attributes_with_template_types(
+            self, properties, mapping: str, template_types: dict):
+        """Read the fields a mapping names, typed by the object template the
+        relations belong to rather than by the mapping itself: a relation the
+        template retypes follows it, and a type no mapping spells cannot
+        contradict it.
+
+        :param properties: the cybox properties carrying the fields - a
+            resource of a foreign document holds none of them
+        :param mapping: the name of the field -> object relation mapping
+        :param template_types: the attribute types the template defines
+        :return: the `(type, value, relation)` of each field the properties
+            fill
+        """
+        for field, relation in getattr(self._mapping, mapping)().items():
+            if getattr(properties, field, None):
+                yield (
+                    template_types.get(relation, 'text'),
+                    getattr(properties, field).value, relation
+                )
+
     @classmethod
     def _read_object_comment(
             cls, name: Optional[str], description,
@@ -1063,6 +1340,24 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._add_warning(
             'MISP objects carry no tag: the markings written on the STIX '
             'objects a MISP object was exported as are not read back.'
+        )
+
+    def _unknown_pe_header_hash_type_warning(
+            self, hash_type: str, hash_value: str, object_id: Optional[str]):
+        self._add_warning(
+            f'Unknown PE header hash type {hash_type!r}'
+            f'{self._object_origin(object_id)}: {hash_value} not converted.'
+        )
+
+    def _off_template_pe_property_warning(
+            self, property_name: str, value: str, object_id: Optional[str]):
+        # Not `unknown`: a `file` and the `pe` under it share one property
+        # bag, so a name the `pe` template cannot type is as often a `file`
+        # relation as a name no template has
+        self._add_warning(
+            f'{property_name!r} is no pe object relation'
+            f'{self._object_origin(object_id)}: {value} converted as a text '
+            'attribute of the pe object.'
         )
 
     def _unknown_pe_section_hash_type_warning(
