@@ -34,6 +34,8 @@ from misp_stix_converter import (
     MissingSTIXContentError, stix_1_to_misp, STIXLoadingError)
 from misp_stix_converter.tools import (
     is_stix1_from_misp, load_stix1_package, stix1_loading_helpers)
+from misp_stix_converter.tools.misp_object_templates import (
+    _template_description)
 from mixbox.namespaces import NamespaceNotFoundError
 from misp_stix_converter.stix2misp.external_stix1_to_misp import (
     ExternalSTIX1toMISPParser)
@@ -48,6 +50,7 @@ from stix.common.related import (
     RelatedIndicator, RelatedObservable, RelatedPackage, RelatedPackages)
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
+from stix.extensions.marking.simple_marking import SimpleMarkingStructure
 from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.extensions.test_mechanism.generic_test_mechanism import (
     GenericTestMechanism)
@@ -100,6 +103,8 @@ _DOMAIN_UUID = '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a'
 _IP_UUID = '3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a6b'
 _URL_UUID = '4f5a6b7c-8d9e-4f0a-8b1c-2d3e4f5a6b7c'
 _MD5_HASH = '8a2a5fc2ce56b3b04d58539a9d3d8d3e'
+_VULNERABILITY_UUID = '6c3d4e5f-7a8b-4c9d-8e0f-1a2b3c4d5e6f'
+_PLAIN_OBJECT_UUID = '7d4e5f6a-8b9c-4d0e-9f1a-2b3c4d5e6f7a'
 # `Type=Other` with the value in `Simple_Hash_Value`: how MISP's own STIX 1
 # export wrote an ssdeep hash, cybox naming nothing better for its length
 _SSDEEP_HASH = '6144:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
@@ -1964,6 +1969,259 @@ class TestSTIX1Import(TestSTIX):
         parser = self._parse_internal_package(self._internal_package(incident))
         self.assertEqual(parser.misp_event.info, 'Incident without a timestamp')
         self.assertEqual(parser.diagnostics()['errors'], {})
+
+    ############################################################################
+    #                      COMMENTS AND TAGS ROUND TRIP.                       #
+    ############################################################################
+
+    @staticmethod
+    def _misp_event_carrying_comments_and_tags():
+        """A MISP event whose every comment-and-tag carrier is filled: the
+        event's own tags, a `to_ids` attribute exported as an Indicator, one
+        with no comment at all, one with `to_ids` unset - the Observable the
+        shape carries neither on - a `campaign-name`, a `vulnerability`
+        exported as a TTP over an Exploit Target, and two objects, one with a
+        comment of its own and one with the template's description alone."""
+        event = get_base_event()
+        event['Event']['Tag'] = [
+            {'name': 'tlp:white'}, {'name': 'event:level="tag"'}
+        ]
+        domain = get_event_with_domain_attribute()['Event']['Attribute'][0]
+        domain['to_ids'] = False
+        domain['comment'] = 'the Observable carries no comment'
+        domain['Tag'] = [{'name': 'my:lost="tag"'}]
+        github = get_event_with_github_username_attribute()['Event']['Attribute'][0]
+        github['to_ids'] = True
+        github['comment'] = 'seen in logs'
+        github['Tag'] = [
+            {'name': 'tlp:amber'},
+            {'name': 'misp-galaxy:mitre-attack-pattern="Phishing - T1566"'},
+            {'name': 'my:custom="tag"'}
+        ]
+        pattern = get_event_with_pattern_attribute()['Event']['Attribute'][0]
+        pattern['to_ids'] = True
+        pattern.pop('comment', None)
+        campaign = get_event_with_campaign_name_attribute()['Event']['Attribute'][0]
+        campaign['comment'] = 'campaign comment'
+        campaign['Tag'] = [{'name': 'tlp:red'}, {'name': 'my:camp="tag"'}]
+        vulnerability = {
+            'uuid': _VULNERABILITY_UUID, 'type': 'vulnerability',
+            'category': 'External analysis', 'value': 'CVE-2021-44228',
+            'to_ids': False, 'timestamp': '1603642920',
+            'comment': 'log4shell',
+            'Tag': [{'name': 'my:vuln="tag"'}]
+        }
+        event['Event']['Attribute'] = [
+            domain, github, pattern, campaign, vulnerability
+        ]
+        commented, plain = (
+            get_event_with_domain_ip_object()['Event']['Object'][0],
+            get_event_with_domain_ip_object()['Event']['Object'][0]
+        )
+        for misp_object in (commented, plain):
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = True
+            attribute['Tag'] = [{'name': 'my:inobject="tag"'}]
+        commented['comment'] = 'object comment'
+        plain['uuid'] = _PLAIN_OBJECT_UUID
+        plain['description'] = _template_description('domain-ip')
+        event['Event']['Object'] = [commented, plain]
+        return event
+
+    @staticmethod
+    def _attribute_context(misp_event):
+        """The comment and the tags each attribute of the event came back
+        with, by value."""
+        return {
+            attribute.value: (
+                getattr(attribute, 'comment', None),
+                sorted(tag.name for tag in attribute.tags)
+            )
+            for attribute in misp_event.attributes
+        }
+
+    def test_internal_attribute_comments_and_tags_read_back(self):
+        """The export writes an attribute's comment as the Indicator's
+        description - the Record Title when there is none - and its tags as
+        the handling: a TLP structure for the colours, a Simple Marking per
+        other tag. A `misp-galaxy:` tag the export could not write as a TTP
+        travels as a Simple Marking too, and comes back as the tag it is."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        context = self._attribute_context(parser.misp_event)
+        self.assertEqual(
+            context['chrisr3d'],
+            (
+                'seen in logs',
+                [
+                    'misp-galaxy:mitre-attack-pattern="Phishing - T1566"',
+                    'my:custom="tag"', 'tlp:amber'
+                ]
+            )
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+
+    def test_internal_attribute_without_comment_reads_back_no_comment(self):
+        """The description of an Indicator the attribute had no comment for is
+        the Record Title, not a comment: it reads back as none."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        context = self._attribute_context(parser.misp_event)
+        self.assertEqual(context['P4tt3rn_1n_f1l3_t3st'], (None, []))
+
+    def test_internal_observable_carries_no_comment_and_no_tag(self):
+        """The shape an attribute with `to_ids` unset is exported as carries
+        neither: the gap is the Observable's, and stays named."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        context = self._attribute_context(parser.misp_event)
+        self.assertEqual(context['circl.lu'], (None, []))
+
+    def test_internal_campaign_comment_and_tags_read_back(self):
+        """The Campaign a `campaign-name` was exported as carries both, and
+        its description needs no Record Title guard: the export writes it only
+        when the attribute has a comment of its own."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        context = self._attribute_context(parser.misp_event)
+        self.assertEqual(
+            context['MartyMcFly'],
+            ('campaign comment', ['my:camp="tag"', 'tlp:red'])
+        )
+
+    def test_internal_exploit_target_comment_and_tags_read_back(self):
+        """A `vulnerability` attribute travels as a TTP over an Exploit
+        Target: the comment on the Exploit Target's description, the tags on
+        the TTP's handling. It comes back as an attribute - the one Exploit
+        Target shape that does - so both land on it."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        context = self._attribute_context(parser.misp_event)
+        self.assertEqual(
+            context['CVE-2021-44228'], ('log4shell', ['my:vuln="tag"'])
+        )
+
+    def test_internal_event_tags_read_back(self):
+        """The event's tags travel on the Incident's handling, and the
+        `misp:tool` tag as a journal entry: pymisp adds a name it already has
+        once, so the entry the handling repeats is not doubled."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        tags = [tag.name for tag in parser.misp_event.tags]
+        self.assertEqual(
+            sorted(tags),
+            [
+                'event:level="tag"', 'misp:tool="MISP-STIX-Converter"',
+                'tlp:white'
+            ]
+        )
+        self.assertEqual(len(tags), len(set(tags)))
+
+    def test_internal_object_comment_reads_back_through_the_template(self):
+        """The export writes a MISP object's comment as the Indicator's
+        description and falls back to the object template's own description,
+        which every MISP object carries. The template is the inverse: the
+        object that had a comment gets it back, the one that had none gets
+        nothing rather than the template blurb."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        comments = {
+            misp_object.uuid: getattr(misp_object, 'comment', None)
+            for misp_object in parser.misp_event.objects
+        }
+        self.assertEqual(
+            comments[event['Event']['Object'][0]['uuid']], 'object comment'
+        )
+        self.assertIsNone(comments[_PLAIN_OBJECT_UUID])
+
+    def test_internal_object_tags_are_dropped_with_one_warning(self):
+        """A MISP object takes no tag, and the handling the export writes
+        holds the tags of every attribute it held merged into one set: there
+        is neither a field to write them to nor a way to tell them apart. One
+        warning per converted document says so, however many objects hit it."""
+        event = self._misp_event_carrying_comments_and_tags()
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(
+            parser.diagnostics()['warnings']['misp event'],
+            [
+                'MISP objects carry no tag: the markings written on the STIX '
+                'objects a MISP object was exported as are not read back.'
+            ]
+        )
+        for misp_object in parser.misp_event.objects:
+            for attribute in misp_object.attributes:
+                self.assertEqual(attribute.tags, [])
+
+    def test_internal_attributes_collection_reads_comments_and_tags_back(self):
+        """The Attribute Collection writes its Indicators on the package
+        itself, with the same description and handling, and a `target-*`
+        attribute as a TTP targeting an identity - the one carrier whose tags
+        the Incident holds in an event export."""
+        event = self._misp_event_carrying_comments_and_tags()
+        target = get_event_with_target_attributes()['Event']['Attribute'][0]
+        target['Tag'] = [{'name': 'my:target="tag"'}]
+        attributes = [*event['Event']['Attribute'], target]
+        parser = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        parser.parse_json_content({'response': {'Attribute': attributes}})
+        imported = self._parse_internal_package(parser.stix_package)
+        context = self._attribute_context(imported.misp_event)
+        self.assertEqual(
+            context['chrisr3d'],
+            (
+                'seen in logs',
+                [
+                    'misp-galaxy:mitre-attack-pattern="Phishing - T1566"',
+                    'my:custom="tag"', 'tlp:amber'
+                ]
+            )
+        )
+        self.assertEqual(context[target['value']][1], ['my:target="tag"'])
+        self.assertEqual(imported.diagnostics()['errors'], {})
+
+    def test_internal_empty_simple_marking_statement_is_dropped(self):
+        """A Simple Marking a taxonomy tag can be made of nothing from writes
+        no tag, as a Built Tag with an empty slot does - never an empty one."""
+        incident = self._incident_with_content()
+        incident.handling = self._handling_with_statements(
+            None, '', '   ', 'my:kept="tag"'
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(
+            [tag.name for tag in parser.misp_event.tags], ['my:kept="tag"']
+        )
+
+    def test_external_simple_marking_statements_read_back_as_tags(self):
+        """A Simple Marking on a package header is the sender's own tag: the
+        External parser copies it whole, as the shared reader now gives it."""
+        stix_package = STIXPackage()
+        stix_package.stix_header = STIXHeader()
+        stix_package.stix_header.title = 'External report'
+        stix_package.stix_header.handling = self._handling_with_statements(
+            'my:external="tag"', 'another statement'
+        )
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        stix_package.add_observable(Observable(Object(domain)))
+        parser = ExternalSTIX1toMISPParser()
+        parser.load_stix_package(stix_package)
+        parser.parse_stix_package(single_event=True)
+        self.assertEqual(
+            sorted(tag.name for tag in parser.misp_event.tags),
+            ['another statement', 'my:external="tag"']
+        )
+
+    @staticmethod
+    def _handling_with_statements(*statements):
+        """A Handling holding one Simple Marking per statement, the shape the
+        export writes for the tags that are not a TLP colour."""
+        handling = Marking()
+        marking_specification = MarkingSpecification()
+        for statement in statements:
+            simple_marking = SimpleMarkingStructure()
+            simple_marking.statement = statement
+            marking_specification.marking_structures.append(simple_marking)
+        handling.add_marking(marking_specification)
+        return handling
 
     ############################################################################
     #                 EXPORTED ATTRIBUTES COLLECTION ROUND TRIP.               #
