@@ -110,6 +110,28 @@ def _template_attribute_types(name: str) -> dict:
 
 
 @lru_cache(maxsize=None)
+def _template_description(name: str) -> Optional[str]:
+    """Read the description a template gives every object made from it.
+
+    A MISP object carries its template's description in its own `description`
+    field, and the STIX 1 export writes that description where the object has
+    no comment - so the import needs the template's own text to tell the two
+    apart and read back only a description the object's author wrote.
+
+    :param name: a MISP object template name
+    :return: the template description, None when the name is not a template
+        pymisp knows or the template gives no description
+    """
+    if not _is_template_name(name):
+        return None
+    from pymisp import MISPObject
+    from pymisp.abstract import misp_objects_path
+    misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
+    definition = getattr(misp_object, '_definition', None) or {}
+    return definition.get('description')
+
+
+@lru_cache(maxsize=None)
 def _template_custom_properties(name: str) -> Mapping[str, dict]:
     """Invert the custom property name fold through the object template.
 
