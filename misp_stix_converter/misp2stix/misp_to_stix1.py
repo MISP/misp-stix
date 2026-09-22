@@ -1504,6 +1504,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 )
             return custom_properties
         for object_relation, values in attributes.items():
+            # A relation its parser forced single is a scalar here, not a
+            # list: iterating it spreads a string over one property per
+            # character, and a boolean is not iterable at all
+            if not isinstance(values, list):
+                values = [values]
             for value in values:
                 self._append_property(
                     custom_properties, object_relation, value, record
