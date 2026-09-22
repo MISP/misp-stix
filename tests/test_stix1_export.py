@@ -20,7 +20,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4, uuid5, UUID
 from .test_events import *
-from .test_events import _INDICATOR_ATTRIBUTE
+from .test_events import _INDICATOR_ATTRIBUTE, _TEST_USER_ACCOUNT_OBJECT
 from ._test_stix import TestSTIX
 from ._test_stix_export import TestCollectionSTIX1Export
 
@@ -118,6 +118,272 @@ class TestSTIX1InputContract(TestSTIX):
             {'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)]}
         )
         self.assertIsNotNone(parser.stix_package)
+
+
+class TestSTIX1CustomPropertyValues(TestSTIX):
+    """What a CybOX custom property carries for a MISP value cybox refuses: a
+    MISP object template names the type of the relation it declares, so the
+    value goes out in the lexical form XSD has for that type under the CybOX
+    `datatype`, and a value with no such form is skipped with a warning
+    rather than raising (ADR-0015, ticket 24)."""
+
+    _OBJECT_UUID = '2b8f4e2a-9d31-4c6e-8f1a-7c3b5d6e9a04'
+
+    @staticmethod
+    def _events_parser():
+        return MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+
+    def _event_with_object(self, misp_object, uuid=None):
+        event = get_base_event()
+        if uuid is not None:
+            event['Event']['uuid'] = uuid
+        event['Event']['Object'] = [misp_object]
+        return event
+
+    def _custom_object(self, attributes, name='parler-account'):
+        return {
+            'name': name, 'meta-category': 'misc',
+            'description': 'Parler account.', 'uuid': self._OBJECT_UUID,
+            'timestamp': '1603642920', 'Attribute': attributes
+        }
+
+    def _custom_properties(self, parser):
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return observable.item.object_.properties.custom_properties
+
+    def test_numeric_relation_values_carry_their_datatype(self):
+        # `counter`, `port` and `integer` all become `int`: CybOX names
+        # neither of the first two, and `int` is what a consumer can act on
+        parser = self._events_parser()
+        parser.parse_misp_event(
+            self._event_with_object(
+                self._custom_object(
+                    [
+                        {
+                            'type': 'counter', 'object_relation': 'comments',
+                            'value': 1337
+                        },
+                        {
+                            'type': 'port', 'object_relation': 'port',
+                            'value': 8080
+                        },
+                        {
+                            'type': 'float', 'object_relation': 'score',
+                            'value': 9.5
+                        },
+                        {
+                            'type': 'integer', 'object_relation': 'views',
+                            'value': 10 ** 12
+                        }
+                    ]
+                )
+            )['Event']
+        )
+        self.assertEqual(parser.errors, {})
+        properties = self._custom_properties(parser)
+        self.assertEqual(
+            [(prop.name, prop.value, prop.datatype) for prop in properties],
+            [
+                ('comments', '1337', 'int'), ('port', '8080', 'int'),
+                ('score', '9.5', 'float'),
+                # The name is the true one: XSD's `int` is 32-bit
+                ('views', '1000000000000', 'long')
+            ]
+        )
+
+    def test_typed_object_boolean_relation_carries_its_datatype(self):
+        # The typed export sites reach the same code by another route: a
+        # `user-account` relation CybOX has no field for is a custom property
+        # on the UserAccount object
+        user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
+        user_account['Attribute'].append(
+            {
+                'type': 'boolean', 'object_relation': 'privileged',
+                'value': False
+            }
+        )
+        parser = self._events_parser()
+        parser.parse_misp_event(self._event_with_object(user_account)['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        properties = incident.related_observables.observable[0].item.object_.properties
+        self.assertEqual(properties._XSI_TYPE, 'UserAccountObjectType')
+        privileged = next(
+            prop for prop in properties.custom_properties
+            if prop.name == 'privileged'
+        )
+        self.assertEqual(privileged.value, 'false')
+        self.assertEqual(privileged.datatype, 'boolean')
+
+    def test_list_valued_property_is_coerced_element_by_element(self):
+        # cybox validates a list element by element, so a list is the same
+        # question one value further in: every element takes its lexical
+        # form, and one element with none costs the property
+        parser = self._events_parser()
+        parser.parse_misp_event(
+            self._event_with_object(
+                self._custom_object(
+                    [
+                        {
+                            'type': 'boolean', 'object_relation': 'human',
+                            'value': [False, True]
+                        },
+                        {
+                            'type': 'text', 'object_relation': 'account-name',
+                            'value': ['ParlerOctocat', {'name': 'octocat'}]
+                        }
+                    ]
+                )
+            )['Event']
+        )
+        self.assertEqual(parser.errors, {})
+        properties = self._custom_properties(parser)
+        self.assertEqual(len(properties), 1)
+        self.assertEqual(properties[0].name, 'human')
+        self.assertEqual(properties[0].value, ['false', 'true'])
+        self.assertEqual(properties[0].datatype, 'boolean')
+        self.assertIn(
+            "'account-name' has no lexical form STIX 1 can carry",
+            parser.warnings[get_base_event()['Event']['uuid']][0]
+        )
+
+    def test_single_valued_relation_is_one_property(self):
+        # A relation its parser forced single reaches the property bag as a
+        # scalar: iterating it spread `hello` over five properties named
+        # `text`, and a `process` `hidden` of False - which the typed site
+        # does not pop, being falsy - was not iterable at all
+        user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
+        user_account['Attribute'].append(
+            {'type': 'text', 'object_relation': 'text', 'value': 'hello'}
+        )
+        parser = self._events_parser()
+        parser.parse_misp_event(self._event_with_object(user_account)['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        properties = incident.related_observables.observable[0].item.object_.properties
+        self.assertEqual(
+            [
+                (prop.name, prop.value)
+                for prop in properties.custom_properties
+                if prop.name == 'text'
+            ],
+            [('text', 'hello')]
+        )
+        process = {
+            'name': 'process', 'meta-category': 'misc',
+            'description': 'Object describing a system process.',
+            'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+            'Attribute': [
+                {'type': 'text', 'object_relation': 'pid', 'value': '2510'},
+                {
+                    'type': 'boolean', 'object_relation': 'hidden',
+                    'value': False
+                }
+            ]
+        }
+        parser = self._events_parser()
+        parser.parse_misp_event(self._event_with_object(process)['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        properties = incident.related_observables.observable[0].item.object_.properties
+        self.assertEqual(properties._XSI_TYPE, 'ProcessObjectType')
+        self.assertEqual(
+            [
+                (prop.name, prop.value, prop.datatype)
+                for prop in properties.custom_properties
+            ],
+            [('hidden', 'false', 'boolean')]
+        )
+
+    def test_values_with_no_lexical_form_are_skipped_with_a_warning(self):
+        # The three arms a property value can take beyond a plain string: a
+        # one-element list is the value it holds, and what has no lexical
+        # form is skipped - the property is built from routes nothing above
+        # catches, so raising loses the whole conversion
+        parser = self._events_parser()
+        parser.parse_misp_event(
+            self._event_with_object(
+                self._custom_object(
+                    [
+                        {
+                            'type': 'text', 'object_relation': 'account-id',
+                            'value': ['42']
+                        },
+                        {
+                            'type': 'text', 'object_relation': 'account-name',
+                            'value': None
+                        },
+                        {
+                            'type': 'link', 'object_relation': 'link',
+                            'value': {'url': 'https://parler.com/octocat'}
+                        }
+                    ]
+                )
+            )['Event']
+        )
+        self.assertEqual(parser.errors, {})
+        properties = self._custom_properties(parser)
+        self.assertEqual(
+            [(prop.name, prop.value) for prop in properties],
+            [('account-id', '42')]
+        )
+        features = f'parler-account object (uuid: {self._OBJECT_UUID})'
+        self.assertEqual(
+            parser.warnings[get_base_event()['Event']['uuid']],
+            [
+                f"'account-name' has no lexical form STIX 1 can carry in "
+                f'the {features}: None not converted.',
+                f"'link' has no lexical form STIX 1 can carry in the "
+                f"{features}: {{'url': 'https://parler.com/octocat'}} "
+                'not converted.',
+                'MISP Object name parler-account not mapped.'
+            ]
+        )
+
+    def test_failing_custom_object_route_is_not_retried(self):
+        # The custom object route is what `_object_error` falls back to:
+        # retrying what just raised raises again, with nothing left to catch
+        # it - and from a collection that costs every other event too
+        first = self._event_with_object(
+            self._custom_object(
+                [
+                    {
+                        'type': 'text', 'object_relation': 'account-id',
+                        'value': '42'
+                    }
+                ]
+            )
+        )
+        second = get_event_with_domain_attribute()
+        second['Event']['uuid'] = '31f0d1b0-8a2f-4e18-9a0e-2f5b6c7d8e90'
+        parser = self._events_parser()
+        with patch.object(
+                MISPtoSTIX1EventsParser, '_create_property',
+                side_effect=ValueError('Value must be a string')):
+            parser.parse_json_content({'response': [first, second]})
+        packages = parser.stix_package.related_packages
+        self.assertEqual(len(packages), 2)
+        self.assertEqual(
+            list(parser.errors), [first['Event']['uuid']]
+        )
+        error = parser.errors[first['Event']['uuid']][0]
+        self.assertIn(
+            f'Error with the parler-account object '
+            f'(uuid: {self._OBJECT_UUID})', error
+        )
+        self.assertIn('Value must be a string', error)
+        # The object is lost, the event it sits in is not, and neither is the
+        # event after it
+        first_package, second_package = packages
+        self.assertEqual(
+            len(first_package.item.incidents[0].related_observables.observable),
+            0
+        )
+        self.assertEqual(
+            len(second_package.item.incidents[0].related_indicators.indicator),
+            1
+        )
 
 
 class _STIX1NamespaceTestCase(TestSTIX):
@@ -444,6 +710,10 @@ class TestStix1Export(TestSTIX):
                     self._datetime_from_str(custom.value).timestamp(),
                     value.timestamp()
                 )
+                continue
+            if isinstance(value, bool):
+                self.assertEqual(custom.value, 'true' if value else 'false')
+                self.assertEqual(custom.datatype, 'boolean')
                 continue
             self.assertEqual(custom.value, value)
 
@@ -2113,6 +2383,35 @@ class TestStix1Export(TestSTIX):
         # object attribute's other tag reaches the Indicator's handling
         self._check_handling_markings(indicator, ('WHITE',))
 
+    def _test_event_with_account_objects_with_attachment(self, event):
+        # The `parler-account` template declares `human` a `boolean`, and a
+        # boolean is what the event carries: cybox refuses the value, and
+        # before ticket 24 the whole conversion raised on it
+        misp_objects = deepcopy(event['Object'])
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        incident = self.parser.stix_package.incidents[0]
+        observables = incident.related_observables.observable
+        self.assertEqual(len(observables), len(misp_objects))
+        for observable, misp_object in zip(observables, misp_objects):
+            properties = self._check_observable_features(
+                observable.item, misp_object, 'Custom'
+            )
+            self.assertEqual(properties.custom_name, misp_object['name'])
+            self._check_custom_properties(
+                misp_object['Attribute'], properties.custom_properties
+            )
+        parler = next(
+            observable.item.object_.properties for observable in observables
+            if observable.item.object_.properties.custom_name
+            == 'parler-account'
+        )
+        human = next(
+            prop for prop in parler.custom_properties if prop.name == 'human'
+        )
+        self.assertEqual(human.value, 'false')
+        self.assertEqual(human.datatype, 'boolean')
+
     def _test_event_with_asn_object_indicator(self, event):
         properties, attributes = self._run_indicator_from_object_tests(event, 'AS')
         self._check_asn_properties(properties, attributes)
@@ -2812,6 +3111,10 @@ class TestSTIX11JSONExport(TestSTIX11Export):
         event = get_embedded_threat_actor_object_galaxy()
         self._test_embedded_threat_actor_object_galaxy(event['Event'])
 
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        self._test_event_with_account_objects_with_attachment(event['Event'])
+
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
         self._test_event_with_asn_object_indicator(event['Event'])
@@ -3340,6 +3643,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event.from_dict(**event)
         self._test_embedded_threat_actor_object_galaxy(misp_event)
 
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_account_objects_with_attachment(misp_event)
+
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
         misp_event = MISPEvent()
@@ -3865,6 +4174,10 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_embedded_threat_actor_object_galaxy(self):
         event = get_embedded_threat_actor_object_galaxy()
         self._test_embedded_threat_actor_object_galaxy(event['Event'])
+
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        self._test_event_with_account_objects_with_attachment(event['Event'])
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
@@ -4393,6 +4706,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_threat_actor_object_galaxy(misp_event)
+
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_account_objects_with_attachment(misp_event)
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()

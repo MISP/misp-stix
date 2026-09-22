@@ -133,12 +133,9 @@ _SNORT_RULES = (
 # What a STIX 1 round trip of every MISP object fixture still loses, per
 # object: its name, the object relations that do not come back, the ones that
 # come back under a name the MISP object never had, and the ticket that owns
-# the gap. 642 of 697 object attributes survive; the rest is the campaign's
+# the gap. 664 of 719 object attributes survive; the rest is the campaign's
 # remaining work, and this table is where its progress is visible.
 _CORPUS_ROUND_TRIP_LOSSES = {
-    ('get_event_with_account_objects_with_attachment', -1): (
-        'export error: ValueError', (), (), 'ticket 24'
-    ),
     ('get_event_with_attack_pattern_object', 0): (
         'attack-pattern',
         ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
@@ -2330,7 +2327,7 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 642 of the 697 object attributes come back, and every row
+        still loses: 664 of the 719 object attributes come back, and every row
         below names the ticket that owns its gap. `n -> n` is not the
         assertion - the campaign is not over - and the table is what fails on
         a regression and on an improvement nobody wrote down."""
