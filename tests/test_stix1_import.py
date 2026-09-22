@@ -40,14 +40,18 @@ from misp_stix_converter.tools import (
 from misp_stix_converter.tools.misp_object_templates import (
     _template_attribute_types, _template_description)
 from mixbox.namespaces import NamespaceNotFoundError
+from misp_stix_converter.stix2misp import (
+    external_stix1_to_misp, internal_stix1_to_misp, stix1_to_misp)
 from misp_stix_converter.stix2misp.external_stix1_to_misp import (
     ExternalSTIX1toMISPParser)
 from misp_stix_converter.stix2misp.internal_stix1_to_misp import (
     InternalSTIX1toMISPParser)
+from misp_stix_converter.misp2stix.stix1_mapping import MISPtoSTIX1Mapping
 from misp_stix_converter.stix2misp.stix1_mapping import (
     InternalSTIX1toMISPMapping, STIX1toMISPMapping)
 from pymisp import MISPEvent
-from unittest.mock import patch
+from pymisp.api import describe_types
+from unittest.mock import ANY, patch
 from uuid import uuid5
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction, Objective
@@ -88,7 +92,8 @@ from ._test_stix_import import (
     SMUGGLING_TAG_VALUE)
 from . import test_events
 from .test_events import (
-    get_base_event, get_event_with_asn_object,
+    get_base_event, get_event_with_account_objects_with_attachment,
+    get_event_with_asn_object,
     get_event_with_attack_pattern_galaxy, get_event_with_attack_pattern_object,
     get_event_with_campaign_name_attribute,
     get_event_with_course_of_action_galaxy,
@@ -99,7 +104,7 @@ from .test_events import (
     get_event_with_file_object, get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
     get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
-    get_event_with_mutex_object,
+    get_event_with_hash_composite_attributes, get_event_with_mutex_object,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
     get_event_with_process_object, get_event_with_process_object_v2,
     get_event_with_target_attributes,
@@ -107,7 +112,7 @@ from .test_events import (
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
     get_event_with_user_account_object, get_event_with_user_account_objects,
     get_event_with_vulnerability_galaxy, get_event_with_x509_object,
-    get_event_with_windows_service_attributes)
+    get_event_with_windows_service_attributes, get_hash_attributes)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
@@ -244,6 +249,37 @@ _CORPUS_ROUND_TRIP_LOSSES = {
     ('get_event_with_x509_object', 0): (
         'x509', ('signature_algorithm',), (), 'ticket 21'
     )
+}
+
+# A `cdhash` is 40 hexadecimal characters, the length of a sha1; an `impfuzzy`
+# has the `blocksize:hash:hash` shape of an ssdeep. Neither is in the fixture
+# corpus, and both are in the export's hash vocabulary
+_CDHASH = 'c0ffee' + 'a' * 34
+_IMPFUZZY_HASH = '24:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
+# What a STIX 1 round trip gives back the type of each hash the export writes
+# as a CybOX `Hash`. cybox types a hash by the length of its value, so seven
+# of the sixteen come back as the type whose length they share - a documented
+# loss no import-side rule can undo, nothing on the wire telling them apart
+# (ADR-0015, session A1). `Other` is the fallback for a length cybox names
+# nothing for: an ssdeep shape and a tlsh shape name themselves, and a `vhash`
+# has no shape to read
+_HASH_TYPE_ROUND_TRIP = {
+    'md5': 'md5',
+    'sha1': 'sha1',
+    'sha224': 'sha224',
+    'sha256': 'sha256',
+    'sha384': 'sha384',
+    'sha512': 'sha512',
+    'ssdeep': 'ssdeep',
+    'tlsh': 'tlsh',
+    'authentihash': 'sha256',
+    'cdhash': 'sha1',
+    'impfuzzy': 'ssdeep',
+    'imphash': 'md5',
+    'pehash': 'sha1',
+    'sha512/224': 'sha224',
+    'sha512/256': 'sha256',
+    'vhash': 'other'
 }
 
 
@@ -2277,6 +2313,162 @@ class TestSTIX1Import(TestSTIX):
                     {('file', to_ids), ('pe', to_ids), ('pe-section', to_ids)}
                 )
 
+    def test_internal_record_misp_refuses_costs_that_record_only(self):
+        """A package of two events, the first carrying a journal entry naming
+        an attribute type MISP has not: pymisp refuses the attribute, and the
+        refusal used to escape `parse_stix_package()` with the whole package -
+        the second event, every other record of the first, and the
+        diagnostics that would have said so. The one attribute is the loss,
+        and the Error names the record and where it came from."""
+        first = self._incident_with_content()
+        first.id_ = f'MISP:Incident-{_PLAIN_OBJECT_UUID}'
+        history = History()
+        history_item = HistoryItem()
+        history_item.journal_entry = JournalEntry(
+            'attribute[Other][no-such-type]: what MISP has no type for'
+        )
+        history.append(history_item)
+        first.history = history
+        second = Incident()
+        second.id_ = f'MISP:Incident-{_RELATED_UUID}'
+        url = URI()
+        url.value = 'http://example.com/malicious'
+        second.related_observables.append(
+            RelatedObservable(
+                self._observable(url, 'URI', _URL_UUID),
+                relationship='Network activity'
+            )
+        )
+        stix_package = STIXPackage()
+        stix_package.related_packages = RelatedPackages()
+        for incident in (first, second):
+            inner_package = STIXPackage()
+            inner_package.add_incident(incident)
+            stix_package.related_packages.append(RelatedPackage(inner_package))
+        parser = self._parse_internal_package(stix_package)
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ),
+            [
+                ('domain', 'circl.lu'),
+                ('url', 'http://example.com/malicious')
+            ]
+        )
+        errors = parser.diagnostics()['errors']['misp event']
+        self.assertEqual(len(errors), 1)
+        self.assertIn('no-such-type attribute', errors[0])
+        self.assertIn('what MISP has no type for', errors[0])
+        self.assertIn(_PLAIN_OBJECT_UUID, errors[0])
+
+    def test_internal_hash_types_the_wire_renames_round_trip(self):
+        """cybox types a hash by the length of its value, so the sixteen hash
+        types the export writes as a `Hash` come back as the eleven cybox has
+        names for: the table is the documented loss, and a future change has
+        to move a row of it deliberately. `Type=Other` is the fallback for a
+        length cybox names nothing for - an ssdeep and a tlsh shape name
+        themselves, and what neither names stays the MISP `other` type."""
+        values = {
+            hash_type: attribute['value']
+            for hash_type, attribute in get_hash_attributes().items()
+        }
+        values.update({'cdhash': _CDHASH, 'impfuzzy': _IMPFUZZY_HASH})
+        self.assertEqual(
+            sorted(_HASH_TYPE_ROUND_TRIP),
+            sorted(MISPtoSTIX1Mapping.hash_type_attributes('single'))
+        )
+        for hash_type, expected in _HASH_TYPE_ROUND_TRIP.items():
+            with self.subTest(hash_type=hash_type):
+                hash_property = MISPtoSTIX1EventsParser._parse_hash_value(
+                    hash_type, values[hash_type]
+                )
+                self.assertEqual(
+                    InternalSTIX1toMISPParser._handle_hashes_attribute(
+                        hash_property
+                    ),
+                    (expected, values[hash_type], expected)
+                )
+
+    def test_internal_misp_export_hash_composite_attributes_round_trip(self):
+        """A `filename|<hash>` attribute exports as a `File` carrying the file
+        name and the hash, and the composite type is rebuilt from the hash
+        type read off the wire: `filename|other`, which MISP has no such type
+        for, was handed to pymisp, which refused it - out of
+        `parse_stix_package()`, costing the whole package. The composite is
+        checked against MISP's own types now, and the residue comes back as
+        the two attributes its halves are, both `to_ids` variants over."""
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_hash_composite_attributes(to_ids)
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                expected = []
+                for attribute in event['Event']['Attribute']:
+                    filename, _, hash_value = attribute['value'].rpartition('|')
+                    hash_type = attribute['type'].split('|')[1]
+                    # A type the export writes as a `Hash` comes back as the
+                    # one cybox named it; the rest travels as a custom
+                    # attribute, under the type it was written with
+                    read_back = _HASH_TYPE_ROUND_TRIP.get(hash_type, hash_type)
+                    if f'filename|{read_back}' in describe_types['types']:
+                        expected.append(
+                            (f'filename|{read_back}', attribute['value'])
+                        )
+                        continue
+                    expected.extend(
+                        (('filename', filename), (read_back, hash_value))
+                    )
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    expected
+                )
+                # The hash is the value the attribute existed for, so it keeps
+                # the uuid of the Observable; the file name qualifying it takes
+                # a random one, as every other import-side attribute does
+                residue = [
+                    attribute for attribute in parser.misp_event.attributes
+                    if attribute.type in ('filename', 'other')
+                ]
+                self.assertEqual(
+                    [attribute.type for attribute in residue],
+                    ['filename', 'other']
+                )
+                self.assertEqual(
+                    residue[1].uuid,
+                    get_hash_attributes()['vhash']['uuid']
+                )
+                self.assertNotEqual(
+                    residue[0].uuid, get_hash_attributes()['vhash']['uuid']
+                )
+                # Both halves keep what the attribute they came from carried -
+                # the comment on the Indicator a `to_ids` attribute is
+                # written as, an Observable carrying none (ADR-0015, ticket 16)
+                for attribute in residue:
+                    self.assertEqual(attribute.to_ids, to_ids)
+                    self.assertEqual(
+                        attribute.get('comment'),
+                        'Filename|vhash test attribute' if to_ids else None
+                    )
+                self.assertEqual(
+                    parser.diagnostics()['warnings']['misp event'],
+                    [
+                        'Unknown hash type in the object with id MISP:File-'
+                        f"{get_hash_attributes()['vhash']['uuid']}: "
+                        f"{get_hash_attributes()['vhash']['value']} read as "
+                        'an other hash.',
+                        "'filename|other' is no MISP attribute type in the "
+                        'object with id MISP:File-'
+                        f"{get_hash_attributes()['vhash']['uuid']}: "
+                        'filename14 and '
+                        f"{get_hash_attributes()['vhash']['value']} converted "
+                        'separately.'
+                    ]
+                )
+
     def _assert_relations_round_trip(self, converted, exported, relations):
         """Every named relation back under its own spelling, with the type and
         the value the MISP object had."""
@@ -2433,6 +2625,30 @@ class TestSTIX1Import(TestSTIX):
         self.assertGreater(entries, 0)
         self.assertEqual(disagreements, set())
 
+    def test_every_attribute_add_goes_through_the_guarded_funnel(self):
+        """Both STIX 1 import parsers add every attribute through
+        `_add_attribute`, the one place a record MISP refuses is caught: a
+        call site adding one itself is guarded only by whoever remembers to,
+        which is how `filename|other` came to cost whole packages. The count
+        is the assertion because a new call site is a new line of code, not a
+        failing test somewhere else."""
+        self.assertEqual(
+            {
+                module.__name__.rsplit('.', 1)[1]:
+                inspect.getsource(module).count('misp_event.add_attribute(')
+                for module in (
+                    stix1_to_misp, internal_stix1_to_misp,
+                    external_stix1_to_misp
+                )
+            },
+            {
+                # The funnel itself, in the shared base
+                'stix1_to_misp': 1,
+                'internal_stix1_to_misp': 0,
+                'external_stix1_to_misp': 0
+            }
+        )
+
     def test_internal_misp_export_property_bags_round_trip(self):
         """Every MISP object relation the export has no CybOX slot for travels
         as a custom property named after the relation itself, and the import
@@ -2488,6 +2704,76 @@ class TestSTIX1Import(TestSTIX):
                 self._assert_relations_round_trip(
                     converted, exported, relations
                 )
+
+    def test_internal_misp_export_declared_types_read_back(self):
+        """A MISP object template declares the type of every relation it
+        names, and the export writes a value cybox refuses - a boolean, an
+        integer, a float - in XSD's lexical form under the CybOX `datatype`
+        saying which (ADR-0015, session A1). Reading that name back is the
+        document being read as written, not the coercion no contract allows:
+        the `human` of a `parler-account` comes back as `False`, and a
+        property carrying no `datatype` stays the string it is."""
+        event = get_event_with_account_objects_with_attachment()
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted = parser.misp_event.get_objects_by_name('parler-account')[0]
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.value
+                for attribute in converted.attributes
+            },
+            {
+                'account-id': '42', 'account-name': 'ParlerOctocat',
+                'human': False, 'profile-photo': 'octocat.png'
+            }
+        )
+        self.assertEqual(
+            [
+                (attribute.object_relation, attribute.type)
+                for attribute in converted.attributes
+                if attribute.object_relation == 'human'
+            ],
+            [('human', 'boolean')]
+        )
+
+    def test_internal_declared_types_are_read_from_the_datatype_alone(self):
+        """Only the `datatype` restores a type: every lexical form the export
+        writes comes back, a form the declared type does not hold stays the
+        string it is, and a property written before the export declared
+        anything - which is every document that shipped - stays a string
+        too."""
+        for datatype, value, expected in (
+                ('boolean', 'true', True),
+                ('boolean', 'false', False),
+                ('boolean', 'not a boolean', 'not a boolean'),
+                ('int', '1234', 1234),
+                ('long', '-4294967296', -4294967296),
+                ('integer', '9' * 25, int('9' * 25)),
+                ('int', 'not an integer', 'not an integer'),
+                ('float', '3.5', 3.5),
+                ('float', 'INF', float('inf')),
+                ('float', '-INF', float('-inf')),
+                ('float', 'not a float', 'not a float'),
+                ('base64Binary', 'Zm9v', 'Zm9v'),
+                (None, 'false', 'false')):
+            with self.subTest(datatype=datatype, value=value):
+                prop = Property()
+                prop.name = 'human'
+                if datatype is not None:
+                    prop.datatype = datatype
+                prop.value = value
+                self.assertEqual(
+                    InternalSTIX1toMISPParser._property_value(prop), expected
+                )
+        # A `NaN` is the one form no equality reads back
+        prop = Property()
+        prop.name = 'human'
+        prop.datatype = 'float'
+        prop.value = 'NaN'
+        self.assertNotEqual(
+            InternalSTIX1toMISPParser._property_value(prop),
+            InternalSTIX1toMISPParser._property_value(prop)
+        )
 
     def test_internal_misp_export_asn_and_mutex_objects_round_trip_whole(self):
         """The two carriers the bag completes: every attribute they hold is
@@ -3630,6 +3916,109 @@ class TestSTIX1Import(TestSTIX):
             )
         )
 
+    def _composition_observable(self, *members):
+        """The Observable the export writes a MISP object as: a composition
+        of one Observable per attribute."""
+        observable = Observable()
+        observable.id_ = f'MISP:Observable-{_OBSERVABLE_UUID}'
+        observable.observable_composition = ObservableComposition(
+            observables=list(members)
+        )
+        observable.observable_composition.operator = 'AND'
+        return observable
+
+    def test_internal_file_composition_splits_a_hash_of_no_composite_type(self):
+        """A `File` member carrying a file name and a hash of a shape nothing
+        names rebuilt `filename|other`, which pymisp refused - and in a
+        composition that cost the whole object rather than the attribute. Both
+        halves are `file` relations, so the pairing is the whole loss."""
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.add_hash(
+            Hash('115056655d15151138z66hz1021z55z66z3', Hash.TYPE_OTHER,
+                 exact=True)
+        )
+        member = self._observable(file_object, 'File', _PLAIN_OBJECT_UUID)
+        incident = Incident()
+        incident.title = 'Incident with a file composition'
+        incident.related_observables.append(
+            RelatedObservable(
+                self._composition_observable(member), relationship='file'
+            )
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self._assert_single_object(
+            parser, 'file',
+            {
+                'filename': 'evil.exe',
+                'other': '115056655d15151138z66hz1021z55z66z3'
+            }
+        )
+
+    def test_internal_refused_composition_record_costs_that_object_only(self):
+        """The composition branch builds its object without going through
+        `_handle_object_case`, so it needs the same guard: a member naming a
+        MISP attribute type whose value MISP will not read costs the object,
+        not the package, and the Error names it."""
+        member = self._observable(
+            self._custom(None, ('datetime', 'not a date')), 'Custom',
+            _PLAIN_OBJECT_UUID
+        )
+        incident = self._incident_with_content()
+        incident.title = 'Incident with a refused composition'
+        incident.related_observables.append(
+            RelatedObservable(
+                self._composition_observable(member), relationship='file'
+            )
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.misp_event.objects, [])
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('domain', 'circl.lu')]
+        )
+        errors = parser.diagnostics()['errors']['misp event']
+        self.assertEqual(len(errors), 1)
+        self.assertIn('Error with the file object', errors[0])
+        self.assertIn('not a date', errors[0])
+
+    def test_internal_composition_pairing_into_no_composite_records_an_error(self):
+        """An attribute exported as a composition is read back by pairing the
+        values its members hold into a MISP composite type: a pair MISP has
+        none for returned nothing, and unpacking the nothing raised a
+        `TypeError` out of `parse_stix_package()` - which no pymisp guard
+        catches. The Error names the types it could not pair."""
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        incident = self._incident_with_content()
+        incident.title = 'Incident with an unpairable composition'
+        incident.related_observables.append(
+            RelatedObservable(
+                self._composition_observable(
+                    self._observable(domain, 'DomainName', _PLAIN_OBJECT_UUID)
+                ),
+                relationship='Network activity'
+            )
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('domain', 'circl.lu')]
+        )
+        errors = parser.diagnostics()['errors']['misp event']
+        self.assertEqual(len(errors), 1)
+        self.assertIn(
+            'domain make no MISP composite attribute', errors[0]
+        )
+        self.assertIn(_OBSERVABLE_UUID, errors[0])
+
     def test_external_dns_record_observable_converts(self):
         dns_record = DNSRecord()
         dns_record.domain_name = 'circl.lu'
@@ -3908,6 +4297,176 @@ class TestSTIX1Import(TestSTIX):
                 for attribute in parser.misp_event.attributes
             ],
             [('filename|ssdeep', f'evil.exe|{_SSDEEP_HASH}')]
+        )
+
+    def test_external_record_misp_refuses_costs_that_record_only(self):
+        """The record boundary is the unit of the guard: a relation the `file`
+        template types `datetime` carrying a value MISP will not read as one
+        is refused by pymisp, and the refusal used to escape
+        `parse_stix_package()` - costing every other record of the package,
+        the recorded error included, since the diagnostics never reached a
+        caller. The object is the whole loss, and the Error names it."""
+        stix_package = STIXPackage()
+        stix_package.observables = Observables(
+            [
+                self._observable(
+                    self._custom(
+                        'file',
+                        ('filename', 'evil.exe'),
+                        ('creation-time', 'not a date')
+                    ),
+                    'Custom'
+                ),
+                self._observable(
+                    self._custom('github-user', ('username', 'chrisr3d')),
+                    'Custom', _PLAIN_OBJECT_UUID
+                )
+            ]
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [
+                (misp_object.name, misp_object.uuid)
+                for misp_object in parser.misp_event.objects
+            ],
+            [('github-user', _PLAIN_OBJECT_UUID)]
+        )
+        errors = parser.diagnostics()['errors']['misp event']
+        self.assertEqual(len(errors), 1)
+        self.assertIn(f'file object with id {_OBSERVABLE_UUID}', errors[0])
+        self.assertIn('not a date', errors[0])
+
+    def test_external_file_with_an_other_typed_tlsh_hash_converts(self):
+        """A tlsh is 70 hexadecimal characters, optionally behind the `T1`
+        version prefix, and cybox has no name for that length: the shape is
+        what names it, the one `Type=Other` a value tells apart besides the
+        ssdeep above."""
+        for digest in (
+                'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396'
+                '813829297',
+                'T1c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f3'
+                '96813829297'):
+            with self.subTest(digest=digest):
+                file_object = File()
+                file_object.file_name = 'evil.exe'
+                file_object.add_hash(
+                    Hash(digest, Hash.TYPE_OTHER, exact=True)
+                )
+                parser = self._parse_external_observable(file_object, 'File')
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('filename|tlsh', f'evil.exe|{digest}')]
+                )
+
+    def test_external_lone_hash_of_an_unnameable_shape_converts_as_other(self):
+        """A hash with no file name beside it is the whole attribute: a tlsh
+        comes back under its own type, and a `vhash` - which no shape names -
+        comes back under the MISP `other` type, with the one warning saying
+        the type is what was lost."""
+        for digest, attribute_type, warnings in (
+                (
+                    'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385'
+                    'f396813829297', 'tlsh', {}
+                ),
+                (
+                    '115056655d15151138z66hz1021z55z66z3', 'other',
+                    {
+                        'misp event': [
+                            'Unknown hash type in the object with id '
+                            f'MISP:File-{_OBSERVABLE_UUID}: '
+                            '115056655d15151138z66hz1021z55z66z3 read as an '
+                            'other hash.'
+                        ]
+                    }
+                )):
+            with self.subTest(attribute_type=attribute_type):
+                file_object = File()
+                file_object.add_hash(Hash(digest, Hash.TYPE_OTHER, exact=True))
+                parser = self._parse_external_observable(file_object, 'File')
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [(attribute_type, digest)]
+                )
+                self.assertEqual(parser.diagnostics()['warnings'], warnings)
+
+    def test_external_refused_attribute_costs_that_record_only(self):
+        """The External parser reaches the same funnel: a `Custom` property
+        named after a MISP attribute type carries a value MISP will not read
+        as one, and the refusal used to escape `parse_stix_package()` with
+        the whole package. The attribute is the whole loss, the Error names
+        it, and the Observable next to it converts."""
+        stix_package = STIXPackage()
+        stix_package.observables = Observables(
+            [
+                self._observable(
+                    self._custom(None, ('datetime', 'not a date')), 'Custom'
+                ),
+                self._observable(
+                    self._custom(None, ('md5', _MD5_HASH)), 'Custom',
+                    _PLAIN_OBJECT_UUID
+                )
+            ]
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('md5', _MD5_HASH, _PLAIN_OBJECT_UUID)]
+        )
+        errors = parser.diagnostics()['errors']['misp event']
+        self.assertEqual(len(errors), 1)
+        self.assertIn('Error with the datetime attribute: not a date', errors[0])
+        self.assertIn(f'MISP:Custom-{_OBSERVABLE_UUID}', errors[0])
+
+    def test_external_file_name_and_hash_of_no_composite_type_convert_apart(self):
+        """A `File` carrying a file name and a hash of a shape nothing names
+        rebuilt the `filename|other` composite MISP has no type for: pymisp
+        refused it, out of `parse_stix_package()`, and the whole package was
+        lost. Both values come back now, as the two attributes they are - the
+        hash keeping the id of the Observable, the file name qualifying it
+        taking a random uuid - with one warning naming the observable."""
+        digest = '115056655d15151138z66hz1021z55z66z3'
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.add_hash(Hash(digest, Hash.TYPE_OTHER, exact=True))
+        parser = self._parse_external_observable(file_object, 'File')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                ('filename', 'evil.exe', ANY),
+                ('other', digest, _OBSERVABLE_UUID)
+            ]
+        )
+        self.assertNotEqual(
+            parser.misp_event.attributes[0].uuid, _OBSERVABLE_UUID
+        )
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {
+                'misp event': [
+                    'Unknown hash type in the object with id '
+                    f'MISP:File-{_OBSERVABLE_UUID}: {digest} read as an '
+                    'other hash.',
+                    "'filename|other' is no MISP attribute type in the object "
+                    f'with id MISP:File-{_OBSERVABLE_UUID}: evil.exe and '
+                    f'{digest} converted separately.'
+                ]
+            }
         )
 
     def test_external_file_with_an_other_typed_hash_converts(self):
