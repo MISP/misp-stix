@@ -404,9 +404,16 @@ class MISPtoSTIXParser(AbstractParser):
         )
 
     def _object_error(self, misp_object: dict, exception: Exception):
-        features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
         tb = self._parse_traceback(exception)
-        self._add_error(f"Error with the {features}:\n{tb}.")
+        self._add_error(
+            f"Error with the {self._object_features(misp_object)}:\n{tb}."
+        )
+        if self._raised_from(exception, self._parse_custom_object.__name__):
+            # The custom object route is the fallback: retrying what just
+            # raised raises again, with nothing left to catch it - the
+            # traceback escapes the parser and, from a collection, costs
+            # every other event too. The object is lost either way
+            return
         self._parse_custom_object(misp_object)
 
     @staticmethod
@@ -444,6 +451,18 @@ class MISPtoSTIXParser(AbstractParser):
             'Unable to find the pe object related to '
             f'the file object {file_uuid}.'
         )
+
+    @staticmethod
+    def _raised_from(exception: Exception, method: str) -> bool:
+        """Whether the given method is among the frames the exception came
+        through - which is what tells a failed conversion route from a failed
+        fallback."""
+        tb = exception.__traceback__
+        while tb is not None:
+            if tb.tb_frame.f_code.co_name == method:
+                return True
+            tb = tb.tb_next
+        return False
 
     def _referenced_object_name_warning(
             self, object_name: str, referenced_uuid: str):
