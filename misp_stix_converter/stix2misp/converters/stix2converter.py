@@ -444,13 +444,12 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         """Pick the MISP attribute a property of an object's STIX form maps to.
 
         A custom property carries a MISP object relation folded to the STIX
-        charset (ADR-0013). The object template is the exact inverse of that
-        fold, so it is asked first for the original spelling and the type;
-        the static mapping table comes next, for what the template cannot
-        say - a relation it has dropped since; failing both, the value
-        survives as a text attribute under the folded relation and the loss
-        of spelling and type is reported. Any other property maps through the
-        static table alone.
+        charset. The object template is the exact inverse of that fold, so it
+        is asked first for the original spelling and the type; the static
+        mapping table comes next, for what the template cannot say - a relation
+        it has dropped since; failing both, the value survives as a text
+        attribute under the folded relation and the loss of spelling and type
+        is reported. Any other property maps through the static table alone.
 
         :param name: the MISP object template name
         :param field: the STIX property, or pattern segment, being read
@@ -595,7 +594,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         it, a name it lists comes back as listed and any other was written
         verbatim. Without a channel, `dash_meta_fields` restores the `-` the
         names it lists lost in the bundles exported before the channel
-        existed (ADR-0013); the list is frozen there.
+        existed; the list is frozen there.
 
         :param field: the custom property carrying the meta key
         :param original_names: the channel, or `None` when the object has none

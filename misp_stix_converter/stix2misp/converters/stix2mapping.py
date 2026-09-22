@@ -1473,7 +1473,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_hostname=__hostname_attribute,
         x_misp_ip=STIX2Mapping.ip_attribute(),
         x_misp_text=STIX2Mapping.text_attribute(),
-        # spelling exported before the custom property name fold (ADR-0013)
+        # spelling exported before the custom property name fold
         x_misp_AS=__ip_port_as_attribute
     )
     __lnk_object_mapping = Mapping(

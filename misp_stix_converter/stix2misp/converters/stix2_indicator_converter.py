@@ -1875,7 +1875,7 @@ class InternalSTIX2IndicatorConverter(
         away. Case is not such a narrowing, and a hash is the usual pair
         differing by it alone, so the comparison is lowered. A registry value
         is written with its `%` escaped in a pattern and bare in the
-        observable (ADR-0007), so both of its forms are tried
+        observable, so both of its forms are tried
         """
         value = str(value).lower()
         candidates = {value, value.replace('\\%', '%')}

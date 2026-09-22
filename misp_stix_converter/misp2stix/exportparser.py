@@ -487,9 +487,9 @@ class MISPtoSTIXParser(AbstractParser):
     def _unstorable_property_warning(
             self, relation: str, value: Any, record: Optional[str] = None):
         # The relation and the record name what the reader lost, the value
-        # says what shape it had. Not merged with any other message: a
-        # caller filtering under ADR-0014 tells a value no format can write
-        # from a value written under another name
+        # says what shape it had. Not merged with any other message: a caller
+        # filtering tells a value no format can write from a value written
+        # under another name
         origin = f' in the {record}' if record else ''
         self._add_warning(
             f'{relation!r} has no lexical form STIX 1 can carry'

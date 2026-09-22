@@ -1073,9 +1073,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if 'definition_type' in marking_definition:
             # The tag a marking is read as is one this library writes out of
             # the two fields below, so it goes through the tag builder like
-            # every other built tag (ADR-0012): a `definition` carrying a `"`
-            # would otherwise decide what else the data it governs is tagged
-            # with. A marking naming its own type keeps the slots it named.
+            # every other built tag: a `definition` carrying a `"` would
+            # otherwise decide what else the data it governs is tagged with.
+            # A marking naming its own type keeps the slots it named.
             definition_type = marking_definition['definition_type']
             definition = str(marking_definition['definition'][definition_type])
             slots = (
