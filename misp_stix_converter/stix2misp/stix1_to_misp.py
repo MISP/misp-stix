@@ -63,6 +63,10 @@ _SSDEEP_PATTERN = re.compile(r'^\d+:[0-9A-Za-z+/]*:[0-9A-Za-z+/]*$')
 # The length of an `authentihash`, the one `pe` header hash a `Type=Other` can
 # hold besides the `impfuzzy` that type is the fallback for
 _SHA256_PATTERN = re.compile(r'^[0-9a-fA-F]{64}$')
+# 70 hexadecimal characters, optionally behind the `T1` version prefix: the
+# shape of a `tlsh` value, the one hash type cybox has no name for whose value
+# says what it is
+_TLSH_PATTERN = re.compile(r'^(?:T1)?[0-9a-fA-F]{70}$')
 
 
 class StixObjectTypeError(Exception):
@@ -650,6 +654,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 _, hash_value, relation = self._handle_hashes_attribute(
                     hash_property
                 )
+                if relation == 'other':
+                    # Nothing on the wire names the type of a hash cybox had
+                    # no length for and no shape names either: the value is
+                    # kept, under the one MISP type that says nothing
+                    self._unknown_hash_type_warning(hash_value, object_id)
                 attribute = self._read_derived_attribute(
                     relation, hash_value, template_types, object_id
                 )
@@ -788,14 +797,49 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # Return type & value of a hash attribute
     @classmethod
     def _handle_hashes_attribute(cls, hash_property: Hash) -> tuple:
+        """Read the type and the value of a hash.
+
+        cybox types a hash by the length of its value, so `Other` is what a
+        value of no well-known length gets: the shape is then all there is to
+        name it with, and a type no shape names stays the MISP `other` type,
+        which says nothing. Each caller reports that as its own context has
+        it - on the `pe-section` path `other` is no relation, so the attribute
+        is skipped and the skip is what the reader needs to hear. The `pe`
+        header hashes do not come through here at all: their relation names
+        are their own vocabulary (`_pe_header_hash_relation`).
+
+        :param hash_property: the cybox hash
+        :return: the `(type, value, relation)` of the hash - one name, which
+            is both for a hash
+        """
         hash_type = hash_property.type_.value.lower()
         hash_value = cls._hash_value(hash_property)
-        if (hash_type == 'other' and isinstance(hash_value, str)
-                and _SSDEEP_PATTERN.match(hash_value)):
-            # `Other` is the type cybox gives a value of no well-known length,
-            # and how MISP's own STIX 1 export wrote ssdeep: the shape names it
-            hash_type = 'ssdeep'
+        if hash_type == 'other':
+            hash_type = cls._hash_type_from_value(hash_value) or hash_type
         return hash_type, hash_value, hash_type
+
+    @staticmethod
+    def _hash_type_from_value(hash_value) -> Optional[str]:
+        """Name the MISP hash type a value cybox typed `Other` carries.
+
+        Two shapes name one: the `blocksize:hash:hash` of an ssdeep - how
+        MISP's own STIX 1 export wrote every ssdeep - and the 70 hexadecimal
+        characters of a tlsh, optionally behind the `T1` version prefix. It is
+        a length-and-charset test, not a checksum. Nothing else is guessed: a
+        `vhash` has no shape to read, and the hash types cybox renames on the
+        wire are named by their length alone, which is the length of the type
+        it renamed them to.
+
+        :param hash_value: the hash value
+        :return: the MISP hash type, None when no shape names one
+        """
+        if not isinstance(hash_value, str):
+            return None
+        if _SSDEEP_PATTERN.match(hash_value):
+            return 'ssdeep'
+        if _TLSH_PATTERN.match(hash_value):
+            return 'tlsh'
+        return None
 
     # Return type & value of a hostname attribute
     def _handle_hostname(self, properties: hostname_object.Hostname) -> tuple:
@@ -1042,20 +1086,23 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         The cybox type names it, except for `Other`: the type the length table
         falls back to for an `impfuzzy`, and the one an export older than
         2026.9.21 gave an `authentihash`, whose value it measured the length of
-        wrapped in a list. A value of the `blocksize:hash:hash` shape an
-        `impfuzzy` always has is one, a value of the length an `authentihash`
-        has is one, and what is neither reads as the `impfuzzy` the fallback
-        was written for.
+        wrapped in a list. A value of the length an `authentihash` has is one,
+        and everything else `Other` is reads as the `impfuzzy` the fallback
+        was written for - which the mapping says, `other` being one of its
+        four entries.
+
+        This is the relation-name precedence the shared shape rule does not
+        have: a `pe` carries no `ssdeep` relation, so the shape an ssdeep and
+        an `impfuzzy` share names the `impfuzzy` here, where the attribute
+        path - with both types possible - can only say `ssdeep`.
 
         :param hash_type: the cybox hash type, lowercased
         :param hash_value: the hash value
         :return: the object relation, None when the type names none
         """
-        if hash_type == 'other' and isinstance(hash_value, str):
-            if _SSDEEP_PATTERN.match(hash_value):
-                return 'impfuzzy'
-            if _SHA256_PATTERN.match(hash_value):
-                return 'authentihash'
+        if (hash_type == 'other' and isinstance(hash_value, str)
+                and _SHA256_PATTERN.match(hash_value)):
+            return 'authentihash'
         return self._mapping.pe_header_hash_mapping(hash_type)
 
     def _read_pe_section(self, section: win_executable_file_object.PESection,
@@ -1672,6 +1719,15 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'{composite_type!r} is no MISP attribute type'
             f'{self._object_origin(object_id)}: {filename} and {hash_value} '
             'converted separately.'
+        )
+
+    def _unknown_hash_type_warning(
+            self, hash_value: str, object_id: Optional[str]):
+        # Its own message, not the unstorable one: the value is kept, and what
+        # the reader lost is the name of what it is
+        self._add_warning(
+            f'Unknown hash type{self._object_origin(object_id)}: '
+            f'{hash_value} read as an other hash.'
         )
 
     def _unknown_pe_header_hash_type_warning(

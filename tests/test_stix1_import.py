@@ -3914,7 +3914,8 @@ class TestSTIX1Import(TestSTIX):
         """`Other` is a MISP attribute type of its own, and no `file` object
         relation: a hash of no well-known length and of no shape naming a
         relation keeps working off-template, as it does today. A uniform skip
-        would start dropping values that survive."""
+        would start dropping values that survive - and the one warning says
+        the type is what was lost, the value being kept."""
         digest = 'f' * 24
         file_object = File()
         file_object.add_hash(Hash(_MD5_HASH, exact=True))
@@ -3930,7 +3931,16 @@ class TestSTIX1Import(TestSTIX):
             },
             {'md5': 'md5', 'other': 'other'}
         )
-        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {
+                'misp event': [
+                    'Unknown hash type in the object with id '
+                    f'MISP:File-{_OBSERVABLE_UUID}: {digest} read as an '
+                    'other hash.'
+                ]
+            }
+        )
 
     def test_external_file_hash_of_unknown_type_costs_that_hash_only(self):
         """The cybox hash type is the MISP type and the object relation of the
