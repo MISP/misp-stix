@@ -67,6 +67,14 @@ _SHA256_PATTERN = re.compile(r'^[0-9a-fA-F]{64}$')
 # shape of a `tlsh` value, the one hash type cybox has no name for whose value
 # says what it is
 _TLSH_PATTERN = re.compile(r'^(?:T1)?[0-9a-fA-F]{70}$')
+# What the import gives back a value the export wrote under a CybOX
+# `datatype`: the MISP object template declares the type, the document
+# declares it too, and reading it is not the coercion no contract allows.
+# A name this does not list leaves the value a string
+_DECLARED_TYPES = {'int': int, 'long': int, 'integer': int, 'float': float}
+# The lexical forms XSD gives a boolean, `true` and `false` being the two the
+# export writes
+_BOOLEAN_FORMS = {'true': True, '1': True, 'false': False, '0': False}
 
 
 class StixObjectTypeError(Exception):
@@ -1519,8 +1527,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     getattr(properties, field).value, relation
                 )
 
-    @staticmethod
-    def _property_value(value):
+    @classmethod
+    def _property_value(cls, prop):
         """Read the value a custom property carries, guarded against what is
         no attribute value.
 
@@ -1532,12 +1540,51 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         `str()` would store `False` as `'False'` and a dictionary as its
         Python repr.
 
-        :param value: the property value
+        A string the document declares the type of is the one exception:
+        reading a `datatype` back is not coercion, it is the document being
+        read as written, and it is what gives a `boolean` relation `False`
+        rather than the word.
+
+        :param prop: the custom property
         :return: the value, None when it is no MISP attribute value
         """
+        value = prop.value
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
-        return value if isinstance(value, str) else None
+        if not isinstance(value, str):
+            return None
+        return cls._declared_value(value, getattr(prop, 'datatype', None))
+
+    @staticmethod
+    def _declared_value(value: str, datatype):
+        """Read a value under the type the document declares for it.
+
+        The export writes a MISP value its object template types as a
+        `boolean`, an `integer` or a `float` in XSD's lexical form, under the
+        CybOX `datatype` naming which: the same name backwards is what gives
+        the value back. A property carrying no `datatype` - every document
+        written before the export declared one - stays the string it is, and
+        that is the named loss: a template says what a relation is, not what
+        this document carried.
+
+        :param value: the lexical form on the wire
+        :param datatype: the CybOX `datatype`, None where the property
+            declares none
+        :return: the value under its declared type, the string itself where
+            nothing declares one or the form does not hold it
+        """
+        # A form the declared type does not hold names nothing, so the string
+        # is what the document carries either way
+        declared_type = getattr(datatype, 'value', datatype)
+        if declared_type == 'boolean':
+            return _BOOLEAN_FORMS.get(value, value)
+        reader = _DECLARED_TYPES.get(declared_type)
+        if reader is None:
+            return value
+        try:
+            return reader(value)
+        except ValueError:
+            return value
 
     def _read_custom_properties(self, properties, name: str) -> Iterator[tuple]:
         """Read the property bag a typed CybOX object carries.
@@ -1576,7 +1623,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :return: the `(type, value, relation)` of each property
         """
         for prop in custom_properties or ():
-            value = self._property_value(prop.value)
+            value = self._property_value(prop)
             if value is None:
                 self._unstorable_attribute_warning(
                     prop.name, prop.value, object_id
