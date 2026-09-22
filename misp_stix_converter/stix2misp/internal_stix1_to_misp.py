@@ -9,6 +9,7 @@ from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from pymisp.api import describe_types
+from pymisp.exceptions import PyMISPError
 from datetime import datetime
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction
@@ -144,12 +145,15 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                         self.misp_event.add_tag(entry_value)
                     elif entry_type.startswith('attribute['):
                         _, category, attribute_type = entry_type.split('[')
-                        self.misp_event.add_attribute(
-                            **{
+                        # The type is read off the journal entry text: what
+                        # MISP has no such type for is the one attribute lost
+                        self._add_attribute(
+                            {
                                 'type': attribute_type[:-1],
                                 'category': category[:-1],
                                 'value': entry_value
-                            }
+                            },
+                            self._event.id_
                         )
                     elif entry_type == "Event Threat Level":
                         threat_level = self._mapping.threat_level_mapping(
@@ -161,7 +165,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     continue
         if self._event.information_source and self._event.information_source.references:
             for reference in self._event.information_source.references:
-                self.misp_event.add_attribute(**{'type': 'link', 'value': reference})
+                self._add_attribute(
+                    {'type': 'link', 'value': reference}, self._event.id_
+                )
         self._parse_package_context(
             package, frozenset(object_courses_of_action)
         )
@@ -265,7 +271,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         misp_attribute = {'type': 'target-machine', 'value': value}
         if comment is not None:
             misp_attribute['comment'] = comment
-        self.misp_event.add_attribute(**misp_attribute)
+        self._add_attribute(misp_attribute, self._event.id_)
 
     def _parse_attack_pattern_object(self, attack_pattern: AttackPattern, ttp_id: str):
         attributes = []
@@ -316,7 +322,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if tags:
             misp_attribute['Tag'] = list(tags)
         misp_attribute.update(self._sanitise_attribute_uuid(campaign.id_))
-        self.misp_event.add_attribute(**misp_attribute)
+        self._add_attribute(misp_attribute, campaign.id_)
 
     # Parse indicators of a STIX document coming from our exporter
     def _parse_indicator(self, indicator: RelatedIndicator):
@@ -452,7 +458,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if tags:
             misp_attribute['Tag'] = list(tags)
         misp_attribute.update(self._sanitise_attribute_uuid(identity.id_))
-        self.misp_event.add_attribute(**misp_attribute)
+        self._add_attribute(misp_attribute, identity.id_)
 
     def _parse_vulnerability_object(
             self, vulnerability: Vulnerability, ttp_id: str,
@@ -476,7 +482,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     attributes['comment'] = comment
                 if tags:
                     attributes['Tag'] = list(tags)
-                self.misp_event.add_attribute(**attributes)
+                self._add_attribute(attributes, ttp_id)
             else:
                 vulnerability_object = MISPObject('vulnerability')
                 vulnerability_object.uuid = ttp_id
@@ -578,7 +584,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             attribute = {'type': attribute_type, 'value': rule, **misp_attribute}
             if index == 0:
                 attribute.update(self._sanitise_attribute_uuid(indicator.id_))
-            self.misp_event.add_attribute(**attribute)
+            self._add_attribute(attribute, indicator.id_)
 
     def _parse_attribute_observable(
             self, observable: Observable, category: Optional[str] = None):
@@ -608,7 +614,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     properties, title=observable.title
                 )
                 if isinstance(attribute_value, (str, int)):
-                    self._handle_attribute_case(attribute_type, attribute_value, compl_data, misp_attribute)
+                    self._handle_attribute_case(
+                        attribute_type, attribute_value, compl_data,
+                        misp_attribute, stix_object_id
+                    )
                 else:
                     self._handle_object_case(attribute_type, attribute_value, compl_data, to_ids=to_ids)
             except StixObjectTypeError as xsi_type:
@@ -625,8 +634,24 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 except StixObjectTypeError as xsi_type:
                     self._stix_object_type_error(xsi_type, stix_object_id)
             if attribute_dict:
-                attribute_type, attribute_value = self._composite_type(attribute_dict)
-                self.misp_event.add_attribute(attribute_type, attribute_value, **misp_attribute)
+                composite = self._composite_type(attribute_dict)
+                if composite is None:
+                    # The values a composition holds pair into no MISP
+                    # composite type: there is no attribute to build, and
+                    # unpacking the nothing that was returned used to cost the
+                    # whole package
+                    self._unconvertible_composition_error(
+                        sorted(attribute_dict), stix_object_id
+                    )
+                    return
+                attribute_type, attribute_value = composite
+                self._add_attribute(
+                    {
+                        'type': attribute_type, 'value': attribute_value,
+                        **misp_attribute
+                    },
+                    stix_object_id
+                )
 
     # Parse STIX object that we know will give MISP objects
     def _parse_misp_object_indicator(self, indicator: Indicator):
@@ -699,28 +724,56 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             # and pymisp joins it into a filesystem path to find the template:
             # a name that is not a plain template name is kept out of that join
             name, rejected_name = _sanitise_template_name(name)
-            misp_object = MISPObject(name, misp_objects_path_custom=_MISP_objects_path)
-            self._sanitise_object_uuid(misp_object, item.id_)
-            comment = self._read_object_comment(name, description, title)
-            if comment is not None:
-                misp_object.comment = comment
-            if rejected_name is not None:
-                self._invalid_template_name_warning(rejected_name, item.id_)
-                self._record_rejected_template_name(misp_object, rejected_name)
-            if to_ids:
-                observables = item.observable.observable_composition.observables
-                misp_object.timestamp = self._timestamp_from_date(item.timestamp)
-            else:
-                observables = item.observable_composition.observables
-            args = (misp_object, observables, to_ids)
-            self._handle_file_composition(*args) if name == 'file' else self._handle_composition(*args)
-            self.misp_event.add_object(misp_object)
+            # Guarded as one record, like every other object: what pymisp
+            # refuses inside a composition costs that object and no more
+            try:
+                self._build_composition_object(
+                    item, name, rejected_name, to_ids, description, title
+                )
+            except PyMISPError as exception:
+                self._refused_object_error(
+                    name, exception, self._sanitise_uuid(item.id_)
+                )
         else:
             properties = item.observable.object_.properties if to_ids else item.object_.properties
             self._parse_observable_object(
-                properties, to_ids, self._sanitise_uuid(item.id_),
+                properties, to_ids, self._sanitise_uuid(item.id_), item.id_,
                 name=name, description=description, title=title
             )
+
+    def _build_composition_object(self, item, name: str,
+                                  rejected_name: Optional[str], to_ids: bool,
+                                  description, title):
+        """Build the MISP object an Observable composition was exported as,
+        and add it to the event.
+
+        Called through the guard in `_fill_misp_object`, which is where the
+        refusal of any record built here is recorded.
+
+        :param item: the Indicator or Observable carrying the composition
+        :param name: the object template name, sanitised
+        :param rejected_name: the name `_sanitise_template_name` refused, None
+            where it kept the one the document carried
+        :param to_ids: the `to_ids` flag the whole composition was written with
+        :param description: the STIX description field, or None
+        :param title: the Record Title, where the shape carries one
+        """
+        misp_object = MISPObject(name, misp_objects_path_custom=_MISP_objects_path)
+        self._sanitise_object_uuid(misp_object, item.id_)
+        comment = self._read_object_comment(name, description, title)
+        if comment is not None:
+            misp_object.comment = comment
+        if rejected_name is not None:
+            self._invalid_template_name_warning(rejected_name, item.id_)
+            self._record_rejected_template_name(misp_object, rejected_name)
+        if to_ids:
+            observables = item.observable.observable_composition.observables
+            misp_object.timestamp = self._timestamp_from_date(item.timestamp)
+        else:
+            observables = item.observable_composition.observables
+        args = (misp_object, observables, to_ids)
+        self._handle_file_composition(*args) if name == 'file' else self._handle_composition(*args)
+        self.misp_event.add_object(misp_object)
 
     def _handle_composition(self, misp_object, observables, to_ids):
         for observable in observables:
@@ -730,8 +783,18 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             except StixObjectTypeError as xsi_type:
                 self._stix_object_type_error(xsi_type, observable.id_)
                 continue
+            attribute_type, attribute_value, relation = attribute
+            filename = self._filename_residue(relation)
+            if filename is not None:
+                # In an object the two halves are two relations, the hash
+                # naming its own the way every hash read from a composition
+                # does
+                self._add_filename_relation(misp_object, filename, to_ids)
+                relation = attribute_type
             misp_attribute = MISPAttribute()
-            misp_attribute.type, misp_attribute.value, misp_attribute.object_relation = attribute
+            misp_attribute.type = attribute_type
+            misp_attribute.value = attribute_value
+            misp_attribute.object_relation = relation
             if 'Port' in observable.id_:
                 misp_attribute.object_relation = '-'.join(
                     (
@@ -754,6 +817,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._stix_object_type_error(xsi_type, observable.id_)
                 continue
             if isinstance(attribute_value, str):
+                filename = self._filename_residue(compl_data)
+                if filename is not None:
+                    # Both halves are relations the `file` template defines,
+                    # so the pairing is all that is lost
+                    self._add_filename_relation(misp_object, filename, to_ids)
+                    compl_data = None
                 # The MISP type the content named is the object relation too:
                 # a type the `file` template does not define is checked
                 # against MISP's own, rather than handed to pymisp, which
@@ -779,8 +848,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         return misp_object
 
     # Create a MISP attribute and add it in its MISP object
-    def _parse_observable_object(self, properties, to_ids, uuid, name=None,
-                                 description=None, title=None):
+    def _parse_observable_object(self, properties, to_ids, uuid, object_id,
+                                 name=None, description=None, title=None):
         attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties)
         if isinstance(attribute_value, (str, int)):
             attribute = {'to_ids': to_ids, 'uuid': uuid}
@@ -790,7 +859,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             comment = self._read_object_comment(name, description, title)
             if comment is not None:
                 attribute['comment'] = comment
-            self._handle_attribute_case(attribute_type, attribute_value, compl_data, attribute)
+            self._handle_attribute_case(
+                attribute_type, attribute_value, compl_data, attribute,
+                object_id
+            )
         else:
             self._handle_object_case(
                 attribute_type, attribute_value, compl_data, to_ids=to_ids,
@@ -818,7 +890,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         category = title.split(': ', 1)[0]
         return category if category in _MISP_categories else None
 
-    # Return type & value of a composite attribute in MISP
+    # Return type & value of a composite attribute in MISP - None where the
+    # values the composition holds pair into no MISP composite type, which the
+    # caller records rather than unpacking
     @staticmethod
     def _composite_type(attributes: dict):
         if "port" in attributes:
@@ -829,11 +903,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             elif "hostname" in attributes:
                 return "hostname|port", f"{attributes['hostname']}|{attributes['port']}"
         elif "domain" in attributes:
-            if "ip-src" in attributes:
-                ip_value = attributes["ip-src"]
-            elif "ip-dst" in attributes:
-                ip_value = attributes["ip-dst"]
-            return "domain|ip", f"{attributes['domain']}|{ip_value}"
+            for feature in ('ip-src', 'ip-dst'):
+                if feature in attributes:
+                    return (
+                        "domain|ip",
+                        f"{attributes['domain']}|{attributes[feature]}"
+                    )
 
     def _define_name(self, observable: Observable, relationship) -> Optional[str]:
         """Name the MISP object an Observable came from.

@@ -25,6 +25,7 @@ from operator import attrgetter
 from pathlib import Path
 from pymisp.abstract import misp_objects_path
 from pymisp.api import describe_types
+from pymisp.exceptions import PyMISPError
 from pymisp import MISPAttribute, MISPObject
 import re
 from stix.coa import CourseOfAction
@@ -135,12 +136,56 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             raise StixObjectTypeError(xsi_type)
         return getattr(self, parser)(*args)
 
-    def _handle_attribute_case(self, attribute_type, attribute_value, data, attribute):
+    def _handle_attribute_case(self, attribute_type, attribute_value, data,
+                               attribute, object_id: Optional[str] = None):
         if attribute_type in ('attachment', 'malware-sample'):
             attribute['data'] = data
         elif attribute_type == 'text':
             attribute['comment'] = data
-        self.misp_event.add_attribute(attribute_type, attribute_value, **attribute)
+        else:
+            filename = self._filename_residue(data)
+            if filename is not None:
+                # The `filename|<hash>` composite MISP has no type for: both
+                # values are kept, the pairing is not. The hash is what the
+                # record existed for, so it keeps the Observable id and the
+                # filename qualifying it takes a random uuid - which is what
+                # every import-side attribute uuid is today
+                self._add_attribute(
+                    {
+                        'type': 'filename', 'value': filename,
+                        **{
+                            key: value for key, value in attribute.items()
+                            if key != 'uuid'
+                        }
+                    },
+                    object_id
+                )
+        self._add_attribute(
+            {'type': attribute_type, 'value': attribute_value, **attribute},
+            object_id
+        )
+
+    def _add_attribute(self, attribute: dict,
+                       object_id: Optional[str] = None) -> Optional[MISPAttribute]:
+        """Add one attribute to the event, guarded against the record MISP
+        refuses.
+
+        The record is the unit of a **Validation Error** in either direction:
+        a type, a value or a uuid pymisp will not take costs that attribute
+        and nothing else, where the refusal used to escape
+        `parse_stix_package()` and cost the whole package - every other event,
+        object and galaxy in it included, the diagnostics never reaching a
+        caller. Every attribute the STIX 1 import adds goes through here, so a
+        new call site is guarded by being written rather than by remembering.
+
+        :param attribute: the attribute, as pymisp takes it
+        :param object_id: the id of the STIX object the attribute came from
+        :return: the attribute added to the event, None when MISP refused it
+        """
+        try:
+            return self.misp_event.add_attribute(**attribute)
+        except PyMISPError as exception:
+            self._refused_attribute_error(attribute, exception, object_id)
 
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
@@ -150,6 +195,38 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # observable there is nothing to convert from
             self._unnamed_object_error(object_uuid)
             return
+        # Guarded as one record: an object is what the diagnostics name, and a
+        # relation, a value or a template pymisp refuses costs that object
+        # rather than the package it travelled in
+        try:
+            self._build_observable_object(
+                name, attribute_value, compl_data, to_ids, object_uuid,
+                test_mechanisms, description, title
+            )
+        except PyMISPError as exception:
+            self._refused_object_error(name, exception, object_uuid)
+
+    def _build_observable_object(
+            self, name, attribute_value, compl_data, to_ids, object_uuid,
+            test_mechanisms, description, title):
+        """Build the MISP object the attributes read from an Observable make,
+        and add it to the event.
+
+        Called through the guard above, which is where the refusal of the
+        record built here is recorded.
+
+        :param name: the object template name
+        :param attribute_value: the attributes, as the handlers return them
+        :param compl_data: the complementary data the handler carried - the
+            `pe` and its sections, the process references, a rejected
+            template name
+        :param to_ids: the `to_ids` flag the whole carrier was written with
+        :param object_uuid: the uuid the object takes, None for a random one
+        :param test_mechanisms: the uuids of the attributes the rules of an
+            Indicator landed as, referenced as `detected-with`
+        :param description: the STIX description field, or None
+        :param title: the Record Title, where the shape carries one
+        """
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid:
             misp_object.uuid = object_uuid
@@ -311,7 +388,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attribute.type, attribute.value, _ = self._handle_attribute_type(properties)
                 referenced_uuid = str(uuid4())
                 attribute.uuid = referenced_uuid
-                self.misp_event.add_attribute(**attribute)
+                if self._add_attribute(dict(attribute), course_of_action.id_) is None:
+                    # A reference to an attribute MISP refused points at
+                    # nothing: the refusal is recorded, and the object keeps
+                    # only the references it can resolve
+                    continue
                 misp_object.add_reference(referenced_uuid, 'observable', None, **attribute)
         self.misp_event.add_object(misp_object)
 
@@ -436,10 +517,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # template with one property per attribute, named by its object relation.
     def _handle_custom(self, properties: custom_object.Custom) -> tuple:
         custom_properties = properties.custom_properties or ()
+        object_id = getattr(properties.parent, 'id_', None)
         if properties.custom_name is not None:
             return self._handle_custom_object(
-                properties.custom_name, custom_properties,
-                getattr(properties.parent, 'id_', None)
+                properties.custom_name, custom_properties, object_id
             )
         attributes = [
             (prop.name, prop.value, '') if prop.name in _MISP_types
@@ -458,8 +539,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         last_attribute = attributes.pop(-1)
         for attribute_type, attribute_value, comment in attributes:
             misp_attribute = {'comment': comment} if comment else {}
-            self.misp_event.add_attribute(
-                attribute_type, attribute_value, **misp_attribute
+            self._add_attribute(
+                {
+                    'type': attribute_type, 'value': attribute_value,
+                    **misp_attribute
+                },
+                object_id
             )
         return last_attribute
 
@@ -579,9 +664,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Return type & attributes of a file object
     def _handle_file(self, properties: file_object.File, is_object: bool) -> tuple:
-        attributes = self._fetch_file_attributes(
-            properties, getattr(properties.parent, 'id_', None)
-        )
+        object_id = getattr(properties.parent, 'id_', None)
+        attributes = self._fetch_file_attributes(properties, object_id)
         attributes.extend(self._read_custom_properties(properties, 'file'))
         b_hash = bool(properties.hashes)
         b_file = bool(getattr(properties.file_name, 'value', None))
@@ -590,7 +674,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return attribute[0] if attribute[2] != "fullpath" else "filename", attribute[1], ""
         if len(attributes) == 2:
             if b_hash and b_file:
-                return self._handle_filename_object(attributes, is_object)
+                return self._handle_filename_object(
+                    attributes, is_object, object_id
+                )
             path, filename = self._handle_filename_path_case(attributes)
             if path and filename:
                 attribute_value = f"{path}\\{filename}"
@@ -612,8 +698,26 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return path, filename
 
     # Return the appropriate type & value when we have 1 filename & 1 hash value
-    @staticmethod
-    def _handle_filename_object(attributes: list, is_object: bool) -> tuple:
+    def _handle_filename_object(self, attributes: list, is_object: bool,
+                                object_id: Optional[str] = None) -> tuple:
+        """Read the `File` carrying one file name and one hash.
+
+        The MISP attribute it was exported from is a `filename|<hash type>`
+        composite, and the hash type is read off the wire: a type MISP has no
+        composite for - `filename|other`, all that is left of the check below
+        - was handed to pymisp, which refused it and cost the whole package.
+        The composite is checked against MISP's own types rather than built
+        and trusted, and the residue becomes the two attributes the two halves
+        are: both values are kept, the pairing is not.
+
+        :param attributes: the file name and the hash, as
+            `_fetch_file_attributes` read them
+        :param is_object: whether the properties build a MISP object
+        :param object_id: the id of the object the properties belong to
+        :return: the `(type, value, complementary data)` of the attribute -
+            the hash, carrying the file name as its complementary data, where
+            the composite is no MISP type
+        """
         for attribute in attributes:
             attribute_type, attribute_value, _ = attribute
             if attribute_type == "filename":
@@ -625,8 +729,39 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # file object attributes cannot be filename|hash, so it is malware-sample
             attr_type = "malware-sample"
             return attr_type, value, attr_type
-        # it could be malware-sample as well, but STIX is losing this information
-        return f"filename|{hash_type}", value, ""
+        composite_type = f'filename|{hash_type}'
+        if composite_type in _MISP_types:
+            # it could be malware-sample as well, but STIX is losing this information
+            return composite_type, value, ""
+        self._composite_type_warning(
+            composite_type, filename_value, hash_value, object_id
+        )
+        return hash_type, hash_value, {'filename': filename_value}
+
+    @staticmethod
+    def _filename_residue(compl_data) -> Optional[str]:
+        """The file name half of a `filename|<hash>` composite MISP has no
+        type for, as `_handle_filename_object` hands it over - None where the
+        complementary data is anything else."""
+        if isinstance(compl_data, dict):
+            return compl_data.get('filename')
+
+    @staticmethod
+    def _add_filename_relation(misp_object: MISPObject, filename: str,
+                               to_ids: bool):
+        """Add the file name half of a composite MISP has no type for as an
+        object attribute of its own.
+
+        :param misp_object: the object the hash half lands in
+        :param filename: the file name
+        :param to_ids: the `to_ids` flag the carrier was written with
+        """
+        misp_object.add_attribute(
+            **{
+                'type': 'filename', 'value': filename,
+                'object_relation': 'filename', 'to_ids': to_ids
+            }
+        )
 
     @staticmethod
     def _hash_value(hash_property: Hash):
@@ -1121,8 +1256,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         last_attribute = attributes.pop(-1)
         for attribute in attributes:
             attribute_type, attribute_value, attribute_relation = attribute
-            misp_attributes = {"comment": f"Whois {attribute_relation}"}
-            self.misp_event.add_attribute(attribute_type, attribute_value, **misp_attributes)
+            self._add_attribute(
+                {
+                    'type': attribute_type, 'value': attribute_value,
+                    'comment': f'Whois {attribute_relation}'
+                },
+                getattr(properties.parent, 'id_', None)
+            )
         return last_attribute
 
     # Return type & value of a windows service object
@@ -1495,9 +1635,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
 
+    @classmethod
+    def _object_origin(cls, object_id: Optional[str]) -> str:
+        origin = cls._record_origin(object_id)
+        return f' in the object{origin}' if origin else ''
+
     @staticmethod
-    def _object_origin(object_id: Optional[str]) -> str:
-        return f' in the object with id {object_id}' if object_id else ''
+    def _record_origin(object_id: Optional[str]) -> str:
+        return f' with id {object_id}' if object_id else ''
 
     def _invalid_template_name_warning(
             self, rejected_name: str, object_id: Optional[str] = None):
@@ -1515,6 +1660,18 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._add_warning(
             'MISP objects carry no tag: the markings written on the STIX '
             'objects a MISP object was exported as are not read back.'
+        )
+
+    def _composite_type_warning(
+            self, composite_type: str, filename: str, hash_value: str,
+            object_id: Optional[str]):
+        # The two values are converted, the pairing is not, and the message
+        # says so without promising what each half becomes: in an object the
+        # halves are two relations, and there is no composite there either
+        self._add_warning(
+            f'{composite_type!r} is no MISP attribute type'
+            f'{self._object_origin(object_id)}: {filename} and {hash_value} '
+            'converted separately.'
         )
 
     def _unknown_pe_header_hash_type_warning(
@@ -1559,10 +1716,38 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'{self._object_origin(object_id)}: {value} not converted.'
         )
 
-    def _unnamed_object_error(self, object_uuid: Optional[str]):
-        origin = f' with id {object_uuid}' if object_uuid else ''
+    def _refused_attribute_error(
+            self, attribute: dict, exception: Exception,
+            object_id: Optional[str]):
+        # The Export side of the same refusal is a **Validation Error**: one
+        # record not converted as sent, the conversion as a whole still
+        # producing output. The type and the value name the attribute the
+        # reader lost, since an import-side attribute has no name of its own
         self._add_error(
-            f'Unable to convert the Observable{origin}: '
+            f"Error with the {attribute.get('type')} attribute: "
+            f"{attribute.get('value')}"
+            f'{self._object_origin(object_id)}: {exception}'
+        )
+
+    def _refused_object_error(
+            self, name: str, exception: Exception, object_uuid: Optional[str]):
+        self._add_error(
+            f'Error with the {name} object'
+            f'{self._record_origin(object_uuid)}: {exception}'
+        )
+
+    def _unconvertible_composition_error(
+            self, attribute_types: list, object_id: Optional[str]):
+        self._add_error(
+            'Unable to convert the Observable composition'
+            f'{self._object_origin(object_id)}: '
+            f"{', '.join(attribute_types)} make no MISP composite attribute"
+        )
+
+    def _unnamed_object_error(self, object_uuid: Optional[str]):
+        self._add_error(
+            f'Unable to convert the Observable'
+            f'{self._record_origin(object_uuid)}: '
             'nothing to name a MISP object with'
         )
 

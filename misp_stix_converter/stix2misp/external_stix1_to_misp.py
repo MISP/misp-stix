@@ -6,8 +6,7 @@ from .stix1_mapping import ExternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
 from cybox.core import Object, Observable, Observables
-from pymisp.abstract import misp_objects_path
-from pymisp import MISPAttribute, MISPEvent, MISPObject
+from pymisp import MISPAttribute, MISPEvent
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP
@@ -39,11 +38,12 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         self.misp_event.info = self._get_event_info()
         header = self.stix_package.stix_header
         if getattr(getattr(header, 'description', None), 'value', None):
-            self.misp_event.add_attribute(
-                **{
+            self._add_attribute(
+                {
                     'type': 'text', 'value': header.description.value,
                     'comment': 'STIX Header Description'
-                }
+                },
+                self.stix_package.id_
             )
         if getattr(header, 'handling', None):
             for handling in header.handling:
@@ -72,30 +72,30 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 domain_attribute = domain['data']
                 ip_reference = domain['related']
                 if ip_reference in self.dns_objects['ip']:
-                    misp_object = MISPObject(
-                        'passive-dns', misp_objects_path_custom=misp_objects_path
-                    )
                     domain_attribute['object_relation'] = "rrname"
-                    misp_object.add_attribute(**domain_attribute)
                     ip_address = self.dns_objects['ip'][ip_reference]['value']
-                    misp_object.add_attribute(
-                        **{
-                            "type": "text", "object_relation": "rdata",
-                            "value": ip_address
-                        }
+                    # Built through the shared object handler, which is where
+                    # the record boundary guard sits
+                    self._handle_object_case(
+                        'passive-dns',
+                        (
+                            domain_attribute,
+                            {
+                                'type': 'text', 'object_relation': 'rdata',
+                                'value': ip_address
+                            },
+                            {
+                                'type': 'text', 'object_relation': 'rrtype',
+                                'value': "AAAA" if ":" in ip_address else "A"
+                            }
+                        ),
+                        None
                     )
-                    misp_object.add_attribute(
-                        **{
-                            'type': 'text', 'object_relation': 'rrtype',
-                            'value': "AAAA" if ":" in ip_address else "A"
-                        }
-                    )
-                    self.misp_event.add_object(misp_object)
                 else:
-                    self.misp_event.add_attribute(**domain_attribute)
+                    self._add_attribute(domain_attribute)
             for ip, ip_attribute in self.dns_objects['ip'].items():
                 if ip not in self.dns_ips:
-                    self.misp_event.add_attribute(**ip_attribute)
+                    self._add_attribute(ip_attribute)
         self._set_distribution()
         self._apply_object_references()
         self._apply_event_galaxies()
@@ -183,7 +183,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 misp_attribute['timestamp'] = self._timestamp_from_date(
                     stix_object.timestamp
                 )
-            self.misp_event.add_attribute(**misp_attribute)
+            self._add_attribute(misp_attribute, stix_object.id_)
 
     def _parse_galaxies_from_ttp(self, ttp: TTP):
         if ttp.behavior:
@@ -243,7 +243,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         )
                         self.dns_objects['ip'][uuid] = attribute
                         return
-                    self._handle_attribute_case(attribute_type, attribute_value, compl_data, attribute)
+                    self._handle_attribute_case(
+                        attribute_type, attribute_value, compl_data,
+                        attribute, observable.object_.id_
+                    )
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
@@ -256,7 +259,13 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     else:
                         # it is a list of attribute values, so we add single attributes
                         for value in attribute_value:
-                            self.misp_event.add_attribute(**{'type': attribute_type, 'value': value, 'to_ids': True})
+                            self._add_attribute(
+                                {
+                                    'type': attribute_type, 'value': value,
+                                    'to_ids': True
+                                },
+                                observable.object_.id_
+                            )
             elif hasattr(observable, 'observable_composition') and observable.observable_composition:
                 self._parse_observables(observable.observable_composition.observables, to_ids=True)
             else:
@@ -302,7 +311,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         )
                         self.dns_objects['ip'][uuid] = attribute
                         continue
-                    self._handle_attribute_case(attribute_type, attribute_value, compl_data, attribute)
+                    self._handle_attribute_case(
+                        attribute_type, attribute_value, compl_data,
+                        attribute, observable_object.id_
+                    )
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
@@ -314,8 +326,12 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     else:
                         # it is a list of attribute values, so we add single attributes
                         for value in attribute_value:
-                            self.misp_event.add_attribute(
-                                **{'type': attribute_type, 'value': value, 'to_ids': to_ids}
+                            self._add_attribute(
+                                {
+                                    'type': attribute_type, 'value': value,
+                                    'to_ids': to_ids
+                                },
+                                observable_object.id_
                             )
                 else:
                     self._record_related_objects(observable_object, uuid)
@@ -330,10 +346,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         """
         test_mechanisms = []
         for attribute_type, rule in self._read_test_mechanisms(indicator):
-            misp_attribute = self.misp_event.add_attribute(
-                **{'type': attribute_type, 'value': rule}
+            misp_attribute = self._add_attribute(
+                {'type': attribute_type, 'value': rule}, indicator.id_
             )
-            test_mechanisms.append(misp_attribute.uuid)
+            if misp_attribute is not None:
+                test_mechanisms.append(misp_attribute.uuid)
         return test_mechanisms
 
     def _parse_threat_actor(self, threat_actor: ThreatActor):
@@ -366,7 +383,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     misp_attribute.from_dict(**attribute)
                     for galaxy in galaxies:
                         misp_attribute.add_tag(galaxy)
-                    self.misp_event.add_attribute(**misp_attribute)
+                    self._add_attribute(dict(misp_attribute), ttp.id_)
                 return
         self.galaxies.update(galaxies)
 
