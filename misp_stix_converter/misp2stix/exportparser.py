@@ -409,6 +409,10 @@ class MISPtoSTIXParser(AbstractParser):
         self._add_error(f"Error with the {features}:\n{tb}.")
         self._parse_custom_object(misp_object)
 
+    @staticmethod
+    def _object_features(misp_object: Union[MISPObject, dict]) -> str:
+        return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
+
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, name: str):
         self._add_warning(
             f"{galaxy_type} galaxy in {name} object not mapped."
@@ -459,6 +463,18 @@ class MISPtoSTIXParser(AbstractParser):
         self._add_warning(
             f'The file object {file_uuid} has more than one reference '
             f"to pe objects: {', '.join(pe_uuids)}"
+        )
+
+    def _unstorable_property_warning(
+            self, relation: str, value: Any, record: Optional[str] = None):
+        # The relation and the record name what the reader lost, the value
+        # says what shape it had. Not merged with any other message: a
+        # caller filtering under ADR-0014 tells a value no format can write
+        # from a value written under another name
+        origin = f' in the {record}' if record else ''
+        self._add_warning(
+            f'{relation!r} has no lexical form STIX 1 can carry'
+            f'{origin}: {value!r} not converted.'
         )
 
     def _validation_errors(self, *messages: tuple[str]):

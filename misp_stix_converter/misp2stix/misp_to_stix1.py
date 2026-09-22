@@ -47,6 +47,7 @@ from cybox.objects.win_user_account_object import WinGroup, WinGroupList, WinUse
 from cybox.objects.x509_certificate_object import X509Certificate, X509CertificateSignature, X509Cert, SubjectPublicKey, RSAPublicKey, Validity
 from datetime import datetime, timezone
 from io import BytesIO
+from math import isinf, isnan
 from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
@@ -73,7 +74,7 @@ from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 from uuid import uuid5, UUID
 
 _FILE_SINGLE_ATTRIBUTES = (
@@ -229,8 +230,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
-        custom_object.custom_properties.append(
-            self._create_property(attribute['type'], attribute['value'])
+        self._append_property(
+            custom_object.custom_properties,
+            attribute['type'], attribute['value'],
+            f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
         )
         observable = self._create_observable(custom_object, attribute['uuid'], 'Custom')
         self._handle_attribute(attribute, observable)
@@ -748,6 +751,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
+    def _append_property(self, custom_properties: CustomProperties,
+                         name: str, value: Any, record: Optional[str] = None):
+        prop = self._create_property(name, value, record)
+        if prop is not None:
+            custom_properties.append(prop)
+
     def _add_journal_entry(self, entryline: str):
         history_item = HistoryItem()
         history_item.journal_entry = entryline
@@ -929,12 +938,45 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable = self._create_observable(port_object, uuid, object_type)
         return observable
 
-    def _create_property(self, name: str, value: str) -> Property:
+    def _create_property(
+            self, name: str, value: Any,
+            record: Optional[str] = None) -> Optional[Property]:
+        """Build a CybOX custom property out of a MISP value.
+
+        A MISP object template names the type of the relation it declares, so
+        a boolean, an integer or a float goes out in the lexical form XSD has
+        for it, under the CybOX `datatype` saying which - values cybox
+        refuses outright today, so no document that has ever been written
+        changes. A value with no such form is skipped with a warning rather
+        than raising: the property is built from routes nothing above
+        catches.
+        """
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+        if isinstance(value, list):
+            # cybox validates a list element by element, so one value with no
+            # lexical form costs the property exactly as it would alone - an
+            # empty one carries nothing to write in the first place
+            forms = [self._lexical_form(item) for item in value]
+            if not forms or None in forms:
+                self._unstorable_property_warning(name, value, record)
+                return None
+            datatypes = {datatype for datatype, _ in forms}
+            # Values of one relation share a type; a list that mixes them has
+            # no one name, so it goes out as the strings it already is
+            datatype = datatypes.pop() if len(datatypes) == 1 else None
+            lexical_form = [form for _, form in forms]
+        else:
+            form = self._lexical_form(value)
+            if form is None:
+                self._unstorable_property_warning(name, value, record)
+                return None
+            datatype, lexical_form = form
         prop = Property()
         prop.name = name
-        if isinstance(value, datetime):
-            value = self._datetime_to_str(value)
-        prop.value = value
+        if datatype is not None:
+            prop.datatype = datatype
+        prop.value = lexical_form
         return prop
 
     @staticmethod
@@ -1090,6 +1132,40 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if not tag.startswith('tlp:'):
             return False
         return tag.startswith('tlp:') and self._mapping.TLP_order(':'.join(tag.split(':')[1:])) is not None
+
+    def _lexical_form(self, value: Any) -> Optional[tuple]:
+        """The form a MISP value takes on the wire and the CybOX `datatype`
+        naming it - `None` for that datatype where the form is a string XSD
+        needs no name for, and `None` for the pair where the value has no
+        form at all."""
+        if isinstance(value, str):
+            return None, value
+        if isinstance(value, datetime):
+            # No datatype: the documents this form ships in predate it
+            return None, self._datetime_to_str(value)
+        if isinstance(value, bool):
+            return 'boolean', 'true' if value else 'false'
+        if isinstance(value, int):
+            # `counter` and `port` included: CybOX names neither, and an
+            # integer type is what a consumer can act on
+            return self._integer_datatype(value), str(value)
+        if isinstance(value, float):
+            if isnan(value):
+                return 'float', 'NaN'
+            if isinf(value):
+                return 'float', 'INF' if value > 0 else '-INF'
+            return 'float', str(value)
+        return None
+
+    @staticmethod
+    def _integer_datatype(value: int) -> str:
+        # XSD bounds the names it gives: `int` is 32-bit and `long` 64-bit,
+        # so a value outside them would declare a type it does not satisfy
+        if -2 ** 31 <= value < 2 ** 31:
+            return 'int'
+        if -2 ** 63 <= value < 2 ** 63:
+            return 'long'
+        return 'integer'
 
     def _sort_tags(self, tags: list) -> Tuple[dict, dict]:
         sorted_tags = defaultdict(list)
@@ -1372,13 +1448,14 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 for misp_object in self._objects_to_parse.pop('pe-section').values():
                     self._parse_custom_object(misp_object)
 
-    def _add_custom_property(self, stix_object: File, name: str, value: str):
-        prop = self._create_property(name, value)
-        try:
-            stix_object.custom_properties.append(prop)
-        except AttributeError:
+    def _add_custom_property(self, stix_object: File, name: str, value: Any,
+                             misp_object: dict):
+        if stix_object.custom_properties is None:
             stix_object.custom_properties = CustomProperties()
-            stix_object.custom_properties.append(prop)
+        self._append_property(
+            stix_object.custom_properties, name, value,
+            self._object_features(misp_object)
+        )
 
     def _check_object_name(self, misp_object: dict) -> bool:
         object_name = misp_object['name']
@@ -1416,15 +1493,21 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 attributes_dict[relation].append(value)
         return attributes_dict
 
-    def _handle_custom_properties(self, attributes: dict, multiple: Optional[bool] = True) -> CustomProperties:
+    def _handle_custom_properties(self, attributes: dict, misp_object: dict,
+                                  multiple: Optional[bool] = True) -> CustomProperties:
         custom_properties = CustomProperties()
+        record = self._object_features(misp_object)
         if not multiple:
             for object_relation, value in attributes.items():
-                custom_properties.append(self._create_property(object_relation, value))
+                self._append_property(
+                    custom_properties, object_relation, value, record
+                )
             return custom_properties
         for object_relation, values in attributes.items():
             for value in values:
-                custom_properties.append(self._create_property(object_relation, value))
+                self._append_property(
+                    custom_properties, object_relation, value, record
+                )
         return custom_properties
 
     def _handle_misp_object(self, observable: Observable, category: str):
@@ -1515,7 +1598,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('description'):
             as_object.name = attributes.pop('description')
         if attributes:
-            as_object.custom_properties = self._handle_custom_properties(attributes)
+            as_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(as_object, misp_object['uuid'], 'AS')
         return observable
 
@@ -1590,7 +1673,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if authentication_list:
             account_object.authentication = authentication_list
         if attributes:
-            account_object.custom_properties = self._handle_custom_properties(attributes)
+            account_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(account_object, misp_object['uuid'], 'UserAccount')
         return observable
 
@@ -1600,15 +1683,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if misp_object.get('description'):
             custom_object.description = misp_object['description']
         custom_object.custom_properties = CustomProperties()
+        record = self._object_features(misp_object)
         for attribute in misp_object['Attribute']:
-            value = attribute['value']
-            if isinstance(value, datetime):
-                value = self._datetime_to_str(value)
-            custom_object.custom_properties.append(
-                self._create_property(
-                    attribute['object_relation'],
-                    value
-                )
+            self._append_property(
+                custom_object.custom_properties,
+                attribute['object_relation'], attribute['value'], record
             )
         observable = self._create_observable(custom_object, misp_object['uuid'], 'Custom')
         self._object_not_mapped_warning(misp_object['name'])
@@ -1666,11 +1745,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 email_object.parent.related_objects.append(related_file)
                 email_object.attachments.append(related_file.id_)
         if attributes:
-            email_object.custom_properties = self._handle_custom_properties(attributes)
+            email_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(email_object, misp_object['uuid'], 'EmailMessage')
         return observable
 
-    def _parse_file_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
+    def _parse_file_attributes(self, attributes: dict, misp_object: dict,
+                               file_object: Union[File, WinExecutableFile]):
         if attributes.get('filename'):
             filename = self._select_single_feature(attributes, 'filename')
             file_object.file_name = filename
@@ -1686,13 +1766,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     file_object.add_hash(self._parse_hash_value(object_relation, value))
                 else:
                     for single_value in value:
-                        self._add_custom_property(file_object, object_relation, single_value)
+                        self._add_custom_property(
+                            file_object, object_relation, single_value,
+                            misp_object
+                        )
 
     def _parse_file_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_file_attributes(misp_object['Attribute'])
         observables = self._parse_file_observables(attributes)
         file_object = File()
-        self._parse_file_attributes(attributes, file_object)
+        self._parse_file_attributes(attributes, misp_object, file_object)
         file_observable = self._create_observable(file_object, misp_object['uuid'], 'File')
         if observables:
             observables.append(file_observable)
@@ -1727,7 +1810,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         attributes = self._extract_file_attributes(misp_object['Attribute'])
         observables = self._parse_file_observables(attributes)
         file_object = WinExecutableFile()
-        self._parse_file_attributes(attributes, file_object)
+        self._parse_file_attributes(attributes, misp_object, file_object)
         for reference in misp_object['ObjectReference']:
             if self._check_reference(reference, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
@@ -1783,7 +1866,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('name'):
             mutex_object.name = attributes.pop('name')
         if attributes:
-            mutex_object.custom_properties = self._handle_custom_properties(attributes, multiple=False)
+            mutex_object.custom_properties = self._handle_custom_properties(
+                attributes, misp_object, multiple=False
+            )
         observable = self._create_observable(
             mutex_object,
             misp_object['uuid'],
@@ -1805,7 +1890,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 setattr(connection_object, field, attributes.pop(feature))
                 setattr(getattr(connection_object, field), 'condition', 'Equals')
         if attributes:
-            connection_object.custom_properties = self._handle_custom_properties(attributes)
+            connection_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(
             connection_object,
             misp_object['uuid'],
@@ -1829,7 +1914,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             socket_object.is_listening = True if 'listening' in states else False
             socket_object.is_blocking = True if 'blocking' in states else False
         if attributes:
-            socket_object.custom_properties = self._handle_custom_properties(attributes)
+            socket_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(socket_object, misp_object['uuid'], 'NetworkSocket')
         return observable
 
@@ -1872,7 +1957,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     hashes.append(self._parse_hash_value(object_relation, value))
                 else:
                     for single_value in value:
-                        self._add_custom_property(file_object, object_relation, single_value)
+                        self._add_custom_property(
+                            file_object, object_relation, single_value, misp_pe
+                        )
             if hashes:
                 # The gate above creates the headers for five relations and
                 # the file header for one of them, so a `pe` carrying a header
@@ -1958,7 +2045,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             hidden = attributes.pop('hidden')
             process_object.is_hidden = False if hidden in ('False', 'false') else bool(hidden)
         if attributes:
-            process_object.custom_properties = self._handle_custom_properties(attributes)
+            process_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(process_object, misp_object['uuid'], 'Process')
         return observable
 
@@ -1982,6 +2069,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes:
             registry_object.custom_properties = self._handle_custom_properties(
                 attributes,
+                misp_object,
                 multiple=False
             )
         observable = self._create_observable(
@@ -2044,7 +2132,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 setattr(account_object, feature, attributes.pop(key))
                 setattr(getattr(account_object, feature), 'condition', 'Equals')
         if attributes:
-            account_object.custom_properties = self._handle_custom_properties(attributes)
+            account_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(
             account_object,
             misp_object['uuid'],
@@ -2140,7 +2228,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         elif attributes.get('text'):
             whois_object.remarks = attributes.pop('text')
         if attributes:
-            whois_object.custom_properties = self._handle_custom_properties(attributes)
+            whois_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(whois_object, misp_object['uuid'], 'Whois')
         return observable
 
@@ -2211,7 +2299,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     signature_set = True
             x509_object.certificate_signature = signature
         if attributes:
-            x509_object.custom_properties = self._handle_custom_properties(attributes)
+            x509_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(x509_object, misp_object['uuid'], 'X509Certificate')
         return observable
 
