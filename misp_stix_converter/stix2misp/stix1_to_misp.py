@@ -1767,10 +1767,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # One per converted document however many objects hit it: a MISP
         # object takes no tag, and the markings the export wrote hold the
         # tags of every attribute it held merged into one set, so there is
-        # neither a field to write them to nor a way to tell them apart.
+        # neither a field to write them to nor a way to tell them apart. The
+        # Course of Action parser is shared, so the words hold for a document
+        # our export never wrote too.
         self._add_warning(
-            'MISP objects carry no tag: the markings written on the STIX '
-            'objects a MISP object was exported as are not read back.'
+            'MISP objects carry no tag: the markings on the STIX objects a '
+            'MISP object is built from are not read back.'
         )
 
     def _composite_type_warning(

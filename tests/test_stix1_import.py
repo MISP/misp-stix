@@ -3099,8 +3099,8 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(
             parser.diagnostics()['warnings']['misp event'],
             [
-                'MISP objects carry no tag: the markings written on the STIX '
-                'objects a MISP object was exported as are not read back.'
+                'MISP objects carry no tag: the markings on the STIX objects a '
+                'MISP object is built from are not read back.'
             ]
         )
         for misp_object in parser.misp_event.objects:
