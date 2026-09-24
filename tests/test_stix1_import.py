@@ -18,7 +18,8 @@ from cybox.objects.library_object import Library
 from cybox.objects.network_connection_object import NetworkConnection
 from cybox.objects.network_socket_object import NetworkSocket
 from cybox.objects.port_object import Port
-from cybox.objects.process_object import ImageInfo, Process
+from cybox.objects.process_object import (
+    ImageInfo, NetworkConnectionList, Process)
 from cybox.objects.socket_address_object import SocketAddress
 from cybox.objects.uri_object import URI
 from cybox.objects.user_account_object import UserAccount
@@ -53,7 +54,7 @@ from misp_stix_converter.stix2misp.stix1_mapping import (
 from pymisp import MISPEvent
 from pymisp.api import describe_types
 from unittest.mock import ANY, patch
-from uuid import uuid5
+from uuid import UUID, uuid5
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement, ToolInformation
@@ -102,9 +103,11 @@ from .test_events import (
     get_event_with_domain_attribute,
     get_event_with_domain_ip_object,
     get_event_with_email_body_attribute, get_event_with_email_header_attribute,
-    get_event_with_email_with_display_names_object,
-    get_event_with_file_object, get_event_with_github_username_attribute,
-    get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
+    get_event_with_email_object, get_event_with_email_with_display_names_object,
+    get_event_with_file_object, get_event_with_file_object_with_artifact,
+    get_event_with_github_username_attribute,
+    get_event_with_ip_port_attributes, get_event_with_ip_port_object,
+    get_event_with_malware_galaxy,
     get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
     get_event_with_hash_composite_attributes, get_event_with_mutex_object,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
@@ -113,9 +116,10 @@ from .test_events import (
     get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
-    get_event_with_undefined_attributes,
+    get_event_with_undefined_attributes, get_event_with_url_object,
     get_event_with_user_account_object, get_event_with_user_account_objects,
-    get_event_with_vulnerability_galaxy, get_event_with_whois_registrar_attribute,
+    get_event_with_vulnerability_galaxy, get_event_with_vulnerability_object,
+    get_event_with_weakness_object, get_event_with_whois_registrar_attribute,
     get_event_with_x509_fingerprint_attributes, get_event_with_x509_object,
     get_event_with_windows_service_attributes, get_hash_attributes)
 
@@ -5421,3 +5425,317 @@ class TestSTIX1Import(TestSTIX):
             [misp_object.uuid for misp_object in parser.misp_event.objects],
             [event['Event']['Object'][0]['uuid']]
         )
+
+    @staticmethod
+    def _derived_attribute_uuid(object_uuid, attribute, value=None):
+        """The uuid an object attribute derives, from the value as the import
+        read it - which pymisp may have parsed since, a datetime read as a
+        string off the wire among others."""
+        return str(
+            uuid5(
+                _UUIDv4,
+                f'{object_uuid} - {attribute.object_relation} - '
+                f'{attribute.value if value is None else value}'
+            )
+        )
+
+    def _assert_derived_attribute_uuids(self, misp_object, values=None):
+        for attribute in misp_object.attributes:
+            with self.subTest(relation=attribute.object_relation):
+                self.assertEqual(
+                    attribute.uuid,
+                    self._derived_attribute_uuid(
+                        misp_object.uuid, attribute,
+                        (values or {}).get(attribute.object_relation)
+                    )
+                )
+
+    def test_internal_composition_members_keep_their_uuids(self):
+        """The export writes every member of a `domain-ip`, `ip-port` or `url`
+        composition as an Observable carrying the attribute's own uuid: read
+        per attribute, as the object reads its own."""
+        for fixture in (get_event_with_domain_ip_object,
+                        get_event_with_ip_port_object,
+                        get_event_with_url_object):
+            event = fixture()
+            misp_object = event['Event']['Object'][0]
+            with self.subTest(name=misp_object['name']):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted = parser.misp_event.objects[0]
+                # What comes back, that is: the relations the export drops
+                # are ticket 21's
+                exported = {
+                    attribute['uuid']: str(attribute['value'])
+                    for attribute in misp_object['Attribute']
+                }
+                self.assertTrue(converted.attributes)
+                for attribute in converted.attributes:
+                    with self.subTest(relation=attribute.object_relation):
+                        self.assertEqual(
+                            exported.get(attribute.uuid), str(attribute.value)
+                        )
+
+    def test_internal_file_composition_reads_the_members_carrying_data(self):
+        """A `malware-sample` and an `attachment` carrying their data are
+        Observables of their own, written with the attribute's uuid; the File
+        member carries the object's, so every other attribute derives."""
+        event = get_event_with_file_object_with_artifact()
+        misp_object = event['Event']['Object'][0]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted = parser.misp_event.get_objects_by_name('file')[0]
+        self.assertEqual(converted.uuid, misp_object['uuid'])
+        read = {
+            attribute['object_relation']: attribute['uuid']
+            for attribute in misp_object['Attribute'] if attribute.get('data')
+        }
+        self.assertEqual(sorted(read), ['attachment', 'malware-sample'])
+        for attribute in converted.attributes:
+            with self.subTest(relation=attribute.object_relation):
+                self.assertEqual(
+                    attribute.uuid,
+                    read.get(
+                        attribute.object_relation,
+                        self._derived_attribute_uuid(converted.uuid, attribute)
+                    )
+                )
+
+    def test_internal_email_attachment_keeps_its_uuid(self):
+        """The export writes an attachment as a related File carrying the
+        attribute's uuid in its id; the header fields carry none and derive."""
+        event = get_event_with_email_object()
+        misp_object = event['Event']['Object'][0]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted = parser.misp_event.get_objects_by_name('email')[0]
+        attachments = {
+            attribute['value']: attribute['uuid']
+            for attribute in misp_object['Attribute']
+            if attribute['object_relation'] == 'attachment'
+        }
+        self.assertTrue(attachments)
+        for attribute in converted.attributes:
+            with self.subTest(relation=attribute.object_relation):
+                if attribute.object_relation == 'attachment':
+                    self.assertEqual(
+                        attribute.uuid, attachments[attribute.value]
+                    )
+                    continue
+                self.assertEqual(
+                    attribute.uuid,
+                    self._derived_attribute_uuid(converted.uuid, attribute)
+                )
+
+    def test_internal_folded_object_attributes_take_derived_uuids(self):
+        """Nothing on the wire carries the uuid of an attribute folded into
+        a CybOX object: it derives from the uuid the object takes, the
+        relation and the value - the `pe` and each `pe-section` from their
+        own derived uuid."""
+        for fixture in (get_event_with_x509_object,
+                        get_event_with_file_and_pe_objects):
+            event = fixture()
+            with self.subTest(fixture=fixture.__name__):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                for misp_object in parser.misp_event.objects:
+                    with self.subTest(name=misp_object.name):
+                        # A `pe` custom property is read as the string the
+                        # wire carries, and pymisp parses the datetime after
+                        values = {
+                            attribute['object_relation']: attribute['value']
+                            for exported in event['Event']['Object']
+                            if exported['name'] == misp_object.name == 'pe'
+                            for attribute in exported['Attribute']
+                            if attribute['type'] == 'datetime'
+                        }
+                        self._assert_derived_attribute_uuids(
+                            misp_object, values
+                        )
+
+    def test_internal_context_object_attributes_take_derived_uuids(self):
+        """The `attack-pattern`, `vulnerability` and `weakness` objects a TTP
+        carries and the `course-of-action` object derive off the uuid of the
+        object they build."""
+        for fixture in (get_event_with_attack_pattern_object,
+                        get_event_with_vulnerability_object,
+                        get_event_with_weakness_object,
+                        get_event_with_course_of_action_object):
+            event = fixture()
+            misp_object = event['Event']['Object'][0]
+            with self.subTest(name=misp_object['name']):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted = parser.misp_event.get_objects_by_name(
+                    misp_object['name']
+                )[0]
+                self.assertEqual(converted.uuid, misp_object['uuid'])
+                self._assert_derived_attribute_uuids(converted)
+
+    def test_internal_two_imports_give_identical_attribute_uuids(self):
+        """The property the derivation exists for: one document imported
+        twice lands the same attribute uuids, not a disjoint set."""
+        event = self._misp_event_reaching_every_import_path()
+        event['Event']['Object'].extend(
+            fixture()['Event']['Object'][0] for fixture in (
+                get_event_with_x509_object, get_event_with_email_object,
+                get_event_with_file_object_with_artifact
+            )
+        )
+
+        def attribute_uuids():
+            parser = self._parse_internal_package(self._misp_export(event))
+            return {
+                misp_object.uuid: sorted(
+                    attribute.uuid for attribute in misp_object.attributes
+                )
+                for misp_object in parser.misp_event.objects
+            }
+
+        self.assertEqual(attribute_uuids(), attribute_uuids())
+
+    def test_external_observable_object_attributes_take_derived_uuids(self):
+        """The observable object builder is shared: the External import
+        derives the same way, off the uuid the CybOX object id gives."""
+        connection = NetworkConnection()
+        connection.source_socket_address = self._socket_address(
+            '198.51.100.7', 49152
+        )
+        connection.layer4_protocol = 'TCP'
+        parser = self._parse_external_observable(
+            connection, 'NetworkConnection'
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        misp_object = parser.misp_event.objects[0]
+        self.assertEqual(misp_object.uuid, _OBSERVABLE_UUID)
+        self._assert_derived_attribute_uuids(misp_object)
+
+    def test_external_process_network_connections_take_derived_uuids(self):
+        """A network connection a process lists has no id of its own: its
+        object derives from the process object's uuid and its index, and its
+        attributes from that."""
+        process = Process()
+        process.pid = 4242
+        process.network_connection_list = NetworkConnectionList()
+        for address, port in (('203.0.113.9', 443), ('203.0.113.10', 80)):
+            connection = NetworkConnection()
+            connection.destination_socket_address = self._socket_address(
+                address, port
+            )
+            process.network_connection_list.append(connection)
+        parser = self._parse_external_observable(process, 'Process')
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        process_object = parser.misp_event.get_objects_by_name('process')[0]
+        self.assertEqual(process_object.uuid, _OBSERVABLE_UUID)
+        connections = parser.misp_event.get_objects_by_name(
+            'network-connection'
+        )
+        self.assertEqual(
+            [connection.uuid for connection in connections],
+            [
+                str(
+                    uuid5(
+                        _UUIDv4,
+                        f'{_OBSERVABLE_UUID} - network-connections - {index}'
+                    )
+                )
+                for index in range(2)
+            ]
+        )
+        self.assertEqual(
+            sorted(
+                reference.referenced_uuid
+                for reference in process_object.references
+            ),
+            sorted(connection.uuid for connection in connections)
+        )
+        for misp_object in (process_object, *connections):
+            with self.subTest(name=misp_object.name, uuid=misp_object.uuid):
+                self._assert_derived_attribute_uuids(misp_object)
+
+    @classmethod
+    def _external_package_of_export(cls, event):
+        """The Indicators and Observables the MISP export relates to its
+        Incident, written on the package itself where the External parser
+        reads them."""
+        incident = cls._misp_export(event).related_packages.related_package[
+            0].item.incidents[0]
+        stix_package = STIXPackage()
+        for related in incident.related_indicators or ():
+            stix_package.add_indicator(related.item)
+        for related in incident.related_observables or ():
+            stix_package.add_observable(related.item)
+        return stix_package
+
+    def test_external_email_attachment_keeps_its_uuid(self):
+        """The attachment reader is shared: the External import reads the
+        related File id the same way."""
+        event = get_event_with_email_object()
+        attachments = {
+            attribute['value']: attribute['uuid']
+            for attribute in event['Event']['Object'][0]['Attribute']
+            if attribute['object_relation'] == 'attachment'
+        }
+        parser = self._parse_external_package(
+            self._external_package_of_export(event)
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted = parser.misp_event.get_objects_by_name('email')[0]
+        self.assertTrue(attachments)
+        for attribute in converted.attributes:
+            with self.subTest(relation=attribute.object_relation):
+                self.assertEqual(
+                    attribute.uuid,
+                    attachments.get(
+                        attribute.value,
+                        self._derived_attribute_uuid(converted.uuid, attribute)
+                    )
+                )
+
+    def test_external_two_imports_give_identical_attribute_uuids(self):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            fixture()['Event']['Object'][0] for fixture in (
+                get_event_with_x509_object, get_event_with_email_object,
+                get_event_with_process_object
+            )
+        ]
+
+        def attribute_uuids():
+            parser = self._parse_external_package(
+                self._external_package_of_export(event)
+            )
+            self.assertEqual(len(parser.misp_event.objects), 3)
+            return {
+                misp_object.uuid: sorted(
+                    attribute.uuid for attribute in misp_object.attributes
+                )
+                for misp_object in parser.misp_event.objects
+            }
+
+        self.assertEqual(attribute_uuids(), attribute_uuids())
+
+    def test_internal_attributes_derive_from_a_remapped_object_uuid(self):
+        """The prefix is the uuid the object takes: one of a version MISP
+        refuses is replaced, and the attributes derive from the replacement."""
+        event = get_event_with_x509_object()
+        object_uuid = '3fa85f64-5717-0562-b3fc-2c963f66afa6'
+        event['Event']['Object'][0]['uuid'] = object_uuid
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted = parser.misp_event.objects[0]
+        self.assertEqual(str(converted.uuid), str(uuid5(_UUIDv4, object_uuid)))
+        self._assert_derived_attribute_uuids(converted)
+
+    def test_external_passive_dns_attributes_stay_random(self):
+        """The object the DNS bookkeeping builds has no uuid in hand: nothing
+        to derive its attributes from."""
+        stix_package = STIXPackage()
+        stix_package.add_indicator(self._url_indicator('https://circl.lu/'))
+        stix_package.add_indicator(self._ip_indicator('198.51.100.4'))
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        passive_dns = parser.misp_event.get_objects_by_name('passive-dns')[0]
+        for attribute in passive_dns.attributes:
+            with self.subTest(relation=attribute.object_relation):
+                self.assertEqual(UUID(attribute.uuid).version, 4)
