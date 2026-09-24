@@ -2115,6 +2115,19 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(yara_tm._XSI_TYPE, 'yaraTM:YaraTestMechanismType')
         self.assertEqual(yara_tm.rule.value, yara['value'])
 
+    @staticmethod
+    def _two_header_description_attributes():
+        event = get_event_with_undefined_attributes()
+        header, journal = event['Event']['Attribute']
+        event['Event']['Attribute'] = [
+            header,
+            {
+                **journal, 'type': 'text', 'category': 'Internal reference',
+                'comment': header['comment']
+            }
+        ]
+        return event
+
     def _test_event_with_undefined_attributes(self, event):
         header, comment = event['Attribute']
         self.parser.parse_misp_event(event)
@@ -2129,6 +2142,25 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(
             journal_entry.journal_entry.value,
             f"Attribute ({comment['category']} - {comment['type']}): {comment['value']}"
+        )
+
+    def _test_event_with_two_header_description_attributes(self, event):
+        """The header holds one description: with two attributes commented
+        as imported from one, the export wrote neither of them, anywhere.
+        Each goes to the journal like an unmarked attribute of its type."""
+        self.parser.parse_misp_event(event)
+        self.assertIsNone(self.parser.stix_package.stix_header.description)
+        incident = self.parser.stix_package.incidents[0]
+        self.assertEqual(
+            [
+                entry.journal_entry.value
+                for entry in incident.history.history_items
+            ][1:],
+            [
+                f"Attribute ({attribute['category']} - {attribute['type']}): "
+                f"{attribute['value']}"
+                for attribute in event['Attribute']
+            ]
         )
 
     def _test_event_with_url_attribute(self, event):
@@ -3059,6 +3091,10 @@ class TestSTIX11JSONExport(TestSTIX11Export):
         event = get_event_with_undefined_attributes()
         self._test_event_with_undefined_attributes(event['Event'])
 
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        self._test_event_with_two_header_description_attributes(event['Event'])
+
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()
         self._test_event_with_url_attribute(event['Event'])
@@ -3566,6 +3602,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_undefined_attributes(misp_event)
+
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_two_header_description_attributes(misp_event)
 
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()
@@ -4123,6 +4165,10 @@ class TestSTIX12JSONExport(TestSTIX12Export):
         event = get_event_with_undefined_attributes()
         self._test_event_with_undefined_attributes(event['Event'])
 
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        self._test_event_with_two_header_description_attributes(event['Event'])
+
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()
         self._test_event_with_url_attribute(event['Event'])
@@ -4630,6 +4676,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_undefined_attributes(misp_event)
+
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_two_header_description_attributes(misp_event)
 
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()

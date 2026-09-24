@@ -113,6 +113,7 @@ from .test_events import (
     get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
+    get_event_with_undefined_attributes,
     get_event_with_user_account_object, get_event_with_user_account_objects,
     get_event_with_vulnerability_galaxy, get_event_with_whois_registrar_attribute,
     get_event_with_x509_fingerprint_attributes, get_event_with_x509_object,
@@ -686,6 +687,176 @@ class TestSTIX1Import(TestSTIX):
         incident.history = history
         parser = self._parse_internal_package(self._internal_package(incident))
         self.assertIn('tlp:amber', [tag['name'] for tag in parser.misp_event.tags])
+
+    @classmethod
+    def _journal_package(cls, *entries):
+        """An Incident carrying the given journal entries next to one
+        attribute to convert, wrapped the way the MISP export wraps it."""
+        incident = cls._incident_with_content()
+        incident.id_ = f'MISP:Incident-{_PLAIN_OBJECT_UUID}'
+        history = History()
+        for value in entries:
+            history_item = HistoryItem()
+            history_item.journal_entry = JournalEntry(value)
+            history.append(history_item)
+        incident.history = history
+        return cls._internal_package(incident)
+
+    @staticmethod
+    def _journal_attributes(parser):
+        return sorted(
+            (attribute.type, attribute.category, attribute.value)
+            for attribute in parser.misp_event.attributes
+            if attribute.type != 'domain'
+        )
+
+    def test_internal_journal_entry_attributes_round_trip(self):
+        """`comment`, `text` and `other` have no CybOX shape and the export
+        writes each as a journal entry of the Incident, a grammar the reader
+        did not know: all three came back as nothing, with no message. The
+        entry carries the category, the type and the value, and the uuid is
+        derived from the Incident id, stable across two reads."""
+        for attribute_type in ('comment', 'text', 'other'):
+            with self.subTest(type=attribute_type):
+                event = get_base_event()
+                event['Event']['Attribute'] = [
+                    {
+                        'uuid': _PLAIN_OBJECT_UUID, 'type': attribute_type,
+                        'category': 'Internal reference',
+                        'value': f'My {attribute_type} value'
+                    }
+                ]
+                stix_package = self._misp_export(event)
+                parser = self._parse_internal_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                converted, = parser.misp_event.attributes
+                self.assertEqual(
+                    (converted.type, converted.category, converted.value),
+                    (
+                        attribute_type, 'Internal reference',
+                        f'My {attribute_type} value'
+                    )
+                )
+                incident_id = stix_package.related_packages.related_package[
+                    0
+                ].item.incidents[0].id_
+                self.assertEqual(
+                    converted.uuid,
+                    str(
+                        uuid5(
+                            _UUIDv4,
+                            f'{incident_id} - {attribute_type} - '
+                            f'My {attribute_type} value'
+                        )
+                    )
+                )
+                again = self._parse_internal_package(stix_package)
+                self.assertEqual(
+                    again.misp_event.attributes[0].uuid, converted.uuid
+                )
+
+    def test_internal_journal_entry_value_holding_the_separator(self):
+        """An entry was split on every `': '` into exactly two names, so a
+        value holding one more - a tag with a colon in it included - raised
+        and was skipped without a word. The entry splits on the first."""
+        parser = self._parse_internal_package(
+            self._journal_package(
+                'Attribute (Other - comment): a value: with a colon',
+                'MISP Tag: a: b'
+            )
+        )
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            self._journal_attributes(parser),
+            [('comment', 'Other', 'a value: with a colon')]
+        )
+        self.assertIn('a: b', [tag.name for tag in parser.misp_event.tags])
+
+    def test_internal_legacy_journal_entry_grammar_still_reads(self):
+        """`attribute[Category][type]: value`, the grammar MISP core's own STIX
+        1 export wrote, is read next to ours. A category MISP has not is left
+        to pymisp's default for the type: pymisp raises a bare `KeyError`
+        for it, which escaped the guard and aborted the whole package."""
+        parser = self._parse_internal_package(
+            self._journal_package(
+                'attribute[Internal reference][text]: legacy text',
+                'attribute[No such category][comment]: legacy comment'
+            )
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            self._journal_attributes(parser),
+            [
+                ('comment', 'Other', 'legacy comment'),
+                ('text', 'Internal reference', 'legacy text')
+            ]
+        )
+
+    def test_internal_unread_journal_entries_are_one_warning(self):
+        """An entry matching no grammar - free text, a malformed
+        `attribute[` prefix, an entry with no `': '` - was skipped silently.
+        The loss is one Warning per document, the count its only size."""
+        parser = self._parse_internal_package(
+            self._journal_package(
+                'Some free text: the analyst wrote',
+                'attribute[Other: malformed',
+                'no separator at all',
+                'Attribute (no category): value'
+            )
+        )
+        self.assertEqual(self._journal_attributes(parser), [])
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('4 Incident journal entries', warnings[0])
+
+    def test_internal_header_description_attribute_round_trips(self):
+        """The attribute whose comment is `Imported from STIX header
+        description` is exported as the package header description, which
+        the reader never read. It comes back as a `comment` attribute
+        carrying the marker, so a re-export puts it back in the header."""
+        event = get_event_with_undefined_attributes()
+        header, journal = event['Event']['Attribute']
+        stix_package = self._misp_export(event)
+        parser = self._parse_internal_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            sorted(
+                (
+                    attribute.type, attribute.category, attribute.value,
+                    getattr(attribute, 'comment', None)
+                )
+                for attribute in parser.misp_event.attributes
+            ),
+            [
+                ('comment', 'Other', journal['value'], None),
+                ('comment', 'Other', header['value'], header['comment'])
+            ]
+        )
+        package_id = stix_package.related_packages.related_package[0].item.id_
+        self.assertIn(
+            str(uuid5(_UUIDv4, f'{package_id} - header description')),
+            [attribute.uuid for attribute in parser.misp_event.attributes]
+        )
+        exporter = MISPtoSTIX1EventsParser('MISP', '1.1.1')
+        exporter.parse_misp_event(parser.misp_event.to_dict())
+        self.assertEqual(
+            exporter.stix_package.stix_header.description.value,
+            header['value']
+        )
+
+    def test_internal_undefined_attributes_alone_convert(self):
+        """An event holding only journal entry attributes converted to nothing
+        and was refused as a document carrying no content."""
+        parser = self._parse_internal_package(
+            self._misp_export(get_event_with_undefined_attributes())
+        )
+        self.assertEqual(len(parser.misp_event.attributes), 2)
 
     ############################################################################
     #                          PUBLIC ENTRY POINT TESTS.                       #
