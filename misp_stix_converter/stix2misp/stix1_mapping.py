@@ -102,6 +102,9 @@ class STIX1toMISPMapping:
         x_mailer = ("email-x-mailer", 'value', "x-mailer")
     )
     _file_mapping = Mapping(
+        accessed_time = ('datetime', 'accessed_time.value', 'access-time'),
+        created_time = ('datetime', 'created_time.value', 'creation-time'),
+        modified_time = ('datetime', 'modified_time.value', 'modification-time'),
         file_path = ('text', 'file_path.value', 'path'),
         full_path = ('text', 'full_path.value', 'fullpath'),
         file_format = ('mime-type', 'file_format.value', 'mimetype'),
@@ -131,7 +134,8 @@ class STIX1toMISPMapping:
     __network_socket_mapping = Mapping(
         protocol = ('text', 'protocol.value', 'protocol'),
         address_family = ('text', 'address_family.value', 'address-family'),
-        domain = ('text', 'domain.value', 'domain-family')
+        domain = ('text', 'domain.value', 'domain-family'),
+        type_ = ('text', 'type_.value', 'socket-type')
     )
     # PE file header field -> the `pe` object relation it is read as. The
     # template types every one of them, so a relation it retypes later is
@@ -181,7 +185,9 @@ class STIX1toMISPMapping:
         parent_pid = ('text', 'parent-pid')
     )
     __regkey_mapping = Mapping(
-        **{'hive': ('text', 'hive'), 'key': ('regkey', 'key')}
+        hive = ('text', 'hive'),
+        key = ('regkey', 'key'),
+        modified_time = ('datetime', 'last-modified')
     )
     __regkey_value_mapping = Mapping(
         data = ('text', 'data'),
@@ -212,7 +218,6 @@ class STIX1toMISPMapping:
     __user_account_object_mapping = Mapping(
         username = ('text', 'username'),
         full_name = ('text', 'display-name'),
-        disabled = ('boolean', 'disabled'),
         creation_date = ('datetime', 'created'),
         last_login = ('datetime', 'last_login'),
         home_directory = ('text', 'home_dir'),
@@ -229,7 +234,13 @@ class STIX1toMISPMapping:
         phone_number = ('whois-registrant-phone', 'value', 'registrant-phone'),
         organization = ('whois-registrant-org', 'value', 'registrant-org')
     )
-    __x509_certificate_types = ('version', 'serial_number', 'issuer', 'subject')
+    __x509_certificate_mapping = Mapping(
+        version = 'version',
+        serial_number = 'serial-number',
+        issuer = 'issuer',
+        signature_algorithm = 'signature_algorithm',
+        subject = 'subject'
+    )
     __x509_datetime_types = ('not_before', 'not_after')
     __x509_pubkey_types = ('exponent', 'modulus')
 
@@ -341,8 +352,8 @@ class STIX1toMISPMapping:
         return cls.__whois_registrant_mapping
 
     @classmethod
-    def x509_certificate_types(cls) -> tuple:
-        return cls.__x509_certificate_types
+    def x509_certificate_mapping(cls) -> dict:
+        return cls.__x509_certificate_mapping
 
     @classmethod
     def x509_datetime_types(cls) -> tuple:
@@ -372,6 +383,7 @@ class InternalSTIX1toMISPMapping(STIX1toMISPMapping):
     __vulnerability_object_mapping = Mapping(
         cve_id = ('vulnerability', 'id'),
         description = ('text', 'summary'),
+        discovered_datetime = ('datetime', 'created'),
         published_datetime = ('datetime', 'published')
     )
     __weakness_object_mapping = Mapping(

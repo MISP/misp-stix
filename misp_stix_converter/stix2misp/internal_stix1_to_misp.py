@@ -578,6 +578,20 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                         'value': value if isinstance(value, str) else value.value
                     }
                 )
+        if vulnerability.cvss_score and vulnerability.cvss_score.overall_score:
+            attributes.append(
+                {
+                    'type': 'float', 'object_relation': 'cvss-score',
+                    'value': vulnerability.cvss_score.overall_score
+                }
+            )
+        for reference in vulnerability.references or ():
+            attributes.append(
+                {
+                    'type': 'link', 'object_relation': 'references',
+                    'value': reference
+                }
+            )
         if attributes:
             if len(attributes) == 1 and attributes[0]['object_relation'] == 'id':
                 attributes = attributes[0]

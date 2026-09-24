@@ -700,12 +700,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if properties.header:
             header = properties.header
             attributes = list(self._fetch_attributes_with_key_parsing(header, 'email_mapping'))
-            if header.to:
-                for to in header.to:
-                    attributes.append(["email-dst", to.address_value.value, "to"])
-            if header.cc:
-                for cc in header.cc:
-                    attributes.append(["email-dst", cc.address_value.value, "cc"])
+            for feature in ('to', 'cc', 'bcc'):
+                for recipient in getattr(header, feature) or ():
+                    attributes.append(
+                        ["email-dst", recipient.address_value.value, feature]
+                    )
         else:
             attributes = []
         # Standard CybOX fields rather than MISP grammar, read on a document
@@ -1300,6 +1299,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attributes.append(["filename", properties.image_info.file_name.value, "image"])
             if properties.image_info.command_line:
                 attributes.append(["text", properties.image_info.command_line.value, "command-line"])
+        if properties.is_hidden is not None:
+            attributes.append(["boolean", properties.is_hidden, "hidden"])
         attributes.extend(self._read_custom_properties(properties, 'process'))
         if properties.network_connection_list:
             # Built with the process object, whose uuid theirs derive from
@@ -1369,11 +1370,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Parse a UNIX user account object
     def _handle_unix_user(self, properties: unix_user_account_object.UnixUserAccount) -> tuple:
-        attributes = list(
-            self._fetch_attributes_with_partial_key_parsing(
-                properties, 'user_account_object_mapping'
-            )
-        )
+        attributes = self._fetch_user_account_attributes(properties)
+        # The export carries a `unix` account type by this CybOX type alone
+        attributes.append(['text', 'unix', 'account-type'])
         if properties.user_id:
             attributes.append(['text', properties.user_id.value, 'user-id'])
         if properties.group_id:
@@ -1385,15 +1384,42 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Parse a user account object
     def _handle_user(self, properties: user_account_object.UserAccount) -> tuple:
+        attributes = self._fetch_user_account_attributes(properties)
+        attributes.extend(
+            self._read_custom_properties(properties, 'user-account')
+        )
+        return 'user-account', self._return_object_attributes(attributes), ''
+
+    def _fetch_user_account_attributes(
+            self, properties: user_account_object.UserAccount) -> list:
+        """Read the fields every user account type carries: the ones its
+        mapping names, the `disabled` boolean, and the `authentication_data`
+        of every authentication whose type is `password`, in any case: the
+        export writes it lowercase, CybOX's vocabulary capitalised.
+
+        :param properties: the user account properties, of any account type
+        :return: the `(type, value, relation)` of each attribute
+        """
         attributes = list(
             self._fetch_attributes_with_partial_key_parsing(
                 properties, 'user_account_object_mapping'
             )
         )
-        attributes.extend(
-            self._read_custom_properties(properties, 'user-account')
-        )
-        return 'user-account', self._return_object_attributes(attributes), ''
+        # A CybOX boolean holds the value itself, `False` included
+        if properties.disabled is not None:
+            attributes.append(['boolean', properties.disabled, 'disabled'])
+        for authentication in properties.authentication or ():
+            authentication_type = authentication.authentication_type
+            if str(getattr(authentication_type, 'value', '')).lower() != 'password':
+                continue
+            if authentication.authentication_data:
+                attributes.append(
+                    [
+                        'text', authentication.authentication_data.value,
+                        'password'
+                    ]
+                )
+        return attributes
 
     @staticmethod
     def _utc_midnight(value: date) -> datetime:
@@ -1458,11 +1484,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Parse a windows user account object
     def _handle_windows_user(self, properties: win_user_account_object.WinUser) -> tuple:
-        attributes = list(
-            self._fetch_attributes_with_partial_key_parsing(
-                properties, 'user_account_object_mapping'
-            )
-        )
+        attributes = self._fetch_user_account_attributes(properties)
         if properties.security_id:
             attributes.append(['text', properties.security_id.value, 'user-id'])
         attributes.extend(
@@ -1512,9 +1534,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                        yield ['text', getattr(rsa_pubkey, prop).value, f'pubkey-info-{prop}']
             if subject_pubkey.public_key_algorithm:
                 yield ["text", subject_pubkey.public_key_algorithm.value, "pubkey-info-algorithm"]
-        for prop in self._mapping.x509_certificate_types():
-            if getattr(certificate, prop):
-                yield ['text', getattr(certificate, prop).value, prop.replace('_', '-')]
+        yield from self._fetch_attributes_with_template_types(
+            certificate, 'x509_certificate_mapping',
+            _template_attribute_types('x509')
+        )
 
     ############################################################################
     #                      OBJECT REFERENCES APPLICATION.                      #
