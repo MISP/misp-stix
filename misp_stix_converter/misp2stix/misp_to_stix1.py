@@ -519,9 +519,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_undefined_attribute(self, attribute: dict):
         if attribute.get('comment') and attribute['comment'] == 'Imported from STIX header description':
-            self._header_comment.append(attribute['value'])
+            self._header_description_attributes.append(attribute)
         else:
-            self._add_journal_entry(f"Attribute ({attribute.get('category', 'Other')} - {attribute['type']}): {attribute['value']}")
+            self._add_attribute_journal_entry(attribute)
+
+    def _add_attribute_journal_entry(self, attribute: dict):
+        self._add_journal_entry(f"Attribute ({attribute.get('category', 'Other')} - {attribute['type']}): {attribute['value']}")
 
     def _parse_user_agent_attribute(self, attribute: dict):
         http_client_request = HTTPClientRequest()
@@ -1280,7 +1283,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             raise InvalidMISPInputError('Input does not look like a MISP event.')
 
     def parse_misp_event(self, misp_event: dict):
-        self._header_comment = []
+        self._header_description_attributes = []
         self._objects_to_parse = defaultdict(dict)
         self._contextualised_data = set()
         self._ids = set()
@@ -1308,12 +1311,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                                 timestamp=timestamp
                             )
                             ttp.add_related_ttp(related_ttp)
+        # The header holds one description: with more than one attribute
+        # meant for it, each goes to the journal like the others of its type
+        if len(self._header_description_attributes) > 1:
+            for attribute in self._header_description_attributes:
+                self._add_attribute_journal_entry(attribute)
         self._stix_package.add_incident(self._incident)
         stix_header = STIXHeader()
         stix_header.title = f"Export from {producer}'s MISP"
         stix_header.package_intents = "Threat Report"
-        if self._header_comment and len(self._header_comment) == 1:
-            stix_header.description = self._header_comment[0]
+        if len(self._header_description_attributes) == 1:
+            stix_header.description = self._header_description_attributes[0]['value']
         self._stix_package.stix_header = stix_header
 
     ################################################################################
