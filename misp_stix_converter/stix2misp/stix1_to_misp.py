@@ -201,7 +201,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
-    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None):
+    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None, timestamp=None):
         if not name:
             # An observable carrying nothing to name an object with is the
             # observable there is nothing to convert from
@@ -213,14 +213,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         try:
             self._build_observable_object(
                 name, attribute_value, compl_data, to_ids, object_uuid,
-                test_mechanisms, description, title
+                test_mechanisms, description, title, timestamp
             )
         except PyMISPError as exception:
             self._refused_object_error(name, exception, object_uuid)
 
     def _build_observable_object(
             self, name, attribute_value, compl_data, to_ids, object_uuid,
-            test_mechanisms, description, title):
+            test_mechanisms, description, title, timestamp):
         """Build the MISP object the attributes read from an Observable make,
         and add it to the event.
 
@@ -238,10 +238,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             Indicator landed as, referenced as `detected-with`
         :param description: the STIX description field, or None
         :param title: the Record Title, where the shape carries one
+        :param timestamp: the timestamp of the carrier, None where it carries
+            none and pymisp stamps the object
         """
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid:
             misp_object.uuid = object_uuid
+        if timestamp is not None:
+            misp_object.timestamp = timestamp
         # The name is only final here - what the export wrote the object as
         # names it, not the Observable id - so the description the export
         # writes for an object carrying no comment is told from a comment

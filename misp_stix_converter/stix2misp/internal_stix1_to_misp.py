@@ -619,7 +619,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                         misp_attribute, stix_object_id
                     )
                 else:
-                    self._handle_object_case(attribute_type, attribute_value, compl_data, to_ids=to_ids)
+                    self._handle_attribute_yield(
+                        attribute_type, attribute_value, compl_data,
+                        misp_attribute, stix_object_id, to_ids
+                    )
             except StixObjectTypeError as xsi_type:
                 self._stix_object_type_error(xsi_type, stix_object_id)
         elif getattr(observable.observable_composition, 'observables', None) is not None:
@@ -652,6 +655,96 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     },
                     stix_object_id
                 )
+
+    def _handle_attribute_yield(
+            self, name: Optional[str], attributes, compl_data,
+            misp_attribute: dict, stix_object_id: str, to_ids: bool):
+        """Read an Attribute Observable back as the MISP attribute it was
+        exported from, where the handler reading its CybOX object yields the
+        attributes of an object.
+
+        That the carrier held exactly one MISP attribute is a property of the
+        call path, not of the CybOX shape - the same shape reaches
+        `_parse_observable_object` from an object export - so the rule lives
+        here rather than in the handlers, which the External parser shares. It
+        is written as a rule, not a table of what reduces: a yield of one
+        attribute is that attribute, whose type is the MISP attribute type;
+        a yield of several reduces only where a composite MISP type spells
+        exactly those relations. Anything else lands as the object it reads
+        as, carrying what the attribute carried, and a warning says so - a
+        shape our export never writes, so a hand-crafted document wearing the
+        `misp:tool` label. A yield carrying complementary data to act on is
+        never reduced: `_handle_attribute_case` would drop it.
+
+        The routing that brings a carrier here - the relationship naming a
+        MISP category, `_parse_indicator` / `_parse_observable` - is an exact,
+        case-sensitive match, and no MISP category is also an object template
+        name: a new one that were would see an object flattened here.
+
+        :param name: the object template name the handler returned
+        :param attributes: the attributes, as the handlers return them
+        :param compl_data: the complementary data the handler returned
+        :param misp_attribute: the attribute context the caller read - the
+            uuid, the category, the comment, the tags, the timestamp
+        :param stix_object_id: the id of the Indicator or the Observable
+        :param to_ids: the `to_ids` flag the carrier was written with
+        """
+        if not name:
+            # Nothing to name an object with: recorded by the object branch
+            self._handle_object_case(
+                name, attributes, compl_data,
+                object_uuid=misp_attribute.get('uuid')
+            )
+            return
+        if not attributes:
+            # An object holding no attribute is no record: the document would
+            # be one record short with nothing saying so
+            self._empty_yield_error(name, stix_object_id)
+            return
+        if not isinstance(compl_data, dict):
+            attribute = self._attribute_from_yield(name, attributes)
+            if attribute is not None:
+                self._add_attribute(
+                    {**attribute, **misp_attribute}, stix_object_id
+                )
+                return
+        self._unread_attribute_warning(name, stix_object_id)
+        if 'Tag' in misp_attribute:
+            self._object_markings_warning()
+        # The comment is read already: handed over as the description, it is
+        # guarded against the template description alone
+        self._handle_object_case(
+            name, attributes, compl_data, to_ids=to_ids,
+            object_uuid=misp_attribute.get('uuid'),
+            description=misp_attribute.get('comment'),
+            timestamp=misp_attribute.get('timestamp')
+        )
+
+    @staticmethod
+    def _attribute_from_yield(name: str, attributes) -> Optional[dict]:
+        """Reduce the attributes of an object yield to the one MISP attribute
+        they spell.
+
+        :param name: the object template name
+        :param attributes: the attributes, as the handlers return them
+        :return: the attribute, None when the yield spells none
+        """
+        if len(attributes) == 1:
+            return {
+                key: value for key, value in attributes[0].items()
+                if key != 'object_relation'
+            }
+        relations = {
+            attribute['object_relation']: attribute['value']
+            for attribute in attributes
+        }
+        if name == 'registry-key' and len(attributes) == len(relations) == 2:
+            if set(relations) == {'key', 'data'}:
+                return {
+                    'type': 'regkey|value',
+                    'value': f"{relations['key']}|{relations['data']}"
+                }
+        return None
 
     # Parse STIX object that we know will give MISP objects
     def _parse_misp_object_indicator(self, indicator: Indicator):
@@ -1026,6 +1119,19 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             f'Unable to convert the TTP with id {ttp_id}: no attack pattern, '
             'vulnerability, weakness or victim targeting to read a MISP '
             'attribute or object from'
+        )
+
+    def _empty_yield_error(self, name: str, object_id: str):
+        self._add_error(
+            f'Unable to convert the STIX object with id {object_id}: '
+            f'nothing to fill a MISP {name} object with'
+        )
+
+    def _unread_attribute_warning(self, name: str, object_id: str):
+        # Unreachable from our own export, every attribute of which reduces
+        self._add_warning(
+            f'Unable to read the STIX object with id {object_id} back as a '
+            f'MISP attribute: converted as a {name} object.'
         )
 
     def _unnamed_composition_warning(self, object_id: str):
