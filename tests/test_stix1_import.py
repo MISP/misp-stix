@@ -12,6 +12,7 @@ from cybox.objects.address_object import Address, EmailAddress
 from cybox.objects.custom_object import Custom
 from cybox.objects.dns_record_object import DNSRecord
 from cybox.objects.domain_name_object import DomainName
+from cybox.objects.email_message_object import EmailMessage
 from cybox.objects.file_object import File
 from cybox.objects.library_object import Library
 from cybox.objects.network_connection_object import NetworkConnection
@@ -100,6 +101,7 @@ from .test_events import (
     get_event_with_course_of_action_object, get_event_with_credential_object,
     get_event_with_domain_attribute,
     get_event_with_domain_ip_object,
+    get_event_with_email_body_attribute, get_event_with_email_header_attribute,
     get_event_with_email_with_display_names_object,
     get_event_with_file_object, get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_malware_galaxy,
@@ -107,11 +109,13 @@ from .test_events import (
     get_event_with_hash_composite_attributes, get_event_with_mutex_object,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
     get_event_with_process_object, get_event_with_process_object_v2,
+    get_event_with_regkey_attribute, get_event_with_regkey_value_attribute,
     get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
     get_event_with_user_account_object, get_event_with_user_account_objects,
-    get_event_with_vulnerability_galaxy, get_event_with_x509_object,
+    get_event_with_vulnerability_galaxy, get_event_with_whois_registrar_attribute,
+    get_event_with_x509_fingerprint_attributes, get_event_with_x509_object,
     get_event_with_windows_service_attributes, get_hash_attributes)
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
@@ -2941,10 +2945,15 @@ class TestSTIX1Import(TestSTIX):
         for misp_object in (commented, plain):
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = True
-            attribute['Tag'] = [{'name': 'my:inobject="tag"'}]
+                attribute['Tag'] = [{'name': 'my:inobject="tag"'}]
         commented['comment'] = 'object comment'
         plain['uuid'] = _PLAIN_OBJECT_UUID
-        plain['description'] = _template_description('domain-ip')
+        # The template description the export writes, spelt out rather than
+        # read through the helper the conversion itself reads it with
+        plain['description'] = (
+            'A domain/hostname and IP address seen as a tuple in a specific '
+            'time frame.'
+        )
         event['Event']['Object'] = [commented, plain]
         return event
 
@@ -3177,6 +3186,339 @@ class TestSTIX1Import(TestSTIX):
             marking_specification.marking_structures.append(simple_marking)
         handling.add_marking(marking_specification)
         return handling
+
+    def test_internal_indicator_with_several_rules_gives_each_its_context(self):
+        """An Indicator yielding one attribute per rule gives each of them the
+        comment and the tags it carried: context for every rule it held, where
+        the uuid is an identity and goes to the first alone. Each attribute
+        takes tags of its own, not a list the others share."""
+        incident = self._incident_with_content()
+        indicator = Indicator()
+        indicator.id_ = f'MISP:Indicator-{_IP_UUID}'
+        indicator.description = 'two rules, one comment'
+        indicator.handling = self._handling_with_statements('my:rule="tag"')
+        test_mechanism = SnortTestMechanism()
+        test_mechanism.rules = list(_SNORT_RULES)
+        indicator.add_test_mechanism(test_mechanism)
+        incident.related_indicators.append(
+            RelatedIndicator(indicator, relationship='Network activity')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        snort_attributes = [
+            attribute for attribute in parser.misp_event.attributes
+            if attribute.type == 'snort'
+        ]
+        self.assertEqual(
+            [
+                (
+                    attribute.value, attribute.comment,
+                    [tag.name for tag in attribute.tags]
+                )
+                for attribute in snort_attributes
+            ],
+            [
+                (rule, 'two rules, one comment', ['my:rule="tag"'])
+                for rule in _SNORT_RULES
+            ]
+        )
+        first, second = snort_attributes
+        self.assertIsNot(first.tags, second.tags)
+        first.add_tag('my:first="only"')
+        self.assertEqual([tag.name for tag in second.tags], ['my:rule="tag"'])
+
+    ############################################################################
+    #              ATTRIBUTE OBSERVABLES READ BACK AS ATTRIBUTES.              #
+    ############################################################################
+
+    @staticmethod
+    def _attributes_yielding_several_values():
+        """Every attribute whose CybOX carrier the handlers read as an object
+        yield, each on an event of its own - the x509 fingerprints included,
+        which the fixture holds three of."""
+        for getter in (
+                get_event_with_email_body_attribute,
+                get_event_with_email_header_attribute,
+                get_event_with_regkey_attribute,
+                get_event_with_regkey_value_attribute,
+                get_event_with_whois_registrar_attribute,
+                get_event_with_x509_fingerprint_attributes):
+            for attribute in getter()['Event']['Attribute']:
+                yield attribute
+
+    def _round_trip_attribute(self, attribute, to_ids):
+        """Export an attribute alone on an event, with a comment, a tag and a
+        timestamp forced on it, and read it back."""
+        attribute = {
+            **attribute, 'to_ids': to_ids, 'comment': 'my own comment',
+            'timestamp': '1603642920', 'Tag': [{'name': 'my:kept="tag"'}]
+        }
+        event = get_base_event()
+        event['Event']['Attribute'] = [attribute]
+        return attribute, self._parse_internal_package(self._misp_export(event))
+
+    def test_internal_attribute_observables_yielding_several_values_read_back_as_attributes(self):
+        """An Attribute Observable is read back as the MISP attribute it was
+        exported from, never as a MISP object: the value under its own type,
+        the uuid off the Indicator's or the Observable's id, and the comment,
+        the tags and the timestamp where the carrier holds them - the
+        Indicator does, the Observable holds none of the three. These came
+        back as one-attribute objects, or empty ones for `email-body` and
+        `email-header`, with all of it dropped."""
+        for original in self._attributes_yielding_several_values():
+            for to_ids in (True, False):
+                with self.subTest(type=original['type'], to_ids=to_ids):
+                    attribute, parser = self._round_trip_attribute(
+                        original, to_ids
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.diagnostics()['warnings'], {})
+                    self.assertEqual(parser.misp_event.objects, [])
+                    converted, = parser.misp_event.attributes
+                    self.assertEqual(
+                        (
+                            converted.uuid, converted.type, converted.category,
+                            converted.value, converted.to_ids
+                        ),
+                        (
+                            attribute['uuid'], attribute['type'],
+                            attribute['category'], attribute['value'], to_ids
+                        )
+                    )
+                    self.assertEqual(
+                        (
+                            getattr(converted, 'comment', None),
+                            [tag.name for tag in converted.tags]
+                        ),
+                        ('my own comment', ['my:kept="tag"']) if to_ids
+                        else (None, [])
+                    )
+                    if to_ids:
+                        self.assertEqual(
+                            int(converted.timestamp.timestamp()), 1603642920
+                        )
+
+    def test_internal_regkey_value_is_rebuilt_with_the_canonical_separator(self):
+        """A `regkey|value` travels as a registry key holding one value, and
+        is rebuilt with the canonical `|`. What the export does to the value
+        before the wire is not undone: it splits on `_` too, and a key written
+        `key_data` comes back `key|data`; it strips both halves, and the
+        padding around the separator is gone."""
+        for value, expected in (
+                ('HKLM\\Software\\mthjk|%DATA%\\1234567890',
+                 'HKLM\\Software\\mthjk|%DATA%\\1234567890'),
+                ('HKLM\\Software\\mthjk | %DATA%', 'HKLM\\Software\\mthjk|%DATA%'),
+                ('HKLM\\Software\\mthjk_1234', 'HKLM\\Software\\mthjk|1234')):
+            for to_ids in (True, False):
+                with self.subTest(value=value, to_ids=to_ids):
+                    original = get_event_with_regkey_value_attribute()
+                    original = original['Event']['Attribute'][0]
+                    original['value'] = value
+                    _, parser = self._round_trip_attribute(original, to_ids)
+                    self.assertEqual(parser.misp_event.objects, [])
+                    self.assertEqual(
+                        [
+                            (attribute.type, attribute.value)
+                            for attribute in parser.misp_event.attributes
+                        ],
+                        [('regkey|value', expected)]
+                    )
+
+    @classmethod
+    def _registry_key_indicator(cls, registry_key):
+        """The Indicator a `to_ids` attribute is exported as, carrying a
+        registry key, a comment, a tag and a timestamp, related to an
+        Incident."""
+        registry_object = Object(registry_key)
+        registry_object.id_ = f'MISP:WindowsRegistryKey-{_OBSERVABLE_UUID}'
+        indicator = cls._indicator(registry_object, _OBSERVABLE_UUID)
+        indicator.description = 'my own comment'
+        indicator.handling = cls._handling_with_statements('my:lost="tag"')
+        indicator.timestamp = '2020-10-25T16:22:00+00:00'
+        incident = cls._incident_with_content()
+        incident.related_indicators.append(
+            RelatedIndicator(indicator, relationship='Persistence mechanism')
+        )
+        return incident
+
+    def test_internal_attribute_observable_reducing_to_no_attribute_falls_back_to_an_object(self):
+        """A yield no MISP attribute type spells - a registry key with a value
+        name beside its key, which our export never writes - lands as the
+        object it reads as, carrying what the attribute carried: the uuid off
+        the Indicator's id, the comment, the timestamp. The tags the object
+        cannot take are warned of, and a warning names the Indicator the
+        attribute did not come back from."""
+        registry_key = WinRegistryKey()
+        registry_key.key = 'HKLM\\Software\\mthjk'
+        registry_value = RegistryValue()
+        registry_value.name = 'Run'
+        registry_key.values = RegistryValues(registry_value)
+        incident = self._registry_key_indicator(registry_key)
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [attribute.value for attribute in parser.misp_event.attributes],
+            ['circl.lu']
+        )
+        misp_object, = parser.misp_event.objects
+        self.assertEqual(
+            (
+                misp_object.name, misp_object.uuid, misp_object.comment,
+                misp_object.timestamp
+            ),
+            ('registry-key', _OBSERVABLE_UUID, 'my own comment', 1603642920)
+        )
+        self.assertEqual(
+            sorted(
+                (attribute.object_relation, attribute.value, attribute.to_ids)
+                for attribute in misp_object.attributes
+            ),
+            [('key', 'HKLM\\Software\\mthjk', True), ('name', 'Run', True)]
+        )
+        self.assertEqual(
+            parser.diagnostics()['warnings']['misp event'],
+            [
+                'Unable to read the STIX object with id '
+                f'MISP:Indicator-{_OBSERVABLE_UUID} back as a MISP attribute: '
+                'converted as a registry-key object.',
+                'MISP objects carry no tag: the markings on the STIX objects a '
+                'MISP object is built from are not read back.'
+            ]
+        )
+
+    def test_internal_attribute_observable_with_complementary_data_is_never_reduced(self):
+        """A yield carrying complementary data is not reduced even when it holds
+        one attribute: the attribute branch would drop the data. A named Custom
+        object - the shape our export writes MISP objects in, never attributes
+        - hands its template bookkeeping over that way, and lands as the object
+        it names, with the warning."""
+        custom = Custom()
+        custom.custom_name = 'registry-key'
+        custom.custom_properties = CustomProperties()
+        key = Property()
+        key.name = 'key'
+        key.value = 'HKLM\\Software\\mthjk'
+        custom.custom_properties.append(key)
+        custom_object = Object(custom)
+        custom_object.id_ = f'MISP:Custom-{_OBSERVABLE_UUID}'
+        incident = self._incident_with_content()
+        incident.related_indicators.append(
+            RelatedIndicator(
+                self._indicator(custom_object, _OBSERVABLE_UUID),
+                relationship='Persistence mechanism'
+            )
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        misp_object, = parser.misp_event.objects
+        self.assertEqual(
+            (
+                misp_object.name, misp_object.uuid,
+                [
+                    (attribute.object_relation, attribute.value)
+                    for attribute in misp_object.attributes
+                ]
+            ),
+            (
+                'registry-key', _OBSERVABLE_UUID,
+                [('key', 'HKLM\\Software\\mthjk')]
+            )
+        )
+        self.assertEqual(
+            parser.diagnostics()['warnings']['misp event'],
+            [
+                'Unable to read the STIX object with id '
+                f'MISP:Indicator-{_OBSERVABLE_UUID} back as a MISP attribute: '
+                'converted as a registry-key object.'
+            ]
+        )
+
+    def test_internal_attribute_observable_yielding_nothing_records_an_error(self):
+        """An email message carrying none of the fields the parser reads is no
+        export of ours, and there is no record to build from it: the error
+        names the Indicator, where an `email` object holding no attribute
+        reached the event. The rest of the event converts."""
+        email_object = Object(EmailMessage())
+        email_object.id_ = f'MISP:EmailMessage-{_OBSERVABLE_UUID}'
+        incident = self._incident_with_content()
+        incident.related_indicators.append(
+            RelatedIndicator(
+                self._indicator(email_object, _OBSERVABLE_UUID),
+                relationship='Payload delivery'
+            )
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.misp_event.objects, [])
+        self.assertEqual(
+            [attribute.value for attribute in parser.misp_event.attributes],
+            ['circl.lu']
+        )
+        self.assertEqual(
+            parser.diagnostics()['errors']['misp event'],
+            [
+                'Unable to convert the STIX object with id '
+                f'MISP:Indicator-{_OBSERVABLE_UUID}: nothing to fill a MISP '
+                'email object with'
+            ]
+        )
+
+    def test_internal_text_object_relation_keeps_the_author_comment(self):
+        """An object read back as one `text` attribute takes the relation as
+        its comment only where the author wrote none: an `email` reading its
+        `user-agent` as a Custom Property replaced the comment with the
+        property name, a `file` reading one `text` relation overwrote it with
+        the empty string."""
+        for name, relation, value in (
+                ('email', 'user-agent', 'Mozilla/5.0'),
+                ('file', 'path', '/tmp'),
+                ('file', 'magic', 'PE32 executable')):
+            for comment in ('my own comment', None):
+                with self.subTest(name=name, relation=relation, comment=comment):
+                    misp_object = {
+                        'name': name, 'meta-category': 'misc',
+                        'uuid': _PLAIN_OBJECT_UUID,
+                        'Attribute': [
+                            {
+                                'uuid': _OBSERVABLE_UUID, 'type': 'text',
+                                'object_relation': relation, 'value': value,
+                                'to_ids': True
+                            }
+                        ]
+                    }
+                    if comment is not None:
+                        misp_object['comment'] = comment
+                    event = get_base_event()
+                    event['Event']['Object'] = [misp_object]
+                    parser = self._parse_internal_package(
+                        self._misp_export(event)
+                    )
+                    converted, = parser.misp_event.attributes
+                    self.assertEqual(converted.value, value)
+                    self.assertEqual(
+                        getattr(converted, 'comment', None),
+                        comment if comment is not None
+                        else ('user-agent' if name == 'email' else None)
+                    )
+
+    def test_external_course_of_action_markings_warning_names_no_export(self):
+        """The Course of Action parser is shared, so a third-party one
+        carrying a marking records the loss too - in words true of any
+        document, not of one our export wrote."""
+        course_of_action = self._course_of_action()
+        course_of_action.handling = self._handling_with_statements(
+            'my:coa="tag"'
+        )
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(course_of_action)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(len(parser.misp_event.objects), 1)
+        self.assertEqual(
+            parser.diagnostics()['warnings']['misp event'],
+            [
+                'MISP objects carry no tag: the markings on the STIX objects a '
+                'MISP object is built from are not read back.'
+            ]
+        )
 
     ############################################################################
     #                 EXPORTED ATTRIBUTES COLLECTION ROUND TRIP.               #
