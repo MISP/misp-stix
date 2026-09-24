@@ -8,11 +8,12 @@ from cybox.common import Hash, HashList
 from cybox.common.object_properties import CustomProperties, Property
 from cybox.core import (
     Object, Observable, ObservableComposition, Observables, RelatedObject)
+from cybox.objects.account_object import Authentication
 from cybox.objects.address_object import Address, EmailAddress
 from cybox.objects.custom_object import Custom
 from cybox.objects.dns_record_object import DNSRecord
 from cybox.objects.domain_name_object import DomainName
-from cybox.objects.email_message_object import EmailMessage
+from cybox.objects.email_message_object import EmailHeader, EmailMessage
 from cybox.objects.file_object import File
 from cybox.objects.library_object import Library
 from cybox.objects.network_connection_object import NetworkConnection
@@ -146,119 +147,85 @@ _SNORT_RULES = (
 )
 
 
+# Why a relation still goes missing on the way back, one cause per row below
+_NOT_WRITTEN = 'the export writes it nowhere'
+_READ_AS_USER_ACCOUNT = (
+    'a credential is written as a user account and read back as one: the '
+    '`password` comes back on the `user-account`, nothing else does'
+)
+# `_handle_composition` reads the `src`/`dst` prefix off the Observable id,
+# where the export writes it on the CybOX object id
+_PORT_PREFIX_MISREAD = 'the port prefix is read off the wrong id'
+_NOT_WRITTEN_AND_PORT_PREFIX_MISREAD = (
+    'the export writes `first-seen` nowhere, and the port prefix is read off '
+    'the wrong id'
+)
+# `last-modified` is read, and `key` + `hive` + `last-modified` fold the
+# object into one `regkey` attribute
+_REGISTRY_KEY_FOLDED = 'a registry key of three attributes folds into one'
+# `group` is on the wire, in a carrier nothing reads: a reader missing, not a
+# relation the export never wrote
+_GROUP_LIST_UNREAD = 'the `group_list` carrier is never read'
+
 # What a STIX 1 round trip of every MISP object fixture still loses, per
 # object: its name, the object relations that do not come back, the ones that
-# come back under a name the MISP object never had, and the ticket that owns
-# the gap. 664 of 719 object attributes survive; the rest is the campaign's
-# remaining work, and this table is where its progress is visible.
+# come back under a name the MISP object never had, and why. 687 of 719
+# object attributes survive; the rest is work still to do, and this table is
+# where its progress is visible.
 _CORPUS_ROUND_TRIP_LOSSES = {
     ('get_event_with_attack_pattern_object', 0): (
         'attack-pattern',
         ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
-        (), 'ticket 21'
+        (), _NOT_WRITTEN
     ),
     ('get_event_with_credential_object', 0): (
-        'credential', ('format', 'password', 'text', 'type'), (),
-        'tickets 21 and 23'
+        'credential', ('format', 'text', 'type'), (), _READ_AS_USER_ACCOUNT
     ),
     ('get_event_with_domain_ip_object_custom', 0): (
-        'domain-ip', ('hostname',), (), 'ticket 21'
-    ),
-    ('get_event_with_email_object', 0): (
-        'email', ('bcc',), (), 'ticket 21'
-    ),
-    ('get_event_with_email_with_display_names_object', 0): (
-        'email', ('bcc',), (), 'ticket 21'
+        'domain-ip', ('hostname',), (), _NOT_WRITTEN
     ),
     ('get_event_with_escaped_values_v20', 1): (
-        'credential', ('text',), (), 'tickets 21 and 23'
+        'credential', ('text',), (), _READ_AS_USER_ACCOUNT
     ),
-    # `_handle_composition` reads the `src`/`dst` prefix off the Observable
-    # id, where the export writes it on the CybOX object id: unticketed
     ('get_event_with_escaped_values_v20', 5): (
-        'ip-port', ('dst-port',), ('port',), 'unticketed'
-    ),
-    ('get_event_with_escaped_values_v20', 14): (
-        'user-account', ('password',), (), 'ticket 21'
+        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
     ),
     ('get_event_with_escaped_values_v21', 1): (
-        'credential', ('text',), (), 'tickets 21 and 23'
+        'credential', ('text',), (), _READ_AS_USER_ACCOUNT
     ),
     ('get_event_with_escaped_values_v21', 5): (
-        'ip-port', ('dst-port',), ('port',), 'unticketed'
-    ),
-    ('get_event_with_escaped_values_v21', 14): (
-        'user-account', ('password',), (), 'ticket 21'
-    ),
-    ('get_event_with_file_object', 0): (
-        'file', ('creation-time', 'modification-time'), (), 'ticket 21'
-    ),
-    ('get_event_with_file_object_with_artifact', 0): (
-        'file', ('creation-time', 'modification-time'), (), 'ticket 21'
+        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
     ),
     ('get_event_with_ip_port_object', 0): (
         'ip-port', ('dst-port', 'first-seen'), ('port',),
-        'ticket 21, and unticketed for the port'
-    ),
-    ('get_event_with_network_socket_object', 0): (
-        'network-socket', ('socket-type',), (), 'ticket 21'
+        _NOT_WRITTEN_AND_PORT_PREFIX_MISREAD
     ),
     ('get_event_with_non_conforming_object_relations', 2): (
-        'url', ('Odd.Case/Relation', 'weird-relation'), (), 'ticket 22'
+        'url', ('Odd.Case/Relation', 'weird-relation'), (), _NOT_WRITTEN
     ),
     ('get_event_with_object_confidence_tags', 0): (
         'ip-port', ('dst-port', 'first-seen'), ('port',),
-        'ticket 21, and unticketed for the port'
+        _NOT_WRITTEN_AND_PORT_PREFIX_MISREAD
     ),
     ('get_event_with_object_references', 0): (
         'attack-pattern',
         ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
-        (), 'ticket 21'
+        (), _NOT_WRITTEN
     ),
     ('get_event_with_object_references', 4): (
         'ip-port', ('dst-port', 'first-seen'), ('port',),
-        'ticket 21, and unticketed for the port'
-    ),
-    ('get_event_with_process_object', 0): (
-        'process', ('hidden',), (), 'ticket 21'
-    ),
-    ('get_event_with_process_object_v2', 0): (
-        'process', ('hidden',), (), 'ticket 21'
+        _NOT_WRITTEN_AND_PORT_PREFIX_MISREAD
     ),
     ('get_event_with_registry_key_and_values_objects', 0): (
-        'registry-key', ('hive', 'key', 'last-modified'), (), 'ticket 21'
+        'registry-key', ('hive', 'key', 'last-modified'), (),
+        _REGISTRY_KEY_FOLDED
     ),
     ('get_event_with_registry_key_and_values_objects_custom', 0): (
-        'registry-key', ('hive', 'key', 'last-modified'), (), 'ticket 21'
+        'registry-key', ('hive', 'key', 'last-modified'), (),
+        _REGISTRY_KEY_FOLDED
     ),
-    ('get_event_with_registry_key_object', 0): (
-        'registry-key', ('last-modified',), (), 'ticket 21'
-    ),
-    ('get_event_with_user_account_object', 0): (
-        'user-account', ('account-type', 'password'), (), 'ticket 21'
-    ),
-    ('get_event_with_user_account_objects', 0): (
-        'user-account', ('password',), (), 'ticket 21'
-    ),
-    ('get_event_with_user_account_objects', 1): (
-        'user-account', ('account-type', 'password'), (), 'ticket 21'
-    ),
-    # `group` is on the wire, in a `group_list` carrier no handler visits -
-    # ADR-0015 point 2's family, not a relation the export never wrote
     ('get_event_with_user_account_objects', 2): (
-        'user-account', ('group', 'group', 'password'), (),
-        'ticket 21 for the password, unticketed for the groups'
-    ),
-    ('get_event_with_vulnerability_and_weakness_objects', 0): (
-        'vulnerability', ('created', 'cvss-score', 'references', 'references'),
-        (), 'ticket 21'
-    ),
-    ('get_event_with_vulnerability_object', 0): (
-        'vulnerability', ('created', 'cvss-score', 'references', 'references'),
-        (), 'ticket 21'
-    ),
-    ('get_event_with_x509_object', 0): (
-        'x509', ('signature_algorithm',), (), 'ticket 21'
+        'user-account', ('group', 'group'), (), _GROUP_LIST_UNREAD
     )
 }
 
@@ -326,7 +293,8 @@ class TestSTIX1Import(TestSTIX):
         ('vulnerability_object_mapping', ('vulnerability',), 'type-relation'),
         ('weakness_object_mapping', ('weakness',), 'relation'),
         ('whois_mapping', ('whois',), 'type-feature-relation'),
-        ('whois_registrant_mapping', ('whois',), 'type-feature-relation')
+        ('whois_registrant_mapping', ('whois',), 'type-feature-relation'),
+        ('x509_certificate_mapping', ('x509',), 'relation')
     )
 
     ############################################################################
@@ -2700,10 +2668,10 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 664 of the 719 object attributes come back, and every row
-        below names the ticket that owns its gap. `n -> n` is not the
-        assertion - the campaign is not over - and the table is what fails on
-        a regression and on an improvement nobody wrote down."""
+        still loses: 687 of the 719 object attributes come back, and every row
+        below says why the rest do not. `n -> n` is not the assertion - the
+        work is not over - and the table is what fails on a regression and on
+        an improvement nobody wrote down."""
         losses = {}
         for name, event in self._object_fixtures():
             exported = event['Event']['Object']
@@ -2729,7 +2697,7 @@ class TestSTIX1Import(TestSTIX):
                 gained = tuple(sorted((out_relations - in_relations).elements()))
                 if lost or gained:
                     losses[(name, index)] = (misp_object['name'], lost, gained)
-        # The last element of each row names the owning ticket, which is
+        # The last element of each row says why the row is lost, which is
         # documentation rather than measurement: it is not compared
         self.assertEqual(
             losses,
@@ -3029,6 +2997,108 @@ class TestSTIX1Import(TestSTIX):
                             if attribute.object_relation == 'id'
                         ],
                         ['9']
+                    )
+
+    def test_internal_misp_export_native_fields_come_back(self):
+        """The relations the export writes into the native field their CybOX
+        or STIX type defines, and no reader used to visit: each is back
+        under its own relation, typed by the template, with its value."""
+        for fixture, index, relations in (
+                ('get_event_with_email_object', 0, ('bcc',)),
+                ('get_event_with_email_with_display_names_object', 0,
+                 ('bcc',)),
+                ('get_event_with_file_object', 0,
+                 ('creation-time', 'modification-time')),
+                ('get_event_with_network_socket_object', 0, ('socket-type',)),
+                ('get_event_with_process_object', 0, ('hidden',)),
+                ('get_event_with_process_object_v2', 0, ('hidden',)),
+                ('get_event_with_registry_key_object', 0, ('last-modified',)),
+                ('get_event_with_user_account_object', 0,
+                 ('account-type', 'password')),
+                ('get_event_with_user_account_objects', 0, ('password',)),
+                ('get_event_with_user_account_objects', 1,
+                 ('account-type', 'password')),
+                ('get_event_with_user_account_objects', 2,
+                 ('account-type', 'password')),
+                ('get_event_with_vulnerability_object', 0,
+                 ('created', 'cvss-score', 'references')),
+                ('get_event_with_x509_object', 0, ('signature_algorithm',))):
+            with self.subTest(fixture=fixture, index=index):
+                event = getattr(test_events, fixture)()
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                exported, converted = list(
+                    self._pair_objects(
+                        event['Event']['Object'], parser.misp_event.objects
+                    )
+                )[index]
+                self._assert_relations_round_trip(
+                    converted, exported, relations
+                )
+
+    def test_internal_misp_export_file_access_time_comes_back(self):
+        """The third of the `File` times the export writes natively: no
+        fixture carries one, the reader visits it with the other two."""
+        event = get_event_with_file_object()
+        exported = event['Event']['Object'][0]
+        exported['Attribute'].append(
+            {
+                'uuid': '5e0ca4a1-2b3c-4d5e-8f6a-7b8c9d0e1f2a',
+                'type': 'datetime', 'object_relation': 'access-time',
+                'value': '2022-11-25T16:22:00Z'
+            }
+        )
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.get_objects_by_name('file')
+        self._assert_relations_round_trip(
+            converted, exported, ('access-time',)
+        )
+
+    def _native_boolean_round_trip(self, name, text_relation, relation, value):
+        event = get_base_event()
+        attributes = [
+            {
+                'uuid': '5f1db5b2-3c4d-4e5f-9a7b-8c9d0e1f2a3b',
+                'type': 'text', 'object_relation': text_relation,
+                'value': 'octocat'
+            },
+            {
+                'uuid': '6a2ec6c3-4d5e-4f6a-8b8c-9d0e1f2a3b4c',
+                'type': 'boolean', 'object_relation': relation, 'value': value
+            }
+        ]
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': '7b3fd7d4-5e6f-4a7b-9c9d-0e1f2a3b4c5d',
+                'timestamp': '1603642920', 'Attribute': attributes
+            }
+        ]
+        return self._parse_internal_package(self._misp_export(event))
+
+    def test_internal_misp_export_native_booleans_come_back_both_ways(self):
+        """`is_hidden` and `disabled` are CybOX booleans, which is how the
+        export writes them: read as the boolean they are, `False` included.
+        `disabled` was read as a field holding a `.value`, which a boolean
+        does not - a `True` cost the whole user account."""
+        for name, text_relation, relation in (
+                ('process', 'name', 'hidden'),
+                ('user-account', 'username', 'disabled')):
+            for value in (True, False):
+                with self.subTest(name=name, value=value):
+                    parser = self._native_boolean_round_trip(
+                        name, text_relation, relation, value
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    converted, = parser.misp_event.get_objects_by_name(name)
+                    self.assertEqual(
+                        [
+                            (attribute.type, attribute.value)
+                            for attribute in converted.attributes
+                            if attribute.object_relation == relation
+                        ],
+                        [('boolean', value)]
                     )
 
     def test_internal_misp_export_asn_and_mutex_objects_round_trip_whole(self):
@@ -4336,6 +4406,37 @@ class TestSTIX1Import(TestSTIX):
             parser, 'user-account',
             {'username': 'jdoe', 'display-name': 'John Doe'}
         )
+
+    def test_external_email_bcc_recipient_converts(self):
+        """`EmailHeader.bcc` is a native CybOX field like `to` and `cc`, read
+        on a document of any origin."""
+        email = EmailMessage()
+        email.header = EmailHeader()
+        email.header.to = 'to@example.com'
+        email.header.bcc = 'bcc@example.com'
+        parser = self._parse_external_observable(email, 'EmailMessage')
+        self._assert_single_object(
+            parser, 'email', {'to': 'to@example.com', 'bcc': 'bcc@example.com'}
+        )
+
+    def test_external_user_account_password_converts_in_any_case(self):
+        """CybOX's vocabulary spells the authentication type `Password`, the
+        export `password`: either is the password the account carries."""
+        for authentication_type in ('Password', 'password'):
+            with self.subTest(authentication_type=authentication_type):
+                user_account = UserAccount()
+                user_account.username = 'jdoe'
+                authentication = Authentication()
+                authentication.authentication_type = authentication_type
+                authentication.authentication_data = 'P4ssw0rd'
+                user_account.authentication = [authentication]
+                parser = self._parse_external_observable(
+                    user_account, 'UserAccount'
+                )
+                self._assert_single_object(
+                    parser, 'user-account',
+                    {'username': 'jdoe', 'password': 'P4ssw0rd'}
+                )
 
     def test_external_custom_object_observable_converts(self):
         """A named `Custom` object is what the MISP export writes an object
