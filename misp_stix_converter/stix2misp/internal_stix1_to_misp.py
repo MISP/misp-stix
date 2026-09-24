@@ -6,7 +6,7 @@ from ..tools.misp_object_templates import (
     _UNKNOWN_TEMPLATE_NAME)
 from .stix1_mapping import InternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
-from pymisp import MISPAttribute, MISPEvent, MISPObject
+from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from pymisp.api import describe_types
 from pymisp.exceptions import PyMISPError
@@ -364,8 +364,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if attributes:
             attack_pattern_object = MISPObject('attack-pattern')
             attack_pattern_object.uuid = ttp_id
-            for attribute in attributes:
-                attack_pattern_object.add_attribute(*attribute)
+            for relation, value in attributes:
+                self._add_object_attribute(
+                    attack_pattern_object, ttp_id,
+                    {'object_relation': relation, 'value': value}
+                )
             self.misp_event.add_object(attack_pattern_object)
 
     def _parse_campaign(self, campaign: Campaign):
@@ -571,7 +574,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 if tags:
                     self._object_markings_warning()
                 for attribute in attributes:
-                    vulnerability_object.add_attribute(**attribute)
+                    self._add_object_attribute(
+                        vulnerability_object, ttp_id, attribute
+                    )
                 self.misp_event.add_object(vulnerability_object)
 
     def _parse_weakness_object(
@@ -591,8 +596,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 weakness_object.comment = comment
             if tags:
                 self._object_markings_warning()
-            for attribute in attributes:
-                weakness_object.add_attribute(*attribute)
+            for relation, value in attributes:
+                self._add_object_attribute(
+                    weakness_object, ttp_id,
+                    {'object_relation': relation, 'value': value}
+                )
             self.misp_event.add_object(weakness_object)
 
     ############################################################################
@@ -964,19 +972,25 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 # does
                 self._add_filename_relation(misp_object, filename, to_ids)
                 relation = attribute_type
-            misp_attribute = MISPAttribute()
-            misp_attribute.type = attribute_type
-            misp_attribute.value = attribute_value
-            misp_attribute.object_relation = relation
+            misp_attribute = {
+                'type': attribute_type, 'value': attribute_value,
+                'object_relation': relation, 'to_ids': to_ids
+            }
             if 'Port' in observable.id_:
-                misp_attribute.object_relation = '-'.join(
+                misp_attribute['object_relation'] = '-'.join(
                     (
                         observable.id_.split('-')[0].split(':')[1][:3],
-                        misp_attribute.object_relation
+                        relation
                     )
                 )
-            misp_attribute.to_ids = to_ids
-            misp_object.add_attribute(**misp_attribute)
+            if observable.id_:
+                # The export writes each member with the attribute's uuid
+                misp_attribute.update(
+                    self._sanitise_attribute_uuid(observable.id_)
+                )
+            self._add_object_attribute(
+                misp_object, misp_object.uuid, misp_attribute
+            )
         return misp_object
 
     def  _handle_file_composition(self, misp_object, observables, to_ids):
@@ -1007,17 +1021,27 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 if attribute is None:
                     continue
                 attribute_type, attribute_value, relation = attribute
-                misp_object.add_attribute(
-                    **{
-                        'type': attribute_type, 'value': attribute_value,
-                        'object_relation': relation, 'to_ids': to_ids,
-                        'data': compl_data
-                    }
+                misp_attribute = {
+                    'type': attribute_type, 'value': attribute_value,
+                    'object_relation': relation, 'to_ids': to_ids,
+                    'data': compl_data
+                }
+                if compl_data and observable.id_:
+                    # A member carrying data is an Observable of its own,
+                    # written with the attribute's uuid - the File member
+                    # carries the object's
+                    misp_attribute.update(
+                        self._sanitise_attribute_uuid(observable.id_)
+                    )
+                self._add_object_attribute(
+                    misp_object, misp_object.uuid, misp_attribute
                 )
             else:
                 for attribute in attribute_value:
                     attribute['to_ids'] = to_ids
-                    misp_object.add_attribute(**attribute)
+                    self._add_object_attribute(
+                        misp_object, misp_object.uuid, attribute
+                    )
         return misp_object
 
     # Create a MISP attribute and add it in its MISP object

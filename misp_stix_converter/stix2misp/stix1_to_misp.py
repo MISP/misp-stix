@@ -164,8 +164,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 # The `filename|<hash>` composite MISP has no type for: both
                 # values are kept, the pairing is not. The hash is what the
                 # record existed for, so it keeps the Observable id and the
-                # filename qualifying it takes a random uuid - which is what
-                # every import-side attribute uuid is today
+                # filename qualifying it, which no id names, takes a random
+                # uuid
                 self._add_attribute(
                     {
                         'type': 'filename', 'value': filename,
@@ -241,10 +241,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :param name: the object template name
         :param attribute_value: the attributes, as the handlers return them
         :param compl_data: the complementary data the handler carried - the
-            `pe` and its sections, the process references, a rejected
-            template name
+            `pe` and its sections, the network connections a process lists,
+            a rejected template name
         :param to_ids: the `to_ids` flag the whole carrier was written with
-        :param object_uuid: the uuid the object takes, None for a random one
+        :param object_uuid: the uuid the object takes, and its attributes
+            derive from - None for a random one, and random attribute uuids
         :param test_mechanisms: the uuids of the attributes the rules of an
             Indicator landed as, referenced as `detected-with`
         :param description: the STIX description field, or None
@@ -273,7 +274,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_object.comment = comment
         for attribute in attribute_value:
             attribute['to_ids'] = to_ids
-            misp_object.add_attribute(**attribute)
+            self._add_object_attribute(misp_object, object_uuid, attribute)
         if isinstance(compl_data, dict):
             if "rejected_name" in compl_data:
                 self._record_rejected_template_name(
@@ -290,15 +291,18 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._build_pe_sections(
                     misp_object, compl_data['pe_sections'], to_ids, object_uuid
                 )
-            if "process_uuid" in compl_data:
-                for uuid in compl_data["process_uuid"]:
-                    misp_object.add_reference(uuid, 'connected-to')
+            if "network_connections" in compl_data:
+                self._build_network_connections(
+                    misp_object, compl_data['network_connections'],
+                    object_uuid
+                )
         if test_mechanisms:
             for test_mechanism in test_mechanisms:
                 misp_object.add_reference(test_mechanism, 'detected-with')
         self.misp_event.add_object(misp_object)
 
-    def _build_object(self, name: str, attributes: tuple, to_ids: bool,
+    def _build_object(self, name: str, attributes: tuple,
+                      to_ids: Optional[bool],
                       object_uuid: Optional[str] = None) -> MISPObject:
         """Build a MISP object out of attributes read from a carrier holding
         several of them, and add it to the event.
@@ -306,16 +310,19 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :param name: the object template name
         :param attributes: the attributes, as `_return_object_attributes`
             returns them
-        :param to_ids: the `to_ids` flag the whole carrier was written with
-        :param object_uuid: the uuid the object takes, None to have pymisp
-            give it a random one
+        :param to_ids: the `to_ids` flag the whole carrier was written with,
+            None where it carries none and the template default stands
+        :param object_uuid: the uuid the object takes, and its attributes
+            derive from - None to have pymisp give it a random one
         :return: the object added to the event
         """
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid is not None:
             misp_object.uuid = object_uuid
         for attribute in attributes:
-            misp_object.add_attribute(**{**attribute, 'to_ids': to_ids})
+            if to_ids is not None:
+                attribute = {**attribute, 'to_ids': to_ids}
+            self._add_object_attribute(misp_object, object_uuid, attribute)
         return self.misp_event.add_object(misp_object)
 
     def _build_pe_object(self, pe: dict, to_ids: bool,
@@ -354,14 +361,67 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
             pe_object.add_reference(section.uuid, 'includes')
 
+    def _build_network_connections(
+            self, process_object: MISPObject, connections: list,
+            object_uuid: Optional[str]):
+        """Build the `network-connection` objects a process lists, and
+        reference them.
+
+        :param process_object: the `process` object the connections belong to
+        :param connections: the attributes of each connection, empty for a
+            connection none is read from
+        :param object_uuid: the uuid of the process object, every connection
+            uuid is derived from - the index in the list the process holds
+            them in, so an empty one moves no other
+        """
+        for index, attributes in enumerate(connections):
+            if not attributes:
+                continue
+            # A process carries no `to_ids` for the connections it lists
+            connection = self._build_object(
+                'network-connection', attributes, None,
+                self._derived_uuid(
+                    object_uuid, f'network-connections - {index}'
+                )
+            )
+            process_object.add_reference(connection.uuid, 'connected-to')
+
+    def _add_object_attribute(self, misp_object: MISPObject,
+                              object_uuid: Optional[str], attribute: dict):
+        """Add an attribute to a MISP object, under the uuid it read off the
+        wire or one derived from the object's.
+
+        A composition member carrying its own id has read its uuid already;
+        every other attribute has no id on the wire, and derives from the
+        uuid of the object, its relation and its value - the grammar the STIX
+        2 import gives an object attribute. Two attributes sharing a relation
+        and a value in one object share a uuid: they are one record written
+        twice.
+
+        :param misp_object: the object the attribute lands in
+        :param object_uuid: the uuid the object takes, None where it has none
+            in hand and the attribute takes a random one
+        :param attribute: the attribute, as pymisp takes it
+        """
+        if 'uuid' not in attribute:
+            uuid = self._derived_uuid(
+                object_uuid,
+                f"{attribute['object_relation']} - {attribute['value']}"
+            )
+            if uuid is not None:
+                attribute = {**attribute, 'uuid': uuid}
+        misp_object.add_attribute(**attribute)
+
     def _derived_uuid(self, object_uuid: Optional[str],
                       feature: str) -> Optional[str]:
-        """Derive the uuid of an object the STIX 1 shape carries no id for.
+        """Derive the uuid of a record the STIX 1 shape carries no id for:
+        an object under the one the observable landed as, or an attribute of
+        an object.
 
-        :param object_uuid: the uuid of the object the observable landed as
-        :param feature: what the derived object is under it
+        :param object_uuid: the uuid of the object the record hangs off
+        :param feature: what the record is under it
         :return: the derived uuid, None when there is nothing to derive it
-            from and pymisp gives the object a random one
+            from and pymisp gives the record a random one
         """
         if object_uuid is None:
             return None
@@ -405,7 +465,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if course_of_action.title:
             attribute = {'type': 'text', 'object_relation': 'name',
                          'value': course_of_action.title}
-            misp_object.add_attribute(**attribute)
+            self._add_object_attribute(
+                misp_object, misp_object.uuid, attribute
+            )
         for prop, properties_key in self._mapping.course_of_action_mapping().items():
             if getattr(course_of_action, prop):
                 attribute = {
@@ -414,7 +476,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         attrgetter(f'{prop}.{properties_key}')(course_of_action)
                     )
                 }
-                misp_object.add_attribute(**attribute)
+                self._add_object_attribute(
+                    misp_object, misp_object.uuid, attribute
+                )
         if course_of_action.parameter_observables:
             for observable in course_of_action.parameter_observables.observables:
                 properties = observable.object_.properties
@@ -652,7 +716,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if properties.attachments:
             attributes.extend(self._handle_email_attachment(properties))
         attributes.extend(self._read_custom_properties(properties, 'email'))
-        return attributes[0] if len(attributes) == 1 else ("email", self._return_object_attributes(attributes), "")
+        if len(attributes) == 1:
+            # A single attribute takes the uuid of the record carrying it
+            return tuple(attributes[0][:3])
+        return "email", self._return_object_attributes(attributes), ""
 
     # Return type & value of an email attachment
     def _handle_email_attachment(self, properties: email_message_object.EmailMessage):
@@ -662,7 +729,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
         for attachment in (attachment.object_reference for attachment in properties.attachments):
             if attachment in related_objects:
-                yield ("email-attachment", related_objects[attachment].file_name.value, "attachment")
+                # The related File is written with the attribute's uuid
+                yield (
+                    "email-attachment",
+                    related_objects[attachment].file_name.value, "attachment",
+                    self._sanitise_attribute_uuid(attachment)
+                )
             else:
                 parent_id = self._sanitise_uuid(properties.parent.id_)
                 referenced_id = self._sanitise_uuid(attachment)
@@ -795,8 +867,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if isinstance(compl_data, dict):
             return compl_data.get('filename')
 
-    @staticmethod
-    def _add_filename_relation(misp_object: MISPObject, filename: str,
+    def _add_filename_relation(self, misp_object: MISPObject, filename: str,
                                to_ids: bool):
         """Add the file name half of a composite MISP has no type for as an
         object attribute of its own.
@@ -805,8 +876,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :param filename: the file name
         :param to_ids: the `to_ids` flag the carrier was written with
         """
-        misp_object.add_attribute(
-            **{
+        self._add_object_attribute(
+            misp_object, misp_object.uuid,
+            {
                 'type': 'filename', 'value': filename,
                 'object_relation': 'filename', 'to_ids': to_ids
             }
@@ -1225,15 +1297,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attributes.append(["text", properties.image_info.command_line.value, "command-line"])
         attributes.extend(self._read_custom_properties(properties, 'process'))
         if properties.network_connection_list:
-            references = []
+            # Built with the process object, whose uuid theirs derive from
+            connections = []
             for connection in properties.network_connection_list:
-                object_name, object_attributes, _ = self._handle_network_connection(connection)
-                misp_object = MISPObject(object_name, misp_objects_path_custom=misp_objects_path)
-                for attribute in object_attributes:
-                    misp_object.add_attribute(**attribute)
-                self.misp_event.add_object(misp_object)
-                references.append(misp_object.uuid)
-            return "process", self._return_object_attributes(attributes), {"process_uuid": references}
+                parsed = self._handle_network_connection(connection)
+                connections.append(parsed[1] if parsed is not None else ())
+            return "process", self._return_object_attributes(attributes), {
+                "network_connections": connections
+            }
         return "process", self._return_object_attributes(attributes), ""
 
     # Return type & value of a regkey attribute
@@ -1737,8 +1808,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @staticmethod
     def _return_object_attributes(attributes: Union[list, tuple]) -> tuple:
+        # A fourth element holds the fields an attribute carrying its own id
+        # read: the uuid, and the comment keeping the original id
         return tuple(
-            dict(zip(('type', 'value', 'object_relation'), attribute))
+            {
+                **dict(zip(('type', 'value', 'object_relation'), attribute)),
+                **(attribute[3] if len(attribute) > 3 else {})
+            }
             for attribute in attributes
         )
 
