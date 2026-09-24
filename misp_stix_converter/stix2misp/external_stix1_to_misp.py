@@ -206,7 +206,8 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             observable = indicator.observable
             if self._has_properties(observable):
                 properties = observable.object_.properties
-                uuid = self._sanitise_uuid(observable.object_.id_)
+                record = self._record_uuid(observable)
+                uuid = record['uuid']
                 try:
                     attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties)
                 except StixObjectTypeError as xsi_type:
@@ -239,13 +240,17 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                             attribute['Tag'].extend(self._parse_marking(handling))
                     if attribute_type in ('ip-src', 'ip-dst'):
                         attribute.update(
-                            {'type': attribute_type, 'value': attribute_value}
+                            {
+                                'type': attribute_type,
+                                'value': attribute_value, **record
+                            }
                         )
                         self.dns_objects['ip'][uuid] = attribute
                         return
                     self._handle_attribute_case(
                         attribute_type, attribute_value, compl_data,
-                        attribute, observable.object_.id_
+                        attribute, observable.object_.id_,
+                        uuid_comment=record.get('comment')
                     )
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
@@ -253,7 +258,8 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         self._handle_object_case(
                             attribute_type, attribute_value, compl_data,
                             to_ids=True, object_uuid=uuid,
-                            test_mechanisms=test_mechanisms
+                            test_mechanisms=test_mechanisms,
+                            uuid_comment=record.get('comment')
                         )
                         self._record_related_objects(observable.object_, uuid)
                     else:
@@ -281,7 +287,8 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 except StixObjectTypeError as xsi_type:
                     self._stix_object_type_error(xsi_type, observable.id_)
                     continue
-                uuid = self._sanitise_uuid(observable_object.id_)
+                record = self._record_uuid(observable)
+                uuid = record['uuid']
                 if isinstance(attribute_value, (str, int)):
                     if observable.object_.related_objects:
                         related_objects = observable.object_.related_objects
@@ -307,20 +314,25 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                             attribute['Tag'].extend(self._parse_marking(handling))
                     if attribute_type in ('ip-src', 'ip-dst'):
                         attribute.update(
-                            {'type': attribute_type, 'value': attribute_value}
+                            {
+                                'type': attribute_type,
+                                'value': attribute_value, **record
+                            }
                         )
                         self.dns_objects['ip'][uuid] = attribute
                         continue
                     self._handle_attribute_case(
                         attribute_type, attribute_value, compl_data,
-                        attribute, observable_object.id_
+                        attribute, observable_object.id_,
+                        uuid_comment=record.get('comment')
                     )
                 elif attribute_value:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
                         self._handle_object_case(
                             attribute_type, attribute_value, compl_data,
-                            to_ids=to_ids, object_uuid=uuid
+                            to_ids=to_ids, object_uuid=uuid,
+                            uuid_comment=record.get('comment')
                         )
                         self._record_related_objects(observable_object, uuid)
                     else:
@@ -403,6 +415,23 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if title:
             return title
         return f"Imported from external STIX {self.stix_version} Package"
+
+    def _record_uuid(self, observable: Observable) -> dict:
+        """Read the uuid of the record an Observable converts to.
+
+        The record is keyed on the id of the CybOX Object, which is optional:
+        a producer routinely puts the id on the Observable and leaves the
+        Object bare, and the Observable builds no record of its own here, so
+        its id is borrowed. An Observable carrying neither takes a random
+        uuid.
+
+        :param observable: the Observable the record is converted from
+        :return: the uuid, and the comment keeping the original id when the
+            uuid replaces it
+        """
+        return self._sanitise_attribute_uuid(
+            observable.object_.id_ or observable.id_
+        )
 
     def _record_related_objects(self, observable_object: Object, uuid: str):
         # Recorded rather than applied: the objects they point to may not be

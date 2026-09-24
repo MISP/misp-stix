@@ -149,7 +149,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return getattr(self, parser)(*args)
 
     def _handle_attribute_case(self, attribute_type, attribute_value, data,
-                               attribute, object_id: Optional[str] = None):
+                               attribute, object_id: Optional[str] = None,
+                               uuid_comment: Optional[str] = None):
         if attribute_type in ('attachment', 'malware-sample'):
             attribute['data'] = data
         elif attribute_type == 'text':
@@ -175,6 +176,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     },
                     object_id
                 )
+        # Appended last: the relation standing in for a comment is read
+        # first, and the filename above takes a random uuid, not this one
+        if uuid_comment is not None:
+            attribute['comment'] = (
+                f"{attribute['comment']} - {uuid_comment}"
+                if 'comment' in attribute else uuid_comment
+            )
         self._add_attribute(
             {'type': attribute_type, 'value': attribute_value, **attribute},
             object_id
@@ -204,7 +212,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
-    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None, timestamp=None):
+    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None, timestamp=None, uuid_comment=None):
         if not name:
             # An observable carrying nothing to name an object with is the
             # observable there is nothing to convert from
@@ -216,14 +224,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         try:
             self._build_observable_object(
                 name, attribute_value, compl_data, to_ids, object_uuid,
-                test_mechanisms, description, title, timestamp
+                test_mechanisms, description, title, timestamp, uuid_comment
             )
         except PyMISPError as exception:
             self._refused_object_error(name, exception, object_uuid)
 
     def _build_observable_object(
             self, name, attribute_value, compl_data, to_ids, object_uuid,
-            test_mechanisms, description, title, timestamp):
+            test_mechanisms, description, title, timestamp, uuid_comment):
         """Build the MISP object the attributes read from an Observable make,
         and add it to the event.
 
@@ -243,6 +251,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :param title: the Record Title, where the shape carries one
         :param timestamp: the timestamp of the carrier, None where it carries
             none and pymisp stamps the object
+        :param uuid_comment: the comment keeping the original id when
+            `object_uuid` replaces it, None otherwise
         """
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid:
@@ -254,6 +264,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # writes for an object carrying no comment is told from a comment
         # against the template of the object the content actually builds
         comment = self._read_object_comment(name, description, title)
+        if uuid_comment is not None:
+            comment = (
+                uuid_comment if comment is None
+                else f'{comment} - {uuid_comment}'
+            )
         if comment is not None:
             misp_object.comment = comment
         for attribute in attribute_value:
