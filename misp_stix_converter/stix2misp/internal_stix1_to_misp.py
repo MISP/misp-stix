@@ -10,6 +10,7 @@ from pymisp import MISPAttribute, MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from pymisp.api import describe_types
 from pymisp.exceptions import PyMISPError
+import re
 from datetime import datetime
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction
@@ -32,6 +33,13 @@ _MISP_GALAXY_TITLE_SUFFIX = ' (MISP Galaxy)'
 # What the export puts before the value of a `target-external` attribute in
 # the name line of the CIQ identity it writes the attribute as
 _MISP_EXTERNAL_TARGET_PREFIX = 'External target: '
+# The comment of the one attribute the export writes as the package header
+# description rather than as a journal entry
+_MISP_HEADER_DESCRIPTION_COMMENT = 'Imported from STIX header description'
+# `attribute[Category][type]`, the journal entry grammar MISP core's own STIX
+# 1 export wrote, next to the `Attribute (Category - type)` this one writes
+_LEGACY_JOURNAL_ATTRIBUTE = re.compile(r'^attribute\[([^\]]+)\]\[([^\]]+)\]$')
+_JOURNAL_ATTRIBUTE_PREFIX = 'Attribute ('
 
 
 class InternalSTIX1toMISPParser(STIX1toMISPParser):
@@ -64,6 +72,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self.misp_event.timestamp = max(self.timestamps)
         self._apply_object_references()
         self._apply_event_galaxies()
+        if self.__unread_journal_entries:
+            self._unread_journal_entries_warning(self.__unread_journal_entries)
         self._refuse_empty_event()
 
     def _parse_attributes_collection(self, package: STIXPackage):
@@ -138,31 +148,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self.misp_event.add_tag(tag)
         if self._event.history:
             for entry in self._event.history.history_items:
-                journal_entry = entry.journal_entry.value
-                try:
-                    entry_type, entry_value = journal_entry.split(': ')
-                    if entry_type == "MISP Tag":
-                        self.misp_event.add_tag(entry_value)
-                    elif entry_type.startswith('attribute['):
-                        _, category, attribute_type = entry_type.split('[')
-                        # The type is read off the journal entry text: what
-                        # MISP has no such type for is the one attribute lost
-                        self._add_attribute(
-                            {
-                                'type': attribute_type[:-1],
-                                'category': category[:-1],
-                                'value': entry_value
-                            },
-                            self._event.id_
-                        )
-                    elif entry_type == "Event Threat Level":
-                        threat_level = self._mapping.threat_level_mapping(
-                            entry_value
-                        )
-                        if threat_level is not None:
-                            self.misp_event.threat_level_id = threat_level
-                except ValueError:
-                    continue
+                self._parse_journal_entry(entry.journal_entry.value)
+        self._parse_header_description(package)
         if self._event.information_source and self._event.information_source.references:
             for reference in self._event.information_source.references:
                 self._add_attribute(
@@ -171,6 +158,98 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self._parse_package_context(
             package, frozenset(object_courses_of_action)
         )
+
+    def _parse_journal_entry(self, journal_entry: str):
+        """Convert one journal entry of the Incident History.
+
+        The export writes the event tags, the threat level, and the
+        attributes with no CybOX shape - `comment`, `text` and `other` - as
+        `Attribute (Category - type): value`. Documents MISP core exported
+        write those as `attribute[Category][type]: value`, and both grammars
+        are read. An entry is split once, on the first `': '`: what follows
+        is the value, whatever it holds. An entry matching none of them is
+        counted, the document warned about once.
+
+        :param journal_entry: the text of the journal entry
+        """
+        entry_type, separator, entry_value = journal_entry.partition(': ')
+        if not separator:
+            self.__unread_journal_entries += 1
+            return
+        if entry_type == 'MISP Tag':
+            self.misp_event.add_tag(entry_value)
+            return
+        if entry_type == 'Event Threat Level':
+            threat_level = self._mapping.threat_level_mapping(entry_value)
+            if threat_level is not None:
+                self.misp_event.threat_level_id = threat_level
+            return
+        if entry_type.startswith(_JOURNAL_ATTRIBUTE_PREFIX) and entry_type.endswith(')'):
+            # No MISP type holds ` - `, so the type splits off the right
+            category, separator, attribute_type = entry_type[
+                len(_JOURNAL_ATTRIBUTE_PREFIX):-1
+            ].rpartition(' - ')
+            if separator:
+                self._add_journal_attribute(
+                    category, attribute_type, entry_value
+                )
+                return
+        legacy = _LEGACY_JOURNAL_ATTRIBUTE.match(entry_type)
+        if legacy is not None:
+            self._add_journal_attribute(*legacy.groups(), entry_value)
+            return
+        self.__unread_journal_entries += 1
+
+    def _add_journal_attribute(self, category: str, attribute_type: str,
+                               value: str):
+        """Add the attribute a journal entry carries.
+
+        The entry holds the category, the type and the value, nothing else:
+        the uuid is derived from the Incident id, stable across two reads of
+        one document and not the original. The type is read off the entry
+        text, and what MISP has no such type for is the one attribute lost.
+
+        :param category: the category the entry names
+        :param attribute_type: the type the entry names
+        :param value: the value
+        """
+        attribute = {'type': attribute_type, 'value': value}
+        # pymisp raises a bare `KeyError` for a category it does not know,
+        # where it gives the type its default one
+        if category in _MISP_categories:
+            attribute['category'] = category
+        if self._event.id_:
+            attribute['uuid'] = str(
+                self._create_v5_uuid(
+                    f'{self._event.id_} - {attribute_type} - {value}'
+                )
+            )
+        self._add_attribute(attribute, self._event.id_)
+
+    def _parse_header_description(self, package: STIXPackage):
+        """Convert the header description of an event package.
+
+        The export writes the attribute commented as imported from a header
+        description back to the header it came from, and reads here as a
+        `comment` attribute carrying that comment, so a new export puts it
+        back in the header. The original type is not on the wire, nor the
+        uuid, derived from the package id.
+
+        :param package: the package the Incident is written on
+        """
+        description = getattr(package.stix_header, 'description', None)
+        if description is None or not description.value:
+            return
+        attribute = {
+            'type': 'comment', 'category': 'Other',
+            'value': description.value,
+            'comment': _MISP_HEADER_DESCRIPTION_COMMENT
+        }
+        if package.id_:
+            attribute['uuid'] = str(
+                self._create_v5_uuid(f'{package.id_} - header description')
+            )
+        self._add_attribute(attribute, package.id_)
 
     def _parse_package_context(self, package: STIXPackage,
                                object_courses_of_action: frozenset = frozenset()):
@@ -222,6 +301,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self.__dates = set()
         self.__timestamps = set()
         self.__titles = set()
+        self.__unread_journal_entries = 0
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -1139,6 +1219,16 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             f'Unable to define the MISP object name of the Observable '
             f'composition with id {object_id}: converted as a '
             f'{_UNKNOWN_TEMPLATE_NAME} object.'
+        )
+
+    def _unread_journal_entries_warning(self, count: int):
+        # Once per document with the count, the entries not quoted: they are
+        # free text, and a legacy journal would spend the warnings cap on
+        # itself. Our export writes none of them
+        entries = 'entry' if count == 1 else 'entries'
+        self._add_warning(
+            f'{count} Incident journal {entries} matching no grammar the MISP '
+            'export writes: not read.'
         )
 
     def _get_event_info(self, package: Optional[STIXPackage] = None):
