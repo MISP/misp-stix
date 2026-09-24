@@ -456,12 +456,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 if value is not None:
                     yield attribute_type, value
 
-    # Parse a course of action and add a MISP object to the event
-    def _parse_course_of_action(self, course_of_action):
+    # Parse a course of action and add a MISP object to the event - stamped
+    # with the timestamp the caller read, where there is one
+    def _parse_course_of_action(self, course_of_action,
+                                timestamp: Optional[int] = None):
         if any(self._read_markings(getattr(course_of_action, 'handling', None))):
             self._object_markings_warning()
         misp_object = MISPObject('course-of-action', misp_objects_path_custom=misp_objects_path)
         self._sanitise_object_uuid(misp_object, course_of_action.id_)
+        if timestamp is not None:
+            misp_object.timestamp = timestamp
         if course_of_action.title:
             attribute = {'type': 'text', 'object_relation': 'name',
                          'value': course_of_action.title}

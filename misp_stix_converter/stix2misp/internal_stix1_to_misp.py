@@ -112,16 +112,18 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         # object and the one of an event galaxy alike: on the package, taken
         # by the Incident through a stub carrying the reference - and the
         # timestamp of the object, which a galaxy cluster has none of. The
-        # package loop below parses the referenced ones; a Course of Action
-        # written in full where the stub goes is parsed for what it carries
-        object_courses_of_action = set()
+        # package loop below parses the referenced ones, stamped with the
+        # timestamp of the stub - the full one may carry the export time; a
+        # Course of Action written in full where the stub goes is parsed for
+        # what it carries
+        object_courses_of_action = {}
         for coa_taken in self._event.coa_taken:
             course_of_action = coa_taken.course_of_action
             if course_of_action.id_ is None and course_of_action.idref:
                 if course_of_action.timestamp is not None:
-                    object_courses_of_action.add(
+                    object_courses_of_action[
                         self._extract_uuid(course_of_action.idref)
-                    )
+                    ] = self._timestamp_from_date(course_of_action.timestamp)
                 continue
             self._parse_course_of_action(course_of_action)
         if self._event.timestamp:
@@ -155,9 +157,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._add_attribute(
                     {'type': 'link', 'value': reference}, self._event.id_
                 )
-        self._parse_package_context(
-            package, frozenset(object_courses_of_action)
-        )
+        self._parse_package_context(package, object_courses_of_action)
 
     def _parse_journal_entry(self, journal_entry: str):
         """Convert one journal entry of the Incident History.
@@ -252,7 +252,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self._add_attribute(attribute, package.id_)
 
     def _parse_package_context(self, package: STIXPackage,
-                               object_courses_of_action: frozenset = frozenset()):
+                               object_courses_of_action: Optional[dict] = None):
         """Convert the context objects a package carries next to its content.
 
         Campaigns are `campaign-name` attributes. Threat actors are galaxies.
@@ -263,17 +263,23 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         timestamp of the object the Incident took it with.
 
         :param package: the package the context objects are written on
-        :param object_courses_of_action: the uuids of the Courses of Action
-            the Incident took stamped with the timestamp of a MISP object
+        :param object_courses_of_action: the timestamp of each Course of
+            Action the Incident took stamped with the one of a MISP object,
+            by uuid
         """
+        object_courses_of_action = object_courses_of_action or {}
         if package.campaigns:
             for campaign in package.campaigns:
                 self._parse_campaign(campaign)
         if package.courses_of_action:
             for course_of_action in package.courses_of_action:
+                coa_uuid = self._extract_uuid(course_of_action.id_)
                 if self._is_course_of_action_object(
-                        course_of_action, object_courses_of_action):
-                    self._parse_course_of_action(course_of_action)
+                        course_of_action, coa_uuid, object_courses_of_action):
+                    self._parse_course_of_action(
+                        course_of_action,
+                        object_courses_of_action.get(coa_uuid)
+                    )
                     continue
                 self.galaxies.update(
                     self._parse_galaxy(course_of_action, 'title', 'course_of_action')
@@ -353,7 +359,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             misp_attribute['comment'] = comment
         self._add_attribute(misp_attribute, self._event.id_)
 
-    def _parse_attack_pattern_object(self, attack_pattern: AttackPattern, ttp_id: str):
+    def _parse_attack_pattern_object(self, attack_pattern: AttackPattern,
+                                     ttp_id: str,
+                                     timestamp: Optional[int] = None):
         attributes = []
         for key, relation in self._mapping.attack_pattern_object_mapping().items():
             value = getattr(attack_pattern, key)
@@ -364,6 +372,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if attributes:
             attack_pattern_object = MISPObject('attack-pattern')
             attack_pattern_object.uuid = ttp_id
+            if timestamp is not None:
+                attack_pattern_object.timestamp = timestamp
             for relation, value in attributes:
                 self._add_object_attribute(
                     attack_pattern_object, ttp_id,
@@ -459,18 +469,24 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         The context the TTP carries is read once here and handed to whichever
         of the four builds the record: the tags off the TTP's handling, the
         comment off the description of the Exploit Target the attribute was
-        written into. The tags reach a record that takes them - a `target-*`
-        attribute, a `vulnerability` attribute carrying its id alone - and
-        the warning records the ones that land on a MISP object instead.
+        written into, the timestamp off the TTP. The tags reach a record that
+        takes them - a `target-*` attribute, a `vulnerability` attribute
+        carrying its id alone - and the warning records the ones that land on
+        a MISP object instead.
 
         :param ttp: the TTP, titled `(MISP Attribute)` or `(MISP Object)`
         """
         ttp_id = self._extract_uuid(ttp.id_)
         tags = tuple(self._read_markings(ttp.handling))
+        timestamp = (
+            self._timestamp_from_date(ttp.timestamp) if ttp.timestamp else None
+        )
         converted = False
         if ttp.behavior and ttp.behavior.attack_patterns:
             for attack_pattern in ttp.behavior.attack_patterns:
-                self._parse_attack_pattern_object(attack_pattern, ttp_id)
+                self._parse_attack_pattern_object(
+                    attack_pattern, ttp_id, timestamp
+                )
                 if tags:
                     self._object_markings_warning()
             converted = True
@@ -485,13 +501,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 if exploit_target.item.vulnerabilities:
                     for vulnerability in exploit_target.item.vulnerabilities:
                         self._parse_vulnerability_object(
-                            vulnerability, ttp_id, comment, tags
+                            vulnerability, ttp_id, comment, tags, timestamp
                         )
                     converted = True
                 if exploit_target.item.weaknesses:
                     for weakness in exploit_target.item.weaknesses:
                         self._parse_weakness_object(
-                            weakness, ttp_id, comment, tags
+                            weakness, ttp_id, comment, tags, timestamp
                         )
                     converted = True
         if not converted:
@@ -545,7 +561,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def _parse_vulnerability_object(
             self, vulnerability: Vulnerability, ttp_id: str,
-            comment: Optional[str] = None, tags: tuple = ()):
+            comment: Optional[str] = None, tags: tuple = (),
+            timestamp: Optional[int] = None):
         attributes = []
         for key, mapping in self._mapping.vulnerability_object_mapping().items():
             value = getattr(vulnerability, key)
@@ -561,6 +578,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if len(attributes) == 1 and attributes[0]['object_relation'] == 'id':
                 attributes = attributes[0]
                 attributes['uuid'] = ttp_id
+                if timestamp is not None:
+                    attributes['timestamp'] = timestamp
                 if comment is not None:
                     attributes['comment'] = comment
                 if tags:
@@ -569,6 +588,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             else:
                 vulnerability_object = MISPObject('vulnerability')
                 vulnerability_object.uuid = ttp_id
+                if timestamp is not None:
+                    vulnerability_object.timestamp = timestamp
                 if comment is not None:
                     vulnerability_object.comment = comment
                 if tags:
@@ -581,7 +602,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def _parse_weakness_object(
             self, weakness: Weakness, ttp_id: str,
-            comment: Optional[str] = None, tags: tuple = ()):
+            comment: Optional[str] = None, tags: tuple = (),
+            timestamp: Optional[int] = None):
         attributes = []
         for key, relation in self._mapping.weakness_object_mapping().items():
             value = getattr(weakness, key)
@@ -592,6 +614,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if attributes:
             weakness_object = MISPObject('weakness')
             weakness_object.uuid = ttp_id
+            if timestamp is not None:
+                weakness_object.timestamp = timestamp
             if comment is not None:
                 weakness_object.comment = comment
             if tags:
@@ -916,10 +940,16 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     name, exception, self._sanitise_uuid(item.id_)
                 )
         else:
+            # The Indicator carries the object's timestamp, a plain Observable
+            # none: the object takes none rather than one the wire never gave
             properties = item.observable.object_.properties if to_ids else item.object_.properties
+            timestamp = item.timestamp if to_ids else None
             self._parse_observable_object(
                 properties, to_ids, self._sanitise_uuid(item.id_), item.id_,
-                name=name, description=description, title=title
+                name=name, description=description, title=title,
+                timestamp=(
+                    self._timestamp_from_date(timestamp) if timestamp else None
+                )
             )
 
     def _build_composition_object(self, item, name: str,
@@ -1046,10 +1076,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     # Create a MISP attribute and add it in its MISP object
     def _parse_observable_object(self, properties, to_ids, uuid, object_id,
-                                 name=None, description=None, title=None):
+                                 name=None, description=None, title=None,
+                                 timestamp=None):
         attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties)
         if isinstance(attribute_value, (str, int)):
             attribute = {'to_ids': to_ids, 'uuid': uuid}
+            if timestamp is not None:
+                attribute['timestamp'] = timestamp
             # An object whose content folds into a single attribute has no
             # template of its own to tell the description from a comment: the
             # name the Observable carries is the only one there is
@@ -1063,7 +1096,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         else:
             self._handle_object_case(
                 attribute_type, attribute_value, compl_data, to_ids=to_ids,
-                object_uuid=uuid, description=description, title=title
+                object_uuid=uuid, description=description, title=title,
+                timestamp=timestamp
             )
 
     ############################################################################
@@ -1130,8 +1164,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             return observable_id.split("_")[0].split(":")[1]
 
     def _is_course_of_action_object(
-            self, course_of_action: CourseOfAction,
-            object_courses_of_action: frozenset) -> bool:
+            self, course_of_action: CourseOfAction, coa_uuid: str,
+            object_courses_of_action: dict) -> bool:
         """Tell the Course of Action a `course-of-action` object was exported
         as from the one a galaxy cluster was.
 
@@ -1140,11 +1174,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         reference stamped with the object's timestamp, is the object's.
 
         :param course_of_action: the Course of Action the package carries
-        :param object_courses_of_action: the uuids of the Courses of Action
-            the Incident took stamped with the timestamp of a MISP object
+        :param coa_uuid: the uuid its id carries
+        :param object_courses_of_action: the timestamp of each Course of
+            Action the Incident took stamped with the one of a MISP object,
+            by uuid
         :return: whether the Course of Action is a MISP object
         """
-        if self._extract_uuid(course_of_action.id_) in object_courses_of_action:
+        if coa_uuid in object_courses_of_action:
             return True
         return any(
             getattr(course_of_action, field) is not None

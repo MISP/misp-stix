@@ -259,6 +259,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                             attribute_type, attribute_value, compl_data,
                             to_ids=True, object_uuid=uuid,
                             test_mechanisms=test_mechanisms,
+                            timestamp=(
+                                self._timestamp_from_date(indicator.timestamp)
+                                if indicator.timestamp else None
+                            ),
                             uuid_comment=record.get('comment')
                         )
                         self._record_related_objects(observable.object_, uuid)
