@@ -621,6 +621,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     attributes.append(["email-dst", cc.address_value.value, "cc"])
         else:
             attributes = []
+        # Standard CybOX fields rather than MISP grammar, read on a document
+        # of any origin: the carriers of an `email-body` and an `email-header`
+        if properties.raw_body:
+            attributes.append(
+                ["email-body", properties.raw_body.value, "email-body"]
+            )
+        if properties.raw_header:
+            attributes.append(
+                ["email-header", properties.raw_header.value, "header"]
+            )
         if properties.attachments:
             attributes.extend(self._handle_email_attachment(properties))
         attributes.extend(self._read_custom_properties(properties, 'email'))
