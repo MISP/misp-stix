@@ -188,6 +188,27 @@ class STIX1toMISPMapping:
         datatype = ('text', 'data-type'),
         name = ('text', 'name')
     )
+    # Both spellings of every hive in the CybOX enumeration, to its full name
+    __registry_hives = Mapping(
+        HKEY_CLASSES_ROOT = 'HKEY_CLASSES_ROOT',
+        HKCR = 'HKEY_CLASSES_ROOT',
+        HKEY_CURRENT_CONFIG = 'HKEY_CURRENT_CONFIG',
+        HKCC = 'HKEY_CURRENT_CONFIG',
+        HKEY_CURRENT_USER = 'HKEY_CURRENT_USER',
+        HKCU = 'HKEY_CURRENT_USER',
+        HKEY_LOCAL_MACHINE = 'HKEY_LOCAL_MACHINE',
+        HKLM = 'HKEY_LOCAL_MACHINE',
+        HKEY_USERS = 'HKEY_USERS',
+        HKU = 'HKEY_USERS',
+        HKEY_CURRENT_USER_LOCAL_SETTINGS = 'HKEY_CURRENT_USER_LOCAL_SETTINGS',
+        HKCULS = 'HKEY_CURRENT_USER_LOCAL_SETTINGS',
+        HKEY_PERFORMANCE_DATA = 'HKEY_PERFORMANCE_DATA',
+        HKPD = 'HKEY_PERFORMANCE_DATA',
+        HKEY_PERFORMANCE_NLSTEXT = 'HKEY_PERFORMANCE_NLSTEXT',
+        HKPN = 'HKEY_PERFORMANCE_NLSTEXT',
+        HKEY_PERFORMANCE_TEXT = 'HKEY_PERFORMANCE_TEXT',
+        HKPT = 'HKEY_PERFORMANCE_TEXT'
+    )
     __user_account_object_mapping = Mapping(
         username = ('text', 'username'),
         full_name = ('text', 'display-name'),
@@ -287,6 +308,13 @@ class STIX1toMISPMapping:
     @classmethod
     def process_mapping(cls) -> dict:
         return cls.__process_mapping
+
+    @classmethod
+    def registry_hive(cls, hive: str) -> str:
+        """The full name of a hive in the CybOX enumeration, whichever way
+        it is spelled - any other hive upper-cased, to compare as the
+        enumeration does."""
+        return cls.__registry_hives.get(hive.upper(), hive.upper())
 
     @classmethod
     def regkey_mapping(cls) -> dict:

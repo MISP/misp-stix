@@ -21,6 +21,7 @@ from cybox.objects import (
     unix_user_account_object, user_account_object, whois_object,
     win_executable_file_object, win_registry_key_object, win_service_object,
     win_user_account_object, x509_certificate_object)
+from datetime import date, datetime, timezone
 from operator import attrgetter
 from pathlib import Path
 from pymisp.abstract import misp_objects_path
@@ -1331,11 +1332,22 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if len(attributes) in (2,3):
             d_regkey = {key: value for (_, value, key) in attributes}
             if 'hive' in d_regkey and 'key' in d_regkey:
-                regkey = f"{d_regkey['hive']}\\{d_regkey['key']}"
+                regkey = self._registry_key_path(
+                    d_regkey['hive'], d_regkey['key']
+                )
                 if 'data' in d_regkey:
                     return "regkey|value", f"{regkey} | {d_regkey['data']}", ""
                 return "regkey", regkey, ""
         return "registry-key", self._return_object_attributes(attributes), ""
+
+    def _registry_key_path(self, hive: str, key: str) -> str:
+        # MISP's key holds its hive, CybOX's does not: the hive is prepended
+        # only to a key that does not already begin with it, spelled in full
+        # or abbreviated - our own export writes the key verbatim
+        root = key.lstrip('\\').split('\\', 1)[0]
+        if self._mapping.registry_hive(root) == self._mapping.registry_hive(hive):
+            return key
+        return f'{hive}\\{key}'
 
     # Parse a socket address object in order to return type & value
     # of a composite attribute ip|port or hostname|port
@@ -1383,6 +1395,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
         return 'user-account', self._return_object_attributes(attributes), ''
 
+    @staticmethod
+    def _utc_midnight(value: date) -> datetime:
+        # CybOX holds the whois dates as a `Date`, the time is not on the
+        # wire: what comes back is the midnight of the day, in UTC as every
+        # other `datetime` is
+        return datetime(value.year, value.month, value.day, tzinfo=timezone.utc)
+
     # Parse a whois object:
     # Return type & attributes of a whois object if we have the required fields
     # Otherwise create attributes and return type & value of the last attribute to avoid crashing the parent function
@@ -1393,12 +1412,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             registrant = properties.registrants[0]
             attributes.extend(self._fetch_attributes_with_key_parsing(registrant, 'whois_registrant_mapping'))
         if properties.creation_date:
-            attributes.append(("datetime", properties.creation_date.value.strftime('%Y-%m-%d'), "creation-date"))
+            attributes.append(("datetime", self._utc_midnight(properties.creation_date.value), "creation-date"))
             required_one_of = True
         if properties.updated_date:
-            attributes.append(("datetime", properties.updated_date.value.strftime('%Y-%m-%d'), "modification-date"))
+            attributes.append(("datetime", self._utc_midnight(properties.updated_date.value), "modification-date"))
         if properties.expiration_date:
-            attributes.append(("datetime", properties.expiration_date.value.strftime('%Y-%m-%d'), "expiration-date"))
+            attributes.append(("datetime", self._utc_midnight(properties.expiration_date.value), "expiration-date"))
         if properties.nameservers:
             for nameserver in properties.nameservers:
                 attributes.append(("hostname", nameserver.value.value, "nameserver"))

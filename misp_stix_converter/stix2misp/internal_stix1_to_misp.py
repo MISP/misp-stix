@@ -366,9 +366,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         for key, relation in self._mapping.attack_pattern_object_mapping().items():
             value = getattr(attack_pattern, key)
             if value:
-                attributes.append(
-                    (relation, value if isinstance(value, str) else value.value)
-                )
+                if not isinstance(value, str):
+                    value = value.value
+                # The export writes `id` the STIX 1 way, `CAPEC-9`; MISP's is
+                # the bare number, as the STIX 2 import returns it too
+                if relation == 'id' and value.startswith('CAPEC-'):
+                    value = value[len('CAPEC-'):]
+                attributes.append((relation, value))
         if attributes:
             attack_pattern_object = MISPObject('attack-pattern')
             attack_pattern_object.uuid = ttp_id

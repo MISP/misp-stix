@@ -32,7 +32,7 @@ from cybox.objects.win_registry_key_object import (
     RegistryValue, RegistryValues, WinRegistryKey)
 from cybox.objects.x509_certificate_object import (
     Validity, X509Cert, X509Certificate, X509CertificateSignature)
-from datetime import datetime
+from datetime import datetime, timezone
 from misp_stix_converter import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser,
     MissingSTIXContentError, stix_1_to_misp, STIXLoadingError)
@@ -4095,7 +4095,7 @@ class TestSTIX1Import(TestSTIX):
             {
                 'registrar': 'GANDI SAS', 'domain': 'circl.lu',
                 'registrant-name': 'CIRCL', 'registrant-email': 'info@circl.lu',
-                'creation-date': '2020-01-01 00:00:00'
+                'creation-date': '2020-01-01 00:00:00+00:00'
             }
         )
 
