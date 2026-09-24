@@ -288,13 +288,10 @@ class TestSTIX1CustomPropertyValues(TestSTIX):
         incident = parser.stix_package.incidents[0]
         properties = incident.related_observables.observable[0].item.object_.properties
         self.assertEqual(properties._XSI_TYPE, 'ProcessObjectType')
-        self.assertEqual(
-            [
-                (prop.name, prop.value, prop.datatype)
-                for prop in properties.custom_properties
-            ],
-            [('hidden', 'false', 'boolean')]
-        )
+        # The native field carries every boolean it can, False included:
+        # the bag entry was a fallback, not a shape (ticket 25)
+        self.assertIsNone(properties.custom_properties)
+        self.assertIs(properties.is_hidden, False)
 
     def test_values_with_no_lexical_form_are_skipped_with_a_warning(self):
         # The three arms a property value can take beyond a plain string: a

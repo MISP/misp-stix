@@ -440,7 +440,6 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         **{
             'username': 'username',
             'display-name': 'full_name',
-            'disabled': 'disabled',
             'created': 'creation_date',
             'last_login': 'last_login',
             'home_dir': 'home_directory',

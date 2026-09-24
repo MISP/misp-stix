@@ -484,6 +484,13 @@ class MISPtoSTIXParser(AbstractParser):
             f"to pe objects: {', '.join(pe_uuids)}"
         )
 
+    def _unrecognised_boolean_warning(
+            self, relation: str, value: Any, record: str):
+        self._add_warning(
+            f'{relation!r} in the {record} is not a boolean: {value!r} '
+            'written as a custom property.'
+        )
+
     def _unstorable_property_warning(
             self, relation: str, value: Any, record: Optional[str] = None):
         # The relation and the record name what the reader lost, the value

@@ -82,6 +82,11 @@ _FILE_SINGLE_ATTRIBUTES = (
     "sha1", "sha224", "sha256", "sha384", "sha512", "sha512/224", "sha512/256",
     "size-in-bytes", "ssdeep", "tlsh", "vhash"
 )
+# The spellings of a boolean a MISP value of a `boolean` relation takes
+_MISP_BOOLEAN_SPELLINGS = {
+    '1': True, 'true': True, 'True': True,
+    '0': False, 'false': False, 'False': False
+}
 _NON_INDICATOR_OBJECT_TYPES = Union[Campaign, CourseOfAction, TTP]
 _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
@@ -981,6 +986,29 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             prop.datatype = datatype
         prop.value = lexical_form
         return prop
+
+    def _native_boolean(self, attributes: dict, relation: str,
+                        misp_object: dict) -> Optional[bool]:
+        """Pop a relation a native CybOX boolean field holds, as the boolean
+        its value spells.
+
+        A value spelling no boolean stays in the attributes, for the custom
+        properties to carry verbatim: the field would drop it, and a reader
+        of the field would never see it.
+        """
+        if relation not in attributes:
+            return None
+        value = attributes[relation]
+        if isinstance(value, bool):
+            return attributes.pop(relation)
+        if isinstance(value, str) and value in _MISP_BOOLEAN_SPELLINGS:
+            return _MISP_BOOLEAN_SPELLINGS[attributes.pop(relation)]
+        # A value the bag cannot carry either is warned of there, once
+        if self._lexical_form(value) is not None:
+            self._unrecognised_boolean_warning(
+                relation, value, self._object_features(misp_object)
+            )
+        return None
 
     @staticmethod
     def _create_registry_key_object(regkey: str) -> WinRegistryKey:
@@ -2056,9 +2084,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 if attributes.get(key):
                     setattr(process_object.image_info, feature, attributes.pop(key))
                     setattr(getattr(process_object.image_info, feature), 'condition', 'Equals')
-        if attributes.get('hidden'):
-            hidden = attributes.pop('hidden')
-            process_object.is_hidden = False if hidden in ('False', 'false') else bool(hidden)
+        hidden = self._native_boolean(attributes, 'hidden', misp_object)
+        if hidden is not None:
+            process_object.is_hidden = hidden
         if attributes:
             process_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(process_object, misp_object['uuid'], 'Process')
@@ -2068,8 +2096,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         registry_object = self._create_registry_key_object(attributes.pop('key')) if attributes.get('key') else WinRegistryKey()
         if attributes.get('hive'):
-            hive = attributes.pop('hive').lstrip('\\').upper()
-            registry_object.hive = self._mapping.misp_reghive(hive) or hive
+            # A hive in the CybOX enumeration is spelled its way; any other -
+            # a file on disk, as the template has it - goes out verbatim
+            hive = attributes.pop('hive')
+            registry_object.hive = self._mapping.misp_reghive(
+                hive.lstrip('\\').upper()
+            ) or hive
             registry_object.hive.condition = 'Equals'
         if any(key in attributes for key in self._mapping.regkey_object_mapping().keys()):
             value_object = RegistryValue()
@@ -2146,6 +2178,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if attributes.get(key):
                 setattr(account_object, feature, attributes.pop(key))
                 setattr(getattr(account_object, feature), 'condition', 'Equals')
+        disabled = self._native_boolean(attributes, 'disabled', misp_object)
+        if disabled is not None:
+            account_object.disabled = disabled
         if attributes:
             account_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(
