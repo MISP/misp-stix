@@ -1634,7 +1634,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._handle_ttp_from_object(misp_object, ttp)
 
     def _parse_course_of_action_object(self, misp_object: dict):
-        course_of_action = CourseOfAction()
+        course_of_action = CourseOfAction(
+            timestamp=self._optional_timestamp(misp_object)
+        )
         uuid = misp_object['uuid']
         course_of_action.id_ = f'{self._orgname_id}:CourseOfAction-{uuid}'
         attributes = self._extract_object_attributes(misp_object['Attribute'])

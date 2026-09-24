@@ -678,18 +678,19 @@ class TestStix1Export(TestSTIX):
     def _check_coa_taken(self, coa_taken, uuid, timestamp=None):
         self.assertEqual(coa_taken.course_of_action.idref, f'{_ORGNAME_ID}:CourseOfAction-{uuid}')
         if timestamp is not None:
-            if isinstance(timestamp, str):
-                self.assertEqual(
-                    coa_taken.course_of_action.timestamp,
-                    datetime.fromtimestamp(
-                        int(timestamp), timezone.utc
-                    )
-                )
-            else:
-                self.assertEqual(coa_taken.course_of_action.timestamp, timestamp)
+            self._check_timestamp(coa_taken.course_of_action.timestamp, timestamp)
+
+    def _check_timestamp(self, stix_timestamp, timestamp):
+        if isinstance(timestamp, str):
+            timestamp = datetime.fromtimestamp(int(timestamp), timezone.utc)
+        self.assertEqual(stix_timestamp, timestamp)
 
     def _check_course_of_action_fields(self, course_of_action, misp_object):
         self.assertEqual(course_of_action.id_, f"{_ORGNAME_ID}:CourseOfAction-{misp_object['uuid']}")
+        # Stamped with the object's timestamp, as the COA_Taken referencing
+        # it is, rather than with the export time python-stix gives an
+        # unstamped one
+        self._check_timestamp(course_of_action.timestamp, misp_object['timestamp'])
         name, description, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
         self.assertEqual(course_of_action.title, name['value'])
         self.assertEqual(course_of_action.description.value, description['value'])
