@@ -237,8 +237,8 @@ _IMPFUZZY_HASH = '24:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
 # What a STIX 1 round trip gives back the type of each hash the export writes
 # as a CybOX `Hash`. cybox types a hash by the length of its value, so seven
 # of the sixteen come back as the type whose length they share - a documented
-# loss no import-side rule can undo, nothing on the wire telling them apart
-# (ADR-0015, session A1). `Other` is the fallback for a length cybox names
+# loss no import-side rule can undo, nothing on the wire telling them apart.
+# `Other` is the fallback for a length cybox names
 # nothing for: an ssdeep shape and a tlsh shape name themselves, and a `vhash`
 # has no shape to read
 _HASH_TYPE_ROUND_TRIP = {
@@ -1052,7 +1052,7 @@ class TestSTIX1Import(TestSTIX):
 
     def test_parse_stix_content_honours_the_input_size_limit(self):
         # MISP core converts through the parsers rather than through the entry
-        # functions (ADR-0009), so the limit has to be reachable there too.
+        # functions, so the limit has to be reachable there too.
         from misp_stix_converter import STIXInputSizeError
         stix_package = STIXPackage()
         stix_package.add_course_of_action(self._course_of_action())
@@ -2595,7 +2595,7 @@ class TestSTIX1Import(TestSTIX):
                 )
                 # Both halves keep what the attribute they came from carried -
                 # the comment on the Indicator a `to_ids` attribute is
-                # written as, an Observable carrying none (ADR-0015, ticket 16)
+                # written as, an Observable carrying none
                 for attribute in residue:
                     self.assertEqual(attribute.to_ids, to_ids)
                     self.assertEqual(
@@ -2858,7 +2858,7 @@ class TestSTIX1Import(TestSTIX):
         """A MISP object template declares the type of every relation it
         names, and the export writes a value cybox refuses - a boolean, an
         integer, a float - in XSD's lexical form under the CybOX `datatype`
-        saying which (ADR-0015, session A1). Reading that name back is the
+        saying which. Reading that name back is the
         document being read as written, not the coercion no contract allows:
         the `human` of a `parler-account` comes back as `False`, and a
         property carrying no `datatype` stays the string it is."""
@@ -2927,8 +2927,8 @@ class TestSTIX1Import(TestSTIX):
     def test_internal_misp_export_registry_key_is_not_prefixed_twice(self):
         """MISP's `key` holds its hive, CybOX's does not, and the import's
         join of `Hive` and `Key` prepended the hive to a key already carrying
-        it (ticket 25). The object still folds into a `regkey` attribute -
-        the right value, the wrong kind: finding 11, not this ticket."""
+        it. The object still folds into a `regkey` attribute - the right
+        value, the wrong kind, and not what this test is about."""
         for fixture in ('get_event_with_registry_key_and_values_objects',
                         'get_event_with_registry_key_and_values_objects_custom'):
             with self.subTest(fixture=fixture):
@@ -3127,7 +3127,7 @@ class TestSTIX1Import(TestSTIX):
         wire, and the properties are typed by a template defining neither of
         them - two `text` attributes and two warnings, under the right
         relations on the wrong object. Value and spelling survive; the object
-        name is ticket 23's."""
+        name does not."""
         event = get_event_with_credential_object()
         exported = event['Event']['Object'][0]
         parser = self._parse_internal_package(self._misp_export(event))
@@ -4529,7 +4529,8 @@ class TestSTIX1Import(TestSTIX):
             if 'Invalid MISP object template name' in warning
         ]
         self.assertEqual(len(warnings), 1)
-        # The rejected value and the object it came from, as ADR-0010 asks
+        # The rejected value and the object it came from, so the loss can be
+        # traced back to the document
         self.assertIn(repr(name), warnings[0])
         self.assertIn(f'MISP:Custom-{_OBSERVABLE_UUID}', warnings[0])
 
@@ -4830,8 +4831,8 @@ class TestSTIX1Import(TestSTIX):
     def test_external_pe_section_hash_of_unknown_type_costs_that_hash_only(self):
         """A hash whose type the `pe-section` template has no relation for, and
         whose value names none either, is the one thing not converted: dropped
-        with a warning naming it and the object it came from, as ADR-0010 asks
-        of rejected content, while the rest of the document survives."""
+        with a warning naming it and the object it came from, while the rest
+        of the document survives."""
         md6 = 'b' * 64
         parser = self._parse_external_observable(
             self._pe_with_section(
@@ -5670,7 +5671,7 @@ class TestSTIX1Import(TestSTIX):
                 self.assertEqual(parser.diagnostics()['errors'], {})
                 converted = parser.misp_event.objects[0]
                 # What comes back, that is: the relations the export drops
-                # are ticket 21's
+                # are the round trip ledger's
                 exported = {
                     attribute['uuid']: str(attribute['value'])
                     for attribute in misp_object['Attribute']

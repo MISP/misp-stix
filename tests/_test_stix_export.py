@@ -70,7 +70,7 @@ _INVALID_TLSH_ATTRIBUTE = {
 # last pair is the benign control: a relation needing no quotes keeps the bare
 # segment it always had. Segments are spelled out rather than computed, so the
 # expectations do not restate the escaping they guard.
-# The custom property name rule (ADR-0013) folds every character outside
+# The custom property name rule folds every character outside
 # [a-z0-9_] to `_`, so a metacharacter relation always reaches the pattern as
 # a bare keyword segment - pattern syntax in a relation cannot escape it.
 _DICTIONARY_META_KEYS = {

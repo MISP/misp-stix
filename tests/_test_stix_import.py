@@ -72,9 +72,9 @@ CLASSIFICATION_OVERRIDDEN_TO_INTERNAL_WARNING = (
 # channel, and takes no new entry - a key the corpus gains from now on travels
 # with its spelling. Pinned here so a change to it is a conscious step rather
 # than a corpus bump;
-# 22 entries: the 21 ticket left, plus `x_misp_budapest_convention`, which
-# it pruned as dead on a 2.0-only reading of a galaxy that maps to an SDO in
-# 2.1 - the legacy bundles this list exists for do carry it.
+# 22 entries, `x_misp_budapest_convention` among them: a galaxy that maps to
+# an SDO in 2.1 carries it, so a 2.0-only reading would take it for dead -
+# the legacy bundles this list exists for do carry it.
 _FROZEN_DASH_META_FIELDS = (
     'x_misp_attribution_confidence',
     'x_misp_budapest_convention',
@@ -410,7 +410,7 @@ class TestSTIX2Import(TestSTIX):
         """A marking definition is read as one taxonomy entry, never two.
 
         The tag a marking becomes is one this library writes out of the
-        marking's own fields, so it goes through the tag builder (ADR-0012):
+        marking's own fields, so it goes through the one tag builder:
         the `"` a sender put in the value would otherwise close the slot and
         let the marking decide what else the data it governs is tagged with.
         """
@@ -3675,7 +3675,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     _RELATIONS_THE_TEMPLATE_DROPPED = {('lnk', 'x_misp_lnk_icon_text')}
 
     def _check_every_template_relation_folds_back(self):
-        # The template is the complete inverse of the ADR-0013 fold: every
+        # The template is the complete inverse of the name fold: every
         # relation of every template pymisp ships comes back, original
         # spelling and template type, from the custom property name the export
         # gives it. The count is taken from the templates, not hard-coded.

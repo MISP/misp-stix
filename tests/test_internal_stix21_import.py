@@ -4099,7 +4099,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_legacy_hashlookup_property_names(self):
-        # Bundles exported before the custom property name fold (ADR-0013)
+        # Bundles exported before the custom property name fold
         # carry `x_misp_KnownMalicious`-style names; the import mapping keeps
         # reading them into the same attributes as the folded spelling.
         for getter in ('indicator', 'observable'):

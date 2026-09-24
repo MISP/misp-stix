@@ -4887,8 +4887,8 @@ def get_event_with_threat_actor_galaxy():
 
 
 def get_event_with_colliding_galaxy_meta_keys():
-    # Two meta keys that differ only in case fold to one custom property name
-    # (ADR-0013): the export keeps the last value and warns about the first.
+    # Two meta keys that differ only in case fold to one custom property name:
+    # the export keeps the last value and warns about the first.
     event = deepcopy(_BASE_EVENT)
     galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
     galaxy['GalaxyCluster'][0]['meta'].update(

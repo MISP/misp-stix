@@ -2654,7 +2654,7 @@ _TLP_1_0_MARKING_DEFINITIONS = [
      "name": "TLP:RED", "definition": {"tlp": "red"}},
 ]
 # TLP 2.0 canonical marking-definitions (property-extension; no extension-definition
-# SDO in the bundle, per ADR-0005 §4 — the UUID is OASIS-published).
+# SDO in the bundle: the UUID is OASIS-published, the reader knows it already).
 _TLP_2_0_MARKING_DEFINITIONS = [
     {"type": "marking-definition", "spec_version": "2.1",
      "id": "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",

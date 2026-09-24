@@ -125,7 +125,7 @@ class TestSTIX1CustomPropertyValues(TestSTIX):
     MISP object template names the type of the relation it declares, so the
     value goes out in the lexical form XSD has for that type under the CybOX
     `datatype`, and a value with no such form is skipped with a warning
-    rather than raising (ADR-0015, ticket 24)."""
+    rather than raising."""
 
     _OBJECT_UUID = '2b8f4e2a-9d31-4c6e-8f1a-7c3b5d6e9a04'
 
@@ -289,7 +289,7 @@ class TestSTIX1CustomPropertyValues(TestSTIX):
         properties = incident.related_observables.observable[0].item.object_.properties
         self.assertEqual(properties._XSI_TYPE, 'ProcessObjectType')
         # The native field carries every boolean it can, False included:
-        # the bag entry was a fallback, not a shape (ticket 25)
+        # the bag entry was a fallback, not a shape
         self.assertIsNone(properties.custom_properties)
         self.assertIs(properties.is_hidden, False)
 
@@ -385,7 +385,7 @@ class TestSTIX1CustomPropertyValues(TestSTIX):
 
 class TestSTIX1NativeFieldValues(TestSTIX):
     """What the export writes into a native CybOX field whose MISP value it
-    was corrupting (ticket 25): the two booleans CybOX holds natively,
+    used to corrupt: the two booleans CybOX holds natively,
     `process` `hidden` and `user-account` `disabled`, and the `registry-key`
     hive."""
 
@@ -2563,7 +2563,7 @@ class TestStix1Export(TestSTIX):
     def _test_event_with_account_objects_with_attachment(self, event):
         # The `parler-account` template declares `human` a `boolean`, and a
         # boolean is what the event carries: cybox refuses the value, and
-        # before ticket 24 the whole conversion raised on it
+        # the whole conversion used to raise on it
         misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
         self.assertEqual(self.parser.errors, {})
