@@ -2956,6 +2956,81 @@ class TestSTIX1Import(TestSTIX):
             InternalSTIX1toMISPParser._property_value(prop)
         )
 
+    def test_internal_misp_export_registry_key_is_not_prefixed_twice(self):
+        """MISP's `key` holds its hive, CybOX's does not, and the import's
+        join of `Hive` and `Key` prepended the hive to a key already carrying
+        it (ticket 25). The object still folds into a `regkey` attribute -
+        the right value, the wrong kind: finding 11, not this ticket."""
+        for fixture in ('get_event_with_registry_key_and_values_objects',
+                        'get_event_with_registry_key_and_values_objects_custom'):
+            with self.subTest(fixture=fixture):
+                event = getattr(test_events, fixture)()
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    parser.misp_event.get_objects_by_name('registry-key'), []
+                )
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('regkey', 'hkey_local_machine\\system\\bar\\foo')]
+                )
+
+    def test_internal_misp_export_whois_dates_come_back_as_utc_midnight(self):
+        """CybOX types the three `whois` dates as a `Date`: the time is gone
+        on the wire, a named loss. What comes back is the midnight of the
+        exported date, in UTC like every other `datetime` - not naive."""
+        event = test_events.get_event_with_whois_object()
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.get_objects_by_name('whois')
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.value
+                for attribute in converted.attributes
+                if attribute.type == 'datetime'
+            },
+            {
+                'creation-date': datetime(2017, 10, 1, tzinfo=timezone.utc),
+                'modification-date': datetime(
+                    2020, 10, 25, tzinfo=timezone.utc
+                ),
+                'expiration-date': datetime(2021, 1, 1, tzinfo=timezone.utc)
+            }
+        )
+
+    def test_internal_misp_export_attack_pattern_id_loses_its_capec_prefix(self):
+        """The export writes `id` `9` as the STIX 1 `capec_id` `CAPEC-9`; the
+        import strips the prefix back, as the STIX 2 import does. An original
+        written `CAPEC-9` returns `9` too: the wire cannot tell the two
+        apart."""
+        for fixture in ('get_event_with_attack_pattern_object',
+                        'get_event_with_object_references'):
+            for original in ('9', 'CAPEC-9'):
+                with self.subTest(fixture=fixture, original=original):
+                    event = getattr(test_events, fixture)()
+                    exported = event['Event']['Object'][0]
+                    for attribute in exported['Attribute']:
+                        if attribute['object_relation'] == 'id':
+                            attribute['value'] = original
+                    parser = self._parse_internal_package(
+                        self._misp_export(event)
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    converted, = parser.misp_event.get_objects_by_name(
+                        'attack-pattern'
+                    )
+                    self.assertEqual(
+                        [
+                            attribute.value
+                            for attribute in converted.attributes
+                            if attribute.object_relation == 'id'
+                        ],
+                        ['9']
+                    )
+
     def test_internal_misp_export_asn_and_mutex_objects_round_trip_whole(self):
         """The two carriers the bag completes: every attribute they hold is
         back, under its own relation. A `mutex` object stopped folding into a
@@ -4073,6 +4148,34 @@ class TestSTIX1Import(TestSTIX):
                 'name': 'Updater', 'data': 'C:\\evil.exe', 'data-type': 'REG_SZ'
             }
         )
+
+    def test_external_registry_key_hive_joins_a_key_omitting_it(self):
+        """A key and its hive alone fold into a `regkey`: joined when the key
+        omits the hive, as CybOX has it, and kept verbatim when it already
+        begins with it - spelled in full or abbreviated, in any case."""
+        for key, expected in (
+                ('system\\bar\\foo', 'HKEY_LOCAL_MACHINE\\system\\bar\\foo'),
+                ('HKLM\\system\\bar\\foo', 'HKLM\\system\\bar\\foo'),
+                ('hklm\\system\\bar\\foo', 'hklm\\system\\bar\\foo'),
+                ('hkey_local_machine\\system\\bar\\foo',
+                 'hkey_local_machine\\system\\bar\\foo'),
+                ('\\HKLM\\system', '\\HKLM\\system'),
+                ('HKLMX\\system', 'HKEY_LOCAL_MACHINE\\HKLMX\\system')):
+            with self.subTest(key=key):
+                registry_key = WinRegistryKey()
+                registry_key.hive = 'HKEY_LOCAL_MACHINE'
+                registry_key.key = key
+                parser = self._parse_external_observable(
+                    registry_key, 'WindowsRegistryKey'
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('regkey', expected)]
+                )
 
     def test_external_whois_observable_converts(self):
         """The registrar comes back under `registrar`, the relation the

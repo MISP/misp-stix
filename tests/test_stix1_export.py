@@ -383,6 +383,153 @@ class TestSTIX1CustomPropertyValues(TestSTIX):
         )
 
 
+class TestSTIX1NativeFieldValues(TestSTIX):
+    """What the export writes into a native CybOX field whose MISP value it
+    was corrupting (ticket 25): the two booleans CybOX holds natively,
+    `process` `hidden` and `user-account` `disabled`, and the `registry-key`
+    hive."""
+
+    _OBJECT_UUID = '6c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f'
+    _TRUE_VALUES = (True, '1', 'true', 'True')
+    _FALSE_VALUES = (False, '0', 'false', 'False')
+
+    def _parse_object(self, name, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': attributes
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return parser, observable.item.object_.properties
+
+    def _process(self, hidden):
+        return self._parse_object(
+            'process',
+            [
+                {'type': 'text', 'object_relation': 'pid', 'value': '2510'},
+                {
+                    'type': 'boolean', 'object_relation': 'hidden',
+                    'value': hidden
+                }
+            ]
+        )
+
+    def _user_account(self, disabled):
+        return self._parse_object(
+            'user-account',
+            [
+                {
+                    'type': 'text', 'object_relation': 'username',
+                    'value': 'octocat'
+                },
+                {
+                    'type': 'boolean', 'object_relation': 'disabled',
+                    'value': disabled
+                }
+            ]
+        )
+
+    def _registry_key(self, hive):
+        return self._parse_object(
+            'registry-key',
+            [
+                {
+                    'type': 'regkey', 'object_relation': 'key',
+                    'value': 'system\\bar\\foo'
+                },
+                {'type': 'text', 'object_relation': 'hive', 'value': hive}
+            ]
+        )
+
+    def test_process_hidden_is_written_as_the_boolean_it_spells(self):
+        # `'0'` went out as `is_hidden="true"`, and `False` into the bag
+        for values, expected in ((self._TRUE_VALUES, True),
+                                 (self._FALSE_VALUES, False)):
+            for value in values:
+                with self.subTest(value=value):
+                    parser, properties = self._process(value)
+                    self.assertEqual(parser.errors, {})
+                    self.assertEqual(parser.warnings, {})
+                    self.assertEqual(properties._XSI_TYPE, 'ProcessObjectType')
+                    self.assertIs(properties.is_hidden, expected)
+                    self.assertIsNone(properties.custom_properties)
+
+    def test_user_account_disabled_is_written_as_the_boolean_it_spells(self):
+        # Any truthy value raised on the `.condition` the generic loop set,
+        # and the object went out as a custom one
+        for values, expected in ((self._TRUE_VALUES, True),
+                                 (self._FALSE_VALUES, False)):
+            for value in values:
+                with self.subTest(value=value):
+                    parser, properties = self._user_account(value)
+                    self.assertEqual(parser.errors, {})
+                    self.assertEqual(parser.warnings, {})
+                    self.assertEqual(
+                        properties._XSI_TYPE, 'UserAccountObjectType'
+                    )
+                    self.assertIs(properties.disabled, expected)
+                    self.assertIsNone(properties.custom_properties)
+
+    def test_unrecognised_boolean_goes_to_the_bag_with_a_warning(self):
+        features = f'object (uuid: {self._OBJECT_UUID})'
+        for build, relation, name in (
+                (self._process, 'hidden', 'process'),
+                (self._user_account, 'disabled', 'user-account')):
+            with self.subTest(relation=relation):
+                parser, properties = build('yes')
+                self.assertEqual(parser.errors, {})
+                self.assertIsNone(getattr(
+                    properties, 'is_hidden' if name == 'process' else relation
+                ))
+                self.assertEqual(
+                    [
+                        (prop.name, prop.value, prop.datatype)
+                        for prop in properties.custom_properties
+                    ],
+                    [(relation, 'yes', 'string')]
+                )
+                self.assertEqual(
+                    parser.warnings[get_base_event()['Event']['uuid']],
+                    [
+                        f"{relation!r} in the {name} {features} is not a "
+                        "boolean: 'yes' written as a custom property."
+                    ]
+                )
+
+    def test_boolean_no_bag_can_carry_is_warned_of_once(self):
+        # `None` is neither a boolean nor a value the bag can write: the
+        # bag's own warning says so, and no second one claims it was written
+        parser, properties = self._process(None)
+        self.assertEqual(parser.errors, {})
+        self.assertIsNone(properties.is_hidden)
+        warning, = parser.warnings[get_base_event()['Event']['uuid']]
+        self.assertIn("'hidden' has no lexical form STIX 1 can carry", warning)
+
+    def test_registry_key_hive_in_the_enumeration_is_coerced(self):
+        for hive in ('hklm', 'HKLM', 'HKEY_LOCAL_MACHINE',
+                     'hkey_local_machine', '\\HKLM'):
+            with self.subTest(hive=hive):
+                parser, properties = self._registry_key(hive)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(properties.hive.value, 'HKEY_LOCAL_MACHINE')
+
+    def test_registry_key_hive_outside_the_enumeration_is_verbatim(self):
+        # The template calls `hive` a file on disk: upper-casing it and
+        # stripping its leading backslash corrupted it
+        for hive in ('C:\\Windows\\System32\\config\\SYSTEM',
+                     '\\\\server\\share\\ntuser.dat'):
+            with self.subTest(hive=hive):
+                parser, properties = self._registry_key(hive)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(properties.hive.value, hive)
+
+
 class _STIX1NamespaceTestCase(TestSTIX):
     # What the two namespace test classes below share: the input files, the
     # copy that keeps an export inside its temporary directory, and the
