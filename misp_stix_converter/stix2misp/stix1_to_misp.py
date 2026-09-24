@@ -386,7 +386,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if any(self._read_markings(getattr(course_of_action, 'handling', None))):
             self._object_markings_warning()
         misp_object = MISPObject('course-of-action', misp_objects_path_custom=misp_objects_path)
-        misp_object.uuid = self._sanitise_uuid(course_of_action.id_)
+        self._sanitise_object_uuid(misp_object, course_of_action.id_)
         if course_of_action.title:
             attribute = {'type': 'text', 'object_relation': 'name',
                          'value': course_of_action.title}

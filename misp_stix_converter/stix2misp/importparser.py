@@ -9,7 +9,7 @@ from datetime import datetime
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from typing import Any, Optional, Union
-from uuid import UUID
+from uuid import UUID, uuid4
 
 MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
 
@@ -412,35 +412,58 @@ class STIXtoMISPParser(AbstractParser):
     ############################################################################
 
     def _check_uuid(self, object_id: str):
-        object_uuid = self._extract_uuid(object_id)
-        replacement = (
-            UUID(object_uuid).version not in _RFC_VERSIONS and
-            object_uuid not in self.replacement_uuids
-        )
-        if replacement:
-            self.replacement_uuids[object_uuid] = self._create_v5_uuid(
-                object_uuid
+        self._read_uuid(object_id)
+
+    def _read_uuid(self, object_id: Optional[str]) -> tuple[str, bool]:
+        """Read the uuid a record takes off the id of the STIX object it is
+        converted from - every uuid sanitation helper reads it here, so an
+        object and an attribute read from the same id never diverge.
+
+        The uuid is the trailing 36 characters of the id when they parse as
+        one: every id MISP writes, whatever the prefix carries - a STIX 1
+        `{Type}` naming a template with a hyphen in it included. A uuid of a
+        version MISP refuses is replaced by one derived from it; an id ending
+        with no uuid - a STIX 1 id is a QName, nothing makes its tail a uuid -
+        by one derived from the whole id, prefix and type included, so an
+        `idref` resolves to the uuid its target took and a re-import lands on
+        the same records. An element carrying no id takes a random uuid:
+        nothing can reference it.
+
+        :param object_id: the id, None or empty when the element carries none
+        :return: the key the id is known by in `replacement_uuids` - the uuid
+            it ends with, the whole id when it ends with none - and whether
+            the uuid the key names is replaced
+        """
+        if not object_id:
+            return str(uuid4()), False
+        record_uuid = object_id[-36:]
+        if self._is_uuid(record_uuid):
+            if UUID(record_uuid).version in _RFC_VERSIONS:
+                return record_uuid, False
+        else:
+            record_uuid = object_id
+        if record_uuid not in self.replacement_uuids:
+            self.replacement_uuids[record_uuid] = self._create_v5_uuid(
+                record_uuid
             )
+        return record_uuid, True
+
+    @classmethod
+    def _replaced_uuid_comment(cls, key: str) -> str:
+        noun = 'UUID' if cls._is_uuid(key) else 'id'
+        return f'Original {noun} was: {key}'
 
     def _sanitise_attribute_uuid(
-            self, object_id: str, comment: Optional[str] = None,
+            self, object_id: Optional[str], comment: Optional[str] = None,
             **kwargs) -> dict:
-        attribute_uuid = self._extract_uuid(object_id)
-        attribute_comment = f'Original UUID was: {attribute_uuid}'
+        attribute_uuid, _ = self._read_uuid(object_id)
         if attribute_uuid in self.replacement_uuids:
+            attribute_comment = self._replaced_uuid_comment(attribute_uuid)
             if comment is not None:
                 attribute_comment = f'{comment} - {attribute_comment}'
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
                 'comment': attribute_comment, **kwargs
-            }
-        if UUID(attribute_uuid).version not in _RFC_VERSIONS:
-            sanitised_uuid = self._create_v5_uuid(attribute_uuid)
-            self.replacement_uuids[attribute_uuid] = sanitised_uuid
-            if comment is not None:
-                attribute_comment = f'{comment} - {attribute_comment}'
-            return {
-                'uuid': sanitised_uuid, 'comment': attribute_comment, **kwargs
             }
         attribute = {'uuid': attribute_uuid, **kwargs}
         if comment is not None:
@@ -448,10 +471,11 @@ class STIXtoMISPParser(AbstractParser):
         return attribute
 
     def _sanitise_object_uuid(
-            self, misp_object: Union[MISPEvent, MISPObject], object_id: str):
-        object_uuid = self._extract_uuid(object_id)
+            self, misp_object: Union[MISPEvent, MISPObject],
+            object_id: Optional[str]):
+        object_uuid, _ = self._read_uuid(object_id)
         if object_uuid in self.replacement_uuids:
-            comment = f'Original UUID was: {object_uuid}'
+            comment = self._replaced_uuid_comment(object_uuid)
             misp_object.comment = (
                 f'{misp_object.comment} - {comment}'
                 if hasattr(misp_object, 'comment') else comment
@@ -459,19 +483,24 @@ class STIXtoMISPParser(AbstractParser):
             object_uuid = self.replacement_uuids[object_uuid]
         misp_object.uuid = object_uuid
 
-    def _sanitise_uuid(self, object_id: str) -> str:
-        object_uuid = self._extract_uuid(object_id)
-        if UUID(object_uuid).version not in _RFC_VERSIONS:
-            if object_uuid in self.replacement_uuids:
-                return self.replacement_uuids[object_uuid]
-            sanitised_uuid = self._create_v5_uuid(object_uuid)
-            self.replacement_uuids[object_uuid] = sanitised_uuid
-            return sanitised_uuid
+    def _sanitise_uuid(self, object_id: Optional[str]) -> str:
+        object_uuid, replaced = self._read_uuid(object_id)
+        if replaced:
+            return self.replacement_uuids[object_uuid]
         return object_uuid
 
     ############################################################################
     #                             UTILITY METHODS.                             #
     ############################################################################
+
+    @staticmethod
+    def _is_uuid(value: str) -> bool:
+        # The canonical form only: `UUID()` also reads braces, a `urn:uuid:`
+        # prefix and a hex string with its hyphens anywhere
+        try:
+            return str(UUID(value)) == value.lower()
+        except ValueError:
+            return False
 
     @staticmethod
     def _timestamp_from_date(date: datetime) -> int:
