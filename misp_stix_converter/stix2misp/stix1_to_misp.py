@@ -153,7 +153,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if attribute_type in ('attachment', 'malware-sample'):
             attribute['data'] = data
         elif attribute_type == 'text':
-            attribute['comment'] = data
+            # The relation stands in for a comment the record did not carry,
+            # never for one its author wrote
+            if data and 'comment' not in attribute:
+                attribute['comment'] = data
         else:
             filename = self._filename_residue(data)
             if filename is not None:
