@@ -118,8 +118,10 @@ from .test_events import (
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
     get_event_with_undefined_attributes, get_event_with_url_object,
     get_event_with_user_account_object, get_event_with_user_account_objects,
+    get_event_with_vulnerability_attribute,
     get_event_with_vulnerability_galaxy, get_event_with_vulnerability_object,
-    get_event_with_weakness_object, get_event_with_whois_registrar_attribute,
+    get_event_with_weakness_attribute, get_event_with_weakness_object,
+    get_event_with_whois_registrar_attribute,
     get_event_with_x509_fingerprint_attributes, get_event_with_x509_object,
     get_event_with_windows_service_attributes, get_hash_attributes)
 
@@ -5739,3 +5741,145 @@ class TestSTIX1Import(TestSTIX):
         for attribute in passive_dns.attributes:
             with self.subTest(relation=attribute.object_relation):
                 self.assertEqual(UUID(attribute.uuid).version, 4)
+
+    @staticmethod
+    def _flagged(event):
+        """The event with every attribute of every object flagged `to_ids`:
+        what the export writes an object as an Indicator for."""
+        for misp_object in event['Event'].get('Object', ()):
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = True
+        return event
+
+    def _assert_timestamp(self, record, timestamp):
+        # pymisp parses an attribute timestamp into a datetime, and keeps the
+        # one set on an object as it was given
+        value = record.timestamp
+        if isinstance(value, datetime):
+            value = value.timestamp()
+        self.assertEqual(int(value), int(timestamp))
+
+    def test_internal_single_observable_object_reads_the_indicator_timestamp(self):
+        """An object whose attributes fold into one CybOX object is exported
+        as an Indicator carrying its timestamp: read, as a composition's is."""
+        for fixture in (get_event_with_x509_object, get_event_with_asn_object):
+            event = self._flagged(fixture())
+            misp_object = event['Event']['Object'][0]
+            with self.subTest(name=misp_object['name']):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self._assert_timestamp(
+                    parser.misp_event.objects[0], misp_object['timestamp']
+                )
+
+    def test_internal_standalone_pe_reads_its_indicator_timestamp(self):
+        """A `pe` no `file` includes is its own Indicator; the sections under
+        it carry no timestamp of their own on the wire, and take none."""
+        event = self._flagged(get_event_with_pe_objects())
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        pe_object = parser.misp_event.get_objects_by_name('pe')[0]
+        self._assert_timestamp(
+            pe_object, event['Event']['Object'][0]['timestamp']
+        )
+        for section in parser.misp_event.get_objects_by_name('pe-section'):
+            self.assertIsNone(getattr(section, 'timestamp', None))
+
+    def test_internal_pe_under_a_file_indicator_takes_no_timestamp(self):
+        """The one timestamp on the wire is the `file` Indicator's: the `pe`
+        and its sections are not stamped with it."""
+        event = self._flagged(get_event_with_file_and_pe_objects())
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        file_object = parser.misp_event.get_objects_by_name('file')[0]
+        self._assert_timestamp(
+            file_object, event['Event']['Object'][0]['timestamp']
+        )
+        for name in ('pe', 'pe-section'):
+            for misp_object in parser.misp_event.get_objects_by_name(name):
+                with self.subTest(name=name):
+                    self.assertIsNone(getattr(misp_object, 'timestamp', None))
+
+    def test_internal_context_objects_read_their_timestamp(self):
+        """The TTP an `attack-pattern`, `vulnerability` or `weakness` object
+        is written as carries its timestamp, and the COA_Taken stub the
+        Incident takes a `course-of-action` object with carries it too."""
+        for fixture in (get_event_with_attack_pattern_object,
+                        get_event_with_vulnerability_object,
+                        get_event_with_weakness_object,
+                        get_event_with_course_of_action_object):
+            event = fixture()
+            misp_object = event['Event']['Object'][0]
+            with self.subTest(name=misp_object['name']):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted = parser.misp_event.get_objects_by_name(
+                    misp_object['name']
+                )[0]
+                self._assert_timestamp(converted, misp_object['timestamp'])
+
+    def test_internal_course_of_action_reads_the_stub_timestamp(self):
+        """The stub is what is read, not the full Course of Action: one
+        exported before the export stamped it carries the export time."""
+        event = get_event_with_course_of_action_object()
+        misp_object = event['Event']['Object'][0]
+        stix_package = self._misp_export(event)
+        inner = stix_package.related_packages.related_package[0].item
+        inner.courses_of_action[0].timestamp = datetime(2026, 9, 24, 12, 0)
+        parser = self._parse_internal_package(stix_package)
+        self._assert_timestamp(
+            parser.misp_event.objects[0], misp_object['timestamp']
+        )
+
+    def test_internal_ttp_attributes_read_their_timestamp(self):
+        """A `vulnerability` or `weakness` attribute without `to_ids` is a
+        TTP, stamped with the attribute's timestamp."""
+        for fixture in (get_event_with_vulnerability_attribute,
+                        get_event_with_weakness_attribute):
+            event = fixture()
+            attribute = event['Event']['Attribute'][0]
+            with self.subTest(type=attribute['type']):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                records = (
+                    *parser.misp_event.attributes, *parser.misp_event.objects
+                )
+                self.assertEqual(len(records), 1)
+                self._assert_timestamp(records[0], attribute['timestamp'])
+
+    def test_internal_plain_observables_take_no_timestamp(self):
+        """An object or an attribute exported without `to_ids` is a plain
+        Observable, which carries no timestamp: the named loss."""
+        event = get_event_with_domain_attribute()
+        event['Event']['Attribute'][0]['to_ids'] = False
+        event['Event']['Object'] = get_event_with_x509_object()['Event'][
+            'Object']
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        for record in (*parser.misp_event.attributes,
+                       *parser.misp_event.objects):
+            with self.subTest(uuid=record.uuid):
+                self.assertIsNone(getattr(record, 'timestamp', None))
+
+    def test_external_single_observable_object_reads_the_indicator_timestamp(self):
+        """The External Indicator path builds the object through the shared
+        builder, and hands it the Indicator's timestamp the same way - the
+        standalone `pe` included, its sections left with none."""
+        for fixture in (get_event_with_x509_object, get_event_with_asn_object,
+                        get_event_with_pe_objects):
+            event = self._flagged(fixture())
+            misp_object = event['Event']['Object'][0]
+            with self.subTest(name=misp_object['name']):
+                parser = self._parse_external_package(
+                    self._external_package_of_export(event)
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self._assert_timestamp(
+                    parser.misp_event.get_objects_by_name(
+                        misp_object['name']
+                    )[0],
+                    misp_object['timestamp']
+                )
+                for section in parser.misp_event.get_objects_by_name(
+                        'pe-section'):
+                    self.assertIsNone(getattr(section, 'timestamp', None))
