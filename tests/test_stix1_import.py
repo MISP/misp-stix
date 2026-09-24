@@ -5223,3 +5223,201 @@ class TestSTIX1Import(TestSTIX):
             'misp-galaxy:mitre-tool="Mimikatz"',
             {tag['name'] for tag in attribute.tags}
         )
+
+    ############################################################################
+    #                        RECORD UUIDS READ OFF IDS.                        #
+    ############################################################################
+
+    @staticmethod
+    def _address_observable(value, object_id, observable_id=None):
+        address = Address()
+        address.address_value = value
+        address.category = 'ipv4-addr'
+        address_object = Object(address)
+        address_object.id_ = object_id
+        observable = Observable(address_object)
+        observable.id_ = observable_id
+        return observable
+
+    def test_external_id_that_is_no_uuid_takes_a_uuid_derived_from_it(self):
+        """A STIX 1 id is a QName, nothing makes its tail a uuid: one that is
+        none aborted the whole package. The record takes a uuid derived from
+        the whole id, prefix and type included - two types numbered alike in
+        one namespace are two records."""
+        port = Port()
+        port.port_value = 443
+        port_object = Object(port)
+        port_object.id_ = 'example:Port-1'
+        stix_package = STIXPackage()
+        stix_package.add_observable(
+            self._address_observable('198.51.100.4', 'example:Address-1')
+        )
+        stix_package.add_observable(Observable(port_object))
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        attributes = {
+            attribute.type: attribute for attribute in parser.misp_event.attributes
+        }
+        address, port = attributes['ip-dst'], attributes['port']
+        self.assertEqual(
+            str(address.uuid), str(uuid5(_UUIDv4, 'example:Address-1'))
+        )
+        self.assertEqual(address.comment, 'Original id was: example:Address-1')
+        self.assertEqual(str(port.uuid), str(uuid5(_UUIDv4, 'example:Port-1')))
+        self.assertEqual(port.comment, 'Original id was: example:Port-1')
+
+    def test_external_id_ending_with_no_well_formed_uuid_is_no_uuid(self):
+        object_id = f'example:Address-{_IP_UUID[:-3]}ZZZ'
+        stix_package = STIXPackage()
+        stix_package.add_observable(
+            self._address_observable('198.51.100.4', object_id)
+        )
+        parser = self._parse_external_package(stix_package)
+        attribute = parser.misp_event.attributes[0]
+        self.assertEqual(str(attribute.uuid), str(uuid5(_UUIDv4, object_id)))
+        self.assertEqual(attribute.comment, f'Original id was: {object_id}')
+
+    def test_external_idref_to_an_id_that_is_no_uuid_resolves(self):
+        """The derived uuid is what an `idref` to the record resolves to: the
+        `Resolved_To` pair still makes a `passive-dns` object, and a related
+        object still references the attribute its target became."""
+        url = self._url_indicator('https://circl.lu/')
+        url.observable.object_.related_objects[0].idref = 'example:Address-1'
+        ip = Indicator()
+        ip.add_observable(
+            self._address_observable('198.51.100.4', 'example:Address-1')
+        )
+        file_object = self._object_with_related_object(
+            File(), related_uuid=None
+        )
+        file_object.id_ = 'example:File-1'
+        file_object.properties.file_name = 'evil.exe'
+        file_object.properties.size_in_bytes = 12
+        file_object.related_objects[0].idref = 'example:Address-1'
+        stix_package = STIXPackage()
+        stix_package.add_indicator(url)
+        stix_package.add_indicator(ip)
+        stix_package.add_observable(Observable(file_object))
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        misp_objects = {
+            misp_object.name: misp_object
+            for misp_object in parser.misp_event.objects
+        }
+        self.assertEqual(
+            {
+                attribute.object_relation: attribute.value
+                for attribute in misp_objects['passive-dns'].attributes
+            },
+            {'rrname': 'https://circl.lu/', 'rdata': '198.51.100.4', 'rrtype': 'A'}
+        )
+        file_object = misp_objects['file']
+        self.assertEqual(str(file_object.uuid), str(uuid5(_UUIDv4, 'example:File-1')))
+        self.assertEqual(file_object.comment, 'Original id was: example:File-1')
+        self.assertEqual(
+            [
+                str(reference.referenced_uuid)
+                for reference in file_object.references
+            ],
+            [str(uuid5(_UUIDv4, 'example:Address-1'))]
+        )
+
+    def test_external_idless_object_takes_the_uuid_of_its_observable(self):
+        """`id` is optional on a CybOX Object, and a producer routinely puts
+        it on the Observable alone: the Object carrying none aborted the
+        whole package. The record takes the Observable's id, read the same
+        way, and an element carrying neither takes a random uuid."""
+        stix_package = STIXPackage()
+        stix_package.add_observable(
+            self._address_observable(
+                '198.51.100.4', None, f'example:Observable-{_IP_UUID}'
+            )
+        )
+        stix_package.add_observable(
+            self._address_observable(
+                '198.51.100.5', None, 'example:Observable-1'
+            )
+        )
+        indicator = Indicator()
+        indicator.id_ = 'example:Indicator-1'
+        indicator.add_observable(self._address_observable('198.51.100.6', None))
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        attributes = {
+            attribute.value: attribute
+            for attribute in parser.misp_event.attributes
+        }
+        self.assertEqual(attributes['198.51.100.4'].uuid, _IP_UUID)
+        self.assertEqual(
+            str(attributes['198.51.100.5'].uuid),
+            str(uuid5(_UUIDv4, 'example:Observable-1'))
+        )
+        self.assertNotIn(
+            attributes['198.51.100.6'].uuid,
+            (_IP_UUID, str(uuid5(_UUIDv4, 'example:Indicator-1')))
+        )
+
+    def test_external_idless_ttp_and_course_of_action_convert(self):
+        ttp = self._ttp_with_exploit_target_cve('CVE-2021-44228')
+        ttp.id_ = None
+        course_of_action = self._course_of_action()
+        course_of_action.id_ = None
+        stix_package = STIXPackage()
+        stix_package.add_ttp(ttp)
+        stix_package.add_course_of_action(course_of_action)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [attribute.type for attribute in parser.misp_event.attributes],
+            ['vulnerability']
+        )
+        self.assertEqual(
+            [misp_object.name for misp_object in parser.misp_event.objects],
+            ['course-of-action']
+        )
+
+    def test_external_uuid_of_a_version_misp_refuses_is_replaced(self):
+        """Unchanged by the id reading: a uuid of a version MISP refuses is
+        replaced by one derived from the bare uuid, whatever id carries it."""
+        object_uuid = '3fa85f64-5717-0562-b3fc-2c963f66afa6'
+        stix_package = STIXPackage()
+        stix_package.add_observable(
+            self._address_observable(
+                '198.51.100.4', f'example:Address-{object_uuid}'
+            )
+        )
+        parser = self._parse_external_package(stix_package)
+        attribute = parser.misp_event.attributes[0]
+        self.assertEqual(str(attribute.uuid), str(uuid5(_UUIDv4, object_uuid)))
+        self.assertEqual(attribute.comment, f'Original UUID was: {object_uuid}')
+
+    def test_external_replaced_uuid_keeps_the_relation_standing_in_for_a_comment(self):
+        """The comment keeping the original id is appended to the one a text
+        attribute reads off its relation, never put in its place."""
+        custom_object = Object(self._custom(None, ('myprop', 'some text')))
+        custom_object.id_ = 'example:Custom-1'
+        stix_package = STIXPackage()
+        stix_package.add_observable(Observable(custom_object))
+        parser = self._parse_external_package(stix_package)
+        attribute = parser.misp_event.attributes[0]
+        self.assertEqual(
+            (attribute.type, attribute.value), ('text', 'some text')
+        )
+        self.assertEqual(
+            attribute.comment, 'myprop - Original id was: example:Custom-1'
+        )
+
+    def test_internal_composition_object_keeps_its_uuid(self):
+        """The export writes a composition id as
+        `MISP:{name}_ObservableComposition-{uuid}`, the first hyphen inside a
+        template name carrying one: the object came back with a uuid of
+        `ip_ObservableComposition-{uuid}`."""
+        event = get_event_with_domain_ip_object()
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(
+            [misp_object.uuid for misp_object in parser.misp_event.objects],
+            [event['Event']['Object'][0]['uuid']]
+        )
