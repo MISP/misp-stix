@@ -1216,6 +1216,77 @@ class TestSTIX1UnreferencedPESection(TestSTIX):
                 )
 
 
+class TestSTIX1PlainObservableComment(TestSTIX):
+    """A record exported without `to_ids` is a plain Observable, with no
+    Indicator to carry its comment: the Observable's own description carries
+    it instead, and an uncommented record writes no description."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    @staticmethod
+    def _plain_attribute(comment):
+        attribute = get_event_with_domain_attribute()['Event']['Attribute'][0]
+        attribute['to_ids'] = False
+        attribute.pop('comment', None)
+        if comment is not None:
+            attribute['comment'] = comment
+        return attribute
+
+    @staticmethod
+    def _plain_object(comment):
+        misp_object = get_event_with_domain_ip_object()['Event']['Object'][0]
+        for attribute in misp_object['Attribute']:
+            attribute['to_ids'] = False
+        misp_object.pop('comment', None)
+        if comment is not None:
+            misp_object['comment'] = comment
+        return misp_object
+
+    def _event_observables(self, version, comment):
+        event = get_base_event()
+        event['Event']['Attribute'] = [self._plain_attribute(comment)]
+        event['Event']['Object'] = [self._plain_object(comment)]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        return [
+            related.item for related in incident.related_observables.observable
+        ]
+
+    def _collection_observables(self, version, comment):
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content(
+            {'response': {'Attribute': [self._plain_attribute(comment)]}}
+        )
+        self.assertEqual(parser.errors, {})
+        return list(parser.stix_package.observables)
+
+    def test_plain_observable_carries_the_comment(self):
+        for version in self._VERSIONS:
+            for observables in (
+                    self._event_observables(version, 'a comment'),
+                    self._collection_observables(version, 'a comment')):
+                for observable in observables:
+                    with self.subTest(version=version, id=observable.id_):
+                        self.assertEqual(
+                            observable.description.value, 'a comment'
+                        )
+
+    def test_uncommented_plain_observable_writes_no_description(self):
+        for version in self._VERSIONS:
+            for observables in (
+                    self._event_observables(version, None),
+                    self._collection_observables(version, None)):
+                for observable in observables:
+                    with self.subTest(version=version, id=observable.id_):
+                        self.assertIsNone(observable.description)
+                        self.assertNotIn(
+                            b'Description',
+                            observable.to_xml(include_namespaces=False)
+                        )
+
+
 class TestSTIX1GalaxyTags(TestSTIX):
     """What the export writes for the tag of a galaxy cluster: a STIX 1
     construct names a cluster by its value, and a galaxy of a type no
@@ -2640,9 +2711,9 @@ class TestStix1Export(TestSTIX):
             self._check_identity_features(
                 ttp.victim_targeting.identity, attribute
             )
-        # The comment travels the Custom way: nowhere on a plain observable,
-        # as the Indicator's description once the attribute is `to_ids`
-        self.assertIsNone(observables[0].description)
+        # The comment travels the Custom way: as the description of a plain
+        # observable, as the Indicator's once the attribute is `to_ids`
+        self.assertEqual(observables[0].description.value, machine['comment'])
         machine = {**machine, 'to_ids': True}
         parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
         parser.parse_json_content([machine])

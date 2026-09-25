@@ -113,8 +113,10 @@ from .test_events import (
     get_event_with_malware_galaxy, get_event_with_network_socket_object,
     get_event_with_non_conforming_object_relations,
     get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
+    get_event_with_hash_attributes,
     get_event_with_hash_composite_attributes, get_event_with_mutex_object,
-    get_event_with_pattern_attribute, get_event_with_pe_objects,
+    get_event_with_pattern_attribute,
+    get_event_with_patterning_language_attributes, get_event_with_pe_objects,
     get_event_with_process_object, get_event_with_process_object_v2,
     get_event_with_regkey_attribute, get_event_with_regkey_value_attribute,
     get_event_with_sector_galaxy,
@@ -2668,12 +2670,12 @@ class TestSTIX1Import(TestSTIX):
                 )
                 # Both halves keep what the attribute they came from carried -
                 # the comment on the Indicator a `to_ids` attribute is
-                # written as, an Observable carrying none
+                # written as, on the Observable one without it is
                 for attribute in residue:
                     self.assertEqual(attribute.to_ids, to_ids)
                     self.assertEqual(
                         attribute.get('comment'),
-                        'Filename|vhash test attribute' if to_ids else None
+                        'Filename|vhash test attribute'
                     )
                 self.assertEqual(
                     parser.diagnostics()['warnings']['misp event'],
@@ -3455,7 +3457,7 @@ class TestSTIX1Import(TestSTIX):
                         )
                     # The export writes no comment for a `vulnerability`
                     # object, whose Exploit Target it would go on
-                    if to_ids and exported['name'] != 'vulnerability':
+                    if exported['name'] != 'vulnerability':
                         self.assertEqual(converted.comment, 'object comment')
 
     def test_internal_misp_export_two_attribute_object_stays_an_object(self):
@@ -3690,7 +3692,8 @@ class TestSTIX1Import(TestSTIX):
         """A MISP event whose every comment-and-tag carrier is filled: the
         event's own tags, a `to_ids` attribute exported as an Indicator, one
         with no comment at all, one with `to_ids` unset - the Observable the
-        shape carries neither on - a `campaign-name`, a `vulnerability`
+        shape carries the comment and no tag on - a `campaign-name`, a
+        `vulnerability`
         exported as a TTP over an Exploit Target, and two objects, one with a
         comment of its own and one with the template's description alone."""
         event = get_base_event()
@@ -3699,7 +3702,7 @@ class TestSTIX1Import(TestSTIX):
         ]
         domain = get_event_with_domain_attribute()['Event']['Attribute'][0]
         domain['to_ids'] = False
-        domain['comment'] = 'the Observable carries no comment'
+        domain['comment'] = 'the Observable carries the comment'
         domain['Tag'] = [{'name': 'my:lost="tag"'}]
         github = get_event_with_github_username_attribute()['Event']['Attribute'][0]
         github['to_ids'] = True
@@ -3785,13 +3788,89 @@ class TestSTIX1Import(TestSTIX):
         context = self._attribute_context(parser.misp_event)
         self.assertEqual(context['P4tt3rn_1n_f1l3_t3st'], (None, []))
 
-    def test_internal_observable_carries_no_comment_and_no_tag(self):
-        """The shape an attribute with `to_ids` unset is exported as carries
-        neither: the gap is the Observable's, and stays named."""
+    def test_internal_observable_carries_the_comment_and_no_tag(self):
+        """The Observable an attribute with `to_ids` unset is exported as
+        carries the comment as its description, and has no room for a
+        marking: the tags are the Observable's gap, and stay named."""
         event = self._misp_event_carrying_comments_and_tags()
         parser = self._parse_internal_package(self._misp_export(event))
         context = self._attribute_context(parser.misp_event)
-        self.assertEqual(context['circl.lu'], (None, []))
+        self.assertEqual(
+            context['circl.lu'], ('the Observable carries the comment', [])
+        )
+
+    @staticmethod
+    def _plain_commented_attributes():
+        """Commented attributes with `to_ids` unset: the hashes, and the
+        detection rules a `to_ids` export writes as a test mechanism and a
+        plain one as a `Custom` Observable."""
+        attributes = [
+            attribute
+            for getter in (
+                get_event_with_hash_attributes,
+                get_event_with_patterning_language_attributes,
+                get_event_with_github_username_attribute
+            )
+            for attribute in getter()['Event']['Attribute']
+        ]
+        for attribute in attributes:
+            attribute['to_ids'] = False
+            attribute.setdefault('comment', f"{attribute['type']} comment")
+        return attributes
+
+    def test_internal_plain_observable_comment_round_trips(self):
+        """A commented attribute exported without `to_ids` comes back with its
+        comment, from an event and from an Attribute Collection alike."""
+        attributes = self._plain_commented_attributes()
+        event = get_base_event()
+        event['Event']['Attribute'] = attributes
+        collection = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        collection.parse_json_content({'response': {'Attribute': attributes}})
+        for label, package in (
+                ('event', self._misp_export(event)),
+                ('collection', collection.stix_package)):
+            parser = self._parse_internal_package(package)
+            self.assertEqual(parser.diagnostics()['errors'], {})
+            # By value too: a hash the wire has no name for comes back under
+            # the one it shares, and some fixtures share a uuid
+            comments = {
+                (attribute.uuid, attribute.value): attribute.comment
+                for attribute in parser.misp_event.attributes
+            }
+            for attribute in attributes:
+                with self.subTest(export=label, type=attribute['type']):
+                    self.assertEqual(
+                        comments[(attribute['uuid'], attribute['value'])],
+                        attribute['comment']
+                    )
+
+    def test_internal_plain_object_comment_round_trips(self):
+        """A commented MISP object exported without `to_ids` - a composition,
+        a single CybOX object, a `file` with its `pe` folded in - comes back
+        with its comment; one with none comes back with none."""
+        for getter in (
+                get_event_with_domain_ip_object, get_event_with_mutex_object,
+                get_event_with_pe_objects, get_event_with_file_and_pe_objects):
+            for comment in ('a comment of my own', None):
+                with self.subTest(getter=getter.__name__, comment=comment):
+                    event = getter()
+                    exported = event['Event']['Object'][0]
+                    for misp_object in event['Event']['Object']:
+                        misp_object.pop('comment', None)
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = False
+                    if comment is not None:
+                        exported['comment'] = comment
+                    parser = self._parse_internal_package(
+                        self._misp_export(event)
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    comments = {
+                        misp_object.uuid: getattr(misp_object, 'comment', None)
+                        for misp_object in parser.misp_event.objects
+                    }
+                    self.assertEqual(comments.pop(exported['uuid']), comment)
+                    self.assertEqual(set(comments.values()) - {None}, set())
 
     def test_internal_campaign_comment_and_tags_read_back(self):
         """The Campaign a `campaign-name` was exported as carries both, and
@@ -4049,7 +4128,7 @@ class TestSTIX1Import(TestSTIX):
         exported from, never as a MISP object: the value under its own type,
         the uuid off the Indicator's or the Observable's id, and the comment,
         the tags and the timestamp where the carrier holds them - the
-        Indicator does, the Observable holds none of the three. These came
+        Indicator does, the Observable holds the comment alone. These came
         back as one-attribute objects, or empty ones for `email-body` and
         `email-header`, with all of it dropped."""
         for original in self._attributes_yielding_several_values():
@@ -4078,7 +4157,7 @@ class TestSTIX1Import(TestSTIX):
                             [tag.name for tag in converted.tags]
                         ),
                         ('my own comment', ['my:kept="tag"']) if to_ids
-                        else (None, [])
+                        else ('my own comment', [])
                     )
                     if to_ids:
                         self.assertEqual(
