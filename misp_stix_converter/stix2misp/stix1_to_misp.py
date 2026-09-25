@@ -243,7 +243,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :param attribute_value: the attributes, as the handlers return them
         :param compl_data: the complementary data the handler carried - the
             `pe` and its sections, the network connections a process lists,
-            a rejected template name
+            the references an email makes to the attachments it does not
+            embed, a rejected template name
         :param to_ids: the `to_ids` flag the whole carrier was written with
         :param object_uuid: the uuid the object takes, and its attributes
             derive from - None for a random one, and random attribute uuids
@@ -296,6 +297,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._build_network_connections(
                     misp_object, compl_data['network_connections'],
                     object_uuid
+                )
+            if "references" in compl_data:
+                # Applied once the whole package is parsed, as every other
+                # reference: what they point to may not be parsed yet
+                self.references[misp_object.uuid].extend(
+                    compl_data['references']
                 )
         if test_mechanisms:
             for test_mechanism in test_mechanisms:
@@ -728,34 +735,54 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             attributes.append(
                 ["email-header", properties.raw_header.value, "header"]
             )
+        references = []
         if properties.attachments:
-            attributes.extend(self._handle_email_attachment(properties))
+            embedded, references = self._handle_email_attachment(properties)
+            attributes.extend(embedded)
         attributes.extend(self._read_custom_properties(properties, 'email'))
         if len(attributes) == 1:
             # A single attribute takes the uuid of the record carrying it
             return tuple(attributes[0][:3])
-        return "email", self._return_object_attributes(attributes), ""
+        compl_data = {'references': references} if references else ""
+        return "email", self._return_object_attributes(attributes), compl_data
 
-    # Return type & value of an email attachment
-    def _handle_email_attachment(self, properties: email_message_object.EmailMessage):
+    def _handle_email_attachment(
+            self, properties: email_message_object.EmailMessage) -> tuple:
+        """Read the attachments of an email.
+
+        An attachment the export embeds as a related File is an attribute; one
+        only referenced is a reference of the object the email builds, handed
+        back rather than recorded: the handler sees the properties, and the
+        Object holding them may carry no id - the caller knows the uuid the
+        object takes.
+
+        :param properties: the email properties
+        :return: the attachment attributes, and the references to the
+            attachments the email does not embed
+        """
         related_objects = (
             {related.id_: related.properties for related in properties.parent.related_objects}
             if properties.parent.related_objects else {}
         )
+        attributes, references = [], []
         for attachment in (attachment.object_reference for attachment in properties.attachments):
             if attachment in related_objects:
                 # The related File is written with the attribute's uuid
-                yield (
-                    "email-attachment",
-                    related_objects[attachment].file_name.value, "attachment",
-                    self._sanitise_attribute_uuid(attachment)
+                attributes.append(
+                    (
+                        "email-attachment",
+                        related_objects[attachment].file_name.value,
+                        "attachment", self._sanitise_attribute_uuid(attachment)
+                    )
                 )
             else:
-                parent_id = self._sanitise_uuid(properties.parent.id_)
-                referenced_id = self._sanitise_uuid(attachment)
-                self.references[parent_id].append(
-                    {'idref': referenced_id, 'relationship': 'attachment'}
+                references.append(
+                    {
+                        'idref': self._sanitise_uuid(attachment),
+                        'relationship': 'attachment'
+                    }
                 )
+        return attributes, references
 
     def _fetch_file_attributes(self, properties: file_object.File,
                                object_id: Optional[str] = None) -> list:

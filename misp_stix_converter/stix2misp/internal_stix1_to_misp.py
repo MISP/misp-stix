@@ -955,19 +955,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         :param indicator: the Related Indicator the Incident carries
         """
         name = self._define_name(indicator.item.observable, indicator.relationship)
-        if name == 'passive-dns' and str(indicator.relationship) != "misc":
-            self._add_error(
-                'Unable to parse the Indicator object '
-                f'with id {indicator.item.id_}'
-            )
-        else:
-            if any(self._read_markings(indicator.item.handling)):
-                self._object_markings_warning()
-            self._fill_misp_object(
-                indicator.item, name, to_ids=True,
-                description=indicator.item.description,
-                title=indicator.item.title
-            )
+        if any(self._read_markings(indicator.item.handling)):
+            self._object_markings_warning()
+        self._fill_misp_object(
+            indicator.item, name, to_ids=True,
+            description=indicator.item.description,
+            title=indicator.item.title
+        )
 
     def _parse_misp_object_observable(self, observable: Observable):
         name = self._define_name(observable.item, observable.relationship)
@@ -1106,13 +1100,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 'type': attribute_type, 'value': attribute_value,
                 'object_relation': relation, 'to_ids': to_ids
             }
-            if 'Port' in observable.id_:
-                misp_attribute['object_relation'] = '-'.join(
-                    (
-                        observable.id_.split('-')[0].split(':')[1][:3],
-                        relation
-                    )
-                )
+            feature = self._cybox_object_feature(observable)
+            if feature is not None and feature.endswith('Port'):
+                # `srcPort` / `dstPort`: a bare `Port` has no prefix to read
+                prefix = feature[:-len('Port')]
+                if prefix:
+                    misp_attribute['object_relation'] = f'{prefix}-{relation}'
             if observable.id_:
                 # The export writes each member with the attribute's uuid
                 misp_attribute.update(
@@ -1308,6 +1301,22 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                         f"{attributes['domain']}|{attributes[feature]}"
                     )
 
+    @staticmethod
+    def _cybox_object_feature(observable: Observable) -> Optional[str]:
+        """Read the feature the export writes into the id of the CybOX object
+        an Observable holds, `{org}:{feature}-{uuid}` - the Observable's own
+        id is `{org}:Observable-{uuid}` whatever it holds.
+
+        :param observable: the Observable
+        :return: the feature, None where the CybOX object carries no id of
+            that shape
+        """
+        cybox_object = getattr(observable, 'object_', None)
+        object_id = getattr(cybox_object, 'id_', None)
+        if not object_id or ':' not in object_id or '-' not in object_id:
+            return None
+        return object_id.split(':', 1)[1].split('-', 1)[0]
+
     def _define_name(self, observable: Observable, relationship) -> Optional[str]:
         """Name the MISP object an Observable came from.
 
@@ -1321,11 +1330,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         :param relationship: the MISP meta-category the export wrote
         :return: the object template name, None when the Observable names none
         """
-        observable_id = observable.id_
+        # The CybOX type sits on the id of the CybOX object the Observable
+        # holds, never on the Observable's own
+        feature = self._cybox_object_feature(observable)
         if relationship == "file":
-            return "registry-key" if "WinRegistryKey" in observable_id else "file"
-        if "Custom" in observable_id:
-            return observable_id.split("Custom")[0].split(":")[1]
+            return "registry-key" if feature == "WindowsRegistryKey" else "file"
+        if feature == "Custom":
+            return getattr(observable.object_.properties, 'custom_name', None)
+        observable_id = observable.id_
         # Whatever the meta-category: the export names every composition the
         # same way, and only the composition branch below uses the name
         if "ObservableComposition" in observable_id:
