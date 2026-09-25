@@ -746,6 +746,31 @@ class TestSTIX1ObjectsWithoutPropertyBag(TestSTIX):
                     ]
                 )
 
+    def test_url_repeated_relation_takes_one_member_per_value(self):
+        """A `url` composition writes a member per value of a relation it
+        has a member for, as `domain-ip` and `ip-port` do."""
+        attributes = [
+            self._attribute('url', 'https://circl.lu/team', 'url'),
+            self._attribute('domain', 'circl.lu', 'domain'),
+            self._attribute('domain', 'misp-project.org', 'domain'),
+            self._attribute('host', 'www.circl.lu', 'hostname'),
+            self._attribute('host', 'misp.circl.lu', 'hostname'),
+            self._attribute('ip', '149.13.33.14', 'ip-dst'),
+            self._attribute('ip', '149.13.33.4', 'ip-dst'),
+            self._attribute('port', '443', 'port'),
+            self._attribute('port', '8443', 'port')
+        ]
+        parser = self._parse_object('url', attributes)
+        self.assertEqual(self._warnings(parser), [])
+        members = self._members(parser)
+        self.assertEqual(
+            [member.id_ for member in members],
+            [
+                f"{_ORGNAME_ID}:Observable-{attribute['uuid']}"
+                for attribute in attributes
+            ]
+        )
+
     def test_pe_section_relation_with_no_room_is_warned(self):
         section_uuid = '4b8d0f2c-6e3a-4c9b-8d7f-1a2b3c4d5e6f'
         event = get_base_event()
@@ -783,6 +808,162 @@ class TestSTIX1ObjectsWithoutPropertyBag(TestSTIX):
                 f"object (uuid: {section_uuid}): '0x00012345' not converted."
             ]
         )
+
+
+class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
+    """What the export writes for a relation whose native CybOX field holds
+    one value, or a vocabulary short of what MISP holds: the field takes what
+    it can, and the rest goes to the property bag under the relation."""
+
+    _OBJECT_UUID = '8f2b4d6a-0c7e-4a3f-9b1d-5e6f7a8b9c0d'
+
+    def _parse_object(self, name, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': attribute_type, 'object_relation': relation,
+                     'value': value}
+                    for attribute_type, relation, value in attributes
+                ]
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return observable.item.object_.properties
+
+    @staticmethod
+    def _bag(properties):
+        return sorted(
+            (prop.name, prop.value)
+            for prop in properties.custom_properties or ()
+        )
+
+    def test_email_header_fields_keep_every_value(self):
+        email = self._parse_object(
+            'email',
+            (
+                ('email-src', 'from', 'first@example.com'),
+                ('email-src', 'from', 'second@example.com'),
+                ('email-subject', 'subject', 'Invoice'),
+                ('email-subject', 'subject', 'Re: Invoice'),
+                ('email-reply-to', 'reply-to', 'reply@example.com')
+            )
+        )
+        header = email.header
+        self.assertEqual(header.from_.address_value.value, 'first@example.com')
+        self.assertEqual(header.subject.value, 'Invoice')
+        self.assertEqual(
+            header.reply_to.address_value.value, 'reply@example.com'
+        )
+        self.assertEqual(
+            self._bag(email),
+            [('from', 'second@example.com'), ('subject', 'Re: Invoice')]
+        )
+
+    def test_email_header_fields_of_one_value_write_no_bag(self):
+        email = self._parse_object(
+            'email',
+            (
+                ('email-src', 'from', 'first@example.com'),
+                ('email-subject', 'subject', 'Invoice')
+            )
+        )
+        self.assertIsNone(email.custom_properties)
+
+    def test_credential_format_and_type_keep_every_value(self):
+        credential = self._parse_object(
+            'credential',
+            (
+                ('text', 'username', 'admin'),
+                ('text', 'password', 'P4ssw0rd'),
+                ('text', 'format', 'clear-text'),
+                ('text', 'format', 'hashed'),
+                ('text', 'type', 'password'),
+                ('text', 'type', 'api-key')
+            )
+        )
+        authentication, = credential.authentication
+        self.assertEqual(
+            authentication.structured_authentication_mechanism.description.value,
+            'clear-text'
+        )
+        self.assertEqual(authentication.authentication_type.value, 'password')
+        self.assertEqual(
+            self._bag(credential), [('format', 'hashed'), ('type', 'api-key')]
+        )
+
+    def test_network_socket_state_outside_the_cybox_booleans(self):
+        socket = self._parse_object(
+            'network-socket',
+            (
+                ('ip-dst', 'ip-dst', '198.51.100.4'),
+                ('text', 'state', 'listening'),
+                ('text', 'state', 'established')
+            )
+        )
+        self.assertTrue(socket.is_listening)
+        self.assertEqual(self._bag(socket), [('state', 'established')])
+
+
+class TestSTIX1UnreferencedPESection(TestSTIX):
+    """A `pe-section` no `pe` references has no `WindowsExecutableFile` to
+    fold into: it is exported as every other unmapped object is, one `Custom`
+    Observable carrying its relations."""
+
+    _SECTION_UUID = '5c9e1a3d-7f4b-4d0c-9e8a-2b3c4d5e6f70'
+
+    def _parse_section(self, to_ids):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': 'pe-section', 'meta-category': 'file',
+                'uuid': self._SECTION_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {
+                        'type': 'text', 'object_relation': 'name',
+                        'value': '.rsrc', 'to_ids': to_ids
+                    },
+                    {
+                        'type': 'float', 'object_relation': 'entropy',
+                        'value': 7.836462238824369, 'to_ids': False
+                    }
+                ]
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    def test_unreferenced_pe_section_is_a_custom_observable(self):
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                parser = self._parse_section(to_ids)
+                self.assertEqual(parser.errors, {})
+                incident = parser.stix_package.incidents[0]
+                if to_ids:
+                    related, = incident.related_indicators.indicator
+                    observable = related.item.observable
+                else:
+                    related, = incident.related_observables.observable
+                    observable = related.item
+                custom = observable.object_
+                self.assertEqual(
+                    custom.id_, f'{_ORGNAME_ID}:Custom-{self._SECTION_UUID}'
+                )
+                self.assertEqual(custom.properties.custom_name, 'pe-section')
+                self.assertEqual(
+                    sorted(
+                        (prop.name, prop.value)
+                        for prop in custom.properties.custom_properties
+                    ),
+                    [('entropy', '7.836462238824369'), ('name', '.rsrc')]
+                )
 
 
 class _STIX1NamespaceTestCase(TestSTIX):

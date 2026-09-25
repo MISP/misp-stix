@@ -13,7 +13,8 @@ from cybox.objects.address_object import Address, EmailAddress
 from cybox.objects.custom_object import Custom
 from cybox.objects.dns_record_object import DNSRecord
 from cybox.objects.domain_name_object import DomainName
-from cybox.objects.email_message_object import EmailHeader, EmailMessage
+from cybox.objects.email_message_object import (
+    Attachments, EmailHeader, EmailMessage)
 from cybox.objects.file_object import File
 from cybox.objects.library_object import Library
 from cybox.objects.network_connection_object import NetworkConnection
@@ -115,6 +116,7 @@ from .test_events import (
     get_event_with_pattern_attribute, get_event_with_pe_objects,
     get_event_with_process_object, get_event_with_process_object_v2,
     get_event_with_regkey_attribute, get_event_with_regkey_value_attribute,
+    get_event_with_registry_key_and_values_objects,
     get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
@@ -149,9 +151,6 @@ _SNORT_RULES = (
 
 
 # Why a relation still goes missing on the way back, one cause per row below
-# `_handle_composition` reads the `src`/`dst` prefix off the Observable id,
-# where the export writes it on the CybOX object id
-_PORT_PREFIX_MISREAD = 'the port prefix is read off the wrong id'
 # `last-modified` is read, and `key` + `hive` + `last-modified` fold the
 # object into one `regkey` attribute
 _REGISTRY_KEY_FOLDED = 'a registry key of three attributes folds into one'
@@ -161,25 +160,10 @@ _GROUP_LIST_UNREAD = 'the `group_list` carrier is never read'
 
 # What a STIX 1 round trip of every MISP object fixture still loses, per
 # object: its name, the object relations that do not come back, the ones that
-# come back under a name the MISP object never had, and why. 706 of 719
+# come back under a name the MISP object never had, and why. 711 of 719
 # object attributes survive; the rest is work still to do, and this table is
 # where its progress is visible.
 _CORPUS_ROUND_TRIP_LOSSES = {
-    ('get_event_with_escaped_values_v20', 5): (
-        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
-    ),
-    ('get_event_with_escaped_values_v21', 5): (
-        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
-    ),
-    ('get_event_with_ip_port_object', 0): (
-        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
-    ),
-    ('get_event_with_object_confidence_tags', 0): (
-        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
-    ),
-    ('get_event_with_object_references', 4): (
-        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
-    ),
     ('get_event_with_registry_key_and_values_objects', 0): (
         'registry-key', ('hive', 'key', 'last-modified'), (),
         _REGISTRY_KEY_FOLDED
@@ -5797,6 +5781,229 @@ class TestSTIX1Import(TestSTIX):
             datetime(2020, 10, 25, 16, 22, tzinfo=timezone.utc)
         )
 
+    def test_internal_ip_port_ports_keep_their_feature(self):
+        """The export writes the `src`/`dst` feature of a port on the id of
+        its CybOX `Port`, `dstPort-{uuid}`: read there, a `dst-port` comes
+        back as itself."""
+        event = get_event_with_ip_port_object()
+        misp_object = event['Event']['Object'][0]
+        misp_object['Attribute'].append(
+            {
+                'uuid': '0b3e1c2d-4f5a-4b6c-8d7e-9f0a1b2c3d4e',
+                'type': 'port', 'object_relation': 'src-port',
+                'value': '8443'
+            }
+        )
+        _, exported, converted, warnings = self._round_trip_object(
+            event, 'ip-port'
+        )
+        self.assertEqual(warnings, [])
+        for exported_port in exported['Attribute']:
+            if exported_port['type'] != 'port':
+                continue
+            relation = exported_port['object_relation']
+            with self.subTest(relation=relation):
+                port, = converted.get_attributes_by_relation(relation)
+                self.assertEqual(port.uuid, exported_port['uuid'])
+                self.assertEqual(str(port.value), exported_port['value'])
+        self.assertEqual(converted.get_attributes_by_relation('port'), [])
+
+    def _round_trip_indicator_objects(self, event):
+        """The event a STIX 1 round trip gives back, every object in the
+        event exported as the Indicator a `to_ids` object is."""
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = True
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        return parser.misp_event
+
+    def test_internal_folded_registry_key_reads_no_comment(self):
+        """A `registry-key` Indicator carries the template's description when
+        the object has no comment of its own: read against the template the
+        CybOX `WindowsRegistryKey` names, not the `file` its meta-category
+        does, it is no comment on the attribute the object folds into."""
+        event = get_event_with_registry_key_and_values_objects()
+        registry_key = event['Event']['Object'][0]
+        self.assertEqual(registry_key['name'], 'registry-key')
+        registry_key['description'] = _template_description('registry-key')
+        regkey, = self._round_trip_indicator_objects(event).attributes
+        self.assertEqual(regkey.type, 'regkey')
+        self.assertFalse(regkey.get('comment'))
+
+    def test_internal_folded_registry_key_keeps_its_comment(self):
+        event = get_event_with_registry_key_and_values_objects()
+        registry_key = event['Event']['Object'][0]
+        registry_key['comment'] = 'Run key the dropper sets'
+        regkey, = self._round_trip_indicator_objects(event).attributes
+        self.assertEqual(regkey.comment, 'Run key the dropper sets')
+
+    def test_internal_passive_dns_indicator_round_trips(self):
+        """A `passive-dns` object is a named `Custom` object under its
+        `network` meta-category: read as the template it names, a `to_ids`
+        one comes back as the object it was."""
+        event = get_event_with_ip_port_object()
+        event['Event']['Object'] = [
+            {
+                'name': 'passive-dns', 'meta-category': 'network',
+                'uuid': '2e5f3a4b-6c7d-4e8f-9a0b-1c2d3e4f5a6b',
+                'timestamp': '1603642920',
+                'Attribute': [
+                    {
+                        'uuid': '3f6a4b5c-7d8e-4f9a-8b1c-2d3e4f5a6b7c',
+                        'type': 'text', 'object_relation': 'rrname',
+                        'value': 'circl.lu'
+                    },
+                    {
+                        'uuid': '4a7b5c6d-8e9f-4a0b-9c2d-3e4f5a6b7c8d',
+                        'type': 'text', 'object_relation': 'rrtype',
+                        'value': 'A'
+                    }
+                ]
+            }
+        ]
+        passive_dns, = self._round_trip_indicator_objects(event).objects
+        self.assertEqual(passive_dns.name, 'passive-dns')
+        self.assertEqual(
+            sorted(
+                (attribute.object_relation, attribute.value)
+                for attribute in passive_dns.attributes
+            ),
+            [('rrname', 'circl.lu'), ('rrtype', 'A')]
+        )
+
+    def test_internal_unreferenced_pe_section_round_trips(self):
+        """A `pe-section` no `pe` references travels as a `Custom` object,
+        read back as the section it was - an event holding nothing else
+        included."""
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': 'pe-section', 'meta-category': 'file',
+                'uuid': '5c9e1a3d-7f4b-4d0c-9e8a-2b3c4d5e6f70',
+                'timestamp': '1603642920',
+                'Attribute': [
+                    {
+                        'uuid': '6d0f2b4e-8a5c-4e1d-8f9b-3c4d5e6f7a81',
+                        'type': 'text', 'object_relation': 'name',
+                        'value': '.rsrc'
+                    },
+                    {
+                        'uuid': '7e1a3c5f-9b6d-4f2e-9a0c-4d5e6f7a8b92',
+                        'type': 'float', 'object_relation': 'entropy',
+                        'value': '7.836462238824369'
+                    }
+                ]
+            }
+        ]
+        _, exported, converted, _ = self._round_trip_object(event, 'pe-section')
+        self.assertEqual(converted.uuid, exported['uuid'])
+        self.assertEqual(
+            sorted(
+                (attribute.object_relation, str(attribute.value))
+                for attribute in converted.attributes
+            ),
+            [('entropy', '7.836462238824369'), ('name', '.rsrc')]
+        )
+
+    def _assert_values_round_trip(self, name, attributes):
+        """A STIX 1 round trip of a single MISP object built of the
+        `(type, relation, value)` attributes gives every one of them back,
+        with no warning."""
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': '9a3c5e7b-1d8f-4b4a-8c2e-6f7a8b9c0d1e',
+                'timestamp': '1603642920',
+                'Attribute': [
+                    {
+                        'type': attribute_type, 'object_relation': relation,
+                        'value': value
+                    }
+                    for attribute_type, relation, value in attributes
+                ]
+            }
+        ]
+        *_, converted, warnings = self._round_trip_object(event, name)
+        self.assertEqual(warnings, [])
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.object_relation, attribute.value)
+                for attribute in converted.attributes
+            ),
+            sorted(attributes)
+        )
+
+    def test_internal_email_header_fields_keep_every_value(self):
+        self._assert_values_round_trip(
+            'email',
+            (
+                ('email-src', 'from', 'first@example.com'),
+                ('email-src', 'from', 'second@example.com'),
+                ('email-subject', 'subject', 'Invoice'),
+                ('email-subject', 'subject', 'Re: Invoice')
+            )
+        )
+
+    def test_internal_credential_format_and_type_keep_every_value(self):
+        self._assert_values_round_trip(
+            'credential',
+            (
+                ('text', 'username', 'admin'),
+                ('text', 'password', 'P4ssw0rd'),
+                ('text', 'format', 'clear-text'),
+                ('text', 'format', 'hashed'),
+                ('text', 'type', 'password'),
+                ('text', 'type', 'api-key')
+            )
+        )
+
+    def test_internal_network_socket_keeps_every_state(self):
+        self._assert_values_round_trip(
+            'network-socket',
+            (
+                ('ip-dst', 'ip-dst', '198.51.100.4'),
+                ('text', 'state', 'listening'),
+                ('text', 'state', 'established')
+            )
+        )
+
+    def test_internal_url_repeated_relations_round_trip(self):
+        """Each value of a `url` relation is a member of its own, read back
+        under the uuid it carries - a bare `port` keeping its relation."""
+        event = get_event_with_url_object()
+        misp_object = event['Event']['Object'][0]
+        misp_object['Attribute'] = [
+            {
+                'uuid': uuid, 'type': attribute_type,
+                'object_relation': relation, 'value': value
+            }
+            for uuid, attribute_type, relation, value in (
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c41', 'url', 'url',
+                 'https://circl.lu/team'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c42', 'domain', 'domain',
+                 'circl.lu'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c43', 'domain', 'domain',
+                 'misp-project.org'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c44', 'hostname', 'host',
+                 'www.circl.lu'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c45', 'hostname', 'host',
+                 'misp.circl.lu'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c46', 'ip-dst', 'ip',
+                 '149.13.33.14'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c47', 'ip-dst', 'ip',
+                 '149.13.33.4'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c48', 'port', 'port',
+                 '443'),
+                ('0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c49', 'port', 'port',
+                 '8443')
+            )
+        ]
+        _, exported, converted, warnings = self._round_trip_object(event, 'url')
+        self.assertEqual(warnings, [])
+        self._assert_attributes_kept(exported, converted)
+
     def test_internal_attack_pattern_round_trips_every_relation(self):
         """The summary is the untagged description, `prerequisites` and
         `solutions` the ones tagged with their relation, and each related
@@ -6073,6 +6280,42 @@ class TestSTIX1Import(TestSTIX):
                         self._derived_attribute_uuid(converted.uuid, attribute)
                     )
                 )
+
+    def test_external_idless_email_keys_its_attachment_reference(self):
+        """An idless email Object takes the uuid of its Observable, and the
+        reference to an attachment it does not embed is keyed on that uuid:
+        it came from the Object's own id, which named no object."""
+        email_uuid = '5b8c6d7e-9f0a-4b1c-8d3e-4f5a6b7c8d9e'
+        file_uuid = '6c9d7e8f-0a1b-4c2d-9e4f-5a6b7c8d9e0f'
+        attached = File()
+        attached.file_name = 'invoice.pdf'
+        attached.md5 = _MD5_HASH
+        attached_object = Object(attached)
+        attached_object.id_ = f'example:File-{file_uuid}'
+        email = EmailMessage()
+        email.header = EmailHeader()
+        email.header.from_ = 'sender@example.com'
+        email.header.subject = 'Invoice'
+        email.attachments = Attachments()
+        email.attachments.append(attached_object.id_)
+        email_object = Object(email)
+        email_object.id_ = None
+        email_observable = Observable(email_object)
+        email_observable.id_ = f'example:Observable-{email_uuid}'
+        stix_package = STIXPackage()
+        stix_package.add_observable(email_observable)
+        stix_package.add_observable(Observable(attached_object))
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        email_object, = parser.misp_event.get_objects_by_name('email')
+        self.assertEqual(email_object.uuid, email_uuid)
+        self.assertEqual(
+            [
+                (reference.referenced_uuid, reference.relationship_type)
+                for reference in email_object.references
+            ],
+            [(file_uuid, 'attachment')]
+        )
 
     def test_external_two_imports_give_identical_attribute_uuids(self):
         event = get_base_event()
