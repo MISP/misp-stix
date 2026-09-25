@@ -197,20 +197,25 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 # The `filename|<hash>` composite MISP has no type for: both
                 # values are kept, the pairing is not. The hash is what the
                 # record existed for, so it keeps the Observable id and the
-                # filename qualifying it, which no id names, takes a random
-                # uuid
-                self._add_attribute(
-                    {
-                        'type': 'filename', 'value': filename,
-                        **{
-                            key: value for key, value in attribute.items()
-                            if key != 'uuid'
-                        }
-                    },
-                    object_id
+                # filename qualifying it, which no id names, takes a uuid
+                # derived from the hash's - the same on every import
+                filename_attribute = {
+                    'type': 'filename', 'value': filename,
+                    **{
+                        key: value for key, value in attribute.items()
+                        if key != 'uuid'
+                    }
+                }
+                filename_uuid = self._derived_uuid(
+                    attribute.get('uuid'), f'filename - {filename}'
                 )
+                if filename_uuid is not None:
+                    filename_attribute = {
+                        **filename_attribute, 'uuid': filename_uuid
+                    }
+                self._add_attribute(filename_attribute, object_id)
         # Appended last: the relation standing in for a comment is read
-        # first, and the filename above takes a random uuid, not this one
+        # first, and the filename above takes its own uuid, not this one
         if uuid_comment is not None:
             attribute['comment'] = (
                 f"{attribute['comment']} - {uuid_comment}"
@@ -455,10 +460,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _derived_uuid(self, object_uuid: Optional[str],
                       feature: str) -> Optional[str]:
         """Derive the uuid of a record the STIX 1 shape carries no id for:
-        an object under the one the observable landed as, or an attribute of
-        an object.
+        an object under the one the observable landed as, an attribute of an
+        object, or the file name split off the hash of a `filename|<hash>`
+        composite MISP has no type for.
 
-        :param object_uuid: the uuid of the object the record hangs off
+        :param object_uuid: the uuid of the object - or of the hash attribute
+            - the record hangs off
         :param feature: what the record is under it
         :return: the derived uuid, None when there is nothing to derive it
             from and pymisp gives the record a random one
