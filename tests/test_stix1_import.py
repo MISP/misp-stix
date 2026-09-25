@@ -122,7 +122,8 @@ from .test_events import (
     get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
-    get_event_with_undefined_attributes, get_event_with_url_object,
+    get_event_with_undefined_attributes, get_event_with_url_attributes,
+    get_event_with_url_object,
     get_event_with_user_account_object, get_event_with_user_account_objects,
     get_event_with_vulnerability_attribute,
     get_event_with_vulnerability_galaxy, get_event_with_vulnerability_object,
@@ -2637,7 +2638,7 @@ class TestSTIX1Import(TestSTIX):
                 )
                 # The hash is the value the attribute existed for, so it keeps
                 # the uuid of the Observable; the file name qualifying it takes
-                # a random one, as every other import-side attribute does
+                # one derived from the hash's, the same on every import
                 residue = [
                     attribute for attribute in parser.misp_event.attributes
                     if attribute.type in ('filename', 'other')
@@ -2650,8 +2651,20 @@ class TestSTIX1Import(TestSTIX):
                     residue[1].uuid,
                     get_hash_attributes()['vhash']['uuid']
                 )
-                self.assertNotEqual(
-                    residue[0].uuid, get_hash_attributes()['vhash']['uuid']
+                self.assertEqual(
+                    residue[0].uuid,
+                    str(
+                        uuid5(
+                            _UUIDv4,
+                            f"{get_hash_attributes()['vhash']['uuid']} - "
+                            'filename - filename14'
+                        )
+                    )
+                )
+                again = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(
+                    [attribute.uuid for attribute in again.misp_event.attributes],
+                    [attribute.uuid for attribute in parser.misp_event.attributes]
                 )
                 # Both halves keep what the attribute they came from carried -
                 # the comment on the Indicator a `to_ids` attribute is
@@ -2675,6 +2688,43 @@ class TestSTIX1Import(TestSTIX):
                         'filename14 and '
                         f"{get_hash_attributes()['vhash']['value']} converted "
                         'separately.'
+                    ]
+                )
+
+    def test_internal_misp_export_link_round_trip(self):
+        """A `link`, a `url` and a `uri` are the same URI object on the wire
+        and the category travels on the relationship. Under a category a
+        `url` may not take, the URI can only have been a `link`, and comes
+        back as one in its category - where pymisp used to drop the category
+        and give the `url` it read `Network activity`. Under a category a
+        `url` takes too, the `link` is lost and comes back as that `url`."""
+        link = get_event_with_url_attributes()['Event']['Attribute'][0]
+        read_back = {
+            'Internal reference': 'link', 'Support Tool': 'link',
+            'Antivirus detection': 'link', 'External analysis': 'url'
+        }
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_url_attributes()
+                event['Event']['Attribute'] = [
+                    {
+                        **link, 'category': category, 'to_ids': to_ids,
+                        'uuid': f"{link['uuid'][:-1]}{index}"
+                    }
+                    for index, category in enumerate(read_back)
+                ]
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.uuid, attribute.type, attribute.category,
+                         attribute.to_ids, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [
+                        (attribute['uuid'], read_back[attribute['category']],
+                         attribute['category'], to_ids, link['value'])
+                        for attribute in event['Event']['Attribute']
                     ]
                 )
 
