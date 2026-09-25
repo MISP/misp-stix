@@ -110,7 +110,7 @@ from .test_events import (
     get_event_with_file_object, get_event_with_file_object_with_artifact,
     get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_ip_port_object,
-    get_event_with_malware_galaxy,
+    get_event_with_malware_galaxy, get_event_with_network_socket_object,
     get_event_with_non_conforming_object_relations,
     get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
     get_event_with_hash_composite_attributes, get_event_with_mutex_object,
@@ -127,7 +127,7 @@ from .test_events import (
     get_event_with_vulnerability_attribute,
     get_event_with_vulnerability_galaxy, get_event_with_vulnerability_object,
     get_event_with_weakness_attribute, get_event_with_weakness_object,
-    get_event_with_whois_registrar_attribute,
+    get_event_with_whois_object, get_event_with_whois_registrar_attribute,
     get_event_with_x509_fingerprint_attributes, get_event_with_x509_object,
     get_event_with_windows_service_attributes, get_hash_attributes)
 
@@ -2913,6 +2913,128 @@ class TestSTIX1Import(TestSTIX):
                 self._assert_relations_round_trip(
                     converted, exported, relations
                 )
+
+    @staticmethod
+    def _with_repeated_values(event, name, values):
+        """The event, its `name` object carrying one more value of each
+        relation named, copied off the attribute it has."""
+        misp_object, = (
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == name
+        )
+        for relation, value in values.items():
+            attribute, = (
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] == relation
+            )
+            misp_object['Attribute'].append(
+                {**attribute, 'uuid': str(uuid5(_UUIDv4, relation)),
+                 'value': value}
+            )
+        return misp_object
+
+    def test_internal_misp_export_repeated_single_field_values_round_trip(self):
+        """A native CybOX field holds one value: the export wrote the last one
+        and dropped the others, in silence. The first is the field's, every
+        other one the property bag's, under its relation."""
+        for fixture, name, values in (
+                (
+                    get_event_with_asn_object, 'asn',
+                    {'asn': 'AS9999', 'description': 'Peering'}
+                ),
+                (
+                    get_event_with_credential_object, 'credential',
+                    {'username': 'root', 'text': 'Second account'}
+                ),
+                (
+                    get_event_with_network_socket_object, 'network-socket',
+                    {
+                        'protocol': 'UDP', 'ip-src': '198.51.100.77',
+                        'src-port': '4444', 'address-family': 'AF_INET6',
+                        'hostname-dst': 'second.example.com',
+                        'socket-type': 'SOCK_DGRAM', 'domain-family': 'PF_INET6'
+                    }
+                ),
+                (
+                    get_event_with_pe_objects, 'pe',
+                    {
+                        'company-name': 'Second Company', 'imphash': 'a' * 32,
+                        'number-sections': '9', 'type': 'dll'
+                    }
+                ),
+                (
+                    get_event_with_process_object_v2, 'process',
+                    {'name': 'second.exe', 'pid': '999', 'image': 'second.exe'}
+                ),
+                (
+                    get_event_with_user_account_object, 'user-account',
+                    {
+                        'username': 'root', 'display-name': 'Root',
+                        'password': 'S3cond'
+                    }
+                ),
+                (
+                    get_event_with_whois_object, 'whois',
+                    {
+                        'registrar': 'Second Registrar',
+                        'registrant-name': 'Bob',
+                        'registrant-email': 'bob@example.com'
+                    }
+                )):
+            with self.subTest(name=name):
+                event = fixture()
+                exported = self._with_repeated_values(event, name, values)
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                converted, = parser.misp_event.get_objects_by_name(name)
+                self._assert_relations_round_trip(
+                    converted, exported, tuple(values)
+                )
+
+    def test_internal_misp_export_process_pid_that_is_no_integer_round_trips(self):
+        """cybox takes a pid as an integer, the template as text: the object
+        was lost. Carried by the property bag, it comes back as it was."""
+        event = get_event_with_process_object_v2()
+        exported, = event['Event']['Object']
+        for attribute in exported['Attribute']:
+            if attribute['object_relation'] == 'pid':
+                attribute['value'] = 'pid-2510'
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.get_objects_by_name('process')
+        self._assert_relations_round_trip(converted, exported, ('pid',))
+
+    def test_internal_misp_export_repeated_vulnerability_values(self):
+        """A repeated summary is one more description, read back as one more
+        summary; a repeated id has no room, and reaching the CVE field as a
+        list it cost the object, and a package holding nothing else."""
+        event = get_event_with_vulnerability_object()
+        exported = self._with_repeated_values(
+            event, 'vulnerability', {'summary': 'Second summary'}
+        )
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.get_objects_by_name('vulnerability')
+        self._assert_relations_round_trip(converted, exported, ('summary',))
+        event = get_event_with_vulnerability_object()
+        exported = self._with_repeated_values(
+            event, 'vulnerability', {'id': 'CVE-2099-0001'}
+        )
+        cve_id, _ = (
+            attribute['value'] for attribute in exported['Attribute']
+            if attribute['object_relation'] == 'id'
+        )
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.get_objects_by_name('vulnerability')
+        self.assertEqual(
+            [
+                attribute.value for attribute
+                in converted.get_attributes_by_relation('id')
+            ],
+            [cve_id]
+        )
 
     def test_internal_misp_export_declared_types_read_back(self):
         """A MISP object template declares the type of every relation it

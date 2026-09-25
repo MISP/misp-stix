@@ -869,6 +869,7 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
         parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
         parser.parse_misp_event(event['Event'])
         self.assertEqual(parser.errors, {})
+        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
         incident = parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         return observable.item.object_.properties
@@ -945,6 +946,219 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
         )
         self.assertTrue(socket.is_listening)
         self.assertEqual(self._bag(socket), [('state', 'established')])
+
+    def test_single_value_fields_keep_the_first_and_bag_the_others(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        for name, attributes, read in (
+                (
+                    'asn',
+                    (('AS', 'asn', 'AS1234'), ('AS', 'asn', 'AS5678'),
+                     ('text', 'description', 'Transit'),
+                     ('text', 'description', 'Peering')),
+                    lambda asn: (asn.handle.value, asn.name.value)
+                ),
+                (
+                    'credential',
+                    (('text', 'username', 'admin'),
+                     ('text', 'username', 'root'),
+                     ('text', 'text', 'First'), ('text', 'text', 'Second')),
+                    lambda account: (
+                        account.username.value, account.description.value
+                    )
+                ),
+                (
+                    'network-socket',
+                    (('ip-src', 'ip-src', '198.51.100.4'),
+                     ('ip-src', 'ip-src', '198.51.100.5'),
+                     ('port', 'src-port', '8080'), ('port', 'src-port', '8443'),
+                     ('text', 'protocol', 'TCP'), ('text', 'protocol', 'UDP')),
+                    lambda socket: (
+                        socket.local_address.ip_address.address_value.value,
+                        str(socket.local_address.port.port_value.value),
+                        socket.protocol.value
+                    )
+                ),
+                (
+                    'process',
+                    (('text', 'name', 'first.exe'),
+                     ('text', 'name', 'second.exe'),
+                     ('text', 'pid', '1234'), ('text', 'pid', '5678')),
+                    lambda process: (process.name.value, str(process.pid.value))
+                ),
+                (
+                    'user-account',
+                    (('text', 'username', 'admin'),
+                     ('text', 'username', 'root'),
+                     ('text', 'display-name', 'Admin'),
+                     ('text', 'display-name', 'Root')),
+                    lambda account: (
+                        account.username.value, account.full_name.value
+                    )
+                ),
+                (
+                    'whois',
+                    (('whois-registrar', 'registrar', 'First Registrar'),
+                     ('whois-registrar', 'registrar', 'Second Registrar'),
+                     ('whois-registrant-name', 'registrant-name', 'Alice'),
+                     ('whois-registrant-name', 'registrant-name', 'Bob')),
+                    lambda whois: (
+                        whois.registrar_info.name.value,
+                        whois.registrants[0].name.value
+                    )
+                )):
+            with self.subTest(name=name):
+                properties = self._parse_object(name, attributes)
+                self.assertEqual(
+                    read(properties),
+                    tuple(value for _, _, value in attributes[::2])
+                )
+                self.assertEqual(
+                    self._bag(properties),
+                    sorted(
+                        (relation, value)
+                        for _, relation, value in attributes[1::2]
+                    )
+                )
+
+    def test_pe_single_value_fields_keep_the_first_and_bag_the_others(self):
+        event = get_base_event()
+        pe_uuid = '9a3c5e7b-1d8f-4b4a-8c2e-6f7a8b9c0d1e'
+        event['Event']['Object'] = [
+            {
+                'name': 'file', 'meta-category': 'file',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': 'filename', 'object_relation': 'filename',
+                     'value': 'oui.exe'}
+                ],
+                'ObjectReference': [
+                    {'referenced_uuid': pe_uuid,
+                     'relationship_type': 'includes',
+                     'Object': {'name': 'pe'}}
+                ]
+            },
+            {
+                'name': 'pe', 'meta-category': 'file', 'uuid': pe_uuid,
+                'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': attribute_type, 'object_relation': relation,
+                     'value': value}
+                    for attribute_type, relation, value in (
+                        ('text', 'company-name', 'First Company'),
+                        ('text', 'company-name', 'Second Company'),
+                        ('imphash', 'imphash', 'a' * 32),
+                        ('imphash', 'imphash', 'b' * 32),
+                        ('text', 'type', 'exe'), ('text', 'type', 'dll')
+                    )
+                ]
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        pe = observable.item.object_.properties
+        self.assertEqual(pe.resources[0].companyname.value, 'First Company')
+        hash_value, = pe.headers.file_header.hashes
+        self.assertEqual(hash_value.simple_hash_value.value, 'a' * 32)
+        self.assertEqual(pe.type_.value, 'exe')
+        self.assertEqual(
+            self._bag(pe),
+            [('company-name', 'Second Company'), ('imphash', 'b' * 32),
+             ('type', 'dll')]
+        )
+
+    def test_process_pid_that_is_no_integer_goes_to_the_bag(self):
+        # cybox takes a pid as an integer, the template as text: the object
+        # was lost, with a traceback and a warning calling it unmapped
+        process = self._parse_object(
+            'process',
+            (('text', 'name', 'first.exe'), ('text', 'pid', 'pid-1234'),
+             ('text', 'parent-pid', 'unknown'))
+        )
+        self.assertEqual(process._XSI_TYPE, 'ProcessObjectType')
+        self.assertIsNone(process.pid)
+        self.assertIsNone(process.parent_pid)
+        self.assertEqual(
+            self._bag(process),
+            [('parent-pid', 'unknown'), ('pid', 'pid-1234')]
+        )
+        features = f'process object (uuid: {self._OBJECT_UUID})'
+        self.assertEqual(
+            self._warnings,
+            [
+                f"'pid' in the {features} is not an integer: 'pid-1234' "
+                'written as a custom property.',
+                f"'parent-pid' in the {features} is not an integer: "
+                "'unknown' written as a custom property."
+            ]
+        )
+
+    def _vulnerability(self, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': 'vulnerability', 'meta-category': 'vulnerability',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': attribute_type, 'object_relation': relation,
+                     'value': value}
+                    for attribute_type, relation, value in attributes
+                ]
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
+        ttp, = parser.stix_package.ttps.ttp
+        exploit_target = ttp.exploit_targets[0].item
+        vulnerability, = exploit_target.vulnerabilities
+        return vulnerability
+
+    def test_vulnerability_repeated_summary_is_one_more_description(self):
+        vulnerability = self._vulnerability(
+            (('vulnerability', 'id', 'CVE-2021-44228'),
+             ('text', 'summary', 'Log4Shell'),
+             ('text', 'summary', 'JNDI lookup'))
+        )
+        self.assertEqual(
+            [description.value for description in vulnerability.descriptions],
+            ['Log4Shell', 'JNDI lookup']
+        )
+        self.assertEqual(self._warnings, [])
+
+    def test_vulnerability_repeated_value_with_no_room_is_warned(self):
+        # A repeated `id` reached the CVE field as a list: the object was
+        # lost with a traceback; the others went in silence
+        vulnerability = self._vulnerability(
+            (('vulnerability', 'id', 'CVE-2021-44228'),
+             ('vulnerability', 'id', 'CVE-2021-45046'),
+             ('datetime', 'created', '2021-11-26T00:00:00'),
+             ('datetime', 'created', '2021-11-30T00:00:00'),
+             ('datetime', 'published', '2021-12-10T00:00:00'),
+             ('datetime', 'published', '2021-12-14T00:00:00'),
+             ('float', 'cvss-score', '10.0'),
+             ('float', 'cvss-score', '9.0'))
+        )
+        self.assertEqual(vulnerability.cve_id, 'CVE-2021-44228')
+        self.assertEqual(str(vulnerability.cvss_score.overall_score), '10.0')
+        features = f'vulnerability object (uuid: {self._OBJECT_UUID})'
+        self.assertEqual(
+            self._warnings,
+            [
+                f"{relation!r} has no place in the STIX 1 {features}: "
+                f"{value!r} not converted."
+                for relation, value in (
+                    ('id', 'CVE-2021-45046'),
+                    ('created', '2021-11-30T00:00:00'),
+                    ('published', '2021-12-14T00:00:00'),
+                    ('cvss-score', '9.0')
+                )
+            ]
+        )
 
 
 class TestSTIX1UnreferencedPESection(TestSTIX):
