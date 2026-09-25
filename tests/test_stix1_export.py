@@ -20,7 +20,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4, uuid5, UUID
 from .test_events import *
-from .test_events import _INDICATOR_ATTRIBUTE, _TEST_USER_ACCOUNT_OBJECT
+from .test_events import _INDICATOR_ATTRIBUTE, _TEST_SECTOR_GALAXY, _TEST_USER_ACCOUNT_OBJECT
 from ._test_stix import TestSTIX
 from ._test_stix_export import TestCollectionSTIX1Export
 
@@ -966,6 +966,105 @@ class TestSTIX1UnreferencedPESection(TestSTIX):
                 )
 
 
+class TestSTIX1GalaxyTags(TestSTIX):
+    """What the export writes for the tag of a galaxy cluster: a STIX 1
+    construct names a cluster by its value, and a galaxy of a type no
+    construct holds is written nowhere, so the `misp-galaxy:` tag goes on the
+    handling of the record the galaxy is attached to, mapped or not - once,
+    whether the MISP record carries it already or not."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _SECTOR_TAG = 'misp-galaxy:sector="IT - Security"'
+
+    def _parse_event(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _markings(stix_object):
+        return tuple(
+            marking.statement
+            for marking in stix_object.handling[0].marking_structures
+        )
+
+    def test_unmapped_event_galaxy_tag_reaches_the_incident(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_sector_galaxy()
+                parser = self._parse_event(event, version)
+                incident = parser.stix_package.incidents[0]
+                self.assertEqual(self._markings(incident), (self._SECTOR_TAG,))
+                self.assertIn(
+                    'sector galaxy in event not mapped.',
+                    parser.warnings[event['Event']['uuid']]
+                )
+
+    def test_event_galaxy_tag_the_event_carries_is_written_once(self):
+        """A MISP event carries the tag of every cluster it holds: the
+        Incident handling is the one the event tags alone make."""
+        tags = [{'name': 'tlp:white'}, {'name': self._SECTOR_TAG}]
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_sector_galaxy()
+                event['Event']['Tag'] = deepcopy(tags)
+                untouched = get_base_event()
+                untouched['Event']['Tag'] = deepcopy(tags)
+                self.assertEqual(
+                    self._parse_event(event, version).stix_package.incidents[0].handling.to_dict(),
+                    self._parse_event(untouched, version).stix_package.incidents[0].handling.to_dict()
+                )
+
+    def test_cluster_tag_name_is_the_tag_written(self):
+        """A custom galaxy's cluster tag names the cluster by uuid, not by the
+        value a tag built from the type would hold."""
+        event = get_event_with_custom_malware_galaxy('2.1')
+        cluster = event['Event']['Galaxy'][0]['GalaxyCluster'][0]
+        tag_name = f'misp-galaxy:stix-2.1-malware="{cluster["uuid"]}"'
+        cluster['tag_name'] = tag_name
+        for version in self._VERSIONS:
+            with self.subTest(version=version, tagged=False):
+                incident = self._parse_event(deepcopy(event), version).stix_package.incidents[0]
+                self.assertEqual(self._markings(incident), (tag_name,))
+            with self.subTest(version=version, tagged=True):
+                tagged = deepcopy(event)
+                tagged['Event']['Tag'] = [{'name': tag_name}]
+                incident = self._parse_event(tagged, version).stix_package.incidents[0]
+                self.assertEqual(self._markings(incident), (tag_name,))
+
+    def test_mapped_event_galaxy_keeps_its_tag(self):
+        """A `ransomware` cluster is written as a malware TTP naming its value:
+        the tag is what tells the import its galaxy is not `mitre-malware`."""
+        event = get_event_with_malware_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        galaxy['type'] = 'ransomware'
+        cluster = galaxy['GalaxyCluster'][0]
+        cluster['type'] = 'ransomware'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                stix_package = self._parse_event(deepcopy(event), version).stix_package
+                self.assertEqual(len(stix_package.ttps.ttp), 1)
+                self.assertEqual(
+                    self._markings(stix_package.incidents[0]),
+                    (f'misp-galaxy:ransomware="{cluster["value"]}"',)
+                )
+
+    def test_unmapped_attribute_galaxy_tag_reaches_the_indicator(self):
+        for version in self._VERSIONS:
+            for tags in ([], [{'name': self._SECTOR_TAG}]):
+                with self.subTest(version=version, tagged=bool(tags)):
+                    event = get_base_event()
+                    attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+                    attribute['Galaxy'] = [deepcopy(_TEST_SECTOR_GALAXY)]
+                    attribute['Tag'] = deepcopy(tags)
+                    event['Event']['Attribute'] = [attribute]
+                    parser = self._parse_event(event, version)
+                    incident = parser.stix_package.incidents[0]
+                    indicator = incident.related_indicators.indicator[0].item
+                    self.assertEqual(self._markings(indicator), (self._SECTOR_TAG,))
+                    self.assertIsNone(incident.handling)
+
+
 class _STIX1NamespaceTestCase(TestSTIX):
     # What the two namespace test classes below share: the input files, the
     # copy that keeps an export inside its temporary directory, and the
@@ -1600,6 +1699,13 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(related_threat_actor.relationship.value, galaxy['name'])
         self.assertEqual(related_threat_actor.item.idref, threat_actor_id)
 
+    @staticmethod
+    def _cluster_tags(galaxy):
+        return tuple(
+            f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
+            for cluster in galaxy['GalaxyCluster']
+        )
+
     def _check_handling_markings(self, stix_object, expected):
         markings = tuple(
             self._get_marking_value(marking)
@@ -2101,11 +2207,17 @@ class TestStix1Export(TestSTIX):
     def _test_event_with_tags(self, event):
         self.parser.parse_misp_event(event)
         marking = self.parser.stix_package.incidents[0].handling[0]
-        self.assertEqual(len(marking.marking_structures), 3)
+        # The tag of the cluster the attack pattern TTP carries stays on the
+        # Incident with the others: the TTP names the cluster, not its galaxy
+        self.assertEqual(len(marking.marking_structures), 4)
         markings = tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
         self.assertIn('WHITE', markings)
         self.assertIn('misp:tool="misp2stix"', markings)
         self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
+        self.assertIn(
+            'misp-galaxy:mitre-attack-pattern="Access Token Manipulation - T1134"',
+            markings
+        )
 
     def _test_published_event(self, event):
         self.parser.parse_misp_event(event)
@@ -2244,10 +2356,12 @@ class TestStix1Export(TestSTIX):
         # to the Incident, the way an event-level one is
         incident = stix_package.incidents[0]
         self._check_attributed_threat_actor(incident, galaxy, threat_actor_id)
-        # A converted galaxy takes its `misp-galaxy:` tag with it: only the
-        # attribute's other tag reaches the Indicator's handling
+        # A STIX 1 construct names the cluster by its value alone: the
+        # `misp-galaxy:` tag stays on the Indicator's handling, next to the
+        # attribute's other tag, and carries the galaxy type back
         self._check_handling_markings(
-            incident.related_indicators.indicator[0].item, ('WHITE',)
+            incident.related_indicators.indicator[0].item,
+            ('WHITE', *self._cluster_tags(galaxy))
         )
 
     def _test_attributes_collection_with_target_attributes(self, version, attributes):
@@ -2301,9 +2415,12 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(parser.errors, {})
         stix_package = parser.stix_package
         # No Incident to attribute the actor to: it stands in the STIX Package
-        # on its own, and takes its `misp-galaxy:` tag with it
-        self._check_threat_actor_from_galaxy(stix_package, attribute['Galaxy'][0])
-        self._check_handling_markings(stix_package.indicators[0], ('WHITE',))
+        # on its own, and the Indicator keeps the `misp-galaxy:` tag
+        galaxy = attribute['Galaxy'][0]
+        self._check_threat_actor_from_galaxy(stix_package, galaxy)
+        self._check_handling_markings(
+            stix_package.indicators[0], ('WHITE', *self._cluster_tags(galaxy))
+        )
 
     def _test_embedded_observable_attribute_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -2996,9 +3113,11 @@ class TestStix1Export(TestSTIX):
         indicator = self._check_indicator_object_features(
             incident.related_indicators.indicator[0], misp_object, orgc
         )
-        # The `misp-galaxy:` tag goes with the converted galaxy: only the
-        # object attribute's other tag reaches the Indicator's handling
-        self._check_handling_markings(indicator, ('WHITE',))
+        # The `misp-galaxy:` tag stays on the Indicator's handling, next to
+        # the object attribute's other tag
+        self._check_handling_markings(
+            indicator, ('WHITE', *self._cluster_tags(galaxy))
+        )
 
     def _test_event_with_account_objects_with_attachment(self, event):
         # The `parler-account` template declares `human` a `boolean`, and a
