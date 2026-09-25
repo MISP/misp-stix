@@ -926,12 +926,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return observable
 
     @staticmethod
-    def _add_observable_comment(observable: Observable, record: dict):
+    def _add_record_comment(stix_object: Union[ExploitTarget, Observable],
+                            record: dict):
         # A record exported without `to_ids` has no Indicator to carry its
-        # comment: the Observable's own description does, and only when
-        # there is one, so an uncommented record writes no description
+        # comment, and a `vulnerability` or `weakness` object is a TTP with
+        # none either: the Observable's own description carries it, or the
+        # Exploit Target's, and only when there is one, so an uncommented
+        # record writes no description
         if record.get('comment'):
-            observable.description = record['comment']
+            stix_object.description = record['comment']
 
     def _create_observable_composition(self, observables: list, uuid: str,
                                        name: Optional[str] = None) -> Observable:
@@ -1318,7 +1321,7 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
             indicator = self._handle_attribute_indicator(attribute, observable)
             self._stix_package.add_indicator(indicator)
         else:
-            self._add_observable_comment(observable, attribute)
+            self._add_record_comment(observable, attribute)
             self._stix_package.add_observable(observable)
 
     def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
@@ -1501,7 +1504,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             )
             self._incident.related_indicators.append(related_indicator)
         else:
-            self._add_observable_comment(observable, attribute)
+            self._add_record_comment(observable, attribute)
             related_observable = RelatedObservable(
                 observable,
                 relationship=category
@@ -1727,7 +1730,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 )
 
     def _handle_misp_object(self, misp_object: dict, observable: Observable):
-        self._add_observable_comment(observable, misp_object)
+        self._add_record_comment(observable, misp_object)
         related_observable = RelatedObservable(
             observable,
             relationship=misp_object.get('meta-category')
@@ -2467,6 +2470,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             self._ttp_references[misp_object['uuid']] = references
         exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
         exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
+        self._add_record_comment(exploit_target, misp_object)
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
@@ -2485,6 +2489,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             self._ttp_references[misp_object['uuid']] = references
         exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
         exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
+        self._add_record_comment(exploit_target, misp_object)
         exploit_target.add_weakness(weakness)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
