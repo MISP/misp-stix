@@ -144,12 +144,37 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
 
     # Define type & value of an attribute or object in MISP
-    def _handle_attribute_type(self, properties, is_object=False, title=None):
+    def _handle_attribute_type(self, properties, title=None):
+        """Read a CybOX object, reduced to a single attribute where the
+        reading MISP core's importer was ported from reduces it.
+
+        The handlers return every attribute they read and decide nothing
+        about how many make a record: the reduction is this step's, taken by
+        every caller that wants a scalar where the CybOX object holds one.
+
+        :param properties: the CybOX object properties
+        :param title: the Observable title, which names an artifact
+        :return: the `(type, value, complementary data)` of an attribute, or
+            the `(name, attributes, complementary data)` of an object
+        """
+        read = self._read_cybox_object(properties, title)
+        reduction = self._mapping.attribute_reductions_mapping(
+            properties._XSI_TYPE
+        )
+        if reduction is None:
+            return read
+        return getattr(self, reduction)(properties, *read)
+
+    def _read_cybox_object(self, properties, title=None):
+        """Read a CybOX object through the handler its type names.
+
+        :param properties: the CybOX object properties
+        :param title: the Observable title, which names an artifact
+        :return: what the handler returns
+        """
         xsi_type = properties._XSI_TYPE
         args = [properties]
-        if xsi_type in ("FileObjectType", "PDFFileObjectType", "WindowsFileObjectType"):
-            args.append(is_object)
-        elif xsi_type == "ArtifactObjectType":
+        if xsi_type == "ArtifactObjectType":
             args.append(title)
         parser = self._mapping.attribute_types_mapping(xsi_type)
         if parser is None:
@@ -606,7 +631,15 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._fetch_attributes_with_partial_key_parsing(properties, 'as_mapping')
         )
         attributes.extend(self._read_custom_properties(properties, 'asn'))
-        return attributes[0] if len(attributes) == 1 else ('asn', self._return_object_attributes(attributes), '')
+        return 'asn', self._return_object_attributes(attributes), ''
+
+    # The one attribute an object holding a single one reads as
+    def _reduce_single_attribute(self, properties, name: str,
+                                 attributes: tuple, compl_data) -> tuple:
+        if len(attributes) == 1:
+            # A single attribute takes the uuid of the record carrying it
+            return self._single_attribute(attributes[0])
+        return name, attributes, compl_data
 
     # Return type & value of an attachment attribute
     def _handle_attachment(self, properties: artifact_object.Artifact, title: str) -> tuple:
@@ -747,9 +780,6 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             embedded, references = self._handle_email_attachment(properties)
             attributes.extend(embedded)
         attributes.extend(self._read_custom_properties(properties, 'email'))
-        if len(attributes) == 1:
-            # A single attribute takes the uuid of the record carrying it
-            return tuple(attributes[0][:3])
         compl_data = {'references': references} if references else ""
         return "email", self._return_object_attributes(attributes), compl_data
 
@@ -833,19 +863,29 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return attributes
 
     # Return type & attributes of a file object
-    def _handle_file(self, properties: file_object.File, is_object: bool) -> tuple:
+    def _handle_file(self, properties: file_object.File) -> tuple:
         object_id = getattr(properties.parent, 'id_', None)
         attributes = self._fetch_file_attributes(properties, object_id)
         attributes.extend(self._read_custom_properties(properties, 'file'))
-        b_hash = bool(properties.hashes)
-        b_file = bool(getattr(properties.file_name, 'value', None))
+        return "file", self._return_object_attributes(attributes), ""
+
+    # A file attribute, where one or two attributes spell one
+    def _reduce_file(self, properties: file_object.File, name: str,
+                     attributes: tuple, compl_data) -> tuple:
         if len(attributes) == 1:
-            attribute = attributes[0]
-            return attribute[0] if attribute[2] != "fullpath" else "filename", attribute[1], ""
+            attribute_type, value, relation = self._single_attribute(
+                attributes[0]
+            )
+            return (
+                attribute_type if relation != "fullpath" else "filename",
+                value, ""
+            )
         if len(attributes) == 2:
+            b_hash = bool(properties.hashes)
+            b_file = bool(getattr(properties.file_name, 'value', None))
             if b_hash and b_file:
                 return self._handle_filename_object(
-                    attributes, is_object, object_id
+                    attributes, getattr(properties.parent, 'id_', None)
                 )
             path, filename = self._handle_filename_path_case(attributes)
             if path and filename:
@@ -853,22 +893,25 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 if '\\' in filename and path == filename:
                     attribute_value = filename
                 return "filename", attribute_value, ""
-        return "file", self._return_object_attributes(attributes), ""
+        return name, attributes, compl_data
 
     # Determine path & filename from a complete path or filename attribute
     @staticmethod
-    def _handle_filename_path_case(attributes: list) -> tuple:
+    def _handle_filename_path_case(attributes: tuple) -> tuple:
         path, filename = [""] * 2
-        if attributes[0][2] == 'filename' and attributes[1][2] == 'path':
-            path = attributes[1][1]
-            filename = attributes[0][1]
-        elif attributes[0][2] == 'path' and attributes[1][2] == 'filename':
-            path = attributes[0][1]
-            filename = attributes[1][1]
+        relations = tuple(
+            attribute['object_relation'] for attribute in attributes
+        )
+        if relations == ('filename', 'path'):
+            path = attributes[1]['value']
+            filename = attributes[0]['value']
+        elif relations == ('path', 'filename'):
+            path = attributes[0]['value']
+            filename = attributes[1]['value']
         return path, filename
 
     # Return the appropriate type & value when we have 1 filename & 1 hash value
-    def _handle_filename_object(self, attributes: list, is_object: bool,
+    def _handle_filename_object(self, attributes: tuple,
                                 object_id: Optional[str] = None) -> tuple:
         """Read the `File` carrying one file name and one hash.
 
@@ -880,29 +923,22 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         and trusted, and the residue becomes the two attributes the two halves
         are: both values are kept, the pairing is not.
 
-        :param attributes: the file name and the hash, as
-            `_fetch_file_attributes` read them
-        :param is_object: whether the properties build a MISP object
+        :param attributes: the file name and the hash, as `_handle_file`
+            returns them
         :param object_id: the id of the object the properties belong to
         :return: the `(type, value, complementary data)` of the attribute -
             the hash, carrying the file name as its complementary data, where
             the composite is no MISP type
         """
         for attribute in attributes:
-            attribute_type, attribute_value, _ = attribute
-            if attribute_type == "filename":
-                filename_value = attribute_value
+            if attribute['type'] == "filename":
+                filename_value = attribute['value']
             else:
-                hash_type, hash_value = attribute_type, attribute_value
-        value = f"{filename_value}|{hash_value}"
-        if is_object:
-            # file object attributes cannot be filename|hash, so it is malware-sample
-            attr_type = "malware-sample"
-            return attr_type, value, attr_type
+                hash_type, hash_value = attribute['type'], attribute['value']
         composite_type = f'filename|{hash_type}'
         if composite_type in _MISP_types:
             # it could be malware-sample as well, but STIX is losing this information
-            return composite_type, value, ""
+            return composite_type, f"{filename_value}|{hash_value}", ""
         self._composite_type_warning(
             composite_type, filename_value, hash_value, object_id
         )
@@ -1028,16 +1064,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_link(properties: link_object.Link) -> tuple:
         return "link", properties.value.value, "link"
 
-    # Return type & value of a mutex attribute, or the attributes of a mutex
-    # object: the properties the name travels with are what tells them apart
+    # Return the attributes of a mutex object
     def _handle_mutex(self, properties: mutex_object.Mutex) -> tuple:
-        event_types = self._mapping.event_types(properties._XSI_TYPE)
         attributes = list(self._read_custom_properties(properties, 'mutex'))
-        if not attributes:
-            return (
-                event_types['type'], properties.name.value,
-                event_types['relation']
-            )
         # cybox holds the name in one field either way: it is the whole of a
         # mutex attribute, and the `name` relation of a mutex object - which
         # the template types, as it types every other relation here
@@ -1050,6 +1079,18 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
         )
         return 'mutex', self._return_object_attributes(attributes), ''
+
+    # A mutex attribute, or a mutex object: the properties the name travels
+    # with are what tells them apart
+    def _reduce_mutex(self, properties: mutex_object.Mutex, name: str,
+                      attributes: tuple, compl_data) -> tuple:
+        if len(attributes) == 1:
+            event_types = self._mapping.event_types(properties._XSI_TYPE)
+            return (
+                event_types['type'], attributes[0]['value'],
+                event_types['relation']
+            )
+        return name, attributes, compl_data
 
     def _handle_network(self, properties: _NETWORK_PROPERTIES_TYPING, mapping: str):
         for feature, field in zip(self._mapping.network_fields(), getattr(self._mapping, mapping)()):
@@ -1375,8 +1416,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         attributes.extend(
             self._read_custom_properties(properties, 'registry-key')
         )
+        return "registry-key", self._return_object_attributes(attributes), ""
+
+    # A regkey or regkey|value attribute, where the hive and the key spell one
+    def _reduce_regkey(self, properties: win_registry_key_object.WinRegistryKey,
+                       name: str, attributes: tuple, compl_data) -> tuple:
         if len(attributes) in (2,3):
-            d_regkey = {key: value for (_, value, key) in attributes}
+            d_regkey = {
+                attribute['object_relation']: attribute['value']
+                for attribute in attributes
+            }
             if 'hive' in d_regkey and 'key' in d_regkey:
                 regkey = self._registry_key_path(
                     d_regkey['hive'], d_regkey['key']
@@ -1384,7 +1433,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 if 'data' in d_regkey:
                     return "regkey|value", f"{regkey} | {d_regkey['data']}", ""
                 return "regkey", regkey, ""
-        return "registry-key", self._return_object_attributes(attributes), ""
+        return name, attributes, compl_data
 
     def _registry_key_path(self, hive: str, key: str) -> str:
         # MISP's key holds its hive, CybOX's does not: the hive is prepended
@@ -1473,18 +1522,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # other `datetime` is
         return datetime(value.year, value.month, value.day, tzinfo=timezone.utc)
 
-    # Parse a whois object:
-    # Return type & attributes of a whois object if we have the required fields
-    # Otherwise create attributes and return type & value of the last attribute to avoid crashing the parent function
+    # Return type & attributes of a whois object
     def _handle_whois(self, properties: whois_object.WhoisEntry):
         attributes = list(self._fetch_attributes_with_key_parsing(properties, 'whois_mapping'))
-        required_one_of = True if attributes else False
         if properties.registrants:
             registrant = properties.registrants[0]
             attributes.extend(self._fetch_attributes_with_key_parsing(registrant, 'whois_registrant_mapping'))
         if properties.creation_date:
             attributes.append(("datetime", self._utc_midnight(properties.creation_date.value), "creation-date"))
-            required_one_of = True
         if properties.updated_date:
             attributes.append(("datetime", self._utc_midnight(properties.updated_date.value), "modification-date"))
         if properties.expiration_date:
@@ -1496,13 +1541,26 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             attribute_type = "text"
             relation = "comment" if attributes else attribute_type
             attributes.append([attribute_type, properties.remarks.value, relation])
-            required_one_of = True
         attributes.extend(self._read_custom_properties(properties, 'whois'))
-        # Testing if we have the required attribute types for Object whois
+        return "whois", self._return_object_attributes(attributes), ""
+
+    # A whois object if we have the required fields: otherwise the attributes
+    # are added in the event, and the last one is returned to not make the
+    # calling function crash
+    def _reduce_whois(self, properties: whois_object.WhoisEntry, name: str,
+                      attributes: tuple, compl_data) -> tuple:
+        required_one_of = (
+            any(
+                getattr(properties, field)
+                for field in self._mapping.whois_mapping()
+            )
+            or properties.creation_date or properties.remarks
+        )
         if required_one_of:
-            # if yes, we return the object type and the attributes
-            return "whois", self._return_object_attributes(attributes), ""
-        # otherwise, attributes are added in the event, and one attribute is returned to not make the function crash
+            return name, attributes, compl_data
+        attributes = [
+            self._single_attribute(attribute) for attribute in attributes
+        ]
         if len(attributes) == 1:
             return attributes[0]
         last_attribute = attributes.pop(-1)
@@ -1897,6 +1955,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if not isinstance(value, str) or not value:
             return None
         return None if value in written_without_a_comment else value
+
+    @staticmethod
+    def _single_attribute(attribute: dict) -> tuple:
+        # The `(type, value, relation)` of an attribute a reduction keeps: it
+        # takes the uuid of the record carrying it, never one its own id read
+        return (
+            attribute['type'], attribute['value'], attribute['object_relation']
+        )
 
     @staticmethod
     def _return_object_attributes(attributes: Union[list, tuple]) -> tuple:

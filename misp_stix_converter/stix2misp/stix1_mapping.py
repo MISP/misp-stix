@@ -39,6 +39,19 @@ class STIX1toMISPMapping:
         WindowsUserAccountObjectType = '_handle_windows_user',
         X509CertificateObjectType = '_handle_x509'
     )
+    # CybOX object type -> the method reducing what its handler reads to the
+    # single attribute a scalar caller takes. Keyed by the CybOX type, not by
+    # the name the handler returns: a `pe` or a custom object shares it.
+    __attribute_reductions_mapping = Mapping(
+        ASObjectType = '_reduce_single_attribute',
+        EmailMessageObjectType = '_reduce_single_attribute',
+        FileObjectType = '_reduce_file',
+        MutexObjectType = '_reduce_mutex',
+        PDFFileObjectType = '_reduce_file',
+        WhoisObjectType = '_reduce_whois',
+        WindowsFileObjectType = '_reduce_file',
+        WindowsRegistryKeyObjectType = '_reduce_regkey'
+    )
     _file_attribute_type = ('filename', 'filename')
     __event_types = Mapping(
         ArtifactObjectType = {"type": "attachment", "relation": "attachment"},
@@ -247,6 +260,11 @@ class STIX1toMISPMapping:
     @classmethod
     def as_mapping(cls) -> dict:
         return cls.__as_mapping
+
+    @classmethod
+    def attribute_reductions_mapping(
+            cls, object_type: str) -> Union[str, None]:
+        return cls.__attribute_reductions_mapping.get(object_type)
 
     @classmethod
     def attribute_types_mapping(cls, object_type: str) -> Union[str, None]:
