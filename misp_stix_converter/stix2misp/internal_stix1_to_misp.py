@@ -572,6 +572,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         :param ttp: the TTP, titled `(MISP Attribute)` or `(MISP Object)`
         """
         ttp_id = self._extract_uuid(ttp.id_)
+        # The title is what tells the two kinds apart here: the Related TTP
+        # is named with the object name or the attribute type, `vulnerability`
+        # either way
+        is_object = (ttp.title or '').endswith(_MISP_OBJECT_TITLE_SUFFIX)
         tags = tuple(self._read_markings(ttp.handling))
         timestamp = (
             self._timestamp_from_date(ttp.timestamp) if ttp.timestamp else None
@@ -600,7 +604,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 if exploit_target.item.vulnerabilities:
                     for vulnerability in exploit_target.item.vulnerabilities:
                         self._parse_vulnerability_object(
-                            vulnerability, ttp_id, comment, tags, timestamp
+                            vulnerability, ttp_id, comment, tags, timestamp,
+                            is_object
                         )
                     converted = True
                 if exploit_target.item.weaknesses and not attack_patterns:
@@ -661,7 +666,19 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def _parse_vulnerability_object(
             self, vulnerability: Vulnerability, ttp_id: str,
             comment: Optional[str] = None, tags: tuple = (),
-            timestamp: Optional[int] = None):
+            timestamp: Optional[int] = None, is_object: bool = False):
+        """Convert the vulnerability a TTP carries: a `vulnerability`
+        attribute where it holds its id alone and the TTP is not titled as a
+        MISP object's, a `vulnerability` object otherwise.
+
+        :param vulnerability: the vulnerability
+        :param ttp_id: the uuid of the TTP carrying it
+        :param comment: the comment read off the Exploit Target
+        :param tags: the tags read off the TTP handling
+        :param timestamp: the timestamp of the TTP
+        :param is_object: whether the TTP is titled `(MISP Object)` - an object
+            holding its id alone is still an object
+        """
         attributes = []
         for key, mapping in self._mapping.vulnerability_object_mapping().items():
             value = getattr(vulnerability, key)
@@ -688,7 +705,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 }
             )
         if attributes:
-            if len(attributes) == 1 and attributes[0]['object_relation'] == 'id':
+            if (not is_object and len(attributes) == 1
+                    and attributes[0]['object_relation'] == 'id'):
                 attributes = attributes[0]
                 attributes['uuid'] = ttp_id
                 if timestamp is not None:
@@ -1244,9 +1262,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             attribute = {'to_ids': to_ids, 'uuid': uuid}
             if timestamp is not None:
                 attribute['timestamp'] = timestamp
-            # An object whose content folds into a single attribute has no
-            # template of its own to tell the description from a comment: the
-            # name the Observable carries is the only one there is
+            # A handler reading its CybOX type as a single attribute - a
+            # one-field `DNSRecord`, a nameless `Custom` - names no template
+            # to tell the description from a comment: the name the Observable
+            # carries is the only one there is
             comment = self._read_object_comment(name, description, title)
             if comment is not None:
                 attribute['comment'] = comment
@@ -1292,6 +1311,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         through its own template: the title picks it, before anything is read.
         A `UserAccount` titled with no template name is a `user-account`.
 
+        The content is never reduced to the single attribute the attribute
+        path reads it as: the Incident relates a MISP object under its
+        meta-category, which no MISP category is, so the kind is on the wire
+        and an object comes back as an object whatever it holds - one
+        attribute, or a filename and a hash a composite type would spell.
+
         :param properties: the CybOX object properties
         :param title: the Record Title, where the shape carries one
         :return: what the handler the CybOX type, or the title, picks returns
@@ -1299,7 +1324,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if properties._XSI_TYPE == 'UserAccountObjectType':
             if self._object_name_from_title(title) == 'credential':
                 return self._handle_credential(properties)
-        return self._handle_attribute_type(properties)
+        return self._read_cybox_object(properties)
 
     @staticmethod
     def _object_name_from_title(title: Optional[str]) -> Optional[str]:
