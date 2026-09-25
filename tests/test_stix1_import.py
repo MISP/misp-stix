@@ -56,7 +56,7 @@ from misp_stix_converter.stix2misp.stix1_mapping import (
     InternalSTIX1toMISPMapping, STIX1toMISPMapping)
 from pymisp import MISPEvent
 from pymisp.api import describe_types
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 from uuid import UUID, uuid5
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction, Objective
@@ -3455,10 +3455,72 @@ class TestSTIX1Import(TestSTIX):
                         self.assertEqual(
                             converted.timestamp, int(exported['timestamp'])
                         )
-                    # The export writes no comment for a `vulnerability`
-                    # object, whose Exploit Target it would go on
-                    if exported['name'] != 'vulnerability':
-                        self.assertEqual(converted.comment, 'object comment')
+                    self.assertEqual(converted.comment, 'object comment')
+
+    def test_internal_ttp_id_ending_with_no_uuid_is_read_like_any_other(self):
+        """The export writes every TTP id as `{org}:TTP-{uuid}`, but a
+        hand-edited document may not: the record a TTP carries reads its
+        uuid off the id the way every other record does - one derived from
+        the whole id, which the comment keeps - where whatever followed the
+        first hyphen used to become the uuid, `0` included."""
+        event = get_base_event()
+        event['Event']['Attribute'] = [
+            get_event_with_vulnerability_attribute()['Event']['Attribute'][0]
+        ]
+        event['Event']['Object'] = [
+            {**fixture()['Event']['Object'][0], 'comment': 'object comment'}
+            for fixture in (get_event_with_attack_pattern_object,
+                            get_event_with_vulnerability_object,
+                            get_event_with_weakness_object)
+        ]
+        export_parser = MISPtoSTIX1EventsParser('MISP', '1.1.1')
+        export_parser.parse_misp_event(event['Event'])
+        ttp_ids = {}
+        for index, ttp in enumerate(export_parser.stix_package.ttps.ttp):
+            ttp_ids[ttp.id_[-36:]] = f'MISP:TTP-{index}'
+            ttp.id_ = ttp_ids[ttp.id_[-36:]]
+        parser = self._parse_internal_package(
+            self._wrapped_package(export_parser.stix_package)
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        attribute, = parser.misp_event.attributes
+        records = [attribute, *parser.misp_event.objects]
+        self.assertEqual(len(records), 4)
+        for exported, record in zip(
+                (*event['Event']['Attribute'], *event['Event']['Object']),
+                records):
+            ttp_id = ttp_ids[exported['uuid']]
+            with self.subTest(record=exported.get('name') or exported['type']):
+                self.assertEqual(str(record.uuid), str(uuid5(_UUIDv4, ttp_id)))
+                # An `attack-pattern` object's comment is not exported
+                comment = (
+                    exported['comment'] if 'type' in exported
+                    else None if exported['name'] == 'attack-pattern'
+                    else 'object comment'
+                )
+                original = f'Original id was: {ttp_id}'
+                self.assertEqual(
+                    record.comment,
+                    original if comment is None else f'{comment} - {original}'
+                )
+
+    def test_internal_misp_export_exploit_target_object_keeps_its_comment(self):
+        """A `vulnerability` or a `weakness` object is a TTP holding one
+        Exploit Target, whose description carries the object's comment: it
+        comes back on both `to_ids` paths, where the export used to write
+        none."""
+        for fixture in (get_event_with_vulnerability_object,
+                        get_event_with_weakness_object):
+            for to_ids in (True, False):
+                exported = fixture()['Event']['Object'][0]
+                with self.subTest(name=exported['name'], to_ids=to_ids):
+                    exported, parser = self._round_trip_lone_object(
+                        exported, to_ids
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    converted, = parser.misp_event.objects
+                    self.assertEqual(converted.uuid, exported['uuid'])
+                    self.assertEqual(converted.comment, 'object comment')
 
     def test_internal_misp_export_two_attribute_object_stays_an_object(self):
         """A filename and a hash spell a `filename|<hash>` composite, a
@@ -4299,6 +4361,32 @@ class TestSTIX1Import(TestSTIX):
             ]
         )
 
+    def test_internal_object_folding_into_one_attribute_keeps_the_timestamp(self):
+        """A nameless `Custom` holding one property reads as a single
+        attribute, not as an object: the attribute takes the timestamp of the
+        Indicator carrying it, as the object it would have been does."""
+        custom_object = Object(self._custom(None, ('severity', 'high')))
+        custom_object.id_ = f'MISP:Custom-{_OBSERVABLE_UUID}'
+        indicator = self._indicator(custom_object, _OBSERVABLE_UUID)
+        indicator.title = 'misc: custom (MISP Object)'
+        indicator.timestamp = datetime(2020, 10, 25, 16, 22, tzinfo=timezone.utc)
+        incident = self._incident_with_content()
+        incident.related_indicators.append(
+            RelatedIndicator(indicator, relationship='misc')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.misp_event.objects, [])
+        attribute, = (
+            attribute for attribute in parser.misp_event.attributes
+            if attribute.uuid == _OBSERVABLE_UUID
+        )
+        self.assertEqual(
+            (attribute.type, attribute.value, attribute.comment),
+            ('text', 'high', 'severity')
+        )
+        self.assertEqual(attribute.timestamp, indicator.timestamp)
+
     def test_internal_attribute_observable_yielding_nothing_records_an_error(self):
         """An email message carrying none of the fields the parser reads is no
         export of ours, and there is no record to build from it: the error
@@ -4494,6 +4582,40 @@ class TestSTIX1Import(TestSTIX):
                 _DOMAIN_UUID: ('domain', 'Payload delivery', 'circl.lu', True),
                 _IP_UUID: ('ip-dst', 'Network activity', '198.51.100.4', False)
             }
+        )
+
+    def test_internal_attributes_collection_link_round_trip(self):
+        """The Attribute Collection writes the category of a `to_ids` record
+        on the Record Title, which is where the `link` a URI can only have
+        been under that category is read from, as the event's relationship
+        is: under a category a `url` takes too, it stays that `url`."""
+        link = get_event_with_url_attributes()['Event']['Attribute'][0]
+        read_back = {
+            'Internal reference': 'link', 'Support Tool': 'link',
+            'Antivirus detection': 'link', 'External analysis': 'url'
+        }
+        attributes = [
+            {
+                **link, 'category': category, 'to_ids': True,
+                'uuid': f"{link['uuid'][:-1]}{index}"
+            }
+            for index, category in enumerate(read_back)
+        ]
+        exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        exporter.parse_json_content(attributes)
+        parser = self._parse_internal_package(exporter.stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.uuid, attribute.type, attribute.category,
+                 attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                (attribute['uuid'], read_back[attribute['category']],
+                 attribute['category'], link['value'])
+                for attribute in attributes
+            ]
         )
 
     def test_internal_attributes_collection_target_attributes_round_trip(self):
@@ -5762,7 +5884,8 @@ class TestSTIX1Import(TestSTIX):
         refused it, out of `parse_stix_package()`, and the whole package was
         lost. Both values come back now, as the two attributes they are - the
         hash keeping the id of the Observable, the file name qualifying it
-        taking a random uuid - with one warning naming the observable."""
+        taking a uuid derived from the hash's, the same on every import - with
+        one warning naming the observable."""
         digest = '115056655d15151138z66hz1021z55z66z3'
         file_object = File()
         file_object.file_name = 'evil.exe'
@@ -5775,12 +5898,12 @@ class TestSTIX1Import(TestSTIX):
                 for attribute in parser.misp_event.attributes
             ],
             [
-                ('filename', 'evil.exe', ANY),
+                (
+                    'filename', 'evil.exe',
+                    str(uuid5(_UUIDv4, f'{_OBSERVABLE_UUID} - filename - evil.exe'))
+                ),
                 ('other', digest, _OBSERVABLE_UUID)
             ]
-        )
-        self.assertNotEqual(
-            parser.misp_event.attributes[0].uuid, _OBSERVABLE_UUID
         )
         self.assertEqual(
             parser.diagnostics()['warnings'],

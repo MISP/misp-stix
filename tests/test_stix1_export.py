@@ -1287,6 +1287,52 @@ class TestSTIX1PlainObservableComment(TestSTIX):
                         )
 
 
+class TestSTIX1ExploitTargetObjectComment(TestSTIX):
+    """A `vulnerability` or a `weakness` object is exported as a TTP holding
+    one Exploit Target: the Exploit Target's description carries the
+    object's comment, as it does an attribute's, and an uncommented object
+    writes no description."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    def _exploit_targets(self, version, comment):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            fixture()['Event']['Object'][0]
+            for fixture in (get_event_with_vulnerability_object,
+                            get_event_with_weakness_object)
+        ]
+        for misp_object in event['Event']['Object']:
+            misp_object.pop('comment', None)
+            if comment is not None:
+                misp_object['comment'] = comment
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        return [
+            ttp.exploit_targets[0].item
+            for ttp in parser.stix_package.ttps.ttp
+        ]
+
+    def test_exploit_target_carries_the_object_comment(self):
+        for version in self._VERSIONS:
+            exploit_targets = self._exploit_targets(version, 'a comment')
+            self.assertEqual(len(exploit_targets), 2)
+            for exploit_target in exploit_targets:
+                with self.subTest(version=version, id=exploit_target.id_):
+                    self.assertEqual(
+                        exploit_target.description.value, 'a comment'
+                    )
+
+    def test_uncommented_object_writes_no_exploit_target_description(self):
+        for version in self._VERSIONS:
+            exploit_targets = self._exploit_targets(version, None)
+            self.assertEqual(len(exploit_targets), 2)
+            for exploit_target in exploit_targets:
+                with self.subTest(version=version, id=exploit_target.id_):
+                    self.assertIsNone(exploit_target.description)
+
+
 class TestSTIX1GalaxyTags(TestSTIX):
     """What the export writes for the tag of a galaxy cluster: a STIX 1
     construct names a cluster by its value, and a galaxy of a type no
