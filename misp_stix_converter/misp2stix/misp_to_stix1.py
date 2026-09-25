@@ -50,7 +50,7 @@ from io import BytesIO
 from math import isinf, isnan
 from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction
-from stix.common import InformationSource, Identity, ToolInformation
+from stix.common import InformationSource, Identity, StructuredText, ToolInformation
 from stix.common.confidence import Confidence
 from stix.common.related import RelatedCOA, RelatedIndicator, RelatedObservable, RelatedThreatActor, RelatedTTP
 from stix.common.vocabs import IncidentStatus
@@ -936,6 +936,39 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable.observable_composition = observable_composition
         return observable
 
+    def _create_custom_members(self, misp_object: dict,
+                                     written: tuple) -> list:
+        """Build a composition member for each relation of a MISP object the
+        composition has no member of its own for.
+
+        A composition has no property bag to put them in: each value is one
+        nameless `Custom` object holding one property named with the
+        relation, under the attribute's uuid as every other member is, so
+        that each member still carries one attribute.
+
+        :param misp_object: the MISP object the composition is written from
+        :param written: the relations the composition writes a member for
+        :return: the members, one per value a property can carry
+        """
+        record = self._object_features(misp_object)
+        observables = []
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            if relation in written:
+                continue
+            prop = self._create_property(relation, attribute['value'], record)
+            if prop is None:
+                continue
+            custom_object = Custom()
+            custom_object.custom_properties = CustomProperties()
+            custom_object.custom_properties.append(prop)
+            observables.append(
+                self._create_observable(
+                    custom_object, attribute['uuid'], 'Custom'
+                )
+            )
+        return observables
+
     @staticmethod
     def _create_port_object(port: str) -> Port:
         port_object = Port()
@@ -1559,6 +1592,20 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 )
         return custom_properties
 
+    def _warn_unwritable_relations(self, misp_object: dict, written: tuple):
+        """Warn of each relation of a MISP object the STIX type it is written
+        as has no field for, and no property bag either.
+
+        :param misp_object: the MISP object
+        :param written: the relations the STIX type has room for
+        """
+        record = self._object_features(misp_object)
+        for attribute in misp_object['Attribute']:
+            if attribute['object_relation'] not in written:
+                self._unwritable_relation_warning(
+                    attribute['object_relation'], attribute['value'], record
+                )
+
     def _handle_misp_object(self, observable: Observable, category: str):
         related_observable = RelatedObservable(
             observable,
@@ -1656,11 +1703,29 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         attack_pattern = AttackPattern()
         attack_pattern.id_ = f"{self._orgname_id}:AttackPattern-{misp_object['uuid']}"
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in self._mapping.attack_pattern_object_mapping().items():
+        mapping = self._mapping.attack_pattern_object_mapping()
+        for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(attack_pattern, feature, attributes.pop(key))
         if attack_pattern.capec_id and not attack_pattern.capec_id.startswith('CAPEC'):
             attack_pattern.capec_id = f'CAPEC-{attack_pattern.capec_id}'
+        # The summary is the one untagged description: every other free text
+        # relation is a description of its own, tagged with the relation, and
+        # a related weakness is the Exploit Target the TTP has room for
+        described = self._mapping.attack_pattern_description_relations()
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            if relation in described:
+                description = StructuredText(attribute['value'])
+                description.structuring_format = relation
+                attack_pattern.add_description(description)
+            elif relation == 'related-weakness':
+                ttp.add_exploit_target(
+                    self._create_related_weakness(attribute, misp_object)
+                )
+        self._warn_unwritable_relations(
+            misp_object, (*mapping, *described, 'related-weakness')
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
@@ -1676,9 +1741,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         uuid = misp_object['uuid']
         course_of_action.id_ = f'{self._orgname_id}:CourseOfAction-{uuid}'
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in self._mapping.course_of_action_object_mapping().items():
+        mapping = self._mapping.course_of_action_object_mapping()
+        for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(course_of_action, feature, attributes.pop(key))
+        self._warn_unwritable_relations(misp_object, tuple(mapping))
         tags = self._handle_non_indicator_object_tags_and_galaxies(
             misp_object,
             course_of_action,
@@ -1756,6 +1823,14 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('port'):
             for attribute in attributes['port']:
                 observables.append(self._create_port_observable(*attribute))
+        if attributes.get('hostname'):
+            for attribute in attributes['hostname']:
+                observables.append(self._create_hostname_observable(*attribute))
+        observables.extend(
+            self._create_custom_members(
+                misp_object, ('domain', 'ip', 'port', 'hostname')
+            )
+        )
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
@@ -1904,6 +1979,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('hostname'):
             for attribute in attributes['hostname']:
                 observables.append(self._create_hostname_observable(*attribute))
+        observables.extend(
+            self._create_custom_members(
+                misp_object,
+                ('ip-src', 'ip-dst', 'ip', 'src-port', 'dst-port', 'domain',
+                 'hostname')
+            )
+        )
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
@@ -2064,6 +2146,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if hashlist:
             pe_section.data_hashes = HashList()
             pe_section.data_hashes.hashes = hashlist
+        self._warn_unwritable_relations(
+            misp_pe_section,
+            ('entropy', 'name', 'size-in-bytes',
+             *self._mapping.hash_type_attributes('single'))
+        )
         return pe_section
 
     def _parse_process_object(self, misp_object: dict) -> Observable:
@@ -2164,6 +2251,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(self._create_address_observable('ip-dst', *attributes['ip']))
         if attributes.get('port'):
             observables.append(self._create_port_observable(*attributes['port']))
+        observables.extend(
+            self._create_custom_members(
+                misp_object, ('url', 'domain', 'host', 'ip', 'port')
+            )
+        )
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
@@ -2219,6 +2311,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('references'):
             for reference in attributes.pop('references'):
                 vulnerability.add_reference(reference)
+        self._warn_unwritable_relations(
+            misp_object,
+            ('id', 'cvss-score', 'references',
+             *self._mapping.vulnerability_object_mapping())
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
@@ -2232,9 +2329,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         ttp = self._create_ttp_from_object(misp_object)
         weakness = Weakness()
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in self._mapping.weakness_object_mapping().items():
+        mapping = self._mapping.weakness_object_mapping()
+        for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(weakness, feature, attributes.pop(key))
+        self._warn_unwritable_relations(misp_object, tuple(mapping))
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
@@ -2493,6 +2592,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         stix_package = STIXPackage(**package_args)
         stix_package.version = self._version
         return stix_package
+
+    def _create_related_weakness(self, attribute: dict,
+                                 misp_object: dict) -> ExploitTarget:
+        exploit_target = ExploitTarget(
+            timestamp=self._optional_timestamp(misp_object)
+        )
+        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{attribute['uuid']}"
+        weakness = Weakness()
+        weakness.cwe_id = attribute['value']
+        exploit_target.add_weakness(weakness)
+        return exploit_target
 
     def _create_ttp_from_object(self, misp_object: dict) -> TTP:
         ttp = TTP(timestamp=self._optional_timestamp(misp_object))

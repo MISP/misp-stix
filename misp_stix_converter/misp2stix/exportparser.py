@@ -503,6 +503,15 @@ class MISPtoSTIXParser(AbstractParser):
             f'{origin}: {value!r} not converted.'
         )
 
+    def _unwritable_relation_warning(
+            self, relation: str, value: Any, record: str):
+        # Not the unstorable property warning: the value has a form, the
+        # STIX type the record is written as has nowhere to put it
+        self._add_warning(
+            f'{relation!r} has no place in the STIX 1 {record}: '
+            f'{value!r} not converted.'
+        )
+
     def _validation_errors(self, *messages: tuple[str]):
         for message in messages:
             self._add_error(message, self.identifier)

@@ -320,6 +320,7 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         name='title',
         summary='description'
     )
+    __attack_pattern_description_relations = ('prerequisites', 'solutions')
     __course_of_action_object_mapping = Mapping(
         name='title',
         type='type_',
@@ -529,6 +530,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
     @classmethod
     def attack_pattern_object_mapping(cls) -> dict:
         return cls.__attack_pattern_object_mapping
+
+    @classmethod
+    def attack_pattern_description_relations(cls) -> tuple:
+        return cls.__attack_pattern_description_relations
 
     @classmethod
     def attribute_types_mapping(cls, field: str) -> Union[str, None]:
