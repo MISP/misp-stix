@@ -371,9 +371,9 @@ class ExternalSTIX1toMISPMapping(STIX1toMISPMapping):
 class InternalSTIX1toMISPMapping(STIX1toMISPMapping):
     __attack_pattern_object_mapping = Mapping(
         capec_id = 'id',
-        title = 'name',
-        description = 'summary'
+        title = 'name'
     )
+    __attack_pattern_description_relations = ('prerequisites', 'solutions')
     __threat_level_mapping = Mapping(
         High = '1',
         Medium = '2',
@@ -394,6 +394,10 @@ class InternalSTIX1toMISPMapping(STIX1toMISPMapping):
     @classmethod
     def attack_pattern_object_mapping(cls) -> dict:
         return cls.__attack_pattern_object_mapping
+
+    @classmethod
+    def attack_pattern_description_relations(cls) -> tuple:
+        return cls.__attack_pattern_description_relations
 
     @classmethod
     def threat_level_mapping(cls, threat_level: str) -> Union[str, None]:

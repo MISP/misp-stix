@@ -363,7 +363,18 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def _parse_attack_pattern_object(self, attack_pattern: AttackPattern,
                                      ttp_id: str,
-                                     timestamp: Optional[int] = None):
+                                     timestamp: Optional[int] = None,
+                                     related_weaknesses: tuple = ()):
+        """Convert the attack pattern an `attack-pattern` object was exported
+        as: its id and name, its descriptions, and the related weaknesses
+        its TTP carries as Exploit Targets.
+
+        :param attack_pattern: the attack pattern the TTP carries
+        :param ttp_id: the uuid of the TTP, which the object takes
+        :param timestamp: the timestamp of the TTP
+        :param related_weaknesses: the `related-weakness` attributes read off
+            the Exploit Targets of the TTP
+        """
         attributes = []
         for key, relation in self._mapping.attack_pattern_object_mapping().items():
             value = getattr(attack_pattern, key)
@@ -374,18 +385,63 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 # the bare number, as the STIX 2 import returns it too
                 if relation == 'id' and value.startswith('CAPEC-'):
                     value = value[len('CAPEC-'):]
-                attributes.append((relation, value))
+                attributes.append({'object_relation': relation, 'value': value})
+        attributes.extend(self._read_attack_pattern_descriptions(attack_pattern))
+        attributes.extend(related_weaknesses)
         if attributes:
             attack_pattern_object = MISPObject('attack-pattern')
             attack_pattern_object.uuid = ttp_id
             if timestamp is not None:
                 attack_pattern_object.timestamp = timestamp
-            for relation, value in attributes:
+            for attribute in attributes:
                 self._add_object_attribute(
-                    attack_pattern_object, ttp_id,
-                    {'object_relation': relation, 'value': value}
+                    attack_pattern_object, ttp_id, attribute
                 )
             self.misp_event.add_object(attack_pattern_object)
+
+    def _read_attack_pattern_descriptions(
+            self, attack_pattern: AttackPattern) -> Iterator[dict]:
+        """Read the descriptions of an attack pattern: the one tagged with
+        a relation is that relation, the untagged one the summary - whichever
+        ordinality it takes, since a summary is not always there to come
+        first.
+
+        :param attack_pattern: the attack pattern
+        :return: the attributes, one per description carrying a value
+        """
+        described = self._mapping.attack_pattern_description_relations()
+        for description in attack_pattern.descriptions or ():
+            if not description.value:
+                continue
+            relation = description.structuring_format
+            yield {
+                'object_relation': relation if relation in described else 'summary',
+                'value': description.value
+            }
+
+    def _read_related_weaknesses(self, ttp: TTP) -> Iterator[dict]:
+        """Read the weaknesses an attack pattern's TTP carries as Exploit
+        Targets, each written under the uuid of the attribute it holds.
+
+        :param ttp: the TTP carrying an attack pattern
+        :return: the `related-weakness` attributes
+        """
+        if ttp.exploit_targets is None:
+            return
+        for related_exploit_target in ttp.exploit_targets.exploit_target or ():
+            exploit_target = related_exploit_target.item
+            weaknesses = [
+                weakness.cwe_id for weakness in exploit_target.weaknesses or ()
+                if weakness.cwe_id
+            ]
+            for cwe_id in weaknesses:
+                attribute = {'object_relation': 'related-weakness', 'value': cwe_id}
+                # One Exploit Target, one weakness: several would share a uuid
+                if len(weaknesses) == 1 and exploit_target.id_:
+                    attribute.update(
+                        self._sanitise_attribute_uuid(exploit_target.id_)
+                    )
+                yield attribute
 
     def _parse_campaign(self, campaign: Campaign):
         """Convert the Campaign a `campaign-name` attribute was exported as:
@@ -488,10 +544,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self._timestamp_from_date(ttp.timestamp) if ttp.timestamp else None
         )
         converted = False
-        if ttp.behavior and ttp.behavior.attack_patterns:
-            for attack_pattern in ttp.behavior.attack_patterns:
+        # The weaknesses an attack pattern's TTP carries are its related
+        # weaknesses, not `weakness` objects of their own
+        attack_patterns = ttp.behavior.attack_patterns if ttp.behavior else None
+        if attack_patterns:
+            related_weaknesses = tuple(self._read_related_weaknesses(ttp))
+            for attack_pattern in attack_patterns:
                 self._parse_attack_pattern_object(
-                    attack_pattern, ttp_id, timestamp
+                    attack_pattern, ttp_id, timestamp, related_weaknesses
                 )
                 if tags:
                     self._object_markings_warning()
@@ -510,7 +570,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                             vulnerability, ttp_id, comment, tags, timestamp
                         )
                     converted = True
-                if exploit_target.item.weaknesses:
+                if exploit_target.item.weaknesses and not attack_patterns:
                     for weakness in exploit_target.item.weaknesses:
                         self._parse_weakness_object(
                             weakness, ttp_id, comment, tags, timestamp
@@ -1011,14 +1071,30 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self.misp_event.add_object(misp_object)
 
     def _handle_composition(self, misp_object, observables, to_ids):
+        template_types = _template_attribute_types(misp_object.name)
         for observable in observables:
             properties = observable.object_.properties
+            if properties._XSI_TYPE == 'CustomObjectType' and properties.custom_name is None:
+                self._handle_custom_member(
+                    misp_object, observable, template_types, to_ids
+                )
+                continue
             try:
                 attribute = self._handle_attribute_type(properties)
             except StixObjectTypeError as xsi_type:
                 self._stix_object_type_error(xsi_type, observable.id_)
                 continue
             attribute_type, attribute_value, relation = attribute
+            if attribute_type == 'hostname' and relation not in template_types:
+                # `host` is the `url` relation: every other template names a
+                # hostname its own way
+                relation = next(
+                    (
+                        name for name, template_type in template_types.items()
+                        if template_type == 'hostname'
+                    ),
+                    relation
+                )
             filename = self._filename_residue(relation)
             if filename is not None:
                 # In an object the two halves are two relations, the hash
@@ -1046,6 +1122,39 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 misp_object, misp_object.uuid, misp_attribute
             )
         return misp_object
+
+    def _handle_custom_member(self, misp_object, observable,
+                              template_types: dict, to_ids: bool):
+        """Read the nameless `Custom` member a composition carries a relation
+        it has no member of its own for as: one property named with the
+        relation, typed through the template as a property bag is, under the
+        uuid the member carries.
+
+        :param misp_object: the object the composition builds
+        :param observable: the member
+        :param template_types: the attribute types the template defines
+        :param to_ids: the `to_ids` flag the composition was written with
+        """
+        properties = observable.object_.properties
+        attributes = list(
+            self._read_property_bag(
+                properties.custom_properties, template_types,
+                misp_object.name, getattr(properties.parent, 'id_', None)
+            )
+        )
+        for attribute_type, value, relation in attributes:
+            misp_attribute = {
+                'type': attribute_type, 'value': value,
+                'object_relation': relation, 'to_ids': to_ids
+            }
+            # One member, one attribute: several properties would share a uuid
+            if len(attributes) == 1 and observable.id_:
+                misp_attribute.update(
+                    self._sanitise_attribute_uuid(observable.id_)
+                )
+            self._add_object_attribute(
+                misp_object, misp_object.uuid, misp_attribute
+            )
 
     def  _handle_file_composition(self, misp_object, observables, to_ids):
         template_types = _template_attribute_types('file')
