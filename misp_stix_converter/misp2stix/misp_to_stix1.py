@@ -1489,12 +1489,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     to_ids = self._fetch_ids_flag(misp_object['Attribute'])
                     to_call = self._mapping.objects_mapping(object_name) or '_parse_custom_object'
                     observable = getattr(self, to_call)(misp_object)
-                    if to_ids:
-                        self._handle_misp_object_with_context(misp_object, observable)
-                    else:
-                        if object_name in _TITLED_OBSERVABLE_OBJECT_NAMES:
-                            observable.title = self._object_record_title(misp_object)
-                        self._handle_misp_object(observable, misp_object.get('meta-category'))
+                    self._handle_object_observable(misp_object, observable, to_ids)
             except Exception as exception:
                 self._object_error(misp_object, exception)
         if self._objects_to_parse:
@@ -1522,8 +1517,31 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     except Exception as exception:
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe-section'):
+                # No `pe` references these: no executable to fold them into
                 for misp_object in self._objects_to_parse.pop('pe-section').values():
-                    self._parse_custom_object(misp_object)
+                    try:
+                        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
+                        observable = self._parse_custom_object(misp_object)
+                        self._handle_object_observable(misp_object, observable, to_ids)
+                    except Exception as exception:
+                        self._object_error(misp_object, exception)
+
+    def _handle_object_observable(self, misp_object: dict,
+                                  observable: Observable, to_ids: bool):
+        """Add the Observable a MISP object was exported as to the package:
+        wrapped in an Indicator when an attribute of the object is `to_ids`,
+        related to the Incident as it is otherwise.
+
+        :param misp_object: the MISP object
+        :param observable: the Observable it was exported as
+        :param to_ids: whether any attribute of the object is `to_ids`
+        """
+        if to_ids:
+            self._handle_misp_object_with_context(misp_object, observable)
+            return
+        if misp_object['name'] in _TITLED_OBSERVABLE_OBJECT_NAMES:
+            observable.title = self._object_record_title(misp_object)
+        self._handle_misp_object(observable, misp_object.get('meta-category'))
 
     def _add_custom_property(self, stix_object: File, name: str, value: Any,
                              misp_object: dict):
@@ -1569,6 +1587,20 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             else:
                 attributes_dict[relation].append(value)
         return attributes_dict
+
+    @staticmethod
+    def _pop_first_value(attributes: dict, relation: str) -> Any:
+        """Take the first value of a relation for a native field holding one,
+        leaving the others where the property bag takes them.
+
+        :param attributes: the values of the object, by relation
+        :param relation: the relation the native field holds
+        :return: the first value
+        """
+        first, *others = attributes.pop(relation)
+        if others:
+            attributes[relation] = others
+        return first
 
     def _handle_custom_properties(self, attributes: dict, misp_object: dict,
                                   multiple: Optional[bool] = True) -> CustomProperties:
@@ -1764,10 +1796,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         args = {}
         if attributes.get('format'):
             struct_auth_meca = StructuredAuthenticationMechanism()
-            struct_auth_meca.description = attributes.pop('format')[0]
+            struct_auth_meca.description = self._pop_first_value(attributes, 'format')
             args['auth_format'] = struct_auth_meca
         if attributes.get('type'):
-            args['auth_type'] = attributes.pop('type')[0]
+            args['auth_type'] = self._pop_first_value(attributes, 'type')
         authentication_list = []
         if attributes.get('password'):
             for password in attributes.pop('password'):
@@ -1853,7 +1885,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 setattr(email_header, feature, recipients)
         for feature, key in self._mapping.email_object_mapping().items():
             if attributes.get(feature):
-                setattr(email_header, key, attributes.pop(feature)[0])
+                setattr(email_header, key, self._pop_first_value(attributes, feature))
                 setattr(getattr(email_header, key), 'condition', 'Equals')
         email_object.header = email_header
         if attributes.get('attachment'):
@@ -2046,6 +2078,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             states = attributes.pop('state')
             socket_object.is_listening = True if 'listening' in states else False
             socket_object.is_blocking = True if 'blocking' in states else False
+            # CybOX names two states, as booleans: any other goes to the bag
+            others = [
+                state for state in states
+                if state not in ('listening', 'blocking')
+            ]
+            if others:
+                attributes['state'] = others
         if attributes:
             socket_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(socket_object, misp_object['uuid'], 'NetworkSocket')
@@ -2239,18 +2278,18 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 )
 
     def _parse_url_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes_with_uuid(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
-        if attributes.get('url'):
-            observables.append(self._create_uri_observable(*attributes['url']))
-        if attributes.get('domain'):
-            observables.append(self._create_domain_observable(*attributes['domain']))
-        if attributes.get('host'):
-            observables.append(self._create_hostname_observable(*attributes['host']))
-        if attributes.get('ip'):
-            observables.append(self._create_address_observable('ip-dst', *attributes['ip']))
-        if attributes.get('port'):
-            observables.append(self._create_port_observable(*attributes['port']))
+        for attribute in attributes.get('url', ()):
+            observables.append(self._create_uri_observable(*attribute))
+        for attribute in attributes.get('domain', ()):
+            observables.append(self._create_domain_observable(*attribute))
+        for attribute in attributes.get('host', ()):
+            observables.append(self._create_hostname_observable(*attribute))
+        for attribute in attributes.get('ip', ()):
+            observables.append(self._create_address_observable('ip-dst', *attribute))
+        for attribute in attributes.get('port', ()):
+            observables.append(self._create_port_observable(*attribute))
         observables.extend(
             self._create_custom_members(
                 misp_object, ('url', 'domain', 'host', 'ip', 'port')
