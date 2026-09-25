@@ -471,6 +471,16 @@ class MISPtoSTIXParser(AbstractParser):
             f'object with uuid: {referenced_uuid}.'
         )
 
+    def _required_relation_missing_error(
+            self, misp_object: Union[MISPObject, dict], relation: str):
+        # The object is not written at all: nothing else it holds has a
+        # field to go in without the one the STIX object is built around
+        self._add_error(
+            f"Error with the {self._object_features(misp_object)}: no "
+            f"{relation} attribute to build it from, the object is not "
+            'exported.'
+        )
+
     def _required_fields_missing_warning(
             self, object_type: str, object_name: str):
         self._add_warning(

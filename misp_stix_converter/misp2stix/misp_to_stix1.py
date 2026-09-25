@@ -1525,7 +1525,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     to_ids = self._fetch_ids_flag(misp_object['Attribute'])
                     to_call = self._mapping.objects_mapping(object_name) or '_parse_custom_object'
                     observable = getattr(self, to_call)(misp_object)
-                    self._handle_object_observable(misp_object, observable, to_ids)
+                    # None where the parser refused the object and said why
+                    if observable is not None:
+                        self._handle_object_observable(
+                            misp_object, observable, to_ids
+                        )
             except Exception as exception:
                 self._object_error(misp_object, exception)
         if self._objects_to_parse:
@@ -1745,11 +1749,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._contextualised_data.add(misp_object['uuid'])
         self._stix_package.add_ttp(ttp)
 
-    def _parse_asn_object(self, misp_object: dict) -> Observable:
+    def _parse_asn_object(self, misp_object: dict) -> Optional[Observable]:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.as_single_fields()
         )
+        if 'asn' not in attributes:
+            # The template requires it, and the CybOX `AS` is its number: an
+            # object without one has nowhere to go
+            self._required_relation_missing_error(misp_object, 'asn')
+            return None
         as_object = self._create_autonomous_system_object(attributes.pop('asn'))
         if attributes.get('description'):
             as_object.name = attributes.pop('description')
