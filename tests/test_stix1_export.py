@@ -530,6 +530,261 @@ class TestSTIX1NativeFieldValues(TestSTIX):
                 self.assertEqual(properties.hive.value, hive)
 
 
+class TestSTIX1ObjectsWithoutPropertyBag(TestSTIX):
+    """What the export writes for a relation of an object whose STIX type has
+    no property bag: a composition takes one more member, an attack pattern
+    fills the room its TTP gives it, and what has no room at all is warned
+    rather than dropped in silence."""
+
+    _OBJECT_UUID = '3a7c9e1b-5d2f-4b8a-9c6e-0f1d2e3a4b5c'
+
+    def _parse_object(self, name, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': attributes
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _members(parser):
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return observable.item.observable_composition.observables
+
+    @staticmethod
+    def _ttp(parser):
+        return parser.stix_package.ttps.ttp[0]
+
+    @classmethod
+    def _attribute(cls, relation, value, attribute_type='text'):
+        uuid = uuid5(UUID(cls._OBJECT_UUID), f'{relation} - {value}')
+        return {
+            'uuid': str(uuid), 'type': attribute_type,
+            'object_relation': relation, 'value': value
+        }
+
+    def _warnings(self, parser):
+        return parser.warnings.get(get_base_event()['Event']['uuid'], [])
+
+    def _assert_custom_member(self, member, attribute, datatype='string'):
+        self.assertEqual(member.id_, f"{_ORGNAME_ID}:Observable-{attribute['uuid']}")
+        custom = member.object_
+        self.assertEqual(custom.id_, f"{_ORGNAME_ID}:Custom-{attribute['uuid']}")
+        properties = custom.properties
+        self.assertEqual(properties._XSI_TYPE, 'CustomObjectType')
+        self.assertIsNone(properties.custom_name)
+        prop, = properties.custom_properties
+        self.assertEqual(prop.name, attribute['object_relation'])
+        self.assertEqual(prop.value, attribute['value'])
+        self.assertEqual(prop.datatype, datatype)
+
+    def test_url_writes_every_relation_it_has_no_member_for(self):
+        url = self._attribute('url', 'https://circl.lu/team', 'url')
+        weird = self._attribute('weird-relation', 'custom value')
+        odd = self._attribute('Odd.Case/Relation', 'odd value')
+        scheme = self._attribute('scheme', 'https')
+        parser = self._parse_object('url', [url, weird, odd, scheme])
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        uri, *members = self._members(parser)
+        self.assertEqual(uri.object_.properties.value.value, url['value'])
+        self.assertEqual(len(members), 3)
+        for member, attribute in zip(members, (weird, odd, scheme)):
+            with self.subTest(relation=attribute['object_relation']):
+                self._assert_custom_member(member, attribute)
+
+    def test_domain_ip_hostname_is_a_hostname_member(self):
+        domain = self._attribute('domain', 'circl.lu', 'domain')
+        hostname = self._attribute('hostname', 'www.circl.lu', 'hostname')
+        parser = self._parse_object('domain-ip', [domain, hostname])
+        self.assertEqual(parser.errors, {})
+        _, member = self._members(parser)
+        self.assertEqual(member.id_, f"{_ORGNAME_ID}:Observable-{hostname['uuid']}")
+        self.assertEqual(member.object_.id_, f"{_ORGNAME_ID}:Hostname-{hostname['uuid']}")
+        properties = member.object_.properties
+        self.assertEqual(properties._XSI_TYPE, 'HostnameObjectType')
+        self.assertEqual(properties.hostname_value.value, hostname['value'])
+
+    def test_domain_ip_writes_every_other_relation_as_a_custom_member(self):
+        domain = self._attribute('domain', 'circl.lu', 'domain')
+        text = self._attribute('text', 'CIRCL website')
+        parser = self._parse_object('domain-ip', [domain, text])
+        self.assertEqual(parser.errors, {})
+        _, member = self._members(parser)
+        self._assert_custom_member(member, text)
+
+    def test_ip_port_first_seen_is_a_custom_member(self):
+        ip = self._attribute('ip', '149.13.33.14', 'ip-dst')
+        first_seen = self._attribute(
+            'first-seen', '2020-10-25T16:22:00Z', 'datetime'
+        )
+        parser = self._parse_object('ip-port', [ip, first_seen])
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        _, member = self._members(parser)
+        self._assert_custom_member(member, first_seen)
+
+    def test_composition_member_no_property_can_carry_is_warned(self):
+        # The property's own warning says so, and no member is written for
+        # a value it could not build
+        ip = self._attribute('ip', '149.13.33.14', 'ip-dst')
+        parser = self._parse_object(
+            'ip-port', [ip, self._attribute('text', {'not': 'a value'})]
+        )
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(len(self._members(parser)), 1)
+        warning, = self._warnings(parser)
+        self.assertIn("'text' has no lexical form STIX 1 can carry", warning)
+
+    def test_composition_with_nothing_left_over_is_unchanged(self):
+        # Every relation has a member of its own: no custom member is added
+        attributes = [
+            self._attribute('ip', '149.13.33.14', 'ip-dst'),
+            self._attribute('dst-port', '443', 'port'),
+            self._attribute('domain', 'circl.lu', 'domain'),
+            self._attribute('hostname', 'www.circl.lu', 'hostname')
+        ]
+        parser = self._parse_object('ip-port', attributes)
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(
+            [member.object_.properties._XSI_TYPE for member in self._members(parser)],
+            ['AddressObjectType', 'PortObjectType', 'DomainNameObjectType',
+             'HostnameObjectType']
+        )
+
+    def test_attack_pattern_writes_prerequisites_and_solutions(self):
+        summary = self._attribute('summary', 'An attack pattern.')
+        prerequisites = self._attribute('prerequisites', 'A vulnerable host.')
+        solutions = self._attribute('solutions', 'Patch the host.')
+        parser = self._parse_object(
+            'attack-pattern',
+            [self._attribute('id', '9'), prerequisites, summary, solutions]
+        )
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        attack_pattern = self._ttp(parser).behavior.attack_patterns[0]
+        # The summary stays the untagged description it is
+        self.assertEqual(attack_pattern.description.value, summary['value'])
+        self.assertIsNone(attack_pattern.description.structuring_format)
+        self.assertEqual(
+            [
+                (description.structuring_format, description.value)
+                for description in attack_pattern.descriptions
+            ],
+            [
+                (None, summary['value']),
+                ('prerequisites', prerequisites['value']),
+                ('solutions', solutions['value'])
+            ]
+        )
+
+    def test_attack_pattern_writes_related_weaknesses_as_exploit_targets(self):
+        weaknesses = [
+            self._attribute('related-weakness', 'CWE-118', 'weakness'),
+            self._attribute('related-weakness', 'CWE-120', 'weakness')
+        ]
+        parser = self._parse_object(
+            'attack-pattern', [self._attribute('id', '9'), *weaknesses]
+        )
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        ttp = self._ttp(parser)
+        self.assertEqual(len(ttp.behavior.attack_patterns), 1)
+        exploit_targets = ttp.exploit_targets.exploit_target
+        self.assertEqual(len(exploit_targets), 2)
+        for related, attribute in zip(exploit_targets, weaknesses):
+            with self.subTest(value=attribute['value']):
+                exploit_target = related.item
+                self.assertEqual(
+                    exploit_target.id_,
+                    f"{_ORGNAME_ID}:ExploitTarget-{attribute['uuid']}"
+                )
+                self.assertFalse(exploit_target.vulnerabilities)
+                weakness, = exploit_target.weaknesses
+                self.assertEqual(weakness.cwe_id, attribute['value'])
+
+    def test_attack_pattern_with_nothing_left_over_is_unchanged(self):
+        parser = self._parse_object(
+            'attack-pattern',
+            [
+                self._attribute('id', '9'),
+                self._attribute('summary', 'An attack pattern.')
+            ]
+        )
+        self.assertEqual(self._warnings(parser), [])
+        ttp = self._ttp(parser)
+        self.assertEqual(len(ttp.behavior.attack_patterns[0].descriptions), 1)
+        self.assertFalse(ttp.exploit_targets)
+
+    def test_relations_with_no_room_are_warned(self):
+        for name, attributes, relation, value in (
+                ('attack-pattern', [self._attribute('id', '9')],
+                 'references', 'https://capec.mitre.org/data/definitions/9.html'),
+                ('course-of-action', [self._attribute('name', 'Block')],
+                 'weird-relation', 'custom value'),
+                ('vulnerability', [self._attribute('id', 'CVE-2021-29921', 'vulnerability')],
+                 'modified', '2021-05-07T00:00:00Z'),
+                ('weakness', [self._attribute('id', 'CWE-79', 'weakness')],
+                 'status', 'Stable')):
+            with self.subTest(name=name):
+                parser = self._parse_object(
+                    name, [*attributes, self._attribute(relation, value)]
+                )
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(
+                    self._warnings(parser),
+                    [
+                        f"{relation!r} has no place in the STIX 1 "
+                        f"{name} object (uuid: {self._OBJECT_UUID}): "
+                        f"{value!r} not converted."
+                    ]
+                )
+
+    def test_pe_section_relation_with_no_room_is_warned(self):
+        section_uuid = '4b8d0f2c-6e3a-4c9b-8d7f-1a2b3c4d5e6f'
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': 'pe', 'meta-category': 'file',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    self._attribute('original-filename', 'PuTTy', 'filename')
+                ],
+                'ObjectReference': [
+                    {
+                        'referenced_uuid': section_uuid,
+                        'relationship_type': 'includes',
+                        'Object': {'name': 'pe-section'}
+                    }
+                ]
+            },
+            {
+                'name': 'pe-section', 'meta-category': 'file',
+                'uuid': section_uuid, 'timestamp': '1603642920',
+                'Attribute': [
+                    self._attribute('name', '.rsrc'),
+                    self._attribute('virtual_address', '0x00012345', 'hex')
+                ]
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(
+            self._warnings(parser),
+            [
+                "'virtual_address' has no place in the STIX 1 pe-section "
+                f"object (uuid: {section_uuid}): '0x00012345' not converted."
+            ]
+        )
+
+
 class _STIX1NamespaceTestCase(TestSTIX):
     # What the two namespace test classes below share: the input files, the
     # copy that keeps an export inside its temporary directory, and the
@@ -1010,9 +1265,9 @@ class TestStix1Export(TestSTIX):
 
     def _check_ip_port_observables(self, observables, misp_object):
         attributes = misp_object['Attribute']
-        self.assertEqual(len(observables), len(attributes) - 1)
-        ip, port, domain, _ = attributes
-        ip_observable, port_observable, domain_observable = observables
+        self.assertEqual(len(observables), len(attributes))
+        ip, port, domain, first_seen = attributes
+        ip_observable, port_observable, domain_observable, first_seen_observable = observables
         ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
         self.assertEqual(ip_properties.address_value.value, ip['value'])
         self.assertEqual(port_observable.id_, f"{_ORGNAME_ID}:Observable-{port['uuid']}")
@@ -1023,6 +1278,10 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(port_properties.port_value.value, int(port['value']))
         domain_properties = self._check_observable_features(domain_observable, domain, "DomainName")
         self.assertEqual(domain_properties.value.value, domain['value'])
+        # No member of its own: a nameless custom one, named by the relation
+        first_seen_properties = self._check_observable_features(first_seen_observable, first_seen, 'Custom')
+        self.assertIsNone(first_seen_properties.custom_name)
+        self._check_custom_properties((first_seen,), first_seen_properties.custom_properties)
 
     def _check_malware_sample_properties(self, observable, attribute):
         filename, md5 = attribute['value'].split('|')
@@ -2604,10 +2863,27 @@ class TestStix1Export(TestSTIX):
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         attack_pattern = ttp.behavior.attack_patterns[0]
         self.assertEqual(attack_pattern.id_, f"{_ORGNAME_ID}:AttackPattern-{misp_object['uuid']}")
-        id_, name, summary, _, _, _, _ = misp_object['Attribute']
+        id_, name, summary, weakness1, weakness2, prerequisites, solutions = misp_object['Attribute']
         self.assertEqual(attack_pattern.capec_id, f"CAPEC-{id_['value']}")
         self.assertEqual(attack_pattern.title, name['value'])
         self.assertEqual(attack_pattern.description.value, summary['value'])
+        self.assertEqual(
+            [
+                (description.structuring_format, description.value)
+                for description in attack_pattern.descriptions
+            ],
+            [
+                (None, summary['value']),
+                ('prerequisites', prerequisites['value']),
+                ('solutions', solutions['value'])
+            ]
+        )
+        exploit_targets = ttp.exploit_targets.exploit_target
+        self.assertEqual(len(exploit_targets), 2)
+        for related, weakness in zip(exploit_targets, (weakness1, weakness2)):
+            exploit_target = related.item
+            self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{weakness['uuid']}")
+            self.assertEqual(exploit_target.weaknesses[0].cwe_id, weakness['value'])
         self._check_related_object(
             stix_package.incidents[0].leveraged_ttps.ttp[0],
             misp_object['name'],

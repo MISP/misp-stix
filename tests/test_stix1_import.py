@@ -102,13 +102,14 @@ from .test_events import (
     get_event_with_course_of_action_galaxy,
     get_event_with_course_of_action_object, get_event_with_credential_object,
     get_event_with_domain_attribute,
-    get_event_with_domain_ip_object,
+    get_event_with_domain_ip_object, get_event_with_domain_ip_object_custom,
     get_event_with_email_body_attribute, get_event_with_email_header_attribute,
     get_event_with_email_object, get_event_with_email_with_display_names_object,
     get_event_with_file_object, get_event_with_file_object_with_artifact,
     get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_ip_port_object,
     get_event_with_malware_galaxy,
+    get_event_with_non_conforming_object_relations,
     get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
     get_event_with_hash_composite_attributes, get_event_with_mutex_object,
     get_event_with_pattern_attribute, get_event_with_pe_objects,
@@ -148,14 +149,9 @@ _SNORT_RULES = (
 
 
 # Why a relation still goes missing on the way back, one cause per row below
-_NOT_WRITTEN = 'the export writes it nowhere'
 # `_handle_composition` reads the `src`/`dst` prefix off the Observable id,
 # where the export writes it on the CybOX object id
 _PORT_PREFIX_MISREAD = 'the port prefix is read off the wrong id'
-_NOT_WRITTEN_AND_PORT_PREFIX_MISREAD = (
-    'the export writes `first-seen` nowhere, and the port prefix is read off '
-    'the wrong id'
-)
 # `last-modified` is read, and `key` + `hive` + `last-modified` fold the
 # object into one `regkey` attribute
 _REGISTRY_KEY_FOLDED = 'a registry key of three attributes folds into one'
@@ -165,18 +161,10 @@ _GROUP_LIST_UNREAD = 'the `group_list` carrier is never read'
 
 # What a STIX 1 round trip of every MISP object fixture still loses, per
 # object: its name, the object relations that do not come back, the ones that
-# come back under a name the MISP object never had, and why. 692 of 719
+# come back under a name the MISP object never had, and why. 706 of 719
 # object attributes survive; the rest is work still to do, and this table is
 # where its progress is visible.
 _CORPUS_ROUND_TRIP_LOSSES = {
-    ('get_event_with_attack_pattern_object', 0): (
-        'attack-pattern',
-        ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
-        (), _NOT_WRITTEN
-    ),
-    ('get_event_with_domain_ip_object_custom', 0): (
-        'domain-ip', ('hostname',), (), _NOT_WRITTEN
-    ),
     ('get_event_with_escaped_values_v20', 5): (
         'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
     ),
@@ -184,24 +172,13 @@ _CORPUS_ROUND_TRIP_LOSSES = {
         'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
     ),
     ('get_event_with_ip_port_object', 0): (
-        'ip-port', ('dst-port', 'first-seen'), ('port',),
-        _NOT_WRITTEN_AND_PORT_PREFIX_MISREAD
-    ),
-    ('get_event_with_non_conforming_object_relations', 2): (
-        'url', ('Odd.Case/Relation', 'weird-relation'), (), _NOT_WRITTEN
+        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
     ),
     ('get_event_with_object_confidence_tags', 0): (
-        'ip-port', ('dst-port', 'first-seen'), ('port',),
-        _NOT_WRITTEN_AND_PORT_PREFIX_MISREAD
-    ),
-    ('get_event_with_object_references', 0): (
-        'attack-pattern',
-        ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
-        (), _NOT_WRITTEN
+        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
     ),
     ('get_event_with_object_references', 4): (
-        'ip-port', ('dst-port', 'first-seen'), ('port',),
-        _NOT_WRITTEN_AND_PORT_PREFIX_MISREAD
+        'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
     ),
     ('get_event_with_registry_key_and_values_objects', 0): (
         'registry-key', ('hive', 'key', 'last-modified'), (),
@@ -2655,7 +2632,7 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 692 of the 719 object attributes come back, and every row
+        still loses: 706 of the 719 object attributes come back, and every row
         below says why the rest do not. `n -> n` is not the assertion - the
         work is not over - and the table is what fails on a regression and on
         an improvement nobody wrote down."""
@@ -5722,18 +5699,148 @@ class TestSTIX1Import(TestSTIX):
                 parser = self._parse_internal_package(self._misp_export(event))
                 self.assertEqual(parser.diagnostics()['errors'], {})
                 converted = parser.misp_event.objects[0]
-                # What comes back, that is: the relations the export drops
-                # are the round trip ledger's
                 exported = {
-                    attribute['uuid']: str(attribute['value'])
+                    attribute['uuid']: attribute['value']
                     for attribute in misp_object['Attribute']
                 }
-                self.assertTrue(converted.attributes)
+                self.assertEqual(
+                    sorted(attribute.uuid for attribute in converted.attributes),
+                    sorted(exported)
+                )
                 for attribute in converted.attributes:
                     with self.subTest(relation=attribute.object_relation):
-                        self.assertEqual(
-                            exported.get(attribute.uuid), str(attribute.value)
-                        )
+                        value = exported[attribute.uuid]
+                        # pymisp parses the datetime a member carries
+                        if isinstance(attribute.value, datetime):
+                            value = datetime.fromisoformat(value)
+                        self.assertEqual(str(value), str(attribute.value))
+
+    def _round_trip_object(self, event, name):
+        """The MISP object a STIX 1 round trip of the event gives back, the
+        exported one it came from, and the warnings of the import."""
+        exported, = (
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == name
+        )
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.get_objects_by_name(name)
+        warnings = [
+            warning for warnings in parser.diagnostics()['warnings'].values()
+            for warning in warnings
+        ]
+        return parser, exported, converted, warnings
+
+    def _assert_attributes_kept(self, exported, converted):
+        """Every attribute comes back under its relation, its value and its
+        own uuid."""
+        self.assertEqual(
+            sorted(
+                (attribute.object_relation, attribute.uuid, str(attribute.value))
+                for attribute in converted.attributes
+            ),
+            sorted(
+                (
+                    attribute['object_relation'], attribute['uuid'],
+                    str(attribute['value'])
+                )
+                for attribute in exported['Attribute']
+            )
+        )
+
+    def test_internal_url_off_template_relations_round_trip(self):
+        """The `url` composition carries each relation it has no member for
+        as a nameless custom member of its own: read back through the
+        template, a relation it does not define is text, with the warning a
+        typed CybOX object's custom property gets."""
+        _, exported, converted, warnings = self._round_trip_object(
+            get_event_with_non_conforming_object_relations(), 'url'
+        )
+        self._assert_attributes_kept(exported, converted)
+        for relation in ('weird-relation', 'Odd.Case/Relation'):
+            with self.subTest(relation=relation):
+                attribute, = converted.get_attributes_by_relation(relation)
+                self.assertEqual(attribute.type, 'text')
+                warning, = (
+                    warning for warning in warnings
+                    if warning.startswith(f'{relation!r} is no url object')
+                )
+                self.assertIn('converted as a text attribute', warning)
+
+    def test_internal_domain_ip_hostname_round_trips(self):
+        """A `domain-ip` `hostname` is a `Hostname` member, named by the
+        relation the template has rather than the `url` one."""
+        _, exported, converted, warnings = self._round_trip_object(
+            get_event_with_domain_ip_object_custom(), 'domain-ip'
+        )
+        self.assertEqual(warnings, [])
+        self._assert_attributes_kept(exported, converted)
+        hostname, = converted.get_attributes_by_relation('hostname')
+        self.assertEqual(hostname.type, 'hostname')
+
+    def test_internal_ip_port_first_seen_round_trips_typed(self):
+        """`first-seen` is a nameless custom member: the template types it
+        back a `datetime`, and it keeps the uuid its member carries."""
+        _, exported, converted, warnings = self._round_trip_object(
+            get_event_with_ip_port_object(), 'ip-port'
+        )
+        self.assertEqual(warnings, [])
+        first_seen, = (
+            attribute for attribute in exported['Attribute']
+            if attribute['object_relation'] == 'first-seen'
+        )
+        attribute, = converted.get_attributes_by_relation('first-seen')
+        self.assertEqual(attribute.type, 'datetime')
+        self.assertEqual(attribute.uuid, first_seen['uuid'])
+        self.assertEqual(
+            attribute.value,
+            datetime(2020, 10, 25, 16, 22, tzinfo=timezone.utc)
+        )
+
+    def test_internal_attack_pattern_round_trips_every_relation(self):
+        """The summary is the untagged description, `prerequisites` and
+        `solutions` the ones tagged with their relation, and each related
+        weakness an Exploit Target of the TTP - read back as the relation,
+        under the uuid its Exploit Target carries, never as a `weakness`
+        object."""
+        parser, exported, converted, warnings = self._round_trip_object(
+            get_event_with_attack_pattern_object(), 'attack-pattern'
+        )
+        self.assertEqual(parser.misp_event.get_objects_by_name('weakness'), [])
+        self.assertEqual(warnings, [])
+        self.assertEqual(
+            sorted(
+                (attribute.object_relation, attribute.value)
+                for attribute in converted.attributes
+            ),
+            sorted(
+                (attribute['object_relation'], attribute['value'])
+                for attribute in exported['Attribute']
+            )
+        )
+        weaknesses = {
+            attribute['value']: attribute['uuid']
+            for attribute in exported['Attribute']
+            if attribute['object_relation'] == 'related-weakness'
+        }
+        for attribute in converted.get_attributes_by_relation('related-weakness'):
+            with self.subTest(value=attribute.value):
+                self.assertEqual(attribute.uuid, weaknesses[attribute.value])
+
+    def test_internal_attack_pattern_without_summary_reads_none(self):
+        """A tagged description is its relation, whichever ordinality it
+        takes: with no summary, the first description is `prerequisites`."""
+        event = get_event_with_attack_pattern_object()
+        misp_object = event['Event']['Object'][0]
+        misp_object['Attribute'] = [
+            attribute for attribute in misp_object['Attribute']
+            if attribute['object_relation'] != 'summary'
+        ]
+        *_, converted, _ = self._round_trip_object(event, 'attack-pattern')
+        self.assertEqual(converted.get_attributes_by_relation('summary'), [])
+        self.assertEqual(
+            len(converted.get_attributes_by_relation('prerequisites')), 1
+        )
 
     def test_internal_file_composition_reads_the_members_carrying_data(self):
         """A `malware-sample` and an `attachment` carrying their data are
@@ -5815,7 +5922,8 @@ class TestSTIX1Import(TestSTIX):
     def test_internal_context_object_attributes_take_derived_uuids(self):
         """The `attack-pattern`, `vulnerability` and `weakness` objects a TTP
         carries and the `course-of-action` object derive off the uuid of the
-        object they build."""
+        object they build - but for a related weakness, whose Exploit Target
+        carries its own."""
         for fixture in (get_event_with_attack_pattern_object,
                         get_event_with_vulnerability_object,
                         get_event_with_weakness_object,
@@ -5829,7 +5937,22 @@ class TestSTIX1Import(TestSTIX):
                     misp_object['name']
                 )[0]
                 self.assertEqual(converted.uuid, misp_object['uuid'])
-                self._assert_derived_attribute_uuids(converted)
+                read = {
+                    attribute['value']: attribute['uuid']
+                    for attribute in misp_object['Attribute']
+                    if attribute['object_relation'] == 'related-weakness'
+                }
+                for attribute in converted.attributes:
+                    with self.subTest(relation=attribute.object_relation):
+                        self.assertEqual(
+                            attribute.uuid,
+                            read.get(
+                                attribute.value,
+                                self._derived_attribute_uuid(
+                                    converted.uuid, attribute
+                                )
+                            )
+                        )
 
     def test_internal_two_imports_give_identical_attribute_uuids(self):
         """The property the derivation exists for: one document imported
