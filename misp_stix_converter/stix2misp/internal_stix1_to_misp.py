@@ -25,6 +25,14 @@ from stix.ttp.attack_pattern import AttackPattern
 from typing import Iterator, Optional
 
 _MISP_categories = describe_types.get('categories')
+# A `link`, a `url` and a `uri` travel as the same URI object, the category on
+# the relationship: under a category a `url` may not take, the URI can only
+# have been a `link`
+_LINK_ONLY_CATEGORIES = frozenset(
+    category for category, types
+    in describe_types['category_type_mappings'].items()
+    if 'link' in types and 'url' not in types
+)
 _MISP_objects_path = resources_path / 'objects'
 # How the export titles the TTP it writes a galaxy cluster as, against the
 # `(MISP Attribute)` and `(MISP Object)` it titles the TTP of an attribute or
@@ -862,6 +870,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     properties, title=observable.title
                 )
                 if isinstance(attribute_value, (str, int)):
+                    if self._is_link(properties, attribute_type, misp_attribute):
+                        attribute_type = 'link'
                     self._handle_attribute_case(
                         attribute_type, attribute_value, compl_data,
                         misp_attribute, stix_object_id
@@ -1288,6 +1298,27 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     ############################################################################
     #                             UTILITY METHODS.                             #
     ############################################################################
+
+    @staticmethod
+    def _is_link(properties, attribute_type: str, misp_attribute: dict) -> bool:
+        """Tell the `link` a URI object read as a `url` was exported from.
+
+        The wire is the same for both, and pymisp drops a category invalid for
+        the type silently: the `url` read under a category only a `link` takes
+        came back in `Network activity`. Under a category both take, the two
+        cannot be told apart and the `url` stands.
+
+        :param properties: the CybOX object properties
+        :param attribute_type: the MISP type the properties read as
+        :param misp_attribute: the attribute so far, carrying the category the
+            relationship or the Record Title named
+        :return: True when the attribute can only have been a `link`
+        """
+        return (
+            attribute_type == 'url' and
+            properties._XSI_TYPE == 'URIObjectType' and
+            misp_attribute.get('category') in _LINK_ONLY_CATEGORIES
+        )
 
     @staticmethod
     def _category_from_title(title: Optional[str]) -> Optional[str]:
