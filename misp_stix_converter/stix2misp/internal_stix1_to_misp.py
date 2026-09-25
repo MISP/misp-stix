@@ -847,6 +847,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         """Convert the Observable an attribute with `to_ids` unset was
         exported as.
 
+        The comment comes back with it: the export writes it as the
+        Observable's description, and writes none when the attribute has no
+        comment. The tags do not - a CybOX Observable has no room for a
+        marking.
+
         :param observable: the Observable itself - the item of the Related
             Observable an event export relates to its Incident, the Observable
             an Attribute Collection writes on the package
@@ -857,6 +862,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         misp_attribute = {'to_ids': False}
         if category is not None:
             misp_attribute['category'] = category
+        comment = self._read_comment(observable.description)
+        if comment is not None:
+            misp_attribute['comment'] = comment
         misp_attribute.update(self._sanitise_attribute_uuid(observable.id_))
         self._parse_misp_attribute(observable, misp_attribute, observable.id_)
 
@@ -1033,9 +1041,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         name = self._define_name(observable.item, observable.relationship)
         try:
             # The export titles an object Observable only where its CybOX
-            # type does not name the template
+            # type does not name the template, and describes it only with the
+            # object's comment
             self._fill_misp_object(
-                observable.item, name, title=observable.item.title
+                observable.item, name,
+                description=observable.item.description,
+                title=observable.item.title
             )
         except Exception:
             self._add_error(
