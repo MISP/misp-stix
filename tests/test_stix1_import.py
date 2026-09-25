@@ -8,7 +8,7 @@ from cybox.common import Hash, HashList
 from cybox.common.object_properties import CustomProperties, Property
 from cybox.core import (
     Object, Observable, ObservableComposition, Observables, RelatedObject)
-from cybox.objects.account_object import Authentication
+from cybox.objects.account_object import Account, Authentication
 from cybox.objects.address_object import Address, EmailAddress
 from cybox.objects.custom_object import Custom
 from cybox.objects.dns_record_object import DNSRecord
@@ -149,10 +149,6 @@ _SNORT_RULES = (
 
 # Why a relation still goes missing on the way back, one cause per row below
 _NOT_WRITTEN = 'the export writes it nowhere'
-_READ_AS_USER_ACCOUNT = (
-    'a credential is written as a user account and read back as one: the '
-    '`password` comes back on the `user-account`, nothing else does'
-)
 # `_handle_composition` reads the `src`/`dst` prefix off the Observable id,
 # where the export writes it on the CybOX object id
 _PORT_PREFIX_MISREAD = 'the port prefix is read off the wrong id'
@@ -169,7 +165,7 @@ _GROUP_LIST_UNREAD = 'the `group_list` carrier is never read'
 
 # What a STIX 1 round trip of every MISP object fixture still loses, per
 # object: its name, the object relations that do not come back, the ones that
-# come back under a name the MISP object never had, and why. 687 of 719
+# come back under a name the MISP object never had, and why. 692 of 719
 # object attributes survive; the rest is work still to do, and this table is
 # where its progress is visible.
 _CORPUS_ROUND_TRIP_LOSSES = {
@@ -178,20 +174,11 @@ _CORPUS_ROUND_TRIP_LOSSES = {
         ('prerequisites', 'related-weakness', 'related-weakness', 'solutions'),
         (), _NOT_WRITTEN
     ),
-    ('get_event_with_credential_object', 0): (
-        'credential', ('format', 'text', 'type'), (), _READ_AS_USER_ACCOUNT
-    ),
     ('get_event_with_domain_ip_object_custom', 0): (
         'domain-ip', ('hostname',), (), _NOT_WRITTEN
     ),
-    ('get_event_with_escaped_values_v20', 1): (
-        'credential', ('text',), (), _READ_AS_USER_ACCOUNT
-    ),
     ('get_event_with_escaped_values_v20', 5): (
         'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
-    ),
-    ('get_event_with_escaped_values_v21', 1): (
-        'credential', ('text',), (), _READ_AS_USER_ACCOUNT
     ),
     ('get_event_with_escaped_values_v21', 5): (
         'ip-port', ('dst-port',), ('port',), _PORT_PREFIX_MISREAD
@@ -2668,7 +2655,7 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 687 of the 719 object attributes come back, and every row
+        still loses: 692 of the 719 object attributes come back, and every row
         below says why the rest do not. `n -> n` is not the assertion - the
         work is not over - and the table is what fails on a regression and on
         an improvement nobody wrote down."""
@@ -3121,40 +3108,105 @@ class TestSTIX1Import(TestSTIX):
                     self._exported_content(exported)
                 )
 
-    def test_internal_misp_export_credential_object_still_comes_back_as_a_user_account(self):
-        """The export writes a `credential` object as a `UserAccount`, which
-        the import types as a `user-account`: the template name is lost on the
-        wire, and the properties are typed by a template defining neither of
-        them - two `text` attributes and two warnings, under the right
-        relations on the wrong object. Value and spelling survive; the object
-        name does not."""
-        event = get_event_with_credential_object()
-        exported = event['Event']['Object'][0]
-        parser = self._parse_internal_package(self._misp_export(event))
+    def test_internal_misp_export_credential_object_round_trips_whole(self):
+        """The export writes a `credential` object as a `UserAccount`, the
+        CybOX type a `user-account` is written as too: the import read it as a
+        `user-account`, which kept the username and the password, typed the
+        two custom properties by a template defining neither, and left the
+        description and the authentication type and format unread. The Record
+        Title names the template - on the Indicator, and on the Observable
+        written without one - and every attribute comes back on a
+        `credential`."""
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_credential_object()
+                exported = event['Event']['Object'][0]
+                for attribute in exported['Attribute']:
+                    attribute['to_ids'] = to_ids
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                converted, = parser.misp_event.objects
+                self.assertEqual(converted.name, 'credential')
+                self.assertEqual(converted.uuid, exported['uuid'])
+                self.assertEqual(
+                    self._converted_content(converted),
+                    self._exported_content(exported)
+                )
+
+    def test_internal_misp_export_one_attribute_credential_stays_an_object(self):
+        """A `credential` holding a password alone came back as an empty
+        `user-account`; read as a `credential`, its one attribute is still an
+        object's, never an attribute of the event."""
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_credential_object()
+                exported = event['Event']['Object'][0]
+                exported['Attribute'] = [
+                    dict(attribute, to_ids=to_ids)
+                    for attribute in exported['Attribute']
+                    if attribute['object_relation'] == 'password'
+                ]
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.misp_event.attributes, [])
+                converted, = parser.misp_event.objects
+                self.assertEqual(converted.name, 'credential')
+                self.assertEqual(
+                    self._converted_content(converted),
+                    self._exported_content(exported)
+                )
+
+    def test_external_one_field_account_is_a_credential_object(self):
+        """A third-party `Account` is read by the same handler: one field
+        makes a one-attribute `credential` object, not an attribute of the
+        event."""
+        account = Account()
+        account.description = 'Service account'
+        observable = Observable(account)
+        observable.id_ = f'example:Observable-{_OBSERVABLE_UUID}'
+        stix_package = STIXPackage()
+        stix_package.observables = Observables([observable])
+        parser = self._parse_external_package(stix_package)
         self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.misp_event.attributes, [])
+        converted, = parser.misp_event.objects
+        self.assertEqual(converted.name, 'credential')
         self.assertEqual(
-            [misp_object.name for misp_object in parser.misp_event.objects],
-            ['user-account']
+            self._converted_content(converted),
+            [('text', 'text', 'Service account')]
         )
-        converted = parser.misp_event.objects[0]
-        self._assert_relations_round_trip(
-            converted, exported, ('origin', 'notification')
-        )
-        self.assertEqual(
-            {
-                attribute.object_relation: attribute.type
-                for attribute in converted.attributes
-                if attribute.object_relation in ('origin', 'notification')
-            },
-            {'origin': 'text', 'notification': 'text'}
-        )
-        warnings = [
-            warning for warnings in parser.diagnostics()['warnings'].values()
-            for warning in warnings
-        ]
-        self.assertEqual(len(warnings), 2)
-        for warning in warnings:
-            self.assertIn('is no user-account object relation', warning)
+
+    def test_internal_misp_export_user_account_without_account_type_stays_a_user_account(self):
+        """A `user-account` naming no `unix` or `windows-*` account type is
+        the `UserAccount` a `credential` is written as, with no title naming
+        `credential`: it comes back as the `user-account` it was."""
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_user_account_objects()
+                user = event['Event']['Object'][0]
+                event['Event']['Object'] = [user]
+                for attribute in user['Attribute']:
+                    attribute['to_ids'] = to_ids
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted, = parser.misp_event.objects
+                self.assertEqual(converted.name, 'user-account')
+
+    def test_internal_misp_export_untitled_plain_credential_is_a_named_loss(self):
+        """A `credential` exported without `to_ids` before the export titled
+        its Observable carries nothing saying `credential`: it comes back as a
+        `user-account`, the loss named rather than warned - nothing on the
+        wire tells it from a real one."""
+        event = get_event_with_credential_object()
+        stix_package = self._misp_export(event)
+        package = stix_package.related_packages.related_package[0].item
+        related_observable, = package.incidents[0].related_observables
+        related_observable.item.title = None
+        parser = self._parse_internal_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.objects
+        self.assertEqual(converted.name, 'user-account')
 
     def test_internal_misp_export_file_and_pe_split_the_property_bag(self):
         """A `file` and the `pe` under it are one `WinExecutableFile` with one

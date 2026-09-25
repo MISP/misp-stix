@@ -2634,13 +2634,24 @@ class TestStix1Export(TestSTIX):
             'UserAccount'
         )
         self._check_credential_properties(properties, attributes)
+        # The Indicator carries the Record Title: the Observable under it
+        # takes none
+        indicator = self.parser.stix_package.incidents[0].related_indicators.indicator[0]
+        self.assertIsNone(indicator.item.observable.title)
 
     def _test_event_with_credential_object_observable(self, event):
+        meta_category = event['Object'][0]['meta-category']
         properties, attributes = self._run_observable_from_object_tests(
             event,
             'UserAccount'
         )
         self._check_credential_properties(properties, attributes)
+        # A `user-account` is a `UserAccount` too: with no Indicator, the
+        # Observable carries the Record Title saying which template wrote it
+        observable = self.parser.stix_package.incidents[0].related_observables.observable[0]
+        self.assertEqual(
+            observable.item.title, f'{meta_category}: credential (MISP Object)'
+        )
 
     def _test_event_with_custom_objects(self, event):
         account, btc, report = deepcopy(event['Object'])
@@ -2891,6 +2902,9 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(user_observable.relationship, user['meta-category'])
         user_properties = self._check_observable_features(user_observable.item, user, 'UserAccount')
         self._check_user_account_properties(user_properties, user['Attribute'])
+        # The title a `credential` carries is not written for the template
+        # the import names a `UserAccount` by default
+        self.assertIsNone(user_observable.item.title)
         self.assertEqual(unix_observable.relationship, unix['meta-category'])
         unix_properties = self._check_observable_features(unix_observable.item, unix, 'UnixUserAccount')
         self._check_unix_user_account_properties(unix_properties, unix['Attribute'])
