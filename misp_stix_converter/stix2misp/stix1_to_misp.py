@@ -1071,20 +1071,23 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # mutex attribute, and the `name` relation of a mutex object - which
         # the template types, as it types every other relation here
         template_types = _template_attribute_types('mutex')
-        attributes.insert(
-            0,
-            (
-                template_types.get('name', 'text'), properties.name.value,
-                'name'
+        # A mutex holding no name is read for the rest: cybox leaves the
+        # field None, which used to cost the whole package
+        if properties.name is not None:
+            attributes.insert(
+                0,
+                (
+                    template_types.get('name', 'text'), properties.name.value,
+                    'name'
+                )
             )
-        )
         return 'mutex', self._return_object_attributes(attributes), ''
 
     # A mutex attribute, or a mutex object: the properties the name travels
     # with are what tells them apart
     def _reduce_mutex(self, properties: mutex_object.Mutex, name: str,
                       attributes: tuple, compl_data) -> tuple:
-        if len(attributes) == 1:
+        if len(attributes) == 1 and properties.name is not None:
             event_types = self._mapping.event_types(properties._XSI_TYPE)
             return (
                 event_types['type'], attributes[0]['value'],
