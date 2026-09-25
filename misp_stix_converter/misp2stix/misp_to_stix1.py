@@ -2507,7 +2507,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._event_galaxy_not_mapped_warning(galaxy['type'])
 
     def _handle_undefined_parent_galaxy(self, galaxy: dict):
-        self._parent_galaxy_not_mapped_warning(galaxy['type'])
+        self._parent_galaxy_not_mapping_warning(galaxy['type'])
 
     def _parse_attack_pattern_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
