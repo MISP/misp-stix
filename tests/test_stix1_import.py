@@ -17,6 +17,7 @@ from cybox.objects.email_message_object import (
     Attachments, EmailHeader, EmailMessage)
 from cybox.objects.file_object import File
 from cybox.objects.library_object import Library
+from cybox.objects.mutex_object import Mutex
 from cybox.objects.network_connection_object import NetworkConnection
 from cybox.objects.network_socket_object import NetworkSocket
 from cybox.objects.port_object import Port
@@ -152,27 +153,16 @@ _SNORT_RULES = (
 
 
 # Why a relation still goes missing on the way back, one cause per row below
-# `last-modified` is read, and `key` + `hive` + `last-modified` fold the
-# object into one `regkey` attribute
-_REGISTRY_KEY_FOLDED = 'a registry key of three attributes folds into one'
 # `group` is on the wire, in a carrier nothing reads: a reader missing, not a
 # relation the export never wrote
 _GROUP_LIST_UNREAD = 'the `group_list` carrier is never read'
 
 # What a STIX 1 round trip of every MISP object fixture still loses, per
 # object: its name, the object relations that do not come back, the ones that
-# come back under a name the MISP object never had, and why. 711 of 719
+# come back under a name the MISP object never had, and why. 717 of 719
 # object attributes survive; the rest is work still to do, and this table is
 # where its progress is visible.
 _CORPUS_ROUND_TRIP_LOSSES = {
-    ('get_event_with_registry_key_and_values_objects', 0): (
-        'registry-key', ('hive', 'key', 'last-modified'), (),
-        _REGISTRY_KEY_FOLDED
-    ),
-    ('get_event_with_registry_key_and_values_objects_custom', 0): (
-        'registry-key', ('hive', 'key', 'last-modified'), (),
-        _REGISTRY_KEY_FOLDED
-    ),
     ('get_event_with_user_account_objects', 2): (
         'user-account', ('group', 'group'), (), _GROUP_LIST_UNREAD
     )
@@ -2738,7 +2728,7 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 706 of the 719 object attributes come back, and every row
+        still loses: 717 of the 719 object attributes come back, and every row
         below says why the rest do not. `n -> n` is not the assertion - the
         work is not over - and the table is what fails on a regression and on
         an improvement nobody wrote down."""
@@ -2994,27 +2984,42 @@ class TestSTIX1Import(TestSTIX):
             InternalSTIX1toMISPParser._property_value(prop)
         )
 
-    def test_internal_misp_export_registry_key_is_not_prefixed_twice(self):
-        """MISP's `key` holds its hive, CybOX's does not, and the import's
-        join of `Hive` and `Key` prepended the hive to a key already carrying
-        it. The object still folds into a `regkey` attribute - the right
-        value, the wrong kind, and not what this test is about."""
+    def test_internal_misp_export_registry_key_comes_back_as_an_object(self):
+        """The Incident relates a `registry-key` under its meta-category: it
+        comes back as the object it was, on both `to_ids` paths, where its
+        `key`, `hive` and `last-modified` used to fold into one `regkey`
+        attribute that lost the date. The key comes back verbatim, its hive
+        not prepended twice, and the hive in MISP's canonical form - the one
+        value the schema spells its own way."""
         for fixture in ('get_event_with_registry_key_and_values_objects',
                         'get_event_with_registry_key_and_values_objects_custom'):
-            with self.subTest(fixture=fixture):
-                event = getattr(test_events, fixture)()
-                parser = self._parse_internal_package(self._misp_export(event))
-                self.assertEqual(parser.diagnostics()['errors'], {})
-                self.assertEqual(
-                    parser.misp_event.get_objects_by_name('registry-key'), []
-                )
-                self.assertEqual(
-                    [
-                        (attribute.type, attribute.value)
-                        for attribute in parser.misp_event.attributes
-                    ],
-                    [('regkey', 'hkey_local_machine\\system\\bar\\foo')]
-                )
+            for to_ids in (True, False):
+                with self.subTest(fixture=fixture, to_ids=to_ids):
+                    event = getattr(test_events, fixture)()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    exported = event['Event']['Object'][0]
+                    parser = self._parse_internal_package(
+                        self._misp_export(event)
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.misp_event.attributes, [])
+                    converted, = parser.misp_event.get_objects_by_name(
+                        'registry-key'
+                    )
+                    self.assertEqual(converted.uuid, exported['uuid'])
+                    self.assertEqual(
+                        self._converted_content(converted),
+                        [
+                            ('hive', 'text', 'HKEY_LOCAL_MACHINE'),
+                            (
+                                'key', 'regkey',
+                                'hkey_local_machine\\system\\bar\\foo'
+                            ),
+                            ('last-modified', 'datetime', '2020-10-25T16:22:00Z')
+                        ]
+                    )
 
     def test_internal_misp_export_whois_dates_come_back_as_utc_midnight(self):
         """CybOX types the three `whois` dates as a `Date`: the time is gone
@@ -3190,6 +3195,159 @@ class TestSTIX1Import(TestSTIX):
                     self._converted_content(converted),
                     self._exported_content(exported)
                 )
+
+    def _one_attribute_objects(self):
+        """Every one-attribute object the `asn`, `email`, `file`, `mutex`,
+        `whois` and `vulnerability` fixtures spell: one per relation they
+        hold, the relation alone, and a `file` entropy no fixture holds. An
+        `asn` needs its `asn` - the export refuses one without it."""
+        for fixture in (get_event_with_asn_object, get_event_with_email_object,
+                        get_event_with_file_object,
+                        get_event_with_file_object_with_artifact,
+                        get_event_with_mutex_object,
+                        test_events.get_event_with_whois_object,
+                        get_event_with_vulnerability_object):
+            exported = fixture()['Event']['Object'][0]
+            if exported['name'] == 'file':
+                file_object = exported
+            for attribute in exported['Attribute']:
+                if exported['name'] == 'asn' and attribute['object_relation'] != 'asn':
+                    continue
+                if exported['name'] == 'vulnerability' and attribute['object_relation'] == 'id':
+                    # The fixture types it `text`, the template - and the
+                    # import - `vulnerability`
+                    attribute = {**attribute, 'type': 'vulnerability'}
+                yield {**exported, 'Attribute': [attribute]}
+        yield {
+            **file_object,
+            'Attribute': [
+                {'type': 'float', 'object_relation': 'entropy', 'value': '7.91'}
+            ]
+        }
+
+    def _round_trip_lone_object(self, misp_object: dict, to_ids: bool):
+        event = get_base_event()
+        misp_object = {
+            **misp_object, 'comment': 'object comment',
+            'Attribute': [
+                {**attribute, 'to_ids': to_ids}
+                for attribute in misp_object['Attribute']
+            ]
+        }
+        event['Event']['Object'] = [misp_object]
+        return misp_object, self._parse_internal_package(
+            self._misp_export(event)
+        )
+
+    def test_internal_misp_export_one_attribute_object_stays_an_object(self):
+        """The Incident relates a MISP object under its meta-category, which
+        no MISP category is: an object holding one attribute comes back as
+        the object it was, on both `to_ids` paths, where the reduction the
+        attribute path makes turned it into an event attribute that lost the
+        kind, the category, and without `to_ids` the comment and the
+        timestamp. A `file` or `whois` date and a `file` entropy alone used to
+        cost the whole package with `to_ids` set, a nameless `mutex` too: the
+        reduction expected a string, and a name."""
+        for misp_object in self._one_attribute_objects():
+            relation = misp_object['Attribute'][0]['object_relation']
+            for to_ids in (True, False):
+                with self.subTest(
+                        name=misp_object['name'], relation=relation,
+                        to_ids=to_ids):
+                    exported, parser = self._round_trip_lone_object(
+                        misp_object, to_ids
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.misp_event.attributes, [])
+                    converted, = parser.misp_event.objects
+                    self.assertEqual(converted.name, exported['name'])
+                    self.assertEqual(converted.uuid, exported['uuid'])
+                    expected = self._exported_content(exported)
+                    if exported['name'] == 'whois':
+                        # A `whois` date comes back at midnight UTC, the
+                        # CybOX `Date` holding no time
+                        expected = [
+                            (
+                                relation, attribute_type,
+                                f'{value[:10]}T00:00:00Z'
+                                if attribute_type == 'datetime' else value
+                            )
+                            for relation, attribute_type, value in expected
+                        ]
+                    self.assertEqual(
+                        self._converted_content(converted), expected
+                    )
+                    if to_ids or exported['name'] == 'vulnerability':
+                        self.assertEqual(
+                            converted.timestamp, int(exported['timestamp'])
+                        )
+                    # The export writes no comment for a `vulnerability`
+                    # object, whose Exploit Target it would go on
+                    if to_ids and exported['name'] != 'vulnerability':
+                        self.assertEqual(converted.comment, 'object comment')
+
+    def test_internal_misp_export_two_attribute_object_stays_an_object(self):
+        """A filename and a hash spell a `filename|<hash>` composite, a
+        filename and a path a joined `filename`, a key and a hive a `regkey`:
+        the reductions the attribute path makes. An object holding them comes
+        back as the object, every relation its own - the path, the hive and a
+        third registry key relation the reduction dropped included."""
+        file_object = get_event_with_file_object()['Event']['Object'][0]
+        registry_key = {
+            'name': 'registry-key', 'meta-category': 'file',
+            'uuid': _PLAIN_OBJECT_UUID, 'timestamp': '1603642920'
+        }
+        cases = []
+        for relations in (('filename', 'md5'), ('filename', 'sha256'),
+                          ('filename', 'path')):
+            cases.append(
+                {
+                    **file_object,
+                    'Attribute': [
+                        attribute for attribute in file_object['Attribute']
+                        if attribute['object_relation'] in relations
+                    ]
+                }
+            )
+        for third in ((), (('text', 'data', 'qwerty'),),
+                      (('text', 'name', 'Run'),)):
+            attributes = (
+                ('regkey', 'key', 'system\\bar\\foo'),
+                ('text', 'hive', 'HKEY_LOCAL_MACHINE'), *third
+            )
+            cases.append(
+                {
+                    **registry_key,
+                    'Attribute': [
+                        {
+                            'type': attribute_type, 'object_relation': relation,
+                            'value': value
+                        }
+                        for attribute_type, relation, value in attributes
+                    ]
+                }
+            )
+        for misp_object in cases:
+            relations = tuple(
+                attribute['object_relation']
+                for attribute in misp_object['Attribute']
+            )
+            for to_ids in (True, False):
+                with self.subTest(
+                        name=misp_object['name'], relations=relations,
+                        to_ids=to_ids):
+                    exported, parser = self._round_trip_lone_object(
+                        misp_object, to_ids
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.misp_event.attributes, [])
+                    converted, = parser.misp_event.objects
+                    self.assertEqual(converted.name, exported['name'])
+                    self.assertEqual(converted.uuid, exported['uuid'])
+                    self.assertEqual(
+                        self._converted_content(converted),
+                        self._exported_content(exported)
+                    )
 
     def test_internal_misp_export_credential_object_round_trips_whole(self):
         """The export writes a `credential` object as a `UserAccount`, the
@@ -3919,12 +4077,11 @@ class TestSTIX1Import(TestSTIX):
             ]
         )
 
-    def test_internal_text_object_relation_keeps_the_author_comment(self):
-        """An object read back as one `text` attribute takes the relation as
-        its comment only where the author wrote none: an `email` reading its
-        `user-agent` as a Custom Property replaced the comment with the
-        property name, a `file` reading one `text` relation overwrote it with
-        the empty string."""
+    def test_internal_one_text_relation_object_keeps_its_relation(self):
+        """An object holding one `text` relation came back as a `text`
+        attribute, the relation standing in as its comment - where it did not
+        replace the author's. It comes back as the object it was: the
+        relation is the relation, the comment the object's own."""
         for name, relation, value in (
                 ('email', 'user-agent', 'Mozilla/5.0'),
                 ('file', 'path', '/tmp'),
@@ -3949,13 +4106,15 @@ class TestSTIX1Import(TestSTIX):
                     parser = self._parse_internal_package(
                         self._misp_export(event)
                     )
-                    converted, = parser.misp_event.attributes
-                    self.assertEqual(converted.value, value)
+                    self.assertEqual(parser.misp_event.attributes, [])
+                    converted, = parser.misp_event.objects
+                    self.assertEqual(converted.name, name)
+                    self.assertEqual(converted.uuid, _PLAIN_OBJECT_UUID)
                     self.assertEqual(
-                        getattr(converted, 'comment', None),
-                        comment if comment is not None
-                        else ('user-agent' if name == 'email' else None)
+                        self._converted_content(converted),
+                        [(relation, 'text', value)]
                     )
+                    self.assertEqual(converted.get('comment'), comment)
 
     def test_external_course_of_action_markings_warning_names_no_export(self):
         """The Course of Action parser is shared, so a third-party one
@@ -4380,6 +4539,64 @@ class TestSTIX1Import(TestSTIX):
                         for attribute in parser.misp_event.attributes
                     ],
                     [('regkey', expected)]
+                )
+
+    @staticmethod
+    def _mutex(name=None, **custom_properties):
+        mutex = Mutex()
+        if name is not None:
+            mutex.name = name
+        if custom_properties:
+            mutex.custom_properties = CustomProperties()
+            for prop_name, value in custom_properties.items():
+                prop = Property()
+                prop.name = prop_name
+                prop.value = value
+                mutex.custom_properties.append(prop)
+        return mutex
+
+    def _parse_external_mutex(self, mutex, as_indicator: bool):
+        observable = self._observable(mutex, 'Mutex')
+        stix_package = STIXPackage()
+        if as_indicator:
+            indicator = Indicator()
+            indicator.id_ = f'MISP:Indicator-{_OBSERVABLE_UUID}'
+            indicator.add_observable(observable)
+            stix_package.add_indicator(indicator)
+        else:
+            stix_package.observables = Observables([observable])
+        return self._parse_external_package(stix_package)
+
+    def test_external_mutex_with_its_name_alone_is_an_attribute(self):
+        """The External import reads a one-field object as the attribute it
+        spells: a third-party document relates it under no meta-category to
+        tell otherwise."""
+        for as_indicator in (True, False):
+            with self.subTest(as_indicator=as_indicator):
+                parser = self._parse_external_mutex(
+                    self._mutex('MyMutex'), as_indicator
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.misp_event.objects, [])
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('mutex', 'MyMutex')]
+                )
+
+    def test_external_mutex_without_a_name_converts(self):
+        """cybox leaves the name of a nameless mutex None: reading its value
+        cost the whole package. What the mutex does carry is read."""
+        for as_indicator in (True, False):
+            with self.subTest(as_indicator=as_indicator):
+                parser = self._parse_external_mutex(
+                    self._mutex(description='Held by the dropper'),
+                    as_indicator
+                )
+                self._assert_single_object(
+                    parser, 'mutex', {'description': 'Held by the dropper'}
                 )
 
     def test_external_whois_observable_converts(self):
@@ -5940,25 +6157,28 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(parser.diagnostics()['errors'], {})
         return parser.misp_event
 
-    def test_internal_folded_registry_key_reads_no_comment(self):
+    def test_internal_registry_key_indicator_reads_no_comment(self):
         """A `registry-key` Indicator carries the template's description when
         the object has no comment of its own: read against the template the
         CybOX `WindowsRegistryKey` names, not the `file` its meta-category
-        does, it is no comment on the attribute the object folds into."""
+        does, it is no comment on the object."""
         event = get_event_with_registry_key_and_values_objects()
         registry_key = event['Event']['Object'][0]
         self.assertEqual(registry_key['name'], 'registry-key')
         registry_key['description'] = _template_description('registry-key')
-        regkey, = self._round_trip_indicator_objects(event).attributes
-        self.assertEqual(regkey.type, 'regkey')
-        self.assertFalse(regkey.get('comment'))
+        converted, = self._round_trip_indicator_objects(
+            event
+        ).get_objects_by_name('registry-key')
+        self.assertFalse(converted.get('comment'))
 
-    def test_internal_folded_registry_key_keeps_its_comment(self):
+    def test_internal_registry_key_indicator_keeps_its_comment(self):
         event = get_event_with_registry_key_and_values_objects()
         registry_key = event['Event']['Object'][0]
         registry_key['comment'] = 'Run key the dropper sets'
-        regkey, = self._round_trip_indicator_objects(event).attributes
-        self.assertEqual(regkey.comment, 'Run key the dropper sets')
+        converted, = self._round_trip_indicator_objects(
+            event
+        ).get_objects_by_name('registry-key')
+        self.assertEqual(converted.comment, 'Run key the dropper sets')
 
     def test_internal_passive_dns_indicator_round_trips(self):
         """A `passive-dns` object is a named `Custom` object under its

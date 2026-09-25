@@ -529,6 +529,42 @@ class TestSTIX1NativeFieldValues(TestSTIX):
                 self.assertEqual(parser.errors, {})
                 self.assertEqual(properties.hive.value, hive)
 
+    def test_asn_without_its_number_is_refused_with_an_error(self):
+        # The CybOX `AS` is built around the number the template requires:
+        # the object raised a `KeyError`, reported as a traceback next to a
+        # warning calling the `asn` template unmapped
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                event = get_base_event()
+                event['Event']['Object'] = [
+                    {
+                        'name': 'asn', 'meta-category': 'network',
+                        'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                        'Attribute': [
+                            {
+                                'type': 'text', 'object_relation': 'description',
+                                'value': 'Transit provider', 'to_ids': to_ids
+                            }
+                        ]
+                    }
+                ]
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+                parser.parse_misp_event(event['Event'])
+                self.assertEqual(
+                    parser.errors,
+                    {
+                        event['Event']['uuid']: [
+                            f'Error with the asn object (uuid: '
+                            f'{self._OBJECT_UUID}): no asn attribute to build '
+                            'it from, the object is not exported.'
+                        ]
+                    }
+                )
+                self.assertEqual(parser.warnings, {})
+                incident = parser.stix_package.incidents[0]
+                self.assertFalse(incident.related_observables)
+                self.assertFalse(incident.related_indicators)
+
 
 class TestSTIX1ObjectsWithoutPropertyBag(TestSTIX):
     """What the export writes for a relation of an object whose STIX type has
