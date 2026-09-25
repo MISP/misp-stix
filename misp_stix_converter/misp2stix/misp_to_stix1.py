@@ -925,6 +925,14 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable.id_ = f"{self._orgname_id}:Observable-{alternative_uuid}"
         return observable
 
+    @staticmethod
+    def _add_observable_comment(observable: Observable, record: dict):
+        # A record exported without `to_ids` has no Indicator to carry its
+        # comment: the Observable's own description does, and only when
+        # there is one, so an uncommented record writes no description
+        if record.get('comment'):
+            observable.description = record['comment']
+
     def _create_observable_composition(self, observables: list, uuid: str,
                                        name: Optional[str] = None) -> Observable:
         object_type = 'ObservableComposition' if name is None else f'{name}_ObservableComposition'
@@ -1310,6 +1318,7 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
             indicator = self._handle_attribute_indicator(attribute, observable)
             self._stix_package.add_indicator(indicator)
         else:
+            self._add_observable_comment(observable, attribute)
             self._stix_package.add_observable(observable)
 
     def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
@@ -1492,6 +1501,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             )
             self._incident.related_indicators.append(related_indicator)
         else:
+            self._add_observable_comment(observable, attribute)
             related_observable = RelatedObservable(
                 observable,
                 relationship=category
@@ -1541,7 +1551,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         if to_ids or True in ids_list:
                             self._handle_misp_object_with_context(misp_object, observable)
                         else:
-                            self._handle_misp_object(observable, misp_object.get('meta-category'))
+                            self._handle_misp_object(misp_object, observable)
                     except Exception as exception:
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe'):
@@ -1553,7 +1563,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         if True in ids_list:
                             self._handle_misp_object_with_context(misp_object, observable)
                         else:
-                            self._handle_misp_object(observable, misp_object.get('meta-category'))
+                            self._handle_misp_object(misp_object, observable)
                     except Exception as exception:
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe-section'):
@@ -1581,7 +1591,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             return
         if misp_object['name'] in _TITLED_OBSERVABLE_OBJECT_NAMES:
             observable.title = self._object_record_title(misp_object)
-        self._handle_misp_object(observable, misp_object.get('meta-category'))
+        self._handle_misp_object(misp_object, observable)
 
     def _add_custom_property(self, stix_object: File, name: str, value: Any,
                              misp_object: dict):
@@ -1716,10 +1726,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     attribute['object_relation'], attribute['value'], record
                 )
 
-    def _handle_misp_object(self, observable: Observable, category: str):
+    def _handle_misp_object(self, misp_object: dict, observable: Observable):
+        self._add_observable_comment(observable, misp_object)
         related_observable = RelatedObservable(
             observable,
-            relationship=category
+            relationship=misp_object.get('meta-category')
         )
         self._incident.related_observables.append(related_observable)
 
