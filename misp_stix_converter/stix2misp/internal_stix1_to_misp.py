@@ -681,15 +681,20 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         """
         attributes = []
         for key, mapping in self._mapping.vulnerability_object_mapping().items():
-            value = getattr(vulnerability, key)
-            if value:
-                attribute_type, relation = mapping
-                attributes.append(
-                    {
-                        'type': attribute_type, 'object_relation': relation,
-                        'value': value if isinstance(value, str) else value.value
-                    }
-                )
+            # A summary past the first is one more description
+            values = (
+                vulnerability.descriptions or () if key == 'description'
+                else (getattr(vulnerability, key),)
+            )
+            for value in values:
+                if value:
+                    attribute_type, relation = mapping
+                    attributes.append(
+                        {
+                            'type': attribute_type, 'object_relation': relation,
+                            'value': value if isinstance(value, str) else value.value
+                        }
+                    )
         if vulnerability.cvss_score and vulnerability.cvss_score.overall_score:
             attributes.append(
                 {
