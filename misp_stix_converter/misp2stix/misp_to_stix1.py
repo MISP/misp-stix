@@ -1629,6 +1629,44 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return attributes_dict
 
     @staticmethod
+    def _extract_single_field_attributes(attributes: list,
+                                         force_single: tuple) -> tuple:
+        """Extract the values of a MISP object by relation, a relation whose
+        native field holds one value taking its first value alone.
+
+        :param attributes: the attributes of the MISP object
+        :param force_single: the relations a native field holds one value of
+        :return: the values by relation, and the further values of each
+            relation forced single, which the field has no room for
+        """
+        attributes_dict = defaultdict(list)
+        repeated = defaultdict(list)
+        for attribute in attributes:
+            relation = attribute['object_relation']
+            if relation not in force_single:
+                attributes_dict[relation].append(attribute['value'])
+            elif relation in attributes_dict:
+                repeated[relation].append(attribute['value'])
+            else:
+                attributes_dict[relation] = attribute['value']
+        return attributes_dict, repeated
+
+    def _add_repeated_values(self, stix_object: Any, repeated: dict,
+                             misp_object: dict):
+        """Write the values a native field holding one had no room for to
+        the property bag, under their relation.
+
+        :param stix_object: the CybOX object carrying the bag
+        :param repeated: the further values, by relation
+        :param misp_object: the MISP object they belong to
+        """
+        for relation, values in repeated.items():
+            for value in values:
+                self._add_custom_property(
+                    stix_object, relation, value, misp_object
+                )
+
+    @staticmethod
     def _pop_first_value(attributes: dict, relation: str) -> Any:
         """Take the first value of a relation for a native field holding one,
         leaving the others where the property bag takes them.
@@ -1750,9 +1788,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._stix_package.add_ttp(ttp)
 
     def _parse_asn_object(self, misp_object: dict) -> Optional[Observable]:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.as_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.as_single_fields()
         )
         if 'asn' not in attributes:
             # The template requires it, and the CybOX `AS` is its number: an
@@ -1764,6 +1801,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             as_object.name = attributes.pop('description')
         if attributes:
             as_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(as_object, repeated, misp_object)
         observable = self._create_observable(as_object, misp_object['uuid'], 'AS')
         return observable
 
@@ -1848,9 +1886,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return []
 
     def _parse_credential_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=tuple(self._mapping.credential_object_mapping().keys())
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], tuple(self._mapping.credential_object_mapping().keys())
         )
         account_object = UserAccount()
         for feature, field in self._mapping.credential_object_mapping().items():
@@ -1861,6 +1898,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             account_object.authentication = authentication_list
         if attributes:
             account_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(account_object, repeated, misp_object)
         observable = self._create_observable(account_object, misp_object['uuid'], 'UserAccount')
         return observable
 
@@ -2101,9 +2139,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_network_socket_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.network_socket_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.network_socket_single_fields()
         )
         socket_object = NetworkSocket()
         self._parse_socket_addresses(socket_object, attributes, ('local', 'remote'))
@@ -2124,14 +2161,14 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 attributes['state'] = others
         if attributes:
             socket_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(socket_object, repeated, misp_object)
         observable = self._create_observable(socket_object, misp_object['uuid'], 'NetworkSocket')
         return observable
 
     def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: dict):
         ids_list = [self._fetch_ids_flag(misp_pe['Attribute'])]
-        attributes = self._extract_multiple_object_attributes(
-            misp_pe['Attribute'],
-            force_single=self._mapping.pe_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_pe['Attribute'], self._mapping.pe_single_fields()
         )
         if any(feature in attributes for feature in self._mapping.pe_resource_mapping()):
             resource = PEVersionInfoResource()
@@ -2183,6 +2220,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 hashlist = HashList()
                 hashlist.hashes = hashes
                 file_object.headers.file_header.hashes = hashlist
+        self._add_repeated_values(file_object, repeated, misp_pe)
         if misp_pe.get('ObjectReference'):
             for reference in misp_pe['ObjectReference']:
                 if self._check_reference(reference, 'pe-section'):
@@ -2230,15 +2268,14 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return pe_section
 
     def _parse_process_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.process_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.process_single_fields()
         )
         process_object = Process()
         for key, feature in self._mapping.process_object_mapping().items():
             if attributes.get(key):
                 setattr(process_object, feature, attributes.pop(key))
-                setattr(getattr(process_object, feature), 'condition', 'Equals')
+            setattr(getattr(process_object, feature), 'condition', 'Equals')
         if attributes.get('child-pid'):
             process_object.child_pid_list = ChildPIDList()
             for child in attributes.pop('child-pid'):
@@ -2260,6 +2297,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             process_object.is_hidden = hidden
         if attributes:
             process_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(process_object, repeated, misp_object)
         observable = self._create_observable(process_object, misp_object['uuid'], 'Process')
         return observable
 
@@ -2340,9 +2378,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable_composition
 
     def _parse_user_account_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.user_account_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.user_account_single_fields()
         )
         account_object = self._create_user_account_object(attributes)
         if attributes.get('password'):
@@ -2359,6 +2396,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             account_object.disabled = disabled
         if attributes:
             account_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(account_object, repeated, misp_object)
         observable = self._create_observable(
             account_object,
             misp_object['uuid'],
@@ -2369,13 +2407,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_vulnerability_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         vulnerability = Vulnerability()
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.vulnerability_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.vulnerability_single_fields()
         )
         if attributes.get('id'):
-            cve_id = self._select_single_feature(attributes, 'id')
-            vulnerability.cve_id = cve_id
+            vulnerability.cve_id = attributes.pop('id')
         if attributes.get('cvss-score'):
             cvss = CVSSVector()
             cvss.overall_score = attributes.pop('cvss-score')
@@ -2392,6 +2428,15 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             ('id', 'cvss-score', 'references',
              *self._mapping.vulnerability_object_mapping())
         )
+        record = self._object_features(misp_object)
+        for relation, values in repeated.items():
+            for value in values:
+                if relation == 'summary':
+                    # One more description, as the attack pattern writes
+                    # every free text relation it has
+                    vulnerability.add_description(value)
+                else:
+                    self._unwritable_relation_warning(relation, value, record)
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
@@ -2420,9 +2465,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._handle_ttp_from_object(misp_object, ttp)
 
     def _parse_whois_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.whois_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.whois_single_fields()
         )
         whois_object = WhoisEntry()
         if attributes.get('registrar'):
@@ -2462,6 +2506,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             whois_object.remarks = attributes.pop('text')
         if attributes:
             whois_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(whois_object, repeated, misp_object)
         observable = self._create_observable(whois_object, misp_object['uuid'], 'Whois')
         return observable
 

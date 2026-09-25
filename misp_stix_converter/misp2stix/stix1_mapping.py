@@ -468,6 +468,7 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
     __vulnerability_single_fields = (
         'created',
         'cvss-score',
+        'id',
         'published',
         'summary'
     )
