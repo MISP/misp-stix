@@ -30,6 +30,8 @@ _MISP_objects_path = resources_path / 'objects'
 # `(MISP Attribute)` and `(MISP Object)` it titles the TTP of an attribute or
 # an object with: what tells a cluster from the content written next to it
 _MISP_GALAXY_TITLE_SUFFIX = ' (MISP Galaxy)'
+# The tail of the `{meta-category}: {name} (MISP Object)` Record Title
+_MISP_OBJECT_TITLE_SUFFIX = ' (MISP Object)'
 # What the export puts before the value of a `target-external` attribute in
 # the name line of the CIQ identity it writes the attribute as
 _MISP_EXTERNAL_TARGET_PREFIX = 'External target: '
@@ -910,7 +912,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def _parse_misp_object_observable(self, observable: Observable):
         name = self._define_name(observable.item, observable.relationship)
         try:
-            self._fill_misp_object(observable.item, name)
+            # The export titles an object Observable only where its CybOX
+            # type does not name the template
+            self._fill_misp_object(
+                observable.item, name, title=observable.item.title
+            )
         except Exception:
             self._add_error(
                 'Unable to parse the Observable '
@@ -1096,7 +1102,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def _parse_observable_object(self, properties, to_ids, uuid, object_id,
                                  name=None, description=None, title=None,
                                  timestamp=None):
-        attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties)
+        attribute_type, attribute_value, compl_data = self._handle_object_type(
+            properties, title
+        )
         if isinstance(attribute_value, (str, int)):
             attribute = {'to_ids': to_ids, 'uuid': uuid}
             if timestamp is not None:
@@ -1139,6 +1147,38 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         category = title.split(': ', 1)[0]
         return category if category in _MISP_categories else None
 
+    def _handle_object_type(self, properties, title: Optional[str]) -> tuple:
+        """Read the content of the CybOX object a MISP object was exported
+        as, through the template the Record Title names where the CybOX type
+        does not name one.
+
+        A `credential` and a `user-account` with no unix or windows account
+        type are both a `UserAccount`, and the handler reads the attributes
+        through its own template: the title picks it, before anything is read.
+        A `UserAccount` titled with no template name is a `user-account`.
+
+        :param properties: the CybOX object properties
+        :param title: the Record Title, where the shape carries one
+        :return: what the handler the CybOX type, or the title, picks returns
+        """
+        if properties._XSI_TYPE == 'UserAccountObjectType':
+            if self._object_name_from_title(title) == 'credential':
+                return self._handle_credential(properties)
+        return self._handle_attribute_type(properties)
+
+    @staticmethod
+    def _object_name_from_title(title: Optional[str]) -> Optional[str]:
+        """Read the object template name off the `{meta-category}: {name}
+        (MISP Object)` Record Title.
+
+        :param title: the Indicator or Observable title
+        :return: the template name, None when the title names none
+        """
+        if not title or not title.endswith(_MISP_OBJECT_TITLE_SUFFIX):
+            return None
+        _, _, name = title[:-len(_MISP_OBJECT_TITLE_SUFFIX)].partition(': ')
+        return name or None
+
     # Return type & value of a composite attribute in MISP - None where the
     # values the composition holds pair into no MISP composite type, which the
     # caller records rather than unpacking
@@ -1164,8 +1204,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
         Only an observable composition needs one: the export writes the object
         name into the Observable id it gives the composition, and a simple
-        Observable takes its name from the CybOX properties themselves, in
-        `_handle_attribute_type`.
+        Observable takes its name from the CybOX properties themselves - or
+        from the Record Title where the CybOX type names no single template -
+        in `_handle_object_type`.
 
         :param observable: the Observable the MISP object was exported as
         :param relationship: the MISP meta-category the export wrote

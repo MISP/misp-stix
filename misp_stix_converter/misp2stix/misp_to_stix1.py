@@ -87,6 +87,12 @@ _MISP_BOOLEAN_SPELLINGS = {
     '1': True, 'true': True, 'True': True,
     '0': False, 'false': False, 'False': False
 }
+# The templates whose CybOX type another template writes too: a `credential`
+# is a `UserAccount`, like a `user-account` with no unix or windows account
+# type. On an Indicator the Record Title names the template; an Observable
+# written without one carries that title itself, which every other object
+# Observable goes without
+_TITLED_OBSERVABLE_OBJECT_NAMES = ('credential',)
 _NON_INDICATOR_OBJECT_TYPES = Union[Campaign, CourseOfAction, TTP]
 _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
@@ -1453,6 +1459,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     if to_ids:
                         self._handle_misp_object_with_context(misp_object, observable)
                     else:
+                        if object_name in _TITLED_OBSERVABLE_OBJECT_NAMES:
+                            observable.title = self._object_record_title(misp_object)
                         self._handle_misp_object(observable, misp_object.get('meta-category'))
             except Exception as exception:
                 self._object_error(misp_object, exception)
@@ -2454,13 +2462,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         indicator = Indicator(timestamp=timestamp)
         indicator.id_ = f"{self._orgname_id}:Indicator-{misp_object['uuid']}"
         indicator.producer = self._producer
-        indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
+        indicator.title = self._object_record_title(misp_object)
         if any(misp_object.get(feature) for feature in ('comment', 'description')):
             indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
         indicator.add_indicator_type(self._set_indicator_type(misp_object['name']))
         indicator.add_valid_time_position(ValidTime())
         indicator.confidence = self._handle_object_indicator_tags(misp_object, indicator, timestamp)
         return indicator
+
+    @staticmethod
+    def _object_record_title(misp_object: dict) -> str:
+        return f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
 
     @staticmethod
     def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:

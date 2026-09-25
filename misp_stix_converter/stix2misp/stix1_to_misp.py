@@ -600,18 +600,29 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return "malware-sample", f"{title}|{properties.hashes[0]}", properties.raw_artifact.value
         return self._mapping.event_types(properties._XSI_TYPE)['type'], title, properties.raw_artifact.value
 
-    # Return type & attributes of a credential object
+    # Return name & attributes of a credential object: an object whatever
+    # it holds, one attribute included
     def _handle_credential(self, properties: account_object.Account) -> tuple:
         attributes = []
+        # The export writes a `credential` as a `UserAccount`, the one of the
+        # two carrying a username
+        username = getattr(properties, 'username', None)
+        if username:
+            attributes.append(('text', username.value, 'username'))
         if properties.description:
-            attributes.append(["text", properties.description.value, "text"])
-        if properties.authentication:
-            for authentication in properties.authentication:
-                attributes.extend(
-                    self._fetch_attributes_with_key_parsing(authentication, 'credential_authentication_mapping')
-                )
+            attributes.append(("text", properties.description.value, "text"))
+        read = set()
+        for authentication in properties.authentication or ():
+            for attribute in self._fetch_attributes_with_key_parsing(
+                    authentication, 'credential_authentication_mapping'):
+                # The export writes the type and the format of the credential
+                # on each authentication, one per password: every password is
+                # read, the type and the format once
+                if attribute[2] == 'password' or attribute not in read:
+                    read.add(attribute)
+                    attributes.append(attribute)
         attributes.extend(self._read_custom_properties(properties, 'credential'))
-        return attributes[0] if len(attributes) == 1 else ("credential", self._return_object_attributes(attributes), "")
+        return "credential", self._return_object_attributes(attributes), ""
 
     # Return type & value of a custom attribute, or name & attributes of a
     # custom object: the `Custom` CybOX object is what the MISP export writes
