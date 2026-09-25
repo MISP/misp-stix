@@ -501,6 +501,13 @@ class MISPtoSTIXParser(AbstractParser):
             'written as a custom property.'
         )
 
+    def _unrecognised_integer_warning(
+            self, relation: str, value: Any, record: str):
+        self._add_warning(
+            f'{relation!r} in the {record} is not an integer: {value!r} '
+            'written as a custom property.'
+        )
+
     def _unstorable_property_warning(
             self, relation: str, value: Any, record: Optional[str] = None):
         # The relation and the record name what the reader lost, the value

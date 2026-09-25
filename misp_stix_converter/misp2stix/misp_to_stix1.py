@@ -2273,7 +2273,21 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         process_object = Process()
         for key, feature in self._mapping.process_object_mapping().items():
-            if attributes.get(key):
+            if not attributes.get(key):
+                continue
+            if key in ('pid', 'parent-pid'):
+                try:
+                    setattr(process_object, feature, attributes[key])
+                except ValueError:
+                    # cybox takes a pid as an integer, the template as text:
+                    # a value spelling none stays for the bag to carry
+                    self._unrecognised_integer_warning(
+                        key, attributes[key],
+                        self._object_features(misp_object)
+                    )
+                    continue
+                del attributes[key]
+            else:
                 setattr(process_object, feature, attributes.pop(key))
             setattr(getattr(process_object, feature), 'condition', 'Equals')
         if attributes.get('child-pid'):
