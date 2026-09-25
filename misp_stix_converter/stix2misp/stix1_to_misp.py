@@ -105,12 +105,19 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # itself instead of going through `load_stix_package`, so parsing is
         # the one step every entry into a conversion takes.
         super()._reset_bundle_state()
+        self.__event_tags = set()
         self.__galaxies = set()
         self.__references = defaultdict(list)
 
     ############################################################################
     #                                PROPERTIES                                #
     ############################################################################
+
+    @property
+    def event_tags(self) -> set:
+        # The tags the document itself carried for its event, apart from the
+        # label naming the converter that wrote it
+        return self.__event_tags
 
     @property
     def galaxies(self) -> set:
@@ -1615,8 +1622,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _refuse_empty_event(self):
         """Refuse the event a package converted nothing into.
 
-        An event with no attribute, object or galaxy is what a document the
-        parser could read nothing from yields - a MISP export parsed as
+        An event with no attribute, object, galaxy or tag is what a document
+        the parser could read nothing from yields - a MISP export parsed as
         External finds nothing at package level, a package made of a header
         has nothing below it - and a caller told the conversion succeeded
         writes it as an imported event holding nothing. Raised as the error
@@ -1630,7 +1637,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
         :raises MissingSTIXContentError: if nothing converted
         """
-        if self.misp_event.attributes or self.misp_event.objects or self.galaxies:
+        if (self.misp_event.attributes or self.misp_event.objects
+                or self.galaxies or self.event_tags):
             return
         message = (
             f'The STIX {self.stix_version} package converted to no MISP '

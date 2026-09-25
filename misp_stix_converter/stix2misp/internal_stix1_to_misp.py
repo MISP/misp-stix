@@ -42,6 +42,8 @@ _MISP_HEADER_DESCRIPTION_COMMENT = 'Imported from STIX header description'
 # 1 export wrote, next to the `Attribute (Category - type)` this one writes
 _LEGACY_JOURNAL_ATTRIBUTE = re.compile(r'^attribute\[([^\]]+)\]\[([^\]]+)\]$')
 _JOURNAL_ATTRIBUTE_PREFIX = 'Attribute ('
+# The value slot of a galaxy tag, `misp-galaxy:{galaxy type}="{value}"`
+_GALAXY_TAG = re.compile(r'^misp-galaxy:[^=]+="(.*)"$')
 
 
 class InternalSTIX1toMISPParser(STIX1toMISPParser):
@@ -147,9 +149,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._parse_affected_asset(affected_asset)
         # The event tags: the handling the export writes them on, plus the
         # `misp:tool` journal entry below. Nothing dedupes them here - pymisp
-        # adds a tag name it already has once
+        # adds a tag name it already has once. The handling ones are what the
+        # event carried: an Incident holding one is not an empty event, the
+        # tag of a galaxy no STIX 1 construct holds being all it may carry
         for tag in self._read_markings(self._event.handling):
             self.misp_event.add_tag(tag)
+            self.event_tags.add(tag)
         if self._event.history:
             for entry in self._event.history.history_items:
                 self._parse_journal_entry(entry.journal_entry.value)
@@ -160,6 +165,34 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     {'type': 'link', 'value': reference}, self._event.id_
                 )
         self._parse_package_context(package, object_courses_of_action)
+
+    def _apply_event_galaxies(self):
+        """Add the galaxy tags the STIX constructs name to the event, but the
+        ones an event tag already names the cluster of.
+
+        A construct names a cluster by its value alone, and the tag read off
+        it is typed after the construct: a `ransomware` cluster exported as a
+        malware TTP reads as a `mitre-malware` tag. The export keeps the tag
+        of an event galaxy on the Incident handling, galaxy type included, so
+        an event tag of the same value is the cluster the construct names.
+        Only the event's own tags count: a cluster attached to a record lower
+        down is read as a construct tag on the event as well, and the tag of
+        another record matching its value is no sign it is the same cluster.
+        """
+        carried = {
+            value for value in (
+                self._galaxy_tag_value(tag.name) for tag in self.misp_event.tags
+            )
+            if value is not None
+        }
+        for tag_name in sorted(self.galaxies):
+            if self._galaxy_tag_value(tag_name) not in carried:
+                self.misp_event.add_tag(tag_name)
+
+    @staticmethod
+    def _galaxy_tag_value(tag_name: str) -> Optional[str]:
+        match = _GALAXY_TAG.match(tag_name)
+        return match.group(1) if match is not None else None
 
     def _parse_journal_entry(self, journal_entry: str):
         """Convert one journal entry of the Incident History.
