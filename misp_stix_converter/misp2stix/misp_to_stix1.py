@@ -74,7 +74,7 @@ from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Iterable, Optional, Tuple, Union
 from uuid import uuid5, UUID
 
 _FILE_SINGLE_ATTRIBUTES = (
@@ -157,18 +157,17 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
 
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
-        if attribute.get('Galaxy'):
-            tag_names = []
-            for galaxy in attribute['Galaxy']:
-                galaxy_type = galaxy['type']
-                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if to_call is not None:
-                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
-            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
-        return tuple(tag['name'] for tag in attribute.get('Tag', []))
+        galaxies = attribute.get('Galaxy', [])
+        for galaxy in galaxies:
+            galaxy_type = galaxy['type']
+            to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+            if to_call is not None:
+                getattr(self, to_call.format('attribute'))(galaxy, indicator)
+            else:
+                self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
+        return self._with_galaxy_tags(
+            (tag['name'] for tag in attribute.get('Tag', [])), galaxies
+        )
 
     def _handle_exploit_target(self, attribute: dict, stix_object: Union[Vulnerability, Weakness], stix_type: str):
         attribute_uuid = attribute['uuid']
@@ -190,18 +189,17 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._incident.add_leveraged_ttps(related_ttp)
 
     def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: dict, ttp: TTP) -> tuple:
-        if attribute.get('Galaxy'):
-            tag_names = []
-            for galaxy in attribute['Galaxy']:
-                galaxy_type = galaxy['type']
-                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if galaxy_type not in self._mapping.ttp_names() or to_call is None:
-                    self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
-                    continue
-                getattr(self, to_call.format('object'))(galaxy, ttp)
-                tag_names.extend(self._quick_fetch_tag_names(galaxy))
-            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
-        return tuple(tag['name'] for tag in attribute.get('Tag', []))
+        galaxies = attribute.get('Galaxy', [])
+        for galaxy in galaxies:
+            galaxy_type = galaxy['type']
+            to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+            if galaxy_type not in self._mapping.ttp_names() or to_call is None:
+                self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
+                continue
+            getattr(self, to_call.format('object'))(galaxy, ttp)
+        return self._with_galaxy_tags(
+            (tag['name'] for tag in attribute.get('Tag', [])), galaxies
+        )
 
     def _parse_attachment(self, attribute: dict):
         if attribute.get('data'):
@@ -1198,6 +1196,32 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _datetime_to_str(timestamp):
         return datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
 
+    @staticmethod
+    def _with_galaxy_tags(tag_names: Iterable[str], galaxies: Iterable[dict]) -> tuple:
+        """The tags a STIX 1 record carries: its own, then the tag of every
+        galaxy cluster attached to it the record does not already carry.
+
+        A STIX 1 construct names a cluster by its value alone, and a galaxy no
+        construct holds is written nowhere else: the tag is what brings the
+        cluster back, type included, mapped or not. MISP gives a record the tag
+        of every cluster it carries already, so the tags of a MISP event are
+        written as they are - a cluster's own tag name first, since a custom
+        galaxy's differs from the one its type and value would build.
+
+        :param tag_names: the tag names of the record, in their order
+        :param galaxies: the galaxies attached to the record
+        :return: the tag names, the cluster ones missing appended
+        """
+        tag_names = list(tag_names)
+        for galaxy in galaxies:
+            for cluster in galaxy['GalaxyCluster']:
+                tag_name = cluster.get('tag_name') or (
+                    f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
+                )
+                if tag_name not in tag_names:
+                    tag_names.append(tag_name)
+        return tuple(tag_names)
+
     def _is_tlp_tag(self, tag: str) -> bool:
         if not tag.startswith('tlp:'):
             return False
@@ -1421,6 +1445,18 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         incident.information_source = self._create_information_source(source)
         incident.reporter = self._producer
         return incident
+
+    def _handle_event_tags_and_galaxies(self) -> tuple:
+        galaxies = self._misp_event.get('Galaxy', [])
+        for galaxy in galaxies:
+            to_call = self._mapping.galaxy_types_mapping(galaxy['type'])
+            if to_call is not None:
+                getattr(self, to_call.format('event'))(galaxy)
+            else:
+                self._handle_undefined_event_galaxy(galaxy)
+        return self._with_galaxy_tags(
+            (tag['name'] for tag in self._misp_event.get('Tag', [])), galaxies
+        )
 
     def _generate_stix_objects(self):
         tags = self._handle_event_tags_and_galaxies()
@@ -1656,20 +1692,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES, galaxy_name: str) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
-        tag_names = set()
-        if galaxies:
-            for galaxy_type, galaxy in galaxies.items():
-                if galaxy_type in getattr(self._mapping, galaxy_name)():
-                    to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                    getattr(self, to_call.format('object'))(galaxy, stix_object)
-                    tag_names.update(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._object_galaxy_incompatible_warning(
-                        galaxy_type,
-                        misp_object['name']
-                    )
-            return tuple(tag for tag in tags if tag not in tag_names)
-        return tuple(tags)
+        for galaxy_type, galaxy in galaxies.items():
+            if galaxy_type in getattr(self._mapping, galaxy_name)():
+                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+                getattr(self, to_call.format('object'))(galaxy, stix_object)
+            else:
+                self._object_galaxy_incompatible_warning(
+                    galaxy_type,
+                    misp_object['name']
+                )
+        return self._with_galaxy_tags(tags, galaxies.values())
 
     def _handle_object_indicator_tags(self, misp_object: dict, indicator: Indicator, timestamp: datetime) -> Confidence:
         tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
@@ -1689,20 +1721,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _handle_object_tags_and_galaxies(self, misp_object: dict, indicator: Indicator) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
-        if galaxies:
-            tag_names = set()
-            for galaxy_type, galaxy in galaxies.items():
-                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if to_call is not None:
-                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                    tag_names.update(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._object_galaxy_not_mapped_warning(
-                        galaxy_type,
-                        misp_object['name']
-                    )
-            return tuple(tag for tag in tags if tag not in tag_names)
-        return tuple(tags)
+        for galaxy_type, galaxy in galaxies.items():
+            to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+            if to_call is not None:
+                getattr(self, to_call.format('attribute'))(galaxy, indicator)
+            else:
+                self._object_galaxy_not_mapped_warning(
+                    galaxy_type,
+                    misp_object['name']
+                )
+        return self._with_galaxy_tags(tags, galaxies.values())
 
     def _handle_ttp_from_object(self, misp_object: dict, ttp: TTP):
         tags = self._handle_non_indicator_object_tags_and_galaxies(misp_object, ttp, 'ttp_names')
