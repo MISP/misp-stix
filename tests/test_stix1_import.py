@@ -4899,6 +4899,238 @@ class TestSTIX1Import(TestSTIX):
             }
         )
 
+    @staticmethod
+    def _with_property(cybox_object, name, value):
+        cybox_object.custom_properties = CustomProperties()
+        prop = Property()
+        prop.name = name
+        prop.value = value
+        cybox_object.custom_properties.append(prop)
+        return cybox_object
+
+    def _process_with_connections(self, refused_index=None,
+                                  refused_process=False):
+        """A process listing three connections, the one at `refused_index` -
+        or the process itself - carrying a datetime pymisp refuses."""
+        process = Process()
+        process.name = 'evil.exe'
+        process.pid = 42
+        if refused_process:
+            self._with_property(process, 'start-time', 'notadate')
+        process.network_connection_list = NetworkConnectionList()
+        for index, ip in enumerate(('1.1.1.1', '2.2.2.2', '3.3.3.3')):
+            connection = NetworkConnection()
+            connection.destination_socket_address = self._socket_address(
+                ip, 443
+            )
+            if index == refused_index:
+                self._with_property(
+                    connection, 'first-packet-seen', 'notadate'
+                )
+            process.network_connection_list.append(connection)
+        return process
+
+    def _parse_either_way(self, properties, feature):
+        """Parse an observable as a third party publishes it, and as it sits
+        in an Incident of a MISP export."""
+        yield 'external', self._parse_external_observable(properties, feature)
+        # The export writes the uuid on the Observable id, where the import
+        # of a MISP document reads it
+        observable = self._observable(properties, feature)
+        observable.id_ = f'MISP:Observable-{_OBSERVABLE_UUID}'
+        incident = Incident()
+        incident.related_observables.append(
+            RelatedObservable(observable, relationship='Artifacts dropped')
+        )
+        yield 'internal', self._parse_internal_package(
+            self._internal_package(incident)
+        )
+
+    def _assert_objects_and_one_error(self, parser, expected, refused):
+        """The event holds the `expected` objects - name, uuid and references
+        - and one error, naming the `refused` object by template and uuid."""
+        self.assertEqual(
+            sorted(
+                (
+                    misp_object.name, misp_object.uuid,
+                    self._references(misp_object)
+                )
+                for misp_object in parser.misp_event.objects
+            ),
+            sorted(expected)
+        )
+        errors, = parser.diagnostics()['errors'].values()
+        name, uuid = refused
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(
+            errors[0].startswith(f'Error with the {name} object with id {uuid}:'),
+            errors[0]
+        )
+
+    @staticmethod
+    def _connection_uuids():
+        """The uuids of the three connections, derived from the process's."""
+        return [
+            str(uuid5(_UUIDv4, f'{_OBSERVABLE_UUID} - network-connections - {index}'))
+            for index in range(3)
+        ]
+
+    def test_process_connection_refused_costs_that_connection_only(self):
+        """One connection pymisp refused cost the process and every
+        connection after it, and left the ones before it unreferenced. Each
+        MISP object is its own record: the process keeps the two others."""
+        connections = self._connection_uuids()
+        for origin, parser in self._parse_either_way(
+                self._process_with_connections(refused_index=1), 'Process'):
+            with self.subTest(origin):
+                self._assert_objects_and_one_error(
+                    parser,
+                    [
+                        ('network-connection', connections[0], []),
+                        ('network-connection', connections[2], []),
+                        (
+                            'process', _OBSERVABLE_UUID,
+                            [
+                                ('connected-to', connections[0]),
+                                ('connected-to', connections[2])
+                            ]
+                        )
+                    ],
+                    ('network-connection', connections[1])
+                )
+
+    def test_process_refused_keeps_its_connections(self):
+        """A refused process cost the connections it lists: they are kept,
+        referenced by nothing, as the references were the process's."""
+        connections = self._connection_uuids()
+        for origin, parser in self._parse_either_way(
+                self._process_with_connections(refused_process=True),
+                'Process'):
+            with self.subTest(origin):
+                self._assert_objects_and_one_error(
+                    parser,
+                    [
+                        ('network-connection', uuid, [])
+                        for uuid in connections
+                    ],
+                    ('process', _OBSERVABLE_UUID)
+                )
+
+    def _pe_with_sections(self, with_file=True, refused_pe=False,
+                          refused_file=False):
+        """A Windows executable with three sections, the `pe` object - or
+        the `file` - carrying a datetime pymisp refuses when told to."""
+        pe_file = WinExecutableFile()
+        if with_file:
+            pe_file.file_name = 'evil.exe'
+        self._with_property(
+            pe_file, 'compilation-timestamp',
+            'notadate' if refused_pe else '2020-01-01T00:00:00'
+        )
+        if refused_file:
+            prop = Property()
+            prop.name = 'creation-time'
+            prop.value = 'notadate'
+            pe_file.custom_properties.append(prop)
+        pe_file.sections = PESectionList()
+        for name in ('.text', '.data', '.rsrc'):
+            section = PESection()
+            section.section_header = PESectionHeaderStruct()
+            section.section_header.name = name
+            pe_file.sections.append(section)
+        return pe_file
+
+    @staticmethod
+    def _pe_uuids(with_file):
+        """The uuids of the `pe` and its three sections: the observable's own
+        goes to the `pe` with no `file` to carry it."""
+        pe_uuid = (
+            str(uuid5(_UUIDv4, f'{_OBSERVABLE_UUID} - pe'))
+            if with_file else _OBSERVABLE_UUID
+        )
+        sections = [
+            str(uuid5(_UUIDv4, f'{_OBSERVABLE_UUID} - pe - sections - {index}'))
+            for index in range(3)
+        ]
+        return pe_uuid, sections
+
+    def test_pe_refused_keeps_its_file_and_its_sections(self):
+        """A refused `pe` cost the `file` carrying it and every section, and
+        the error named the `file`. The `file` is kept, and the sections, all
+        of them referenced by nothing."""
+        for with_file in (True, False):
+            pe_uuid, sections = self._pe_uuids(with_file)
+            expected = [('pe-section', uuid, []) for uuid in sections]
+            if with_file:
+                expected.append(('file', _OBSERVABLE_UUID, []))
+            for origin, parser in self._parse_either_way(
+                    self._pe_with_sections(with_file, refused_pe=True),
+                    'WinExecutableFile'):
+                with self.subTest(origin, with_file=with_file):
+                    self._assert_objects_and_one_error(
+                        parser, expected, ('pe', pe_uuid)
+                    )
+
+    def test_file_refused_keeps_its_pe_and_the_sections(self):
+        """A refused `file` costs the `file`: the `pe` it carries is kept
+        with the sections it includes, referenced by nothing."""
+        pe_uuid, sections = self._pe_uuids(with_file=True)
+        for origin, parser in self._parse_either_way(
+                self._pe_with_sections(refused_file=True),
+                'WinExecutableFile'):
+            with self.subTest(origin):
+                self._assert_objects_and_one_error(
+                    parser,
+                    [
+                        *(('pe-section', uuid, []) for uuid in sections),
+                        (
+                            'pe', pe_uuid,
+                            [('includes', uuid) for uuid in sections]
+                        )
+                    ],
+                    ('file', _OBSERVABLE_UUID)
+                )
+
+    def test_pe_section_refused_costs_that_section_only(self):
+        """No section relation is typed for pymisp to refuse a value of, so
+        the section reader is made to give one: the refusal costs that
+        section, and the `pe` keeps the two others."""
+        read_pe_section = stix1_to_misp.STIX1toMISPParser._read_pe_section
+
+        def refusing_middle_section(parser, section, object_id):
+            if section.section_header.name.value == '.data':
+                yield ('datetime', 'notadate', 'name')
+                return
+            yield from read_pe_section(parser, section, object_id)
+
+        for with_file in (True, False):
+            pe_uuid, sections = self._pe_uuids(with_file)
+            expected = [
+                ('pe-section', sections[0], []),
+                ('pe-section', sections[2], []),
+                (
+                    'pe', pe_uuid,
+                    [('includes', sections[0]), ('includes', sections[2])]
+                )
+            ]
+            if with_file:
+                expected.append(
+                    ('file', _OBSERVABLE_UUID, [('includes', pe_uuid)])
+                )
+            with patch.object(
+                    stix1_to_misp.STIX1toMISPParser, '_read_pe_section',
+                    refusing_middle_section):
+                parsed = list(
+                    self._parse_either_way(
+                        self._pe_with_sections(with_file), 'WinExecutableFile'
+                    )
+                )
+            for origin, parser in parsed:
+                with self.subTest(origin, with_file=with_file):
+                    self._assert_objects_and_one_error(
+                        parser, expected, ('pe-section', sections[1])
+                    )
+
     def test_external_registry_key_observable_converts(self):
         registry_key = WinRegistryKey()
         registry_key.hive = 'HKEY_LOCAL_MACHINE'
