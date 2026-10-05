@@ -14,6 +14,7 @@ from cybox.core import Observable, ObservableComposition, RelatedObject
 from cybox.common import Hash, HashList, ByteRun, ByteRuns
 from cybox.common.hashes import _set_hash_type
 from cybox.common.object_properties import CustomProperties,  Property
+from cybox.common.vocabs import VocabString
 from cybox.objects.account_object import Authentication, StructuredAuthenticationMechanism
 from cybox.objects.address_object import Address
 from cybox.objects.artifact_object import Artifact, RawArtifact
@@ -1522,6 +1523,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._contextualised_data = set()
         self._ids = set()
         self._ttp_references = {}
+        self._registry_key_value_references = []
+        self._written_registry_key_values = set()
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
@@ -1712,6 +1715,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         self._handle_object_observable(misp_object, observable, to_ids)
                     except Exception as exception:
                         self._object_error(misp_object, exception)
+        self._drop_unwritten_registry_key_value_references()
+
+    def _drop_unwritten_registry_key_value_references(self):
+        # A key may come before its values, so what it points at is only
+        # known once every object is written: a reference to an object that
+        # is no `registry-key-value`, or to one the export lost, names no
+        # Observable in the document. The value's own Error says it is lost
+        for registry_object, related, value_uuid in self._registry_key_value_references:
+            if value_uuid not in self._written_registry_key_values:
+                registry_object.parent.related_objects.remove(related)
 
     def _handle_object_observable(self, misp_object: dict,
                                   observable: Observable, to_ids: bool):
@@ -1725,10 +1738,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         """
         if to_ids:
             self._handle_misp_object_with_context(misp_object, observable)
-            return
-        if misp_object['name'] in _TITLED_OBSERVABLE_OBJECT_NAMES:
-            observable.title = self._object_record_title(misp_object)
-        self._handle_misp_object(misp_object, observable)
+        else:
+            if misp_object['name'] in _TITLED_OBSERVABLE_OBJECT_NAMES:
+                observable.title = self._object_record_title(misp_object)
+            self._handle_misp_object(misp_object, observable)
+        if misp_object['name'] == 'registry-key-value':
+            # The Observable a `registry-key` points at is in the document
+            self._written_registry_key_values.add(misp_object['uuid'])
 
     def _write_custom_object(self, misp_object: dict):
         """The object error fallback: the object a mapped route failed on
@@ -2588,12 +2604,35 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 misp_object,
                 multiple=False
             )
+        self._add_registry_key_value_references(registry_object, misp_object)
         observable = self._create_observable(
             registry_object,
             misp_object['uuid'],
             'WindowsRegistryKey'
         )
         return observable
+
+    def _add_registry_key_value_references(self, registry_object: WinRegistryKey,
+                                           misp_object: dict):
+        # A `registry-key-value` has no CybOX mapping and goes out as its own
+        # `Custom` Observable: the key points at the object of that Observable,
+        # `contains` as the vocabulary term, any other relationship verbatim.
+        # Each one is kept once the objects are written, only where it points
+        # at the Observable of a value
+        for reference in misp_object.get('ObjectReference', []):
+            value_uuid = reference['referenced_uuid']
+            relationship = reference['relationship_type']
+            related = RelatedObject(
+                idref=f"{self._orgname_id}:Custom-{value_uuid}",
+                relationship=(
+                    'Contains' if relationship == 'contains'
+                    else VocabString(relationship)
+                )
+            )
+            registry_object.parent.related_objects.append(related)
+            self._registry_key_value_references.append(
+                (registry_object, related, value_uuid)
+            )
 
     def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict,
                                 fields: tuple, misp_object: dict):
