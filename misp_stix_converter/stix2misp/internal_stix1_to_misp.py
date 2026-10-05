@@ -11,6 +11,9 @@ from pymisp.abstract import resources_path
 from pymisp.api import describe_types
 from pymisp.exceptions import PyMISPError
 import re
+from cybox.common.vocabs import ObjectRelationship
+from cybox.core import RelatedObject
+from cybox.objects.win_registry_key_object import WinRegistryKey
 from datetime import datetime
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction
@@ -1392,6 +1395,44 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             return None
         _, _, name = title[:-len(_MISP_OBJECT_TITLE_SUFFIX)].partition(': ')
         return name or None
+
+    def _handle_regkey(self, properties: WinRegistryKey) -> tuple:
+        """Read a registry key, and the references it makes to the
+        `registry-key-value` objects the export writes as their own `Custom`
+        Observables, pointed at by a Related_Object each.
+
+        The External parser reads the Related_Objects of every CybOX object
+        on its own, so the shared handler does not.
+
+        :param properties: the registry key properties
+        :return: what the shared handler returns, the references handed back
+            as the complementary data: they are applied once the whole
+            package is parsed
+        """
+        name, attributes, compl_data = super()._handle_regkey(properties)
+        references = [
+            {
+                'idref': self._sanitise_uuid(related.idref),
+                'relationship': self._related_object_relationship(related)
+            }
+            for related in properties.parent.related_objects or ()
+            if related.idref is not None
+        ]
+        if references:
+            compl_data = {'references': references}
+        return name, attributes, compl_data
+
+    @staticmethod
+    def _related_object_relationship(related: RelatedObject) -> str:
+        # `contains` is written as the vocabulary term, any other relationship
+        # verbatim as a free-text term - one spelled `Contains` included
+        relationship = related.relationship
+        if relationship is None or not relationship.value:
+            return 'related-to'
+        if isinstance(relationship, ObjectRelationship):
+            if relationship.value == 'Contains':
+                return 'contains'
+        return relationship.value
 
     # Return type & value of a composite attribute in MISP - None where the
     # values the composition holds pair into no MISP composite type, which the
