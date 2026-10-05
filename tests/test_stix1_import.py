@@ -2305,6 +2305,44 @@ class TestSTIX1Import(TestSTIX):
             parser.diagnostics()['warnings']['misp event']
         )
 
+    def test_internal_folded_pe_galaxy_comes_back_on_the_event(self):
+        """A `pe` and its sections fold into the Indicator of the `file`
+        referencing them, or of the lone `pe`, whose handling carries the
+        markings of every attribute folded in: a cluster on any of them comes
+        back on the event, and a plain tag beside it keeps the warning."""
+        cases = (
+            (get_event_with_file_and_pe_objects, 'pe',
+             get_event_with_sector_galaxy()['Event']['Galaxy'][0],
+             'misp-galaxy:sector="IT - Security"'),
+            (get_event_with_file_and_pe_objects, 'pe-section',
+             self._ransomware_galaxy(), self._RANSOMWARE_TAG),
+            (get_event_with_pe_objects, 'pe-section',
+             get_event_with_sector_galaxy()['Event']['Galaxy'][0],
+             'misp-galaxy:sector="IT - Security"')
+        )
+        for get_event, name, galaxy, tag_name in cases:
+            with self.subTest(event=get_event.__name__, name=name):
+                event = get_event()
+                for misp_object in event['Event']['Object']:
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = True
+                    if misp_object['name'] == name:
+                        misp_object['Attribute'][0]['Galaxy'] = [galaxy]
+                        misp_object['Attribute'][0]['Tag'] = [
+                            {'name': 'my:custom="tag"'}
+                        ]
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(self._galaxy_tags(parser.misp_event), {tag_name})
+                self.assertIn(
+                    self._OBJECT_MARKINGS_WARNING,
+                    parser.diagnostics()['warnings']['misp event']
+                )
+                self.assertEqual(
+                    len(parser.misp_event.objects),
+                    len(event['Event']['Object'])
+                )
+
     def test_internal_attribute_galaxy_adds_no_construct_tag_to_the_event(self):
         """The cluster of a `to_ids` attribute comes back on the attribute,
         and the construct it travels as adds no retyped copy to the event."""

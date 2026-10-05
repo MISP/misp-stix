@@ -2113,6 +2113,243 @@ class TestSTIX1GalaxyTags(TestSTIX):
                     )
                 )
 
+    _PE_TAG = 'my:custom="tag"'
+
+    @staticmethod
+    def _folded_pe_event(get_event, name, galaxies, to_ids, tags=()):
+        """The event `get_event` returns, the first attribute of its `name`
+        object carrying the galaxies and the tags, every attribute flagged
+        `to_ids` or none."""
+        event = get_event()
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+            if misp_object['name'] == name:
+                misp_object['Attribute'][0]['Galaxy'] = deepcopy(galaxies)
+                misp_object['Attribute'][0]['Tag'] = [
+                    {'name': tag} for tag in tags
+                ]
+        return event
+
+    @staticmethod
+    def _statements(stix_object):
+        return {
+            marking.statement
+            for specification in stix_object.handling
+            for marking in specification.marking_structures
+            if hasattr(marking, 'statement')
+        }
+
+    def test_folded_pe_markings_reach_the_indicator(self):
+        """A `pe` and its sections fold into the CybOX object of the `file`
+        referencing them, or of the lone `pe`: the Indicator wrapping it
+        carries the tags and the clusters of every attribute folded in, not
+        those of the `file` or the lone `pe` alone."""
+        cases = (
+            (get_event_with_file_and_pe_objects, 'pe'),
+            (get_event_with_file_and_pe_objects, 'pe-section'),
+            (get_event_with_pe_objects, 'pe-section')
+        )
+        for version in self._VERSIONS:
+            for get_event, name in cases:
+                with self.subTest(version=version, event=get_event.__name__, name=name):
+                    event = self._folded_pe_event(
+                        get_event, name, [_TEST_SECTOR_GALAXY], True,
+                        tags=(self._PE_TAG,)
+                    )
+                    parser = self._parse_event(event, version)
+                    self.assertEqual(parser.errors, {})
+                    incident = parser.stix_package.incidents[0]
+                    indicator, = (
+                        related.item
+                        for related in incident.related_indicators.indicator
+                    )
+                    self.assertEqual(
+                        self._statements(indicator),
+                        {self._SECTOR_TAG, self._PE_TAG}
+                    )
+                    self.assertEqual(len(incident.related_observables), 0)
+
+    def test_standalone_pe_section_keeps_its_markings(self):
+        """A section whose entropy its field would rewrite is not folded: it
+        goes out standalone, its Indicator carrying its own markings, and the
+        `file` Indicator none of them."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = self._folded_pe_event(
+                    get_event_with_file_and_pe_objects, 'pe-section',
+                    [_TEST_SECTOR_GALAXY], True, tags=(self._PE_TAG,)
+                )
+                section, = (
+                    misp_object for misp_object in event['Event']['Object']
+                    if misp_object['name'] == 'pe-section'
+                )
+                for attribute in section['Attribute']:
+                    if attribute['object_relation'] == 'entropy':
+                        attribute['value'] = '0x1f'
+                parser = self._parse_event(event, version)
+                indicators = {
+                    related.item.id_: related.item for related in
+                    parser.stix_package.incidents[0].related_indicators.indicator
+                }
+                file_object, = (
+                    misp_object for misp_object in event['Event']['Object']
+                    if misp_object['name'] == 'file'
+                )
+                self.assertIsNone(
+                    indicators[f'{_ORGNAME_ID}:Indicator-{file_object["uuid"]}'].handling
+                )
+                self.assertEqual(
+                    self._statements(
+                        indicators[f'{_ORGNAME_ID}:Indicator-{section["uuid"]}']
+                    ),
+                    {self._SECTOR_TAG, self._PE_TAG}
+                )
+
+    def test_folded_pe_mapped_galaxy_is_written(self):
+        """A mapped cluster on a folded section is the TTP the Indicator
+        indicates, its tag on the handling beside it."""
+        galaxy = deepcopy(_TEST_MALWARE_GALAXY)
+        galaxy['type'] = 'ransomware'
+        galaxy['GalaxyCluster'][0]['type'] = 'ransomware'
+        tag_name = 'misp-galaxy:ransomware="BISCUIT - S0017"'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = self._folded_pe_event(
+                    get_event_with_file_and_pe_objects, 'pe-section', [galaxy],
+                    True
+                )
+                parser = self._parse_event(event, version)
+                self.assertEqual(parser.errors, {})
+                stix_package = parser.stix_package
+                ttp, = stix_package.ttps.ttp
+                indicator, = (
+                    related.item for related in
+                    stix_package.incidents[0].related_indicators.indicator
+                )
+                self.assertEqual(
+                    [related.item.idref for related in indicator.indicated_ttps],
+                    [ttp.id_]
+                )
+                self.assertEqual(self._statements(indicator), {tag_name})
+
+    def test_folded_pe_plain_observable_galaxies_are_warned(self):
+        """Without `to_ids` the folded object is a plain Observable: each
+        cluster of an attribute folded in is one warning naming the record
+        the object is written as."""
+        cases = (
+            (get_event_with_file_and_pe_objects, 'pe', 'file'),
+            (get_event_with_file_and_pe_objects, 'pe-section', 'file'),
+            (get_event_with_pe_objects, 'pe-section', 'pe')
+        )
+        galaxies = [_TEST_MALWARE_GALAXY, _TEST_SECTOR_GALAXY]
+        for version in self._VERSIONS:
+            for get_event, name, root in cases:
+                with self.subTest(version=version, event=get_event.__name__, name=name):
+                    event = self._folded_pe_event(
+                        get_event, name, galaxies, False
+                    )
+                    root_object, = (
+                        misp_object for misp_object in event['Event']['Object']
+                        if misp_object['name'] == root
+                    )
+                    parser = self._parse_event(event, version)
+                    self.assertEqual(parser.errors, {})
+                    record = f'{root} object (uuid: {root_object["uuid"]})'
+                    self.assertEqual(
+                        [
+                            warning for warning in
+                            parser.warnings[event['Event']['uuid']]
+                            if warning.startswith('Galaxy cluster ')
+                        ],
+                        [
+                            self._plain_observable_warning(self._MALWARE_TAG, record),
+                            self._plain_observable_warning(self._SECTOR_TAG, record)
+                        ]
+                    )
+
+    @staticmethod
+    def _journal_entry_warning(tag_name, record):
+        return (
+            f'Galaxy cluster {tag_name} of the {record} not exported: the '
+            'attribute is written as text, a journal entry of the Incident '
+            'or the package description, which carries no marking.'
+        )
+
+    def test_journal_entry_galaxies_are_warned(self):
+        """A `comment`, `text` or `other` attribute is written as a journal
+        entry of the Incident, the header description one as the package
+        description: neither has a handling, so each cluster, mapped or not,
+        is one warning - whether the attribute is `to_ids` or not."""
+        galaxies = [deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)]
+        for version in self._VERSIONS:
+            for to_ids in (True, False):
+                events = []
+                for attribute_type in ('comment', 'text', 'other'):
+                    event = get_base_event()
+                    event['Event']['Attribute'] = [
+                        {
+                            'uuid': '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                            'type': attribute_type, 'category': 'Other',
+                            'value': f'My {attribute_type} value'
+                        }
+                    ]
+                    events.append((attribute_type, event))
+                events.append(('header', get_event_with_undefined_attributes()))
+                for label, event in events:
+                    with self.subTest(version=version, to_ids=to_ids, attribute=label):
+                        attribute = event['Event']['Attribute'][0]
+                        attribute['to_ids'] = to_ids
+                        attribute['Galaxy'] = deepcopy(galaxies)
+                        parser = self._parse_event(event, version)
+                        self.assertEqual(parser.errors, {})
+                        record = (
+                            f'{attribute["type"]} attribute '
+                            f'(uuid: {attribute["uuid"]})'
+                        )
+                        self.assertEqual(
+                            [
+                                warning for warning in
+                                parser.warnings[event['Event']['uuid']]
+                                if warning.startswith('Galaxy cluster ')
+                            ],
+                            [
+                                self._journal_entry_warning(self._MALWARE_TAG, record),
+                                self._journal_entry_warning(self._SECTOR_TAG, record)
+                            ]
+                        )
+                        self.assertIsNone(parser.stix_package.ttps)
+                        self.assertIsNone(
+                            parser.stix_package.incidents[0].handling
+                        )
+
+    def test_header_description_attributes_in_the_journal_warn_their_galaxies(self):
+        """More than one header description attribute goes to the journal
+        instead: each cluster of each is still one warning."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_undefined_attributes()
+                for attribute in event['Event']['Attribute']:
+                    attribute['comment'] = 'Imported from STIX header description'
+                    attribute['Galaxy'] = [deepcopy(_TEST_SECTOR_GALAXY)]
+                parser = self._parse_event(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertIsNone(parser.stix_package.stix_header.description)
+                self.assertEqual(
+                    [
+                        warning for warning in
+                        parser.warnings[event['Event']['uuid']]
+                        if warning.startswith('Galaxy cluster ')
+                    ],
+                    [
+                        self._journal_entry_warning(
+                            self._SECTOR_TAG,
+                            f'comment attribute (uuid: {attribute["uuid"]})'
+                        )
+                        for attribute in event['Event']['Attribute']
+                    ]
+                )
+
 
 class TestSTIX1RegistryKeyValueReferences(TestSTIX):
     """A `registry-key-value` goes out as its own `Custom` Observable: each
