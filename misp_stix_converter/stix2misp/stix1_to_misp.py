@@ -22,7 +22,6 @@ from cybox.objects import (
     win_executable_file_object, win_registry_key_object, win_service_object,
     win_user_account_object, x509_certificate_object)
 from datetime import date, datetime, timezone
-from operator import attrgetter
 from pathlib import Path
 from pymisp.abstract import misp_objects_path
 from pymisp.api import describe_types
@@ -256,6 +255,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # observable there is nothing to convert from
             self._unnamed_object_error(object_uuid)
             return
+        if not attribute_value and not self._includes_objects(compl_data):
+            self._empty_record_error(name, object_uuid)
+            return
         # Guarded as one record: an object is what the diagnostics name, and a
         # relation, a value or a template pymisp refuses costs that object
         # rather than the package it travelled in
@@ -368,6 +370,18 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
 
     @staticmethod
+    def _includes_objects(compl_data) -> bool:
+        # An object no attribute fills is still the one the objects under it
+        # hang off - the `pe` of its sections, the process of its connections
+        # - as long as one of them holds an attribute
+        if not isinstance(compl_data, dict):
+            return False
+        return 'pe' in compl_data or any(
+            any(compl_data.get(key, ()))
+            for key in ('pe_sections', 'network_connections')
+        )
+
+    @staticmethod
     def _add_object_reference(misp_object: Optional[MISPObject],
                               referenced: Optional[MISPObject],
                               relationship_type: str):
@@ -439,9 +453,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             every section uuid is derived from - never a derived uuid itself
         """
         for index, attributes in enumerate(sections):
+            section_uuid = self._derived_uuid(
+                object_uuid, f'pe - sections - {index}'
+            )
+            if not attributes:
+                self._empty_record_error('pe-section', section_uuid)
+                continue
             section = self._build_object(
-                'pe-section', attributes, to_ids,
-                self._derived_uuid(object_uuid, f'pe - sections - {index}')
+                'pe-section', attributes, to_ids, section_uuid
             )
             self._add_object_reference(pe_object, section, 'includes')
 
@@ -541,7 +560,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if rules is None:
                 rules = (test_mechanism.rule,)
             for rule in rules:
-                value = getattr(rule, 'value', None)
+                value = self._value(rule)
                 if value is not None:
                     yield attribute_type, value
 
@@ -563,12 +582,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 misp_object, misp_object.uuid, attribute
             )
         for prop, properties_key in self._mapping.course_of_action_mapping().items():
-            if getattr(course_of_action, prop):
+            value = self._value(course_of_action, f'{prop}.{properties_key}')
+            if value is not None:
                 attribute = {
                     'type': 'text', 'object_relation': prop.replace('_', ''),
-                    'value': str(
-                        attrgetter(f'{prop}.{properties_key}')(course_of_action)
-                    )
+                    'value': str(value)
                 }
                 self._add_object_attribute(
                     misp_object, misp_object.uuid, attribute
@@ -576,8 +594,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if course_of_action.parameter_observables:
             for observable in course_of_action.parameter_observables.observables:
                 properties = observable.object_.properties
+                attribute_type, attribute_value, _ = self._handle_attribute_type(
+                    properties
+                )
+                if attribute_value is None:
+                    self._empty_record_error(
+                        attribute_type, course_of_action.id_, 'attribute'
+                    )
+                    continue
                 attribute = MISPAttribute()
-                attribute.type, attribute.value, _ = self._handle_attribute_type(properties)
+                attribute.type, attribute.value = attribute_type, attribute_value
                 referenced_uuid = str(uuid4())
                 attribute.uuid = referenced_uuid
                 if self._add_attribute(dict(attribute), course_of_action.id_) is None:
@@ -692,11 +718,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
     ############################################################################
 
-    @staticmethod
-    def _handle_address(properties: _ADDRESS_TYPING) -> tuple:
+    @classmethod
+    def _handle_address(cls, properties: _ADDRESS_TYPING) -> tuple:
+        value = cls._value(properties.address_value)
         if properties.category == 'e-mail':
-            return 'email-src', properties.address_value.value, 'from'
-        return "ip-src" if properties.is_source else "ip-dst", properties.address_value.value, 'ip'
+            return 'email-src', value, 'from'
+        return "ip-src" if properties.is_source else "ip-dst", value, 'ip'
 
     def _handle_as(self, properties: as_object.AS) -> tuple:
         attributes = list(
@@ -715,9 +742,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # Return type & value of an attachment attribute
     def _handle_attachment(self, properties: artifact_object.Artifact, title: str) -> tuple:
+        raw_artifact = self._value(properties.raw_artifact)
         if properties.hashes:
-            return "malware-sample", f"{title}|{properties.hashes[0]}", properties.raw_artifact.value
-        return self._mapping.event_types(properties._XSI_TYPE)['type'], title, properties.raw_artifact.value
+            hash_value = self._hash_value(properties.hashes[0])
+            if hash_value is not None and title is not None:
+                return "malware-sample", f"{title}|{hash_value}", raw_artifact
+        return self._mapping.event_types(properties._XSI_TYPE)['type'], title, raw_artifact
 
     # Return name & attributes of a credential object: an object whatever
     # it holds, one attribute included
@@ -725,11 +755,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         attributes = []
         # The export writes a `credential` as a `UserAccount`, the one of the
         # two carrying a username
-        username = getattr(properties, 'username', None)
-        if username:
-            attributes.append(('text', username.value, 'username'))
-        if properties.description:
-            attributes.append(("text", properties.description.value, "text"))
+        attributes.append(
+            ('text', self._value(getattr(properties, 'username', None)), 'username')
+        )
+        attributes.append(("text", self._value(properties.description), "text"))
         read = set()
         for authentication in properties.authentication or ():
             for attribute in self._fetch_attributes_with_key_parsing(
@@ -756,9 +785,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 properties.custom_name, custom_properties, object_id
             )
         attributes = [
-            (prop.name, prop.value, '') if prop.name in _MISP_types
-            else ('text', prop.value, prop.name)
-            for prop in custom_properties
+            (prop.name, self._value(prop), '') if prop.name in _MISP_types
+            else ('text', self._value(prop), prop.name)
+            for prop in custom_properties if self._value(prop) is not None
         ]
         if not attributes:
             # A Custom object carrying no property names no attribute: the
@@ -804,26 +833,27 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # Return type & attributes of a dns object
     def _handle_dns(self, properties: dns_record_object.DNSRecord) -> tuple:
         relation = []
-        if properties.domain_name:
-            relation.append(["domain", str(properties.domain_name.value), ""])
-        if properties.ip_address:
-            relation.append(
-                ["ip-dst", properties.ip_address.address_value.value, ""]
-            )
+        domain = self._value(properties.domain_name, 'value')
+        if domain is not None:
+            relation.append(["domain", str(domain), ""])
+        ip = self._value(properties.ip_address, 'address_value')
+        if ip is not None:
+            relation.append(["ip-dst", ip, ""])
+        if len(relation) == 2:
+            domain = relation[0][1]
+            ip = relation[1][1]
+            attributes = [["text", domain, "rrname"], ["text", ip, "rdata"]]
+            rrtype = "AAAA" if ":" in ip else "A"
+            attributes.append(["text", rrtype, "rrtype"])
+            return "passive-dns", self._return_object_attributes(attributes), ""
         if relation:
-            if len(relation) == 2:
-                domain = relation[0][1]
-                ip = relation[1][1]
-                attributes = [["text", domain, "rrname"], ["text", ip, "rdata"]]
-                rrtype = "AAAA" if ":" in ip else "A"
-                attributes.append(["text", rrtype, "rrtype"])
-                return "passive-dns", self._return_object_attributes(attributes), ""
             return relation[0]
+        return "passive-dns", (), ""
 
     # Return type & value of a domain or url attribute
     def _handle_domain_or_url(self, properties: Union[domain_name_object.DomainName, uri_object.URI]) -> tuple:
         event_types = self._mapping.event_types(properties._XSI_TYPE)
-        return event_types['type'], properties.value.value, event_types['relation']
+        return event_types['type'], self._value(properties.value), event_types['relation']
 
     # Return type & value of an email attribute
     def _handle_email(self, properties: email_message_object.EmailMessage) -> tuple:
@@ -833,20 +863,21 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             for feature in ('to', 'cc', 'bcc'):
                 for recipient in getattr(header, feature) or ():
                     attributes.append(
-                        ["email-dst", recipient.address_value.value, feature]
+                        [
+                            "email-dst", self._value(recipient, 'address_value'),
+                            feature
+                        ]
                     )
         else:
             attributes = []
         # Standard CybOX fields rather than MISP grammar, read on a document
         # of any origin: the carriers of an `email-body` and an `email-header`
-        if properties.raw_body:
-            attributes.append(
-                ["email-body", properties.raw_body.value, "email-body"]
-            )
-        if properties.raw_header:
-            attributes.append(
-                ["email-header", properties.raw_header.value, "header"]
-            )
+        attributes.append(
+            ["email-body", self._value(properties.raw_body), "email-body"]
+        )
+        attributes.append(
+            ["email-header", self._value(properties.raw_header), "header"]
+        )
         references = []
         if properties.attachments:
             embedded, references = self._handle_email_attachment(properties)
@@ -880,7 +911,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attributes.append(
                     (
                         "email-attachment",
-                        related_objects[attachment].file_name.value,
+                        self._value(related_objects[attachment], 'file_name'),
                         "attachment", self._sanitise_attribute_uuid(attachment)
                     )
                 )
@@ -917,6 +948,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 _, hash_value, relation = self._handle_hashes_attribute(
                     hash_property
                 )
+                if hash_value is None:
+                    continue
                 if relation == 'other':
                     # Nothing on the wire names the type of a hash cybox had
                     # no length for and no shape names either: the value is
@@ -927,11 +960,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
                 if attribute is not None:
                     attributes.append(attribute)
-        if properties.file_name:
-            value = properties.file_name.value
-            if value:
-                attribute_type, relation = self._mapping.event_types(properties._XSI_TYPE)
-                attributes.append([attribute_type, value, relation])
+        value = self._value(properties.file_name)
+        if value:
+            attribute_type, relation = self._mapping.event_types(properties._XSI_TYPE)
+            attributes.append([attribute_type, value, relation])
         return attributes
 
     # Return type & attributes of a file object
@@ -954,7 +986,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
         if len(attributes) == 2:
             b_hash = bool(properties.hashes)
-            b_file = bool(getattr(properties.file_name, 'value', None))
+            b_file = bool(self._value(properties.file_name))
             if b_hash and b_file:
                 return self._handle_filename_object(
                     attributes, getattr(properties.parent, 'id_', None)
@@ -1041,8 +1073,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             }
         )
 
-    @staticmethod
-    def _hash_value(hash_property: Hash):
+    @classmethod
+    def _hash_value(cls, hash_property: Hash):
         """Read the value of a hash, whichever of the two fields cybox holds
         it in.
 
@@ -1053,12 +1085,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         attribute value: the one element it holds is.
 
         :param hash_property: the cybox hash
-        :return: the hash value
+        :return: the hash value, None where neither field holds one
         """
-        try:
-            value = hash_property.simple_hash_value.value
-        except AttributeError:
-            value = hash_property.fuzzy_hash_value.value
+        value = cls._value(hash_property.simple_hash_value)
+        if value is None:
+            value = cls._value(hash_property.fuzzy_hash_value)
         if isinstance(value, list) and len(value) == 1:
             return value[0]
         return value
@@ -1077,15 +1108,35 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         header hashes do not come through here at all: their relation names
         are their own vocabulary (`_pe_header_hash_relation`).
 
+        A hash written with no type is typed as cybox types `Other`: by the
+        shape of its value, once its length has named nothing.
+
         :param hash_property: the cybox hash
         :return: the `(type, value, relation)` of the hash - one name, which
-            is both for a hash
+            is both for a hash - the value None where the hash holds none
         """
-        hash_type = hash_property.type_.value.lower()
         hash_value = cls._hash_value(hash_property)
+        hash_type = cls._hash_type(hash_property, hash_value)
         if hash_type == 'other':
             hash_type = cls._hash_type_from_value(hash_value) or hash_type
         return hash_type, hash_value, hash_type
+
+    @classmethod
+    def _hash_type(cls, hash_property: Hash, hash_value) -> str:
+        """Read the type of a hash, lowercased.
+
+        A hash the document wrote with no type is typed the way cybox types
+        one built from its value alone, by its length - and is `other`, as
+        cybox would have it, where the length names nothing.
+
+        :param hash_property: the cybox hash
+        :param hash_value: the hash value, as `_hash_value` reads it
+        :return: the hash type
+        """
+        hash_type = cls._value(hash_property.type_)
+        if hash_type is None and isinstance(hash_value, str):
+            hash_type = cls._value(Hash(hash_value).type_)
+        return 'other' if hash_type is None else str(hash_type).lower()
 
     @staticmethod
     def _hash_type_from_value(hash_value) -> Optional[str]:
@@ -1113,28 +1164,37 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # Return type & value of a hostname attribute
     def _handle_hostname(self, properties: hostname_object.Hostname) -> tuple:
         event_types = self._mapping.event_types(properties._XSI_TYPE)
-        return event_types['type'], properties.hostname_value.value, event_types['relation']
+        return event_types['type'], self._value(properties.hostname_value), event_types['relation']
 
     # Return type & value of a http request attribute
-    @staticmethod
-    def _handle_http(properties: http_session_object.HTTPSession) -> tuple:
-        client_request = properties.http_request_response[0].http_client_request
-        if client_request.http_request_header:
-            request_header = client_request.http_request_header
+    @classmethod
+    def _handle_http(cls, properties: http_session_object.HTTPSession) -> tuple:
+        # Every field down to the value is optional: a session holding none
+        # of them is the method it does not name
+        client_request = next(
+            (
+                request_response.http_client_request
+                for request_response in properties.http_request_response or ()
+                if request_response.http_client_request is not None
+            ),
+            None
+        )
+        request_header = getattr(client_request, 'http_request_header', None)
+        if request_header:
             if request_header.parsed_header:
-                value = request_header.parsed_header.user_agent.value
+                value = cls._value(request_header.parsed_header, 'user_agent')
                 return "user-agent", value, "user-agent"
             elif request_header.raw_header:
-                value = request_header.raw_header.value
-                return "http-method", value, "method"
-        elif client_request.http_request_line:
-            value = client_request.http_request_line.http_method.value
-            return "http-method", value, "method"
+                return "http-method", cls._value(request_header.raw_header), "method"
+        value = cls._value(
+            getattr(client_request, 'http_request_line', None), 'http_method'
+        )
+        return "http-method", value, "method"
 
     # Return type & value of a link attribute
-    @staticmethod
-    def _handle_link(properties: link_object.Link) -> tuple:
-        return "link", properties.value.value, "link"
+    @classmethod
+    def _handle_link(cls, properties: link_object.Link) -> tuple:
+        return "link", cls._value(properties.value), "link"
 
     # Return the attributes of a mutex object
     def _handle_mutex(self, properties: mutex_object.Mutex) -> tuple:
@@ -1143,15 +1203,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # mutex attribute, and the `name` relation of a mutex object - which
         # the template types, as it types every other relation here
         template_types = _template_attribute_types('mutex')
-        # A mutex holding no name is read for the rest: cybox leaves the
-        # field None, which used to cost the whole package
-        if properties.name is not None:
+        # A mutex holding no name is read for the rest
+        name = self._value(properties.name)
+        if name is not None:
             attributes.insert(
-                0,
-                (
-                    template_types.get('name', 'text'), properties.name.value,
-                    'name'
-                )
+                0, (template_types.get('name', 'text'), name, 'name')
             )
         return 'mutex', self._return_object_attributes(attributes), ''
 
@@ -1159,7 +1215,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # with are what tells them apart
     def _reduce_mutex(self, properties: mutex_object.Mutex, name: str,
                       attributes: tuple, compl_data) -> tuple:
-        if len(attributes) == 1 and properties.name is not None:
+        if len(attributes) == 1 and self._value(properties.name) is not None:
             event_types = self._mapping.event_types(properties._XSI_TYPE)
             return (
                 event_types['type'], attributes[0]['value'],
@@ -1173,11 +1229,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if address_property is None:
                 continue
             for prop, attribute in self._mapping.network_reference_mapping().items():
-                if getattr(address_property, prop):
-                    attribute_type, key, relation = attribute
+                attribute_type, key, relation = attribute
+                value = self._value(address_property, f'{prop}.{key}')
+                if value is not None:
                     yield (
-                        attribute_type.format(feature),
-                        attrgetter(f'{prop}.{key}.value')(address_property),
+                        attribute_type.format(feature), value,
                         relation.format(feature)
                     )
 
@@ -1185,15 +1241,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_network_connection(self, properties: network_connection_object.NetworkConnection) -> tuple:
         attributes = list(self._handle_network(properties, 'network_connection_fields'))
         for feature in ('layer3_protocol', 'layer4_protocol', 'layer7_protocol'):
-            if getattr(properties, feature):
-                attributes.append(
-                    ('text', attrgetter(f"{feature}.value")(properties), feature.replace('_', '-'))
-                )
+            attributes.append(
+                ('text', self._value(getattr(properties, feature)), feature.replace('_', '-'))
+            )
         attributes.extend(
             self._read_custom_properties(properties, 'network-connection')
         )
-        if attributes:
-            return "network-connection", self._return_object_attributes(attributes), ""
+        return "network-connection", self._return_object_attributes(attributes), ""
 
     # Return type & attributes of a network socket objet
     def _handle_network_socket(self, properties: network_socket_object.NetworkSocket) -> tuple:
@@ -1205,8 +1259,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         attributes.extend(
             self._read_custom_properties(properties, 'network-socket')
         )
-        if attributes:
-            return "network-socket", self._return_object_attributes(attributes), ""
+        return "network-socket", self._return_object_attributes(attributes), ""
 
     # Return type & attributes of the file defining a portable executable object
     def _handle_pe(self, properties: win_executable_file_object.WinExecutableFile) -> tuple:
@@ -1306,13 +1359,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
         headers = properties.headers
         if headers is not None:
-            optional_header = headers.optional_header
-            if getattr(optional_header, 'address_of_entry_point', None):
-                yield (
-                    template_types.get('entrypoint-address', 'text'),
-                    optional_header.address_of_entry_point.value,
-                    'entrypoint-address'
-                )
+            yield (
+                template_types.get('entrypoint-address', 'text'),
+                self._value(headers.optional_header, 'address_of_entry_point'),
+                'entrypoint-address'
+            )
             file_header = headers.file_header
             if file_header is not None:
                 yield from self._fetch_attributes_with_template_types(
@@ -1346,8 +1397,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :return: the `(type, value, relation)` of each header hash
         """
         for hash_property in file_header.hashes or ():
-            hash_type = hash_property.type_.value.lower()
             hash_value = self._hash_value(hash_property)
+            if hash_value is None:
+                continue
+            hash_type = self._hash_type(hash_property, hash_value)
             relation = self._pe_header_hash_relation(hash_type, hash_value)
             if relation is None:
                 self._unknown_pe_header_hash_type_warning(
@@ -1398,49 +1451,55 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # The relation alone is what types the attribute, so a hash type
             # the template has no relation for has no type: pymisp refuses it
             hash_type, hash_value, _ = self._handle_hashes_attribute(_hash)
+            if hash_value is None:
+                continue
             if hash_type not in template_types:
                 self._unstorable_attribute_warning(
                     hash_type, hash_value, object_id
                 )
                 continue
             yield (template_types[hash_type], hash_value, hash_type)
-        if section.entropy:
-            yield (
-                template_types.get('entropy', 'text'),
-                section.entropy.value.value, 'entropy'
-            )
-        if section.section_header:
-            # Every header field is optional, and MISP's export writes the
-            # header as soon as the section carries a name or a size
-            section_header = section.section_header
-            if section_header.name:
-                yield (
-                    template_types.get('name', 'text'),
-                    section_header.name.value, 'name'
+        entropy = section.entropy
+        if entropy is not None:
+            value = self._value(entropy, 'value')
+            if value is not None:
+                yield (template_types.get('entropy', 'text'), value, 'entropy')
+            else:
+                bounds = (
+                    self._value(entropy, 'min'), self._value(entropy, 'max')
                 )
-            if section_header.size_of_raw_data:
-                yield (
-                    template_types.get('size-in-bytes', 'text'),
-                    section_header.size_of_raw_data.value, 'size-in-bytes'
-                )
+                if bounds != (None, None):
+                    self._entropy_range_warning(*bounds, object_id)
+        # Every header field is optional, and MISP's export writes the header
+        # as soon as the section carries a name or a size
+        yield (
+            template_types.get('name', 'text'),
+            self._value(section.section_header, 'name'), 'name'
+        )
+        yield (
+            template_types.get('size-in-bytes', 'text'),
+            self._value(section.section_header, 'size_of_raw_data'),
+            'size-in-bytes'
+        )
 
     # Return type & value of a names pipe attribute
-    @staticmethod
-    def _handle_pipe(properties: pipe_object.Pipe) -> tuple:
-        return "named pipe", properties.name.value, ""
+    @classmethod
+    def _handle_pipe(cls, properties: pipe_object.Pipe) -> tuple:
+        return "named pipe", cls._value(properties.name), ""
 
     # Return type & value of a port attribute
     def _handle_port(self, *args):
         properties = args[0]
         event_types = self._mapping.event_types(properties._XSI_TYPE)
         relation = event_types['relation']
+        value = self._value(properties.port_value)
         if len(args) > 1:
             observable_id = args[1]
             if "srcPort" in observable_id:
-                return event_types['type'], properties.port_value.value, f"src-{relation}"
+                return event_types['type'], value, f"src-{relation}"
             if "dstPort" in observable_id:
-                return event_types['type'], properties.port_value.value, f"dst-{relation}"
-        return event_types['type'], properties.port_value.value, relation
+                return event_types['type'], value, f"dst-{relation}"
+        return event_types['type'], value, relation
 
     # Return type & attributes of a process object
     def _handle_process(self, properties: process_object.Process):
@@ -1449,17 +1508,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 properties, 'process_mapping'
             )
         )
-        if properties.child_pid_list:
-            for child in properties.child_pid_list:
-                attributes.append(["text", child.value, "child-pid"])
-        if properties.port_list:
-            for port in properties.port_list:
-                attributes.append(["port", port.port_value.value, "port"])
-        if properties.image_info:
-            if properties.image_info.file_name:
-                attributes.append(["filename", properties.image_info.file_name.value, "image"])
-            if properties.image_info.command_line:
-                attributes.append(["text", properties.image_info.command_line.value, "command-line"])
+        for child in properties.child_pid_list or ():
+            attributes.append(["text", self._value(child), "child-pid"])
+        for port in properties.port_list or ():
+            attributes.append(["port", self._value(port, 'port_value'), "port"])
+        image_info = properties.image_info
+        attributes.append(
+            ["filename", self._value(image_info, 'file_name'), "image"]
+        )
+        attributes.append(
+            ["text", self._value(image_info, 'command_line'), "command-line"]
+        )
         if properties.is_hidden is not None:
             attributes.append(["boolean", properties.is_hidden, "hidden"])
         attributes.extend(self._read_custom_properties(properties, 'process'))
@@ -1467,8 +1526,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # Built with the process object, whose uuid theirs derive from
             connections = []
             for connection in properties.network_connection_list:
-                parsed = self._handle_network_connection(connection)
-                connections.append(parsed[1] if parsed is not None else ())
+                connections.append(
+                    self._handle_network_connection(connection)[1]
+                )
             return "process", self._return_object_attributes(attributes), {
                 "network_connections": connections
             }
@@ -1522,33 +1582,38 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # Parse a socket address object in order to return type & value
     # of a composite attribute ip|port or hostname|port
     def _handle_socket_address(self, properties: socket_address_object.SocketAddress) -> tuple:
+        # The address, or the hostname, is what the attribute is: one
+        # holding neither is the nothing an address holding no value is
+        type1, value1 = "ip-dst", None
         if properties.ip_address:
             type1, value1, _ = self._handle_address(properties.ip_address)
         elif properties.hostname:
             type1 = "hostname"
-            value1 = properties.hostname.hostname_value.value
-        if properties.port:
-            return f"{type1}|port", f"{value1}|{properties.port.port_value.value}", ""
+            value1 = self._value(properties.hostname, 'hostname_value')
+        port = self._value(properties.port, 'port_value')
+        if value1 is not None and port is not None:
+            return f"{type1}|port", f"{value1}|{port}", ""
         return type1, value1, ''
 
     # Parse a system object to extract a mac-address attribute
-    @staticmethod
-    def _handle_system(properties: system_object.System) -> tuple:
+    @classmethod
+    def _handle_system(cls, properties: system_object.System) -> tuple:
+        mac = None
         if properties.network_interface_list:
-            return "mac-address", str(properties.network_interface_list[0].mac), ""
+            mac = cls._value(properties.network_interface_list[0], 'mac')
+        return "mac-address", None if mac is None else str(mac), ""
 
     # Parse a UNIX user account object
     def _handle_unix_user(self, properties: unix_user_account_object.UnixUserAccount) -> tuple:
         attributes = self._fetch_user_account_attributes(properties)
         # The export carries a `unix` account type by this CybOX type alone
         attributes.append(['text', 'unix', 'account-type'])
-        if properties.user_id:
-            attributes.append(['text', properties.user_id.value, 'user-id'])
-        if properties.group_id:
-            attributes.append(['text', properties.group_id.value, 'group-id'])
+        attributes.append(['text', self._value(properties.user_id), 'user-id'])
+        attributes.append(
+            ['text', self._value(properties.group_id), 'group-id']
+        )
         for group in properties.group_list or ():
-            if group.group_id:
-                attributes.append(['text', group.group_id.value, 'group'])
+            attributes.append(['text', self._value(group, 'group_id'), 'group'])
         attributes.extend(
             self._read_custom_properties(properties, 'user-account')
         )
@@ -1581,16 +1646,15 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if properties.disabled is not None:
             attributes.append(['boolean', properties.disabled, 'disabled'])
         for authentication in properties.authentication or ():
-            authentication_type = authentication.authentication_type
-            if str(getattr(authentication_type, 'value', '')).lower() != 'password':
+            authentication_type = self._value(authentication.authentication_type)
+            if str(authentication_type).lower() != 'password':
                 continue
-            if authentication.authentication_data:
-                attributes.append(
-                    [
-                        'text', authentication.authentication_data.value,
-                        'password'
-                    ]
-                )
+            attributes.append(
+                [
+                    'text', self._value(authentication.authentication_data),
+                    'password'
+                ]
+            )
         return attributes
 
     @staticmethod
@@ -1606,19 +1670,21 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if properties.registrants:
             registrant = properties.registrants[0]
             attributes.extend(self._fetch_attributes_with_key_parsing(registrant, 'whois_registrant_mapping'))
-        if properties.creation_date:
-            attributes.append(("datetime", self._utc_midnight(properties.creation_date.value), "creation-date"))
-        if properties.updated_date:
-            attributes.append(("datetime", self._utc_midnight(properties.updated_date.value), "modification-date"))
-        if properties.expiration_date:
-            attributes.append(("datetime", self._utc_midnight(properties.expiration_date.value), "expiration-date"))
-        if properties.nameservers:
-            for nameserver in properties.nameservers:
-                attributes.append(("hostname", nameserver.value.value, "nameserver"))
-        if properties.remarks:
+        for field, relation in (('creation_date', 'creation-date'),
+                                ('updated_date', 'modification-date'),
+                                ('expiration_date', 'expiration-date')):
+            value = self._value(getattr(properties, field))
+            if value is not None:
+                attributes.append(("datetime", self._utc_midnight(value), relation))
+        for nameserver in properties.nameservers or ():
+            value = self._value(nameserver, 'value')
+            if value is not None:
+                attributes.append(("hostname", value, "nameserver"))
+        remarks = self._value(properties.remarks)
+        if remarks is not None:
             attribute_type = "text"
             relation = "comment" if attributes else attribute_type
-            attributes.append([attribute_type, properties.remarks.value, relation])
+            attributes.append([attribute_type, remarks, relation])
         attributes.extend(self._read_custom_properties(properties, 'whois'))
         return "whois", self._return_object_attributes(attributes), ""
 
@@ -1634,7 +1700,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
             or properties.creation_date or properties.remarks
         )
-        if required_one_of:
+        # An entry holding nothing is the object nothing fills
+        if required_one_of or not attributes:
             return name, attributes, compl_data
         attributes = [
             self._single_attribute(attribute) for attribute in attributes
@@ -1654,20 +1721,22 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return last_attribute
 
     # Return type & value of a windows service object
-    @staticmethod
-    def _handle_windows_service(properties: win_service_object.WinService) -> tuple:
-        if properties.service_name:
-            return "windows-service-name", properties.service_name.value, ""
-        if properties.display_name:
-            return "windows-service-displayname", properties.display_name.value, ""
-        if properties.name:
-            return "windows-service-name", properties.name.value, ""
+    @classmethod
+    def _handle_windows_service(cls, properties: win_service_object.WinService) -> tuple:
+        for field, attribute_type in (('service_name', 'windows-service-name'),
+                                      ('display_name', 'windows-service-displayname'),
+                                      ('name', 'windows-service-name')):
+            value = cls._value(getattr(properties, field))
+            if value is not None:
+                return attribute_type, value, ""
+        return "windows-service-name", None, ""
 
     # Parse a windows user account object
     def _handle_windows_user(self, properties: win_user_account_object.WinUser) -> tuple:
         attributes = self._fetch_user_account_attributes(properties)
-        if properties.security_id:
-            attributes.append(['text', properties.security_id.value, 'user-id'])
+        attributes.append(
+            ['text', self._value(properties.security_id), 'user-id']
+        )
         attributes.extend(
             self._read_custom_properties(properties, 'user-account')
         )
@@ -1676,21 +1745,23 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_x509(self, properties: x509_certificate_object.X509Certificate) -> tuple:
         object_id = getattr(properties.parent, 'id_', None)
         attributes = list(self._handle_x509_certificate(properties))
-        if properties.raw_certificate:
-            raw = properties.raw_certificate.value
+        raw = self._value(properties.raw_certificate)
+        if raw is not None:
             try:
                 relation = "raw-base64" if raw == b64encode(b64decode(raw)).strip() else "pem"
             except Exception:
                 relation = "pem"
             attributes.append(["text", raw, relation])
-        if properties.certificate_signature:
-            signature = properties.certificate_signature
+        signature = properties.certificate_signature
+        algorithm = self._value(signature, 'signature_algorithm')
+        value = self._value(signature, 'signature')
+        # A signature naming no algorithm has nothing to type it with
+        if algorithm is not None and value is not None:
             # The signature algorithm the document names is what types the
             # fingerprint, and MISP has an attribute type for three of them
-            relation = f"x509-fingerprint-{signature.signature_algorithm.value.lower()}"
+            relation = f"x509-fingerprint-{str(algorithm).lower()}"
             attribute = self._read_derived_attribute(
-                relation, signature.signature.value,
-                _template_attribute_types('x509'), object_id
+                relation, value, _template_attribute_types('x509'), object_id
             )
             if attribute is not None:
                 attributes.append(attribute)
@@ -1701,20 +1772,21 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if properties.certificate is None:
             return []
         certificate = properties.certificate
-        if certificate.validity:
-            validity = certificate.validity
-            for prop in self._mapping.x509_datetime_types():
-                if getattr(validity, prop):
-                    yield ['datetime', getattr(validity, prop).value, f"validity-{prop.replace('_', '-')}"]
-        if certificate.subject_public_key:
-            subject_pubkey = certificate.subject_public_key
-            if subject_pubkey.rsa_public_key:
-                rsa_pubkey = subject_pubkey.rsa_public_key
-                for prop in self._mapping.x509_pubkey_types():
-                    if getattr(rsa_pubkey, prop):
-                       yield ['text', getattr(rsa_pubkey, prop).value, f'pubkey-info-{prop}']
-            if subject_pubkey.public_key_algorithm:
-                yield ["text", subject_pubkey.public_key_algorithm.value, "pubkey-info-algorithm"]
+        for prop in self._mapping.x509_datetime_types():
+            yield [
+                'datetime', self._value(certificate.validity, prop),
+                f"validity-{prop.replace('_', '-')}"
+            ]
+        subject_pubkey = certificate.subject_public_key
+        rsa_pubkey = getattr(subject_pubkey, 'rsa_public_key', None)
+        for prop in self._mapping.x509_pubkey_types():
+            yield [
+                'text', self._value(rsa_pubkey, prop), f'pubkey-info-{prop}'
+            ]
+        yield [
+            "text", self._value(subject_pubkey, 'public_key_algorithm'),
+            "pubkey-info-algorithm"
+        ]
         yield from self._fetch_attributes_with_template_types(
             certificate, 'x509_certificate_mapping',
             _template_attribute_types('x509')
@@ -1785,14 +1857,15 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             message = f"{message} - {errors} error{'s' if errors > 1 else ''} recorded"
         raise MissingSTIXContentError(f'{message}.')
 
-    @staticmethod
-    def _get_galaxy_name(stix_object: _STIX_OBJECT_TYPING,
+    @classmethod
+    def _get_galaxy_name(cls, stix_object: _STIX_OBJECT_TYPING,
                          feature: str) -> Union[str, list, None]:
         if getattr(stix_object, feature, None) is not None:
             return getattr(stix_object, feature)
         for feature in ('name', 'names'):
             if getattr(stix_object, feature, None) is not None:
-                return [value.value for value in getattr(stix_object, feature)]
+                values = map(cls._value, getattr(stix_object, feature))
+                return [value for value in values if value is not None]
 
     def _parse_galaxy(self, stix_object: _STIX_OBJECT_TYPING,
                       feature: str, construct: str):
@@ -1819,23 +1892,50 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _extract_uuid(object_id: str) -> str:
         return '-'.join(object_id.split('-')[1:])
 
+    @staticmethod
+    def _value(field, path: Optional[str] = None):
+        """Read the value a CybOX or STIX field holds.
+
+        cybox leaves a field the document does not carry None, and one it
+        carries with no value - CybOX makes every one of them optional, and a
+        schema-valid document may write any of them empty - a property whose
+        value is None: both are the absent field. Reading `.value` off the
+        first raised out of `parse_stix_package()` and cost the whole package,
+        so every value the STIX 1 import reads comes through here, and every
+        reader takes None as the field the document does not carry. A field
+        python-stix holds as the plain value it carries is that value.
+
+        :param field: the field, or the structure the path starts from
+        :param path: the dotted path from the structure to the field, a field
+            absent anywhere along it being the field absent
+        :return: the value, None where the field is absent or holds none
+        """
+        for name in path.split('.') if path else ():
+            field = getattr(field, name, None)
+        return getattr(field, 'value', field)
+
+    # The fetchers below read the fields a mapping names, and yield none for
+    # a field holding no value: their callers count what they read
+
     def _fetch_attributes_with_keys(self, properties: _SIMPLE_PROPERTIES_TYPING, mapping: str):
-        for field, attribute in getattr(self._mapping, mapping)().items():
-            if getattr(properties, field):
-                attribute_type, feature, relation = attribute
-                yield (attribute_type, attrgetter(feature)(properties), relation)
+        for attribute_type, feature, relation in getattr(self._mapping, mapping)().values():
+            value = self._value(properties, feature)
+            if value is not None:
+                yield (attribute_type, value, relation)
 
     def _fetch_attributes_with_key_parsing(self, properties: _PROPERTIES_TYPING, mapping: str):
         for field, attribute in getattr(self._mapping, mapping)().items():
-            if getattr(properties, field):
-                attribute_type, feature, relation = attribute
-                yield (attribute_type, attrgetter(f'{field}.{feature}')(properties), relation)
+            attribute_type, feature, relation = attribute
+            value = self._value(properties, f'{field}.{feature}')
+            if value is not None:
+                yield (attribute_type, value, relation)
 
     def _fetch_attributes_with_partial_key_parsing(self, properties: _PARTIAL_PROPERTIES_TYPING, mapping: str):
         for field, attribute in getattr(self._mapping, mapping)().items():
-            if getattr(properties, field):
-                attribute_type, relation = attribute
-                yield (attribute_type, getattr(properties, field).value, relation)
+            attribute_type, relation = attribute
+            value = self._value(getattr(properties, field))
+            if value is not None:
+                yield (attribute_type, value, relation)
 
     def _fetch_attributes_with_template_types(
             self, properties, mapping: str, template_types: dict):
@@ -1852,11 +1952,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             fill
         """
         for field, relation in getattr(self._mapping, mapping)().items():
-            if getattr(properties, field, None):
-                yield (
-                    template_types.get(relation, 'text'),
-                    getattr(properties, field).value, relation
-                )
+            value = self._value(properties, field)
+            if value is not None:
+                yield (template_types.get(relation, 'text'), value, relation)
 
     @classmethod
     def _property_value(cls, prop):
@@ -1879,15 +1977,15 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :param prop: the custom property
         :return: the value, None when it is no MISP attribute value
         """
-        value = prop.value
+        value = cls._value(prop)
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
         if not isinstance(value, str):
             return None
         return cls._declared_value(value, getattr(prop, 'datatype', None))
 
-    @staticmethod
-    def _declared_value(value: str, datatype):
+    @classmethod
+    def _declared_value(cls, value: str, datatype):
         """Read a value under the type the document declares for it.
 
         The export writes a MISP value its object template types as a
@@ -1906,7 +2004,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         """
         # A form the declared type does not hold names nothing, so the string
         # is what the document carries either way
-        declared_type = getattr(datatype, 'value', datatype)
+        declared_type = cls._value(datatype)
         if declared_type == 'boolean':
             return _BOOLEAN_FORMS.get(value, value)
         reader = _DECLARED_TYPES.get(declared_type)
@@ -1954,10 +2052,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :return: the `(type, value, relation)` of each property
         """
         for prop in custom_properties or ():
+            if self._value(prop) is None:
+                # A property holding no value is no property
+                continue
             value = self._property_value(prop)
             if value is None:
                 self._unstorable_attribute_warning(
-                    prop.name, prop.value, object_id
+                    prop.name, self._value(prop), object_id
                 )
                 continue
             if prop.name in template_types:
@@ -2009,9 +2110,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         """
         return cls._read_comment(description, title, _template_description(name))
 
-    @staticmethod
+    @classmethod
     def _read_comment(
-            description, *written_without_a_comment: Optional[str]
+            cls, description, *written_without_a_comment: Optional[str]
     ) -> Optional[str]:
         """Read the comment a MISP record carried off a STIX description.
 
@@ -2029,7 +2130,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             the record has no comment, if anything
         :return: the comment, None when the record carried none
         """
-        value = getattr(description, 'value', description)
+        value = cls._value(description)
         if not isinstance(value, str) or not value:
             return None
         return None if value in written_without_a_comment else value
@@ -2045,13 +2146,15 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @staticmethod
     def _return_object_attributes(attributes: Union[list, tuple]) -> tuple:
         # A fourth element holds the fields an attribute carrying its own id
-        # read: the uuid, and the comment keeping the original id
+        # read: the uuid, and the comment keeping the original id. A field
+        # holding no value is a field the document does not carry, and there
+        # is no attribute to read off it - nothing is lost, nothing is said
         return tuple(
             {
                 **dict(zip(('type', 'value', 'object_relation'), attribute)),
                 **(attribute[3] if len(attribute) > 3 else {})
             }
-            for attribute in attributes
+            for attribute in attributes if attribute[1] is not None
         )
 
     @staticmethod
@@ -2192,6 +2295,28 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             'Unable to convert the Observable composition'
             f'{self._object_origin(object_id)}: '
             f"{', '.join(attribute_types)} make no MISP composite attribute"
+        )
+
+    def _empty_record_error(self, name: str, object_id: Optional[str],
+                            record: str = 'object'):
+        # A record no field fills is refused as the record it would have
+        # been: an attribute holding no value, an object holding no attribute
+        self._add_error(
+            f'Unable to convert the STIX object{self._record_origin(object_id)}'
+            f': nothing to fill a MISP {name} {record} with'
+        )
+
+    def _entropy_range_warning(self, minimum, maximum,
+                               object_id: Optional[str]):
+        # The range is data the document carried, and no `pe-section`
+        # relation holds a range
+        bounds = ', '.join(
+            f'{name} {value}' for name, value in (('min', minimum), ('max', maximum))
+            if value is not None
+        )
+        self._add_warning(
+            f'The entropy range of a PE section{self._object_origin(object_id)}'
+            f' cannot be stored as a MISP attribute: {bounds} not converted.'
         )
 
     def _unnamed_object_error(self, object_uuid: Optional[str]):

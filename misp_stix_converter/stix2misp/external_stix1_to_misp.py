@@ -37,10 +37,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             self.misp_event.timestamp = self._timestamp_from_date(stix_date)
         self.misp_event.info = self._get_event_info()
         header = self.stix_package.stix_header
-        if getattr(getattr(header, 'description', None), 'value', None):
+        description = self._value(header, 'description')
+        if description:
             self._add_attribute(
                 {
-                    'type': 'text', 'value': header.description.value,
+                    'type': 'text', 'value': description,
                     'comment': 'STIX Header Description'
                 },
                 self.stix_package.id_
@@ -140,6 +141,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     except StixObjectTypeError as xsi_type:
                         self._stix_object_type_error(xsi_type, ttp.id_)
                         continue
+                    if attribute_value is None:
+                        self._unfilled_record_error(attribute_type, ttp.id_)
+                        continue
                     if isinstance(attribute_value, list):
                         attributes.extend(
                             {'type': attribute_type, 'value': value, 'to_ids': False}
@@ -175,10 +179,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         return attributes
 
     def _parse_description(self, stix_object: Union[Indicator, Observable]):
-        if stix_object.description:
-            misp_attribute = {
-                'type': 'text', 'value': stix_object.description.value
-            }
+        description = self._value(stix_object.description)
+        if description:
+            misp_attribute = {'type': 'text', 'value': description}
             if stix_object.timestamp:
                 misp_attribute['timestamp'] = self._timestamp_from_date(
                     stix_object.timestamp
@@ -218,7 +221,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         related_objects = observable.object_.related_objects
                         resolving = (
                             attribute_type == "url" and len(related_objects) == 1 and
-                            related_objects[0].relationship.value == "Resolved_To"
+                            self._value(related_objects[0].relationship) == "Resolved_To"
                         )
                         if resolving:
                             related_ip = self._sanitise_uuid(related_objects[0].idref)
@@ -252,7 +255,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         attribute, observable.object_.id_,
                         uuid_comment=record.get('comment')
                     )
-                elif attribute_value:
+                elif attribute_value is None:
+                    self._unfilled_record_error(attribute_type, indicator.id_)
+                else:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
                         self._handle_object_case(
@@ -298,7 +303,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         related_objects = observable.object_.related_objects
                         resolving = (
                             attribute_type == "url" and len(related_objects) == 1 and
-                            related_objects[0].relationship.value == "Resolved_To"
+                            self._value(related_objects[0].relationship) == "Resolved_To"
                         )
                         if resolving:
                             related_ip = self._sanitise_uuid(related_objects[0].idref)
@@ -330,7 +335,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         attribute, observable_object.id_,
                         uuid_comment=record.get('comment')
                     )
-                elif attribute_value:
+                elif attribute_value is not None:
                     if all(isinstance(value, dict) for value in attribute_value):
                         # it is a list of attributes, so we build an object
                         self._handle_object_case(
@@ -350,7 +355,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                                 observable_object.id_
                             )
                 else:
-                    self._record_related_objects(observable_object, uuid)
+                    self._unfilled_record_error(attribute_type, observable.id_)
             else:
                 self._parse_description(observable)
 
@@ -379,14 +384,16 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             elif hasattr(identity, 'specification') and getattr(identity.specification, 'party_name', None) is not None:
                 party_name = identity.specification.party_name
                 if getattr(party_name, 'person_names', None) is not None:
-                    for person_name in party_name.person_names:
-                        self.galaxies.update(
-                            self._resolve_galaxy(person_name.name_elements[0].value, 'threat_actor')
-                        )
+                    names = party_name.person_names
                 elif getattr(party_name, 'organisation_names', None) is not None:
-                    for organisation_name in party_name.organisation_names:
+                    names = party_name.organisation_names
+                else:
+                    names = ()
+                for name in names:
+                    value = self._value(next(iter(name.name_elements or ()), None))
+                    if value is not None:
                         self.galaxies.update(
-                            self._resolve_galaxy(organisation_name.name_elements[0].value, 'threat_actor')
+                            self._resolve_galaxy(value, 'threat_actor')
                         )
 
     def _parse_ttp(self, ttp: TTP):
@@ -447,7 +454,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         for related_object in observable_object.related_objects:
             if related_object.idref is None:
                 continue
-            relationship = getattr(related_object.relationship, 'value', None)
+            relationship = self._value(related_object.relationship)
             self.references[uuid].append(
                 {
                     'idref': self._sanitise_uuid(related_object.idref),
@@ -457,6 +464,14 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     )
                 }
             )
+
+    def _unfilled_record_error(self, name: Optional[str], object_id: str):
+        # A handler reading no value names the attribute it would have been,
+        # one reading no property of a nameless object names nothing
+        if name:
+            self._empty_record_error(name, object_id, 'attribute')
+        else:
+            self._unnamed_object_error(object_id)
 
     @staticmethod
     def _has_properties(observable):

@@ -168,7 +168,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self.event_tags.add(tag)
         if self._event.history:
             for entry in self._event.history.history_items:
-                self._parse_journal_entry(entry.journal_entry.value)
+                # An entry holding no text is no entry
+                journal_entry = self._value(entry, 'journal_entry')
+                if journal_entry is not None:
+                    self._parse_journal_entry(journal_entry)
         self._parse_header_description(package)
         if self._event.information_source and self._event.information_source.references:
             for reference in self._event.information_source.references:
@@ -292,12 +295,12 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
         :param package: the package the Incident is written on
         """
-        description = getattr(package.stix_header, 'description', None)
-        if description is None or not description.value:
+        description = self._value(package.stix_header, 'description')
+        if not description:
             return
         attribute = {
             'type': 'comment', 'category': 'Other',
-            'value': description.value,
+            'value': description,
             'comment': _MISP_HEADER_DESCRIPTION_COMMENT
         }
         if package.id_:
@@ -398,17 +401,15 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
         :param affected_asset: the Affected Asset of the Incident
         """
-        description = affected_asset.description
-        if description is None or not description.value:
+        description = self._value(affected_asset.description)
+        if not description:
             self._add_error(
                 'Unable to convert an Affected Asset of the Incident with id '
                 f'{self._event.id_}: no description to read a target-machine '
                 'attribute from'
             )
             return
-        value, comment = self._split_affected_asset_description(
-            description.value
-        )
+        value, comment = self._split_affected_asset_description(description)
         misp_attribute = {'type': 'target-machine', 'value': value}
         if comment is not None:
             misp_attribute['comment'] = comment
@@ -432,10 +433,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         """
         attributes = []
         for key, relation in self._mapping.attack_pattern_object_mapping().items():
-            value = getattr(attack_pattern, key)
+            value = self._value(attack_pattern, key)
             if value:
-                if not isinstance(value, str):
-                    value = value.value
                 # The export writes `id` the STIX 1 way, `CAPEC-9`; MISP's is
                 # the bare number, as the STIX 2 import returns it too
                 if relation == 'id' and value.startswith('CAPEC-'):
@@ -469,12 +468,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         """
         described = self._mapping.attack_pattern_description_relations()
         for description in attack_pattern.descriptions or ():
-            if not description.value:
+            value = self._value(description)
+            if not value:
                 continue
             relation = description.structuring_format
             yield {
                 'object_relation': relation if relation in described else 'summary',
-                'value': description.value
+                'value': value
             }
 
     def _read_related_weaknesses(self, ttp: TTP) -> Iterator[dict]:
@@ -512,15 +512,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
         :param campaign: the Campaign the package carries
         """
-        if not campaign.names:
+        name = self._value(campaign.names[0]) if campaign.names else None
+        if name is None:
             self._add_error(
                 f'Unable to convert the Campaign with id {campaign.id_}: '
                 'no name to read a campaign-name attribute from'
             )
             return
-        misp_attribute = {
-            'type': 'campaign-name', 'value': campaign.names[0].value
-        }
+        misp_attribute = {'type': 'campaign-name', 'value': name}
         category = self._category_from_title(campaign.title)
         if category is not None:
             misp_attribute['category'] = category
@@ -714,13 +713,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 vulnerability.descriptions or () if key == 'description'
                 else (getattr(vulnerability, key),)
             )
-            for value in values:
+            for value in map(self._value, values):
                 if value:
                     attribute_type, relation = mapping
                     attributes.append(
                         {
                             'type': attribute_type, 'object_relation': relation,
-                            'value': value if isinstance(value, str) else value.value
+                            'value': value
                         }
                     )
         if vulnerability.cvss_score and vulnerability.cvss_score.overall_score:
@@ -770,11 +769,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             timestamp: Optional[int] = None):
         attributes = []
         for key, relation in self._mapping.weakness_object_mapping().items():
-            value = getattr(weakness, key)
+            value = self._value(weakness, key)
             if value:
-                attributes.append(
-                    (relation, value if isinstance(value, str) else value.value)
-                )
+                attributes.append((relation, value))
         if attributes:
             weakness_object = MISPObject('weakness')
             if comment is not None:
@@ -896,7 +893,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 attribute_type, attribute_value, compl_data = self._handle_attribute_type(
                     properties, title=observable.title
                 )
-                if isinstance(attribute_value, (str, int)):
+                if attribute_type and attribute_value is None:
+                    self._empty_record_error(
+                        attribute_type, stix_object_id, 'attribute'
+                    )
+                elif isinstance(attribute_value, (str, int)):
                     if self._is_link(properties, attribute_type, misp_attribute):
                         attribute_type = 'link'
                     self._handle_attribute_case(
@@ -912,15 +913,26 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._stix_object_type_error(xsi_type, stix_object_id)
         elif getattr(observable.observable_composition, 'observables', None) is not None:
             attribute_dict = {}
+            unfilled = []
             for observables in observable.observable_composition.observables:
                 properties = observables.object_.properties
                 try:
                     attribute_type, attribute_value, _ = self._handle_attribute_type(
                         properties
                     )
-                    attribute_dict[attribute_type] = attribute_value
                 except StixObjectTypeError as xsi_type:
                     self._stix_object_type_error(xsi_type, stix_object_id)
+                    continue
+                if attribute_value is None:
+                    # A member holding no value is a member the composition
+                    # does not carry
+                    unfilled.append(attribute_type)
+                    continue
+                attribute_dict[attribute_type] = attribute_value
+            if not attribute_dict and unfilled:
+                self._empty_record_error(
+                    'composite', stix_object_id, 'attribute'
+                )
             if attribute_dict:
                 composite = self._composite_type(attribute_dict)
                 if composite is None:
@@ -984,7 +996,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if not attributes:
             # An object holding no attribute is no record: the document would
             # be one record short with nothing saying so
-            self._empty_yield_error(name, stix_object_id)
+            self._empty_record_error(name, stix_object_id)
             return
         if not isinstance(compl_data, dict):
             attribute = self._attribute_from_yield(name, attributes)
@@ -1156,6 +1168,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             observables = item.observable_composition.observables
         args = (misp_object, observables, to_ids)
         self._handle_file_composition(*args) if name == 'file' else self._handle_composition(*args)
+        if not misp_object.attributes:
+            self._empty_record_error(name, item.id_)
+            return
         self.misp_event.add_object(misp_object)
 
     def _handle_composition(self, misp_object, observables, to_ids):
@@ -1173,6 +1188,20 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._stix_object_type_error(xsi_type, observable.id_)
                 continue
             attribute_type, attribute_value, relation = attribute
+            if attribute_value is None:
+                # A member holding no value is a member the composition does
+                # not carry
+                continue
+            if isinstance(attribute_value, tuple):
+                # A member read as the attributes of an object of its own
+                # gives the composition those attributes, as a `file`
+                # composition takes them
+                for misp_attribute in attribute_value:
+                    self._add_object_attribute(
+                        misp_object, misp_object.uuid,
+                        {**misp_attribute, 'to_ids': to_ids}
+                    )
+                continue
             if attribute_type == 'hostname' and relation not in template_types:
                 # `host` is the `url` relation: every other template names a
                 # hostname its own way
@@ -1253,6 +1282,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             except StixObjectTypeError as xsi_type:
                 self._stix_object_type_error(xsi_type, observable.id_)
                 continue
+            if attribute_value is None:
+                # A member holding no value is a member the composition does
+                # not carry
+                continue
             if isinstance(attribute_value, str):
                 filename = self._filename_residue(compl_data)
                 if filename is not None:
@@ -1301,7 +1334,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         attribute_type, attribute_value, compl_data = self._handle_object_type(
             properties, title
         )
-        if isinstance(attribute_value, (str, int)):
+        if attribute_type and attribute_value is None:
+            self._empty_record_error(attribute_type, object_id, 'attribute')
+        elif isinstance(attribute_value, (str, int)):
             attribute = {'to_ids': to_ids, 'uuid': uuid}
             if timestamp is not None:
                 attribute['timestamp'] = timestamp
@@ -1429,17 +1464,18 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             compl_data = {'references': references}
         return name, attributes, compl_data
 
-    @staticmethod
-    def _related_object_relationship(related: RelatedObject) -> str:
+    @classmethod
+    def _related_object_relationship(cls, related: RelatedObject) -> str:
         # `contains` is written as the vocabulary term, any other relationship
         # verbatim as a free-text term - one spelled `Contains` included
         relationship = related.relationship
-        if relationship is None or not relationship.value:
+        value = cls._value(relationship)
+        if not value:
             return 'related-to'
         if isinstance(relationship, ObjectRelationship):
-            if relationship.value == 'Contains':
+            if value == 'Contains':
                 return 'contains'
-        return relationship.value
+        return value
 
     # Return type & value of a composite attribute in MISP - None where the
     # values the composition holds pair into no MISP composite type, which the
@@ -1528,9 +1564,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if field != 'description'
         )
 
-    @staticmethod
+    @classmethod
     def _read_target_identity_fields(
-            identity: Identity) -> Iterator[tuple[str, str]]:
+            cls, identity: Identity) -> Iterator[tuple[str, str]]:
         """Read the `target-*` type and the value off each CIQ identity field
         the identity fills - the export fills one, with one value.
 
@@ -1542,23 +1578,27 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if specification is None:
             return
         for identifier in specification.electronic_address_identifiers or ():
-            if identifier.value:
-                yield 'target-email', identifier.value
+            value = cls._value(identifier)
+            if value:
+                yield 'target-email', value
         party_name = specification.party_name
         if party_name is not None:
             for name_line in party_name.name_lines or ():
-                if name_line.value:
-                    yield 'target-external', name_line.value.removeprefix(
+                value = cls._value(name_line)
+                if value:
+                    yield 'target-external', value.removeprefix(
                         _MISP_EXTERNAL_TARGET_PREFIX
                     )
             for organisation_name in party_name.organisation_names or ():
                 for element in organisation_name.name_elements or ():
-                    if element.value:
-                        yield 'target-org', element.value
+                    value = cls._value(element)
+                    if value:
+                        yield 'target-org', value
             for person_name in party_name.person_names or ():
                 for element in person_name.name_elements or ():
-                    if element.value:
-                        yield 'target-user', element.value
+                    value = cls._value(element)
+                    if value:
+                        yield 'target-user', value
         for address in specification.addresses or ():
             free_text_address = address.free_text_address
             if free_text_address is not None:
@@ -1599,12 +1639,6 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             f'Unable to convert the TTP with id {ttp_id}: no attack pattern, '
             'vulnerability, weakness or victim targeting to read a MISP '
             'attribute or object from'
-        )
-
-    def _empty_yield_error(self, name: str, object_id: str):
-        self._add_error(
-            f'Unable to convert the STIX object with id {object_id}: '
-            f'nothing to fill a MISP {name} object with'
         )
 
     def _unread_attribute_warning(self, name: str, object_id: str):
