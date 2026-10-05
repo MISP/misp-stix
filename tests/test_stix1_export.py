@@ -1877,6 +1877,47 @@ class TestSTIX1ExploitTargetObjectComment(TestSTIX):
                     self.assertIsNone(exploit_target.description)
 
 
+class TestSTIX1AttackPatternComment(TestSTIX):
+    """An `attack-pattern` object is exported as a TTP holding one Attack
+    Pattern, whose descriptions all carry relations: the TTP's own
+    description carries the object's comment, and an uncommented object
+    writes none."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    def _ttp(self, version, comment):
+        event = get_event_with_attack_pattern_object()
+        misp_object = event['Event']['Object'][0]
+        misp_object.pop('comment', None)
+        if comment is not None:
+            misp_object['comment'] = comment
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        ttp, = parser.stix_package.ttps.ttp
+        return ttp
+
+    def test_ttp_carries_the_object_comment(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                ttp = self._ttp(version, 'a comment')
+                self.assertEqual(ttp.description.value, 'a comment')
+                # The Attack Pattern's descriptions are unchanged
+                attack_pattern, = ttp.behavior.attack_patterns
+                self.assertNotIn(
+                    'a comment',
+                    [
+                        description.value
+                        for description in attack_pattern.descriptions
+                    ]
+                )
+
+    def test_uncommented_object_writes_no_ttp_description(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                self.assertIsNone(self._ttp(version, None).description)
+
+
 class TestSTIX1GalaxyTags(TestSTIX):
     """What the export writes for the tag of a galaxy cluster: a STIX 1
     construct names a cluster by its value, and a galaxy of a type no
