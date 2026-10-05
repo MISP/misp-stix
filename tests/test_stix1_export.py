@@ -1161,6 +1161,364 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
         )
 
 
+class TestSTIX1CanonicalNumbers(TestSTIX):
+    """A MISP value goes into a native CybOX integer or float field only
+    where the field writes it back unchanged: cybox reads a string with
+    `int(value, 0)` or `float(value)` and checks no sign, so `'0x1f'` went out
+    as 31 and `'-3'` into an unsigned field. Any other spelling goes to the
+    property bag under its relation, with one warning."""
+
+    _OBJECT_UUID = '3d5f7a9b-1c2e-4f60-8a1b-2c3d4e5f6a7b'
+    _ATTRIBUTE_UUID = '4e6a8b0c-2d3f-4a71-9b2c-3d4e5f6a7b8c'
+    _NON_CANONICAL = (
+        '0x1f', '0b11', '1_000', '+5', ' 7 ', '٣', '-3', '007', 'pid-1'
+    )
+
+    def _parse(self, event):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
+        return parser.stix_package.incidents[0].related_observables.observable
+
+    def _parse_object(self, name, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [self._misp_object(name, attributes)]
+        observable, = self._parse(event)
+        return observable.item
+
+    def _misp_object(self, name, attributes, uuid=None):
+        return {
+            'name': name, 'meta-category': 'misc',
+            'uuid': uuid or self._OBJECT_UUID, 'timestamp': '1603642920',
+            'Attribute': [
+                {'type': attribute_type, 'object_relation': relation,
+                 'value': value, 'uuid': str(uuid5(UUID(self._OBJECT_UUID), relation + str(index)))}
+                for index, (attribute_type, relation, value)
+                in enumerate(attributes)
+            ]
+        }
+
+    def _parse_attribute(self, attribute_type, value):
+        event = get_base_event()
+        event['Event']['Attribute'] = [
+            {'type': attribute_type, 'category': 'Network activity',
+             'value': value, 'uuid': self._ATTRIBUTE_UUID, 'to_ids': False}
+        ]
+        observable, = self._parse(event)
+        return observable.item.object_
+
+    @staticmethod
+    def _bag(properties):
+        return sorted(
+            (prop.name, prop.value)
+            for prop in properties.custom_properties or ()
+        )
+
+    def _warning(self, relation, value, kind='unsigned decimal integer',
+                 record=None):
+        record = record or f'process object (uuid: {self._OBJECT_UUID})'
+        return (
+            f'{relation!r} in the {record} is not a canonical {kind}: '
+            f'{value!r} written as a custom property.'
+        )
+
+    def test_process_pid_goes_native_only_in_canonical_form(self):
+        for value in self._NON_CANONICAL:
+            with self.subTest(value=value):
+                process = self._parse_object(
+                    'process', (('text', 'pid', value),)
+                ).object_.properties
+                self.assertIsNone(process.pid)
+                self.assertEqual(self._bag(process), [('pid', value)])
+                self.assertEqual(
+                    self._warnings, [self._warning('pid', value)]
+                )
+        process = self._parse_object(
+            'process', (('text', 'pid', '31'),)
+        ).object_.properties
+        self.assertEqual(process.pid.value, 31)
+        self.assertEqual(self._bag(process), [])
+        self.assertEqual(self._warnings, [])
+
+    def test_child_pid_no_integer_keeps_the_process(self):
+        # `pid` and `parent-pid` alone were guarded: cybox refusing a
+        # child cost the whole process
+        process = self._parse_object(
+            'process',
+            (('text', 'name', 'first.exe'), ('text', 'child-pid', '42'),
+             ('text', 'child-pid', 'pid-1'))
+        ).object_.properties
+        self.assertEqual(process._XSI_TYPE, 'ProcessObjectType')
+        self.assertEqual(process.name.value, 'first.exe')
+        self.assertEqual(
+            [child.value for child in process.child_pid_list], [42]
+        )
+        self.assertEqual(self._bag(process), [('child-pid', 'pid-1')])
+        self.assertEqual(
+            self._warnings, [self._warning('child-pid', 'pid-1')]
+        )
+
+    def test_port_attributes_non_canonical_are_custom(self):
+        record = f'{{}} attribute (uuid: {self._ATTRIBUTE_UUID})'
+        for attribute_type, value, port in (
+                ('port', '0x1f', '0x1f'),
+                ('hostname|port', 'circl.lu|+5', '+5'),
+                ('ip-dst|port', '5.6.7.8|-3', '-3')):
+            with self.subTest(type=attribute_type):
+                custom = self._parse_attribute(attribute_type, value)
+                self.assertEqual(
+                    self._bag(custom.properties), [(attribute_type, value)]
+                )
+                self.assertEqual(
+                    self._warnings,
+                    [self._warning(attribute_type, port,
+                                   record=record.format(attribute_type))]
+                )
+        port = self._parse_attribute('port', '8080')
+        self.assertEqual(port.properties.port_value.value, 8080)
+        self.assertEqual(self._warnings, [])
+
+    def test_object_ports_non_canonical_go_to_the_bag(self):
+        for name, relation, other in (
+                ('network-connection', 'dst-port',
+                 ('ip-dst', 'ip-dst', '5.6.7.8')),
+                ('network-socket', 'src-port',
+                 ('ip-dst', 'ip-dst', '5.6.7.8')),
+                ('process', 'port', ('text', 'name', 'first.exe'))):
+            with self.subTest(name=name):
+                properties = self._parse_object(
+                    name, (('port', relation, '0x1f'), other)
+                ).object_.properties
+                self.assertEqual(self._bag(properties), [(relation, '0x1f')])
+                self.assertEqual(
+                    self._warnings,
+                    [self._warning(
+                        relation, '0x1f',
+                        record=f'{name} object (uuid: {self._OBJECT_UUID})'
+                    )]
+                )
+
+    def test_composition_ports_non_canonical_are_custom_members(self):
+        for name, relation, other in (
+                ('ip-port', 'dst-port', ('ip-dst', 'ip-dst', '5.6.7.8')),
+                ('domain-ip', 'port', ('domain', 'domain', 'circl.lu')),
+                ('url', 'port', ('url', 'url', 'https://circl.lu'))):
+            with self.subTest(name=name):
+                observable = self._parse_object(
+                    name, (other, ('port', relation, '0x1f'),
+                           ('port', relation, '443'))
+                )
+                members = observable.observable_composition.observables
+                customs = [
+                    member.object_.properties for member in members
+                    if member.object_.properties._XSI_TYPE
+                    == 'CustomObjectType'
+                ]
+                ports = [
+                    member.object_.properties.port_value.value
+                    for member in members
+                    if member.object_.properties._XSI_TYPE == 'PortObjectType'
+                ]
+                self.assertEqual(ports, [443])
+                self.assertEqual(
+                    [self._bag(custom) for custom in customs],
+                    [[(relation, '0x1f')]]
+                )
+                self.assertEqual(
+                    self._warnings,
+                    [self._warning(
+                        relation, '0x1f',
+                        record=f'{name} object (uuid: {self._OBJECT_UUID})'
+                    )]
+                )
+
+    def test_sizes_non_canonical_go_to_the_bag(self):
+        custom = self._parse_attribute('size-in-bytes', '1_000')
+        self.assertEqual(
+            self._bag(custom.properties), [('size-in-bytes', '1_000')]
+        )
+        file_object = self._parse_object(
+            'file', (('filename', 'filename', 'test.exe'),
+                     ('size-in-bytes', 'size-in-bytes', '1_000'))
+        ).object_.properties
+        self.assertIsNone(file_object.size_in_bytes)
+        self.assertEqual(
+            self._bag(file_object), [('size-in-bytes', '1_000')]
+        )
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'size-in-bytes', '1_000',
+                record=f'file object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
+
+    def test_asn_non_canonical_goes_to_the_bag(self):
+        custom = self._parse_attribute('AS', '0x1f')
+        self.assertEqual(self._bag(custom.properties), [('AS', '0x1f')])
+        # A handle is a string, whatever follows its `AS`
+        handle = self._parse_attribute('AS', 'AS0x1f').properties
+        self.assertEqual(handle.handle.value, 'AS0x1f')
+        number = self._parse_attribute('AS', '1234').properties
+        self.assertEqual(number.number.value, 1234)
+        self.assertEqual(self._warnings, [])
+        autonomous_system = self._parse_object(
+            'asn', (('AS', 'asn', '0x1f'), ('text', 'description', 'CIRCL'))
+        ).object_.properties
+        self.assertIsNone(autonomous_system.number)
+        self.assertEqual(autonomous_system.name.value, 'CIRCL')
+        self.assertEqual(self._bag(autonomous_system), [('asn', '0x1f')])
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'asn', '0x1f',
+                record=f'asn object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
+
+    def _parse_file_with_pe(self, pe_attributes, section_attributes=()):
+        file_uuid = '5f7b9c1d-3e4a-4b82-8c3d-4e5f6a7b8c9d'
+        pe_uuid = '6a8c0d2e-4f5b-4c93-9d4e-5f6a7b8c9d0e'
+        section_uuid = '7b9d1e3f-5a6c-4da4-8e5f-6a7b8c9d0e1f'
+        file_object = self._misp_object(
+            'file', (('filename', 'filename', 'test.exe'),), uuid=file_uuid
+        )
+        file_object['ObjectReference'] = [
+            {'referenced_uuid': pe_uuid, 'relationship_type': 'includes',
+             'Object': {'name': 'pe'}}
+        ]
+        pe = self._misp_object('pe', pe_attributes, uuid=pe_uuid)
+        objects = [file_object, pe]
+        if section_attributes:
+            pe['ObjectReference'] = [
+                {'referenced_uuid': section_uuid,
+                 'relationship_type': 'includes',
+                 'Object': {'name': 'pe-section'}}
+            ]
+            objects.append(
+                self._misp_object(
+                    'pe-section', section_attributes, uuid=section_uuid
+                )
+            )
+        event = get_base_event()
+        event['Event']['Object'] = objects
+        return self._parse(event)
+
+    def test_pe_number_sections_non_canonical_goes_to_the_bag(self):
+        observable, = self._parse_file_with_pe(
+            (('counter', 'number-sections', '0x1f'),)
+        )
+        pe = observable.item.object_.properties
+        self.assertIsNone(pe.headers)
+        self.assertEqual(self._bag(pe), [('number-sections', '0x1f')])
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'number-sections', '0x1f',
+                record='pe object (uuid: 6a8c0d2e-4f5b-4c93-9d4e-5f6a7b8c9d0e)'
+            )]
+        )
+
+    def test_x509_signed_integers(self):
+        x509 = self._parse_object(
+            'x509', (('text', 'version', '-3'),
+                     ('text', 'pubkey-info-exponent', '0x10001'))
+        ).object_.properties
+        self.assertEqual(x509.certificate.version.value, -3)
+        self.assertIsNone(x509.certificate.subject_public_key)
+        self.assertEqual(
+            self._bag(x509), [('pubkey-info-exponent', '0x10001')]
+        )
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'pubkey-info-exponent', '0x10001', kind='decimal integer',
+                record=f'x509 object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
+
+    def test_unix_user_account_numbers(self):
+        # The group list was built twice, popping `group` twice: numeric
+        # groups cost the whole account a `KeyError`
+        account = self._parse_object(
+            'user-account',
+            (('text', 'account-type', 'unix'), ('text', 'username', 'root'),
+             ('text', 'user-id', '+0'), ('text', 'group-id', '1000'),
+             ('text', 'group', '1000'), ('text', 'group', '1001'),
+             ('text', 'group', '0x3e9'))
+        ).object_.properties
+        self.assertEqual(account._XSI_TYPE, 'UnixUserAccountObjectType')
+        self.assertIsNone(account.user_id)
+        self.assertEqual(account.group_id.value, 1000)
+        self.assertEqual(
+            [group.group_id.value for group in account.group_list],
+            [1000, 1001]
+        )
+        self.assertEqual(
+            self._bag(account), [('group', '0x3e9'), ('user-id', '+0')]
+        )
+        record = f'user-account object (uuid: {self._OBJECT_UUID})'
+        self.assertEqual(
+            self._warnings,
+            [self._warning('user-id', '+0', record=record),
+             self._warning('group', '0x3e9', record=record)]
+        )
+
+    def test_file_entropy_non_canonical_goes_to_the_bag(self):
+        # `float('0x1f')` raises: the file was lost
+        record = f'file object (uuid: {self._OBJECT_UUID})'
+        for value in ('0x1f', 'nan', '1_000', ' 7 '):
+            with self.subTest(value=value):
+                file_object = self._parse_object(
+                    'file', (('filename', 'filename', 'test.exe'),
+                             ('float', 'entropy', value))
+                ).object_.properties
+                self.assertEqual(file_object.file_name.value, 'test.exe')
+                self.assertIsNone(file_object.peak_entropy)
+                self.assertEqual(self._bag(file_object), [('entropy', value)])
+                self.assertEqual(
+                    self._warnings,
+                    [self._warning('entropy', value, kind='decimal number',
+                                   record=record)]
+                )
+        for value in ('7.5', '-1.5e3', 7.836462238824369):
+            with self.subTest(value=value):
+                file_object = self._parse_object(
+                    'file', (('float', 'entropy', value),)
+                ).object_.properties
+                self.assertEqual(file_object.peak_entropy.value, float(value))
+                self.assertEqual(self._warnings, [])
+
+    def test_pe_section_entropy_non_canonical_section_goes_standalone(self):
+        # A section has no property bag: it goes out as the object error
+        # fallback writes it, with the warning in place of an error
+        section_uuid = '7b9d1e3f-5a6c-4da4-8e5f-6a7b8c9d0e1f'
+        observables = self._parse_file_with_pe(
+            (('text', 'type', 'exe'),),
+            (('text', 'name', '.text'), ('float', 'entropy', '0x1f'))
+        )
+        # The section is written while its pe is, before the file
+        section_observable, file_observable = observables
+        pe = file_observable.item.object_.properties
+        self.assertEqual(pe.type_.value, 'exe')
+        self.assertIsNone(pe.sections)
+        custom = section_observable.item.object_
+        self.assertEqual(custom.id_, f'{_ORGNAME_ID}:Custom-{section_uuid}')
+        self.assertEqual(custom.properties.custom_name, 'pe-section')
+        self.assertEqual(
+            self._bag(custom.properties),
+            [('entropy', '0x1f'), ('name', '.text')]
+        )
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'entropy', '0x1f', kind='decimal number',
+                record=f'pe-section object (uuid: {section_uuid})'
+            )]
+        )
+
+
 class TestSTIX1UnreferencedPESection(TestSTIX):
     """A `pe-section` no `pe` references has no `WindowsExecutableFile` to
     fold into: it is exported as every other unmapped object is, one `Custom`

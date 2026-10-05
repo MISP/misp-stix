@@ -4260,6 +4260,91 @@ class TestSTIX1Import(TestSTIX):
                             int(converted.timestamp.timestamp()), 1603642920
                         )
 
+    @staticmethod
+    def _non_canonical_number_cases():
+        """A fixture, the attributes of it to give a number, and the number:
+        one case per kind of site the export writes a native CybOX number
+        from, with one cybox would rewrite or refuse."""
+        attribute = lambda *types: (
+            lambda attr: 'object_relation' not in attr and attr['type'] in types
+        )
+        relation = lambda *relations: (
+            lambda attr: attr.get('object_relation') in relations
+        )
+        yield test_events.get_event_with_port_attribute, attribute('port'), '0x1f'
+        yield (test_events.get_event_with_hostname_port_attribute,
+               attribute('hostname|port'), '+5')
+        yield get_event_with_ip_port_attributes, attribute('ip-src|port', 'ip-dst|port'), '-3'
+        yield (test_events.get_event_with_size_in_bytes_attribute,
+               attribute('size-in-bytes'), '1_000')
+        yield test_events.get_event_with_as_attribute, attribute('AS'), '0x1f'
+        yield get_event_with_asn_object, relation('asn'), '٣'
+        for value in ('0x1f', '0b11', '1_000', '+5', '٣', '-3', '007', 'pid-1'):
+            yield get_event_with_process_object, relation('pid'), value
+        yield get_event_with_process_object, relation('port'), '0x1f'
+        yield test_events.get_event_with_network_connection_object, relation('dst-port'), '+5'
+        yield test_events.get_event_with_domain_ip_object_custom, relation('port'), '0x1f'
+        yield test_events.get_event_with_url_object, relation('port'), '0x1f'
+        yield get_event_with_process_object, relation('child-pid'), 'pid-1'
+        yield get_event_with_network_socket_object, relation('src-port'), '1_000'
+        yield get_event_with_ip_port_object, relation('dst-port'), '007'
+        yield get_event_with_file_object, relation('size-in-bytes'), '0b11'
+        yield (get_event_with_file_and_pe_objects,
+               relation('number-sections', 'entropy'), '0x1f')
+        # Both entropies: the file's and the section's
+        yield get_event_with_file_and_pe_objects, relation('entropy'), 'nan'
+        yield get_event_with_x509_object, relation('version', 'pubkey-info-exponent'), '0x1f'
+        yield get_event_with_user_account_object, relation('user-id', 'group-id'), '-3'
+        # Native: a signed field, and numeric groups - which cost the whole
+        # account a `KeyError`
+        yield get_event_with_x509_object, relation('version'), '-3'
+        yield get_event_with_user_account_object, relation('group'), '1000'
+
+    def test_internal_non_canonical_numbers_read_back_unchanged(self):
+        """A number the native CybOX field would rewrite - `'0x1f'` read as
+        31 - or refuse travels in the property bag, or as a custom
+        attribute, and a canonical one in the field: the import reads either
+        back as it was written, on both `to_ids` paths."""
+        for getter, matches, value in self._non_canonical_number_cases():
+            for to_ids in (True, False):
+                event = getter()
+                expected = []
+                records = (
+                    event['Event'].get('Attribute', []) + [
+                        attribute for misp_object in event['Event'].get('Object', [])
+                        for attribute in misp_object['Attribute']
+                    ]
+                )
+                for attribute in records:
+                    attribute['to_ids'] = to_ids
+                    if matches(attribute):
+                        if '|' in attribute['type']:
+                            attribute['value'] = (
+                                f"{attribute['value'].split('|')[0]}|{value}"
+                            )
+                        else:
+                            attribute['value'] = value
+                        expected.append(
+                            (attribute.get('object_relation', attribute['type']),
+                             attribute['value'])
+                        )
+                with self.subTest(fixture=getter.__name__, to_ids=to_ids):
+                    parser = self._parse_internal_package(
+                        self._misp_export(event['Event'])
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    # A value out of the bag takes a derived uuid: the
+                    # relation and the value say which it is
+                    read = [
+                        (attribute.type, str(attribute.value))
+                        for attribute in parser.misp_event.attributes
+                    ] + [
+                        (attribute.object_relation, str(attribute.value))
+                        for misp_object in parser.misp_event.objects
+                        for attribute in misp_object.attributes
+                    ]
+                    self.assertLessEqual(Counter(expected), Counter(read))
+
     def test_internal_regkey_value_is_rebuilt_with_the_canonical_separator(self):
         """A `regkey|value` travels as a registry key holding one value, and
         is rebuilt with the canonical `|`. What the export does to the value
