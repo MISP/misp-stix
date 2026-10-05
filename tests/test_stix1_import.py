@@ -3635,16 +3635,9 @@ class TestSTIX1Import(TestSTIX):
             ttp_id = ttp_ids[exported['uuid']]
             with self.subTest(record=exported.get('name') or exported['type']):
                 self.assertEqual(str(record.uuid), str(uuid5(_UUIDv4, ttp_id)))
-                # An `attack-pattern` object's comment is not exported
-                comment = (
-                    exported['comment'] if 'type' in exported
-                    else None if exported['name'] == 'attack-pattern'
-                    else 'object comment'
-                )
-                original = f'Original id was: {ttp_id}'
                 self.assertEqual(
                     record.comment,
-                    original if comment is None else f'{comment} - {original}'
+                    f"{exported['comment']} - Original id was: {ttp_id}"
                 )
 
     def test_internal_misp_export_exploit_target_object_keeps_its_comment(self):
@@ -3664,6 +3657,32 @@ class TestSTIX1Import(TestSTIX):
                     converted, = parser.misp_event.objects
                     self.assertEqual(converted.uuid, exported['uuid'])
                     self.assertEqual(converted.comment, 'object comment')
+
+    def test_internal_misp_export_attack_pattern_object_keeps_its_comment(self):
+        """An `attack-pattern` object is a TTP holding one Attack Pattern,
+        and the TTP's description carries the object's comment: it comes
+        back, where the export used to write none. The object has no
+        Indicator, so `to_ids` changes nothing."""
+        exported = get_event_with_attack_pattern_object()['Event']['Object'][0]
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                misp_object, parser = self._round_trip_lone_object(
+                    exported, to_ids
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted, = parser.misp_event.objects
+                self.assertEqual(converted.uuid, misp_object['uuid'])
+                self.assertEqual(converted.comment, 'object comment')
+                self.assertEqual(
+                    sorted(
+                        (attribute.object_relation, attribute.value)
+                        for attribute in converted.attributes
+                    ),
+                    sorted(
+                        (attribute['object_relation'], attribute['value'])
+                        for attribute in misp_object['Attribute']
+                    )
+                )
 
     def test_internal_misp_export_two_attribute_object_stays_an_object(self):
         """A filename and a hash spell a `filename|<hash>` composite, a
