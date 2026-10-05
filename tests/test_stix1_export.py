@@ -20,7 +20,9 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4, uuid5, UUID
 from .test_events import *
-from .test_events import _INDICATOR_ATTRIBUTE, _TEST_SECTOR_GALAXY, _TEST_USER_ACCOUNT_OBJECT
+from .test_events import (
+    _INDICATOR_ATTRIBUTE, _TEST_MALWARE_GALAXY, _TEST_SECTOR_GALAXY,
+    _TEST_USER_ACCOUNT_OBJECT)
 from ._test_stix import TestSTIX
 from ._test_stix_export import TestCollectionSTIX1Export
 
@@ -1972,6 +1974,103 @@ class TestSTIX1GalaxyTags(TestSTIX):
                     indicator = incident.related_indicators.indicator[0].item
                     self.assertEqual(self._markings(indicator), (self._SECTOR_TAG,))
                     self.assertIsNone(incident.handling)
+
+    _MALWARE_TAG = 'misp-galaxy:mitre-malware="BISCUIT - S0017"'
+
+    @staticmethod
+    def _plain_observable_warning(tag_name, record):
+        return (
+            f'Galaxy cluster {tag_name} of the {record} not exported: a '
+            'record without to_ids is written as a plain Observable, which '
+            'carries no marking.'
+        )
+
+    def test_plain_observable_attribute_galaxies_are_warned(self):
+        """A record exported without `to_ids` is a plain Observable, with no
+        handling to write a cluster tag on: each cluster, mapped or not, is
+        one warning, since nothing else in the document says it was there.
+        The event export and the attributes collection alike."""
+        for version in self._VERSIONS:
+            attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+            attribute['to_ids'] = False
+            attribute['Galaxy'] = [
+                deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)
+            ]
+            record = f'domain attribute (uuid: {attribute["uuid"]})'
+            expected = [
+                self._plain_observable_warning(self._MALWARE_TAG, record),
+                self._plain_observable_warning(self._SECTOR_TAG, record)
+            ]
+            with self.subTest(version=version, export='event'):
+                event = get_base_event()
+                event['Event']['Attribute'] = [deepcopy(attribute)]
+                parser = self._parse_event(event, version)
+                warnings = parser.warnings[event['Event']['uuid']]
+                for warning in expected:
+                    self.assertIn(warning, warnings)
+                incident = parser.stix_package.incidents[0]
+                self.assertEqual(len(incident.related_observables), 1)
+                self.assertIsNone(parser.stix_package.ttps)
+            with self.subTest(version=version, export='attributes collection'):
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content([deepcopy(attribute)])
+                warnings = [
+                    warning for recorded in parser.warnings.values()
+                    for warning in recorded
+                ]
+                for warning in expected:
+                    self.assertIn(warning, warnings)
+
+    def test_plain_observable_object_galaxies_are_warned(self):
+        """The same for a MISP object exported without `to_ids`: one warning
+        per cluster its attributes carry, a cluster on two of them once."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_object()
+                misp_object = event['Event']['Object'][0]
+                first, second = misp_object['Attribute'][:2]
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = False
+                first['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
+                second['Galaxy'] = [
+                    deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)
+                ]
+                parser = self._parse_event(event, version)
+                record = f'file object (uuid: {misp_object["uuid"]})'
+                warnings = [
+                    warning for warning in parser.warnings[event['Event']['uuid']]
+                    if warning.startswith('Galaxy cluster ')
+                ]
+                self.assertEqual(
+                    warnings,
+                    [
+                        self._plain_observable_warning(self._MALWARE_TAG, record),
+                        self._plain_observable_warning(self._SECTOR_TAG, record)
+                    ]
+                )
+                self.assertIsNone(parser.stix_package.ttps)
+
+    def test_indicator_galaxies_are_not_warned(self):
+        """A record with `to_ids` set is an Indicator, which carries the
+        cluster tags on its handling: no warning."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_object()
+                misp_object = event['Event']['Object'][0]
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = True
+                misp_object['Attribute'][0]['Galaxy'] = [
+                    deepcopy(_TEST_MALWARE_GALAXY)
+                ]
+                parser = self._parse_event(event, version)
+                self.assertFalse(
+                    any(
+                        warning.startswith('Galaxy cluster ')
+                        for warning in parser.warnings.get(
+                            event['Event']['uuid'], ()
+                        )
+                    )
+                )
 
 
 class _STIX1NamespaceTestCase(TestSTIX):
