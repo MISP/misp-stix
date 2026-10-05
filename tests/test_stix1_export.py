@@ -2073,6 +2073,163 @@ class TestSTIX1GalaxyTags(TestSTIX):
                 )
 
 
+class TestSTIX1RegistryKeyValueReferences(TestSTIX):
+    """A `registry-key-value` goes out as its own `Custom` Observable: each
+    reference a `registry-key` makes to one is a Related_Object on the
+    `WindowsRegistryKey`, pointing at that Observable's object - `contains`
+    as the CybOX vocabulary term, any other relationship verbatim."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _KEY_UUID = '5ac3379c-3e74-44ba-9160-04120a00020f'
+    _VALUE_UUIDS = (
+        '0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81',
+        '1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92'
+    )
+
+    @staticmethod
+    def _event(to_ids):
+        event = get_event_with_registry_key_and_values_objects()
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+        return event
+
+    def _cybox_objects(self, event, version, as_misp_event=False):
+        """The CybOX objects the export writes for the event, by id."""
+        if as_misp_event:
+            misp_event = MISPEvent()
+            misp_event.from_dict(**event)
+            event = misp_event
+        else:
+            event = event['Event']
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event)
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        observables = [
+            related.item.observable
+            for related in incident.related_indicators.indicator
+        ] if incident.related_indicators else []
+        if incident.related_observables:
+            observables.extend(
+                related.item
+                for related in incident.related_observables.observable
+            )
+        return {
+            observable.object_.id_: observable.object_
+            for observable in observables
+        }
+
+    def test_references_to_values_are_related_objects(self):
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                for as_misp_event in (False, True):
+                    with self.subTest(
+                            version=version, to_ids=to_ids,
+                            as_misp_event=as_misp_event):
+                        cybox_objects = self._cybox_objects(
+                            self._event(to_ids), version, as_misp_event
+                        )
+                        registry_key = cybox_objects[
+                            f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                        ]
+                        self.assertEqual(
+                            [
+                                related.idref
+                                for related in registry_key.related_objects
+                            ],
+                            [
+                                f'{_ORGNAME_ID}:Custom-{value_uuid}'
+                                for value_uuid in self._VALUE_UUIDS
+                            ]
+                        )
+                        for related in registry_key.related_objects:
+                            self.assertIn(related.idref, cybox_objects)
+                            self.assertIsNone(related.properties)
+                            self.assertEqual(
+                                related.relationship.value, 'Contains'
+                            )
+                            self.assertEqual(
+                                related.relationship.xsi_type,
+                                'cyboxVocabs:ObjectRelationshipVocab-1.1'
+                            )
+
+    def test_other_relationship_is_written_verbatim(self):
+        event = self._event(False)
+        reference = event['Event']['Object'][0]['ObjectReference'][0]
+        reference['relationship_type'] = 'stores-value'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                registry_key = self._cybox_objects(event, version)[
+                    f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                ]
+                related = registry_key.related_objects[0]
+                self.assertEqual(related.relationship.value, 'stores-value')
+                self.assertIsNone(related.relationship.xsi_type)
+                self.assertEqual(
+                    registry_key.related_objects[1].relationship.value,
+                    'Contains'
+                )
+
+    def test_reference_to_anything_else_writes_nothing(self):
+        """A reference to an object that is no `registry-key-value` of the
+        event points at no Observable the export writes for one."""
+        event = self._event(False)
+        registry_key = event['Event']['Object'][0]
+        registry_key['ObjectReference'][0]['referenced_uuid'] = (
+            '9e1f0a2b-3c4d-4e5f-8a6b-7c8d9e0f1a2b'
+        )
+        event['Event']['Object'][2]['name'] = 'registry-key-data'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                cybox_object = self._cybox_objects(event, version)[
+                    f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                ]
+                self.assertEqual(list(cybox_object.related_objects), [])
+
+    def test_reference_to_a_value_the_export_loses_writes_nothing(self):
+        """A value whose own export fails, its fallback with it, is lost
+        with an Error: the key points at no Observable missing from the
+        document."""
+        event = self._event(True)
+        event['Event']['Object'][1]['timestamp'] = 'not-a-time'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                parser.parse_misp_event(event['Event'])
+                self.assertIn(self._VALUE_UUIDS[0], ''.join(
+                    error for errors in parser.errors.values()
+                    for error in errors
+                ))
+                incident = parser.stix_package.incidents[0]
+                cybox_objects = {
+                    related.item.observable.object_.id_:
+                        related.item.observable.object_
+                    for related in incident.related_indicators.indicator
+                }
+                self.assertNotIn(
+                    f'{_ORGNAME_ID}:Custom-{self._VALUE_UUIDS[0]}',
+                    cybox_objects
+                )
+                registry_key = cybox_objects[
+                    f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                ]
+                self.assertEqual(
+                    [related.idref for related in registry_key.related_objects],
+                    [f'{_ORGNAME_ID}:Custom-{self._VALUE_UUIDS[1]}']
+                )
+
+    def test_key_with_no_reference_writes_no_related_object(self):
+        event = get_event_with_registry_key_object()
+        for version in self._VERSIONS:
+            for cybox_object in self._cybox_objects(event, version).values():
+                with self.subTest(version=version):
+                    self.assertNotIn(
+                        b'Related_Object',
+                        cybox_object.to_xml(include_namespaces=False)
+                    )
+
+
 class _STIX1NamespaceTestCase(TestSTIX):
     # What the two namespace test classes below share: the input files, the
     # copy that keeps an export inside its temporary directory, and the
