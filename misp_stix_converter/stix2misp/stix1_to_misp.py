@@ -260,39 +260,50 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # relation, a value or a template pymisp refuses costs that object
         # rather than the package it travelled in
         try:
-            self._build_observable_object(
+            misp_object = self._build_observable_object(
                 name, attribute_value, compl_data, to_ids, object_uuid,
-                test_mechanisms, description, title, timestamp, uuid_comment
+                description, title, timestamp, uuid_comment
             )
         except PyMISPError as exception:
             self._refused_object_error(name, exception, object_uuid)
+            misp_object = None
+        # One Observable may build several objects - a process and the
+        # connections it lists, a `pe` and its sections - and each is a record
+        # of its own: built and refused alone, whatever happens to the object
+        # they hang off, whose references to them die with it
+        if isinstance(compl_data, dict):
+            self._build_included_objects(
+                misp_object, compl_data, to_ids, object_uuid
+            )
+        if misp_object is None:
+            return
+        for test_mechanism in test_mechanisms:
+            misp_object.add_reference(test_mechanism, 'detected-with')
+        self.misp_event.add_object(misp_object)
 
     def _build_observable_object(
             self, name, attribute_value, compl_data, to_ids, object_uuid,
-            test_mechanisms, description, title, timestamp, uuid_comment):
-        """Build the MISP object the attributes read from an Observable make,
-        and add it to the event.
+            description, title, timestamp, uuid_comment) -> MISPObject:
+        """Build the MISP object the attributes read from an Observable make.
 
         Called through the guard above, which is where the refusal of the
-        record built here is recorded.
+        record built here is recorded, and the object added to the event.
 
         :param name: the object template name
         :param attribute_value: the attributes, as the handlers return them
-        :param compl_data: the complementary data the handler carried - the
-            `pe` and its sections, the network connections a process lists,
-            the references an email makes to the attachments it does not
-            embed, a rejected template name
+        :param compl_data: the complementary data the handler carried - only
+            the rejected template name is the object's own, the rest are the
+            objects built under it
         :param to_ids: the `to_ids` flag the whole carrier was written with
         :param object_uuid: the uuid the object takes, and its attributes
             derive from - None for a random one, and random attribute uuids
-        :param test_mechanisms: the uuids of the attributes the rules of an
-            Indicator landed as, referenced as `detected-with`
         :param description: the STIX description field, or None
         :param title: the Record Title, where the shape carries one
         :param timestamp: the timestamp of the carrier, None where it carries
             none and pymisp stamps the object
         :param uuid_comment: the comment keeping the original id when
             `object_uuid` replaces it, None otherwise
+        :return: the object, not added to the event yet
         """
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid:
@@ -314,43 +325,65 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for attribute in attribute_value:
             attribute['to_ids'] = to_ids
             self._add_object_attribute(misp_object, object_uuid, attribute)
-        if isinstance(compl_data, dict):
-            if "rejected_name" in compl_data:
-                self._record_rejected_template_name(
-                    misp_object, compl_data['rejected_name']
-                )
-            # if some complementary data is a dictionary containing an uuid,
-            # it means we are using it to add an object reference
-            if "pe" in compl_data:
-                pe_object = self._build_pe_object(
-                    compl_data['pe'], to_ids, object_uuid
-                )
-                misp_object.add_reference(pe_object.uuid, 'includes')
-            if "pe_sections" in compl_data:
-                self._build_pe_sections(
-                    misp_object, compl_data['pe_sections'], to_ids, object_uuid
-                )
-            if "network_connections" in compl_data:
-                self._build_network_connections(
-                    misp_object, compl_data['network_connections'],
-                    object_uuid
-                )
-            if "references" in compl_data:
-                # Applied once the whole package is parsed, as every other
-                # reference: what they point to may not be parsed yet
-                self.references[misp_object.uuid].extend(
-                    compl_data['references']
-                )
-        if test_mechanisms:
-            for test_mechanism in test_mechanisms:
-                misp_object.add_reference(test_mechanism, 'detected-with')
-        self.misp_event.add_object(misp_object)
+        if isinstance(compl_data, dict) and "rejected_name" in compl_data:
+            self._record_rejected_template_name(
+                misp_object, compl_data['rejected_name']
+            )
+        return misp_object
+
+    def _build_included_objects(
+            self, misp_object: Optional[MISPObject], compl_data: dict,
+            to_ids: bool, object_uuid: Optional[str]):
+        """Build the objects under the one an Observable landed as, and
+        reference them from it.
+
+        :param misp_object: the object the Observable landed as, None where
+            MISP refused it and the objects under it reference nothing
+        :param compl_data: the complementary data the handler carried - the
+            `pe` and its sections, the network connections a process lists,
+            the references an email makes to the attachments it does not
+            embed
+        :param to_ids: the `to_ids` flag the whole carrier was written with
+        :param object_uuid: the uuid of the object the Observable landed as,
+            every uuid under it is derived from
+        """
+        if "pe" in compl_data:
+            pe_object = self._build_pe_object(
+                compl_data['pe'], to_ids, object_uuid
+            )
+            self._add_object_reference(misp_object, pe_object, 'includes')
+        if "pe_sections" in compl_data:
+            self._build_pe_sections(
+                misp_object, compl_data['pe_sections'], to_ids, object_uuid
+            )
+        if "network_connections" in compl_data:
+            self._build_network_connections(
+                misp_object, compl_data['network_connections'], object_uuid
+            )
+        if "references" in compl_data and misp_object is not None:
+            # Applied once the whole package is parsed, as every other
+            # reference: what they point to may not be parsed yet
+            self.references[misp_object.uuid].extend(
+                compl_data['references']
+            )
+
+    @staticmethod
+    def _add_object_reference(misp_object: Optional[MISPObject],
+                              referenced: Optional[MISPObject],
+                              relationship_type: str):
+        # A reference holds between two objects the event keeps: MISP refused
+        # either one, and the reference is the refused record's too
+        if misp_object is not None and referenced is not None:
+            misp_object.add_reference(referenced.uuid, relationship_type)
 
     def _build_object(self, name: str, attributes: tuple,
                       to_ids: Optional[bool],
-                      object_uuid: Optional[str] = None) -> MISPObject:
+                      object_uuid: Optional[str] = None) -> Optional[MISPObject]:
         """Build a MISP object out of attributes read from a carrier holding
         several of them, and add it to the event.
+
+        Guarded as one record, as the object the Observable landed as is: the
+        refusal costs this object, and the error names it.
 
         :param name: the object template name
         :param attributes: the attributes, as `_return_object_attributes`
@@ -359,19 +392,23 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             None where it carries none and the template default stands
         :param object_uuid: the uuid the object takes, and its attributes
             derive from - None to have pymisp give it a random one
-        :return: the object added to the event
+        :return: the object added to the event, None when MISP refused it
         """
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid is not None:
             misp_object.uuid = object_uuid
-        for attribute in attributes:
-            if to_ids is not None:
-                attribute = {**attribute, 'to_ids': to_ids}
-            self._add_object_attribute(misp_object, object_uuid, attribute)
+        try:
+            for attribute in attributes:
+                if to_ids is not None:
+                    attribute = {**attribute, 'to_ids': to_ids}
+                self._add_object_attribute(misp_object, object_uuid, attribute)
+        except PyMISPError as exception:
+            self._refused_object_error(name, exception, object_uuid)
+            return None
         return self.misp_event.add_object(misp_object)
 
     def _build_pe_object(self, pe: dict, to_ids: bool,
-                         object_uuid: Optional[str]) -> MISPObject:
+                         object_uuid: Optional[str]) -> Optional[MISPObject]:
         """Build the `pe` object a `file` includes, and the sections under it.
 
         :param pe: the attributes of the `pe` and of each of its sections
@@ -379,7 +416,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             with - one flag for the file, the `pe` and every section
         :param object_uuid: the uuid of the `file` object, the `pe` and the
             section uuids are derived from
-        :return: the `pe` object
+        :return: the `pe` object, None when MISP refused it
         """
         pe_object = self._build_object(
             'pe', pe['attributes'], to_ids,
@@ -388,11 +425,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._build_pe_sections(pe_object, pe['sections'], to_ids, object_uuid)
         return pe_object
 
-    def _build_pe_sections(self, pe_object: MISPObject, sections: tuple,
-                           to_ids: bool, object_uuid: Optional[str]):
+    def _build_pe_sections(self, pe_object: Optional[MISPObject],
+                           sections: tuple, to_ids: bool,
+                           object_uuid: Optional[str]):
         """Build the `pe-section` objects under a `pe`, and reference them.
 
-        :param pe_object: the `pe` object including the sections
+        :param pe_object: the `pe` object including the sections, None where
+            MISP refused it
         :param sections: the attributes of each section
         :param to_ids: the `to_ids` flag the Windows executable was written
             with
@@ -404,15 +443,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 'pe-section', attributes, to_ids,
                 self._derived_uuid(object_uuid, f'pe - sections - {index}')
             )
-            pe_object.add_reference(section.uuid, 'includes')
+            self._add_object_reference(pe_object, section, 'includes')
 
     def _build_network_connections(
-            self, process_object: MISPObject, connections: list,
+            self, process_object: Optional[MISPObject], connections: list,
             object_uuid: Optional[str]):
         """Build the `network-connection` objects a process lists, and
         reference them.
 
-        :param process_object: the `process` object the connections belong to
+        :param process_object: the `process` object the connections belong
+            to, None where MISP refused it
         :param connections: the attributes of each connection, empty for a
             connection none is read from
         :param object_uuid: the uuid of the process object, every connection
@@ -429,7 +469,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     object_uuid, f'network-connections - {index}'
                 )
             )
-            process_object.add_reference(connection.uuid, 'connected-to')
+            self._add_object_reference(
+                process_object, connection, 'connected-to'
+            )
 
     def _add_object_attribute(self, misp_object: MISPObject,
                               object_uuid: Optional[str], attribute: dict):
