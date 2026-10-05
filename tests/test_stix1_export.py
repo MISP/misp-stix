@@ -1216,6 +1216,190 @@ class TestSTIX1UnreferencedPESection(TestSTIX):
                 )
 
 
+class TestSTIX1ObjectErrorFallback(TestSTIX):
+    """An object a mapped route fails on still goes out, the way an unmapped
+    one does: a `Custom` Observable named after its template, carrying its
+    relations. The error says what failed; no warning claims the template is
+    not mapped."""
+
+    _OBJECT_UUID = '7d2e3f4a-5b6c-4d7e-8f90-a1b2c3d4e5f6'
+    _VERSIONS = ('1.1.1', '1.2')
+
+    def _failing_objects(self):
+        # A mutex name and a registry key datetime cybox refuses
+        yield 'mutex', [
+            {'type': 'text', 'object_relation': 'name', 'value': True}
+        ]
+        yield 'registry-key', [
+            {
+                'type': 'regkey', 'object_relation': 'key',
+                'value': 'HKLM\\Software\\Run'
+            },
+            {
+                'type': 'datetime', 'object_relation': 'last-modified',
+                'value': 'not a date'
+            }
+        ]
+
+    def _parse_event(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _written_observables(parser):
+        incident = parser.stix_package.incidents[0]
+        observables = [
+            related.item for related in incident.related_observables
+        ]
+        observables.extend(
+            related.item.observable for related in incident.related_indicators
+        )
+        return observables
+
+    @staticmethod
+    def _warnings(parser):
+        return [
+            warning for warnings in parser.warnings.values()
+            for warning in warnings
+        ]
+
+    def _assert_one_error(self, parser, name, uuid):
+        errors, = parser.errors.values()
+        self.assertEqual(len(errors), 1)
+        self.assertIn(f'Error with the {name} object (uuid: {uuid})', errors[0])
+
+    def _assert_custom_observable(self, observable, name, uuid):
+        custom = observable.object_
+        self.assertEqual(custom.id_, f'{_ORGNAME_ID}:Custom-{uuid}')
+        self.assertEqual(custom.properties.custom_name, name)
+
+    def test_failed_object_is_a_custom_observable(self):
+        for version in self._VERSIONS:
+            for name, attributes in self._failing_objects():
+                for to_ids in (False, True):
+                    with self.subTest(version=version, name=name, to_ids=to_ids):
+                        event = get_base_event()
+                        event['Event']['Object'] = [
+                            {
+                                'name': name, 'meta-category': 'misc',
+                                'uuid': self._OBJECT_UUID,
+                                'timestamp': '1603642920',
+                                'Attribute': [
+                                    {**attribute, 'to_ids': to_ids}
+                                    for attribute in attributes
+                                ]
+                            }
+                        ]
+                        parser = self._parse_event(event, version)
+                        self._assert_one_error(parser, name, self._OBJECT_UUID)
+                        self.assertEqual(self._warnings(parser), [])
+                        incident = parser.stix_package.incidents[0]
+                        if to_ids:
+                            related, = incident.related_indicators
+                            observable = related.item.observable
+                            self.assertEqual(len(incident.related_observables), 0)
+                        else:
+                            related, = incident.related_observables
+                            observable = related.item
+                            self.assertEqual(len(incident.related_indicators), 0)
+                        self._assert_custom_observable(
+                            observable, name, self._OBJECT_UUID
+                        )
+
+    def test_pe_failing_under_its_file_is_written_standalone(self):
+        # The `file` goes out as it does without the `pe`; the `includes`
+        # reference between the two is lost with the `pe` the file failed to
+        # fold in
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_and_pe_objects()
+                file_object, pe_object, _ = event['Event']['Object']
+                for attribute in pe_object['Attribute']:
+                    if attribute['object_relation'] == 'original-filename':
+                        attribute['value'] = True
+                parser = self._parse_event(event, version)
+                self._assert_one_error(parser, 'pe', pe_object['uuid'])
+                self.assertNotIn(
+                    'MISP Object name pe not mapped.', self._warnings(parser)
+                )
+                observables = {
+                    observable.id_: observable
+                    for observable in self._written_observables(parser)
+                }
+                written_file = observables[
+                    f"{_ORGNAME_ID}:Observable-{file_object['uuid']}"
+                ]
+                self.assertEqual(
+                    written_file.object_.properties._XSI_TYPE,
+                    'WindowsExecutableFileObjectType'
+                )
+                self._assert_custom_observable(
+                    observables[f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"],
+                    'pe', pe_object['uuid']
+                )
+
+    def test_pe_section_failing_under_its_pe_is_written_standalone(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_pe_objects()
+                pe_object, section = event['Event']['Object']
+                for attribute in section['Attribute']:
+                    if attribute['object_relation'] == 'name':
+                        attribute['value'] = True
+                parser = self._parse_event(event, version)
+                self._assert_one_error(parser, 'pe-section', section['uuid'])
+                self.assertEqual(self._warnings(parser), [])
+                observables = {
+                    observable.id_: observable
+                    for observable in self._written_observables(parser)
+                }
+                written_pe = observables[
+                    f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"
+                ]
+                self.assertEqual(
+                    written_pe.object_.properties._XSI_TYPE,
+                    'WindowsExecutableFileObjectType'
+                )
+                self.assertIsNone(written_pe.object_.properties.sections)
+                self._assert_custom_observable(
+                    observables[f"{_ORGNAME_ID}:Observable-{section['uuid']}"],
+                    'pe-section', section['uuid']
+                )
+
+    def test_failing_record_write_is_not_retried(self):
+        # The fallback writes its Observable from the same object fields the
+        # failed route wrote from: an object timestamp the Indicator cannot
+        # parse fails again there, with nothing left to catch it, and from a
+        # collection costs every other event too
+        for version in self._VERSIONS:
+            for fixture in (get_event_with_mutex_object,
+                            get_event_with_vulnerability_object):
+                with self.subTest(version=version, fixture=fixture.__name__):
+                    first = fixture()
+                    misp_object = first['Event']['Object'][0]
+                    misp_object['timestamp'] = 'not a timestamp'
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = True
+                    second = get_event_with_domain_attribute()
+                    second['Event']['uuid'] = '31f0d1b0-8a2f-4e18-9a0e-2f5b6c7d8e90'
+                    parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                    parser.parse_json_content({'response': [first, second]})
+                    self._assert_one_error(
+                        parser, misp_object['name'], misp_object['uuid']
+                    )
+                    first_package, second_package = (
+                        parser.stix_package.related_packages
+                    )
+                    first_incident = first_package.item.incidents[0]
+                    self.assertEqual(len(first_incident.related_indicators), 0)
+                    self.assertEqual(len(first_incident.related_observables), 0)
+                    self.assertEqual(
+                        len(second_package.item.incidents[0].related_indicators),
+                        1
+                    )
+
+
 class TestSTIX1PlainObservableComment(TestSTIX):
     """A record exported without `to_ids` is a plain Observable, with no
     Indicator to carry its comment: the Observable's own description carries

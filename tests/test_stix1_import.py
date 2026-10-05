@@ -3457,6 +3457,40 @@ class TestSTIX1Import(TestSTIX):
                         )
                     self.assertEqual(converted.comment, 'object comment')
 
+    def test_internal_misp_export_failed_object_comes_back_as_its_template(self):
+        """An object the export fails on goes out as an unmapped one does, a
+        `Custom` Observable named after its template: it comes back as the
+        same object, its uuid and comment kept, on both `to_ids` paths. The
+        Property Bag carries no attribute uuid, nor one `to_ids` per
+        attribute."""
+        misp_object = get_event_with_mutex_object()['Event']['Object'][0]
+        misp_object['Attribute'][0]['value'] = True
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                exported, parser = self._round_trip_lone_object(
+                    misp_object, to_ids
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.misp_event.attributes, [])
+                converted, = parser.misp_event.objects
+                self.assertEqual(converted.name, 'mutex')
+                self.assertEqual(converted.uuid, exported['uuid'])
+                self.assertEqual(converted.comment, 'object comment')
+                self.assertEqual(
+                    sorted(
+                        (attribute.object_relation, attribute.value)
+                        for attribute in converted.attributes
+                    ),
+                    sorted(
+                        (attribute['object_relation'], attribute['value'])
+                        for attribute in exported['Attribute']
+                    )
+                )
+                self.assertEqual(
+                    {attribute.to_ids for attribute in converted.attributes},
+                    {to_ids}
+                )
+
     def test_internal_ttp_id_ending_with_no_uuid_is_read_like_any_other(self):
         """The export writes every TTP id as `{org}:TTP-{uuid}`, but a
         hand-edited document may not: the record a TTP carries reads its
