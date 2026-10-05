@@ -36,6 +36,7 @@ from cybox.objects.win_registry_key_object import (
 from cybox.objects.x509_certificate_object import (
     Validity, X509Cert, X509Certificate, X509CertificateSignature)
 from datetime import datetime, timezone
+from io import BytesIO
 from misp_stix_converter import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser,
     MissingSTIXContentError, stix_1_to_misp, STIXLoadingError)
@@ -7019,6 +7020,82 @@ class TestSTIX1Import(TestSTIX):
             event
         ).get_objects_by_name('registry-key')
         self.assertEqual(converted.comment, 'Run key the dropper sets')
+
+    def _parse_written_misp_export(self, event, version):
+        """The Internal import of the package the MISP STIX 1 export writes
+        for the event, parsed back from its XML: a vocabulary term and a
+        free-text one are told apart by what the document says."""
+        parser = MISPtoSTIX1EventsParser('MISP', version)
+        parser.parse_misp_event(event)
+        stix_package = STIXPackage.from_xml(
+            BytesIO(self._wrapped_package(parser.stix_package).to_xml())
+        )
+        return self._parse_internal_package(stix_package)
+
+    @staticmethod
+    def _registry_key_references(misp_event):
+        registry_key, = misp_event.get_objects_by_name('registry-key')
+        return sorted(
+            (reference.referenced_uuid, reference.relationship_type)
+            for reference in registry_key.references
+        )
+
+    def test_internal_registry_key_value_references_round_trip(self):
+        """The Related_Objects pointing at the `Custom` Observables the
+        values go out as come back as the references the key made, to the
+        `registry-key-value` objects those Observables come back as."""
+        for version in ('1.1.1', '1.2'):
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = get_event_with_registry_key_and_values_objects()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    parser = self._parse_written_misp_export(event, version)
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    exported = event['Event']['Object'][0]['ObjectReference']
+                    self.assertEqual(
+                        self._registry_key_references(parser.misp_event),
+                        sorted(
+                            (reference['referenced_uuid'], 'contains')
+                            for reference in exported
+                        )
+                    )
+                    self.assertEqual(
+                        sorted(
+                            misp_object.uuid for misp_object in
+                            parser.misp_event.get_objects_by_name(
+                                'registry-key-value'
+                            )
+                        ),
+                        sorted(
+                            reference['referenced_uuid']
+                            for reference in exported
+                        )
+                    )
+
+    def test_internal_registry_key_value_other_relationship_round_trips(self):
+        """Written verbatim as a free-text term, any relationship other than
+        `contains` is read back verbatim - one spelling the vocabulary term
+        `Contains` included."""
+        event = get_event_with_registry_key_and_values_objects()
+        references = event['Event']['Object'][0]['ObjectReference']
+        references[0]['relationship_type'] = 'Stores_Value'
+        references[1]['relationship_type'] = 'Contains'
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                parser = self._parse_written_misp_export(event, version)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._registry_key_references(parser.misp_event),
+                    sorted(
+                        (
+                            reference['referenced_uuid'],
+                            reference['relationship_type']
+                        )
+                        for reference in references
+                    )
+                )
 
     def test_internal_passive_dns_indicator_round_trips(self):
         """A `passive-dns` object is a named `Custom` object under its
