@@ -958,13 +958,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return observable
 
     @staticmethod
-    def _add_record_comment(stix_object: Union[ExploitTarget, Observable],
-                            record: dict):
+    def _add_record_comment(
+            stix_object: Union[ExploitTarget, Observable, TTP], record: dict):
         # A record exported without `to_ids` has no Indicator to carry its
-        # comment, and a `vulnerability` or `weakness` object is a TTP with
-        # none either: the Observable's own description carries it, or the
-        # Exploit Target's, and only when there is one, so an uncommented
-        # record writes no description
+        # comment, and a context object is a TTP with none either. The
+        # Observable's own description carries it, the Exploit Target's for a
+        # `vulnerability` or `weakness` object, the TTP's own for an
+        # `attack-pattern` object, whose Attack Pattern descriptions all carry
+        # relations. Only when there is one: an uncommented record writes no
+        # description
         if record.get('comment'):
             stix_object.description = record['comment']
 
@@ -2024,6 +2026,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _parse_attack_pattern_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
+        self._add_record_comment(ttp, misp_object)
         attack_pattern = AttackPattern()
         attack_pattern.id_ = f"{self._orgname_id}:AttackPattern-{misp_object['uuid']}"
         attributes = self._extract_object_attributes(misp_object['Attribute'])
