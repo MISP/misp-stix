@@ -421,6 +421,13 @@ class MISPtoSTIXParser(AbstractParser):
         to the results itself."""
         self._parse_custom_object(misp_object)
 
+    def _non_canonical_number_warning(
+            self, relation: str, value: Any, record: str, kind: str):
+        self._add_warning(
+            f'{relation!r} in the {record} is not a canonical {kind}: '
+            f'{value!r} written as a custom property.'
+        )
+
     @staticmethod
     def _object_features(misp_object: Union[MISPObject, dict]) -> str:
         return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
@@ -503,13 +510,6 @@ class MISPtoSTIXParser(AbstractParser):
             self, relation: str, value: Any, record: str):
         self._add_warning(
             f'{relation!r} in the {record} is not a boolean: {value!r} '
-            'written as a custom property.'
-        )
-
-    def _unrecognised_integer_warning(
-            self, relation: str, value: Any, record: str):
-        self._add_warning(
-            f'{relation!r} in the {record} is not an integer: {value!r} '
             'written as a custom property.'
         )
 

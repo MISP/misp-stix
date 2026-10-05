@@ -82,6 +82,9 @@ _FILE_SINGLE_ATTRIBUTES = (
     "sha1", "sha224", "sha256", "sha384", "sha512", "sha512/224", "sha512/256",
     "size-in-bytes", "ssdeep", "tlsh", "vhash"
 )
+# The decimal literal a native CybOX float field writes back as the number it
+# reads: `float()` takes more, a `nan`, an `inf`, digits of any script
+_CANONICAL_FLOAT = re.compile(r'[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?')
 # The spellings of a boolean a MISP value of a `boolean` relation takes
 _MISP_BOOLEAN_SPELLINGS = {
     '1': True, 'true': True, 'True': True,
@@ -211,7 +214,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._parse_file_attribute(attribute)
 
     def _parse_autonomous_system_attribute(self, attribute: dict):
-        autonomous_system = self._create_autonomous_system_object(attribute['value'])
+        value = attribute['value']
+        if not value.startswith('AS'):
+            if not self._canonical_attribute_integer(attribute, value):
+                return
+        autonomous_system = self._create_autonomous_system_object(value)
         observable = self._create_observable(autonomous_system, attribute['uuid'], 'AS')
         self._handle_attribute(attribute, observable)
 
@@ -236,13 +243,29 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             campaign.handling = self._create_handling(sorted_tags)
         self._stix_package.add_campaign(campaign)
 
+    def _canonical_attribute_integer(self, attribute: dict,
+                                     value: Any) -> bool:
+        """Whether the native CybOX integer field of an attribute holds its
+        number unchanged - an attribute whose number the field would rewrite
+        or refuse goes out whole as a custom attribute instead, its value
+        under its type."""
+        record = self._attribute_record(attribute)
+        if self._canonical_integer(value, attribute['type'], record):
+            return True
+        self._parse_custom_attribute(attribute)
+        return False
+
+    @staticmethod
+    def _attribute_record(attribute: dict) -> str:
+        return f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
+
     def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
         self._append_property(
             custom_object.custom_properties,
             attribute['type'], attribute['value'],
-            f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
+            self._attribute_record(attribute)
         )
         observable = self._create_observable(custom_object, attribute['uuid'], 'Custom')
         self._handle_attribute(attribute, observable)
@@ -356,6 +379,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 hostname, port = attribute['value'].split(separator)
+                if not self._canonical_attribute_integer(attribute, port):
+                    break
                 socket_address = self._create_socket_address_object(
                     hostname=hostname, port=port)
                 observable = self._create_observable(
@@ -391,6 +416,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 ip, port = attribute['value'].split(separator)
+                if not self._canonical_attribute_integer(attribute, port):
+                    break
                 ip_type = attribute['type'].split('|')[0]
                 socket_address = self._create_socket_address_object(ip=(ip_type, ip), port=port)
                 observable = self._create_observable(
@@ -444,6 +471,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute(attribute, observable)
 
     def _parse_port_attribute(self, attribute: dict):
+        if not self._canonical_attribute_integer(attribute, attribute['value']):
+            return
         observable = self._create_port_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
 
@@ -473,6 +502,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_attribute(attribute, observable)
 
     def _parse_size_in_bytes_attribute(self, attribute: dict):
+        if not self._canonical_attribute_integer(attribute, attribute['value']):
+            return
         file_object = File()
         file_object.size_in_bytes = attribute['value']
         file_object.size_in_bytes.condition = 'Equals'
@@ -965,17 +996,49 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             relation = attribute['object_relation']
             if relation in written:
                 continue
-            prop = self._create_property(relation, attribute['value'], record)
-            if prop is None:
-                continue
-            custom_object = Custom()
-            custom_object.custom_properties = CustomProperties()
-            custom_object.custom_properties.append(prop)
-            observables.append(
-                self._create_observable(
-                    custom_object, attribute['uuid'], 'Custom'
-                )
+            observable = self._create_custom_member(
+                relation, attribute['value'], attribute['uuid'], record
             )
+            if observable is not None:
+                observables.append(observable)
+        return observables
+
+    def _create_custom_member(self, relation: str, value: Any, uuid: str,
+                              record: str) -> Optional[Observable]:
+        prop = self._create_property(relation, value, record)
+        if prop is None:
+            return None
+        custom_object = Custom()
+        custom_object.custom_properties = CustomProperties()
+        custom_object.custom_properties.append(prop)
+        return self._create_observable(custom_object, uuid, 'Custom')
+
+    def _create_port_members(self, misp_object: dict, relation: str,
+                             ports: list,
+                             feature: Optional[str] = None) -> list:
+        """Build the composition member of each port of a relation, as a
+        `Custom` one where the port is a number the CybOX field would
+        rewrite or refuse.
+
+        :param misp_object: the MISP object the composition is written from
+        :param relation: the relation the ports are values of
+        :param ports: the value and the uuid of each port attribute
+        :param feature: the side a port is on, where the relation names one
+        :return: the members, one per value a property can carry
+        """
+        record = self._object_features(misp_object)
+        observables = []
+        for port, uuid in ports:
+            if self._canonical_integer(port, relation, record):
+                observables.append(
+                    self._create_port_observable(port, uuid, feature=feature)
+                )
+                continue
+            observable = self._create_custom_member(
+                relation, port, uuid, record
+            )
+            if observable is not None:
+                observables.append(observable)
         return observables
 
     @staticmethod
@@ -1034,6 +1097,58 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             prop.datatype = datatype
         prop.value = lexical_form
         return prop
+
+    def _canonical_integer(self, value: Any, relation: str, record: str,
+                           signed: bool = False) -> bool:
+        """Whether a native CybOX integer field holds a MISP value unchanged.
+
+        cybox casts a string with `int(value, 0)` and checks no sign against
+        an unsigned type: `'0x1f'` goes out as `31`, `'-3'` as a value the
+        schema refuses. Only the decimal digits the field writes back are
+        canonical; any other value is warned of, for the property bag to
+        carry verbatim under its relation.
+        """
+        if isinstance(value, bool):
+            canonical = False
+        elif isinstance(value, int):
+            canonical = signed or value >= 0
+        elif isinstance(value, str):
+            digits = value[1:] if signed and value.startswith('-') else value
+            canonical = (
+                digits.isascii() and digits.isdigit()
+                and value == str(int(value))
+            )
+        else:
+            canonical = False
+        if not canonical:
+            self._non_canonical_number_warning(
+                relation, value, record,
+                'decimal integer' if signed else 'unsigned decimal integer'
+            )
+        return canonical
+
+    def _canonical_float(self, value: Any, relation: str,
+                         record: str) -> bool:
+        """Whether a native CybOX float field holds a MISP value as the
+        number it spells: `float()` reads a `nan`, an `inf`, digits of any
+        script and underscores, and refuses a `0x1f` with the whole object.
+        Any value but a decimal literal is warned of, for the property bag to
+        carry verbatim under its relation."""
+        if isinstance(value, bool):
+            canonical = False
+        elif isinstance(value, int):
+            canonical = True
+        elif isinstance(value, float):
+            canonical = not (isnan(value) or isinf(value))
+        elif isinstance(value, str):
+            canonical = _CANONICAL_FLOAT.fullmatch(value) is not None
+        else:
+            canonical = False
+        if not canonical:
+            self._non_canonical_number_warning(
+                relation, value, record, 'decimal number'
+            )
+        return canonical
 
     def _native_boolean(self, attributes: dict, relation: str,
                         misp_object: dict) -> Optional[bool]:
@@ -1151,19 +1266,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _set_group_list(
-        account_object: Union[UnixUserAccount, WinUser], attributes: dict,
+        account_object: Union[UnixUserAccount, WinUser], groups: list,
         group_list_class: Union[UnixGroupList, WinGroupList],
         group_class: Union[UnixGroup, WinGroup], feature: str):
         group_list = group_list_class()
-        groups = attributes.pop('group')
-        try:
-            for grp in groups:
-                group = group_class()
-                setattr(group, feature, grp)
-                group_list.append(group)
-            account_object.group_list = group_list
-        except ValueError:
-            attributes['group'] = groups
+        for grp in groups:
+            group = group_class()
+            setattr(group, feature, grp)
+            group_list.append(group)
+        account_object.group_list = group_list
 
     def _set_handling(self, tags: list) -> Marking:
         sorted_tags = defaultdict(list)
@@ -1700,6 +1811,28 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     stix_object, relation, value, misp_object
                 )
 
+    def _pop_canonical_integers(self, attributes: dict, relation: str,
+                                record: str) -> list:
+        """Take the values of a relation a native CybOX unsigned integer
+        field holds unchanged, leaving the others where the property bag
+        takes them.
+
+        :param attributes: the values of the object, by relation
+        :param relation: the relation the native field holds
+        :param record: the MISP object the values belong to, as warnings
+            name it
+        :return: the canonical values
+        """
+        canonical, others = [], []
+        for value in attributes.pop(relation, ()):
+            if self._canonical_integer(value, relation, record):
+                canonical.append(value)
+            else:
+                others.append(value)
+        if others:
+            attributes[relation] = others
+        return canonical
+
     @staticmethod
     def _pop_first_value(attributes: dict, relation: str) -> Any:
         """Take the first value of a relation for a native field holding one,
@@ -1831,7 +1964,14 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             # object without one has nowhere to go
             self._required_relation_missing_error(misp_object, 'asn')
             return None
-        as_object = self._create_autonomous_system_object(attributes.pop('asn'))
+        asn = attributes['asn']
+        if asn.startswith('AS') or self._canonical_integer(
+                asn, 'asn', self._object_features(misp_object)):
+            as_object = self._create_autonomous_system_object(
+                attributes.pop('asn')
+            )
+        else:
+            as_object = AutonomousSystem()
         if attributes.get('description'):
             as_object.name = attributes.pop('description')
         if attributes:
@@ -1966,8 +2106,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             for attribute in attributes['ip']:
                 observables.append(self._create_address_observable('ip-dst', *attribute))
         if attributes.get('port'):
-            for attribute in attributes['port']:
-                observables.append(self._create_port_observable(*attribute))
+            observables.extend(
+                self._create_port_members(
+                    misp_object, 'port', attributes['port']
+                )
+            )
         if attributes.get('hostname'):
             for attribute in attributes['hostname']:
                 observables.append(self._create_hostname_observable(*attribute))
@@ -2026,11 +2169,25 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             filename = self._select_single_feature(attributes, 'filename')
             file_object.file_name = filename
             file_object.file_name.condition = 'Equals'
+        record = self._object_features(misp_object)
+        numbers = {
+            'entropy': self._canonical_float,
+            'size-in-bytes': self._canonical_integer
+        }
         for feature, key in self._mapping.file_object_mapping().items():
-            if attributes.get(feature):
-                value = attributes[feature].pop(0) if isinstance(attributes[feature], list) else attributes.pop(feature)
-                setattr(file_object, key, value)
-                setattr(getattr(file_object, key), 'condition', 'Equals')
+            if not attributes.get(feature):
+                continue
+            canonical = numbers.get(feature)
+            if canonical is not None and not canonical(
+                    attributes[feature], feature, record):
+                # One value, the relation is single: a list for the bag loop
+                # below, which spreads a string over one property per
+                # character
+                attributes[feature] = [attributes[feature]]
+                continue
+            value = attributes[feature].pop(0) if isinstance(attributes[feature], list) else attributes.pop(feature)
+            setattr(file_object, key, value)
+            setattr(getattr(file_object, key), 'condition', 'Equals')
         if attributes:
             for object_relation, value in attributes.items():
                 if object_relation in self._mapping.hash_type_attributes('single'):
@@ -2113,11 +2270,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 observables.append(self._create_address_observable('ip-dst', *attribute))
         for feature in ('src-port', 'dst-port'):
             if attributes.get(feature):
-                for attribute in attributes[feature]:
-                    observables.append(self._create_port_observable(
-                        *attribute,
+                observables.extend(
+                    self._create_port_members(
+                        misp_object, feature, attributes[feature],
                         feature=feature.split('-')[0]
-                    ))
+                    )
+                )
         if attributes.get('domain'):
             for attribute in attributes['domain']:
                 observables.append(self._create_domain_observable(*attribute))
@@ -2160,7 +2318,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._parse_socket_addresses(
             connection_object,
             attributes,
-            ('source_socket', 'destination_socket')
+            ('source_socket', 'destination_socket'),
+            misp_object
         )
         for feature in ('layer3-protocol', 'layer4-protocol', 'layer7-protocol'):
             if attributes.get(feature):
@@ -2181,7 +2340,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             misp_object['Attribute'], self._mapping.network_socket_single_fields()
         )
         socket_object = NetworkSocket()
-        self._parse_socket_addresses(socket_object, attributes, ('local', 'remote'))
+        self._parse_socket_addresses(
+            socket_object, attributes, ('local', 'remote'), misp_object
+        )
         for key, feature in self._mapping.network_socket_mapping().items():
             if attributes.get(key):
                 setattr(socket_object, feature, attributes.pop(key))
@@ -2217,6 +2378,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             resource_list = PEResourceList()
             resource_list.append(resource)
             file_object.resources = resource_list
+        # Out of the way of the headers, which have nothing to hold for it
+        bagged = None
+        if attributes.get('number-sections') and not self._canonical_integer(
+                attributes['number-sections'], 'number-sections',
+                self._object_features(misp_pe)):
+            bagged = attributes.pop('number-sections')
         headers_fields = ('entrypoint-address', 'impfuzzy', 'imphash', 'number-sections', 'pehash')
         if any(feature in attributes for feature in headers_fields):
             pe_headers = PEHeaders()
@@ -2234,6 +2401,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('type'):
             file_object.type_ = attributes.pop('type')
             file_object.type_.condition = 'Equals'
+        if bagged is not None:
+            # A list for the bag loop below, which spreads a string over one
+            # property per character
+            attributes['number-sections'] = [bagged]
         if attributes:
             hashes = []
             for object_relation, value in attributes.items():
@@ -2265,11 +2436,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     misp_pe_section = self._objects_to_parse['pe-section'].pop(reference['referenced_uuid'])
                     try:
                         pe_section = self._parse_pe_section_object(misp_pe_section)
-                        try:
-                            file_object.sections.append(pe_section)
-                        except AttributeError:
-                            file_object.sections = PESectionList()
-                            file_object.sections.append(pe_section)
+                        if pe_section is None:
+                            # A section has no property bag: one with a value
+                            # its fields would rewrite goes out standalone, as
+                            # the object error fallback writes it
+                            self._write_custom_object(misp_pe_section)
+                        else:
+                            self._append_pe_section(file_object, pe_section)
                     except Exception as exception:
                         self._object_error(misp_pe_section, exception)
                     ids_list.append(
@@ -2277,8 +2450,22 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     )
         return ids_list
 
-    def _parse_pe_section_object(self, misp_pe_section: dict) -> PESection:
+    @staticmethod
+    def _append_pe_section(file_object: WinExecutableFile,
+                           pe_section: PESection):
+        try:
+            file_object.sections.append(pe_section)
+        except AttributeError:
+            file_object.sections = PESectionList()
+            file_object.sections.append(pe_section)
+
+    def _parse_pe_section_object(
+            self, misp_pe_section: dict) -> Optional[PESection]:
         section_attributes = self._extract_object_attributes(misp_pe_section['Attribute'])
+        if section_attributes.get('entropy') and not self._canonical_float(
+                section_attributes['entropy'], 'entropy',
+                self._object_features(misp_pe_section)):
+            return None
         pe_section = PESection()
         if section_attributes.get('entropy'):
             pe_section.entropy = Entropy()
@@ -2310,31 +2497,26 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             misp_object['Attribute'], self._mapping.process_single_fields()
         )
         process_object = Process()
+        record = self._object_features(misp_object)
         for key, feature in self._mapping.process_object_mapping().items():
             if not attributes.get(key):
                 continue
-            if key in ('pid', 'parent-pid'):
-                try:
-                    setattr(process_object, feature, attributes[key])
-                except ValueError:
-                    # cybox takes a pid as an integer, the template as text:
-                    # a value spelling none stays for the bag to carry
-                    self._unrecognised_integer_warning(
-                        key, attributes[key],
-                        self._object_features(misp_object)
-                    )
-                    continue
-                del attributes[key]
-            else:
-                setattr(process_object, feature, attributes.pop(key))
+            # cybox takes a pid as an integer, the template as text: a value
+            # the field would not write back stays for the bag to carry
+            if key in ('pid', 'parent-pid') and not self._canonical_integer(
+                    attributes[key], key, record):
+                continue
+            setattr(process_object, feature, attributes.pop(key))
             setattr(getattr(process_object, feature), 'condition', 'Equals')
-        if attributes.get('child-pid'):
+        children = self._pop_canonical_integers(attributes, 'child-pid', record)
+        if children:
             process_object.child_pid_list = ChildPIDList()
-            for child in attributes.pop('child-pid'):
+            for child in children:
                 process_object.child_pid_list.append(child)
-        if attributes.get('port'):
+        ports = self._pop_canonical_integers(attributes, 'port', record)
+        if ports:
             process_object.port_list = PortList()
-            for port in attributes.pop('port'):
+            for port in ports:
                 port_object = self._create_port_object(port)
                 process_object.port_list.append(port_object)
         image_info_keys = ('image', 'command-line')
@@ -2387,7 +2569,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         return observable
 
-    def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict, fields: tuple):
+    def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict,
+                                fields: tuple, misp_object: dict):
+        record = self._object_features(misp_object)
         for key, field in zip(('src', 'dst'), fields):
             args = {}
             if attributes.get(f'ip-{key}'):
@@ -2395,8 +2579,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 args['ip'] = (attribute_type, attributes.pop(attribute_type))
             if attributes.get(f'hostname-{key}'):
                 args['hostname'] = attributes.pop(f'hostname-{key}')
-            if attributes.get(f'{key}-port'):
-                args['port'] = attributes.pop(f'{key}-port')
+            relation = f'{key}-port'
+            if attributes.get(relation) and self._canonical_integer(
+                    attributes[relation], relation, record):
+                args['port'] = attributes.pop(relation)
             if args:
                 setattr(
                     stix_object,
@@ -2415,8 +2601,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(self._create_hostname_observable(*attribute))
         for attribute in attributes.get('ip', ()):
             observables.append(self._create_address_observable('ip-dst', *attribute))
-        for attribute in attributes.get('port', ()):
-            observables.append(self._create_port_observable(*attribute))
+        observables.extend(
+            self._create_port_members(
+                misp_object, 'port', attributes.get('port', ())
+            )
+        )
         observables.extend(
             self._create_custom_members(
                 misp_object, ('url', 'domain', 'host', 'ip', 'port')
@@ -2433,7 +2622,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         attributes, repeated = self._extract_single_field_attributes(
             misp_object['Attribute'], self._mapping.user_account_single_fields()
         )
-        account_object = self._create_user_account_object(attributes)
+        account_object = self._create_user_account_object(
+            attributes, misp_object
+        )
         if attributes.get('password'):
             account_object.authentication = self._create_authentication_object(
                 auth_type='password',
@@ -2567,10 +2758,19 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_x509_object(self, misp_object: dict) -> Observable:
         attributes = defaultdict(list)
         content = defaultdict(bool)
+        # The two integers are signed: a negative one is written natively
+        bagged = defaultdict(list)
+        record = self._object_features(misp_object)
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
             feature = self._mapping.x509_creation_mapping(relation)
             if feature is not None:
+                if relation in ('version', 'pubkey-info-exponent'):
+                    if not self._canonical_integer(
+                            attribute['value'], relation, record,
+                            signed=True):
+                        bagged[relation].append(attribute['value'])
+                        continue
                 attributes[relation] = attribute['value']
                 content[feature] = True
             else:
@@ -2630,6 +2830,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     signature.signature.condition = 'Equals'
                     signature_set = True
             x509_object.certificate_signature = signature
+        attributes.update(bagged)
         if attributes:
             x509_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(x509_object, misp_object['uuid'], 'X509Certificate')
@@ -2785,33 +2986,31 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         ttp.title = f"{misp_object.get('meta-category', 'misc')}: {misp_object['name']} (MISP Object)"
         return ttp
 
-    def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
+    def _create_unix_user_account_object(self, attributes: dict,
+                                         misp_object: dict) -> UnixUserAccount:
         account_object = UnixUserAccount()
-        if attributes.get('user-id'):
-            self._set_user_id(account_object, attributes, 'user_id')
-        if attributes.get('group-id'):
-            account_object.group_id = attributes.pop('group-id')[0]
-            account_object.group_id.condition = 'Equals'
-        if attributes.get('group'):
-            self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
-            group_list = UnixGroupList()
-            groups = attributes.pop('group')
-            try:
-                for group in groups:
-                    unix_group = UnixGroup()
-                    unix_group.group_id = group
-                    group_list.append(unix_group)
-                account_object.group_list = group_list
-            except ValueError:
-                attributes['group'] = groups
+        record = self._object_features(misp_object)
+        for relation, feature in (('user-id', 'user_id'), ('group-id', 'group_id')):
+            values = self._pop_canonical_integers(attributes, relation, record)
+            if values:
+                setattr(account_object, feature, values.pop(0))
+                setattr(getattr(account_object, feature), 'condition', 'Equals')
+            if values:
+                # One field: the further values go to the bag with the others
+                attributes[relation] = [*values, *attributes.get(relation, ())]
+        groups = self._pop_canonical_integers(attributes, 'group', record)
+        if groups:
+            self._set_group_list(account_object, groups, UnixGroupList, UnixGroup, 'group_id')
         return account_object
 
-    def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
+    def _create_user_account_object(self, attributes: dict, misp_object: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
         account_types = ('unix', 'windows-domain', 'windows-local')
         if 'account-type' in attributes and attributes['account-type'] in account_types:
             account_type = attributes.pop('account-type')
             if account_type == 'unix':
-                return self._create_unix_user_account_object(attributes)
+                return self._create_unix_user_account_object(
+                    attributes, misp_object
+                )
             attributes['account-type'] = [account_type]
             return self._create_windows_user_account_object(attributes)
         account_object = UserAccount()
@@ -2822,7 +3021,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('user-id'):
             self._set_user_id(account_object, attributes, 'security_id')
         if attributes.get('group'):
-            self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
+            self._set_group_list(
+                account_object, attributes.pop('group'), WinGroupList, WinGroup, 'name'
+            )
         return account_object
 
     def _set_information_source(self) -> str:

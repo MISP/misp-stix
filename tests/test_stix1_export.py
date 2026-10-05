@@ -1089,10 +1089,10 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
         self.assertEqual(
             self._warnings,
             [
-                f"'pid' in the {features} is not an integer: 'pid-1234' "
-                'written as a custom property.',
-                f"'parent-pid' in the {features} is not an integer: "
-                "'unknown' written as a custom property."
+                f"'pid' in the {features} is not a canonical unsigned "
+                "decimal integer: 'pid-1234' written as a custom property.",
+                f"'parent-pid' in the {features} is not a canonical unsigned "
+                "decimal integer: 'unknown' written as a custom property."
             ]
         )
 
