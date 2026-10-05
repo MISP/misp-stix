@@ -476,6 +476,13 @@ class MISPtoSTIXParser(AbstractParser):
             tb = tb.tb_next
         return False
 
+    def _plain_observable_galaxy_warning(self, tag_name: str, record: str):
+        self._add_warning(
+            f'Galaxy cluster {tag_name} of the {record} not exported: a '
+            'record without to_ids is written as a plain Observable, which '
+            'carries no marking.'
+        )
+
     def _referenced_object_name_warning(
             self, object_name: str, referenced_uuid: str):
         self._add_warning(

@@ -1344,6 +1344,23 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     tag_names.append(tag_name)
         return tuple(tag_names)
 
+    def _warn_plain_observable_galaxies(self, attributes: Iterable[dict],
+                                        record: str):
+        """Warn about every galaxy cluster on a record exported without
+        `to_ids`: the plain Observable it is written as has no handling for
+        the cluster tags to go on, and the clusters are written as no
+        construct either, so nothing in the document says they were there.
+
+        :param attributes: the attribute, or the attributes of the object
+        :param record: the record, as the warning names it
+        """
+        galaxies = (
+            galaxy for attribute in attributes
+            for galaxy in attribute.get('Galaxy', ())
+        )
+        for tag_name in self._with_galaxy_tags((), galaxies):
+            self._plain_observable_galaxy_warning(tag_name, record)
+
     def _is_tlp_tag(self, tag: str) -> bool:
         if not tag.startswith('tlp:'):
             return False
@@ -1433,6 +1450,9 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
             self._stix_package.add_indicator(indicator)
         else:
             self._add_record_comment(observable, attribute)
+            self._warn_plain_observable_galaxies(
+                (attribute,), self._attribute_record(attribute)
+            )
             self._stix_package.add_observable(observable)
 
     def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
@@ -1616,6 +1636,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             self._incident.related_indicators.append(related_indicator)
         else:
             self._add_record_comment(observable, attribute)
+            self._warn_plain_observable_galaxies(
+                (attribute,), self._attribute_record(attribute)
+            )
             related_observable = RelatedObservable(
                 observable,
                 relationship=category
@@ -1885,6 +1908,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _handle_misp_object(self, misp_object: dict, observable: Observable):
         self._add_record_comment(observable, misp_object)
+        self._warn_plain_observable_galaxies(
+            misp_object['Attribute'], self._object_features(misp_object)
+        )
         related_observable = RelatedObservable(
             observable,
             relationship=misp_object.get('meta-category')
