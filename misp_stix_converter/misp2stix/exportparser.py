@@ -483,6 +483,13 @@ class MISPtoSTIXParser(AbstractParser):
             'carries no marking.'
         )
 
+    def _journal_entry_galaxy_warning(self, tag_name: str, record: str):
+        self._add_warning(
+            f'Galaxy cluster {tag_name} of the {record} not exported: the '
+            'attribute is written as text, a journal entry of the Incident '
+            'or the package description, which carries no marking.'
+        )
+
     def _referenced_object_name_warning(
             self, object_name: str, referenced_uuid: str):
         self._add_warning(

@@ -563,6 +563,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._header_description_attributes.append(attribute)
         else:
             self._add_attribute_journal_entry(attribute)
+        # Text has no handling for a cluster tag. Warned after the write: a
+        # parser with no Incident raises above, and its fallback warns instead
+        record = self._attribute_record(attribute)
+        for tag_name in self._with_galaxy_tags((), attribute.get('Galaxy', ())):
+            self._journal_entry_galaxy_warning(tag_name, record)
 
     def _add_attribute_journal_entry(self, attribute: dict):
         self._add_journal_entry(f"Attribute ({attribute.get('category', 'Other')} - {attribute['type']}): {attribute['value']}")
