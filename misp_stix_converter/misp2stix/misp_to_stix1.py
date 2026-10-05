@@ -1596,6 +1596,27 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observable.title = self._object_record_title(misp_object)
         self._handle_misp_object(misp_object, observable)
 
+    def _write_custom_object(self, misp_object: dict):
+        """The object error fallback: the object a mapped route failed on
+        goes out the way an unmapped one does, a `Custom` Observable carrying
+        its relations - with no warning its template is not mapped, the error
+        already says why the object is in this shape.
+
+        :param misp_object: the MISP object the export failed on
+        """
+        try:
+            self._handle_object_observable(
+                misp_object, self._create_custom_observable(misp_object),
+                self._fetch_ids_flag(misp_object['Attribute'])
+            )
+        except Exception:
+            # The Observable is written the way the failed route writes its
+            # own, from the same object fields: what failed there - an object
+            # timestamp the Indicator cannot parse - fails here again, with
+            # nothing left to catch it. The object is lost, and the error
+            # already says so
+            return
+
     def _add_custom_property(self, stix_object: File, name: str, value: Any,
                              misp_object: dict):
         if stix_object.custom_properties is None:
@@ -1917,6 +1938,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_custom_object(self, misp_object: dict) -> Observable:
+        observable = self._create_custom_observable(misp_object)
+        self._object_not_mapped_warning(misp_object['name'])
+        return observable
+
+    def _create_custom_observable(self, misp_object: dict) -> Observable:
         custom_object = Custom()
         custom_object.custom_name = misp_object['name']
         if misp_object.get('description'):
@@ -1928,9 +1954,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 custom_object.custom_properties,
                 attribute['object_relation'], attribute['value'], record
             )
-        observable = self._create_observable(custom_object, misp_object['uuid'], 'Custom')
-        self._object_not_mapped_warning(misp_object['name'])
-        return observable
+        return self._create_observable(custom_object, misp_object['uuid'], 'Custom')
 
     def _parse_domain_ip_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])

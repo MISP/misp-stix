@@ -414,6 +414,11 @@ class MISPtoSTIXParser(AbstractParser):
             # traceback escapes the parser and, from a collection, costs
             # every other event too. The object is lost either way
             return
+        self._write_custom_object(misp_object)
+
+    def _write_custom_object(self, misp_object: dict):
+        """The object error fallback: the custom object route adds the object
+        to the results itself."""
         self._parse_custom_object(misp_object)
 
     @staticmethod
