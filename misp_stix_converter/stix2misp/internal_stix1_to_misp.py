@@ -417,7 +417,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
     def _parse_attack_pattern_object(self, attack_pattern: AttackPattern,
                                      ttp_id: str,
                                      timestamp: Optional[int] = None,
-                                     related_weaknesses: tuple = ()):
+                                     related_weaknesses: tuple = (),
+                                     comment: Optional[str] = None):
         """Convert the attack pattern an `attack-pattern` object was exported
         as: its id and name, its descriptions, and the related weaknesses
         its TTP carries as Exploit Targets.
@@ -427,6 +428,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         :param timestamp: the timestamp of the TTP
         :param related_weaknesses: the `related-weakness` attributes read off
             the Exploit Targets of the TTP
+        :param comment: the comment read off the TTP description
         """
         attributes = []
         for key, relation in self._mapping.attack_pattern_object_mapping().items():
@@ -443,6 +445,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         attributes.extend(related_weaknesses)
         if attributes:
             attack_pattern_object = MISPObject('attack-pattern')
+            if comment is not None:
+                attack_pattern_object.comment = comment
             self._sanitise_object_uuid(attack_pattern_object, ttp_id)
             if timestamp is not None:
                 attack_pattern_object.timestamp = timestamp
@@ -585,9 +589,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         The context the TTP carries is read once here and handed to whichever
         of the four builds the record: the tags off the TTP's handling, the
         comment off the description of the Exploit Target the attribute was
-        written into, the timestamp off the TTP. The tags reach a record that
-        takes them - a `target-*` attribute, a `vulnerability` attribute
-        carrying its id alone - and the ones that land on a MISP object
+        written into, or off the TTP's own for an attack pattern, the
+        timestamp off the TTP. The tags reach a record that takes them - a
+        `target-*` attribute, a `vulnerability` attribute carrying its id
+        alone - and the ones that land on a MISP object
         instead come back on the event if they are galaxy clusters, warned
         about if they are not.
 
@@ -607,9 +612,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         attack_patterns = ttp.behavior.attack_patterns if ttp.behavior else None
         if attack_patterns:
             related_weaknesses = tuple(self._read_related_weaknesses(ttp))
+            comment = self._read_comment(ttp.description)
             for attack_pattern in attack_patterns:
                 self._parse_attack_pattern_object(
-                    attack_pattern, ttp.id_, timestamp, related_weaknesses
+                    attack_pattern, ttp.id_, timestamp, related_weaknesses,
+                    comment
                 )
                 self._read_object_markings(tags)
             converted = True
