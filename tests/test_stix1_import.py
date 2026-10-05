@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import cybox.objects
+import importlib
 import inspect
 import json
+import pkgutil
 from collections import Counter
-from cybox.common import Hash, HashList
+from cybox.common import Hash, HashList, ObjectProperties
 from cybox.common.object_properties import CustomProperties, Property
+from cybox.common.properties import BaseProperty
 from cybox.core import (
     Object, Observable, ObservableComposition, Observables, RelatedObject)
 from cybox.objects.account_object import Account, Authentication
@@ -45,6 +49,7 @@ from misp_stix_converter.tools import (
     is_stix1_from_misp, load_stix1_package, stix1_loading_helpers)
 from misp_stix_converter.tools.misp_object_templates import (
     _template_attribute_types, _template_description)
+from mixbox.entities import Entity
 from mixbox.namespaces import NamespaceNotFoundError
 from misp_stix_converter.stix2misp import (
     external_stix1_to_misp, internal_stix1_to_misp, stix1_to_misp)
@@ -143,6 +148,7 @@ _DOMAIN_UUID = '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a'
 _IP_UUID = '3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a6b'
 _URL_UUID = '4f5a6b7c-8d9e-4f0a-8b1c-2d3e4f5a6b7c'
 _MD5_HASH = '8a2a5fc2ce56b3b04d58539a9d3d8d3e'
+_SHA1_HASH = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
 _VULNERABILITY_UUID = '6c3d4e5f-7a8b-4c9d-8e0f-1a2b3c4d5e6f'
 _PLAIN_OBJECT_UUID = '7d4e5f6a-8b9c-4d0e-9f1a-2b3c4d5e6f7a'
 # `Type=Other` with the value in `Simple_Hash_Value`: how MISP's own STIX 1
@@ -6645,6 +6651,409 @@ class TestSTIX1Import(TestSTIX):
         self.assertIn(
             'misp-galaxy:mitre-tool="Mimikatz"',
             {tag['name'] for tag in attribute.tags}
+        )
+
+    ############################################################################
+    #                           VALUE-LESS FIELDS.                             #
+    ############################################################################
+
+    @staticmethod
+    def _routed_cybox_types():
+        """Every CybOX object type the import routes to a handler, with the
+        class cybox builds it from."""
+        routed = {}
+        for module in pkgutil.iter_modules(cybox.objects.__path__):
+            content = importlib.import_module(f'cybox.objects.{module.name}')
+            for value in vars(content).values():
+                xsi_type = getattr(value, '_XSI_TYPE', None)
+                routed_type = (
+                    isinstance(value, type)
+                    and issubclass(value, ObjectProperties)
+                    and STIX1toMISPMapping.attribute_types_mapping(xsi_type)
+                )
+                if routed_type:
+                    routed.setdefault(xsi_type, value)
+        return routed
+
+    @classmethod
+    def _with_empty_fields(cls, entity_class, depth=0):
+        """An instance of a cybox class with every field present and empty:
+        each property holding no value, each structure built the same way, a
+        list holding one of them."""
+        entity = entity_class()
+        if depth > 4:
+            return entity
+        for name, field in entity_class.typed_fields_with_attrnames():
+            field_type = field.type_
+            if not isinstance(field_type, type) or name == 'parent':
+                continue
+            if issubclass(field_type, BaseProperty):
+                value = field_type()
+            elif issubclass(field_type, Entity):
+                try:
+                    value = cls._with_empty_fields(field_type, depth + 1)
+                except TypeError:
+                    # A structure cybox builds from arguments only
+                    continue
+            else:
+                continue
+            try:
+                setattr(entity, name, [value] if field.multiple else value)
+            except (TypeError, ValueError):
+                # A field cybox validates the content of on assignment
+                continue
+        return entity
+
+    def _valueless_packages(self, properties, feature):
+        """The package shapes an Observable carrying `properties` reaches the
+        import in, each next to a domain that converts, under the parser they
+        are read by."""
+        def observable(uuid=_OBSERVABLE_UUID):
+            return self._observable(properties, feature, uuid)
+
+        def composition(name):
+            composed = self._composition_observable(
+                observable(_PLAIN_OBJECT_UUID)
+            )
+            if name is not None:
+                composed.id_ = (
+                    f'MISP:{name}_ObservableComposition-{_OBSERVABLE_UUID}'
+                )
+            return composed
+
+        def domain():
+            domain_name = DomainName()
+            domain_name.value = 'circl.lu'
+            return self._observable(domain_name, 'DomainName', _DOMAIN_UUID)
+
+        for parser in (InternalSTIX1toMISPParser, ExternalSTIX1toMISPParser):
+            stix_package = STIXPackage()
+            stix_package.observables = Observables([observable(), domain()])
+            yield parser, 'observables', stix_package
+            stix_package = STIXPackage()
+            stix_package.add_indicator(self._indicator(observable().object_, _IP_UUID))
+            stix_package.add_indicator(self._indicator(domain().object_, _DOMAIN_UUID))
+            yield parser, 'indicators', stix_package
+        stix_package = STIXPackage()
+        stix_package.observables = Observables([composition(None), domain()])
+        yield ExternalSTIX1toMISPParser, 'composition', stix_package
+        shapes = (
+            ('attribute observable', 'Artifacts dropped', observable),
+            ('object observable', 'misc', observable),
+            (
+                'attribute composition', 'Network activity',
+                lambda: composition(None)
+            ),
+            (
+                'object composition', 'network',
+                lambda: composition('network-connection')
+            ),
+            ('file composition', 'file', lambda: composition('file'))
+        )
+        for shape, relationship, build in shapes:
+            incident = self._incident_with_content()
+            incident.related_observables.append(
+                RelatedObservable(build(), relationship=relationship)
+            )
+            yield (
+                InternalSTIX1toMISPParser, shape,
+                self._internal_package(incident)
+            )
+        for shape, relationship in (('attribute', 'Artifacts dropped'),
+                                    ('object', 'misc')):
+            incident = self._incident_with_content()
+            incident.related_indicators.append(
+                RelatedIndicator(
+                    self._indicator(observable().object_, _IP_UUID),
+                    relationship=relationship
+                )
+            )
+            yield (
+                InternalSTIX1toMISPParser, f'{shape} indicator',
+                self._internal_package(incident)
+            )
+
+    def test_valueless_fields_cost_no_package(self):
+        """A CybOX field present with no value - schema-valid, every one of
+        them optional - raised out of `parse_stix_package()` and cost the
+        whole package. Every handler the import routes to is handed its
+        object with every field absent, then with every field present and
+        empty, on every path of both parsers: the package converts, the
+        domain beside it included, and the guard turning any crash on the
+        object path into an error is never what catches it."""
+        for xsi_type, cybox_class in sorted(self._routed_cybox_types().items()):
+            feature = xsi_type[:-len('ObjectType')]
+            for fields in ('absent', 'empty'):
+                for parser_class, path, stix_package in self._valueless_packages(
+                        cybox_class() if fields == 'absent'
+                        else self._with_empty_fields(cybox_class),
+                        feature):
+                    with self.subTest(
+                            xsi_type, fields=fields,
+                            parser=parser_class.__name__, path=path):
+                        parser = parser_class()
+                        parser.load_stix_package(stix_package)
+                        parser.parse_stix_package()
+                        self.assertIn(
+                            'circl.lu',
+                            [
+                                attribute.value
+                                for attribute in parser.misp_event.attributes
+                            ]
+                        )
+                        errors = [
+                            error
+                            for errors in parser.diagnostics()['errors'].values()
+                            for error in errors
+                        ]
+                        self.assertFalse(
+                            any(
+                                error.startswith('Unable to parse the Observable')
+                                for error in errors
+                            ),
+                            errors
+                        )
+
+    @staticmethod
+    def _pe_with_valueless_section(entropy=None, *hashes):
+        """A Windows executable whose one section carries the `entropy` and
+        the `hashes` given, on top of a name and a size."""
+        section = PESection()
+        section.entropy = entropy
+        section.section_header = PESectionHeaderStruct()
+        section.section_header.name = '.text'
+        section.section_header.size_of_raw_data = 4096
+        if hashes:
+            section.data_hashes = HashList()
+            section.data_hashes.hashes = list(hashes)
+        pe_file = WinExecutableFile()
+        pe_file.file_name = 'evil.exe'
+        pe_file.sections = PESectionList()
+        pe_file.sections.append(section)
+        return pe_file
+
+    @staticmethod
+    def _section_content(parser):
+        section = parser.misp_event.get_objects_by_name('pe-section')[0]
+        return {
+            attribute.object_relation: str(attribute.value)
+            for attribute in section.attributes
+        }
+
+    def test_pe_section_entropy_with_no_value_is_absent(self):
+        """An entropy carrying no value is no entropy: the section comes back
+        with its other fields, and nothing is said."""
+        for origin, parser in self._parse_either_way(
+                self._pe_with_valueless_section(Entropy()),
+                'WinExecutableFile'):
+            with self.subTest(origin):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._section_content(parser),
+                    {'name': '.text', 'size-in-bytes': '4096'}
+                )
+
+    def test_pe_section_entropy_range_with_no_value_warns(self):
+        """An entropy carrying a range and no value is data the document
+        carried, which the `pe-section` template has no slot for: the section
+        comes back with its other fields, and a warning names the range."""
+        entropy = Entropy()
+        entropy.min = 1.5
+        entropy.max = 7.5
+        for origin, parser in self._parse_either_way(
+                self._pe_with_valueless_section(entropy), 'WinExecutableFile'):
+            with self.subTest(origin):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._section_content(parser),
+                    {'name': '.text', 'size-in-bytes': '4096'}
+                )
+                warnings = [
+                    warning
+                    for warnings in parser.diagnostics()['warnings'].values()
+                    for warning in warnings
+                    if 'entropy' in warning
+                ]
+                self.assertEqual(len(warnings), 1)
+                self.assertIn('1.5', warnings[0])
+                self.assertIn('7.5', warnings[0])
+
+    @staticmethod
+    def _valueless_hash():
+        hash_property = Hash()
+        hash_property.type_ = Hash.TYPE_MD5
+        return hash_property
+
+    @staticmethod
+    def _untyped_hash(value):
+        # cybox types a hash by its length as the value is set: the type is
+        # removed after, as a document carrying none is read
+        hash_property = Hash(value)
+        hash_property.type_ = None
+        return hash_property
+
+    def test_pe_section_hash_with_no_value_is_absent(self):
+        for origin, parser in self._parse_either_way(
+                self._pe_with_valueless_section(
+                    None, self._valueless_hash(),
+                    Hash(_SHA1_HASH, exact=True)
+                ),
+                'WinExecutableFile'):
+            with self.subTest(origin):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._section_content(parser),
+                    {'name': '.text', 'size-in-bytes': '4096', 'sha1': _SHA1_HASH}
+                )
+
+    def test_file_hash_with_no_value_is_absent(self):
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.size_in_bytes = 1024
+        file_object.hashes = HashList()
+        file_object.hashes.hashes = [
+            self._valueless_hash(), Hash(_SHA1_HASH, exact=True)
+        ]
+        for origin, parser in self._parse_either_way(file_object, 'File'):
+            with self.subTest(origin):
+                self._assert_single_object(
+                    parser, 'file',
+                    {
+                        'filename': 'evil.exe', 'size-in-bytes': '1024',
+                        'sha1': _SHA1_HASH
+                    }
+                )
+
+    def test_hash_with_no_type_is_typed_by_its_shape(self):
+        """A hash written with no type is typed the way cybox types a hash
+        built from its value alone - by its length - or the way one it types
+        `Other` is, by its shape: an MD5-length value is an `md5`."""
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.size_in_bytes = 1024
+        file_object.hashes = HashList()
+        file_object.hashes.hashes = [
+            self._untyped_hash(_MD5_HASH), self._untyped_hash(_SSDEEP_HASH)
+        ]
+        for origin, parser in self._parse_either_way(file_object, 'File'):
+            with self.subTest('file', origin=origin):
+                self._assert_single_object(
+                    parser, 'file',
+                    {
+                        'filename': 'evil.exe', 'size-in-bytes': '1024',
+                        'md5': _MD5_HASH, 'ssdeep': _SSDEEP_HASH
+                    }
+                )
+        for origin, parser in self._parse_either_way(
+                self._pe_with_valueless_section(
+                    None, self._untyped_hash(_MD5_HASH)
+                ),
+                'WinExecutableFile'):
+            with self.subTest('pe-section', origin=origin):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._section_content(parser),
+                    {'name': '.text', 'size-in-bytes': '4096', 'md5': _MD5_HASH}
+                )
+
+    def test_pe_section_hash_with_no_type_and_no_shape_warns(self):
+        """A hash with no type whose value names none either is what a hash
+        cybox types `Other` is: the `pe-section` template has no relation to
+        store it under, and the unstorable warning names it."""
+        value = 'c0ffee'
+        for origin, parser in self._parse_either_way(
+                self._pe_with_valueless_section(
+                    None, self._untyped_hash(value)
+                ),
+                'WinExecutableFile'):
+            with self.subTest(origin):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._section_content(parser),
+                    {'name': '.text', 'size-in-bytes': '4096'}
+                )
+                # The Internal import also warns the Observable it reads as
+                # an attribute converts as an object
+                warnings = [
+                    warning
+                    for warnings in parser.diagnostics()['warnings'].values()
+                    for warning in warnings if value in warning
+                ]
+                self.assertEqual(len(warnings), 1)
+                self.assertIn('cannot be stored as a MISP attribute', warnings[0])
+
+    def test_valueless_attribute_record_is_an_error(self):
+        """An Address, a URI, a domain name or a port carrying no value is a
+        record with nothing in it: refused with an error naming it, and the
+        rest of the package converts."""
+        records = (
+            (Address(category='ipv4-addr'), 'Address'), (URI(), 'URI'),
+            (DomainName(), 'DomainName'), (Port(), 'Port')
+        )
+        for properties, feature in records:
+            for origin, parser in self._parse_valueless_record(
+                    properties, feature):
+                with self.subTest(feature, origin=origin):
+                    self.assertEqual(
+                        [
+                            attribute.value
+                            for attribute in parser.misp_event.attributes
+                        ],
+                        ['circl.lu']
+                    )
+                    self.assertEqual(parser.misp_event.objects, [])
+                    errors = parser.diagnostics()['errors']['misp event']
+                    self.assertEqual(len(errors), 1)
+                    self.assertIn('nothing to fill a MISP', errors[0])
+
+    def test_object_including_only_empty_objects_is_an_error(self):
+        """A process whose one connection holds nothing, a Windows executable
+        whose one section holds nothing: no object under them holds an
+        attribute, so there is nothing for them to hang off and they are
+        records with nothing in them."""
+        process = Process()
+        process.network_connection_list = NetworkConnectionList()
+        process.network_connection_list.append(NetworkConnection())
+        pe_file = WinExecutableFile()
+        pe_file.sections = PESectionList()
+        pe_file.sections.append(PESection())
+        records = (
+            (process, 'Process', 'process'),
+            (pe_file, 'WinExecutableFile', 'pe')
+        )
+        for properties, feature, name in records:
+            for origin, parser in self._parse_valueless_record(
+                    properties, feature):
+                with self.subTest(feature, origin=origin):
+                    self.assertEqual(parser.misp_event.objects, [])
+                    errors = parser.diagnostics()['errors']['misp event']
+                    self.assertEqual(len(errors), 1)
+                    self.assertIn(
+                        f'nothing to fill a MISP {name} object with', errors[0]
+                    )
+
+    def _parse_valueless_record(self, properties, feature):
+        """Parse a record next to a domain that converts, as a third party
+        publishes it and as it sits in an Incident of a MISP export."""
+        domain_name = DomainName()
+        domain_name.value = 'circl.lu'
+        stix_package = STIXPackage()
+        stix_package.observables = Observables(
+            [
+                self._observable(properties, feature),
+                self._observable(domain_name, 'DomainName', _DOMAIN_UUID)
+            ]
+        )
+        yield 'external', self._parse_external_package(stix_package)
+        incident = self._incident_with_content()
+        incident.related_observables.append(
+            RelatedObservable(
+                self._observable(properties, feature),
+                relationship='Network activity'
+            )
+        )
+        yield 'internal', self._parse_internal_package(
+            self._internal_package(incident)
         )
 
     ############################################################################
