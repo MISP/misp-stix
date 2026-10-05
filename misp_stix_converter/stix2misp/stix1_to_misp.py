@@ -37,7 +37,7 @@ from stix.extensions.marking.simple_marking import SimpleMarkingStructure
 from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
-from typing import Iterator, Optional, Union
+from typing import Iterable, Iterator, Optional, Union
 from uuid import uuid4
 
 _ADDRESS_TYPING = Union[address_object.Address, address_object.EmailAddress]
@@ -549,8 +549,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # with the timestamp the caller read, where there is one
     def _parse_course_of_action(self, course_of_action,
                                 timestamp: Optional[int] = None):
-        if any(self._read_markings(getattr(course_of_action, 'handling', None))):
-            self._object_markings_warning()
+        self._read_object_markings(
+            self._read_markings(getattr(course_of_action, 'handling', None))
+        )
         misp_object = MISPObject('course-of-action', misp_objects_path_custom=misp_objects_path)
         self._sanitise_object_uuid(misp_object, course_of_action.id_)
         if timestamp is not None:
@@ -629,6 +630,28 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         """
         for marking_specification in handling or ():
             yield from self._parse_marking(marking_specification)
+
+    def _read_object_markings(self, tags: Iterable[str]):
+        """Read the tags off the markings of a STIX object a MISP object is
+        built from.
+
+        A MISP object holds no tag, and the export merges the tags of every
+        attribute the object held into its one handling. The `misp-galaxy:`
+        ones are clusters, and they come back on the event, as the tags they
+        are: the place is lost, the cluster is not - and the construct the
+        export wrote beside one adds no copy typed after it. The others have
+        nowhere to go, and the warning records them.
+
+        :param tags: the tags the markings carry
+        """
+        unread = False
+        for tag in tags:
+            if tag.startswith('misp-galaxy:'):
+                self.misp_event.add_tag(tag)
+            else:
+                unread = True
+        if unread:
+            self._object_markings_warning()
 
     def _parse_marking(self, handling: MarkingSpecification) -> Iterator[str]:
         if getattr(handling, 'marking_structures', None):
@@ -2071,7 +2094,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # One per converted document however many objects hit it: a MISP
         # object takes no tag, and the markings the export wrote hold the
         # tags of every attribute it held merged into one set, so there is
-        # neither a field to write them to nor a way to tell them apart. The
+        # neither a field to write them to nor a way to tell them apart -
+        # only the galaxy clusters among them come back, on the event. The
         # Course of Action parser is shared, so the words hold for a document
         # our export never wrote too.
         self._add_warning(

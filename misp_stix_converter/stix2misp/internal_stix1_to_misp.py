@@ -181,15 +181,24 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         A construct names a cluster by its value alone, and the tag read off
         it is typed after the construct: a `ransomware` cluster exported as a
         malware TTP reads as a `mitre-malware` tag. The export keeps the tag
-        of an event galaxy on the Incident handling, galaxy type included, so
-        an event tag of the same value is the cluster the construct names.
-        Only the event's own tags count: a cluster attached to a record lower
-        down is read as a construct tag on the event as well, and the tag of
-        another record matching its value is no sign it is the same cluster.
+        of a cluster, galaxy type included, on the handling of the record
+        carrying it - the Incident, an attribute, the one a MISP object
+        merges the ones of its attributes into, read onto the event - so a
+        tag of the same value read anywhere in the event is the cluster the
+        construct names. Matched on value, two clusters of one value in two
+        galaxies on two records collide, and the construct one is not added.
         """
+        attributes = (
+            *self.misp_event.attributes,
+            *(attribute for misp_object in self.misp_event.objects
+              for attribute in misp_object.attributes)
+        )
         carried = {
             value for value in (
-                self._galaxy_tag_value(tag.name) for tag in self.misp_event.tags
+                self._galaxy_tag_value(tag.name) for tag in (
+                    *self.misp_event.tags,
+                    *(tag for attribute in attributes for tag in attribute.tags)
+                )
             )
             if value is not None
         }
@@ -575,8 +584,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         comment off the description of the Exploit Target the attribute was
         written into, the timestamp off the TTP. The tags reach a record that
         takes them - a `target-*` attribute, a `vulnerability` attribute
-        carrying its id alone - and the warning records the ones that land on
-        a MISP object instead.
+        carrying its id alone - and the ones that land on a MISP object
+        instead come back on the event if they are galaxy clusters, warned
+        about if they are not.
 
         :param ttp: the TTP, titled `(MISP Attribute)` or `(MISP Object)`
         """
@@ -598,8 +608,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._parse_attack_pattern_object(
                     attack_pattern, ttp.id_, timestamp, related_weaknesses
                 )
-                if tags:
-                    self._object_markings_warning()
+                self._read_object_markings(tags)
             converted = True
         if ttp.victim_targeting and ttp.victim_targeting.identity:
             self._parse_victim_identity(
@@ -737,8 +746,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._sanitise_object_uuid(vulnerability_object, ttp_id)
                 if timestamp is not None:
                     vulnerability_object.timestamp = timestamp
-                if tags:
-                    self._object_markings_warning()
+                self._read_object_markings(tags)
                 for attribute in attributes:
                     self._add_object_attribute(
                         vulnerability_object, vulnerability_object.uuid,
@@ -764,8 +772,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self._sanitise_object_uuid(weakness_object, ttp_id)
             if timestamp is not None:
                 weakness_object.timestamp = timestamp
-            if tags:
-                self._object_markings_warning()
+            self._read_object_markings(tags)
             for relation, value in attributes:
                 self._add_object_attribute(
                     weakness_object, weakness_object.uuid,
@@ -977,8 +984,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 )
                 return
         self._unread_attribute_warning(name, stix_object_id)
-        if 'Tag' in misp_attribute:
-            self._object_markings_warning()
+        self._read_object_markings(misp_attribute.get('Tag', ()))
         # The comment is read already: handed over as the description, it is
         # guarded against the template description alone
         self._handle_object_case(
@@ -1023,16 +1029,15 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         description, which every MISP object carries, when the object has no
         comment of its own. The description travels raw, and the template it
         is told from is the one of the object the content builds - the name
-        here only names the compositions. The handling does not come back - it
-        holds the tags of every attribute the object held merged into one set,
-        and a MISP object takes no tag - so the warning records what is
-        dropped.
+        here only names the compositions. The handling holds the tags of every
+        attribute the object held merged into one set, and a MISP object takes
+        no tag: its galaxy clusters come back on the event, and the warning
+        records the rest, dropped.
 
         :param indicator: the Related Indicator the Incident carries
         """
         name = self._define_name(indicator.item.observable, indicator.relationship)
-        if any(self._read_markings(indicator.item.handling)):
-            self._object_markings_warning()
+        self._read_object_markings(self._read_markings(indicator.item.handling))
         self._fill_misp_object(
             indicator.item, name, to_ids=True,
             description=indicator.item.description,
