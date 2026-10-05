@@ -1523,6 +1523,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             attributes.append(['text', properties.user_id.value, 'user-id'])
         if properties.group_id:
             attributes.append(['text', properties.group_id.value, 'group-id'])
+        for group in properties.group_list or ():
+            if group.group_id:
+                attributes.append(['text', group.group_id.value, 'group'])
         attributes.extend(
             self._read_custom_properties(properties, 'user-account')
         )
