@@ -1530,7 +1530,9 @@ class TestSTIX1Import(TestSTIX):
         the tags the import writes back name the galaxy each construct stands
         for, and it has to be one MISP has - a MISP export used to re-import
         with `course-of-action` and `misp-attack-pattern` tags naming no galaxy
-        at all, and `ransomware` and `tool` ones naming no cluster."""
+        at all, and `ransomware` and `tool` ones naming no cluster. The
+        attribute handling, which names each galaxy itself, is stripped: the
+        constructs are left the one source of the tags."""
         event = get_base_event()
         event['Event']['Attribute'] = [
             {
@@ -1546,7 +1548,10 @@ class TestSTIX1Import(TestSTIX):
                 ]
             }
         ]
-        parser = self._parse_internal_package(self._misp_export(event))
+        stix_package = self._misp_export(event)
+        incident = stix_package.related_packages[0].item.incidents[0]
+        incident.related_indicators[0].item.handling = None
+        parser = self._parse_internal_package(stix_package)
         self.assertEqual(parser.diagnostics()['errors'], {})
         self.assertEqual(
             self._galaxy_tags(parser.misp_event),
@@ -2181,11 +2186,13 @@ class TestSTIX1Import(TestSTIX):
             {'misp-galaxy:ransomware="BISCUIT - S0017"'}
         )
 
-    def test_internal_attribute_galaxy_tag_leaves_the_construct_tag_alone(self):
-        """A cluster value is shared across galaxies - a MITRE and a malpedia
-        cluster both named after the malware: an attribute tag of the same
-        value as a mapped cluster is no sign the two are one, and the tag the
-        construct names still lands on the event."""
+    def test_internal_attribute_galaxy_tag_counts_against_the_construct_tag(self):
+        """The construct tag is matched on value against every tag read in
+        the event, a record's included: a cluster value is shared across
+        galaxies - a MITRE and a malpedia cluster both named after the
+        malware - so the attribute tag of a malpedia cluster holds the
+        construct tag of a MITRE one off the event too. The collision the
+        match on value makes, named rather than read around."""
         event = get_event_with_malware_galaxy()
         attribute = get_event_with_domain_attribute()['Event']['Attribute'][0]
         attribute['to_ids'] = True
@@ -2196,14 +2203,115 @@ class TestSTIX1Import(TestSTIX):
         # The shape an export stripping the event galaxy tag wrote
         stix_package.related_packages[0].item.incidents[0].handling = None
         parser = self._parse_internal_package(stix_package)
-        self.assertEqual(
-            self._galaxy_tags(parser.misp_event),
-            {'misp-galaxy:mitre-malware="BISCUIT - S0017"'}
-        )
+        self.assertEqual(self._galaxy_tags(parser.misp_event), set())
         self.assertEqual(
             [tag.name for tag in parser.misp_event.attributes[0].tags],
             ['misp-galaxy:malpedia="BISCUIT - S0017"']
         )
+
+    _OBJECT_MARKINGS_WARNING = (
+        'MISP objects carry no tag: the markings on the STIX objects a '
+        'MISP object is built from are not read back.'
+    )
+
+    @staticmethod
+    def _ransomware_galaxy():
+        """A cluster of a galaxy the export writes as a malware TTP, which
+        the import reads a `mitre-malware` tag off."""
+        galaxy = get_event_with_malware_galaxy()['Event']['Galaxy'][0]
+        galaxy['type'] = 'ransomware'
+        galaxy['GalaxyCluster'][0]['type'] = 'ransomware'
+        return galaxy
+
+    _RANSOMWARE_TAG = 'misp-galaxy:ransomware="BISCUIT - S0017"'
+
+    @staticmethod
+    def _event_with_object_galaxy(get_event, galaxy, tags=()):
+        """The event `get_event` returns, its one object's first attribute
+        carrying the galaxy and the tags, every attribute flagged `to_ids`."""
+        event = get_event()
+        misp_object = event['Event']['Object'][0]
+        for attribute in misp_object['Attribute']:
+            attribute['to_ids'] = True
+        misp_object['Attribute'][0]['Galaxy'] = [galaxy]
+        misp_object['Attribute'][0]['Tag'] = [{'name': tag} for tag in tags]
+        return event
+
+    def test_internal_object_galaxy_comes_back_on_the_event(self):
+        """A MISP object holds no tag, and the handling the export writes for
+        one holds the clusters of every attribute it held: each comes back on
+        the event as its own tag, not the one its construct types it as, and
+        a handling holding clusters alone is read in full - no warning. The
+        Indicator of a `file`, the TTP of an `attack-pattern`, a
+        `vulnerability` or a `weakness`, and the Course of Action of a
+        `course-of-action` alike."""
+        for get_event in (get_event_with_file_object,
+                          get_event_with_attack_pattern_object,
+                          get_event_with_course_of_action_object,
+                          get_event_with_vulnerability_object,
+                          get_event_with_weakness_object):
+            with self.subTest(event=get_event.__name__):
+                event = self._event_with_object_galaxy(
+                    get_event, self._ransomware_galaxy()
+                )
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._galaxy_tags(parser.misp_event), {self._RANSOMWARE_TAG}
+                )
+                self.assertNotIn(
+                    self._OBJECT_MARKINGS_WARNING,
+                    parser.diagnostics()['warnings'].get('misp event', [])
+                )
+                self.assertEqual(len(parser.misp_event.objects), 1)
+
+    def test_internal_unmapped_object_galaxy_comes_back_on_the_event(self):
+        """A galaxy no STIX 1 construct holds travels as the tag on the
+        object's handling alone, and the tag is what comes back."""
+        event = self._event_with_object_galaxy(
+            get_event_with_file_object,
+            get_event_with_sector_galaxy()['Event']['Galaxy'][0]
+        )
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            self._galaxy_tags(parser.misp_event),
+            {'misp-galaxy:sector="IT - Security"'}
+        )
+
+    def test_internal_object_galaxy_beside_a_tag_comes_back_with_the_warning(self):
+        """The clusters come back off a handling holding other markings too,
+        which the import still does not read: those keep the warning."""
+        event = self._event_with_object_galaxy(
+            get_event_with_file_object, self._ransomware_galaxy(),
+            tags=('tlp:amber', 'my:custom="tag"')
+        )
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(
+            self._galaxy_tags(parser.misp_event), {self._RANSOMWARE_TAG}
+        )
+        self.assertNotIn(
+            'tlp:amber', [tag.name for tag in parser.misp_event.tags]
+        )
+        self.assertIn(
+            self._OBJECT_MARKINGS_WARNING,
+            parser.diagnostics()['warnings']['misp event']
+        )
+
+    def test_internal_attribute_galaxy_adds_no_construct_tag_to_the_event(self):
+        """The cluster of a `to_ids` attribute comes back on the attribute,
+        and the construct it travels as adds no retyped copy to the event."""
+        event = get_event_with_domain_attribute()
+        attribute = event['Event']['Attribute'][0]
+        attribute['to_ids'] = True
+        attribute['Galaxy'] = [self._ransomware_galaxy()]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [tag.name for tag in parser.misp_event.attributes[0].tags],
+            [self._RANSOMWARE_TAG]
+        )
+        self.assertEqual(self._galaxy_tags(parser.misp_event), set())
 
     def test_internal_incident_carrying_a_tag_alone_converts(self):
         """A tag is data the event carried: an Incident whose handling holds
@@ -4857,10 +4965,17 @@ class TestSTIX1Import(TestSTIX):
             ],
             [('weakness', _IP_UUID, [('id', 'CWE-79')])]
         )
-        self.assertIn(
-            'misp-galaxy:branded-vulnerability="Log4Shell"',
-            {tag['name'] for tag in parser.misp_event.tags}
+        # The cluster comes back on the attribute carrying it, and the
+        # vulnerability TTP it travels as adds no copy to the event
+        domain = next(
+            attribute for attribute in parser.misp_event.attributes
+            if attribute.uuid == _URL_UUID
         )
+        self.assertEqual(
+            [tag.name for tag in domain.tags],
+            ['misp-galaxy:branded-vulnerability="Log4Shell"']
+        )
+        self.assertEqual(self._galaxy_tags(parser.misp_event), set())
 
     ############################################################################
     #                       EXTERNAL OBSERVABLE TYPES.                         #
