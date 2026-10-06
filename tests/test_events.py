@@ -6484,6 +6484,70 @@ def get_event_with_object_references():
     return event
 
 
+def get_event_with_object_references_in_relationship_slots():
+    ap_object = dict(_populate_object(_TEST_ATTACK_PATTERN_OBJECT))
+    btc_object = dict(_populate_object(_TEST_BTC_WALLET_OBJECT))
+    coa_object = dict(_populate_object(_TEST_COURSE_OF_ACTION_OBJECT))
+    ip_object = dict(_populate_object(_TEST_IP_PORT_OBJECT))
+    vuln_object = dict(_populate_object(_TEST_VULNERABILITY_OBJECT))
+    weakness_object = dict(_populate_object(_TEST_WEAKNESS_OBJECT))
+    other_coa_object = dict(
+        _populate_object(
+            {
+                "name": "course-of-action",
+                "meta-category": "misc",
+                "description": "An object describing a specific measure taken to prevent or respond to an attack.",
+                "uuid": "3c1e8f0a-5b2d-4e7f-9a6c-1d4b7e0f3a2c",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "Patch the ipaddress library"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "type",
+                        "value": "Patching"
+                    }
+                ]
+            }
+        )
+    )
+
+    def references(source, *targets):
+        source['ObjectReference'] = [
+            {
+                "uuid": uuid5(_TEST_UUID, f"{source['uuid']} - {target['uuid']}").__str__(),
+                "object_uuid": source['uuid'],
+                "referenced_uuid": target['uuid'],
+                "relationship_type": relationship
+            }
+            for target, relationship in targets
+        ]
+
+    btc_object['Attribute'][0]['to_ids'] = True
+    ip_object['Attribute'][0]['to_ids'] = True
+    references(
+        btc_object, (coa_object, 'protected-with'), (ap_object, 'indicates'),
+        (vuln_object, 'exploits')
+    )
+    references(
+        ip_object, (other_coa_object, 'protected-with'),
+        (weakness_object, 'exploits')
+    )
+    references(vuln_object, (coa_object, 'mitigated-by'))
+    references(weakness_object, (other_coa_object, 'mitigated-by'))
+    references(coa_object, (other_coa_object, 'complemented-by'))
+    event = deepcopy(_BASE_EVENT)
+    # Every source before its target, but the attack pattern's
+    event['Event']['Object'] = [
+        btc_object, ip_object, vuln_object, weakness_object, coa_object,
+        other_coa_object, ap_object
+    ]
+    return event
+
+
 def get_event_with_organization_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [

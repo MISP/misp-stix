@@ -2834,7 +2834,9 @@ class TestSTIX1ObjectReferences(TestSTIX):
 
     def test_references_with_no_single_object_end_are_warned(self):
         """Every reference of the fixture touches an `ip-port` composition,
-        a TTP or a Course of Action: none is written, each is warned once."""
+        a TTP or a Course of Action: none is a Related_Object. The `ip-port`
+        one to the Course of Action is a Suggested_COA once the `ip-port` is
+        an Indicator; every other one is warned once."""
         for version in self._VERSIONS:
             for to_ids in (False, True):
                 with self.subTest(version=version, to_ids=to_ids):
@@ -2856,6 +2858,7 @@ class TestSTIX1ObjectReferences(TestSTIX):
                         (misp_object['uuid'], reference)
                         for misp_object in event['Event']['Object']
                         for reference in misp_object['ObjectReference']
+                        if not (to_ids and misp_object['name'] == 'ip-port')
                     ]
                     self.assertEqual(len(warned), len(references))
                     for source_uuid, reference in references:
@@ -2882,6 +2885,270 @@ class TestSTIX1ObjectReferences(TestSTIX):
                         if warning.startswith('Reference ')
                     ],
                     []
+                )
+
+
+class TestSTIX1ObjectReferenceSlots(TestSTIX):
+    """A reference a CybOX Related_Object cannot carry goes in the
+    relationship slot of the source's own STIX construct naming the target's
+    kind, the relationship verbatim: Potential_COAs on the Exploit Target of
+    a `vulnerability` or `weakness`, Related_COAs on a Course of Action,
+    Suggested_COAs and Indicated_TTP on an Indicator. The galaxy clusters
+    fill the same slots."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _ATTACK_PATTERN_UUID = '7205da54-70de-4fa7-9b34-e14e63fe6787'
+    _BTC_WALLET_UUID = '6f7509f1-f324-4acc-bf06-bbe726ab8fc7'
+    _COA_UUID = '5d514ff9-ac30-4fb5-b9e7-3eb4a964451a'
+    _IP_PORT_UUID = '5ac47edc-31e4-4402-a7b6-040d0a00020f'
+    _OTHER_COA_UUID = '3c1e8f0a-5b2d-4e7f-9a6c-1d4b7e0f3a2c'
+    _VULNERABILITY_UUID = '5e579975-e9cc-46c6-a6ad-1611a964451a'
+    _WEAKNESS_UUID = 'a1285743-3962-40e3-a824-0f21f10f3e19'
+
+    @staticmethod
+    def _event(to_ids=True):
+        event = get_event_with_object_references_in_relationship_slots()
+        for misp_object in event['Event']['Object']:
+            if misp_object['name'] in ('btc-wallet', 'ip-port'):
+                misp_object['Attribute'][0]['to_ids'] = to_ids
+        return event
+
+    @staticmethod
+    def _parse(event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _reference_warnings(parser):
+        return [
+            warning for warning in parser.warnings.get(
+                get_base_event()['Event']['uuid'], []
+            )
+            if warning.startswith('Reference ')
+        ]
+
+    @staticmethod
+    def _slots(parser):
+        """Each entry of the four slots, as its source uuid, the slot, the
+        idref and the relationship."""
+        package = parser.stix_package
+        slots = []
+
+        def read(source_id, slot, related_items):
+            slots.extend(
+                (
+                    source_id[-36:], slot, related.item.idref,
+                    related.relationship.value
+                )
+                for related in related_items
+            )
+
+        incident = package.incidents[0]
+        for related in incident.related_indicators.indicator if incident.related_indicators else ():
+            indicator = related.item
+            read(indicator.id_, 'Suggested_COAs', indicator.suggested_coas)
+            read(indicator.id_, 'Indicated_TTP', indicator.indicated_ttps)
+        for course_of_action in package.courses_of_action or ():
+            read(
+                course_of_action.id_, 'Related_COAs',
+                course_of_action.related_coas
+            )
+        for ttp in package.ttps.ttp if package.ttps else ():
+            for related in ttp.exploit_targets.exploit_target if ttp.exploit_targets else ():
+                read(ttp.id_, 'Potential_COAs', related.item.potential_coas)
+        return sorted(slots)
+
+    def _coa(self, uuid):
+        return f'{_ORGNAME_ID}:CourseOfAction-{uuid}'
+
+    def _ttp(self, uuid):
+        return f'{_ORGNAME_ID}:TTP-{uuid}'
+
+    def _non_indicator_slots(self):
+        return [
+            (
+                self._COA_UUID, 'Related_COAs',
+                self._coa(self._OTHER_COA_UUID), 'complemented-by'
+            ),
+            (
+                self._VULNERABILITY_UUID, 'Potential_COAs',
+                self._coa(self._COA_UUID), 'mitigated-by'
+            ),
+            (
+                self._WEAKNESS_UUID, 'Potential_COAs',
+                self._coa(self._OTHER_COA_UUID), 'mitigated-by'
+            )
+        ]
+
+    def test_references_go_in_the_source_relationship_slots(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(self._event(), version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(self._reference_warnings(parser), [])
+                self.assertEqual(
+                    self._slots(parser),
+                    sorted(
+                        [
+                            *self._non_indicator_slots(),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._ATTACK_PATTERN_UUID),
+                                'indicates'
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._VULNERABILITY_UUID),
+                                'exploits'
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Suggested_COAs',
+                                self._coa(self._COA_UUID), 'protected-with'
+                            ),
+                            (
+                                self._IP_PORT_UUID, 'Indicated_TTP',
+                                self._ttp(self._WEAKNESS_UUID), 'exploits'
+                            ),
+                            (
+                                self._IP_PORT_UUID, 'Suggested_COAs',
+                                self._coa(self._OTHER_COA_UUID),
+                                'protected-with'
+                            )
+                        ]
+                    )
+                )
+
+    def test_slot_entries_name_a_written_target_with_its_timestamp(self):
+        """Each entry points at a Course of Action or a TTP the package
+        holds, pinned to its timestamp as a Related_TTP is."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(self._event(), version)
+                package = parser.stix_package
+                timestamps = {
+                    construct.id_: construct.timestamp
+                    for construct in (
+                        *package.courses_of_action, *package.ttps.ttp
+                    )
+                }
+                incident = package.incidents[0]
+                related_items = [
+                    related
+                    for indicator in incident.related_indicators.indicator
+                    for related in (
+                        *indicator.item.suggested_coas,
+                        *indicator.item.indicated_ttps
+                    )
+                ]
+                related_items.extend(
+                    related
+                    for course_of_action in package.courses_of_action
+                    for related in course_of_action.related_coas
+                )
+                self.assertEqual(len(related_items), 6)
+                for related in related_items:
+                    self.assertIn(related.item.idref, timestamps)
+                    self.assertIsNotNone(related.item.timestamp)
+                    self.assertEqual(
+                        related.item.timestamp,
+                        timestamps[related.item.idref]
+                    )
+
+    def test_plain_observable_source_is_warned(self):
+        """A source written as a plain Observable has no slot: each of its
+        references is warned once, and nothing is written for it."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = self._event(False)
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(
+                    self._slots(parser), sorted(self._non_indicator_slots())
+                )
+                warned = self._reference_warnings(parser)
+                references = [
+                    (misp_object['uuid'], reference)
+                    for misp_object in event['Event']['Object']
+                    if misp_object['name'] in ('btc-wallet', 'ip-port')
+                    for reference in misp_object['ObjectReference']
+                ]
+                self.assertEqual(len(warned), len(references))
+                for source_uuid, reference in references:
+                    self.assertEqual(
+                        len(
+                            [
+                                warning for warning in warned
+                                if source_uuid in warning
+                                and reference['relationship_type'] in warning
+                                and reference['referenced_uuid'] in warning
+                            ]
+                        ),
+                        1
+                    )
+
+    def test_galaxy_cluster_and_reference_share_the_slot(self):
+        """A cluster on an object attribute fills the slot with the galaxy
+        name as relationship, the reference beside it."""
+        event = self._event()
+        coa_galaxy = get_event_with_course_of_action_galaxy()['Event']['Galaxy'][0]
+        attack_pattern_galaxy = get_event_with_attack_pattern_galaxy()['Event']['Galaxy'][0]
+        for misp_object in event['Event']['Object']:
+            if misp_object['uuid'] == self._COA_UUID:
+                misp_object['Attribute'][0]['Galaxy'] = [coa_galaxy]
+            elif misp_object['name'] == 'btc-wallet':
+                misp_object['Attribute'][0]['Galaxy'] = [attack_pattern_galaxy]
+        coa_cluster_uuid = coa_galaxy['GalaxyCluster'][0]['uuid']
+        attack_pattern_cluster_uuid = attack_pattern_galaxy['GalaxyCluster'][0]['uuid']
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(self._reference_warnings(parser), [])
+                slots = self._slots(parser)
+                self.assertEqual(
+                    [
+                        entry for entry in slots
+                        if entry[:2] == (self._COA_UUID, 'Related_COAs')
+                    ],
+                    sorted(
+                        [
+                            (
+                                self._COA_UUID, 'Related_COAs',
+                                self._coa(coa_cluster_uuid), coa_galaxy['name']
+                            ),
+                            (
+                                self._COA_UUID, 'Related_COAs',
+                                self._coa(self._OTHER_COA_UUID),
+                                'complemented-by'
+                            )
+                        ]
+                    )
+                )
+                self.assertEqual(
+                    [
+                        entry for entry in slots
+                        if entry[:2] == (self._BTC_WALLET_UUID, 'Indicated_TTP')
+                    ],
+                    sorted(
+                        [
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(attack_pattern_cluster_uuid),
+                                attack_pattern_galaxy['name']
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._ATTACK_PATTERN_UUID),
+                                'indicates'
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._VULNERABILITY_UUID),
+                                'exploits'
+                            )
+                        ]
+                    )
                 )
 
 
