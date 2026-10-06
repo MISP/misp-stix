@@ -5,6 +5,7 @@ from .output_writing_helpers import _write_output
 from .stix1_framing import SCHEMALOC_DICT, _handle_namespaces
 from cybox.core.observable import Observables
 from pathlib import Path
+from stix.common.related import RelatedPackage
 from stix.core import (
     Campaigns, CoursesOfAction, Indicators, STIXPackage, ThreatActors)
 from stix.core.ttps import TTPs
@@ -69,10 +70,14 @@ def write_events(package: STIXPackage, return_format: str = 'xml') -> str:
         if package.related_packages is not None:
             length = 135 + len(package.id_) + len(package.version)
             return package.to_xml(include_namespaces=False).decode()[length:-82]
-        content = '\n            '.join(
-            package.to_xml(include_namespaces=False).decode().split('\n')
-        )
-        return f'            {content}\n'
+        # Inside a related package, the package is the `stix:Package`
+        # element: `stix:STIX_Package` is the name of the document root only.
+        # The framing writes the `stix:Related_Package` around it, so the
+        # wrapper line of either end, and the empty line after it, are dropped
+        lines = RelatedPackage(package).to_xml(
+            include_namespaces=False).decode().split('\n')[1:-2]
+        content = '\n        '.join(lines)
+        return f'        {content}\n'
     if package.related_packages is not None:
         return ', '.join(
             related_package.to_json() for related_package
