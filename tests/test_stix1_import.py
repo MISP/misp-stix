@@ -7640,6 +7640,106 @@ class TestSTIX1Import(TestSTIX):
                     )
                 )
 
+    @staticmethod
+    def _object_references(misp_event):
+        return sorted(
+            (
+                misp_object.name, reference.referenced_uuid,
+                reference.relationship_type
+            )
+            for misp_object in misp_event.objects
+            for reference in misp_object.references
+        )
+
+    def test_internal_related_ttps_between_object_ttps_round_trip(self):
+        """The Related_TTP a `vulnerability` TTP carries towards the
+        `weakness` one it references comes back as the reference, whatever
+        the `to_ids` flag of their attributes."""
+        for version in ('1.1.1', '1.2'):
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = test_events.get_event_with_vulnerability_and_weakness_objects()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    vulnerability, weakness = event['Event']['Object']
+                    parser = self._parse_written_misp_export(event, version)
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(
+                        self._object_references(parser.misp_event),
+                        [('vulnerability', weakness['uuid'], 'weakened-by')]
+                    )
+
+    def test_internal_related_ttp_any_relationship_round_trips(self):
+        """Any relationship between two of the `attack-pattern`,
+        `vulnerability` and `weakness` objects is read back verbatim."""
+        event = test_events.get_event_with_vulnerability_and_weakness_objects()
+        attack_pattern = get_event_with_attack_pattern_object()['Event']['Object'][0]
+        vulnerability, weakness = event['Event']['Object']
+        attack_pattern['ObjectReference'] = [
+            {
+                'uuid': '9c1d4e2f-3a5b-4c6d-8e7f-0a1b2c3d4e5f',
+                'object_uuid': attack_pattern['uuid'],
+                'referenced_uuid': vulnerability['uuid'],
+                'relationship_type': 'Exploits'
+            }
+        ]
+        weakness['ObjectReference'] = [
+            {
+                'uuid': '0d2e5f3a-4b6c-4d7e-9f8a-1b2c3d4e5f6a',
+                'object_uuid': weakness['uuid'],
+                'referenced_uuid': attack_pattern['uuid'],
+                'relationship_type': 'leveraged by'
+            }
+        ]
+        event['Event']['Object'].append(attack_pattern)
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                parser = self._parse_written_misp_export(event, version)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._object_references(parser.misp_event),
+                    [
+                        (
+                            'attack-pattern', vulnerability['uuid'],
+                            'Exploits'
+                        ),
+                        (
+                            'vulnerability', weakness['uuid'], 'weakened-by'
+                        ),
+                        (
+                            'weakness', attack_pattern['uuid'],
+                            'leveraged by'
+                        )
+                    ]
+                )
+
+    def test_internal_related_ttp_to_a_galaxy_cluster_adds_no_reference(self):
+        """A reference to a galaxy cluster is written as a Related_TTP
+        towards the cluster's TTP, which the import reads as a galaxy, not a
+        record: no reference comes back for it, and nothing is reported."""
+        event = test_events.get_event_with_vulnerability_and_weakness_objects()
+        galaxy = get_event_with_attack_pattern_galaxy()['Event']['Galaxy']
+        event['Event']['Galaxy'] = galaxy
+        vulnerability, weakness = event['Event']['Object']
+        vulnerability['ObjectReference'].append(
+            {
+                'uuid': '1e3f6a4b-5c7d-4e8f-8a9b-2c3d4e5f6a7b',
+                'object_uuid': vulnerability['uuid'],
+                'referenced_uuid': galaxy[0]['GalaxyCluster'][0]['uuid'],
+                'relationship_type': 'related-to'
+            }
+        )
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                parser = self._parse_written_misp_export(event, version)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self.assertEqual(
+                    self._object_references(parser.misp_event),
+                    [('vulnerability', weakness['uuid'], 'weakened-by')]
+                )
+
     def test_internal_passive_dns_indicator_round_trips(self):
         """A `passive-dns` object is a named `Custom` object under its
         `network` meta-category: read as the template it names, a `to_ids`
