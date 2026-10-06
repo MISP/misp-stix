@@ -1379,6 +1379,17 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
             )]
         )
 
+    def test_asn_integer_value_goes_native(self):
+        # An integer is the number itself: no handle to tell apart
+        number = self._parse_attribute('AS', 1234).properties
+        self.assertEqual(number.number.value, 1234)
+        autonomous_system = self._parse_object(
+            'asn', (('AS', 'asn', 1234),)
+        ).object_.properties
+        self.assertEqual(autonomous_system.number.value, 1234)
+        self.assertEqual(self._bag(autonomous_system), [])
+        self.assertEqual(self._warnings, [])
+
     def _parse_file_with_pe(self, pe_attributes, section_attributes=()):
         file_uuid = '5f7b9c1d-3e4a-4b82-8c3d-4e5f6a7b8c9d'
         pe_uuid = '6a8c0d2e-4f5b-4c93-9d4e-5f6a7b8c9d0e'
