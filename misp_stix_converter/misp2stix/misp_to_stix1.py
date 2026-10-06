@@ -1693,10 +1693,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if self._objects_to_parse.get('file'):
                 for misp_object in self._objects_to_parse.pop('file').values():
                     try:
-                        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
-                        ids_list, attributes, observable = self._parse_file_with_pe_object(misp_object)
+                        attributes, observable = self._parse_file_with_pe_object(misp_object)
                         record = self._folded_record(misp_object, attributes)
-                        if to_ids or True in ids_list:
+                        if self._fetch_ids_flag(attributes):
                             self._handle_misp_object_with_context(record, observable)
                         else:
                             self._handle_misp_object(record, observable)
@@ -1706,10 +1705,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 for misp_object in self._objects_to_parse.pop('pe').values():
                     try:
                         file_object = WinExecutableFile()
-                        ids_list, attributes = self._parse_pe_object(file_object, misp_object)
+                        attributes = self._parse_pe_object(file_object, misp_object)
                         observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
                         record = self._folded_record(misp_object, attributes)
-                        if True in ids_list:
+                        if self._fetch_ids_flag(attributes):
                             self._handle_misp_object_with_context(record, observable)
                         else:
                             self._handle_misp_object(record, observable)
@@ -1730,9 +1729,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _folded_record(misp_object: dict, attributes: list) -> dict:
         """The record a `file` or a lone `pe` is written as, once the objects
         it references are folded into its CybOX object: the object itself,
-        holding the attributes of every object folded in, so the markings
-        written for it - and the warnings about those it cannot carry - are
-        those of all of them, not of the `file` or the `pe` alone.
+        holding the attributes of every object folded in. Its `to_ids`, the
+        markings written for it and the warnings about those it cannot carry
+        are those of all of them, not of the `file` or the `pe` alone. A
+        section written standalone is not folded in and counts for none.
 
         :param misp_object: the `file` or the lone `pe`
         :param attributes: its attributes and those of the objects folded in
@@ -2300,7 +2300,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observables
 
     def _parse_file_with_pe_object(self, misp_object: dict) -> tuple:
-        ids_list = [self._fetch_ids_flag(misp_object['Attribute'])]
         folded = list(misp_object['Attribute'])
         attributes = self._extract_file_attributes(misp_object['Attribute'])
         observables = self._parse_file_observables(attributes)
@@ -2310,11 +2309,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if self._check_reference(reference, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
                 try:
-                    pe_ids, pe_attributes = self._parse_pe_object(
-                        file_object, misp_pe
-                    )
-                    ids_list.extend(pe_ids)
-                    folded.extend(pe_attributes)
+                    folded.extend(self._parse_pe_object(file_object, misp_pe))
                 except Exception as exception:
                     self._object_error(misp_pe, exception)
                 break
@@ -2326,8 +2321,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 misp_object['uuid'],
                 name=misp_object['name']
             )
-            return ids_list, folded, observable_composition
-        return ids_list, folded, file_observable
+            return folded, observable_composition
+        return folded, file_observable
 
     def _parse_ip_port_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
@@ -2436,8 +2431,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_pe_object(self, file_object: WinExecutableFile,
-                         misp_pe: dict) -> tuple:
-        ids_list = [self._fetch_ids_flag(misp_pe['Attribute'])]
+                         misp_pe: dict) -> list:
         folded = list(misp_pe['Attribute'])
         attributes, repeated = self._extract_single_field_attributes(
             misp_pe['Attribute'], self._mapping.pe_single_fields()
@@ -2516,14 +2510,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                             self._write_custom_object(misp_pe_section)
                         else:
                             self._append_pe_section(file_object, pe_section)
-                            # One written standalone carries its own markings
+                            # Only a folded section counts: one written
+                            # standalone carries its own markings and its
+                            # own `to_ids`
                             folded.extend(misp_pe_section['Attribute'])
                     except Exception as exception:
                         self._object_error(misp_pe_section, exception)
-                    ids_list.append(
-                        self._fetch_ids_flag(misp_pe_section['Attribute'])
-                    )
-        return ids_list, folded
+        return folded
 
     @staticmethod
     def _append_pe_section(file_object: WinExecutableFile,
