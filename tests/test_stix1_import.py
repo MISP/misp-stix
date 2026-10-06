@@ -6612,6 +6612,69 @@ class TestSTIX1Import(TestSTIX):
         self.assertIn(repr('state'), warnings[0])
         self.assertIn(f'MISP:File-{_OBSERVABLE_UUID}', warnings[0])
 
+    def test_external_related_indicators_are_parsed(self):
+        """An Indicator's related Indicators are read through the relation
+        wrapping them: reading the wrapper as an Indicator crashed the
+        conversion of the whole package."""
+        indicator = Indicator()
+        indicator.related_indicators.append(
+            RelatedIndicator(self._domain_indicator('circl.lu'))
+        )
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [attribute.value for attribute in parser.misp_event.attributes],
+            ['circl.lu']
+        )
+
+    def test_external_indicator_with_related_indicators_keeps_its_own_content(self):
+        indicator = self._ip_indicator('8.8.8.8')
+        indicator.related_indicators.append(
+            RelatedIndicator(self._domain_indicator('circl.lu'))
+        )
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            sorted(
+                attribute.value for attribute in parser.misp_event.attributes
+            ),
+            ['8.8.8.8', 'circl.lu']
+        )
+
+    def test_external_indicator_read_from_xml_without_related_indicators_converts(self):
+        """An Indicator read from XML holds no related Indicators list at all
+        when it names none, unlike one built in memory."""
+        stix_package = STIXPackage()
+        stix_package.add_indicator(self._domain_indicator('circl.lu'))
+        stix_package = STIXPackage.from_xml(BytesIO(stix_package.to_xml()))
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [attribute.value for attribute in parser.misp_event.attributes],
+            ['circl.lu']
+        )
+
+    def test_external_related_indicator_given_by_reference_converts_once(self):
+        """A related Indicator given by reference alone is converted where
+        the package gives its content, not a second time as the relation."""
+        related = self._domain_indicator('circl.lu')
+        indicator = self._ip_indicator('8.8.8.8')
+        indicator.related_indicators.append(
+            RelatedIndicator(Indicator(idref=related.id_))
+        )
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        stix_package.add_indicator(related)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            sorted(
+                attribute.value for attribute in parser.misp_event.attributes
+            ),
+            ['8.8.8.8', 'circl.lu']
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+
     @staticmethod
     def _yara_test_mechanism():
         test_mechanism = YaraTestMechanism()
