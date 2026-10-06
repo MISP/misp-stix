@@ -11,9 +11,9 @@ from misp_stix_converter import (InvalidMISPInputError, MISPtoSTIX1AttributesPar
                                  misp_event_collection_to_stix1, misp_to_stix1)
 from misp_stix_converter import misp_stix_converter as converter_module
 from misp_stix_converter.tools.stix1_framing import (
-    _handle_namespaces, _scoped_id_namespace)
+    NS_DICT, _handle_namespaces, _scoped_id_namespace)
 from mixbox import idgen
-from mixbox.namespaces import Namespace
+from mixbox.namespaces import Namespace, lookup_name
 from pymisp import MISPEvent
 from shutil import copyfile
 from tempfile import TemporaryDirectory
@@ -3347,6 +3347,15 @@ class TestSTIX1NamespaceParameter(_STIX1NamespaceTestCase):
             ],
             'MISP'
         )
+
+    def test_declared_prefixes_are_the_ones_the_libraries_write(self):
+        # python-stix and cybox write an extension's `xsi:type` with the
+        # prefix they register for its namespace, whatever the framing
+        # declares: any other prefix leaves that `xsi:type` undeclared, and
+        # the document cannot be loaded back
+        for namespace, prefix in NS_DICT.items():
+            with self.subTest(namespace=namespace):
+                self.assertEqual(prefix, lookup_name(namespace))
 
 
 class TestSTIX1IdNamespaceScope(_STIX1NamespaceTestCase):

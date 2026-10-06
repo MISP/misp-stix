@@ -44,7 +44,9 @@ from datetime import datetime, timezone
 from io import BytesIO
 from misp_stix_converter import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser,
-    MissingSTIXContentError, stix_1_to_misp, STIXLoadingError)
+    MissingSTIXContentError, misp_attribute_collection_to_stix1,
+    misp_event_collection_to_stix1, misp_to_stix1, stix_1_to_misp,
+    STIXLoadingError)
 from misp_stix_converter.abstract import _UUIDv4
 from misp_stix_converter.tools import (
     is_stix1_from_misp, load_stix1_package, stix1_loading_helpers)
@@ -1884,6 +1886,92 @@ class TestSTIX1Import(TestSTIX):
                     )
                 else:
                     self.assertEqual(converted_attribute.uuid, attribute['uuid'])
+
+    def _export_target_attributes_to_file(self, tmp_dir, export, version,
+                                          **kwargs):
+        """Write the `target-*` attributes event the way `export` writes it
+        and return the file written. A collection export is given two inputs:
+        with one, it writes the bare package and never reaches its own
+        framing."""
+        event = get_event_with_target_attributes()
+        if export is misp_attribute_collection_to_stix1:
+            event = event['Event']['Attribute']
+        filename = Path(tmp_dir) / 'input.json'
+        filename.write_text(json.dumps(event))
+        inputs = (filename,) if export is misp_to_stix1 else (filename, filename)
+        results = export(
+            *inputs, return_format='xml', version=version,
+            output_name=Path(tmp_dir) / 'exported.xml', **kwargs
+        )
+        self.assertEqual(results['success'], 1)
+        return results['results'][0]
+
+    def test_misp_export_with_ciq_identities_loads_back_from_file(self):
+        """A CIQ identity is written with python-stix's own `xsi:type`
+        prefix, so the namespace the framing declares has to carry that very
+        prefix: under another one, the written XML names an undeclared prefix
+        and the whole document fails to load. The in-memory round trip of the
+        same event never serialises the package, so it cannot see this."""
+        exports = (
+            ('event', misp_to_stix1, {}),
+            (
+                'events collection', misp_event_collection_to_stix1,
+                {'single_output': True}
+            ),
+            (
+                'events collection in memory', misp_event_collection_to_stix1,
+                {'single_output': True, 'in_memory': True}
+            ),
+            (
+                'attributes collection', misp_attribute_collection_to_stix1,
+                {'single_output': True}
+            )
+        )
+        for version in ('1.1.1', '1.2'):
+            for name, export, kwargs in exports:
+                with self.subTest(version=version, export=name), \
+                        TemporaryDirectory() as tmp_dir:
+                    self.assertIsInstance(
+                        load_stix1_package(
+                            self._export_target_attributes_to_file(
+                                tmp_dir, export, version, **kwargs
+                            )
+                        ),
+                        STIXPackage
+                    )
+
+    def test_misp_collection_export_with_ciq_identities_reads_back_from_file(self):
+        """Loaded from the file, the CIQ identities of the `target-*`
+        attributes read back as the attributes they were written from."""
+        attributes = get_event_with_target_attributes()['Event']['Attribute']
+        exports = (
+            (misp_event_collection_to_stix1, {'in_memory': True}),
+            (misp_attribute_collection_to_stix1, {})
+        )
+        for version in ('1.1.1', '1.2'):
+            for export, kwargs in exports:
+                with self.subTest(version=version, export=export.__name__), \
+                        TemporaryDirectory() as tmp_dir:
+                    results = stix_1_to_misp(
+                        self._export_target_attributes_to_file(
+                            tmp_dir, export, version, single_output=True,
+                            **kwargs
+                        ),
+                        single_event=True, classification='internal',
+                        output_dir=tmp_dir
+                    )
+                    self.assertNotIn('errors', results)
+                    converted = json.loads(results['results'][0].read_text())
+                    self.assertEqual(
+                        {
+                            (attribute['type'], attribute['value'])
+                            for attribute in converted['Attribute']
+                        },
+                        {
+                            (attribute['type'], attribute['value'])
+                            for attribute in attributes
+                        }
+                    )
 
     def test_internal_affected_asset_description_is_split_on_the_last_parenthesis(self):
         """The export writes `{value} ({comment})` as the description of the
