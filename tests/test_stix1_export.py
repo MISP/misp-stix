@@ -1512,12 +1512,20 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
             self._bag(custom.properties),
             [('entropy', '0x1f'), ('name', '.text')]
         )
+        # The pe is folded into the file's object, the section is not: the
+        # reference between them has no Object of the pe to go on
         self.assertEqual(
             self._warnings,
-            [self._warning(
-                'entropy', '0x1f', kind='decimal number',
-                record=f'pe-section object (uuid: {section_uuid})'
-            )]
+            [
+                self._warning(
+                    'entropy', '0x1f', kind='decimal number',
+                    record=f'pe-section object (uuid: {section_uuid})'
+                ),
+                "Reference 'includes' from the pe object (uuid: "
+                "6a8c0d2e-4f5b-4c93-9d4e-5f6a7b8c9d0e) to the pe-section "
+                f"object (uuid: {section_uuid}) not converted: the STIX 1 "
+                "document has no slot of the source naming the target."
+            ]
         )
 
 
@@ -2590,9 +2598,11 @@ class TestSTIX1RegistryKeyValueReferences(TestSTIX):
                     'Contains'
                 )
 
-    def test_reference_to_anything_else_writes_nothing(self):
-        """A reference to an object that is no `registry-key-value` of the
-        event points at no Observable the export writes for one."""
+    def test_reference_to_anything_else(self):
+        """A reference to a record the event does not hold points at no
+        Observable: nothing is written. One to an object that is no
+        `registry-key-value`, written as a single CybOX Object too, is a
+        Related_Object all the same."""
         event = self._event(False)
         registry_key = event['Event']['Object'][0]
         registry_key['ObjectReference'][0]['referenced_uuid'] = (
@@ -2604,7 +2614,10 @@ class TestSTIX1RegistryKeyValueReferences(TestSTIX):
                 cybox_object = self._cybox_objects(event, version)[
                     f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
                 ]
-                self.assertEqual(list(cybox_object.related_objects), [])
+                self.assertEqual(
+                    [related.idref for related in cybox_object.related_objects],
+                    [f'{_ORGNAME_ID}:Custom-{self._VALUE_UUIDS[1]}']
+                )
 
     def test_reference_to_a_value_the_export_loses_writes_nothing(self):
         """A value whose own export fails, its fallback with it, is lost
@@ -2647,6 +2660,229 @@ class TestSTIX1RegistryKeyValueReferences(TestSTIX):
                         b'Related_Object',
                         cybox_object.to_xml(include_namespaces=False)
                     )
+
+
+class TestSTIX1ObjectReferences(TestSTIX):
+    """A reference from a MISP object written as a single CybOX Object to a
+    record written as one too is a Related_Object on the source's Object,
+    pointing at the target's - a CybOX ObjectRelationship term where the
+    relationship is one, free text otherwise. Every other reference the
+    export cannot write is named in one Warning."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _FILE_UUID = '4b2a0e1c-7d3f-4e5a-9b6c-8d7e6f5a4b3c'
+    _IP_UUID = '6c5d4e3f-2a1b-4c0d-8e9f-a0b1c2d3e4f5'
+
+    @staticmethod
+    def _event(to_ids, relationship='downloaded-from'):
+        event = get_event_with_file_object_referencing_an_attribute()
+        event['Event']['Attribute'][0]['to_ids'] = to_ids
+        misp_object, = event['Event']['Object']
+        for attribute in misp_object['Attribute']:
+            attribute['to_ids'] = to_ids
+        misp_object['ObjectReference'][0]['relationship_type'] = relationship
+        return event
+
+    @staticmethod
+    def _parse(event, version, as_misp_event=False):
+        if as_misp_event:
+            misp_event = MISPEvent()
+            misp_event.from_dict(**event)
+            event = misp_event
+        else:
+            event = event['Event']
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event)
+        return parser
+
+    @staticmethod
+    def _cybox_objects(parser):
+        """The single CybOX Objects the export writes, by id."""
+        incident = parser.stix_package.incidents[0]
+        observables = [
+            related.item.observable
+            for related in incident.related_indicators.indicator
+        ] if incident.related_indicators else []
+        if incident.related_observables:
+            observables.extend(
+                related.item
+                for related in incident.related_observables.observable
+            )
+        return {
+            observable.object_.id_: observable.object_
+            for observable in observables if observable.object_ is not None
+        }
+
+    @staticmethod
+    def _warnings(parser):
+        return parser.warnings.get(get_base_event()['Event']['uuid'], [])
+
+    def test_reference_to_an_attribute_is_a_related_object(self):
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                for as_misp_event in (False, True):
+                    with self.subTest(
+                            version=version, to_ids=to_ids,
+                            as_misp_event=as_misp_event):
+                        parser = self._parse(
+                            self._event(to_ids), version, as_misp_event
+                        )
+                        self.assertEqual(parser.errors, {})
+                        self.assertEqual(self._warnings(parser), [])
+                        cybox_objects = self._cybox_objects(parser)
+                        file_object = cybox_objects[
+                            f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                        ]
+                        related, = file_object.related_objects
+                        self.assertEqual(
+                            related.idref,
+                            f'{_ORGNAME_ID}:Address-{self._IP_UUID}'
+                        )
+                        self.assertIn(related.idref, cybox_objects)
+                        self.assertIsNone(related.properties)
+                        self.assertEqual(
+                            related.relationship.value, 'Downloaded_From'
+                        )
+                        self.assertEqual(
+                            related.relationship.xsi_type,
+                            'cyboxVocabs:ObjectRelationshipVocab-1.1'
+                        )
+
+    def test_vocabulary_term_matched_whatever_the_separator_and_case(self):
+        """`Sub-domain_Of` mixes both separators: the term is matched from
+        the vocabulary, not spelled by a rule."""
+        for relationship, term in (('Downloaded_From', 'Downloaded_From'),
+                                   ('sub-domain-of', 'Sub-domain_Of'),
+                                   ('SUB_DOMAIN_OF', 'Sub-domain_Of')):
+            for version in self._VERSIONS:
+                with self.subTest(relationship=relationship, version=version):
+                    parser = self._parse(
+                        self._event(False, relationship), version
+                    )
+                    related, = self._cybox_objects(parser)[
+                        f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                    ].related_objects
+                    self.assertEqual(related.relationship.value, term)
+                    self.assertEqual(
+                        related.relationship.xsi_type,
+                        'cyboxVocabs:ObjectRelationshipVocab-1.1'
+                    )
+
+    def test_other_relationship_is_free_text(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(
+                    self._event(False, 'fetched-over'), version
+                )
+                related, = self._cybox_objects(parser)[
+                    f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                ].related_objects
+                self.assertEqual(related.relationship.value, 'fetched-over')
+                self.assertIsNone(related.relationship.xsi_type)
+
+    def test_reference_to_a_target_the_export_loses_is_warned(self):
+        """An object whose own export fails, its fallback with it, is lost
+        with an Error: the file points at no Object missing from the
+        document."""
+        event = self._event(True)
+        event['Event']['Attribute'] = []
+        event['Event']['Object'].append(
+            {
+                'name': 'mutex',
+                'meta-category': 'misc',
+                'description': 'Object to describe mutual exclusion locks',
+                'uuid': self._IP_UUID,
+                'timestamp': 'not-a-time',
+                'Attribute': [
+                    {
+                        'uuid': 'a0b9c8d7-6e5f-4a4b-8c3d-e4f5a6b7c8d9',
+                        'type': 'text',
+                        'category': 'Other',
+                        'object_relation': 'name',
+                        'value': 'MutexTest',
+                        'to_ids': True,
+                        'timestamp': '1603642920'
+                    }
+                ]
+            }
+        )
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertNotEqual(parser.errors, {})
+                file_object = self._cybox_objects(parser)[
+                    f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                ]
+                self.assertEqual(list(file_object.related_objects), [])
+                warning, = self._warnings(parser)
+                self.assertIn(self._FILE_UUID, warning)
+                self.assertIn('downloaded-from', warning)
+                self.assertIn(self._IP_UUID, warning)
+
+    def test_reference_to_a_record_the_event_does_not_hold_is_warned(self):
+        event = self._event(False)
+        event['Event']['Attribute'] = []
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                file_object = self._cybox_objects(parser)[
+                    f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                ]
+                self.assertEqual(list(file_object.related_objects), [])
+                warning, = self._warnings(parser)
+                self.assertIn(self._IP_UUID, warning)
+
+    def test_references_with_no_single_object_end_are_warned(self):
+        """Every reference of the fixture touches an `ip-port` composition,
+        a TTP or a Course of Action: none is written, each is warned once."""
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = get_event_with_object_references()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    parser = self._parse(event, version)
+                    self.assertEqual(parser.errors, {})
+                    for cybox_object in self._cybox_objects(parser).values():
+                        self.assertEqual(
+                            list(cybox_object.related_objects or ()), []
+                        )
+                    warned = [
+                        warning for warning in self._warnings(parser)
+                        if warning.startswith('Reference ')
+                    ]
+                    references = [
+                        (misp_object['uuid'], reference)
+                        for misp_object in event['Event']['Object']
+                        for reference in misp_object['ObjectReference']
+                    ]
+                    self.assertEqual(len(warned), len(references))
+                    for source_uuid, reference in references:
+                        self.assertEqual(
+                            len(
+                                [
+                                    warning for warning in warned
+                                    if source_uuid in warning
+                                    and reference['relationship_type'] in warning
+                                    and reference['referenced_uuid'] in warning
+                                ]
+                            ),
+                            1
+                        )
+
+    def test_related_ttp_reference_is_not_warned(self):
+        event = get_event_with_vulnerability_and_weakness_objects()
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(
+                    [
+                        warning for warning in self._warnings(parser)
+                        if warning.startswith('Reference ')
+                    ],
+                    []
+                )
 
 
 class _STIX1NamespaceTestCase(TestSTIX):

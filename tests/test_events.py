@@ -6231,6 +6231,60 @@ def get_event_with_file_object():
     return event
 
 
+def get_event_with_file_object_referencing_an_attribute():
+    file_uuid = '4b2a0e1c-7d3f-4e5a-9b6c-8d7e6f5a4b3c'
+    ip_uuid = '6c5d4e3f-2a1b-4c0d-8e9f-a0b1c2d3e4f5'
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": ip_uuid,
+            "type": "ip-src",
+            "category": "Network activity",
+            "value": "1.2.3.4",
+            "to_ids": False,
+            "timestamp": "1603642920"
+        }
+    ]
+    event['Event']['Object'] = [
+        {
+            "name": "file",
+            "meta-category": "file",
+            "description": "File object describing a file",
+            "uuid": file_uuid,
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "uuid": "7d6e5f4a-3b2c-4d1e-9f0a-b1c2d3e4f5a6",
+                    "type": "filename",
+                    "category": "Payload delivery",
+                    "object_relation": "filename",
+                    "value": "oui",
+                    "to_ids": False,
+                    "timestamp": "1603642920"
+                },
+                {
+                    "uuid": "8e7f6a5b-4c3d-4e2f-8a1b-c2d3e4f5a6b7",
+                    "type": "md5",
+                    "category": "Payload delivery",
+                    "object_relation": "md5",
+                    "value": "b2a5abfeef9e36964281a31e17b57c97",
+                    "to_ids": False,
+                    "timestamp": "1603642920"
+                }
+            ],
+            "ObjectReference": [
+                {
+                    "uuid": "9f8a7b6c-5d4e-4f3a-9b2c-d3e4f5a6b7c8",
+                    "object_uuid": file_uuid,
+                    "referenced_uuid": ip_uuid,
+                    "relationship_type": "downloaded-from"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_geolocation_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
