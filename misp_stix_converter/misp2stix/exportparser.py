@@ -309,6 +309,11 @@ class MISPtoSTIXParser(AbstractParser):
         )
         tb = self._parse_traceback(exception)
         self._add_error(f"Error with the {features}:\n{tb}.")
+        self._write_custom_attribute(attribute)
+
+    def _write_custom_attribute(self, attribute: dict):
+        """The attribute error fallback: the custom attribute route adds the
+        attribute to the results itself."""
         self._parse_custom_attribute(attribute)
 
     def _attribute_galaxy_not_mapped_warning(

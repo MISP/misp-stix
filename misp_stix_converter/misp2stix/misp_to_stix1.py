@@ -279,6 +279,22 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable = self._create_observable(custom_object, attribute['uuid'], 'Custom')
         self._handle_attribute(attribute, observable)
 
+    def _write_custom_attribute(self, attribute: dict):
+        """The attribute error fallback: the attribute a route failed on goes
+        out as a `Custom` Observable.
+
+        :param attribute: the MISP attribute the export failed on
+        """
+        try:
+            self._parse_custom_attribute(attribute)
+        except Exception:
+            # The Observable is written the way the failed route writes its
+            # own, from the same attribute fields: what failed there - a
+            # timestamp the Indicator cannot parse - fails here again, with
+            # nothing left to catch it. The attribute is lost, and the error
+            # already says so
+            return
+
     def _parse_domain_attribute(self, attribute: dict):
         observable = self._create_domain_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
