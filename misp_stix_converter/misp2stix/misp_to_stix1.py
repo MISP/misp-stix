@@ -224,7 +224,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_autonomous_system_attribute(self, attribute: dict):
         value = attribute['value']
-        if not value.startswith('AS'):
+        if not self._is_as_handle(value):
             if not self._canonical_attribute_integer(attribute, value):
                 return
         autonomous_system = self._create_autonomous_system_object(value)
@@ -883,9 +883,14 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return observable
 
     @staticmethod
-    def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
+    def _is_as_handle(AS: Any) -> bool:
+        # An integer is the number itself, never an `AS`-prefixed handle
+        return isinstance(AS, str) and AS.startswith('AS')
+
+    def _create_autonomous_system_object(
+            self, AS: Union[int, str]) -> AutonomousSystem:
         autonomous_system = AutonomousSystem()
-        feature = 'handle' if AS.startswith('AS') else 'number'
+        feature = 'handle' if self._is_as_handle(AS) else 'number'
         setattr(autonomous_system, feature, AS)
         setattr(getattr(autonomous_system, feature), 'condition', 'Equals')
         return autonomous_system
@@ -2171,7 +2176,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             self._required_relation_missing_error(misp_object, 'asn')
             return None
         asn = attributes['asn']
-        if asn.startswith('AS') or self._canonical_integer(
+        if self._is_as_handle(asn) or self._canonical_integer(
                 asn, 'asn', self._object_features(misp_object)):
             as_object = self._create_autonomous_system_object(
                 attributes.pop('asn')
