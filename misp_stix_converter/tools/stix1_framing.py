@@ -56,7 +56,7 @@ NS_DICT = Mapping(
         "http://stix.mitre.org/ThreatActor-1": 'ta',
         "http://stix.mitre.org/common-1": 'stixCommon',
         "http://stix.mitre.org/default_vocabularies-1": 'stixVocabs',
-        "http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1": 'ciqIdentity',
+        "http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1": 'stix-ciqidentity',
         "http://stix.mitre.org/extensions/TestMechanism#Snort-1": 'snortTM',
         "http://stix.mitre.org/extensions/TestMechanism#YARA-1": 'yaraTM',
         "http://stix.mitre.org/stix-1": 'stix',
