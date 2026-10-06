@@ -164,21 +164,11 @@ _SNORT_RULES = (
 )
 
 
-# Why a relation still goes missing on the way back, one cause per row below
-# `group` is on the wire, in a carrier nothing reads: a reader missing, not a
-# relation the export never wrote
-_GROUP_LIST_UNREAD = 'the `group_list` carrier is never read'
-
 # What a STIX 1 round trip of every MISP object fixture still loses, per
 # object: its name, the object relations that do not come back, the ones that
-# come back under a name the MISP object never had, and why. 717 of 719
-# object attributes survive; the rest is work still to do, and this table is
-# where its progress is visible.
-_CORPUS_ROUND_TRIP_LOSSES = {
-    ('get_event_with_user_account_objects', 2): (
-        'user-account', ('group', 'group'), (), _GROUP_LIST_UNREAD
-    )
-}
+# come back under a name the MISP object never had, and why. Every object
+# attribute survives; a row lands here, with its cause, when one stops.
+_CORPUS_ROUND_TRIP_LOSSES = {}
 
 # A `cdhash` is 40 hexadecimal characters, the length of a sha1; an `impfuzzy`
 # has the `blocksize:hash:hash` shape of an ssdeep. Neither is in the fixture
@@ -2971,10 +2961,9 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 753 of the 755 object attributes come back, and every row
-        below says why the rest do not. `n -> n` is not the assertion - the
-        work is not over - and the table is what fails on a regression and on
-        an improvement nobody wrote down."""
+        still loses: all 755 object attributes come back, and a row would say
+        why one did not. The table is what fails on a regression and on an
+        improvement nobody wrote down."""
         losses = {}
         for name, event in self._object_fixtures():
             exported = event['Event']['Object']
