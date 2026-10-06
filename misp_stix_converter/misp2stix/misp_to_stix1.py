@@ -1740,11 +1740,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     except Exception as exception:
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe-section'):
-                # No `pe` references these: no executable to fold them into
+                # No `pe` references these, or the `pe` failed: no executable
+                # to fold them into. The template is mapped under a `pe`, so
+                # the `Custom` Observable comes with no "not mapped" warning
                 for misp_object in self._objects_to_parse.pop('pe-section').values():
                     try:
                         to_ids = self._fetch_ids_flag(misp_object['Attribute'])
-                        observable = self._parse_custom_object(misp_object)
+                        observable = self._create_custom_observable(misp_object)
                         self._handle_object_observable(misp_object, observable, to_ids)
                     except Exception as exception:
                         self._object_error(misp_object, exception)
