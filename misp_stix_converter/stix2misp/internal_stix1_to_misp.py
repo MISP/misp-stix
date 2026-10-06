@@ -69,12 +69,15 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         # event mode to ask for, like the External one it sits next to
         self._set_single_event(True)
         self._set_misp_event(MISPEvent())
-        # The event export relates one package per event to the wrapper it
-        # writes; an Attribute Collection writes its content on the package
-        # itself, with no Incident to relate anything to
+        # The events collection export relates one package per event to the
+        # wrapper it writes, the event export writes the package of its one
+        # event as the document; an Attribute Collection writes its content
+        # on the package itself, with no Incident to relate anything to
         if self.stix_package.related_packages:
             for item in self.stix_package.related_packages.related_package:
                 self._parse_event_package(item.item)
+        elif self.stix_package.incidents:
+            self._parse_event_package(self.stix_package)
         else:
             self._parse_attributes_collection(self.stix_package)
         self._set_distribution()
@@ -116,8 +119,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self._parse_package_context(package)
 
     def _parse_event_package(self, package: STIXPackage):
-        """Convert one related package of a MISP event export: its Incident
-        and the context objects it leverages.
+        """Convert the package of one MISP event - related to the document
+        or the document itself: its Incident and the context objects it
+        leverages.
 
         :param package: the package the event was exported as
         """
