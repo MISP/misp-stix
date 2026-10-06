@@ -1858,6 +1858,75 @@ class TestSTIX1ObjectErrorFallback(TestSTIX):
                     )
 
 
+class TestSTIX1AttributeErrorFallback(TestSTIX):
+    """An attribute the `Custom` Observable fallback fails on as well is lost,
+    with its error: retrying the route that just raised raises again, with
+    nothing left to catch it."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    @staticmethod
+    def _failing_attribute(event):
+        # The Indicator parses the timestamp, on the mapped route and on the
+        # fallback alike
+        attribute = event['Event']['Attribute'][0]
+        attribute['to_ids'] = True
+        attribute['timestamp'] = 'not a timestamp'
+        return attribute
+
+    def _assert_one_error(self, parser, attribute):
+        errors, = parser.errors.values()
+        self.assertEqual(len(errors), 1)
+        self.assertIn(
+            f"Error with the {attribute['type']} attribute: "
+            f"{attribute['value']} (uuid: {attribute['uuid']})", errors[0]
+        )
+
+    def test_failing_event_attribute_is_not_retried(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                first = get_event_with_domain_attribute()
+                attribute = self._failing_attribute(first)
+                second = get_event_with_domain_attribute()
+                second['Event']['uuid'] = '31f0d1b0-8a2f-4e18-9a0e-2f5b6c7d8e90'
+                second['Event']['Attribute'][0]['to_ids'] = True
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                parser.parse_json_content({'response': [first, second]})
+                self.assertEqual(
+                    list(parser.errors), [first['Event']['uuid']]
+                )
+                self._assert_one_error(parser, attribute)
+                first_package, second_package = (
+                    parser.stix_package.related_packages
+                )
+                first_incident = first_package.item.incidents[0]
+                self.assertEqual(len(first_incident.related_indicators), 0)
+                self.assertEqual(len(first_incident.related_observables), 0)
+                self.assertEqual(
+                    len(second_package.item.incidents[0].related_indicators),
+                    1
+                )
+
+    def test_failing_collection_attribute_is_not_retried(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                attribute = self._failing_attribute(
+                    get_event_with_domain_attribute()
+                )
+                other = get_event_with_domain_attribute()['Event']['Attribute'][0]
+                other['uuid'] = '4a5b6c7d-8e9f-4a0b-9c1d-2e3f4a5b6c7d'
+                other['to_ids'] = True
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content(
+                    {'response': {'Attribute': [attribute, other]}}
+                )
+                self._assert_one_error(parser, attribute)
+                indicators = parser.stix_package.indicators
+                self.assertEqual(len(indicators), 1)
+                self.assertIn(other['uuid'], indicators[0].id_)
+                self.assertEqual(len(parser.stix_package.observables or ()), 0)
+
+
 class TestSTIX1PlainObservableComment(TestSTIX):
     """A record exported without `to_ids` is a plain Observable, with no
     Indicator to carry its comment: the Observable's own description carries
