@@ -16,6 +16,7 @@ from mixbox import idgen
 from mixbox.namespaces import Namespace, lookup_name
 from pymisp import MISPEvent
 from shutil import copyfile
+from stix.core import STIXPackage
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4, uuid5, UUID
@@ -8339,6 +8340,49 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
                 ),
                 ['Ali Baba', 'MartyMcFly']
             )
+
+    def _unframed_package(self, output_file: Path, return_format: str) -> dict:
+        with open(output_file, 'rt', encoding='utf-8') as f:
+            if return_format == 'json':
+                return json.load(f)
+        return STIXPackage.from_xml(str(output_file)).to_dict()
+
+    def test_attributes_collection_unframed_output_carries_the_misp_title(self):
+        # Written without `single_output`, the package is the parser's own: it
+        # is the one the framed output ships, titled as a MISP export (the
+        # title is what the import reads to tell a MISP export apart) and
+        # carrying the version it was asked for
+        input_files = self._collection_files('test_attributes_collection')
+        for version in ('1.1.1', '1.2'):
+            for return_format in ('xml', 'json'):
+                for count in (1, 2):
+                    with self.subTest(
+                            version=version, return_format=return_format,
+                            inputs=count), TemporaryDirectory() as tmp_dir:
+                        copies = self._copy_inputs(tmp_dir, *input_files[:count])
+                        results = misp_attribute_collection_to_stix1(
+                            *copies, return_format=return_format,
+                            version=version
+                        )
+                        self.assertEqual(results['success'], 1)
+                        self.assertEqual(len(results['results']), count)
+                        for output_file in results['results']:
+                            package = self._unframed_package(
+                                output_file, return_format
+                            )
+                            self.assertEqual(package['version'], version)
+                            self.assertRegex(
+                                package['id'], r'^MISP:STIXPackage-'
+                            )
+                            self.assertTrue(package.get('timestamp'))
+                            header = package['stix_header']
+                            self.assertEqual(
+                                header['title'], "Export from MISP's MISP"
+                            )
+                            self.assertEqual(
+                                header['package_intent'][0]['value'],
+                                'Threat Report'
+                            )
 
     def test_attribute_collection_export_11(self):
         name = 'test_attributes_collection'

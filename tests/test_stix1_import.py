@@ -4959,6 +4959,76 @@ class TestSTIX1Import(TestSTIX):
                     attributes[attribute['uuid']] = attribute
         return attributes
 
+    def test_internal_attributes_collection_file_round_trip_is_detected_internal(self):
+        """Written without `single_output`, the attributes collection is the
+        parser's own package: titled as a MISP export like the framed one, it
+        reads back Internal with no `classification`, where an untitled one
+        read back External and lost the `campaign-name` silently, the
+        `regkey|value` as a `registry-key` object and the uuid of every
+        rule. Detection is the only Warning."""
+        attributes = [
+            {
+                'uuid': 'c0a7a7e5-4f2a-4d0e-9a3c-1d6c2f5b8e01',
+                'type': 'domain', 'category': 'Network activity',
+                'value': 'circl.lu', 'timestamp': '1603642920'
+            },
+            {
+                'uuid': 'c0a7a7e5-4f2a-4d0e-9a3c-1d6c2f5b8e02',
+                'type': 'snort', 'category': 'Network activity',
+                'value': 'alert http any 443 -> 8.8.8.8 any',
+                'to_ids': True, 'timestamp': '1603642920'
+            },
+            {
+                'uuid': 'c0a7a7e5-4f2a-4d0e-9a3c-1d6c2f5b8e03',
+                'type': 'yara', 'category': 'Payload installation',
+                'value': 'rule test { condition: true }',
+                'to_ids': True, 'timestamp': '1603642920'
+            },
+            {
+                'uuid': 'c0a7a7e5-4f2a-4d0e-9a3c-1d6c2f5b8e04',
+                'type': 'campaign-name', 'category': 'Attribution',
+                'value': 'MartyMcFly', 'timestamp': '1603642920'
+            },
+            {
+                'uuid': 'c0a7a7e5-4f2a-4d0e-9a3c-1d6c2f5b8e05',
+                'type': 'regkey|value', 'category': 'Persistence mechanism',
+                'value': 'HKLM\\Software\\mykey|%DATA%\\qwertyuiop',
+                'timestamp': '1603642920'
+            }
+        ]
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version), TemporaryDirectory() as tmp_dir:
+                filename = Path(tmp_dir) / 'attributes.json'
+                filename.write_text(json.dumps({'Attribute': attributes}))
+                exported = misp_attribute_collection_to_stix1(
+                    filename, return_format='xml', version=version
+                )
+                self.assertEqual(exported['success'], 1)
+                results = stix_1_to_misp(
+                    exported['results'][0], single_event=True,
+                    output_dir=tmp_dir
+                )
+                self.assertEqual(results['success'], 1)
+                self.assertNotIn('errors', results)
+                warnings = [
+                    warning for warnings in results['warnings'].values()
+                    for warning in warnings
+                ]
+                self.assertEqual(len(warnings), 1)
+                self.assertIn('selected from the document content', warnings[0])
+                misp_event = self._load_misp_event(results['results'][0])
+                self.assertEqual(misp_event.objects, [])
+                self.assertEqual(
+                    {
+                        attribute.uuid: (attribute.type, attribute.value)
+                        for attribute in misp_event.attributes
+                    },
+                    {
+                        attribute['uuid']: (attribute['type'], attribute['value'])
+                        for attribute in attributes
+                    }
+                )
+
     def test_internal_attributes_collection_export_reads_back(self):
         """The attribute-level export - what `stix1_attributes_framing` frames -
         carries its Indicators and Observables on the package itself, with no
