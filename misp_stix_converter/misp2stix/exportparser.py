@@ -548,6 +548,14 @@ class MISPtoSTIXParser(AbstractParser):
             f'{value!r} not converted.'
         )
 
+    def _unwritten_object_reference_warning(
+            self, source: str, relationship: str, target: str):
+        self._add_warning(
+            f'Reference {relationship!r} from the {source} to the {target} '
+            'not converted: the STIX 1 document has no slot of the source '
+            'naming the target.'
+        )
+
     def _validation_errors(self, *messages: tuple[str]):
         for message in messages:
             self._add_error(message, self.identifier)

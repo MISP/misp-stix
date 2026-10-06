@@ -14,7 +14,7 @@ from cybox.core import Observable, ObservableComposition, RelatedObject
 from cybox.common import Hash, HashList, ByteRun, ByteRuns
 from cybox.common.hashes import _set_hash_type
 from cybox.common.object_properties import CustomProperties,  Property
-from cybox.common.vocabs import VocabString
+from cybox.common.vocabs import ObjectRelationship, VocabString
 from cybox.objects.account_object import Authentication, StructuredAuthenticationMechanism
 from cybox.objects.address_object import Address
 from cybox.objects.artifact_object import Artifact, RawArtifact
@@ -97,6 +97,14 @@ _MISP_BOOLEAN_SPELLINGS = {
 # written without one carries that title itself, which every other object
 # Observable goes without
 _TITLED_OBSERVABLE_OBJECT_NAMES = ('credential',)
+# The CybOX ObjectRelationship terms, by the MISP relationship spelling each
+# one matches whatever its case and separators: taken from the vocabulary
+# rather than spelled by a rule, `Sub-domain_Of` mixing both separators
+_OBJECT_RELATIONSHIP_TERMS = {
+    term.lower().replace('_', '-'): term
+    for name, term in vars(ObjectRelationship).items()
+    if name.startswith('TERM_')
+}
 _NON_INDICATOR_OBJECT_TYPES = Union[Campaign, CourseOfAction, TTP]
 _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
@@ -1534,8 +1542,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._contextualised_data = set()
         self._ids = set()
         self._ttp_references = {}
-        self._registry_key_value_references = []
-        self._written_registry_key_values = set()
+        self._written_cybox_objects = {}
+        self._folding_references = set()
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
@@ -1545,20 +1553,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._stix_package = self._create_stix_package()
         self._incident = self._create_incident()
         self._generate_stix_objects()
-        if self._stix_package.ttps is not None:
-            for ttp in self._stix_package.ttps.ttp:
-                uuid = '-'.join(ttp.id_.split('-')[-5:])
-                if uuid in self._ttp_references:
-                    for referenced_uuid, relationship in self._ttp_references[uuid]:
-                        if referenced_uuid in self._contextualised_data:
-                            referenced_id = f'{self._orgname_id}:TTP-{referenced_uuid}'
-                            timestamp = self._quick_fetch_ttp_timestamp(referenced_id)
-                            related_ttp = self._create_related_ttp(
-                                f'{self._orgname_id}:TTP-{referenced_uuid}',
-                                relationship,
-                                timestamp=timestamp
-                            )
-                            ttp.add_related_ttp(related_ttp)
+        self._write_object_references()
         # The header holds one description: with more than one attribute
         # meant for it, each goes to the journal like the others of its type
         if len(self._header_description_attributes) > 1:
@@ -1658,6 +1653,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 relationship=category
             )
             self._incident.related_observables.append(related_observable)
+        self._written_cybox_objects[attribute['uuid']] = observable.object_
 
     def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
         ciq_identity = self._create_ciq_identity_instance(attribute, identity_spec)
@@ -1727,7 +1723,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         self._handle_object_observable(misp_object, observable, to_ids)
                     except Exception as exception:
                         self._object_error(misp_object, exception)
-        self._drop_unwritten_registry_key_value_references()
 
     @staticmethod
     def _folded_record(misp_object: dict, attributes: list) -> dict:
@@ -1744,14 +1739,85 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         """
         return {**misp_object, 'Attribute': attributes}
 
-    def _drop_unwritten_registry_key_value_references(self):
-        # A key may come before its values, so what it points at is only
-        # known once every object is written: a reference to an object that
-        # is no `registry-key-value`, or to one the export lost, names no
-        # Observable in the document. The value's own Error says it is lost
-        for registry_object, related, value_uuid in self._registry_key_value_references:
-            if value_uuid not in self._written_registry_key_values:
-                registry_object.parent.related_objects.remove(related)
+    def _write_object_references(self):
+        """Write the references of the MISP objects, once every record is
+        written: a source may come before its target.
+
+        A reference between two objects written as TTPs is a Related_TTP. One
+        from an object written as a single CybOX Object to a record written as
+        one too is a Related_Object on the source's Object, pointing at the
+        target's. A `pe` folded into its `file` and a section folded into its
+        `pe` take their reference with them. Every other reference has no
+        slot of the source's own to go in, or points at nothing the document
+        holds: it is named in a Warning.
+        """
+        written = self._write_related_ttps()
+        for misp_object in self._misp_event.get('Object', []):
+            source = self._written_cybox_objects.get(misp_object['uuid'])
+            for reference in misp_object.get('ObjectReference', []):
+                pair = (misp_object['uuid'], reference['referenced_uuid'])
+                if pair in written or pair in self._folding_references:
+                    continue
+                target = self._written_cybox_objects.get(
+                    reference['referenced_uuid']
+                )
+                if source is None or target is None:
+                    self._unwritten_object_reference_warning(
+                        self._object_features(misp_object),
+                        reference['relationship_type'],
+                        self._referenced_record(reference['referenced_uuid'])
+                    )
+                    continue
+                source.related_objects.append(
+                    RelatedObject(
+                        idref=target.id_,
+                        relationship=self._object_relationship(
+                            reference['relationship_type']
+                        )
+                    )
+                )
+
+    def _write_related_ttps(self) -> set:
+        """Add a Related_TTP to the TTP of an object written as one for each
+        reference it makes to another record written as a TTP.
+
+        :return: the source and target uuids of each reference written
+        """
+        written = set()
+        if self._stix_package.ttps is None:
+            return written
+        for ttp in self._stix_package.ttps.ttp:
+            uuid = '-'.join(ttp.id_.split('-')[-5:])
+            for referenced_uuid, relationship in self._ttp_references.get(uuid, ()):
+                if referenced_uuid in self._contextualised_data:
+                    referenced_id = f'{self._orgname_id}:TTP-{referenced_uuid}'
+                    related_ttp = self._create_related_ttp(
+                        referenced_id, relationship,
+                        timestamp=self._quick_fetch_ttp_timestamp(referenced_id)
+                    )
+                    ttp.add_related_ttp(related_ttp)
+                    written.add((uuid, referenced_uuid))
+        return written
+
+    def _referenced_record(self, uuid: str) -> str:
+        # How a Warning names the target of a reference: the record of the
+        # event holding the uuid, where there is one
+        for attribute in self._misp_event.get('Attribute', []):
+            if attribute['uuid'] == uuid:
+                return self._attribute_record(attribute)
+        for misp_object in self._misp_event.get('Object', []):
+            if misp_object['uuid'] == uuid:
+                return self._object_features(misp_object)
+        return f'record (uuid: {uuid})'
+
+    @staticmethod
+    def _object_relationship(relationship: str) -> Union[str, VocabString]:
+        # A relationship the CybOX vocabulary has a term for is written as
+        # the term, any other verbatim as free text
+        term = _OBJECT_RELATIONSHIP_TERMS.get(
+            relationship.lower().replace('_', '-')
+        )
+        return VocabString(relationship) if term is None else term
 
     def _handle_object_observable(self, misp_object: dict,
                                   observable: Observable, to_ids: bool):
@@ -1769,9 +1835,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if misp_object['name'] in _TITLED_OBSERVABLE_OBJECT_NAMES:
                 observable.title = self._object_record_title(misp_object)
             self._handle_misp_object(misp_object, observable)
-        if misp_object['name'] == 'registry-key-value':
-            # The Observable a `registry-key` points at is in the document
-            self._written_registry_key_values.add(misp_object['uuid'])
 
     def _write_custom_object(self, misp_object: dict):
         """The object error fallback: the object a mapped route failed on
@@ -1817,10 +1880,15 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     return True
         return False
 
-    def _check_reference(self, reference: dict, object_name: str) -> bool:
+    def _check_reference(self, source_uuid: str, reference: dict,
+                         object_name: str) -> bool:
         if self._is_reference_included(reference, object_name):
             if reference['referenced_uuid'] not in self._objects_to_parse[object_name]:
                 self._referenced_object_name_warning(object_name, reference['referenced_uuid'])
+                # Warned about here: the reference is the folding's own
+                self._folding_references.add(
+                    (source_uuid, reference['referenced_uuid'])
+                )
                 return False
             return True
         return False
@@ -1959,6 +2027,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             relationship=misp_object.get('meta-category')
         )
         self._incident.related_observables.append(related_observable)
+        self._written_cybox_objects[misp_object['uuid']] = observable.object_
 
     def _handle_misp_object_with_context(self, misp_object: dict, observable: Observable):
         indicator = self._create_indicator_from_object(misp_object)
@@ -1968,6 +2037,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             relationship=misp_object.get('meta-category')
         )
         self._incident.related_indicators.append(related_indicator)
+        self._written_cybox_objects[misp_object['uuid']] = observable.object_
 
     def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES, galaxy_name: str) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
@@ -2310,10 +2380,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         file_object = WinExecutableFile()
         self._parse_file_attributes(attributes, misp_object, file_object)
         for reference in misp_object['ObjectReference']:
-            if self._check_reference(reference, 'pe'):
+            if self._check_reference(misp_object['uuid'], reference, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
                 try:
                     folded.extend(self._parse_pe_object(file_object, misp_pe))
+                    self._folding_references.add(
+                        (misp_object['uuid'], misp_pe['uuid'])
+                    )
                 except Exception as exception:
                     self._object_error(misp_pe, exception)
                 break
@@ -2503,7 +2576,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._add_repeated_values(file_object, repeated, misp_pe)
         if misp_pe.get('ObjectReference'):
             for reference in misp_pe['ObjectReference']:
-                if self._check_reference(reference, 'pe-section'):
+                if self._check_reference(misp_pe['uuid'], reference, 'pe-section'):
                     misp_pe_section = self._objects_to_parse['pe-section'].pop(reference['referenced_uuid'])
                     try:
                         pe_section = self._parse_pe_section_object(misp_pe_section)
@@ -2514,6 +2587,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                             self._write_custom_object(misp_pe_section)
                         else:
                             self._append_pe_section(file_object, pe_section)
+                            self._folding_references.add(
+                                (misp_pe['uuid'], misp_pe_section['uuid'])
+                            )
                             # Only a folded section counts: one written
                             # standalone carries its own markings and its
                             # own `to_ids`
@@ -2634,35 +2710,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 misp_object,
                 multiple=False
             )
-        self._add_registry_key_value_references(registry_object, misp_object)
         observable = self._create_observable(
             registry_object,
             misp_object['uuid'],
             'WindowsRegistryKey'
         )
         return observable
-
-    def _add_registry_key_value_references(self, registry_object: WinRegistryKey,
-                                           misp_object: dict):
-        # A `registry-key-value` has no CybOX mapping and goes out as its own
-        # `Custom` Observable: the key points at the object of that Observable,
-        # `contains` as the vocabulary term, any other relationship verbatim.
-        # Each one is kept once the objects are written, only where it points
-        # at the Observable of a value
-        for reference in misp_object.get('ObjectReference', []):
-            value_uuid = reference['referenced_uuid']
-            relationship = reference['relationship_type']
-            related = RelatedObject(
-                idref=f"{self._orgname_id}:Custom-{value_uuid}",
-                relationship=(
-                    'Contains' if relationship == 'contains'
-                    else VocabString(relationship)
-                )
-            )
-            registry_object.parent.related_objects.append(related)
-            self._registry_key_value_references.append(
-                (registry_object, related, value_uuid)
-            )
 
     def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict,
                                 fields: tuple, misp_object: dict):
