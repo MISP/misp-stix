@@ -642,20 +642,45 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if not converted:
             self._unconverted_ttp_error(ttp.id_)
             return
-        self._read_related_ttps(ttp)
+        self._read_ttp_slot_references(ttp)
 
-    def _read_related_ttps(self, ttp: TTP):
-        """Record the references the Related_TTPs of a TTP carry: the export
-        writes one for each reference an `attack-pattern`, `vulnerability` or
-        `weakness` object makes to another record it writes as a TTP.
+    def _read_ttp_slot_references(self, ttp: TTP):
+        # The Related_TTPs: one for each reference an `attack-pattern`,
+        # `vulnerability` or `weakness` object makes to another record the
+        # export writes as a TTP. The Potential_COAs of the Exploit Target a
+        # `vulnerability` or `weakness` object is written into: one for each
+        # reference it makes to a `course-of-action` object
+        self._read_slot_references(ttp.id_, ttp.related_ttps)
+        if ttp.exploit_targets:
+            for exploit_target in ttp.exploit_targets.exploit_target:
+                self._read_slot_references(
+                    ttp.id_, exploit_target.item.potential_coas
+                )
 
-        The source is the object the TTP became - one that became an
-        attribute holds no reference, and the application skips it. A galaxy
-        cluster is written as a TTP too, and its uuid lands on no record: the
-        entries are slot references, applied only towards a record the import
-        built. A reference's uuid, comment and timestamp are not written.
+    def _parse_course_of_action(self, course_of_action,
+                                timestamp: Optional[int] = None):
+        super()._parse_course_of_action(course_of_action, timestamp)
+        # One Related_COA for each reference the object makes to another
+        # `course-of-action` object
+        self._read_slot_references(
+            course_of_action.id_, course_of_action.related_coas
+        )
 
-        :param ttp: the TTP a MISP attribute or object was exported as
+    def _read_slot_references(self, source_id: str, slot):
+        """Record the references a STIX relationship slot carries: the
+        export writes there each reference a MISP object makes that a CybOX
+        Related_Object cannot carry, its relationship verbatim.
+
+        The source is the object the construct holding the slot became - one
+        that became an attribute holds no reference, and the application
+        skips it. A galaxy cluster fills the same slots, and its uuid lands on
+        no record: the entries are slot references, applied only towards a
+        record the import built. A reference's uuid, comment and timestamp are
+        not written.
+
+        :param source_id: the id of the construct holding the slot, which
+            carries the uuid of the object it became
+        :param slot: the related constructs the slot holds
         """
         references = [
             {
@@ -665,11 +690,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 ),
                 'slot': True
             }
-            for related in ttp.related_ttps or ()
+            for related in slot or ()
             if related.item is not None and related.item.idref
         ]
         if references:
-            self.references[self._sanitise_uuid(ttp.id_)].extend(references)
+            self.references[self._sanitise_uuid(source_id)].extend(references)
 
     def _parse_victim_identity(
             self, identity: Identity, timestamp: Optional[datetime] = None,
@@ -1092,6 +1117,14 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             indicator.item, name, to_ids=True,
             description=indicator.item.description,
             title=indicator.item.title
+        )
+        # A reference to a `course-of-action` object, and one to an
+        # `attack-pattern`, `vulnerability` or `weakness` object
+        self._read_slot_references(
+            indicator.item.id_, indicator.item.suggested_coas
+        )
+        self._read_slot_references(
+            indicator.item.id_, indicator.item.indicated_ttps
         )
 
     def _parse_misp_object_observable(self, observable: Observable):
