@@ -563,8 +563,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._header_description_attributes.append(attribute)
         else:
             self._add_attribute_journal_entry(attribute)
-        # Text has no handling for a cluster tag. Warned after the write: a
-        # parser with no Incident raises above, and its fallback warns instead
+        # Text has no handling for a cluster tag
         record = self._attribute_record(attribute)
         for tag_name in self._with_galaxy_tags((), attribute.get('Galaxy', ())):
             self._journal_entry_galaxy_warning(tag_name, record)
@@ -1482,6 +1481,11 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
     def _parse_target_machine(self, attribute: dict):
         # No Incident to hold an Affected_Asset: the machine falls back to the
         # Custom observable, like every type with no native slot on this parser
+        self._parse_custom_attribute(attribute)
+
+    def _parse_undefined_attribute(self, attribute: dict):
+        # No Incident to hold a journal entry, no STIX Header to describe:
+        # the Custom observable keeps the value, uuid, comment and tags alike
         self._parse_custom_attribute(attribute)
 
     ################################################################################
