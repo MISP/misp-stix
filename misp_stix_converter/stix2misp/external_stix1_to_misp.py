@@ -52,11 +52,13 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     self.misp_event.add_tag(tag)
         if self.stix_package.indicators:
             for indicator in self.stix_package.indicators:
-                if indicator.related_indicators:
-                    for related_indicator in indicator.related_indicators:
-                        self._parse_indicator(related_indicator)
-                else:
-                    self._parse_indicator(indicator)
+                self._parse_indicator(indicator)
+                for related_indicator in indicator.related_indicators or ():
+                    related = related_indicator.item
+                    # A related Indicator given by idref alone is converted
+                    # where the package defines it
+                    if related is not None and related.idref is None:
+                        self._parse_indicator(related)
         if self.stix_package.observables:
             self._parse_observables()
         if self.stix_package.ttps:
