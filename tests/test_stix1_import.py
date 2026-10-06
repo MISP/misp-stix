@@ -62,6 +62,7 @@ from misp_stix_converter.stix2misp.stix1_mapping import (
     InternalSTIX1toMISPMapping, STIX1toMISPMapping)
 from pymisp import MISPEvent
 from pymisp.api import describe_types
+from pymisp.exceptions import NewAttributeError
 from unittest.mock import patch
 from uuid import UUID, uuid5
 from stix.campaign import Campaign
@@ -7693,6 +7694,22 @@ class TestSTIX1Import(TestSTIX):
                         self._file_references(parser.misp_event),
                         [(reference['referenced_uuid'], read)]
                     )
+
+    def test_internal_object_reference_to_a_refused_record_is_dropped(self):
+        """A reference whose target MISP refused points at nothing: the
+        refusal is the target's Error, and the object keeps no reference to a
+        record the event does not hold."""
+        event = get_event_with_file_object_referencing_an_attribute()
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                with patch.object(
+                        MISPEvent, 'add_attribute',
+                        side_effect=NewAttributeError('refused')):
+                    parser = self._parse_written_misp_export(event, version)
+                self.assertEqual(parser.misp_event.attributes, [])
+                errors, = parser.diagnostics()['errors'].values()
+                self.assertEqual(len(errors), 1)
+                self.assertEqual(self._file_references(parser.misp_event), [])
 
     @staticmethod
     def _object_references(misp_event):
