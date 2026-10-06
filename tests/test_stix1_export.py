@@ -2440,6 +2440,57 @@ class TestSTIX1GalaxyTags(TestSTIX):
                     ]
                 )
 
+    def test_attributes_collection_undefined_attribute_galaxies(self):
+        """The attributes collection writes a `comment`, `text` or `other`
+        attribute, the header description one included, as a Custom
+        observable: its clusters are those of any record taking that route,
+        warned on a plain Observable, carried by the Indicator's handling -
+        never the journal entry warning."""
+        galaxies = [deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)]
+        header, comment = get_event_with_undefined_attributes()['Event']['Attribute']
+        header = {**header, 'type': 'text'}
+        for version in self._VERSIONS:
+            for attribute in (header, comment, {**comment, 'type': 'text'},
+                              {**comment, 'type': 'other'}):
+                label = 'header' if attribute is header else attribute['type']
+                for to_ids in (True, False):
+                    with self.subTest(version=version, to_ids=to_ids, attribute=label):
+                        exported = {
+                            **attribute, 'to_ids': to_ids,
+                            'Galaxy': deepcopy(galaxies)
+                        }
+                        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                        parser.parse_json_content([exported])
+                        self.assertEqual(parser.errors, {})
+                        warnings = [
+                            warning for recorded in parser.warnings.values()
+                            for warning in recorded
+                            if warning.startswith('Galaxy cluster ')
+                        ]
+                        record = (
+                            f'{attribute["type"]} attribute '
+                            f'(uuid: {attribute["uuid"]})'
+                        )
+                        if to_ids:
+                            self.assertEqual(warnings, [])
+                            indicator, = parser.stix_package.indicators
+                            self.assertEqual(
+                                self._markings(indicator),
+                                (self._MALWARE_TAG, self._SECTOR_TAG)
+                            )
+                        else:
+                            self.assertEqual(
+                                warnings,
+                                [
+                                    self._plain_observable_warning(
+                                        self._MALWARE_TAG, record
+                                    ),
+                                    self._plain_observable_warning(
+                                        self._SECTOR_TAG, record
+                                    )
+                                ]
+                            )
+
 
 class TestSTIX1RegistryKeyValueReferences(TestSTIX):
     """A `registry-key-value` goes out as its own `Custom` Observable: each
@@ -3942,6 +3993,49 @@ class TestStix1Export(TestSTIX):
             machine, properties.custom_properties.property_[0]
         )
 
+    def _test_attributes_collection_with_undefined_attributes(self, version, attributes):
+        # No Incident to write a journal entry on, no STIX Header to describe:
+        # `comment`, `text` and `other`, the header description one included,
+        # take the Custom observable, which keeps their uuid and comment
+        header, comment = attributes
+        attributes = [
+            {**header, 'type': 'text'}, comment,
+            {**comment, 'uuid': '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+             'type': 'text', 'value': 'Test text'},
+            {**comment, 'uuid': '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f',
+             'type': 'other', 'value': 'Test other'}
+        ]
+        for to_ids in (False, True):
+            with self.subTest(version=version, to_ids=to_ids):
+                exported = [
+                    {**attribute, 'to_ids': to_ids} for attribute in attributes
+                ]
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content(exported)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(parser.warnings, {})
+                stix_package = parser.stix_package
+                self.assertIsNone(stix_package.stix_header)
+                if to_ids:
+                    self.assertEqual(len(stix_package.observables), 0)
+                    records = stix_package.indicators
+                    observables = [record.observable for record in records]
+                else:
+                    self.assertEqual(len(stix_package.indicators), 0)
+                    records = observables = stix_package.observables.observables
+                self.assertEqual(len(records), len(exported))
+                for record, observable, attribute in zip(records, observables, exported):
+                    properties = self._check_observable_features(
+                        observable, attribute, 'Custom'
+                    )
+                    self._check_custom_property(
+                        attribute, properties.custom_properties.property_[0]
+                    )
+                    if attribute.get('comment'):
+                        self.assertEqual(
+                            record.description.value, attribute['comment']
+                        )
+
     def _test_attributes_collection_with_threat_actor_galaxy(self, version, attribute):
         parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
         parser.parse_json_content([attribute])
@@ -5351,6 +5445,12 @@ class TestSTIX11JSONExport(TestSTIX11Export):
             '1.1.1', event['Event']['Attribute']
         )
 
+    def test_attributes_collection_with_undefined_attributes(self):
+        event = get_event_with_undefined_attributes()
+        self._test_attributes_collection_with_undefined_attributes(
+            '1.1.1', event['Event']['Attribute']
+        )
+
     def test_event_with_test_mechanism_attributes(self):
         event = get_event_with_test_mechanism_attributes()
         self._test_event_with_test_mechanism_attributes(event['Event'])
@@ -6422,6 +6522,12 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_attributes_collection_with_target_attributes(self):
         event = get_event_with_target_attributes()
         self._test_attributes_collection_with_target_attributes(
+            '1.2', event['Event']['Attribute']
+        )
+
+    def test_attributes_collection_with_undefined_attributes(self):
+        event = get_event_with_undefined_attributes()
+        self._test_attributes_collection_with_undefined_attributes(
             '1.2', event['Event']['Attribute']
         )
 

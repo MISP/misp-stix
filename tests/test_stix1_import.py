@@ -4984,6 +4984,47 @@ class TestSTIX1Import(TestSTIX):
         )
         self.assertEqual(int(stamped.timestamp.timestamp()), 1603642920)
 
+    def test_internal_attributes_collection_undefined_attributes_round_trip(self):
+        """An Attribute Collection has no Incident to write a journal entry
+        on and no STIX Header to describe: a `comment`, `text` or `other`
+        attribute, the header description one included, is the Custom
+        observable, and reads back with its type, value, uuid and comment
+        whether `to_ids` or not."""
+        header, comment = get_event_with_undefined_attributes()['Event']['Attribute']
+        attributes = [
+            {**header, 'type': 'text'}, comment,
+            {**comment, 'uuid': '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+             'type': 'text', 'value': 'Test text'},
+            {**comment, 'uuid': '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f',
+             'type': 'other', 'value': 'Test other'}
+        ]
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                exported = [
+                    {**attribute, 'to_ids': to_ids} for attribute in attributes
+                ]
+                exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+                exporter.parse_json_content(exported)
+                self.assertEqual(exporter.errors, {})
+                parser = self._parse_internal_package(exporter.stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    {
+                        attribute.uuid: (
+                            attribute.type, attribute.value,
+                            attribute.get('comment')
+                        )
+                        for attribute in parser.misp_event.attributes
+                    },
+                    {
+                        attribute['uuid']: (
+                            attribute['type'], attribute['value'],
+                            attribute.get('comment')
+                        )
+                        for attribute in exported
+                    }
+                )
+
     def test_internal_attributes_collection_test_mechanism_attributes_round_trip(self):
         """An Attribute Collection writes the same Indicator on the package -
         the rule as a test mechanism, no observable, the category in the
