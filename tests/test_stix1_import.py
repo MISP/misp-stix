@@ -1887,6 +1887,29 @@ class TestSTIX1Import(TestSTIX):
                 else:
                     self.assertEqual(converted_attribute.uuid, attribute['uuid'])
 
+    # Every way the export writes a file: each one is a document of its own
+    # shape, which only loading the file back exercises
+    _FILE_EXPORTS = (
+        ('event', misp_to_stix1, {}),
+        (
+            'events collection', misp_event_collection_to_stix1,
+            {'single_output': True}
+        ),
+        (
+            'events collection in memory', misp_event_collection_to_stix1,
+            {'single_output': True, 'in_memory': True}
+        ),
+        (
+            'attributes collection', misp_attribute_collection_to_stix1,
+            {'single_output': True}
+        ),
+        (
+            'attributes collection in memory',
+            misp_attribute_collection_to_stix1,
+            {'single_output': True, 'in_memory': True}
+        )
+    )
+
     def _export_target_attributes_to_file(self, tmp_dir, export, version,
                                           **kwargs):
         """Write the `target-*` attributes event the way `export` writes it
@@ -1912,23 +1935,8 @@ class TestSTIX1Import(TestSTIX):
         prefix: under another one, the written XML names an undeclared prefix
         and the whole document fails to load. The in-memory round trip of the
         same event never serialises the package, so it cannot see this."""
-        exports = (
-            ('event', misp_to_stix1, {}),
-            (
-                'events collection', misp_event_collection_to_stix1,
-                {'single_output': True}
-            ),
-            (
-                'events collection in memory', misp_event_collection_to_stix1,
-                {'single_output': True, 'in_memory': True}
-            ),
-            (
-                'attributes collection', misp_attribute_collection_to_stix1,
-                {'single_output': True}
-            )
-        )
         for version in ('1.1.1', '1.2'):
-            for name, export, kwargs in exports:
+            for name, export, kwargs in self._FILE_EXPORTS:
                 with self.subTest(version=version, export=name), \
                         TemporaryDirectory() as tmp_dir:
                     self.assertIsInstance(
@@ -1940,22 +1948,20 @@ class TestSTIX1Import(TestSTIX):
                         STIXPackage
                     )
 
-    def test_misp_collection_export_with_ciq_identities_reads_back_from_file(self):
+    def test_misp_export_with_ciq_identities_reads_back_from_file(self):
         """Loaded from the file, the CIQ identities of the `target-*`
-        attributes read back as the attributes they were written from."""
+        attributes read back as the attributes they were written from,
+        whichever export wrote the file: the event package written as the
+        document, or related to a collection, or the attributes collection
+        streamed or built in memory."""
         attributes = get_event_with_target_attributes()['Event']['Attribute']
-        exports = (
-            (misp_event_collection_to_stix1, {'in_memory': True}),
-            (misp_attribute_collection_to_stix1, {})
-        )
         for version in ('1.1.1', '1.2'):
-            for export, kwargs in exports:
-                with self.subTest(version=version, export=export.__name__), \
+            for name, export, kwargs in self._FILE_EXPORTS:
+                with self.subTest(version=version, export=name), \
                         TemporaryDirectory() as tmp_dir:
                     results = stix_1_to_misp(
                         self._export_target_attributes_to_file(
-                            tmp_dir, export, version, single_output=True,
-                            **kwargs
+                            tmp_dir, export, version, **kwargs
                         ),
                         single_event=True, classification='internal',
                         output_dir=tmp_dir
