@@ -1737,6 +1737,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         attributes.append(
             ['text', self._value(properties.security_id), 'user-id']
         )
+        for group in properties.group_list or ():
+            attributes.append(['text', self._value(group, 'name'), 'group'])
         attributes.extend(
             self._read_custom_properties(properties, 'user-account')
         )
