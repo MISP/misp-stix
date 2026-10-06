@@ -2970,7 +2970,7 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 719 of the 721 object attributes come back, and every row
+        still loses: 753 of the 755 object attributes come back, and every row
         below says why the rest do not. `n -> n` is not the assertion - the
         work is not over - and the table is what fails on a regression and on
         an improvement nobody wrote down."""
@@ -7792,6 +7792,108 @@ class TestSTIX1Import(TestSTIX):
                 self.assertEqual(
                     self._object_references(parser.misp_event),
                     [('vulnerability', weakness['uuid'], 'weakened-by')]
+                )
+
+    @staticmethod
+    def _slot_references_event(to_ids=True):
+        event = test_events.get_event_with_object_references_in_relationship_slots()
+        for misp_object in event['Event']['Object']:
+            if misp_object['name'] in ('btc-wallet', 'ip-port'):
+                misp_object['Attribute'][0]['to_ids'] = to_ids
+        return event
+
+    @staticmethod
+    def _fixture_references(event, *names):
+        return sorted(
+            (
+                misp_object['name'], reference['referenced_uuid'],
+                reference['relationship_type']
+            )
+            for misp_object in event['Event']['Object']
+            if not names or misp_object['name'] in names
+            for reference in misp_object.get('ObjectReference', ())
+        )
+
+    def test_internal_object_references_in_relationship_slots_round_trip(self):
+        """The Potential_COAs of a `vulnerability` or `weakness` Exploit
+        Target, the Related_COAs of a Course of Action, the Suggested_COAs
+        and Indicated_TTP of an Indicator come back as the references the
+        objects made."""
+        event = self._slot_references_event()
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                parser = self._parse_written_misp_export(event, version)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self.assertEqual(
+                    sorted(
+                        misp_object.uuid
+                        for misp_object in parser.misp_event.objects
+                    ),
+                    sorted(
+                        misp_object['uuid']
+                        for misp_object in event['Event']['Object']
+                    )
+                )
+                self.assertEqual(
+                    self._object_references(parser.misp_event),
+                    self._fixture_references(event)
+                )
+
+    def test_internal_plain_observable_slot_references_are_lost(self):
+        """An object written as a plain Observable has no slot: its
+        references to a Course of Action or a TTP do not come back, the
+        others do."""
+        event = self._slot_references_event(False)
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                parser = self._parse_written_misp_export(event, version)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._object_references(parser.misp_event),
+                    self._fixture_references(
+                        event, 'course-of-action', 'vulnerability',
+                        'weakness'
+                    )
+                )
+
+    def test_internal_slot_cluster_and_reference_read_apart(self):
+        """A galaxy cluster sharing the slot with a reference comes back as
+        its tag only, the reference as a reference, nothing extra."""
+        event = self._slot_references_event()
+        coa_galaxy = test_events.get_event_with_course_of_action_galaxy()['Event']['Galaxy'][0]
+        attack_pattern_galaxy = test_events.get_event_with_attack_pattern_galaxy()['Event']['Galaxy'][0]
+        coa_uuid = '5d514ff9-ac30-4fb5-b9e7-3eb4a964451a'
+        for misp_object in event['Event']['Object']:
+            # The Course of Action both a reference and the cluster point from
+            if misp_object['uuid'] == coa_uuid:
+                misp_object['Attribute'][0]['Galaxy'] = [coa_galaxy]
+            elif misp_object['name'] == 'btc-wallet':
+                misp_object['Attribute'][0]['Galaxy'] = [attack_pattern_galaxy]
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                parser = self._parse_written_misp_export(event, version)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self.assertEqual(
+                    len(parser.misp_event.objects),
+                    len(event['Event']['Object'])
+                )
+                self.assertEqual(parser.misp_event.attributes, [])
+                self.assertEqual(
+                    self._object_references(parser.misp_event),
+                    self._fixture_references(event)
+                )
+                self.assertEqual(
+                    sorted(
+                        tag.name for tag in parser.misp_event.tags
+                        if tag.name.startswith('misp-galaxy:')
+                    ),
+                    sorted(
+                        f"misp-galaxy:{galaxy['type']}="
+                        f"\"{galaxy['GalaxyCluster'][0]['value']}\""
+                        for galaxy in (coa_galaxy, attack_pattern_galaxy)
+                    )
                 )
 
     def test_internal_passive_dns_indicator_round_trips(self):
