@@ -2602,6 +2602,39 @@ class TestSTIX1Import(TestSTIX):
                 )
                 self.assertEqual(self._galaxy_tags(parser.misp_event), set())
 
+    def test_internal_misp_export_bare_course_of_action_object_reads_as_the_cluster(self):
+        """Pins a named loss, not a defect: a `course-of-action` object with
+        a name, a description and no timestamp exports exactly as the
+        `mitre-course-of-action` cluster's Course of Action, so nothing tells
+        it from the cluster and it reads back as the cluster's tag, with no
+        object and no message. An object pymisp builds can be one of them."""
+        event = get_event_with_course_of_action_object()
+        misp_object = event['Event']['Object'][0]
+        del misp_object['timestamp']
+        misp_object['Attribute'] = [
+            attribute for attribute in misp_object['Attribute']
+            if attribute['object_relation'] in ('name', 'description')
+        ]
+        name = next(
+            attribute['value'] for attribute in misp_object['Attribute']
+            if attribute['object_relation'] == 'name'
+        )
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                exporter = MISPtoSTIX1EventsParser('MISP', version)
+                exporter.parse_misp_event(event)
+                parser = self._parse_internal_package(
+                    self._wrapped_package(exporter.stix_package)
+                )
+                self.assertEqual(parser.misp_event.objects, [])
+                self.assertEqual(
+                    self._galaxy_tags(parser.misp_event),
+                    {f'misp-galaxy:mitre-course-of-action="{name}"'}
+                )
+                diagnostics = parser.diagnostics()
+                self.assertEqual(diagnostics['warnings'], {})
+                self.assertEqual(diagnostics['errors'], {})
+
     def test_internal_misp_export_pe_section_header_with_one_field_round_trips(self):
         """The export writes a section header as soon as the `pe-section`
         object carries a `name` or a `size-in-bytes`, each set on its own; the
