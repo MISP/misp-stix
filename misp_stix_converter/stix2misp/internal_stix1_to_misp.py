@@ -688,7 +688,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 'relationship': (
                     self._value(related.relationship) or 'related-to'
                 ),
-                'slot': True
+                'built_only': True
             }
             for related in slot or ()
             if related.item is not None and related.item.idref
@@ -1527,7 +1527,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         references = [
             {
                 'idref': self._sanitise_uuid(related.idref),
-                'relationship': self._related_object_relationship(related)
+                'relationship': self._related_object_relationship(related),
+                # The export writes a Related_Object towards a record of the
+                # same package: a target the import refused points at nothing
+                'built_only': True
             }
             for related in properties.parent.related_objects or ()
             if related.idref is not None

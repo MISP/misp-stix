@@ -1802,9 +1802,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # it became, which only exists once the whole package is parsed. A
         # source that became an attribute has nothing that can hold a reference
         # in MISP, so its records stay records; a target that did is referenced
-        # by the attribute uuid, which MISP accepts. A reference read off a
-        # STIX relationship slot - one a galaxy cluster fills too - is applied
-        # only towards a record the import built.
+        # by the attribute uuid, which MISP accepts. A reference the Internal
+        # import reads - a Related_Object, or a STIX relationship slot a galaxy
+        # cluster fills too - is applied only towards a record the import
+        # built: a target it refused or never met points at nothing. The
+        # External import keeps a reference to a target outside the package.
         misp_objects = {
             misp_object.uuid: misp_object
             for misp_object in self.misp_event.objects
@@ -1818,7 +1820,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if misp_object is None:
                 continue
             for reference in references:
-                if reference.get('slot') and reference['idref'] not in built_uuids:
+                if reference.get('built_only') and reference['idref'] not in built_uuids:
                     continue
                 misp_object.add_reference(
                     reference['idref'], reference['relationship']
