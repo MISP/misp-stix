@@ -594,9 +594,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if course_of_action.parameter_observables:
             for observable in course_of_action.parameter_observables.observables:
                 properties = observable.object_.properties
-                attribute_type, attribute_value, _ = self._handle_attribute_type(
-                    properties
-                )
+                try:
+                    attribute_type, attribute_value, _ = (
+                        self._handle_attribute_type(properties)
+                    )
+                except StixObjectTypeError as xsi_type:
+                    self._stix_object_type_error(xsi_type, course_of_action.id_)
+                    continue
                 if attribute_value is None:
                     self._empty_record_error(
                         attribute_type, course_of_action.id_, 'attribute'
