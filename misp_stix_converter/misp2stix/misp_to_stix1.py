@@ -1472,7 +1472,9 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
                     'Input does not look like a MISP attributes collection: '
                     f'item {index} is not a MISP attribute.'
                 )
-        self._stix_package = STIXPackage()
+        self._stix_package = _create_stix_package(
+            self._orgname, self._version
+        )
         for attribute in attributes:
             self._resolve_attribute(attribute)
 

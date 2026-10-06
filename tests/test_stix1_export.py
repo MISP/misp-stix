@@ -4590,9 +4590,10 @@ class TestStix1Export(TestSTIX):
         )
 
     def _test_attributes_collection_with_undefined_attributes(self, version, attributes):
-        # No Incident to write a journal entry on, no STIX Header to describe:
-        # `comment`, `text` and `other`, the header description one included,
-        # take the Custom observable, which keeps their uuid and comment
+        # No Incident to write a journal entry on, and a STIX Header that is
+        # the MISP export title, not a description: `comment`, `text` and
+        # `other`, the header description one included, take the Custom
+        # observable, which keeps their uuid and comment
         header, comment = attributes
         attributes = [
             {**header, 'type': 'text'}, comment,
@@ -4611,7 +4612,7 @@ class TestStix1Export(TestSTIX):
                 self.assertEqual(parser.errors, {})
                 self.assertEqual(parser.warnings, {})
                 stix_package = parser.stix_package
-                self.assertIsNone(stix_package.stix_header)
+                self.assertIsNone(stix_package.stix_header.description)
                 if to_ids:
                     self.assertEqual(len(stix_package.observables), 0)
                     records = stix_package.indicators

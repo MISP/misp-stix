@@ -1914,8 +1914,8 @@ class TestSTIX1Import(TestSTIX):
                                           **kwargs):
         """Write the `target-*` attributes event the way `export` writes it
         and return the file written. A collection export is given two inputs:
-        with one, it writes the bare package and never reaches its own
-        framing."""
+        with one, it writes the parser's own package and never reaches the
+        framing that merges several."""
         event = get_event_with_target_attributes()
         if export is misp_attribute_collection_to_stix1:
             event = event['Event']['Attribute']
@@ -5032,10 +5032,7 @@ class TestSTIX1Import(TestSTIX):
         )
         parser = self._parse_internal_package(exporter.stix_package)
         self.assertEqual(parser.diagnostics()['errors'], {})
-        self.assertEqual(
-            parser.misp_event.info,
-            'Imported from STIX 1.2 Package generated with MISP'
-        )
+        self.assertEqual(parser.misp_event.info, "Export from MISP's MISP")
         self.assertEqual(
             {
                 attribute.uuid: (
