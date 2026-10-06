@@ -114,6 +114,7 @@ from .test_events import (
     get_event_with_email_body_attribute, get_event_with_email_header_attribute,
     get_event_with_email_object, get_event_with_email_with_display_names_object,
     get_event_with_file_object, get_event_with_file_object_with_artifact,
+    get_event_with_file_object_referencing_an_attribute,
     get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_ip_port_object,
     get_event_with_malware_galaxy, get_event_with_network_socket_object,
@@ -2969,7 +2970,7 @@ class TestSTIX1Import(TestSTIX):
 
     def test_internal_misp_export_object_corpus_round_trip_baseline(self):
         """The ledger of what a STIX 1 round trip of the whole fixture corpus
-        still loses: 717 of the 719 object attributes come back, and every row
+        still loses: 719 of the 721 object attributes come back, and every row
         below says why the rest do not. `n -> n` is not the assertion - the
         work is not over - and the table is what fails on a regression and on
         an improvement nobody wrote down."""
@@ -7618,9 +7619,10 @@ class TestSTIX1Import(TestSTIX):
                     )
 
     def test_internal_registry_key_value_other_relationship_round_trips(self):
-        """Written verbatim as a free-text term, any relationship other than
-        `contains` is read back verbatim - one spelling the vocabulary term
-        `Contains` included."""
+        """Written verbatim as a free-text term, a relationship the CybOX
+        vocabulary has no term for is read back verbatim. One spelling a term
+        whatever its case is written as the term, and read back the MISP
+        way."""
         event = get_event_with_registry_key_and_values_objects()
         references = event['Event']['Object'][0]['ObjectReference']
         references[0]['relationship_type'] = 'Stores_Value'
@@ -7633,12 +7635,64 @@ class TestSTIX1Import(TestSTIX):
                     self._registry_key_references(parser.misp_event),
                     sorted(
                         (
-                            reference['referenced_uuid'],
-                            reference['relationship_type']
+                            (references[0]['referenced_uuid'], 'Stores_Value'),
+                            (references[1]['referenced_uuid'], 'contains')
                         )
-                        for reference in references
                     )
                 )
+
+    @staticmethod
+    def _file_references(misp_event):
+        file_object, = misp_event.get_objects_by_name('file')
+        return [
+            (reference.referenced_uuid, reference.relationship_type)
+            for reference in file_object.references
+        ]
+
+    def test_internal_object_reference_to_an_attribute_round_trips(self):
+        """The Related_Object a `file` carries towards the Address Object of
+        an `ip-src` attribute comes back as the reference the object made, to
+        the attribute that Object comes back as."""
+        for version in ('1.1.1', '1.2'):
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = get_event_with_file_object_referencing_an_attribute()
+                    event['Event']['Attribute'][0]['to_ids'] = to_ids
+                    misp_object, = event['Event']['Object']
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    parser = self._parse_written_misp_export(event, version)
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    attribute, = parser.misp_event.attributes
+                    self.assertEqual(
+                        attribute.uuid,
+                        event['Event']['Attribute'][0]['uuid']
+                    )
+                    file_object, = parser.misp_event.get_objects_by_name('file')
+                    self.assertEqual(file_object.uuid, misp_object['uuid'])
+                    self.assertEqual(
+                        self._file_references(parser.misp_event),
+                        [(attribute.uuid, 'downloaded-from')]
+                    )
+
+    def test_internal_object_reference_term_and_free_text_read_apart(self):
+        """A vocabulary term is read back the MISP way, a free-text
+        relationship verbatim: the document tells them apart, not the
+        spelling."""
+        for relationship, read in (('DOWNLOADED_FROM', 'downloaded-from'),
+                                   ('sub-domain-of', 'sub-domain-of'),
+                                   ('Fetched_Over', 'Fetched_Over')):
+            event = get_event_with_file_object_referencing_an_attribute()
+            reference, = event['Event']['Object'][0]['ObjectReference']
+            reference['relationship_type'] = relationship
+            for version in ('1.1.1', '1.2'):
+                with self.subTest(relationship=relationship, version=version):
+                    parser = self._parse_written_misp_export(event, version)
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(
+                        self._file_references(parser.misp_event),
+                        [(reference['referenced_uuid'], read)]
+                    )
 
     @staticmethod
     def _object_references(misp_event):
