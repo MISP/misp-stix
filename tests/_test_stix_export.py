@@ -779,7 +779,13 @@ class TestSTIX2Export(TestSTIX):
          invalid_size, _, _, invalid_x509_md5) = initial_attributes
         (_, _, domain_ip, _, _, ip_port, _, network_connection,
          network_socket, *_) = misp_objects
-        validation_errors = self.parser.warnings.get('misp event', [])
+        # Filed under the event they come from, never under 'misp event',
+        # next to the conversion warnings of that event.
+        validation_errors = [
+            warning for warning in self.parser.warnings.get(
+                self.parser._misp_event['uuid'], []
+            ) if warning.startswith('Failed validation')
+        ]
         self.assertEqual(len(validation_errors), 17)
         connection_src_ip, connection_dst_ip = network_connection['Attribute']
         error_messages = list(

@@ -11,6 +11,7 @@ from ..tools.misp_object_templates import (
 from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
+from copy import deepcopy
 from datetime import datetime
 from dateutil import parser
 from io import BytesIO
@@ -20,7 +21,7 @@ from pymisp import (
     MISPNote, MISPObject, MISPOpinion)
 from pymisp.exceptions import PyMISPError
 from pymisp.tools import (
-    validate_attribute, validate_event, validate_object, validate_objects)
+    validate_attribute, validate_attributes, validate_event, validate_objects)
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -168,11 +169,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._resolve_object(obj)
         else:
             self._bind_shared_args(self._handle_identity_from_feed(event))
-            self._resolve_object(
-                validate_object(
-                    self._sanitise_object_template_name(misp_object), errors
-                )
-            )
+            self._resolve_valid_object(misp_object, errors)
         if errors:
             self._handle_validation_errors(errors)
         if self._objects_to_parse:
@@ -194,17 +191,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._bind_shared_args(
                 self._handle_identity_from_feed(misp_object.get('Event', {}))
             )
-            self._resolve_object(
-                validate_object(
-                    self._sanitise_object_template_name(misp_object), errors
-                )
-            )
+            self._resolve_valid_object(misp_object, errors)
         if errors:
             self._handle_validation_errors(errors)
         if self._objects_to_parse:
             self._resolve_objects_to_parse()
         if self.relationships:
             self._handle_relationships()
+
+    def _resolve_valid_object(
+            self, misp_object: MISPObject | dict, errors: dict):
+        # An object pymisp cannot load is skipped, its error recorded.
+        for valid_object in validate_objects(
+                [self._sanitise_object_template_name(misp_object)], errors):
+            self._resolve_object(valid_object)
 
     def _parse_json_content(self, json_content: dict | list):
         self._results_handling_method = '_append_SDO'
@@ -264,13 +264,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self.__index = len(self.stix_objects)
 
     def _parse_misp_event(self, misp_event: MISPEvent | dict):
-        self._misp_event = validate_event(
-            self._sanitise_event_object_names(misp_event),
-            errors := defaultdict(list)
-        )
+        errors = defaultdict(list)
+        if isinstance(misp_event, dict):
+            loaded_event = self._load_misp_event(misp_event, errors)
+            # The event before it, if any, still names the bundle.
+            if loaded_event is None:
+                return
+            self._misp_event = loaded_event
+        else:
+            self._misp_event = validate_event(misp_event, errors)
+        # An event with no uuid of its own only has one once pymisp loaded it.
+        self._set_identifier(self._misp_event['uuid'])
         if errors:
             self._handle_validation_errors(errors)
-        self._set_identifier(self._misp_event['uuid'])
         self.__event_timestamp = self._handle_event_timestamp()
         self.__object_refs = []
         self.__relationships = []
@@ -294,6 +300,43 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_attributes_and_objects()
         report = self._generate_report_from_event()
         self.stix_objects.insert(self.__index, report)
+
+    def _load_misp_event(
+            self, misp_event: dict, errors: dict) -> Optional[MISPEvent]:
+        """Load an event, losing only the records pymisp cannot load.
+
+        pymisp loads the whole event before it skips any record, so a single
+        unloadable record would cost the event. On a load failure the event is
+        loaded again without its attributes and objects, which are then loaded
+        one by one: the event itself is skipped only when its own fields cannot
+        be loaded.
+
+        pymisp also pops keys from the dictionaries it loads: every load works
+        on a copy, so the caller's input is left untouched.
+
+        :param misp_event: MISP event, in its dictionary form
+        :param errors: dictionary populated with the validation messages
+        :return: the loaded event, or None when it cannot be loaded at all
+        """
+        event = misp_event.get('Event', misp_event)
+        self._set_identifier(event.get('uuid') or 'misp event')
+        misp_event = self._sanitise_event_object_names(misp_event)
+        try:
+            return validate_event(deepcopy(misp_event), errors)
+        except PyMISPError:
+            pass
+        event = deepcopy(misp_event.get('Event', misp_event))
+        attributes = event.pop('Attribute', None) or []
+        objects = event.pop('Object', None) or []
+        try:
+            loaded_event = validate_event(event, errors)
+        except PyMISPError as exception:
+            self._validation_errors(str(exception))
+            return None
+        loaded_event.attributes = list(validate_attributes(attributes, errors))
+        for misp_object in validate_objects(objects, errors):
+            loaded_event.add_object(misp_object)
+        return loaded_event
 
     def _define_stix_object_id(
             self, feature: str, misp_object: MISPObject | dict) -> str:
