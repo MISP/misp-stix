@@ -128,6 +128,141 @@ class TestSTIX20InputContract(TestSTIX20GenericExport):
         self.assertIn('attributes collection', self.parser.errors)
         self.assertNotIn('misp event', self.parser.errors)
 
+    @staticmethod
+    def _unloadable(record: dict) -> dict:
+        # pymisp reads every timestamp as an int: this one cannot be loaded.
+        return {**record, 'timestamp': 'not a timestamp'}
+
+    def _object_ids(self, uuid: str) -> list:
+        return [
+            stix_object.id for stix_object in self.parser.stix_objects
+            if stix_object.id.endswith(uuid)
+        ]
+
+    def test_unloadable_attribute_costs_only_that_attribute(self):
+        event = get_base_event()
+        event['Event']['Attribute'] = [
+            self._unloadable(get_indicator_attribute() | {
+                'uuid': '11111111-1111-4111-8111-111111111111',
+                'type': 'ip-src', 'value': '1.2.3.4'
+            }),
+            get_indicator_attribute()
+        ]
+        self.parser.parse_json_content(event)
+        event_uuid = event['Event']['uuid']
+        attribute_uuid = get_indicator_attribute()['uuid']
+        self.assertIn(
+            f'indicator--{attribute_uuid}', self._object_ids(attribute_uuid)
+        )
+        self.assertFalse(
+            self._object_ids('11111111-1111-4111-8111-111111111111')
+        )
+        errors = self.parser.errors[event_uuid]
+        self.assertTrue(
+            any(error.startswith('Error loading Attribute') for error in errors)
+        )
+        self.assertFalse(
+            any(error.startswith('Error loading Event') for error in errors)
+        )
+
+    def test_unloadable_object_attribute_costs_only_that_object(self):
+        event = get_base_event()
+        misp_object = get_domain_ip_object()
+        misp_object['Attribute'][0] = self._unloadable(
+            misp_object['Attribute'][0]
+        )
+        event['Event']['Attribute'] = [get_indicator_attribute()]
+        event['Event']['Object'] = [misp_object]
+        self.parser.parse_json_content(event)
+        self.assertTrue(self._object_ids(get_indicator_attribute()['uuid']))
+        self.assertFalse(self._object_ids(misp_object['uuid']))
+        self.assertTrue(
+            any(o.type in ('grouping', 'report')
+                for o in self.parser.stix_objects)
+        )
+        self.assertTrue(
+            any(error.startswith('Error loading Object')
+                for error in self.parser.errors[event['Event']['uuid']])
+        )
+
+    def test_unloadable_event_costs_only_that_event_of_a_collection(self):
+        bad = self._unloadable(get_base_event()['Event'])
+        bad['uuid'] = '44444444-4444-4444-8444-444444444444'
+        good = get_event_with_domain_attribute()
+        for label, events in (('first', [{'Event': bad}, good]),
+                              ('last', [good, {'Event': bad}])):
+            with self.subTest(label):
+                self.setUp()
+                self.parser.parse_json_content(
+                    {'response': deepcopy(events)}
+                )
+                self.assertTrue(
+                    self._object_ids(get_indicator_attribute()['uuid'])
+                )
+                self.assertTrue(self._object_ids(good['Event']['uuid']))
+                self.assertFalse(self._object_ids(bad['uuid']))
+                self.assertTrue(
+                    any(error.startswith('Error loading Event')
+                        for error in self.parser.errors[bad['uuid']])
+                )
+                self.assertEqual(
+                    self.parser.bundle.id, f"bundle--{good['Event']['uuid']}"
+                )
+
+    def test_unloadable_lone_event_is_recorded_not_raised(self):
+        event = get_event_with_domain_attribute()
+        event['Event'] = self._unloadable(event['Event'])
+        self.parser.parse_json_content(event)
+        self.assertFalse(self.parser.stix_objects)
+        self.assertEqual(self.parser.bundle.type, 'bundle')
+        self.assertTrue(
+            any(error.startswith('Error loading Event')
+                for error in self.parser.errors[event['Event']['uuid']])
+        )
+
+    def test_event_conversion_leaves_the_input_untouched(self):
+        event = get_event_with_domain_attribute()
+        event['Event']['Object'] = [get_domain_ip_object()]
+        original = deepcopy(event)
+        self.parser.parse_json_content(event)
+        self.assertTrue(self._object_ids(event['Event']['Object'][0]['uuid']))
+        self.assertEqual(event, original)
+
+    def test_event_validation_warnings_filed_under_their_event(self):
+        first = get_event_with_domain_attribute()
+        second = get_base_event()
+        second['Event']['uuid'] = '55555555-5555-4555-8555-555555555555'
+        second['Event']['Attribute'] = [
+            get_indicator_attribute() | {
+                'uuid': '66666666-6666-4666-8666-666666666666',
+                'type': 'ip-src', 'value': 'not an ip address'
+            }
+        ]
+        self.parser.parse_json_content([first, second])
+        warnings = self.parser.warnings
+        self.assertIn(second['Event']['uuid'], warnings)
+        self.assertNotIn(first['Event']['uuid'], warnings)
+
+    def test_unloadable_object_in_objects_entry_points(self):
+        bad = self._unloadable(get_domain_ip_object())
+        good = get_domain_ip_object() | {
+            'uuid': '77777777-7777-4777-8777-777777777777'
+        }
+        for entry_point, content, converted in (
+                ('parse_misp_object', bad, ()),
+                ('parse_misp_objects', [{'Object': bad}, {'Object': good}],
+                 (good['uuid'],))):
+            with self.subTest(entry_point):
+                self.setUp()
+                getattr(self.parser, entry_point)(deepcopy(content))
+                self.assertTrue(
+                    any(error.startswith('Error loading Object')
+                        for error in self.parser.errors['objects collection'])
+                )
+                self.assertFalse(self._object_ids(bad['uuid']))
+                for uuid in converted:
+                    self.assertTrue(self._object_ids(uuid))
+
 
 class TestSTIX20Diagnostics(TestSTIX20GenericExport):
     def test_diagnostics_count_error_occurrences(self):
