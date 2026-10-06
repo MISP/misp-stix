@@ -27,6 +27,7 @@ from cybox.objects.network_socket_object import NetworkSocket
 from cybox.objects.port_object import Port
 from cybox.objects.process_object import (
     ImageInfo, NetworkConnectionList, Process)
+from cybox.objects.semaphore_object import Semaphore
 from cybox.objects.socket_address_object import SocketAddress
 from cybox.objects.uri_object import URI
 from cybox.objects.user_account_object import UserAccount
@@ -457,6 +458,59 @@ class TestSTIX1Import(TestSTIX):
         misp_object = parser.misp_event.objects[0]
         self.assertEqual(len(misp_object.references), 1)
         self.assertEqual(misp_object.references[0].relationship_type, 'observable')
+
+    @classmethod
+    def _course_of_action_with_an_unknown_parameter_observable(cls):
+        """A Course of Action whose parameter observables are a domain and an
+        object of a CybOX type no handler reads."""
+        course_of_action = cls._course_of_action()
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        semaphore = Semaphore()
+        semaphore.name = 'evil'
+        course_of_action.parameter_observables = Observables(
+            [Observable(Object(semaphore)), Observable(Object(domain))]
+        )
+        return course_of_action
+
+    def _assert_unknown_parameter_observable_skipped(self, parser):
+        self.assertEqual(
+            [attribute.value for attribute in parser.misp_event.attributes],
+            ['circl.lu']
+        )
+        coa_objects = [
+            misp_object for misp_object in parser.misp_event.objects
+            if misp_object.name == 'course-of-action'
+        ]
+        self.assertEqual(len(coa_objects), 1)
+        self.assertEqual(len(coa_objects[0].references), 1)
+        errors = [
+            error for errors in parser.diagnostics()['errors'].values()
+            for error in errors
+        ]
+        self.assertEqual(len(errors), 1)
+        self.assertIn('SemaphoreObjectType', errors[0])
+        self.assertIn(f'MISP:CourseOfAction-{_COA_UUID}', errors[0])
+
+    def test_external_course_of_action_unknown_parameter_observable_is_skipped(self):
+        """A parameter observable of an unknown CybOX type costs that
+        observable alone, with an Error: it crashed the conversion of the
+        whole package."""
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(
+            self._course_of_action_with_an_unknown_parameter_observable()
+        )
+        parser = self._parse_external_package(stix_package)
+        self._assert_unknown_parameter_observable_skipped(parser)
+
+    def test_internal_course_of_action_unknown_parameter_observable_is_skipped(self):
+        incident = Incident()
+        incident.title = 'Incident with a Course of Action taken'
+        incident.add_coa_taken(
+            self._course_of_action_with_an_unknown_parameter_observable()
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self._assert_unknown_parameter_observable_skipped(parser)
 
     def test_internal_course_of_action_taken_converts(self):
         incident = Incident()
