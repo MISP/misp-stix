@@ -13,7 +13,6 @@ from pymisp.exceptions import PyMISPError
 import re
 from cybox.common.vocabs import ObjectRelationship
 from cybox.core import RelatedObject
-from cybox.objects.win_registry_key_object import WinRegistryKey
 from datetime import datetime
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction
@@ -1386,6 +1385,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 object_uuid=uuid, description=description, title=title,
                 timestamp=timestamp
             )
+            self._read_related_objects(properties, uuid)
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -1467,20 +1467,30 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         _, _, name = title[:-len(_MISP_OBJECT_TITLE_SUFFIX)].partition(': ')
         return name or None
 
-    def _handle_regkey(self, properties: WinRegistryKey) -> tuple:
-        """Read a registry key, and the references it makes to the
-        `registry-key-value` objects the export writes as their own `Custom`
-        Observables, pointed at by a Related_Object each.
+    @classmethod
+    def _related_object_relationship(cls, related: RelatedObject) -> str:
+        # A relationship the CybOX vocabulary has a term for is written as the
+        # term, read back the MISP way; any other verbatim as free text
+        relationship = related.relationship
+        value = cls._value(relationship)
+        if not value:
+            return 'related-to'
+        if isinstance(relationship, ObjectRelationship):
+            return value.lower().replace('_', '-')
+        return value
+
+    def _read_related_objects(self, properties, uuid: str):
+        """Record the references the Related_Objects of a CybOX object carry:
+        the export writes one for each reference a MISP object makes to a
+        record it writes as a single CybOX Object, pointing at that Object.
 
         The External parser reads the Related_Objects of every CybOX object
-        on its own, so the shared handler does not.
+        on its own, so the shared handlers do not. An inline Related_Object -
+        the File an email embeds as its attachment - is no reference.
 
-        :param properties: the registry key properties
-        :return: what the shared handler returns, the references handed back
-            as the complementary data: they are applied once the whole
-            package is parsed
+        :param properties: the CybOX object properties
+        :param uuid: the uuid of the object the CybOX object became
         """
-        name, attributes, compl_data = super()._handle_regkey(properties)
         references = [
             {
                 'idref': self._sanitise_uuid(related.idref),
@@ -1490,21 +1500,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if related.idref is not None
         ]
         if references:
-            compl_data = {'references': references}
-        return name, attributes, compl_data
-
-    @classmethod
-    def _related_object_relationship(cls, related: RelatedObject) -> str:
-        # `contains` is written as the vocabulary term, any other relationship
-        # verbatim as a free-text term - one spelled `Contains` included
-        relationship = related.relationship
-        value = cls._value(relationship)
-        if not value:
-            return 'related-to'
-        if isinstance(relationship, ObjectRelationship):
-            if value == 'Contains':
-                return 'contains'
-        return value
+            # Applied once the whole package is parsed: what they point to
+            # may not be parsed yet
+            self.references[uuid].extend(references)
 
     # Return type & value of a composite attribute in MISP - None where the
     # values the composition holds pair into no MISP composite type, which the
