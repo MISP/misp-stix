@@ -1543,7 +1543,8 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
 class TestSTIX1UnreferencedPESection(TestSTIX):
     """A `pe-section` no `pe` references has no `WindowsExecutableFile` to
     fold into: it is exported as every other unmapped object is, one `Custom`
-    Observable carrying its relations."""
+    Observable carrying its relations. The template is mapped, under a `pe`:
+    no warning claims otherwise."""
 
     _SECTION_UUID = '5c9e1a3d-7f4b-4d0c-9e8a-2b3c4d5e6f70'
 
@@ -1574,6 +1575,7 @@ class TestSTIX1UnreferencedPESection(TestSTIX):
             with self.subTest(to_ids=to_ids):
                 parser = self._parse_section(to_ids)
                 self.assertEqual(parser.errors, {})
+                self.assertEqual(parser.warnings, {})
                 incident = parser.stix_package.incidents[0]
                 if to_ids:
                     related, = incident.related_indicators.indicator
@@ -1789,9 +1791,11 @@ class TestSTIX1ObjectErrorFallback(TestSTIX):
                         attribute['value'] = True
                 parser = self._parse_event(event, version)
                 self._assert_one_error(parser, 'pe', pe_object['uuid'])
-                self.assertNotIn(
-                    'MISP Object name pe not mapped.', self._warnings(parser)
-                )
+                for name in ('pe', 'pe-section'):
+                    self.assertNotIn(
+                        f'MISP Object name {name} not mapped.',
+                        self._warnings(parser)
+                    )
                 observables = {
                     observable.id_: observable
                     for observable in self._written_observables(parser)
