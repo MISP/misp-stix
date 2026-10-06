@@ -1544,6 +1544,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._ttp_references = {}
         self._written_cybox_objects = {}
         self._folding_references = set()
+        self._course_of_action_slots = {}
+        self._written_indicators = {}
+        self._written_courses_of_action = {}
+        self._written_object_ttps = {}
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
@@ -1746,8 +1750,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         A reference between two objects written as TTPs is a Related_TTP. One
         from an object written as a single CybOX Object to a record written as
         one too is a Related_Object on the source's Object, pointing at the
-        target's. A `pe` folded into its `file` and a section folded into its
-        `pe` take their reference with them. Every other reference has no
+        target's. One a Related_Object cannot carry goes in the relationship
+        slot of the source's own construct naming the target's kind, where
+        there is one. A `pe` folded into its `file` and a section folded into
+        its `pe` take their reference with them. Every other reference has no
         slot of the source's own to go in, or points at nothing the document
         holds: it is named in a Warning.
         """
@@ -1762,6 +1768,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     reference['referenced_uuid']
                 )
                 if source is None or target is None:
+                    if self._write_slot_reference(
+                            misp_object['uuid'], reference['referenced_uuid'],
+                            reference['relationship_type']):
+                        continue
                     self._unwritten_object_reference_warning(
                         self._object_features(misp_object),
                         reference['relationship_type'],
@@ -1776,6 +1786,44 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         )
                     )
                 )
+
+    def _write_slot_reference(self, source_uuid: str, target_uuid: str,
+                              relationship: str) -> bool:
+        """Write a reference in the relationship slot of the source's own
+        construct naming the target's kind, the relationship verbatim: one to
+        a `course-of-action` object in the Potential_COAs of the Exploit
+        Target of a `vulnerability` or `weakness`, the Related_COAs of a
+        Course of Action or the Suggested_COAs of an Indicator; one from an
+        Indicator to an `attack-pattern`, `vulnerability` or `weakness` object
+        in its Indicated_TTP. The galaxy clusters fill the same slots.
+
+        :param source_uuid: the uuid of the object making the reference
+        :param target_uuid: the uuid of the record it references
+        :param relationship: the relationship of the reference
+        :return: whether the source's construct has a slot for the target
+        """
+        course_of_action = self._written_courses_of_action.get(target_uuid)
+        if course_of_action is not None:
+            slot = self._course_of_action_slots.get(source_uuid)
+            if slot is None:
+                return False
+            slot.append(
+                self._create_related_coa(
+                    course_of_action.id_, relationship,
+                    timestamp=course_of_action.timestamp
+                )
+            )
+            return True
+        ttp = self._written_object_ttps.get(target_uuid)
+        indicator = self._written_indicators.get(source_uuid)
+        if ttp is None or indicator is None:
+            return False
+        indicator.add_indicated_ttp(
+            self._create_related_ttp(
+                ttp.id_, relationship, timestamp=ttp.timestamp
+            )
+        )
+        return True
 
     def _write_related_ttps(self) -> set:
         """Add a Related_TTP to the TTP of an object written as one for each
@@ -2038,6 +2086,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         self._incident.related_indicators.append(related_indicator)
         self._written_cybox_objects[misp_object['uuid']] = observable.object_
+        self._written_indicators[misp_object['uuid']] = indicator
+        self._course_of_action_slots[misp_object['uuid']] = indicator.suggested_coas
 
     def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES, galaxy_name: str) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
@@ -2093,6 +2143,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._incident.add_leveraged_ttps(related_ttp)
         self._contextualised_data.add(misp_object['uuid'])
         self._stix_package.add_ttp(ttp)
+        self._written_object_ttps[misp_object['uuid']] = ttp
 
     def _parse_asn_object(self, misp_object: dict) -> Optional[Observable]:
         attributes, repeated = self._extract_single_field_attributes(
@@ -2181,6 +2232,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         self._incident.add_coa_taken(coa_taken)
         self._stix_package.add_course_of_action(course_of_action)
+        self._written_courses_of_action[uuid] = course_of_action
+        self._course_of_action_slots[uuid] = course_of_action.related_coas
 
     def _parse_credential_authentication(self, attributes: dict) -> list:
         args = {}
@@ -2837,6 +2890,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
+        self._course_of_action_slots[misp_object['uuid']] = (
+            exploit_target.potential_coas
+        )
 
     def _parse_weakness_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
@@ -2856,6 +2912,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         exploit_target.add_weakness(weakness)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
+        self._course_of_action_slots[misp_object['uuid']] = (
+            exploit_target.potential_coas
+        )
 
     def _parse_whois_object(self, misp_object: dict) -> Observable:
         attributes, repeated = self._extract_single_field_attributes(
