@@ -2678,6 +2678,42 @@ class TestSTIX1Import(TestSTIX):
                     {('file', to_ids), ('pe', to_ids), ('pe-section', to_ids)}
                 )
 
+    def test_internal_misp_export_unfolded_section_to_ids_round_trips(self):
+        """A flagged section the export writes standalone - an entropy its
+        field would rewrite - or falls back on - a name cybox refuses - is
+        its own Indicator: the `file` or the lone `pe` it is not folded into
+        stays a plain Observable, and its attributes come back unflagged."""
+        cases = (
+            (get_event_with_file_and_pe_objects, ('entropy', '0x1p1')),
+            (get_event_with_file_and_pe_objects, ('name', True)),
+            (get_event_with_pe_objects, ('entropy', '0x1p1')),
+            (get_event_with_pe_objects, ('name', True))
+        )
+        for get_event, (relation, value) in cases:
+            with self.subTest(event=get_event.__name__, relation=relation):
+                event = get_event()
+                for misp_object in event['Event']['Object']:
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = False
+                    if misp_object['name'] == 'pe-section':
+                        misp_object['Attribute'][0]['to_ids'] = True
+                        for attribute in misp_object['Attribute']:
+                            if attribute['object_relation'] == relation:
+                                attribute['value'] = value
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    {
+                        (misp_object.name, attribute.to_ids)
+                        for misp_object in parser.misp_event.objects
+                        for attribute in misp_object.attributes
+                    },
+                    {
+                        (misp_object['name'], misp_object['name'] == 'pe-section')
+                        for misp_object in event['Event']['Object']
+                    }
+                )
+
     def test_internal_record_misp_refuses_costs_that_record_only(self):
         """A package of two events, the first carrying a journal entry naming
         an attribute type MISP has not: pymisp refuses the attribute, and the

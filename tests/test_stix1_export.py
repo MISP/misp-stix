@@ -1576,6 +1576,96 @@ class TestSTIX1UnreferencedPESection(TestSTIX):
                 )
 
 
+class TestSTIX1FoldedPEToIds(TestSTIX):
+    """A `file` or a lone `pe` is an Indicator when an attribute folded into
+    its `WindowsExecutableFile` is `to_ids`: a section written standalone, or
+    one the export failed on, carries its own Indicator and does not count."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _CASES = (
+        (get_event_with_file_and_pe_objects, 'file'),
+        (get_event_with_pe_objects, 'pe')
+    )
+
+    @staticmethod
+    def _section_flagged_event(get_event, section_value=None):
+        """The event `get_event` returns, its first section attribute the only
+        one flagged `to_ids`, and the section value of the relation named in
+        `section_value` replaced by the value given there."""
+        event = get_event()
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = False
+            if misp_object['name'] == 'pe-section':
+                misp_object['Attribute'][0]['to_ids'] = True
+                if section_value is not None:
+                    relation, value = section_value
+                    for attribute in misp_object['Attribute']:
+                        if attribute['object_relation'] == relation:
+                            attribute['value'] = value
+        return event
+
+    @staticmethod
+    def _object(event, name):
+        misp_object, = (
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == name
+        )
+        return misp_object
+
+    def _written(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        incident = parser.stix_package.incidents[0]
+        return (
+            parser,
+            {related.item.id_ for related in incident.related_indicators},
+            {related.item.id_ for related in incident.related_observables}
+        )
+
+    def test_unfolded_flagged_section_does_not_flag_its_record(self):
+        # An entropy its field would rewrite sends the section out
+        # standalone, a name cybox refuses sends it to the object error
+        # fallback: either way it is not in the record
+        section_values = (('entropy', '0x1p1'), ('name', True))
+        for version in self._VERSIONS:
+            for get_event, root in self._CASES:
+                for section_value in section_values:
+                    with self.subTest(version=version, root=root,
+                                      section_value=section_value):
+                        event = self._section_flagged_event(
+                            get_event, section_value
+                        )
+                        root_uuid = self._object(event, root)['uuid']
+                        section_uuid = self._object(event, 'pe-section')['uuid']
+                        _, indicators, observables = self._written(
+                            event, version
+                        )
+                        self.assertEqual(
+                            indicators,
+                            {f'{_ORGNAME_ID}:Indicator-{section_uuid}'}
+                        )
+                        self.assertEqual(
+                            observables,
+                            {f'{_ORGNAME_ID}:Observable-{root_uuid}'}
+                        )
+
+    def test_folded_flagged_section_flags_its_record(self):
+        for version in self._VERSIONS:
+            for get_event, root in self._CASES:
+                with self.subTest(version=version, root=root):
+                    event = self._section_flagged_event(get_event)
+                    root_uuid = self._object(event, root)['uuid']
+                    parser, indicators, observables = self._written(
+                        event, version
+                    )
+                    self.assertEqual(parser.errors, {})
+                    self.assertEqual(
+                        indicators, {f'{_ORGNAME_ID}:Indicator-{root_uuid}'}
+                    )
+                    self.assertEqual(observables, set())
+
+
 class TestSTIX1ObjectErrorFallback(TestSTIX):
     """An object a mapped route fails on still goes out, the way an unmapped
     one does: a `Custom` Observable named after its template, carrying its
