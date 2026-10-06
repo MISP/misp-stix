@@ -642,6 +642,35 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     converted = True
         if not converted:
             self._unconverted_ttp_error(ttp.id_)
+            return
+        self._read_related_ttps(ttp)
+
+    def _read_related_ttps(self, ttp: TTP):
+        """Record the references the Related_TTPs of a TTP carry: the export
+        writes one for each reference an `attack-pattern`, `vulnerability` or
+        `weakness` object makes to another record it writes as a TTP.
+
+        The source is the object the TTP became - one that became an
+        attribute holds no reference, and the application skips it. A galaxy
+        cluster is written as a TTP too, and its uuid lands on no record: the
+        entries are slot references, applied only towards a record the import
+        built. A reference's uuid, comment and timestamp are not written.
+
+        :param ttp: the TTP a MISP attribute or object was exported as
+        """
+        references = [
+            {
+                'idref': self._sanitise_uuid(related.item.idref),
+                'relationship': (
+                    self._value(related.relationship) or 'related-to'
+                ),
+                'slot': True
+            }
+            for related in ttp.related_ttps or ()
+            if related.item is not None and related.item.idref
+        ]
+        if references:
+            self.references[self._sanitise_uuid(ttp.id_)].extend(references)
 
     def _parse_victim_identity(
             self, identity: Identity, timestamp: Optional[datetime] = None,
