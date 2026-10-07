@@ -480,6 +480,111 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(len(misp_object.references), 1)
         self.assertEqual(misp_object.references[0].relationship_type, 'observable')
 
+    def _parse_course_of_action_with(self, *observables):
+        course_of_action = self._course_of_action()
+        course_of_action.parameter_observables = Observables(list(observables))
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(course_of_action)
+        return self._parse_external_package(stix_package)
+
+    def _assert_referenced_parameter_object(self, parser, name: str,
+                                            object_uuid: str):
+        """The parameter observable landed as the one object named, written
+        as no detection, and the Course of Action references it alone."""
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.misp_event.attributes, [])
+        misp_object, = parser.misp_event.get_objects_by_name(name)
+        self.assertEqual(misp_object.uuid, object_uuid)
+        self.assertFalse(
+            any(attribute.to_ids for attribute in misp_object.attributes)
+        )
+        coa_object, = parser.misp_event.get_objects_by_name('course-of-action')
+        self.assertEqual(
+            [
+                (reference.referenced_uuid, reference.relationship_type)
+                for reference in coa_object.references
+            ],
+            [(object_uuid, 'observable')]
+        )
+        return misp_object
+
+    def test_external_course_of_action_email_parameter_observable_is_an_object(self):
+        """A parameter observable reading as an object was added as an
+        attribute named after the object - an `email` attribute whose value
+        was the fields read, with no message. It lands as the object, and
+        the Course of Action references it as it references an attribute."""
+        parser = self._parse_course_of_action_with(
+            self._observable(self._two_field_email(), 'EmailMessage')
+        )
+        email_object = self._assert_referenced_parameter_object(
+            parser, 'email', _OBSERVABLE_UUID
+        )
+        self.assertEqual(
+            sorted(
+                (attribute.object_relation, attribute.value)
+                for attribute in email_object.attributes
+            ),
+            [('from', 'jdoe@example.com'), ('subject', 'Invoice')]
+        )
+
+    def test_external_course_of_action_file_parameter_observable_is_an_object(self):
+        """A file was refused with an Error, the Course of Action left
+        referencing nothing: it lands as the `file` object it reads as."""
+        parser = self._parse_course_of_action_with(
+            self._observable(self._file_with_three_properties(), 'File')
+        )
+        file_object = self._assert_referenced_parameter_object(
+            parser, 'file', _OBSERVABLE_UUID
+        )
+        self.assertEqual(
+            sorted(attribute.object_relation for attribute in file_object.attributes),
+            ['filename', 'md5', 'size-in-bytes']
+        )
+
+    def test_external_course_of_action_email_parameter_keeps_its_attachment_reference(self):
+        """An email referencing an attachment it does not embed is read
+        whole, as on the Observable path: the email object keeps the
+        reference, which the reduced attribute had nothing to hold."""
+        email_uuid = '0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e'
+        file_uuid = '1c2d3e4f-5a6b-4c7d-9e8f-0a1b2c3d4e5f'
+        parser = self._parse_course_of_action_with(
+            Observable(
+                self._subject_email_object(
+                    f'example:EmailMessage-{email_uuid}',
+                    f'example:File-{file_uuid}'
+                )
+            )
+        )
+        email_object = self._assert_referenced_parameter_object(
+            parser, 'email', email_uuid
+        )
+        self.assertEqual(
+            [
+                (reference.referenced_uuid, reference.relationship_type)
+                for reference in email_object.references
+            ],
+            [(file_uuid, 'attachment')]
+        )
+
+    def test_external_course_of_action_refused_parameter_object_is_not_referenced(self):
+        """An object pymisp refuses costs that object, with an Error, and
+        the Course of Action keeps no reference pointing at it."""
+        parser = self._parse_course_of_action_with(
+            self._observable(
+                self._custom(
+                    'file', ('creation-time', 'not a date'), ('md5', _MD5_HASH)
+                ),
+                'Custom'
+            )
+        )
+        coa_object, = parser.misp_event.objects
+        self.assertEqual(coa_object.name, 'course-of-action')
+        self.assertEqual(coa_object.references, [])
+        errors = parser.diagnostics()['errors']['misp event']
+        self.assertEqual(len(errors), 1)
+        self.assertIn('Error with the file object', errors[0])
+        self.assertIn('not a date', errors[0])
+
     @classmethod
     def _course_of_action_with_an_unknown_parameter_observable(cls):
         """A Course of Action whose parameter observables are a domain and an
@@ -1521,6 +1626,113 @@ class TestSTIX1Import(TestSTIX):
         self.assertNotIn(
             f'misp-galaxy:mitre-malware="{SMUGGLING_TAG_VALUE}"', tags
         )
+
+    @classmethod
+    def _ttp_with_infrastructure(cls, *observables):
+        """A TTP naming a malware, over infrastructure made of the
+        Observables given."""
+        ttp = cls._ttp_with_malware('WannaCry')
+        infrastructure = Infrastructure()
+        infrastructure.observable_characterization = Observables(
+            list(observables)
+        )
+        ttp.resources = Resource()
+        ttp.resources.infrastructure = infrastructure
+        return ttp
+
+    def _parse_ttp_with(self, *observables):
+        stix_package = STIXPackage()
+        stix_package.add_ttp(self._ttp_with_infrastructure(*observables))
+        return self._parse_external_package(stix_package)
+
+    def test_external_ttp_infrastructure_file_is_an_object(self):
+        """A TTP's infrastructure reading as an object was added as an
+        attribute named after the object, which pymisp refused outside any
+        guard: the whole package was lost. It lands as the object, every
+        attribute carrying the TTP's galaxy tag, and the sole record the
+        TTP builds takes its uuid."""
+        parser = self._parse_ttp_with(
+            self._observable(self._file_with_three_properties(), 'File')
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.misp_event.attributes, [])
+        self.assertEqual(parser.misp_event.tags, [])
+        misp_object, = parser.misp_event.objects
+        self.assertEqual(
+            (misp_object.name, misp_object.uuid), ('file', _ACTOR_UUID)
+        )
+        self.assertEqual(
+            sorted(
+                (
+                    attribute.object_relation, attribute.to_ids,
+                    tuple(tag.name for tag in attribute.tags)
+                )
+                for attribute in misp_object.attributes
+            ),
+            [
+                (relation, False, ('misp-galaxy:mitre-malware="WannaCry"',))
+                for relation in ('filename', 'md5', 'size-in-bytes')
+            ]
+        )
+
+    def test_external_ttp_infrastructure_email_is_an_object(self):
+        """An email was added as an `email` attribute whose value was the
+        fields read, with no message. It lands as the object, taking the
+        Observable's id where the TTP builds more than one record."""
+        parser = self._parse_ttp_with(
+            self._observable(self._two_field_email(), 'EmailMessage'),
+            self._observable(self._ipv4_address(), 'Address', _IP_UUID)
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        email_object, = parser.misp_event.objects
+        self.assertEqual(
+            (
+                email_object.name, email_object.uuid,
+                sorted(
+                    (attribute.object_relation, attribute.value)
+                    for attribute in email_object.attributes
+                )
+            ),
+            (
+                'email', _OBSERVABLE_UUID,
+                [('from', 'jdoe@example.com'), ('subject', 'Invoice')]
+            )
+        )
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('ip-dst', '198.51.100.16')]
+        )
+        self.assertEqual(
+            {
+                tuple(tag.name for tag in attribute.tags)
+                for attribute in (
+                    *email_object.attributes, *parser.misp_event.attributes
+                )
+            },
+            {('misp-galaxy:mitre-malware="WannaCry"',)}
+        )
+
+    def test_external_ttp_refused_record_costs_that_record_only(self):
+        """A record pymisp refuses was built outside the guard, and the
+        refusal cost the whole package: it costs that record, with an
+        Error, and the galaxy it would have carried goes to the event."""
+        parser = self._parse_ttp_with(
+            self._observable(
+                self._custom(None, ('datetime', 'not a date')), 'Custom'
+            )
+        )
+        self.assertEqual(parser.misp_event.attributes, [])
+        self.assertEqual(parser.misp_event.objects, [])
+        self.assertIn(
+            'misp-galaxy:mitre-malware="WannaCry"',
+            {tag.name for tag in parser.misp_event.tags}
+        )
+        errors = parser.diagnostics()['errors']['misp event']
+        self.assertEqual(len(errors), 1)
+        self.assertIn('Error with the datetime attribute: not a date', errors[0])
 
     def test_external_threat_actor_galaxy_lands_on_the_event(self):
         """A threat actor names no attribute or object of its own: the galaxy
@@ -5720,6 +5932,23 @@ class TestSTIX1Import(TestSTIX):
         file_object.size_in_bytes = 1024
         file_object.add_hash(_MD5_HASH)
         return file_object
+
+    @staticmethod
+    def _two_field_email():
+        """Two header fields, so the email lands as an `email` object rather
+        than as the attribute one of them reduces to."""
+        email = EmailMessage()
+        email.header = EmailHeader()
+        email.header.subject = 'Invoice'
+        email.header.from_ = 'jdoe@example.com'
+        return email
+
+    @staticmethod
+    def _ipv4_address():
+        address = Address()
+        address.address_value = '198.51.100.16'
+        address.category = 'ipv4-addr'
+        return address
 
     @staticmethod
     def _pe_with_section(*hashes):
