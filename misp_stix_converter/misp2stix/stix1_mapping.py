@@ -321,6 +321,11 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         summary='description'
     )
     __attack_pattern_description_relations = ('prerequisites', 'solutions')
+    __attack_pattern_single_fields = (
+        'id',
+        'name',
+        'summary'
+    )
     __course_of_action_object_mapping = Mapping(
         name='title',
         type='type_',
@@ -330,6 +335,16 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         cost='cost',
         impact='impact',
         efficacy='efficacy'
+    )
+    __course_of_action_single_fields = (
+        'cost',
+        'description',
+        'efficacy',
+        'impact',
+        'name',
+        'objective',
+        'stage',
+        'type'
     )
     __credential_object_mapping = Mapping(
         username='username',
@@ -367,6 +382,20 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
             'protocol': 'protocol',
             'socket-type': 'type_'
         }
+    )
+    __mutex_single_fields = (
+        'name',
+    )
+    __network_connection_single_fields = (
+        'dst-port',
+        'hostname-dst',
+        'hostname-src',
+        'ip-dst',
+        'ip-src',
+        'layer3-protocol',
+        'layer4-protocol',
+        'layer7-protocol',
+        'src-port'
     )
     __network_socket_single_fields = (
         'address-family',
@@ -411,6 +440,11 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         'product-version',
         'type'
     )
+    __pe_section_single_fields = (
+        'entropy',
+        'name',
+        'size-in-bytes'
+    )
     __process_object_mapping = Mapping(
         **{
             'creation-time': 'creation_time',
@@ -436,6 +470,14 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
             'data': 'data',
             'data-type': 'datatype'
         }
+    )
+    __registry_key_single_fields = (
+        'data',
+        'data-type',
+        'hive',
+        'key',
+        'last-modified',
+        'name'
     )
     __user_account_object_mapping = Mapping(
         **{
@@ -475,6 +517,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
     __weakness_object_mapping = Mapping(
         id='cwe_id',
         description='description'
+    )
+    __weakness_single_fields = (
+        'description',
+        'id'
     )
     __whois_object_mapping = Mapping(
         **{
@@ -537,6 +583,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         return cls.__attack_pattern_description_relations
 
     @classmethod
+    def attack_pattern_single_fields(cls) -> tuple:
+        return cls.__attack_pattern_single_fields
+
+    @classmethod
     def attribute_types_mapping(cls, field: str) -> Union[str, None]:
         return cls.__attribute_types_mapping.get(field)
 
@@ -559,6 +609,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
     @classmethod
     def course_of_action_object_mapping(cls) -> dict:
         return cls.__course_of_action_object_mapping
+
+    @classmethod
+    def course_of_action_single_fields(cls) -> tuple:
+        return cls.__course_of_action_single_fields
 
     @classmethod
     def credential_object_mapping(cls) -> dict:
@@ -597,6 +651,14 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         return cls.__misp_reghive.get(field)
 
     @classmethod
+    def mutex_single_fields(cls) -> tuple:
+        return cls.__mutex_single_fields
+
+    @classmethod
+    def network_connection_single_fields(cls) -> tuple:
+        return cls.__network_connection_single_fields
+
+    @classmethod
     def network_socket_mapping(cls) -> dict:
         return cls.__network_socket_mapping
 
@@ -621,6 +683,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         return cls.__pe_single_fields
 
     @classmethod
+    def pe_section_single_fields(cls) -> tuple:
+        return cls.__pe_section_single_fields
+
+    @classmethod
     def process_object_mapping(cls) -> dict:
         return cls.__process_object_mapping
 
@@ -631,6 +697,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
     @classmethod
     def regkey_object_mapping(cls) -> dict:
         return cls.__regkey_object_mapping
+
+    @classmethod
+    def registry_key_single_fields(cls) -> tuple:
+        return cls.__registry_key_single_fields
 
     @classmethod
     def status_mapping(cls, field: str) -> Union[str, None]:
@@ -667,6 +737,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
     @classmethod
     def weakness_object_mapping(cls) -> dict:
         return cls.__weakness_object_mapping
+
+    @classmethod
+    def weakness_single_fields(cls) -> tuple:
+        return cls.__weakness_single_fields
 
     @classmethod
     def whois_object_mapping(cls) -> dict:

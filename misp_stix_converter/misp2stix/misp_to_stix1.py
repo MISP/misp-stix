@@ -2041,6 +2041,34 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     stix_object, relation, value, misp_object
                 )
 
+    def _describe_repeated_values(self, construct: Any, repeated: dict,
+                                  description_relation: str,
+                                  misp_object: dict):
+        """Write the values a field holding one had no room for, on a
+        construct with no property bag: a further value of its free text
+        relation is one more description, any other is warned of.
+
+        :param construct: the STIX construct taking descriptions
+        :param repeated: the further values, by relation
+        :param description_relation: the relation its description holds
+        :param misp_object: the MISP object they belong to
+        """
+        for value in repeated.pop(description_relation, ()):
+            construct.add_description(value)
+        self._warn_repeated_values(repeated, misp_object)
+
+    def _warn_repeated_values(self, repeated: dict, misp_object: dict):
+        """Warn of each value a field holding one had no room for, on a
+        construct with no property bag.
+
+        :param repeated: the further values, by relation
+        :param misp_object: the MISP object they belong to
+        """
+        record = self._object_features(misp_object)
+        for relation, values in repeated.items():
+            for value in values:
+                self._single_value_field_warning(relation, value, record)
+
     def _pop_canonical_integers(self, attributes: dict, relation: str,
                                 record: str, positive: bool = False) -> list:
         """Take the values of a relation a native CybOX unsigned integer
@@ -2079,16 +2107,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             attributes[relation] = others
         return first
 
-    def _handle_custom_properties(self, attributes: dict, misp_object: dict,
-                                  multiple: Optional[bool] = True) -> CustomProperties:
+    def _handle_custom_properties(self, attributes: dict,
+                                  misp_object: dict) -> CustomProperties:
         custom_properties = CustomProperties()
         record = self._object_features(misp_object)
-        if not multiple:
-            for object_relation, value in attributes.items():
-                self._append_property(
-                    custom_properties, object_relation, value, record
-                )
-            return custom_properties
         for object_relation, values in attributes.items():
             # A relation its parser forced single is a scalar here, not a
             # list: iterating it spreads a string over one property per
@@ -2225,7 +2247,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._add_record_comment(ttp, misp_object)
         attack_pattern = AttackPattern()
         attack_pattern.id_ = f"{self._orgname_id}:AttackPattern-{misp_object['uuid']}"
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'],
+            self._mapping.attack_pattern_single_fields()
+        )
         mapping = self._mapping.attack_pattern_object_mapping()
         for key, feature in mapping.items():
             if attributes.get(key):
@@ -2249,6 +2274,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._warn_unwritable_relations(
             misp_object, (*mapping, *described, 'related-weakness')
         )
+        self._describe_repeated_values(
+            attack_pattern, repeated, 'summary', misp_object
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
@@ -2263,12 +2291,18 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         uuid = misp_object['uuid']
         course_of_action.id_ = f'{self._orgname_id}:CourseOfAction-{uuid}'
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'],
+            self._mapping.course_of_action_single_fields()
+        )
         mapping = self._mapping.course_of_action_object_mapping()
         for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(course_of_action, feature, attributes.pop(key))
         self._warn_unwritable_relations(misp_object, tuple(mapping))
+        self._describe_repeated_values(
+            course_of_action, repeated, 'description', misp_object
+        )
         tags = self._handle_non_indicator_object_tags_and_galaxies(
             misp_object,
             course_of_action,
@@ -2565,14 +2599,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable_composition
 
     def _parse_mutex_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.mutex_single_fields()
+        )
         mutex_object = Mutex()
         if attributes.get('name'):
             mutex_object.name = attributes.pop('name')
         if attributes:
             mutex_object.custom_properties = self._handle_custom_properties(
-                attributes, misp_object, multiple=False
+                attributes, misp_object
             )
+        self._add_repeated_values(mutex_object, repeated, misp_object)
         observable = self._create_observable(
             mutex_object,
             misp_object['uuid'],
@@ -2581,7 +2618,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_network_connection_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'],
+            self._mapping.network_connection_single_fields()
+        )
         connection_object = NetworkConnection()
         self._parse_socket_addresses(
             connection_object,
@@ -2596,6 +2636,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 setattr(getattr(connection_object, field), 'condition', 'Equals')
         if attributes:
             connection_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(connection_object, repeated, misp_object)
         observable = self._create_observable(
             connection_object,
             misp_object['uuid'],
@@ -2734,7 +2775,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _parse_pe_section_object(
             self, misp_pe_section: dict) -> Optional[PESection]:
-        section_attributes = self._extract_object_attributes(misp_pe_section['Attribute'])
+        section_attributes, repeated = self._extract_single_field_attributes(
+            misp_pe_section['Attribute'],
+            self._mapping.pe_section_single_fields()
+        )
         if section_attributes.get('entropy') and not self._canonical_float(
                 section_attributes['entropy'], 'entropy',
                 self._object_features(misp_pe_section)):
@@ -2751,10 +2795,14 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if section_attributes.get('size-in-bytes'):
                 pe_section.section_header.size_of_raw_data = section_attributes.pop('size-in-bytes')
                 pe_section.section_header.size_of_raw_data.condition = 'Equals'
+        # A section has no property bag, but its HashList takes every value
+        # of a hash
         hashlist = []
-        for key, value in section_attributes.items():
+        for key, values in section_attributes.items():
             if key in self._mapping.hash_type_attributes('single'):
-                hashlist.append(self._parse_hash_value(key, value))
+                hashlist.extend(
+                    self._parse_hash_value(key, value) for value in values
+                )
         if hashlist:
             pe_section.data_hashes = HashList()
             pe_section.data_hashes.hashes = hashlist
@@ -2763,6 +2811,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             ('entropy', 'name', 'size-in-bytes',
              *self._mapping.hash_type_attributes('single'))
         )
+        self._warn_repeated_values(repeated, misp_pe_section)
         return pe_section
 
     def _parse_process_object(self, misp_object: dict) -> Observable:
@@ -2811,7 +2860,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_registry_key_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.registry_key_single_fields()
+        )
         registry_object = self._create_registry_key_object(attributes.pop('key')) if attributes.get('key') else WinRegistryKey()
         if attributes.get('hive'):
             # A hive in the CybOX enumeration is spelled its way; any other -
@@ -2833,10 +2884,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             registry_object.modified_time.condition = 'Equals'
         if attributes:
             registry_object.custom_properties = self._handle_custom_properties(
-                attributes,
-                misp_object,
-                multiple=False
+                attributes, misp_object
             )
+        self._add_repeated_values(registry_object, repeated, misp_object)
         observable = self._create_observable(
             registry_object,
             misp_object['uuid'],
@@ -2947,15 +2997,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             ('id', 'cvss-score', 'references',
              *self._mapping.vulnerability_object_mapping())
         )
-        record = self._object_features(misp_object)
-        for relation, values in repeated.items():
-            for value in values:
-                if relation == 'summary':
-                    # One more description, as the attack pattern writes
-                    # every free text relation it has
-                    vulnerability.add_description(value)
-                else:
-                    self._single_value_field_warning(relation, value, record)
+        self._describe_repeated_values(
+            vulnerability, repeated, 'summary', misp_object
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
@@ -2972,12 +3016,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_weakness_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         weakness = Weakness()
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.weakness_single_fields()
+        )
         mapping = self._mapping.weakness_object_mapping()
         for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(weakness, feature, attributes.pop(key))
         self._warn_unwritable_relations(misp_object, tuple(mapping))
+        self._describe_repeated_values(
+            weakness, repeated, 'description', misp_object
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
