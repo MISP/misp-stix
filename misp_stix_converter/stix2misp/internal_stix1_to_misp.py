@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from ..tools.galaxy_types import _stix1_construct_kind
 from ..tools.misp_object_templates import (
     _sanitise_template_name, _template_attribute_types,
     _UNKNOWN_TEMPLATE_NAME)
@@ -52,8 +53,9 @@ _MISP_HEADER_DESCRIPTION_COMMENT = 'Imported from STIX header description'
 # 1 export wrote, next to the `Attribute (Category - type)` this one writes
 _LEGACY_JOURNAL_ATTRIBUTE = re.compile(r'^attribute\[([^\]]+)\]\[([^\]]+)\]$')
 _JOURNAL_ATTRIBUTE_PREFIX = 'Attribute ('
-# The value slot of a galaxy tag, `misp-galaxy:{galaxy type}="{value}"`
-_GALAXY_TAG = re.compile(r'^misp-galaxy:[^=]+="(.*)"$')
+# The galaxy type and value slots of a galaxy tag,
+# `misp-galaxy:{galaxy type}="{value}"`
+_GALAXY_TAG = re.compile(r'^misp-galaxy:([^=]+)="(.*)"$')
 
 
 class InternalSTIX1toMISPParser(STIX1toMISPParser):
@@ -193,9 +195,15 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         of a cluster, galaxy type included, on the handling of the record
         carrying it - the Incident, an attribute, the one a MISP object
         merges the ones of its attributes into, read onto the event - so a
-        tag of the same value read anywhere in the event is the cluster the
-        construct names. Matched on value, two clusters of one value in two
-        galaxies on two records collide, and the construct one is not added.
+        tag read anywhere in the event, of the same value and of a galaxy
+        type exported as the same kind of construct, is the cluster the
+        construct names. A tag of a galaxy STIX 1 has no construct for, or
+        of another kind, names another cluster and leaves the construct one
+        alone. Two clusters of one value in two galaxies of the same kind on
+        two records still collide, and the construct one is not added: a
+        package written by this export never holds one, the cluster tag
+        being on its record, but one written before it kept the tag of no
+        mapped cluster, the construct being its only carrier.
         """
         attributes = (
             *self.misp_event.attributes,
@@ -203,22 +211,29 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
               for attribute in misp_object.attributes)
         )
         carried = {
-            value for value in (
-                self._galaxy_tag_value(tag.name) for tag in (
+            key for key in (
+                self._galaxy_tag_key(tag.name) for tag in (
                     *self.misp_event.tags,
                     *(tag for attribute in attributes for tag in attribute.tags)
                 )
             )
-            if value is not None
+            if key is not None
         }
         for tag_name in sorted(self.galaxies):
-            if self._galaxy_tag_value(tag_name) not in carried:
+            if self._galaxy_tag_key(tag_name) not in carried:
                 self.misp_event.add_tag(tag_name)
 
     @staticmethod
-    def _galaxy_tag_value(tag_name: str) -> Optional[str]:
+    def _galaxy_tag_key(tag_name: str) -> Optional[tuple[str, str]]:
+        """The kind of STIX 1 construct a galaxy tag's cluster is exported as,
+        and its value: None for a tag that is not a galaxy one, or of a
+        galaxy no construct holds."""
         match = _GALAXY_TAG.match(tag_name)
-        return match.group(1) if match is not None else None
+        if match is None:
+            return None
+        galaxy_type, value = match.groups()
+        kind = _stix1_construct_kind(galaxy_type)
+        return (kind, value) if kind is not None else None
 
     def _parse_journal_entry(self, journal_entry: str):
         """Convert one journal entry of the Incident History.

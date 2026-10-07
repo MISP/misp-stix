@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ..misp_stix_mapping import Mapping
+from ..tools.galaxy_types import _STIX1_CONSTRUCT_KINDS
 from .stix_mapping import MISPtoSTIXMapping
 from typing import Union
 
@@ -253,29 +254,12 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
     # GALAXIES MAPPING
     __galaxy_types_mapping = Mapping(
         **{
-            'branded-vulnerability': '_parse_vulnerability_{}_galaxy',
-            **dict.fromkeys(
-                MISPtoSTIXMapping.attack_pattern_types(),
-                '_parse_attack_pattern_{}_galaxy'
-            ),
-            **dict.fromkeys(
-                MISPtoSTIXMapping.course_of_action_types(),
-                '_parse_course_of_action_{}_galaxy'
-            ),
-            **dict.fromkeys(
-                MISPtoSTIXMapping.malware_types(), '_parse_malware_{}_galaxy'
-            ),
-            **dict.fromkeys(
-                MISPtoSTIXMapping.threat_actor_types(),
-                '_parse_threat_actor_{}_galaxy'
-            ),
-            **dict.fromkeys(
-                MISPtoSTIXMapping.tool_types(), '_parse_tool_{}_galaxy'
-            )
+            galaxy_type: f'_parse_{kind}_{{}}_galaxy'
+            for galaxy_type, kind in _STIX1_CONSTRUCT_KINDS.items()
         }
     )
     __ttp_names = (
-        'branded-vulnerability',
+        *MISPtoSTIXMapping.vulnerability_types(),
         *MISPtoSTIXMapping.attack_pattern_types(),
         *MISPtoSTIXMapping.malware_types(),
         *MISPtoSTIXMapping.tool_types()
