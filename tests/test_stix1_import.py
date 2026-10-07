@@ -1798,10 +1798,10 @@ class TestSTIX1Import(TestSTIX):
         return event
 
     @classmethod
-    def _misp_export(cls, event):
+    def _misp_export(cls, event, version='1.1.1'):
         """The package the MISP STIX 1 export writes for the event, framed the
         way the collection export frames it."""
-        parser = MISPtoSTIX1EventsParser('MISP', '1.1.1')
+        parser = MISPtoSTIX1EventsParser('MISP', version)
         parser.parse_misp_event(event)
         return cls._wrapped_package(parser.stix_package)
 
@@ -2964,6 +2964,43 @@ class TestSTIX1Import(TestSTIX):
                     (expected, values[hash_type], expected)
                 )
 
+    def test_internal_repeated_off_template_file_hash_writes_one_hash_per_value(self):
+        """A hash relation the `file` template has not reached the hash
+        writer as a list: cybox measured the list, typed it `Other`, and two
+        values went out as one `Hash` read back as a Python list. Each value
+        is one `Hash` now, coming back as the type cybox names it."""
+        values = (
+            ('pehash', 'pehash', '4' * 40), ('pehash', 'pehash', '6' * 40),
+            ('cdhash', 'cdhash', _CDHASH),
+            ('impfuzzy', 'impfuzzy', _IMPFUZZY_HASH)
+        )
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                event = get_event_with_file_object()
+                misp_object, = event['Event']['Object']
+                misp_object['Attribute'].extend(
+                    {'type': attribute_type, 'object_relation': relation,
+                     'value': value, 'uuid': str(uuid5(_UUIDv4, value))}
+                    for attribute_type, relation, value in values
+                )
+                parser = self._parse_internal_package(
+                    self._misp_export(event['Event'], version)
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted, = parser.misp_event.get_objects_by_name('file')
+                read_back = [
+                    (attribute.type, attribute.value)
+                    for attribute in converted.attributes
+                    if attribute.value in {value for *_, value in values}
+                ]
+                self.assertEqual(
+                    sorted(read_back),
+                    sorted(
+                        (_HASH_TYPE_ROUND_TRIP[attribute_type], value)
+                        for attribute_type, _, value in values
+                    )
+                )
+
     def test_internal_misp_export_hash_composite_attributes_round_trip(self):
         """A `filename|<hash>` attribute exports as a `File` carrying the file
         name and the hash, and the composite type is rebuilt from the hash
@@ -3404,6 +3441,56 @@ class TestSTIX1Import(TestSTIX):
                 self._assert_relations_round_trip(
                     converted, exported, tuple(values)
                 )
+
+    def test_internal_misp_export_repeated_file_single_values_round_trip(self):
+        """The `file` object's single fields kept the last value and dropped
+        the others in silence, a sample or an attachment with its payload.
+        The first is the field's, every other one the property bag's, or one
+        more Artifact of the composition when it carries data."""
+        for fixture, values in (
+                (
+                    get_event_with_file_object_with_artifact,
+                    {
+                        'md5': 'a' * 32, 'sha256': 'b' * 64,
+                        'size-in-bytes': '70',
+                        'malware-sample': f"second.exe|{'c' * 32}",
+                        'attachment': 'second.txt'
+                    }
+                ),
+                (
+                    get_event_with_file_and_pe_objects,
+                    {
+                        'md5': 'a' * 32, 'sha1': 'd' * 40,
+                        'entropy': '7.5', 'size-in-bytes': '70'
+                    }
+                )):
+            for version in ('1.1.1', '1.2'):
+                with self.subTest(fixture=fixture.__name__, version=version):
+                    event = fixture()
+                    exported = self._with_repeated_values(
+                        event, 'file', values
+                    )
+                    parser = self._parse_internal_package(
+                        self._misp_export(event['Event'], version)
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.diagnostics()['warnings'], {})
+                    converted, = parser.misp_event.get_objects_by_name('file')
+                    self._assert_relations_round_trip(
+                        converted, exported, tuple(values)
+                    )
+                    self.assertEqual(
+                        sorted(
+                            (attribute.object_relation, attribute.uuid)
+                            for attribute in converted.attributes
+                            if attribute.data is not None
+                        ),
+                        sorted(
+                            (attribute['object_relation'], attribute['uuid'])
+                            for attribute in exported['Attribute']
+                            if attribute.get('data')
+                        )
+                    )
 
     def test_internal_misp_export_process_pid_that_is_no_integer_round_trips(self):
         """cybox takes a pid as an integer, the template as text: the object

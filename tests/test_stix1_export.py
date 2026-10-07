@@ -1017,19 +1017,20 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                         whois.registrants[0].name.value
                     )
                 )):
-            with self.subTest(name=name):
-                properties = self._parse_object(name, attributes)
-                self.assertEqual(
-                    read(properties),
-                    tuple(value for _, _, value in attributes[::2])
-                )
-                self.assertEqual(
-                    self._bag(properties),
-                    sorted(
-                        (relation, value)
-                        for _, relation, value in attributes[1::2]
+            for version in self._VERSIONS:
+                with self.subTest(name=name, version=version):
+                    properties = self._parse_object(name, attributes, version)
+                    self.assertEqual(
+                        read(properties),
+                        tuple(value for _, _, value in attributes[::2])
                     )
-                )
+                    self.assertEqual(
+                        self._bag(properties),
+                        sorted(
+                            (relation, value)
+                            for _, relation, value in attributes[1::2]
+                        )
+                    )
 
     def test_pe_single_value_fields_keep_the_first_and_bag_the_others(self):
         event = get_base_event()
@@ -1064,49 +1065,171 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                 ]
             }
         ]
-        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
-        parser.parse_misp_event(event['Event'])
-        self.assertEqual(parser.errors, {})
-        incident = parser.stix_package.incidents[0]
-        observable = incident.related_observables.observable[0]
-        pe = observable.item.object_.properties
-        self.assertEqual(pe.resources[0].companyname.value, 'First Company')
-        hash_value, = pe.headers.file_header.hashes
-        self.assertEqual(hash_value.simple_hash_value.value, 'a' * 32)
-        self.assertEqual(pe.type_.value, 'exe')
-        self.assertEqual(
-            self._bag(pe),
-            [('company-name', 'Second Company'), ('imphash', 'b' * 32),
-             ('type', 'dll')]
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse_event(event, version)
+                incident = parser.stix_package.incidents[0]
+                observable = incident.related_observables.observable[0]
+                pe = observable.item.object_.properties
+                self.assertEqual(
+                    pe.resources[0].companyname.value, 'First Company'
+                )
+                hash_value, = pe.headers.file_header.hashes
+                self.assertEqual(hash_value.simple_hash_value.value, 'a' * 32)
+                self.assertEqual(pe.type_.value, 'exe')
+                self.assertEqual(
+                    self._bag(pe),
+                    [('company-name', 'Second Company'),
+                     ('imphash', 'b' * 32), ('type', 'dll')]
+                )
+
+    def _parse_file(self, attributes, with_pe, version):
+        """The CybOX objects written for a `file` object, alone or with a
+        `pe` folded into it: the File, or the WindowsExecutableFile, and
+        the members of its composition before it."""
+        file_object = {
+            'name': 'file', 'meta-category': 'file',
+            'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+            'Attribute': [
+                {'type': attribute_type, 'object_relation': relation,
+                 'value': value, **(extra[0] if extra else {})}
+                for attribute_type, relation, value, *extra in attributes
+            ]
+        }
+        event = get_base_event()
+        event['Event']['Object'] = [file_object]
+        if with_pe:
+            pe_uuid = '9a3c5e7b-1d8f-4b4a-8c2e-6f7a8b9c0d1e'
+            file_object['ObjectReference'] = [
+                {'referenced_uuid': pe_uuid, 'relationship_type': 'includes',
+                 'Object': {'name': 'pe'}}
+            ]
+            event['Event']['Object'].append(
+                {
+                    'name': 'pe', 'meta-category': 'file', 'uuid': pe_uuid,
+                    'timestamp': '1603642920',
+                    'Attribute': [
+                        {'type': 'text', 'object_relation': 'type',
+                         'value': 'exe'}
+                    ]
+                }
+            )
+        parser = self._parse_event(event, version)
+        item = parser.stix_package.incidents[0].related_observables.observable[0].item
+        if item.observable_composition is None:
+            return item.object_.properties, []
+        *members, file_observable = item.observable_composition.observables
+        return (
+            file_observable.object_.properties,
+            [member.object_.properties for member in members]
         )
+
+    def test_file_single_value_fields_keep_the_first_and_bag_the_others(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        attributes = (
+            ('filename', 'filename', 'oui.exe'),
+            ('float', 'entropy', '7.1'), ('float', 'entropy', '7.2'),
+            ('size-in-bytes', 'size-in-bytes', '100'),
+            ('size-in-bytes', 'size-in-bytes', '200'),
+            ('md5', 'md5', 'a' * 32), ('md5', 'md5', 'b' * 32),
+            ('sha256', 'sha256', 'c' * 64), ('sha256', 'sha256', 'd' * 64),
+            ('malware-sample', 'malware-sample', f"first.exe|{'a' * 32}"),
+            ('malware-sample', 'malware-sample', f"second.exe|{'b' * 32}")
+        )
+        for with_pe in (False, True):
+            for version in self._VERSIONS:
+                with self.subTest(with_pe=with_pe, version=version):
+                    file_object, members = self._parse_file(
+                        attributes, with_pe, version
+                    )
+                    self.assertEqual(members, [])
+                    self.assertEqual(file_object.peak_entropy.value, 7.1)
+                    self.assertEqual(file_object.size_in_bytes.value, 100)
+                    self.assertEqual(
+                        [str(hash_value.simple_hash_value)
+                         for hash_value in file_object.hashes],
+                        ['a' * 32, 'c' * 64]
+                    )
+                    self.assertEqual(
+                        self._bag(file_object),
+                        [('entropy', '7.2'), ('malware-sample',
+                                              f"first.exe|{'a' * 32}"),
+                         ('malware-sample', f"second.exe|{'b' * 32}"),
+                         ('md5', 'b' * 32), ('sha256', 'd' * 64),
+                         ('size-in-bytes', '200')]
+                    )
+                    self.assertEqual(self._warnings, [])
+
+    def test_file_repeated_sample_carrying_data_is_one_more_artifact(self):
+        # The first sample and its payload were dropped, in silence
+        data = 'Tm9uLW1hbGljaW91cyBmaWxlCg=='
+        attributes = (
+            ('filename', 'filename', 'oui.exe'),
+            ('malware-sample', 'malware-sample', f"first.exe|{'a' * 32}",
+             {'data': data, 'uuid': '1b2c3d4e-5f60-4a71-8b2c-3d4e5f6a7b8c'}),
+            ('malware-sample', 'malware-sample', f"second.exe|{'b' * 32}",
+             {'data': data, 'uuid': '2c3d4e5f-6a71-4b82-9c3d-4e5f6a7b8c9d'}),
+            ('malware-sample', 'malware-sample', f"third.exe|{'c' * 32}"),
+            ('attachment', 'attachment', 'first.txt',
+             {'data': data, 'uuid': '3d4e5f6a-7b82-4c93-8d4e-5f6a7b8c9d0e'}),
+            ('attachment', 'attachment', 'second.txt',
+             {'data': data, 'uuid': '4e5f6a7b-8c93-4da4-9e5f-6a7b8c9d0e1f'})
+        )
+        for with_pe in (False, True):
+            for version in self._VERSIONS:
+                with self.subTest(with_pe=with_pe, version=version):
+                    file_object, members = self._parse_file(
+                        attributes, with_pe, version
+                    )
+                    self.assertEqual(
+                        [member.parent.id_ for member in members],
+                        [f'{_ORGNAME_ID}:Artifact-{uuid}' for uuid in (
+                            '1b2c3d4e-5f60-4a71-8b2c-3d4e5f6a7b8c',
+                            '2c3d4e5f-6a71-4b82-9c3d-4e5f6a7b8c9d',
+                            '3d4e5f6a-7b82-4c93-8d4e-5f6a7b8c9d0e',
+                            '4e5f6a7b-8c93-4da4-9e5f-6a7b8c9d0e1f'
+                        )]
+                    )
+                    self.assertEqual(
+                        self._bag(file_object),
+                        [('malware-sample', f"third.exe|{'c' * 32}")]
+                    )
+                    self.assertEqual(self._warnings, [])
 
     def test_process_pid_that_is_no_integer_goes_to_the_bag(self):
         # cybox takes a pid as an integer, the template as text: the object
         # was lost, with a traceback and a warning calling it unmapped
-        process = self._parse_object(
-            'process',
-            (('text', 'name', 'first.exe'), ('text', 'pid', 'pid-1234'),
-             ('text', 'parent-pid', 'unknown'))
-        )
-        self.assertEqual(process._XSI_TYPE, 'ProcessObjectType')
-        self.assertIsNone(process.pid)
-        self.assertIsNone(process.parent_pid)
-        self.assertEqual(
-            self._bag(process),
-            [('parent-pid', 'unknown'), ('pid', 'pid-1234')]
-        )
-        features = f'process object (uuid: {self._OBJECT_UUID})'
-        self.assertEqual(
-            self._warnings,
-            [
-                f"'pid' in the {features} is not a canonical unsigned "
-                "decimal integer: 'pid-1234' written as a custom property.",
-                f"'parent-pid' in the {features} is not a canonical unsigned "
-                "decimal integer: 'unknown' written as a custom property."
-            ]
-        )
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                process = self._parse_object(
+                    'process',
+                    (('text', 'name', 'first.exe'),
+                     ('text', 'pid', 'pid-1234'),
+                     ('text', 'parent-pid', 'unknown')),
+                    version
+                )
+                self.assertEqual(process._XSI_TYPE, 'ProcessObjectType')
+                self.assertIsNone(process.pid)
+                self.assertIsNone(process.parent_pid)
+                self.assertEqual(
+                    self._bag(process),
+                    [('parent-pid', 'unknown'), ('pid', 'pid-1234')]
+                )
+                features = f'process object (uuid: {self._OBJECT_UUID})'
+                self.assertEqual(
+                    self._warnings,
+                    [
+                        f"'pid' in the {features} is not a canonical "
+                        "unsigned decimal integer: 'pid-1234' written as a "
+                        "custom property.",
+                        f"'parent-pid' in the {features} is not a canonical "
+                        "unsigned decimal integer: 'unknown' written as a "
+                        "custom property."
+                    ]
+                )
 
-    def _vulnerability(self, attributes):
+    def _vulnerability(self, attributes, version='1.1.1'):
         event = get_base_event()
         event['Event']['Object'] = [
             {
@@ -1529,6 +1652,26 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
                 ).object_.properties
                 self.assertEqual(file_object.peak_entropy.value, float(value))
                 self.assertEqual(self._warnings, [])
+
+    def test_file_entropy_repeated_non_canonical_first_goes_to_the_bag(self):
+        # The last value took the field: the first was dropped, in silence,
+        # and the canonical check saw the survivor alone
+        file_object = self._parse_object(
+            'file', (('filename', 'filename', 'test.exe'),
+                     ('float', 'entropy', '0x1f'),
+                     ('float', 'entropy', '7.2'))
+        ).object_.properties
+        self.assertIsNone(file_object.peak_entropy)
+        self.assertEqual(
+            self._bag(file_object), [('entropy', '0x1f'), ('entropy', '7.2')]
+        )
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'entropy', '0x1f', kind='decimal number',
+                record=f'file object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
 
     def test_pe_section_entropy_non_canonical_section_goes_standalone(self):
         # A section has no property bag: it goes out as the object error
