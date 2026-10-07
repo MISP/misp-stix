@@ -1263,24 +1263,33 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
         )
 
     def test_port_attributes_non_canonical_are_custom(self):
+        # A port is a positive integer: cybox types it so, and wrote a 0
         record = f'{{}} attribute (uuid: {self._ATTRIBUTE_UUID})'
         for attribute_type, value, port in (
                 ('port', '0x1f', '0x1f'),
+                ('port', '0', '0'),
+                ('port', 0, 0),
                 ('hostname|port', 'circl.lu|+5', '+5'),
-                ('ip-dst|port', '5.6.7.8|-3', '-3')):
-            with self.subTest(type=attribute_type):
+                ('hostname|port', 'circl.lu|0', '0'),
+                ('ip-dst|port', '5.6.7.8|-3', '-3'),
+                ('ip-dst|port', '5.6.7.8|0', '0')):
+            with self.subTest(type=attribute_type, value=value):
                 custom = self._parse_attribute(attribute_type, value)
                 self.assertEqual(
-                    self._bag(custom.properties), [(attribute_type, value)]
+                    self._bag(custom.properties),
+                    [(attribute_type, str(value))]
                 )
                 self.assertEqual(
                     self._warnings,
                     [self._warning(attribute_type, port,
+                                   kind='positive decimal integer',
                                    record=record.format(attribute_type))]
                 )
-        port = self._parse_attribute('port', '8080')
-        self.assertEqual(port.properties.port_value.value, 8080)
-        self.assertEqual(self._warnings, [])
+        for value in ('8080', '1', 1):
+            with self.subTest(value=value):
+                port = self._parse_attribute('port', value)
+                self.assertEqual(port.properties.port_value.value, int(value))
+                self.assertEqual(self._warnings, [])
 
     def test_object_ports_non_canonical_go_to_the_bag(self):
         for name, relation, other in (
@@ -1289,18 +1298,21 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
                 ('network-socket', 'src-port',
                  ('ip-dst', 'ip-dst', '5.6.7.8')),
                 ('process', 'port', ('text', 'name', 'first.exe'))):
-            with self.subTest(name=name):
-                properties = self._parse_object(
-                    name, (('port', relation, '0x1f'), other)
-                ).object_.properties
-                self.assertEqual(self._bag(properties), [(relation, '0x1f')])
-                self.assertEqual(
-                    self._warnings,
-                    [self._warning(
-                        relation, '0x1f',
-                        record=f'{name} object (uuid: {self._OBJECT_UUID})'
-                    )]
-                )
+            for value in ('0x1f', '0', 0):
+                with self.subTest(name=name, value=value):
+                    properties = self._parse_object(
+                        name, (('port', relation, value), other)
+                    ).object_.properties
+                    self.assertEqual(
+                        self._bag(properties), [(relation, str(value))]
+                    )
+                    self.assertEqual(
+                        self._warnings,
+                        [self._warning(
+                            relation, value, kind='positive decimal integer',
+                            record=f'{name} object (uuid: {self._OBJECT_UUID})'
+                        )]
+                    )
 
     def test_composition_ports_non_canonical_are_custom_members(self):
         for name, relation, other in (
@@ -1310,6 +1322,7 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
             with self.subTest(name=name):
                 observable = self._parse_object(
                     name, (other, ('port', relation, '0x1f'),
+                           ('port', relation, '0'), ('port', relation, 0),
                            ('port', relation, '443'))
                 )
                 members = observable.observable_composition.observables
@@ -1326,14 +1339,14 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
                 self.assertEqual(ports, [443])
                 self.assertEqual(
                     [self._bag(custom) for custom in customs],
-                    [[(relation, '0x1f')]]
+                    [[(relation, '0x1f')], [(relation, '0')], [(relation, '0')]]
                 )
                 self.assertEqual(
                     self._warnings,
                     [self._warning(
-                        relation, '0x1f',
+                        relation, value, kind='positive decimal integer',
                         record=f'{name} object (uuid: {self._OBJECT_UUID})'
-                    )]
+                    ) for value in ('0x1f', '0', 0)]
                 )
 
     def test_sizes_non_canonical_go_to_the_bag(self):

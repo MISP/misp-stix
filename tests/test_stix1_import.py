@@ -4668,6 +4668,12 @@ class TestSTIX1Import(TestSTIX):
         yield get_event_with_process_object, relation('child-pid'), 'pid-1'
         yield get_event_with_network_socket_object, relation('src-port'), '1_000'
         yield get_event_with_ip_port_object, relation('dst-port'), '007'
+        # A port is a positive integer, and cybox types it so
+        yield test_events.get_event_with_port_attribute, attribute('port'), '0'
+        yield (get_event_with_ip_port_attributes,
+               attribute('ip-src|port', 'ip-dst|port'), '0')
+        yield test_events.get_event_with_network_connection_object, relation('dst-port'), '0'
+        yield test_events.get_event_with_url_object, relation('port'), '0'
         yield get_event_with_file_object, relation('size-in-bytes'), '0b11'
         yield (get_event_with_file_and_pe_objects,
                relation('number-sections', 'entropy'), '0x1f')

@@ -252,14 +252,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             campaign.handling = self._create_handling(sorted_tags)
         self._stix_package.add_campaign(campaign)
 
-    def _canonical_attribute_integer(self, attribute: dict,
-                                     value: Any) -> bool:
+    def _canonical_attribute_integer(self, attribute: dict, value: Any,
+                                     positive: bool = False) -> bool:
         """Whether the native CybOX integer field of an attribute holds its
         number unchanged - an attribute whose number the field would rewrite
         or refuse goes out whole as a custom attribute instead, its value
         under its type."""
         record = self._attribute_record(attribute)
-        if self._canonical_integer(value, attribute['type'], record):
+        if self._canonical_integer(
+                value, attribute['type'], record, positive=positive):
             return True
         self._parse_custom_attribute(attribute)
         return False
@@ -404,7 +405,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 hostname, port = attribute['value'].split(separator)
-                if not self._canonical_attribute_integer(attribute, port):
+                if not self._canonical_attribute_integer(
+                        attribute, port, positive=True):
                     break
                 socket_address = self._create_socket_address_object(
                     hostname=hostname, port=port)
@@ -441,7 +443,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 ip, port = attribute['value'].split(separator)
-                if not self._canonical_attribute_integer(attribute, port):
+                if not self._canonical_attribute_integer(
+                        attribute, port, positive=True):
                     break
                 ip_type = attribute['type'].split('|')[0]
                 socket_address = self._create_socket_address_object(ip=(ip_type, ip), port=port)
@@ -496,7 +499,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute(attribute, observable)
 
     def _parse_port_attribute(self, attribute: dict):
-        if not self._canonical_attribute_integer(attribute, attribute['value']):
+        if not self._canonical_attribute_integer(
+                attribute, attribute['value'], positive=True):
             return
         observable = self._create_port_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
@@ -1065,7 +1069,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         record = self._object_features(misp_object)
         observables = []
         for port, uuid in ports:
-            if self._canonical_integer(port, relation, record):
+            if self._canonical_integer(port, relation, record, positive=True):
                 observables.append(
                     self._create_port_observable(port, uuid, feature=feature)
                 )
@@ -1135,14 +1139,16 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return prop
 
     def _canonical_integer(self, value: Any, relation: str, record: str,
-                           signed: bool = False) -> bool:
+                           signed: bool = False,
+                           positive: bool = False) -> bool:
         """Whether a native CybOX integer field holds a MISP value unchanged.
 
         cybox casts a string with `int(value, 0)` and checks no sign against
         an unsigned type: `'0x1f'` goes out as `31`, `'-3'` as a value the
         schema refuses. Only the decimal digits the field writes back are
         canonical; any other value is warned of, for the property bag to
-        carry verbatim under its relation.
+        carry verbatim under its relation. A `positive` field, a port, takes
+        no zero either.
         """
         if isinstance(value, bool):
             canonical = False
@@ -1156,11 +1162,16 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         else:
             canonical = False
+        if canonical and positive:
+            canonical = int(value) > 0
         if not canonical:
-            self._non_canonical_number_warning(
-                relation, value, record,
-                'decimal integer' if signed else 'unsigned decimal integer'
-            )
+            if positive:
+                kind = 'positive decimal integer'
+            elif signed:
+                kind = 'decimal integer'
+            else:
+                kind = 'unsigned decimal integer'
+            self._non_canonical_number_warning(relation, value, record, kind)
         return canonical
 
     def _canonical_float(self, value: Any, relation: str,
@@ -2031,7 +2042,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 )
 
     def _pop_canonical_integers(self, attributes: dict, relation: str,
-                                record: str) -> list:
+                                record: str, positive: bool = False) -> list:
         """Take the values of a relation a native CybOX unsigned integer
         field holds unchanged, leaving the others where the property bag
         takes them.
@@ -2040,11 +2051,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         :param relation: the relation the native field holds
         :param record: the MISP object the values belong to, as warnings
             name it
+        :param positive: whether the field takes no zero either
         :return: the canonical values
         """
         canonical, others = [], []
         for value in attributes.pop(relation, ()):
-            if self._canonical_integer(value, relation, record):
+            if self._canonical_integer(
+                    value, relation, record, positive=positive):
                 canonical.append(value)
             else:
                 others.append(value)
@@ -2773,7 +2786,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             process_object.child_pid_list = ChildPIDList()
             for child in children:
                 process_object.child_pid_list.append(child)
-        ports = self._pop_canonical_integers(attributes, 'port', record)
+        ports = self._pop_canonical_integers(
+            attributes, 'port', record, positive=True
+        )
         if ports:
             process_object.port_list = PortList()
             for port in ports:
@@ -2840,8 +2855,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if attributes.get(f'hostname-{key}'):
                 args['hostname'] = attributes.pop(f'hostname-{key}')
             relation = f'{key}-port'
-            if attributes.get(relation) and self._canonical_integer(
-                    attributes[relation], relation, record):
+            # A port 0 is a value, for the check to warn of
+            if relation in attributes and self._canonical_integer(
+                    attributes[relation], relation, record, positive=True):
                 args['port'] = attributes.pop(relation)
             if args:
                 setattr(
