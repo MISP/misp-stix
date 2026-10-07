@@ -978,6 +978,25 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                     )
                 ),
                 (
+                    'mutex',
+                    (('mutex', 'name', 'FirstMutex'),
+                     ('mutex', 'name', 'SecondMutex')),
+                    lambda mutex: (mutex.name.value,)
+                ),
+                (
+                    'network-connection',
+                    (('ip-dst', 'ip-dst', '198.51.100.4'),
+                     ('ip-dst', 'ip-dst', '198.51.100.5'),
+                     ('port', 'dst-port', '8080'), ('port', 'dst-port', '8443'),
+                     ('text', 'layer4-protocol', 'TCP'),
+                     ('text', 'layer4-protocol', 'UDP')),
+                    lambda connection: (
+                        connection.destination_socket_address.ip_address.address_value.value,
+                        str(connection.destination_socket_address.port.port_value.value),
+                        connection.layer4_protocol.value
+                    )
+                ),
+                (
                     'network-socket',
                     (('ip-src', 'ip-src', '198.51.100.4'),
                      ('ip-src', 'ip-src', '198.51.100.5'),
@@ -995,6 +1014,20 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                      ('text', 'name', 'second.exe'),
                      ('text', 'pid', '1234'), ('text', 'pid', '5678')),
                     lambda process: (process.name.value, str(process.pid.value))
+                ),
+                (
+                    'registry-key',
+                    (('regkey', 'key', 'HKLM\\Software\\First'),
+                     ('regkey', 'key', 'HKLM\\Software\\Second'),
+                     ('text', 'name', 'FirstName'),
+                     ('text', 'name', 'SecondName'),
+                     ('text', 'data', 'FirstData'),
+                     ('text', 'data', 'SecondData')),
+                    lambda registry_key: (
+                        registry_key.key.value,
+                        registry_key.values[0].name.value,
+                        registry_key.values[0].data.value
+                    )
                 ),
                 (
                     'user-account',
@@ -1031,6 +1064,7 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                             for _, relation, value in attributes[1::2]
                         )
                     )
+                    self.assertEqual(self._warnings, [])
 
     def test_pe_single_value_fields_keep_the_first_and_bag_the_others(self):
         event = get_base_event()
@@ -1296,6 +1330,149 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                             ('published', '2021-12-14T00:00:00'),
                             ('cvss-score', '9.0')
                         )
+                    ]
+                )
+
+    def test_ttp_family_repeated_values_are_described_or_warned(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        for name, attributes, read, warned in (
+                (
+                    'attack-pattern',
+                    (('text', 'id', '9'), ('text', 'id', '10'),
+                     ('text', 'name', 'Buffer Overflow'),
+                     ('text', 'name', 'Stack Overflow'),
+                     ('text', 'summary', 'First summary'),
+                     ('text', 'summary', 'Second summary')),
+                    lambda package: (
+                        lambda attack_pattern: (
+                            attack_pattern.capec_id.removeprefix('CAPEC-'),
+                            str(attack_pattern.title),
+                            [str(description.value) for description
+                             in attack_pattern.descriptions]
+                        )
+                    )(package.ttps.ttp[0].behavior.attack_patterns[0]),
+                    (('id', '10'), ('name', 'Stack Overflow'))
+                ),
+                (
+                    'course-of-action',
+                    (('text', 'name', 'Block the C2'),
+                     ('text', 'name', 'Sinkhole the C2'),
+                     ('text', 'description', 'First description'),
+                     ('text', 'description', 'Second description'),
+                     ('text', 'cost', 'Low'), ('text', 'cost', 'High')),
+                    lambda package: (
+                        lambda course_of_action: (
+                            str(course_of_action.title),
+                            str(course_of_action.cost.value),
+                            [str(description.value) for description
+                             in course_of_action.descriptions]
+                        )
+                    )(package.courses_of_action[0]),
+                    (('name', 'Sinkhole the C2'), ('cost', 'High'))
+                ),
+                (
+                    'weakness',
+                    (('weakness', 'id', 'CWE-119'),
+                     ('weakness', 'id', 'CWE-120'),
+                     ('text', 'description', 'First description'),
+                     ('text', 'description', 'Second description')),
+                    lambda package: (
+                        lambda weakness: (
+                            weakness.cwe_id,
+                            [str(description.value) for description
+                             in weakness.descriptions]
+                        )
+                    )(package.ttps.ttp[0].exploit_targets[0].item.weaknesses[0]),
+                    (('id', 'CWE-120'),)
+                )):
+            event = get_base_event()
+            event['Event']['Object'] = [
+                {
+                    'name': name, 'meta-category': 'misc',
+                    'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                    'Attribute': [
+                        {'type': attribute_type, 'object_relation': relation,
+                         'value': value}
+                        for attribute_type, relation, value in attributes
+                    ]
+                }
+            ]
+            for version in self._VERSIONS:
+                with self.subTest(name=name, version=version):
+                    parser = self._parse_event(event, version)
+                    *native, descriptions = read(parser.stix_package)
+                    self.assertEqual(
+                        tuple(native),
+                        tuple(
+                            value for _, relation, value in attributes[::2]
+                            if relation not in ('summary', 'description')
+                        )
+                    )
+                    self.assertEqual(
+                        descriptions,
+                        ['First summary', 'Second summary']
+                        if name == 'attack-pattern' else
+                        ['First description', 'Second description']
+                    )
+                    features = f'{name} object (uuid: {self._OBJECT_UUID})'
+                    self.assertEqual(
+                        self._warnings,
+                        [
+                            f"{relation!r} in the STIX 1 {features} has room "
+                            f"for one value: {value!r} not converted."
+                            for relation, value in warned
+                        ]
+                    )
+
+    def test_pe_section_repeated_hash_is_one_more_hash(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        event = get_event_with_file_and_pe_objects()
+        *_, section = event['Event']['Object']
+        original = {
+            attribute['object_relation']: attribute['value']
+            for attribute in section['Attribute']
+        }
+        repeats = (
+            ('text', 'name', '.text'),
+            ('size-in-bytes', 'size-in-bytes', '1024'),
+            ('float', 'entropy', '6.5'),
+            ('md5', 'md5', 'a' * 32)
+        )
+        section['Attribute'].extend(
+            {'type': attribute_type, 'object_relation': relation,
+             'value': value}
+            for attribute_type, relation, value in repeats
+        )
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse_event(event, version)
+                incident = parser.stix_package.incidents[0]
+                pe = incident.related_observables.observable[0].item.object_.properties
+                pe_section, = pe.sections
+                header = pe_section.section_header
+                self.assertEqual(header.name.value, original['name'])
+                self.assertEqual(
+                    str(header.size_of_raw_data.value),
+                    original['size-in-bytes']
+                )
+                self.assertEqual(
+                    str(pe_section.entropy.value), original['entropy']
+                )
+                self.assertEqual(
+                    [str(hash_value.simple_hash_value)
+                     for hash_value in pe_section.data_hashes
+                     if str(hash_value.type_) == 'MD5'],
+                    [original['md5'], 'a' * 32]
+                )
+                features = f"pe-section object (uuid: {section['uuid']})"
+                self.assertEqual(
+                    self._warnings,
+                    [
+                        f"{relation!r} in the STIX 1 {features} has room for "
+                        f"one value: {value!r} not converted."
+                        for _, relation, value in repeats[:3]
                     ]
                 )
 

@@ -121,7 +121,8 @@ from .test_events import (
     get_event_with_file_object_referencing_an_attribute,
     get_event_with_github_username_attribute,
     get_event_with_ip_port_attributes, get_event_with_ip_port_object,
-    get_event_with_malware_galaxy, get_event_with_network_socket_object,
+    get_event_with_malware_galaxy, get_event_with_network_connection_object,
+    get_event_with_network_socket_object,
     get_event_with_non_conforming_object_relations,
     get_event_with_full_pe_object, get_event_with_file_and_pe_objects,
     get_event_with_hash_attributes,
@@ -132,6 +133,7 @@ from .test_events import (
     get_event_with_regkey_attribute, get_event_with_regkey_value_attribute,
     get_event_with_sector_galaxy,
     get_event_with_registry_key_and_values_objects,
+    get_event_with_registry_key_object,
     get_event_with_target_attributes,
     get_event_with_test_mechanism_attributes,
     get_event_with_threat_actor_galaxy, get_event_with_tool_galaxy,
@@ -439,6 +441,22 @@ class TestSTIX1Import(TestSTIX):
                 for attribute in misp_object.attributes
             },
             self._course_of_action_attributes()
+        )
+
+    def test_external_course_of_action_every_description_converts(self):
+        # The first description was read, every other one dropped
+        course_of_action = self._course_of_action()
+        course_of_action.add_description('Sinkhole the C2 domain')
+        stix_package = STIXPackage()
+        stix_package.add_course_of_action(course_of_action)
+        parser = self._parse_external_package(stix_package)
+        misp_object, = parser.misp_event.objects
+        self.assertEqual(
+            [
+                attribute.value for attribute
+                in misp_object.get_attributes_by_relation('description')
+            ],
+            ['Drop traffic to the C2 at the perimeter', 'Sinkhole the C2 domain']
         )
 
     def test_external_course_of_action_with_parameter_observables_converts(self):
@@ -3441,6 +3459,101 @@ class TestSTIX1Import(TestSTIX):
                 self._assert_relations_round_trip(
                     converted, exported, tuple(values)
                 )
+
+    def test_internal_misp_export_repeated_values_with_room_round_trip(self):
+        """The export kept the last value of these relations and dropped the
+        others, in silence. The first is the field's; every other one is the
+        property bag's, one more description or one more section hash, and
+        comes back."""
+        for fixture, name, values in (
+                (get_event_with_mutex_object, 'mutex', {'name': 'SecondMutex'}),
+                (
+                    get_event_with_network_connection_object,
+                    'network-connection',
+                    {
+                        'ip-dst': '198.51.100.5', 'dst-port': '8443',
+                        'layer4-protocol': 'UDP'
+                    }
+                ),
+                (
+                    get_event_with_registry_key_object, 'registry-key',
+                    {
+                        'key': 'hkey_local_machine\\system\\second',
+                        'name': 'SecondName', 'data': 'SecondData'
+                    }
+                ),
+                (
+                    get_event_with_attack_pattern_object, 'attack-pattern',
+                    {'summary': 'Second summary'}
+                ),
+                (
+                    get_event_with_course_of_action_object, 'course-of-action',
+                    {'description': 'Second description'}
+                ),
+                (
+                    get_event_with_weakness_object, 'weakness',
+                    {'description': 'Second description'}
+                ),
+                (
+                    get_event_with_file_and_pe_objects, 'pe-section',
+                    {'md5': 'a' * 32}
+                )):
+            for version in ('1.1.1', '1.2'):
+                with self.subTest(name=name, version=version):
+                    event = fixture()
+                    exported = self._with_repeated_values(event, name, values)
+                    # The weakness fixture spells the type key `text`
+                    for attribute in exported['Attribute']:
+                        attribute.setdefault('type', 'text')
+                    parser = self._parse_internal_package(
+                        self._misp_export(event['Event'], version)
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.diagnostics()['warnings'], {})
+                    converted, = parser.misp_event.get_objects_by_name(name)
+                    self._assert_relations_round_trip(
+                        converted, exported, tuple(values)
+                    )
+
+    def test_internal_misp_export_repeated_values_without_room(self):
+        """A further value of a relation the STIX construct holds one of is
+        warned of at export and does not come back; the first one does."""
+        for fixture, name, values in (
+                (
+                    get_event_with_attack_pattern_object, 'attack-pattern',
+                    {'id': '10', 'name': 'Second name'}
+                ),
+                (
+                    get_event_with_course_of_action_object, 'course-of-action',
+                    {'name': 'Second name', 'cost': 'High'}
+                ),
+                (get_event_with_weakness_object, 'weakness', {'id': 'CWE-120'}),
+                (
+                    get_event_with_file_and_pe_objects, 'pe-section',
+                    {'name': '.text', 'size-in-bytes': '1024', 'entropy': '6.5'}
+                )):
+            for version in ('1.1.1', '1.2'):
+                with self.subTest(name=name, version=version):
+                    event = fixture()
+                    exported = self._with_repeated_values(event, name, values)
+                    parser = self._parse_internal_package(
+                        self._misp_export(event['Event'], version)
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    converted, = parser.misp_event.get_objects_by_name(name)
+                    for relation in values:
+                        first, _ = (
+                            attribute['value']
+                            for attribute in exported['Attribute']
+                            if attribute['object_relation'] == relation
+                        )
+                        self.assertEqual(
+                            [
+                                str(attribute.value) for attribute
+                                in converted.get_attributes_by_relation(relation)
+                            ],
+                            [first]
+                        )
 
     def test_internal_misp_export_repeated_file_single_values_round_trip(self):
         """The `file` object's single fields kept the last value and dropped
