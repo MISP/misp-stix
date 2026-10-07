@@ -463,6 +463,12 @@ class MISPtoSTIXParser(AbstractParser):
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
 
+    def _pe_section_comment_warning(self, misp_pe_section: dict):
+        self._add_warning(
+            f'The comment of the {self._object_features(misp_pe_section)} '
+            'is not converted: a STIX 1 PE section has no description.'
+        )
+
     def _pe_reference_warning(self, file_uuid: str):
         self._add_warning(
             'Unable to find the pe object related to '

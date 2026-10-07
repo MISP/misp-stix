@@ -2538,18 +2538,30 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         file_object = WinExecutableFile()
         self._parse_file_attributes(attributes, misp_object, file_object)
         self._add_repeated_values(file_object, repeated, misp_object)
+        pe_comment = None
         for reference in misp_object['ObjectReference']:
             if self._check_reference(misp_object['uuid'], reference, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
                 try:
-                    folded.extend(self._parse_pe_object(file_object, misp_pe))
+                    # Parsed apart, and copied onto the file's object once
+                    # it succeeds: a `pe` failing partway leaves nothing on
+                    # the file, and the fallback writes it once
+                    pe_object = WinExecutableFile()
+                    pe_folded = self._parse_pe_object(pe_object, misp_pe)
+                    self._fold_pe_object(file_object, pe_object)
+                    folded.extend(pe_folded)
                     self._folding_references.add(
                         (misp_object['uuid'], misp_pe['uuid'])
                     )
+                    pe_comment = misp_pe.get('comment')
                 except Exception as exception:
                     self._object_error(misp_pe, exception)
                 break
         file_observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
+        if pe_comment:
+            # The `file` comment is the Observable's or the Indicator's: the
+            # CybOX Object holding the executable carries the `pe` one
+            file_observable.object_.description = pe_comment
         if observables:
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
@@ -2760,9 +2772,26 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                             # standalone carries its own markings and its
                             # own `to_ids`
                             folded.extend(misp_pe_section['Attribute'])
+                            if misp_pe_section.get('comment'):
+                                self._pe_section_comment_warning(
+                                    misp_pe_section
+                                )
                     except Exception as exception:
                         self._object_error(misp_pe_section, exception)
         return folded
+
+    @staticmethod
+    def _fold_pe_object(file_object: WinExecutableFile,
+                        pe_object: WinExecutableFile):
+        # The file's object holds no `pe` field of its own: only its custom
+        # properties, the `pe` ones going after them
+        for field in ('resources', 'headers', 'type_', 'sections'):
+            setattr(file_object, field, getattr(pe_object, field))
+        if pe_object.custom_properties:
+            if file_object.custom_properties is None:
+                file_object.custom_properties = CustomProperties()
+            for prop in pe_object.custom_properties:
+                file_object.custom_properties.append(prop)
 
     @staticmethod
     def _append_pe_section(file_object: WinExecutableFile,
