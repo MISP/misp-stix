@@ -137,6 +137,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _resolve_attribute(self, attribute: dict):
         attribute_type = attribute['type']
+        built = len(self._built_constructs)
         try:
             to_call = self._mapping.attribute_types_mapping(attribute_type)
             if to_call is not None:
@@ -145,6 +146,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._parse_custom_attribute(attribute)
                 self._attribute_not_mapped_warning(attribute_type)
         except Exception as exception:
+            self._roll_back_constructs(built)
             self._attribute_error(attribute, exception)
 
     def _handle_attribute_indicator(self, attribute: dict, observable: Observable) -> Indicator:
@@ -286,15 +288,17 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
         :param attribute: the MISP attribute the export failed on
         """
+        built = len(self._built_constructs)
         try:
             self._parse_custom_attribute(attribute)
         except Exception:
             # The Observable is written the way the failed route writes its
             # own, from the same attribute fields: what failed there - a
-            # timestamp the Indicator cannot parse - fails here again, with
-            # nothing left to catch it. The attribute is lost, and the error
-            # already says so
-            return
+            # timestamp the Indicator cannot parse, a malformed tag or
+            # cluster - fails here again, with nothing left to catch it. The
+            # attribute is lost, and the error already says so. The galaxy
+            # constructs this second write built go with it
+            self._roll_back_constructs(built)
 
     def _parse_domain_attribute(self, attribute: dict):
         observable = self._create_domain_observable(attribute['value'], attribute['uuid'])
@@ -708,7 +712,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if cluster['uuid'] not in self._ids:
             course_of_action = self._create_course_of_action_from_galaxy(cluster)
             self._stix_package.add_course_of_action(course_of_action)
-            self._ids.add(cluster['uuid'])
+            self._record_construct(
+                cluster['uuid'], self._ids,
+                self._stix_package.courses_of_action, course_of_action
+            )
             return course_of_action.id_
         return f"{self._orgname_id}:CourseOfAction-{cluster['uuid']}"
 
@@ -749,7 +756,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if cluster['uuid'] not in self._ids:
             threat_actor = self._create_threat_actor_from_galaxy(cluster)
             self._stix_package.add_threat_actor(threat_actor)
-            self._ids.add(cluster['uuid'])
+            self._record_construct(
+                cluster['uuid'], self._ids,
+                self._stix_package.threat_actors, threat_actor
+            )
             return threat_actor.id_
         return f"{self._orgname_id}:ThreatActor-{cluster['uuid']}"
 
@@ -789,9 +799,55 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             ttp = self._create_ttp_from_galaxy(galaxy_name, cluster['uuid'])
             getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
             self._stix_package.add_ttp(ttp)
-            self._ids.add(cluster['uuid'])
+            self._record_construct(
+                cluster['uuid'], self._ids, self._stix_package.ttps.ttp, ttp
+            )
             return ttp.id_
         return f"{self._orgname_id}:TTP-{cluster['uuid']}"
+
+    def _record_construct(self, cluster_uuid: str, written: set,
+                          container: list, construct):
+        """Record a galaxy construct, or the reference to one, as written:
+        its cluster uuid in the set the next one is looked up in, the
+        construct in the list it was added to, for a failing record to roll
+        it back."""
+        written.add(cluster_uuid)
+        self._built_constructs.append(
+            (cluster_uuid, written, container, construct)
+        )
+
+    def _keep_constructs(self, built: int):
+        """Keep the constructs written since `built` from the rollback of
+        the record they are nested in: the record they belong to is
+        written."""
+        self._kept_constructs.update(range(built, len(self._built_constructs)))
+
+    def _roll_back_constructs(self, built: int):
+        """Undo what the galaxies of a failing record wrote, down to the
+        `built` constructs written before it.
+
+        A record's galaxies are written before the steps of its route that
+        can still fail, and its error fallback writes it with no reference
+        to them: left in place, they would be read back as clusters of the
+        event, tied to no record. One a record written before it holds is
+        kept, and one the fallback references again is written again. So is
+        one a record nested in the failing one wrote, its own fallback having
+        written it: a `pe` failing under its `file` is written standalone.
+
+        :param built: the number of constructs written before the record
+        """
+        while len(self._built_constructs) > built:
+            cluster_uuid, written, container, construct = self._built_constructs.pop()
+            if len(self._built_constructs) in self._kept_constructs:
+                self._kept_constructs.discard(len(self._built_constructs))
+                continue
+            del container[next(
+                index for index, item in enumerate(container) if item is construct
+            )]
+            written.discard(cluster_uuid)
+        ttps = self._stix_package.ttps
+        if ttps is not None and not ttps.ttp:
+            self._stix_package.ttps = None
 
     def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         galaxy_name = galaxy['name']
@@ -1467,6 +1523,8 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         self._producer = self._create_information_source(orgname)
         self._set_identifier('attributes collection')
         self._ids = set()
+        self._built_constructs = []
+        self._kept_constructs = set()
 
     def _parse_json_content(self, attributes: dict | list):
         if isinstance(attributes, dict) and attributes.get('response') is not None:
@@ -1575,6 +1633,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._objects_to_parse = defaultdict(dict)
         self._contextualised_data = set()
         self._ids = set()
+        self._built_constructs = []
+        self._kept_constructs = set()
         self._ttp_references = {}
         self._written_cybox_objects = {}
         self._folding_references = set()
@@ -1712,6 +1772,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             object_name = misp_object['name']
             if self._check_object_name(misp_object):
                 continue
+            built = len(self._built_constructs)
             try:
                 to_call = self._mapping.non_indicator_names(object_name)
                 if to_call is not None:
@@ -1726,10 +1787,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                             misp_object, observable, to_ids
                         )
             except Exception as exception:
+                self._roll_back_constructs(built)
                 self._object_error(misp_object, exception)
         if self._objects_to_parse:
             if self._objects_to_parse.get('file'):
                 for misp_object in self._objects_to_parse.pop('file').values():
+                    built = len(self._built_constructs)
                     try:
                         attributes, observable = self._parse_file_with_pe_object(misp_object)
                         record = self._folded_record(misp_object, attributes)
@@ -1738,9 +1801,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         else:
                             self._handle_misp_object(record, observable)
                     except Exception as exception:
+                        self._roll_back_constructs(built)
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe'):
                 for misp_object in self._objects_to_parse.pop('pe').values():
+                    built = len(self._built_constructs)
                     try:
                         file_object = WinExecutableFile()
                         attributes = self._parse_pe_object(file_object, misp_object)
@@ -1751,17 +1816,20 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         else:
                             self._handle_misp_object(record, observable)
                     except Exception as exception:
+                        self._roll_back_constructs(built)
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe-section'):
                 # No `pe` references these, or the `pe` failed: no executable
                 # to fold them into. The template is mapped under a `pe`, so
                 # the `Custom` Observable comes with no "not mapped" warning
                 for misp_object in self._objects_to_parse.pop('pe-section').values():
+                    built = len(self._built_constructs)
                     try:
                         to_ids = self._fetch_ids_flag(misp_object['Attribute'])
                         observable = self._create_custom_observable(misp_object)
                         self._handle_object_observable(misp_object, observable, to_ids)
                     except Exception as exception:
+                        self._roll_back_constructs(built)
                         self._object_error(misp_object, exception)
 
     @staticmethod
@@ -1928,6 +1996,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
         :param misp_object: the MISP object the export failed on
         """
+        built = len(self._built_constructs)
         try:
             self._handle_object_observable(
                 misp_object, self._create_custom_observable(misp_object),
@@ -1936,10 +2005,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         except Exception:
             # The Observable is written the way the failed route writes its
             # own, from the same object fields: what failed there - an object
-            # timestamp the Indicator cannot parse - fails here again, with
-            # nothing left to catch it. The object is lost, and the error
-            # already says so
-            return
+            # timestamp the Indicator cannot parse, a malformed tag or
+            # cluster - fails here again, with nothing left to catch it. The
+            # object is lost, and the error already says so. The galaxy
+            # constructs this second write built go with it
+            self._roll_back_constructs(built)
+        else:
+            self._keep_constructs(built)
 
     def _add_custom_property(self, stix_object: File, name: str, value: Any,
                              misp_object: dict):
@@ -3248,7 +3320,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 except AttributeError:
                     self._incident.attributed_threat_actors = AttributedThreatActors()
                     self._incident.attributed_threat_actors.append(related_threat_actor)
-                self._contextualised_data.add(cluster['uuid'])
+                self._record_construct(
+                    cluster['uuid'], self._contextualised_data,
+                    self._incident.attributed_threat_actors,
+                    related_threat_actor
+                )
 
     def _parse_tool_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
