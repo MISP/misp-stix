@@ -288,6 +288,24 @@ class MISPtoSTIXParser(AbstractParser):
         }
 
     @staticmethod
+    def _is_canonical_integer(value: Any, signed: bool = False) -> bool:
+        """Whether a value is spelled as a native integer field writes it
+        back: ASCII decimal digits equal to `str(int(value))`, with a leading
+        `-` only when the field is `signed`. `'007'`, `'+5'`, `'1_000'`,
+        `'0x1f'` or `'٣'` denote a number without being its spelling."""
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, int):
+            return signed or value >= 0
+        if isinstance(value, str):
+            digits = value[1:] if signed and value.startswith('-') else value
+            return (
+                digits.isascii() and digits.isdigit()
+                and value == str(int(value))
+            )
+        return False
+
+    @staticmethod
     def _select_single_feature(
             attributes: dict, feature: str) -> Union[str, tuple]:
         if isinstance(attributes[feature], list):
@@ -432,6 +450,10 @@ class MISPtoSTIXParser(AbstractParser):
             f'{relation!r} in the {record} is not a canonical {kind}: '
             f'{value!r} written as a custom property.'
         )
+
+    @staticmethod
+    def _attribute_record(attribute: Union[MISPAttribute, dict]) -> str:
+        return f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
 
     @staticmethod
     def _object_features(misp_object: Union[MISPObject, dict]) -> str:

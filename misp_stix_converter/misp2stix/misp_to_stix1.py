@@ -267,10 +267,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._parse_custom_attribute(attribute)
         return False
 
-    @staticmethod
-    def _attribute_record(attribute: dict) -> str:
-        return f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
-
     def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
@@ -1206,18 +1202,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         carry verbatim under its relation. A `positive` field, a port, takes
         no zero either.
         """
-        if isinstance(value, bool):
-            canonical = False
-        elif isinstance(value, int):
-            canonical = signed or value >= 0
-        elif isinstance(value, str):
-            digits = value[1:] if signed and value.startswith('-') else value
-            canonical = (
-                digits.isascii() and digits.isdigit()
-                and value == str(int(value))
-            )
-        else:
-            canonical = False
+        canonical = self._is_canonical_integer(value, signed=signed)
         if canonical and positive:
             canonical = int(value) > 0
         if not canonical:
