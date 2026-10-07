@@ -11,6 +11,7 @@ from abc import ABCMeta
 from base64 import b64decode, b64encode
 from collections import defaultdict
 from cybox.common import Hash
+from cybox.core import Observable
 from cybox.objects import (
     account_object, address_object, artifact_object, as_object,
     custom_object, email_message_object, dns_record_object,
@@ -175,6 +176,31 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return read
         return self._reduce(properties, read)
 
+    @staticmethod
+    def _is_object_read(attribute_value) -> bool:
+        # A read is an object when it holds the attributes the handler read,
+        # rather than a value or the values of attributes of one type
+        return not isinstance(attribute_value, (str, int)) and all(
+            isinstance(value, dict) for value in attribute_value
+        )
+
+    def _record_uuid(self, observable: Observable) -> dict:
+        """Read the uuid of the record an Observable converts to.
+
+        The record is keyed on the id of the CybOX Object, which is optional:
+        a producer routinely puts the id on the Observable and leaves the
+        Object bare, and the Observable builds no record of its own here, so
+        its id is borrowed. An Observable carrying neither takes a random
+        uuid.
+
+        :param observable: the Observable the record is converted from
+        :return: the uuid, and the comment keeping the original id when the
+            uuid replaces it
+        """
+        return self._sanitise_attribute_uuid(
+            observable.object_.id_ or observable.id_
+        )
+
     def _reduce(self, properties, read: tuple) -> tuple:
         """Reduce a CybOX object read through the reduction its type names.
 
@@ -274,7 +300,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
-    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None, timestamp=None, uuid_comment=None):
+    # The object is returned once added, None otherwise: a caller references only what the event holds
+    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None, timestamp=None, uuid_comment=None) -> Optional[MISPObject]:
         if not name:
             # An observable carrying nothing to name an object with is the
             # observable there is nothing to convert from
@@ -307,6 +334,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for test_mechanism in test_mechanisms:
             misp_object.add_reference(test_mechanism, 'detected-with')
         self.misp_event.add_object(misp_object)
+        return misp_object
 
     def _build_observable_object(
             self, name, attribute_value, compl_data, to_ids, object_uuid,
@@ -633,8 +661,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             for observable in course_of_action.parameter_observables.observables:
                 properties = observable.object_.properties
                 try:
-                    attribute_type, attribute_value, _ = (
-                        self._handle_attribute_type(properties)
+                    attribute_type, attribute_value, compl_data = (
+                        self._read_record(properties)
                     )
                 except StixObjectTypeError as xsi_type:
                     self._stix_object_type_error(xsi_type, course_of_action.id_)
@@ -643,6 +671,20 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self._empty_record_error(
                         attribute_type, course_of_action.id_, 'attribute'
                     )
+                    continue
+                if self._is_object_read(attribute_value):
+                    # The `to_ids` flag is left false: a parameter is no
+                    # detection
+                    record = self._record_uuid(observable)
+                    referenced = self._handle_object_case(
+                        attribute_type, attribute_value, compl_data,
+                        object_uuid=record['uuid'],
+                        uuid_comment=record.get('comment')
+                    )
+                    if referenced is not None:
+                        misp_object.add_reference(
+                            referenced.uuid, 'observable'
+                        )
                     continue
                 attribute = MISPAttribute()
                 attribute.type, attribute.value = attribute_type, attribute_value

@@ -6,7 +6,7 @@ from .stix1_mapping import ExternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
 from cybox.core import Object, Observable, Observables
-from pymisp import MISPAttribute, MISPEvent
+from pymisp import MISPEvent
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP
@@ -128,8 +128,17 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     #                       STIX OBJECTS PARSING METHODS                       #
     ############################################################################
 
-    def _parse_attributes_from_ttp(self, ttp: TTP, galaxies: set):
-        attributes = []
+    def _parse_records_from_ttp(self, ttp: TTP, galaxies: set) -> list:
+        """Read the records a TTP builds, none of them added yet: the galaxy
+        tags they all carry are only known once the whole TTP is read.
+
+        :param ttp: the TTP
+        :param galaxies: the galaxy tags of the TTP, which the vulnerabilities
+            it targets by title only add to
+        :return: the records - an attribute as pymisp takes it, an object as
+            the Observable it is read from and the read
+        """
+        records = []
         infrastructure = getattr(ttp.resources, 'infrastructure', None)
         if infrastructure is not None and infrastructure.observable_characterization:
             observables = infrastructure.observable_characterization
@@ -139,20 +148,23 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         continue
                     properties = observable.object_.properties
                     try:
-                        attribute_type, attribute_value, _ = self._handle_attribute_type(properties)
+                        read = self._read_record(properties)
                     except StixObjectTypeError as xsi_type:
                         self._stix_object_type_error(xsi_type, ttp.id_)
                         continue
+                    attribute_type, attribute_value, _ = read
                     if attribute_value is None:
                         self._unfilled_record_error(attribute_type, ttp.id_)
                         continue
-                    if isinstance(attribute_value, list):
-                        attributes.extend(
+                    if self._is_object_read(attribute_value):
+                        records.append((observable, read))
+                    elif isinstance(attribute_value, list):
+                        records.extend(
                             {'type': attribute_type, 'value': value, 'to_ids': False}
                             for value in attribute_value
                         )
                     else:
-                        attributes.append(
+                        records.append(
                             {
                                 'type': attribute_type,
                                 'value': attribute_value,
@@ -164,7 +176,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 if exploit_target.item.vulnerabilities:
                     for vulnerability in exploit_target.item.vulnerabilities:
                         if vulnerability.cve_id:
-                            attributes.append(
+                            records.append(
                                 {
                                     'type': 'vulnerability',
                                     'value': vulnerability.cve_id
@@ -176,9 +188,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                                     vulnerability.title, 'vulnerability'
                                 )
                             )
-        if len(attributes) == 1:
-            attributes[0].update(self._sanitise_attribute_uuid(ttp.id_))
-        return attributes
+        return records
 
     def _parse_description(self, stix_object: Union[Indicator, Observable]):
         description = self._value(stix_object.description)
@@ -260,7 +270,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 elif attribute_value is None:
                     self._unfilled_record_error(attribute_type, indicator.id_)
                 else:
-                    if all(isinstance(value, dict) for value in attribute_value):
+                    if self._is_object_read(attribute_value):
                         # it is a list of attributes, so we build an object
                         self._handle_object_case(
                             attribute_type, attribute_value, compl_data,
@@ -338,7 +348,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         uuid_comment=record.get('comment')
                     )
                 elif attribute_value is not None:
-                    if all(isinstance(value, dict) for value in attribute_value):
+                    if self._is_object_read(attribute_value):
                         # it is a list of attributes, so we build an object
                         self._handle_object_case(
                             attribute_type, attribute_value, compl_data,
@@ -401,16 +411,56 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     def _parse_ttp(self, ttp: TTP):
         galaxies = set(self._parse_galaxies_from_ttp(ttp))
         if self._has_ttp_content(ttp):
-            attributes = self._parse_attributes_from_ttp(ttp, galaxies)
-            if attributes:
-                for attribute in attributes:
-                    misp_attribute = MISPAttribute()
-                    misp_attribute.from_dict(**attribute)
-                    for galaxy in galaxies:
-                        misp_attribute.add_tag(galaxy)
-                    self._add_attribute(dict(misp_attribute), ttp.id_)
+            records = self._parse_records_from_ttp(ttp, galaxies)
+            # The sole record a TTP builds is the TTP, and takes its uuid
+            ttp_uuid = (
+                self._sanitise_attribute_uuid(ttp.id_)
+                if len(records) == 1 else None
+            )
+            tags = sorted(galaxies)
+            added = False
+            for record in records:
+                if isinstance(record, dict):
+                    added |= self._add_ttp_attribute(
+                        ttp.id_, record, tags, ttp_uuid
+                    )
+                else:
+                    added |= self._add_ttp_object(*record, tags, ttp_uuid)
+            if added:
                 return
+        # Nothing the TTP builds carries its galaxies: the event does
         self.galaxies.update(galaxies)
+
+    def _add_ttp_attribute(self, ttp_id: str, attribute: dict, tags: list,
+                           ttp_uuid: Optional[dict]) -> bool:
+        if ttp_uuid is not None:
+            attribute.update(ttp_uuid)
+        if tags:
+            attribute['Tag'] = tags
+        return self._add_attribute(attribute, ttp_id) is not None
+
+    def _add_ttp_object(self, observable: Observable, read: tuple, tags: list,
+                        ttp_uuid: Optional[dict]) -> bool:
+        # An object it includes - an email's attachment - is no record of the
+        # TTP's own, and not counted in telling the sole one: it is built
+        # under the object, and carries the galaxies as every record built
+        # from the TTP does, MISP having no tag for an object. What the call
+        # added is read off the event, the included objects with the one
+        # returned
+        record_uuid = ttp_uuid or self._record_uuid(observable)
+        count = len(self.misp_event.objects)
+        # The `to_ids` flag is left false: the infrastructure a TTP uses is
+        # no detection
+        self._handle_object_case(
+            *read, object_uuid=record_uuid['uuid'],
+            uuid_comment=record_uuid.get('comment')
+        )
+        built = self.misp_event.objects[count:]
+        for misp_object in built:
+            for attribute in misp_object.attributes:
+                for tag in tags:
+                    attribute.add_tag(tag)
+        return bool(built)
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -428,23 +478,6 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if title:
             return title
         return f"Imported from external STIX {self.stix_version} Package"
-
-    def _record_uuid(self, observable: Observable) -> dict:
-        """Read the uuid of the record an Observable converts to.
-
-        The record is keyed on the id of the CybOX Object, which is optional:
-        a producer routinely puts the id on the Observable and leaves the
-        Object bare, and the Observable builds no record of its own here, so
-        its id is borrowed. An Observable carrying neither takes a random
-        uuid.
-
-        :param observable: the Observable the record is converted from
-        :return: the uuid, and the comment keeping the original id when the
-            uuid replaces it
-        """
-        return self._sanitise_attribute_uuid(
-            observable.object_.id_ or observable.id_
-        )
 
     def _record_related_objects(self, observable_object: Object, uuid: str):
         # Recorded rather than applied: the objects they point to may not be
