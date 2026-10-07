@@ -5134,6 +5134,51 @@ class TestSTIX1Import(TestSTIX):
             ]
         )
 
+    def test_internal_attribute_observable_with_an_attachment_reference_is_never_reduced(self):
+        """An email attribute holding one field and referencing an attachment
+        it does not embed - a shape our export never writes - is not reduced
+        to that field, which has nothing to hold the reference: it lands as
+        the email object, with the reference and the warning."""
+        file_uuid = '0a3b1c2d-4e5f-4a6b-9c8d-9e0f1a2b3c4d'
+        email_object = self._subject_email_object(
+            f'MISP:EmailMessage-{_OBSERVABLE_UUID}', f'MISP:File-{file_uuid}'
+        )
+        incident = self._incident_with_content()
+        incident.related_indicators.append(
+            RelatedIndicator(
+                self._indicator(email_object, _OBSERVABLE_UUID),
+                relationship='Payload delivery'
+            )
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        misp_object, = parser.misp_event.objects
+        self.assertEqual(
+            (
+                misp_object.name, misp_object.uuid,
+                [
+                    (attribute.object_relation, attribute.value)
+                    for attribute in misp_object.attributes
+                ],
+                [
+                    (reference.referenced_uuid, reference.relationship_type)
+                    for reference in misp_object.references
+                ]
+            ),
+            (
+                'email', _OBSERVABLE_UUID, [('subject', 'Invoice')],
+                [(file_uuid, 'attachment')]
+            )
+        )
+        self.assertEqual(
+            parser.diagnostics()['warnings']['misp event'],
+            [
+                'Unable to read the STIX object with id '
+                f'MISP:Indicator-{_OBSERVABLE_UUID} back as a MISP attribute: '
+                'converted as a email object.'
+            ]
+        )
+
     def test_internal_object_folding_into_one_attribute_keeps_the_timestamp(self):
         """A nameless `Custom` holding one property reads as a single
         attribute, not as an object: the attribute takes the timestamp of the
@@ -9061,6 +9106,93 @@ class TestSTIX1Import(TestSTIX):
                 for reference in email_object.references
             ],
             [(file_uuid, 'attachment')]
+        )
+
+    @staticmethod
+    def _subject_email_object(email_id: str, file_id=None):
+        """An email Object holding a subject alone, and an attachment it
+        references without embedding it when a File id is given."""
+        email = EmailMessage()
+        email.header = EmailHeader()
+        email.header.subject = 'Invoice'
+        if file_id is not None:
+            email.attachments = Attachments()
+            email.attachments.append(file_id)
+        email_object = Object(email)
+        email_object.id_ = email_id
+        return email_object
+
+    def test_external_one_field_email_keeps_its_attachment_reference(self):
+        """An email holding one field and referencing an attachment it does
+        not embed is not reduced to that field: the attribute would have
+        nothing to hold the reference, and it would be lost with no message.
+        It lands as the email object, on the Observable and the Indicator
+        paths alike."""
+        email_uuid = '7d0e8f9a-1b2c-4d3e-8f5a-6b7c8d9e0f1a'
+        file_uuid = '8e1f9a0b-2c3d-4e4f-9a6b-7c8d9e0f1a2b'
+        attached = File()
+        attached.file_name = 'invoice.pdf'
+        attached.md5 = _MD5_HASH
+        attached_object = Object(attached)
+        attached_object.id_ = f'example:File-{file_uuid}'
+        for path in ('observable', 'indicator'):
+            with self.subTest(path=path):
+                email_observable = Observable(
+                    self._subject_email_object(
+                        f'example:EmailMessage-{email_uuid}',
+                        attached_object.id_
+                    )
+                )
+                email_observable.id_ = f'example:Observable-{email_uuid}'
+                stix_package = STIXPackage()
+                if path == 'observable':
+                    stix_package.add_observable(email_observable)
+                else:
+                    indicator = Indicator()
+                    indicator.id_ = f'example:Indicator-{email_uuid}'
+                    indicator.observable = email_observable
+                    stix_package.add_indicator(indicator)
+                stix_package.add_observable(Observable(attached_object))
+                parser = self._parse_external_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                email_object, = parser.misp_event.get_objects_by_name('email')
+                self.assertEqual(
+                    [
+                        (attribute.object_relation, attribute.value)
+                        for attribute in email_object.attributes
+                    ],
+                    [('subject', 'Invoice')]
+                )
+                self.assertEqual(
+                    [
+                        (reference.referenced_uuid, reference.relationship_type)
+                        for reference in email_object.references
+                    ],
+                    [(file_uuid, 'attachment')]
+                )
+                self.assertNotIn(
+                    'email-subject',
+                    [attribute.type for attribute in parser.misp_event.attributes]
+                )
+
+    def test_external_one_field_email_without_attachment_stays_an_attribute(self):
+        """An email holding one field and nothing else is still that field."""
+        email_uuid = '9f2a0b1c-3d4e-4f5a-8b7c-8d9e0f1a2b3c'
+        email_observable = Observable(
+            self._subject_email_object(f'example:EmailMessage-{email_uuid}')
+        )
+        email_observable.id_ = f'example:Observable-{email_uuid}'
+        stix_package = STIXPackage()
+        stix_package.add_observable(email_observable)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.misp_event.objects, [])
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('email-subject', 'Invoice')]
         )
 
     def test_external_two_imports_give_identical_attribute_uuids(self):
