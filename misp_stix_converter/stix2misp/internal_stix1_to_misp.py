@@ -826,9 +826,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             timestamp: Optional[int] = None):
         attributes = []
         for key, relation in self._mapping.weakness_object_mapping().items():
-            value = self._value(weakness, key)
-            if value:
-                attributes.append((relation, value))
+            # A Weakness takes several descriptions: each one is a
+            # `description` attribute
+            values = (
+                map(self._value, weakness.descriptions or ())
+                if key == 'description' else (self._value(weakness, key),)
+            )
+            attributes.extend((relation, value) for value in values if value)
         if attributes:
             weakness_object = MISPObject('weakness')
             if comment is not None:

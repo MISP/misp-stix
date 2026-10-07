@@ -582,8 +582,16 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 misp_object, misp_object.uuid, attribute
             )
         for prop, properties_key in self._mapping.course_of_action_mapping().items():
-            value = self._value(course_of_action, f'{prop}.{properties_key}')
-            if value is not None:
+            # A Course of Action takes several descriptions: each one is a
+            # `description` attribute
+            values = (
+                map(self._value, course_of_action.descriptions or ())
+                if prop == 'description' else
+                (self._value(course_of_action, f'{prop}.{properties_key}'),)
+            )
+            for value in values:
+                if value is None:
+                    continue
                 attribute = {
                     'type': 'text', 'object_relation': prop.replace('_', ''),
                     'value': str(value)
