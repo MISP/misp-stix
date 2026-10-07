@@ -28,6 +28,7 @@ from stix.ttp.attack_pattern import AttackPattern
 from typing import Iterator, Optional
 
 _MISP_categories = describe_types.get('categories')
+_MISP_type_defaults = describe_types['sane_defaults']
 # A `link`, a `url` and a `uri` travel as the same URI object, the category on
 # the relationship: under a category a `url` may not take, the URI can only
 # have been a `link`
@@ -128,6 +129,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         :param package: the package the event was exported as
         """
         self._event = package.incidents[0]
+        # A repeat is one within an Incident's journal: two Incidents of one
+        # collection, with no id to tell them apart, carry their own
+        self.__journal_attributes = set()
         # The export writes the Course of Action of a `course-of-action`
         # object and the one of an event galaxy alike: on the package, taken
         # by the Incident through a stub carrying the reference - and the
@@ -281,26 +285,44 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         """Add the attribute a journal entry carries.
 
         The entry holds the category, the type and the value, nothing else:
-        the uuid is derived from the Incident id, stable across two reads of
-        one document and not the original. The type is read off the entry
-        text, and what MISP has no such type for is the one attribute lost.
+        the uuid is derived from the Incident id, the category, the type and
+        the value, stable across two reads of one document and not the
+        original. The type is read off the entry text, and what MISP has no
+        such type for is the one attribute lost. An entry repeating one already added carries nothing
+        more and is read once.
 
         :param category: the category the entry names
         :param attribute_type: the type the entry names
         :param value: the value
         """
+        # pymisp raises a bare `KeyError` for a category it does not know: the
+        # attribute is read under the type's default one, which is then the
+        # category the record carries, in its uuid and its repeat key alike
+        known_category = category in _MISP_categories
+        carried = category if known_category else _MISP_type_defaults.get(
+            attribute_type, {}
+        ).get('default_category')
+        key = (carried, attribute_type, value)
+        if key in self.__journal_attributes:
+            self._repeated_journal_entry_warning(carried, attribute_type)
+            return
         attribute = {'type': attribute_type, 'value': value}
-        # pymisp raises a bare `KeyError` for a category it does not know,
-        # where it gives the type its default one
-        if category in _MISP_categories:
+        if known_category:
             attribute['category'] = category
         if self._event.id_:
             attribute['uuid'] = str(
                 self._create_v5_uuid(
-                    f'{self._event.id_} - {attribute_type} - {value}'
+                    f'{self._event.id_} - {carried} - {attribute_type} - '
+                    f'{value}'
                 )
             )
-        self._add_attribute(attribute, self._event.id_)
+        if self._add_attribute(attribute, self._event.id_) is None:
+            return
+        self.__journal_attributes.add(key)
+        if not known_category:
+            self._unknown_journal_category_warning(
+                category, attribute_type, carried
+            )
 
     def _parse_header_description(self, package: STIXPackage):
         """Convert the header description of an event package.
@@ -383,6 +405,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self.__dates = set()
         self.__timestamps = set()
         self.__titles = set()
+        self.__journal_attributes = set()
         self.__unread_journal_entries = 0
 
     ############################################################################
@@ -1739,6 +1762,21 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             f'Unable to define the MISP object name of the Observable '
             f'composition with id {object_id}: converted as a '
             f'{_UNKNOWN_TEMPLATE_NAME} object.'
+        )
+
+    def _repeated_journal_entry_warning(self, category: str,
+                                        attribute_type: str):
+        self._add_warning(
+            f'Journal entry of Incident {self._event.id_} repeats an earlier '
+            f'{category} {attribute_type} entry: read once'
+        )
+
+    def _unknown_journal_category_warning(self, category: str,
+                                          attribute_type: str, default: str):
+        self._add_warning(
+            f'Journal entry of Incident {self._event.id_}: MISP has no '
+            f'category {category}, the {attribute_type} attribute is read '
+            f'under its default category {default}'
         )
 
     def _unread_journal_entries_warning(self, count: int):
