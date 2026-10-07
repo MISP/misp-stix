@@ -14,3 +14,10 @@ class InvalidHashValueError(MISPtoSTIXError):
 
 class InvalidMISPInputError(MISPtoSTIXError):
     pass
+
+
+class _UnbuildableRecordError(Exception):
+    """A record whose STIX object cannot be built once the values no native
+    property holds went to custom properties: it goes out whole as the
+    custom record, with the warnings those values already gave and no
+    error."""

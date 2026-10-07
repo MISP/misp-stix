@@ -783,7 +783,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_asn_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        as_args = self._parse_AS_args(misp_object['Attribute'])
+        as_args = self._parse_AS_args(misp_object)
         observable_object = {'0': AutonomousSystem(**as_args)}
         return self._handle_object_observable(misp_object, observable_object)
 
@@ -1058,7 +1058,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_hashlookup_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        file_args = self._parse_hashlookup_args(attributes)
+        file_args = self._parse_hashlookup_args(attributes, misp_object)
         return self._handle_object_observable(
             misp_object, {'0': File(**file_args)}
         )
@@ -1117,7 +1117,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     break
                 index += 1
         if attributes:
-            network_args.update(self._parse_ip_port_args(attributes, protocols))
+            network_args.update(
+                self._parse_ip_port_args(attributes, protocols, misp_object)
+            )
         else:
             network_args['protocols'] = (
                 list(protocols) if protocols else ['tcp']
@@ -1206,7 +1208,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 network_args['_valid_refs'][str_index] = address_object._type
                 network_args[f'{ref_type}_ref'] = str_index
                 index += 1
-        network_args.update(self._parse_netflow_args(attributes))
+        network_args.update(self._parse_netflow_args(attributes, misp_object))
         observable_object['0'] = NetworkTraffic(**network_args)
         return self._handle_object_observable(misp_object, observable_object)
 
@@ -1217,7 +1219,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             attributes
         )
         network_args.update(
-            self._parse_network_connection_args(attributes)
+            self._parse_network_connection_args(attributes, misp_object)
             if attributes else {'protocols': ['tcp']}
         )
         observable_object['0'] = NetworkTraffic(**network_args)
@@ -1260,7 +1262,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             attributes
         )
         network_args.update(
-            self._parse_network_socket_args(attributes)
+            self._parse_network_socket_args(attributes, misp_object)
             if attributes else {'protocols': ['tcp']}
         )
         observable_object['0'] = NetworkTraffic(**network_args)
@@ -1284,9 +1286,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             misp_object['Attribute'],
             force_single=self._mapping.process_single_fields()
         )
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('pid', 'parent-pid', 'child-pid'), misp_object
+        )
         observable_object = {}
-        parent_attributes = self._extract_parent_process_attributes(
-            attributes
+        parent_attributes = self._extract_parent_process_observable_attributes(
+            attributes, non_canonical
         )
         process_args: defaultdict = defaultdict(dict)
         index = 1
@@ -1332,8 +1337,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             process_args['binary_ref'] = str_index
             process_args['_valid_refs'][str_index] = 'file'
         process_args.update(
-            self._parse_process_args(attributes, 'features')
+            self._parse_process_args(attributes, 'features', non_canonical)
         )
+        self._check_native_properties(process_args, non_canonical)
         observable_object['0'] = Process(**process_args)
         observed_data = self._handle_object_observable(
             misp_object, observable_object
@@ -1420,15 +1426,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_user_account_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        user_account_args = self._parse_user_account_args(
-            misp_object['Attribute']
-        )
+        user_account_args = self._parse_user_account_args(misp_object)
         observable_object = {'0': UserAccount(**user_account_args)}
         return self._handle_object_observable(misp_object, observable_object)
 
     def _parse_x509_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        x509_args = self._parse_x509_args(misp_object)
+        x509_args, _ = self._parse_x509_args(misp_object)
         observable_object = {'0': X509Certificate(**x509_args)}
         return self._handle_object_observable(misp_object, observable_object)
 

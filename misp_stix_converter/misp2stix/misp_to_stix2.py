@@ -4,7 +4,8 @@
 import json
 import os
 import re
-from .exceptions import InvalidHashValueError, InvalidMISPInputError
+from .exceptions import (
+    InvalidHashValueError, InvalidMISPInputError, _UnbuildableRecordError)
 from .exportparser import MISPtoSTIXParser
 from ..tools.misp_object_templates import (
     _custom_property_name, _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY)
@@ -40,7 +41,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 try:
     from datetime import UTC
@@ -800,6 +801,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_autonomous_system_attribute(
             self, attribute: MISPAttribute | dict):
+        # A custom property on the observable is not read back: a number the
+        # native property would rewrite takes the whole attribute custom
+        record = self._attribute_record(attribute)
+        if not self._native_integer(attribute['value'], 'AS', record):
+            return self._parse_custom_attribute(attribute)
         observed_data = self._parse_autonomous_system_attribute_observable(attribute)
         stix_objects = [observed_data]
         to_ids = self._mapping.to_ids_default_value(attribute['type'])
@@ -1128,10 +1134,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_hostname_port_attribute(
             self, attribute: MISPAttribute | dict):
-        if not any(s in attribute['value'] for s in self.composite_separators):
+        separator = next(
+            (s for s in self.composite_separators if s in attribute['value']),
+            None
+        )
+        if separator is None:
             self._composite_attribute_value_warning(
                 attribute['type'], attribute['value']
             )
+            return self._parse_custom_attribute(attribute)
+        if not self._native_port(attribute, separator):
             return self._parse_custom_attribute(attribute)
         observed_data = self._parse_hostname_port_attribute_observable(attribute)
         stix_objects = [observed_data]
@@ -1184,10 +1196,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute_analyst_fields(attribute, *stix_objects)
 
     def _parse_ip_port_attribute(self, attribute: MISPAttribute | dict):
-        if not any(s in attribute['value'] for s in self.composite_separators):
+        separator = next(
+            (s for s in self.composite_separators if s in attribute['value']),
+            None
+        )
+        if separator is None:
             self._composite_attribute_value_warning(
                 attribute['type'], attribute['value']
             )
+            return self._parse_custom_attribute(attribute)
+        if not self._native_port(attribute, separator):
             return self._parse_custom_attribute(attribute)
         observed_data = self._parse_ip_port_attribute_observable(attribute)
         stix_objects = [observed_data]
@@ -1454,11 +1472,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         try:
             object_name = misp_object['name']
             to_call = self._mapping.objects_mapping(object_name)
-            if to_call is not None:
-                getattr(self, to_call)(misp_object)
-            else:
+            if to_call is None:
                 self._parse_custom_object(misp_object)
                 self._object_not_mapped_warning(object_name)
+                return
+            try:
+                getattr(self, to_call)(misp_object)
+            except _UnbuildableRecordError:
+                self._parse_custom_object(misp_object)
         except Exception as exception:
             self._object_error(misp_object, exception)
 
@@ -2946,6 +2967,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             pe_object['Attribute'],
             force_single=self._mapping.pe_object_single_fields()
         )
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('number-sections', 'entrypoint-address'), pe_object
+        )
         extension = defaultdict(list)
         for key, feature in self._mapping.pe_object_mapping('features').items():
             if attributes.get(key):
@@ -2956,6 +2980,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 optional_header[feature] = attributes.pop(key)
         if optional_header:
             extension['optional_header'] = optional_header
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             custom = True
             extension.update(
@@ -2969,6 +2994,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 )
                 attributes = self._extract_object_attributes_escaped(
                     pe_section['misp_object']['Attribute']
+                )
+                non_canonical = self._pop_non_canonical_integers(
+                    attributes, ('size-in-bytes',), pe_section['misp_object']
                 )
                 for key, feature in self._mapping.pe_section_mapping().items():
                     if attributes.get(key):
@@ -2986,6 +3014,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                                 attribute_type, pe_object
                             )
                             attributes[attribute_type].append(value)
+                self._restore_non_canonical_integers(attributes, non_canonical)
                 if attributes:
                     custom = True
                     section.update(
@@ -4488,11 +4517,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         return software_args
 
-    def _parse_AS_args(self, attributes: list) -> dict:
+    def _parse_AS_args(self, misp_object: MISPObject | dict) -> dict:
         attributes = self._extract_multiple_object_attributes(
-            attributes, force_single=self._mapping.as_single_fields()
+            misp_object['Attribute'],
+            force_single=self._mapping.as_single_fields()
         )
-        as_args = {'number': self._parse_AS_value(attributes.pop('asn'))}
+        # An autonomous system is built around its number: with none left
+        # by pymisp validation, or one the property would rewrite, the
+        # object goes out whole as the custom object
+        asn = attributes.pop('asn', None)
+        if asn is None:
+            self._required_fields_missing_warning('AutonomousSystem', 'asn')
+            raise _UnbuildableRecordError
+        record = self._object_features(misp_object)
+        if not self._native_integer(asn, 'asn', record):
+            raise _UnbuildableRecordError
+        as_args = {'number': self._parse_AS_value(asn)}
         if attributes.get('description'):
             as_args['name'] = attributes.pop('description')
         if attributes:
@@ -4611,6 +4651,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return email_args
 
     def _parse_file_args(self, attributes: dict, misp_object: dict) -> dict:
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('size-in-bytes',), misp_object
+        )
         file_args = defaultdict(dict)
         for attribute_type in self._mapping.file_hash_main_types():
             value = attributes.get(attribute_type)
@@ -4639,13 +4682,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 file_args[feature] = self._datetime_from_str(
                     self._select_single_feature(attributes, key)
                 )
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             file_args.update(
                 self._handle_observable_multiple_properties(attributes)
             )
         return file_args
 
-    def _parse_hashlookup_args(self, attributes: dict) -> dict:
+    def _parse_hashlookup_args(
+            self, attributes: dict, misp_object: MISPObject | dict) -> dict:
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('FileSize',), misp_object
+        )
         file_args = defaultdict(dict)
         if attributes.get('FileName'):
             file_args['name'] = self._select_single_feature(
@@ -4660,6 +4708,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 file_args['hashes'][hash_type] = self._select_single_feature(
                     attributes, hash_type
                 )
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             file_args.update(self._handle_observable_properties(attributes))
         return file_args
@@ -4687,7 +4736,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return args
 
     def _parse_ip_port_args(
-            self, attributes: dict, protocols: dict[str, None]) -> dict:
+            self, attributes: dict, protocols: dict[str, None],
+            misp_object: MISPObject | dict) -> dict:
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('src-port', 'dst-port'), misp_object
+        )
         mapping = self._mapping.ip_port_object_mapping
         args = {
             feature: self._select_single_feature(attributes, key)
@@ -4700,11 +4753,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for key, feature in mapping('timeline').items():
             if attributes.get(key):
                 args[feature] = self._datetime_from_str(attributes.pop(key))
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
 
     def _parse_lnk_args(self, attributes: dict, misp_object) -> dict:
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('size-in-bytes',), misp_object
+        )
         file_args = defaultdict(dict)
         if attributes.get('filename'):
             file_args['name'] = self._select_single_feature(
@@ -4727,6 +4784,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes.get(key):
                 value = self._select_single_feature(attributes, key)
                 file_args[feature] = self._datetime_from_str(value)
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             file_args.update(
                 self._handle_observable_multiple_properties(attributes)
@@ -4777,7 +4835,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             mutex_args.update(self._handle_observable_properties(attributes))
         return mutex_args
 
-    def _parse_netflow_args(self, attributes: dict) -> dict:
+    def _parse_netflow_args(
+            self, attributes: dict, misp_object: MISPObject | dict) -> dict:
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('src-port', 'dst-port', 'byte-count', 'packet-count'),
+            misp_object
+        )
         args = self._parse_netflow_protocol(attributes)
         netflow_mapping = self._mapping.netflow_object_mapping('features')
         for key, feature in netflow_mapping.items():
@@ -4787,6 +4850,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for key, feature in timeline_mapping.items():
             if attributes.get(key):
                 args[feature] = self._datetime_from_str(attributes.pop(key))
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             args.update(self._handle_observable_properties(attributes))
         return args
@@ -4811,7 +4875,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return {'protocols': list(protocols)}
         return {'protocols': ['ip']}
 
-    def _parse_network_connection_args(self, attributes: dict) -> dict:
+    def _parse_network_connection_args(
+            self, attributes: dict, misp_object: MISPObject | dict) -> dict:
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('src-port', 'dst-port'), misp_object
+        )
         mapping = self._mapping.network_connection_mapping
         network_traffic_args = {
             feature: attributes.pop(key)
@@ -4826,13 +4894,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if not protocols:
             protocols.append('tcp')
         network_traffic_args['protocols'] = protocols
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             network_traffic_args.update(
                 self._handle_observable_properties(attributes)
             )
         return network_traffic_args
 
-    def _parse_network_socket_args(self, attributes: dict) -> dict:
+    def _parse_network_socket_args(
+            self, attributes: dict, misp_object: MISPObject | dict) -> dict:
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('src-port', 'dst-port'), misp_object
+        )
         network_traffic_args = defaultdict(dict)
         socket_mapping = self._mapping.network_socket_mapping('features')
         for key, feature in socket_mapping.items():
@@ -4868,19 +4941,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     else:
                         attributes['state'].append(state)
             network_traffic_args['extensions']['socket-ext'] = socket_ext
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             network_traffic_args.update(
                 self._handle_observable_multiple_properties(attributes)
             )
         return network_traffic_args
 
-    def _parse_process_args(self, attributes: dict, level: str) -> dict:
+    def _parse_process_args(
+            self, attributes: dict, level: str, non_canonical: dict) -> dict:
         mapping = self._mapping.process_object_mapping
         process_args = {
             feature: attributes.pop(key)
             for key, feature in mapping(level).items()
             if key in attributes
         }
+        # A non canonical parent or child pid goes on this process too: stix2
+        # refuses a parent or child process holding a custom property only
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             process_args.update(
                 self._handle_observable_multiple_properties(attributes)
@@ -5014,11 +5092,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             url_args.update(self._handle_observable_properties(attributes))
         return url_args
 
-    def _parse_user_account_args(self, attributes: dict) -> dict:
+    def _parse_user_account_args(self, misp_object: MISPObject | dict) -> dict:
         attributes = self._extract_multiple_object_attributes_with_data(
-            attributes,
+            misp_object['Attribute'],
             force_single=self._mapping.user_account_single_fields(),
             with_data=self._mapping.user_account_data_fields()
+        )
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('group-id',), misp_object
         )
         mapping = self._mapping.user_account_object_mapping
         user_account_args = {
@@ -5039,6 +5120,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         if extension:
             user_account_args['extensions'] = {'unix-account-ext': extension}
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             user_account_args.update(
                 self._handle_observable_multiple_properties_with_data(
@@ -5047,10 +5129,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         return user_account_args
 
-    def _parse_x509_args(self, misp_object: MISPObject | dict) -> dict:
+    def _parse_x509_args(self, misp_object: MISPObject | dict) -> tuple:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=self._mapping.x509_single_fields()
+        )
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('pubkey-info-exponent',), misp_object
         )
         x509_args = defaultdict(dict)
         if attributes.get('self_signed'):
@@ -5084,9 +5169,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if extension:
             name = ','.join(extension)
             x509_args['x509_v3_extensions']['subject_alternative_name'] = name
+        self._restore_non_canonical_integers(attributes, non_canonical)
         if attributes:
             x509_args.update(self._handle_observable_properties(attributes))
-        return x509_args
+        return x509_args, non_canonical
 
     ############################################################################
     #                       PATTERNS CREATION FUNCTIONS.                       #
@@ -5194,6 +5280,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             stix_markings.clean(custom_args['markings'])
 
     @staticmethod
+    def _check_native_properties(args: dict, non_canonical: dict):
+        # stix2 refuses a record holding nothing but custom properties: once
+        # its non canonical numbers went there, it goes out whole as the
+        # custom record
+        native = any(
+            not key.startswith(_CUSTOM_PROPERTY_PREFIX)
+            and key not in ('allow_custom', '_valid_refs')
+            for key in args
+        )
+        if non_canonical and not native:
+            raise _UnbuildableRecordError
+
+    @staticmethod
     def _define_address_type(address):
         if ':' in address:
             return 'ipv6-addr'
@@ -5211,6 +5310,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             key for key in attributes.keys() if key.startswith('parent-')
         )
         return {key: attributes.pop(key) for key in parent_fields}
+
+    def _extract_parent_process_observable_attributes(
+            self, attributes: dict, non_canonical: dict) -> dict:
+        # stix2 refuses a parent process holding custom properties only: when
+        # a non canonical parent pid leaves no relation a native parent
+        # property holds, the parent relations stay with the process
+        parent_attributes = self._extract_parent_process_attributes(attributes)
+        native = self._mapping.process_object_mapping('parent')
+        if 'parent-pid' in non_canonical and not any(
+                key in native for key in parent_attributes):
+            attributes.update(parent_attributes)
+            return {}
+        return parent_attributes
 
     def _fetch_domain_ip_object_case(self, attributes: list) -> str:
         any_domain = any(
@@ -5331,6 +5443,32 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if not isinstance(attribute_value, str):
             return attribute_value
         return self._escape_pattern_value(attribute_value)
+
+    def _native_integer(self, value: Any, relation: str, record: str) -> bool:
+        """Whether a native STIX integer property holds a MISP value
+        unchanged.
+
+        stix2 reads an integer property with `int(value)`: `'007'`, `'+5'`,
+        `'1_000'` or `'٣'` would go out as the number they denote, `'0x1f'`
+        would be refused with the whole record. Only the decimal digits the
+        property writes back go native - every STIX integer property is
+        signed - any other value is warned of, for a custom property to
+        carry verbatim.
+        """
+        if self._is_canonical_integer(value, signed=True):
+            return True
+        self._non_canonical_number_warning(
+            relation, value, record, 'decimal integer'
+        )
+        return False
+
+    def _native_port(
+            self, attribute: MISPAttribute | dict, separator: str) -> bool:
+        # A custom property on the observable is not read back: a port the
+        # native property would rewrite takes the whole attribute custom
+        port = attribute['value'].split(separator)[1]
+        record = self._attribute_record(attribute)
+        return self._native_integer(port, attribute['type'], record)
 
     @staticmethod
     def _parse_custom_data_value(
@@ -5455,6 +5593,49 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return self._datetime_from_timestamp(misp_data_layer['timestamp'])
         return datetime.now(UTC)
 
+    def _pop_non_canonical_integers(
+            self, attributes: dict, relations: tuple,
+            misp_object: MISPObject | dict) -> dict:
+        """Take the values native STIX integer properties would rewrite or
+        refuse out of the relations those properties hold, warning of each.
+
+        Once the native properties are mapped, the values taken go back with
+        `_restore_non_canonical_integers`, for the record to carry them
+        verbatim with the relations no property maps.
+
+        :param attributes: the values of the object, by relation - a single
+            value or a list, each value possibly paired with its uuid
+        :param relations: the relations native integer properties hold
+        :param misp_object: the MISP object the values belong to
+        :return: the non canonical values by relation, without their uuid
+        """
+        record = self._object_features(misp_object)
+        non_canonical = {}
+        for relation in relations:
+            if relation not in attributes:
+                continue
+            values = attributes[relation]
+            if not isinstance(values, list):
+                value = values[0] if isinstance(values, tuple) else values
+                if not self._native_integer(value, relation, record):
+                    del attributes[relation]
+                    non_canonical[relation] = value
+                continue
+            canonical, others = [], []
+            for entry in values:
+                value = entry[0] if isinstance(entry, tuple) else entry
+                if self._native_integer(value, relation, record):
+                    canonical.append(entry)
+                else:
+                    others.append(value)
+            if others:
+                non_canonical[relation] = others
+                if canonical:
+                    attributes[relation] = canonical
+                else:
+                    del attributes[relation]
+        return non_canonical
+
     @staticmethod
     def _record_original_name(
             args: dict, name: str, original: str,
@@ -5480,6 +5661,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             original_names.pop(name, None)
             if not original_names:
                 del args[_ORIGINAL_NAMES_PROPERTY]
+
+    @staticmethod
+    def _restore_non_canonical_integers(attributes: dict, non_canonical: dict):
+        """Give the values `_pop_non_canonical_integers` took back to their
+        relations, next to the values a repeated relation still holds once
+        its native property took one, for the custom properties."""
+        for relation, values in non_canonical.items():
+            if relation in attributes:
+                attributes[relation].extend(values)
+            else:
+                attributes[relation] = values
 
     @staticmethod
     def _sanitise_meta_field(key: str) -> str:

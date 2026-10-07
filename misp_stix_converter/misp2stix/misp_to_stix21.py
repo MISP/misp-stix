@@ -763,7 +763,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_asn_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        as_args = self._parse_AS_args(misp_object['Attribute'])
+        as_args = self._parse_AS_args(misp_object)
         as_args['id'] = self._parse_stix_object_id(
             'object', 'autonomous-system', misp_object
         )
@@ -1142,7 +1142,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         file_args = {
             'id': self._parse_stix_object_id('object', 'file', misp_object),
-            **self._parse_hashlookup_args(attributes)
+            **self._parse_hashlookup_args(attributes, misp_object)
         }
         return self._handle_object_observable(misp_object, [File(**file_args)])
 
@@ -1207,7 +1207,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     ]
         if attributes:
             network_traffic_args.update(
-                self._parse_ip_port_args(attributes, protocols)
+                self._parse_ip_port_args(attributes, protocols, misp_object)
             )
         else:
             network_traffic_args['protocols'] = (
@@ -1328,7 +1328,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             elif attributes.get(f'{ref_type}-as'):
                 attribute = attributes.pop(f'{ref_type}-as')
                 attributes[f'{ref_type}-as'] = attribute[0]
-        network_traffic_args.update(self._parse_netflow_args(attributes))
+        network_traffic_args.update(
+            self._parse_netflow_args(attributes, misp_object)
+        )
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         return self._handle_object_observable(misp_object, objects)
 
@@ -1342,7 +1344,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             attributes
         )
         network_traffic_args.update(
-            self._parse_network_connection_args(attributes)
+            self._parse_network_connection_args(attributes, misp_object)
             if attributes else {'protocols': ['tcp']}
         )
         network_traffic_args['id'] = self._parse_stix_object_id(
@@ -1383,7 +1385,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             attributes
         )
         network_traffic_args.update(
-            self._parse_network_socket_args(attributes)
+            self._parse_network_socket_args(attributes, misp_object)
             if attributes else {'protocols': ['tcp']}
         )
         network_traffic_args['id'] = self._parse_stix_object_id(
@@ -1442,9 +1444,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             force_single=self._mapping.process_single_fields(),
             with_uuid=self._mapping.process_uuid_fields()
         )
+        # The parent pid's uuid names the parent process whether its value
+        # goes native or custom, so the parent id stays the same on each run
+        parent_uuids = [
+            attributes[feature][1]
+            for feature in self._mapping.parent_process_fields()
+            if attributes.get(feature)
+        ]
+        non_canonical = self._pop_non_canonical_integers(
+            attributes, ('pid', 'parent-pid', 'child-pid'), misp_object
+        )
         objects = []
-        parent_attributes = self._extract_parent_process_attributes(
-            attributes
+        parent_attributes = self._extract_parent_process_observable_attributes(
+            attributes, non_canonical
         )
         process_args = defaultdict(list)
         if parent_attributes:
@@ -1454,12 +1466,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 image_uuid = f'file--{uuid}'
                 objects.append(File(id=image_uuid, name=filename))
                 parent_args['image_ref'] = image_uuid
-            for feature in self._mapping.parent_process_fields():
-                if parent_attributes.get(feature):
-                    parent_args['id'] = (
-                        f"process--{parent_attributes[feature][1]}"
-                    )
-                    break
+            if parent_uuids:
+                parent_args['id'] = f'process--{parent_uuids[0]}'
             parent_mapping = self._mapping.process_object_mapping('parent')
             for key, feature in parent_mapping.items():
                 if parent_attributes.get(key):
@@ -1484,8 +1492,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             objects.append(File(id=image_uuid, name=filename))
             process_args['image_ref'] = image_uuid
         process_args.update(
-            self._parse_process_args(attributes, 'features')
+            self._parse_process_args(attributes, 'features', non_canonical)
         )
+        self._check_native_properties(process_args, non_canonical)
         process_args['id'] = self._parse_stix_object_id(
             'object', 'process', misp_object
         )
@@ -1636,9 +1645,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_user_account_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        user_account_args = self._parse_user_account_args(
-            misp_object['Attribute']
-        )
+        user_account_args = self._parse_user_account_args(misp_object)
         user_account_args['id'] = self._parse_stix_object_id(
             'object', 'user-account', misp_object
         )
@@ -1647,7 +1654,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_x509_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        x509_args = self._parse_x509_args(misp_object)
+        x509_args, non_canonical = self._parse_x509_args(misp_object)
+        # A STIX 2.1 certificate is built from one native property at least
+        self._check_native_properties(x509_args, non_canonical)
         x509_args['id'] = self._parse_stix_object_id(
             'object', 'x509-certificate', misp_object
         )
