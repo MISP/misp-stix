@@ -841,8 +841,8 @@ class TestSTIX1Import(TestSTIX):
                     str(
                         uuid5(
                             _UUIDv4,
-                            f'{incident_id} - {attribute_type} - '
-                            f'My {attribute_type} value'
+                            f'{incident_id} - Internal reference - '
+                            f'{attribute_type} - My {attribute_type} value'
                         )
                     )
                 )
@@ -871,8 +871,9 @@ class TestSTIX1Import(TestSTIX):
     def test_internal_legacy_journal_entry_grammar_still_reads(self):
         """`attribute[Category][type]: value`, the grammar MISP core's own STIX
         1 export wrote, is read next to ours. A category MISP has not is left
-        to pymisp's default for the type: pymisp raises a bare `KeyError`
-        for it, which escaped the guard and aborted the whole package."""
+        to pymisp's default for the type, with a Warning: pymisp raises a bare
+        `KeyError` for it, which escaped the guard and aborted the whole
+        package."""
         parser = self._parse_internal_package(
             self._journal_package(
                 'attribute[Internal reference][text]: legacy text',
@@ -880,7 +881,14 @@ class TestSTIX1Import(TestSTIX):
             )
         )
         self.assertEqual(parser.diagnostics()['errors'], {})
-        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            self._warning_texts(parser),
+            [
+                f'Journal entry of Incident MISP:Incident-{_PLAIN_OBJECT_UUID}'
+                ': MISP has no category No such category, the comment '
+                'attribute is read under its default category Other'
+            ]
+        )
         self.assertEqual(
             self._journal_attributes(parser),
             [
@@ -902,12 +910,198 @@ class TestSTIX1Import(TestSTIX):
             )
         )
         self.assertEqual(self._journal_attributes(parser), [])
-        warnings = [
+        warnings = self._warning_texts(parser)
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('4 Incident journal entries', warnings[0])
+
+    @staticmethod
+    def _warning_texts(parser):
+        return [
             warning for warnings in parser.diagnostics()['warnings'].values()
             for warning in warnings
         ]
-        self.assertEqual(len(warnings), 1)
-        self.assertIn('4 Incident journal entries', warnings[0])
+
+    def test_internal_journal_entry_unknown_category_is_warned(self):
+        """An entry naming a category MISP has not was read under the type's
+        default category without a word, though the category is data the
+        document claims to carry. The attribute is still read, with one
+        Warning naming the category and the default it is read under."""
+        for entry in ('Attribute (Nonsense - comment): foo',
+                      'attribute[Nonsense][comment]: foo'):
+            with self.subTest(entry=entry):
+                parser = self._parse_internal_package(
+                    self._journal_package(entry)
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._journal_attributes(parser),
+                    [('comment', 'Other', 'foo')]
+                )
+                self.assertEqual(
+                    self._warning_texts(parser),
+                    [
+                        'Journal entry of Incident '
+                        f'MISP:Incident-{_PLAIN_OBJECT_UUID}: MISP has no '
+                        'category Nonsense, the comment attribute is read '
+                        'under its default category Other'
+                    ]
+                )
+
+    def test_internal_journal_entries_differing_by_category_get_two_uuids(self):
+        """The uuid was derived from the type and the value only, so two
+        entries holding one value under two categories - legitimate MISP
+        content - came back as two attributes sharing one uuid."""
+        parser = self._parse_internal_package(
+            self._journal_package(
+                'Attribute (Other - comment): same',
+                'Attribute (Internal reference - comment): same'
+            )
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        incident_id = f'MISP:Incident-{_PLAIN_OBJECT_UUID}'
+        self.assertEqual(
+            sorted(
+                (attribute.category, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+                if attribute.type == 'comment'
+            ),
+            sorted(
+                (
+                    category,
+                    str(
+                        uuid5(
+                            _UUIDv4,
+                            f'{incident_id} - {category} - comment - same'
+                        )
+                    )
+                )
+                for category in ('Other', 'Internal reference')
+            )
+        )
+
+    def test_internal_identical_journal_entries_are_read_once(self):
+        """An entry identical to one already read - same category, type and
+        value - came back as a second identical attribute sharing the first
+        one's uuid, with no message. It is read once, the repeat warned."""
+        incident_id = f'MISP:Incident-{_PLAIN_OBJECT_UUID}'
+        repeat = (
+            f'Journal entry of Incident {incident_id} repeats an earlier '
+            'Other comment entry: read once'
+        )
+        unknown = (
+            f'Journal entry of Incident {incident_id}: MISP has no category '
+            'Nonsense, the comment attribute is read under its default '
+            'category Other'
+        )
+        cases = {
+            'identical entries': (
+                ('Attribute (Other - comment): same',) * 2, [repeat]
+            ),
+            'both grammars': (
+                (
+                    'Attribute (Other - comment): same',
+                    'attribute[Other][comment]: same'
+                ),
+                [repeat]
+            ),
+            'unknown category twin': (
+                (
+                    'Attribute (Nonsense - comment): same',
+                    'Attribute (Other - comment): same'
+                ),
+                [unknown, repeat]
+            )
+        }
+        for name, (entries, warnings) in cases.items():
+            with self.subTest(name):
+                parser = self._parse_internal_package(
+                    self._journal_package(*entries)
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._journal_attributes(parser),
+                    [('comment', 'Other', 'same')]
+                )
+                self.assertEqual(self._warning_texts(parser), warnings)
+        with self.subTest('incident with no id'):
+            stix_package = self._journal_package(
+                *('Attribute (Other - comment): same',) * 2
+            )
+            stix_package.related_packages.related_package[
+                0
+            ].item.incidents[0].id_ = None
+            parser = self._parse_internal_package(stix_package)
+            self.assertEqual(parser.diagnostics()['errors'], {})
+            self.assertEqual(
+                self._journal_attributes(parser),
+                [('comment', 'Other', 'same')]
+            )
+            self.assertEqual(
+                self._warning_texts(parser),
+                [
+                    'Journal entry of Incident None repeats an earlier '
+                    'Other comment entry: read once'
+                ]
+            )
+        with self.subTest('two incidents with no id'):
+            stix_package = self._journal_package(
+                'Attribute (Other - comment): same'
+            )
+            stix_package.related_packages.related_package[
+                0
+            ].item.incidents[0].id_ = None
+            second = self._journal_package(
+                'Attribute (Other - comment): same'
+            ).related_packages.related_package[0].item
+            second.incidents[0].id_ = None
+            stix_package.related_packages.append(RelatedPackage(second))
+            parser = self._parse_internal_package(stix_package)
+            self.assertEqual(parser.diagnostics()['errors'], {})
+            self.assertEqual(parser.diagnostics()['warnings'], {})
+            self.assertEqual(
+                self._journal_attributes(parser),
+                [('comment', 'Other', 'same')] * 2
+            )
+
+    def test_internal_misp_export_same_value_comments_round_trip_apart(self):
+        """A MISP event holding one comment text under two categories went
+        through the export and back as two attributes sharing one uuid."""
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                event = get_base_event()
+                event['Event']['Attribute'] = [
+                    {
+                        'uuid': uuid, 'type': 'comment', 'category': category,
+                        'value': 'same text'
+                    }
+                    for uuid, category in (
+                        ('3f0e5b6a-1c2d-4e8f-9a0b-7c6d5e4f3a2b', 'Other'),
+                        (
+                            '518b4bcb-a86b-4783-9457-391d548b605b',
+                            'Internal reference'
+                        )
+                    )
+                ]
+                parser = self._parse_internal_package(
+                    self._misp_export(event, version)
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self.assertEqual(
+                    sorted(
+                        attribute.category
+                        for attribute in parser.misp_event.attributes
+                    ),
+                    ['Internal reference', 'Other']
+                )
+                self.assertEqual(
+                    len({
+                        attribute.uuid
+                        for attribute in parser.misp_event.attributes
+                    }),
+                    2
+                )
 
     def test_internal_header_description_attribute_round_trips(self):
         """The attribute whose comment is `Imported from STIX header
