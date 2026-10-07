@@ -1967,18 +1967,30 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return False
 
     @staticmethod
-    def _extract_file_attributes(attributes: list) -> dict:
+    def _extract_file_attributes(attributes: list) -> tuple:
+        """Extract the values of a `file` object by relation, a relation
+        whose native field holds one value taking its first value alone.
+
+        :param attributes: the attributes of the `file` object
+        :return: the values by relation, and the further values of each
+            relation holding one; a value carrying data is a tuple of the
+            value, the data and the attribute uuid
+        """
         attributes_dict = defaultdict(list)
+        repeated = defaultdict(list)
         for attribute in attributes:
             value = attribute['value']
             relation = attribute['object_relation']
-            if relation in _FILE_SINGLE_ATTRIBUTES:
-                if attribute.get('data'):
-                    value = (value, attribute['data'], attribute['uuid'])
-                attributes_dict[relation] = value
-            else:
+            if relation not in _FILE_SINGLE_ATTRIBUTES:
                 attributes_dict[relation].append(value)
-        return attributes_dict
+                continue
+            if attribute.get('data'):
+                value = (value, attribute['data'], attribute['uuid'])
+            if relation in attributes_dict:
+                repeated[relation].append(value)
+            else:
+                attributes_dict[relation] = value
+        return attributes_dict, repeated
 
     @staticmethod
     def _extract_single_field_attributes(attributes: list,
@@ -2409,7 +2421,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes:
             for object_relation, value in attributes.items():
                 if object_relation in self._mapping.hash_type_attributes('single'):
-                    file_object.add_hash(self._parse_hash_value(object_relation, value))
+                    # A hash relation the `file` template has not, such as
+                    # `pehash`, holds a list of values
+                    values = value if isinstance(value, list) else [value]
+                    for hash_value in values:
+                        file_object.add_hash(
+                            self._parse_hash_value(object_relation, hash_value)
+                        )
                 else:
                     for single_value in value:
                         self._add_custom_property(
@@ -2418,10 +2436,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         )
 
     def _parse_file_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_file_attributes(misp_object['Attribute'])
-        observables = self._parse_file_observables(attributes)
+        attributes, repeated = self._extract_file_attributes(
+            misp_object['Attribute']
+        )
+        observables = self._parse_file_observables(attributes, repeated)
         file_object = File()
         self._parse_file_attributes(attributes, misp_object, file_object)
+        self._add_repeated_values(file_object, repeated, misp_object)
         file_observable = self._create_observable(file_object, misp_object['uuid'], 'File')
         if observables:
             observables.append(file_observable)
@@ -2433,30 +2454,43 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             return observable_composition
         return file_observable
 
-    def _parse_file_observables(self, attributes: dict) -> list:
+    def _parse_file_observables(self, attributes: dict,
+                                repeated: dict) -> list:
+        """Write every `malware-sample` and `attachment` value carrying
+        data as an Artifact of its own, the others staying where the
+        property bag takes them.
+
+        :param attributes: the values of the `file` object, by relation
+        :param repeated: the further values of its relations holding one
+        :return: the Artifact Observables, members of the file composition
+        """
         observables = []
-        if attributes.get('malware-sample'):
-            if isinstance(attributes['malware-sample'], tuple):
-                value, data, uuid = attributes.pop('malware-sample')
-                malware_observable = self._create_malware_sample_observable(value, data, uuid)
-                observables.append(malware_observable)
-            else:
-                attributes['malware-sample'] = [attributes['malware-sample']]
-        if attributes.get('attachment'):
-            if isinstance(attributes['attachment'], tuple):
-                filename, data, uuid = attributes.pop('attachment')
-                attachment_observable = self._create_attachment_observable(filename, data, uuid)
-                observables.append(attachment_observable)
-            else:
-                attributes['attachment'] = [attributes['attachment']]
+        for relation, create_observable in (
+                ('malware-sample', self._create_malware_sample_observable),
+                ('attachment', self._create_attachment_observable)):
+            if isinstance(attributes.get(relation), tuple):
+                observables.append(create_observable(*attributes.pop(relation)))
+            elif attributes.get(relation):
+                attributes[relation] = [attributes[relation]]
+            values = []
+            for value in repeated.pop(relation, ()):
+                if isinstance(value, tuple):
+                    observables.append(create_observable(*value))
+                else:
+                    values.append(value)
+            if values:
+                repeated[relation] = values
         return observables
 
     def _parse_file_with_pe_object(self, misp_object: dict) -> tuple:
         folded = list(misp_object['Attribute'])
-        attributes = self._extract_file_attributes(misp_object['Attribute'])
-        observables = self._parse_file_observables(attributes)
+        attributes, repeated = self._extract_file_attributes(
+            misp_object['Attribute']
+        )
+        observables = self._parse_file_observables(attributes, repeated)
         file_object = WinExecutableFile()
         self._parse_file_attributes(attributes, misp_object, file_object)
+        self._add_repeated_values(file_object, repeated, misp_object)
         for reference in misp_object['ObjectReference']:
             if self._check_reference(misp_object['uuid'], reference, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
