@@ -392,7 +392,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _build_object(self, name: str, attributes: tuple,
                       to_ids: Optional[bool],
-                      object_uuid: Optional[str] = None) -> Optional[MISPObject]:
+                      object_uuid: Optional[str] = None,
+                      comment: Optional[str] = None) -> Optional[MISPObject]:
         """Build a MISP object out of attributes read from a carrier holding
         several of them, and add it to the event.
 
@@ -406,11 +407,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             None where it carries none and the template default stands
         :param object_uuid: the uuid the object takes, and its attributes
             derive from - None to have pymisp give it a random one
+        :param comment: the comment the object carries, None for none
         :return: the object added to the event, None when MISP refused it
         """
         misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
         if object_uuid is not None:
             misp_object.uuid = object_uuid
+        if comment is not None:
+            misp_object.comment = comment
         try:
             for attribute in attributes:
                 if to_ids is not None:
@@ -425,7 +429,8 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                          object_uuid: Optional[str]) -> Optional[MISPObject]:
         """Build the `pe` object a `file` includes, and the sections under it.
 
-        :param pe: the attributes of the `pe` and of each of its sections
+        :param pe: the attributes of the `pe` and of each of its sections,
+            and the `pe` comment
         :param to_ids: the `to_ids` flag the Windows executable was written
             with - one flag for the file, the `pe` and every section
         :param object_uuid: the uuid of the `file` object, the `pe` and the
@@ -434,7 +439,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         """
         pe_object = self._build_object(
             'pe', pe['attributes'], to_ids,
-            self._derived_uuid(object_uuid, 'pe')
+            self._derived_uuid(object_uuid, 'pe'), pe['comment']
         )
         self._build_pe_sections(pe_object, pe['sections'], to_ids, object_uuid)
         return pe_object
@@ -1011,6 +1016,13 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 return "filename", attribute_value, ""
         return name, attributes, compl_data
 
+    # A Windows executable holding no `pe` data is a file, and reduces as one
+    def _reduce_pe(self, properties: win_executable_file_object.WinExecutableFile,
+                   name: str, attributes: tuple, compl_data) -> tuple:
+        if name == 'file' and not compl_data:
+            return self._reduce_file(properties, name, attributes, compl_data)
+        return name, attributes, compl_data
+
     # Determine path & filename from a complete path or filename attribute
     @staticmethod
     def _handle_filename_path_case(attributes: tuple) -> tuple:
@@ -1305,12 +1317,25 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
         if not file_attributes:
             return 'pe', attributes, {'pe_sections': sections}
+        file_attributes.extend(file_properties)
+        file_attributes = self._return_object_attributes(file_attributes)
+        if not attributes and not any(sections):
+            # No `pe` data: the file alone, read as a File with the same
+            # fields is, rather than over an empty `pe` object. A comment
+            # alone makes no `pe` either
+            return 'file', file_attributes, ""
         # A file carrying a `pe` is an object however few attributes it has:
         # folded into a single attribute, it has nowhere to reference the `pe`
-        # from, and the `pe` would sit in the event referenced by nothing
-        file_attributes.extend(file_properties)
-        return 'file', self._return_object_attributes(file_attributes), {
-            'pe': {'attributes': attributes, 'sections': sections}
+        # from, and the `pe` would sit in the event referenced by nothing.
+        # The CybOX Object holding the executable carries the `pe` comment,
+        # the Observable or the Indicator carrying the file's
+        return 'file', file_attributes, {
+            'pe': {
+                'attributes': attributes, 'sections': sections,
+                'comment': self._read_comment(
+                    getattr(properties.parent, 'description', None)
+                )
+            }
         }
 
     def _read_shared_property_bag(

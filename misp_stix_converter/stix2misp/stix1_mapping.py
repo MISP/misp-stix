@@ -49,6 +49,7 @@ class STIX1toMISPMapping:
         MutexObjectType = '_reduce_mutex',
         PDFFileObjectType = '_reduce_file',
         WhoisObjectType = '_reduce_whois',
+        WindowsExecutableFileObjectType = '_reduce_pe',
         WindowsFileObjectType = '_reduce_file',
         WindowsRegistryKeyObjectType = '_reduce_regkey'
     )
