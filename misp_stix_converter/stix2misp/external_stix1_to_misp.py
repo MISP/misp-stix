@@ -214,7 +214,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 record = self._record_uuid(observable)
                 uuid = record['uuid']
                 try:
-                    attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties)
+                    attribute_type, attribute_value, compl_data = self._read_record(properties)
                 except StixObjectTypeError as xsi_type:
                     self._stix_object_type_error(xsi_type, indicator.id_)
                     return
@@ -294,7 +294,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 observable_object = observable.object_
                 properties = observable_object.properties
                 try:
-                    attribute_type, attribute_value, compl_data = self._handle_attribute_type(properties, title=observable.title)
+                    attribute_type, attribute_value, compl_data = self._read_record(properties, title=observable.title)
                 except StixObjectTypeError as xsi_type:
                     self._stix_object_type_error(xsi_type, observable.id_)
                     continue

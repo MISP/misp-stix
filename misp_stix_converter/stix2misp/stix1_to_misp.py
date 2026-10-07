@@ -156,7 +156,32 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :return: the `(type, value, complementary data)` of an attribute, or
             the `(name, attributes, complementary data)` of an object
         """
+        return self._reduce(
+            properties, self._read_cybox_object(properties, title)
+        )
+
+    def _read_record(self, properties, title=None):
+        """Read a CybOX object for a caller acting on the complementary data,
+        reduced as `_handle_attribute_type` reduces it unless the read carries
+        references: the attribute it would reduce to has nothing to hold them.
+
+        :param properties: the CybOX object properties
+        :param title: the Observable title, which names an artifact
+        :return: the `(type, value, complementary data)` of an attribute, or
+            the `(name, attributes, complementary data)` of an object
+        """
         read = self._read_cybox_object(properties, title)
+        if isinstance(read[2], dict) and read[2].get('references'):
+            return read
+        return self._reduce(properties, read)
+
+    def _reduce(self, properties, read: tuple) -> tuple:
+        """Reduce a CybOX object read through the reduction its type names.
+
+        :param properties: the CybOX object properties
+        :param read: what the handler returned
+        :return: the read, reduced where its type names a reduction
+        """
         reduction = self._mapping.attribute_reductions_mapping(
             properties._XSI_TYPE
         )

@@ -951,7 +951,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if getattr(observable.object_, 'properties', None) is not None:
             properties = observable.object_.properties
             try:
-                attribute_type, attribute_value, compl_data = self._handle_attribute_type(
+                attribute_type, attribute_value, compl_data = self._read_record(
                     properties, title=observable.title
                 )
                 if attribute_type and attribute_value is None:
