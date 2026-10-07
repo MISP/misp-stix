@@ -553,6 +553,15 @@ class MISPtoSTIXParser(AbstractParser):
             f'{value!r} not converted.'
         )
 
+    def _single_value_field_warning(
+            self, relation: str, value: Any, record: str):
+        # Not the unwritable relation warning: the relation has its field,
+        # which holds the first value
+        self._add_warning(
+            f'{relation!r} in the STIX 1 {record} has room for one value: '
+            f'{value!r} not converted.'
+        )
+
     def _unwritten_object_reference_warning(
             self, source: str, relationship: str, target: str):
         self._add_warning(

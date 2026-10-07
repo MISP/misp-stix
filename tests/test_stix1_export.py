@@ -855,8 +855,9 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
     it can, and the rest goes to the property bag under the relation."""
 
     _OBJECT_UUID = '8f2b4d6a-0c7e-4a3f-9b1d-5e6f7a8b9c0d'
+    _VERSIONS = ('1.1.1', '1.2')
 
-    def _parse_object(self, name, attributes):
+    def _parse_object(self, name, attributes, version='1.1.1'):
         event = get_base_event()
         event['Event']['Object'] = [
             {
@@ -869,13 +870,19 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                 ]
             }
         ]
-        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
-        parser.parse_misp_event(event['Event'])
-        self.assertEqual(parser.errors, {})
-        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
+        parser = self._parse_event(event, version)
         incident = parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         return observable.item.object_.properties
+
+    def _parse_event(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
+        # The version only shows in the serialisation
+        parser.stix_package.to_xml()
+        return parser
 
     @staticmethod
     def _bag(properties):
@@ -1112,56 +1119,62 @@ class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
                 ]
             }
         ]
-        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
-        parser.parse_misp_event(event['Event'])
-        self.assertEqual(parser.errors, {})
-        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
+        parser = self._parse_event(event, version)
         ttp, = parser.stix_package.ttps.ttp
         exploit_target = ttp.exploit_targets[0].item
         vulnerability, = exploit_target.vulnerabilities
         return vulnerability
 
     def test_vulnerability_repeated_summary_is_one_more_description(self):
-        vulnerability = self._vulnerability(
-            (('vulnerability', 'id', 'CVE-2021-44228'),
-             ('text', 'summary', 'Log4Shell'),
-             ('text', 'summary', 'JNDI lookup'))
-        )
-        self.assertEqual(
-            [description.value for description in vulnerability.descriptions],
-            ['Log4Shell', 'JNDI lookup']
-        )
-        self.assertEqual(self._warnings, [])
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                vulnerability = self._vulnerability(
+                    (('vulnerability', 'id', 'CVE-2021-44228'),
+                     ('text', 'summary', 'Log4Shell'),
+                     ('text', 'summary', 'JNDI lookup')),
+                    version
+                )
+                self.assertEqual(
+                    [description.value
+                     for description in vulnerability.descriptions],
+                    ['Log4Shell', 'JNDI lookup']
+                )
+                self.assertEqual(self._warnings, [])
 
-    def test_vulnerability_repeated_value_with_no_room_is_warned(self):
+    def test_vulnerability_repeated_single_value_is_warned(self):
         # A repeated `id` reached the CVE field as a list: the object was
         # lost with a traceback; the others went in silence
-        vulnerability = self._vulnerability(
-            (('vulnerability', 'id', 'CVE-2021-44228'),
-             ('vulnerability', 'id', 'CVE-2021-45046'),
-             ('datetime', 'created', '2021-11-26T00:00:00'),
-             ('datetime', 'created', '2021-11-30T00:00:00'),
-             ('datetime', 'published', '2021-12-10T00:00:00'),
-             ('datetime', 'published', '2021-12-14T00:00:00'),
-             ('float', 'cvss-score', '10.0'),
-             ('float', 'cvss-score', '9.0'))
-        )
-        self.assertEqual(vulnerability.cve_id, 'CVE-2021-44228')
-        self.assertEqual(str(vulnerability.cvss_score.overall_score), '10.0')
-        features = f'vulnerability object (uuid: {self._OBJECT_UUID})'
-        self.assertEqual(
-            self._warnings,
-            [
-                f"{relation!r} has no place in the STIX 1 {features}: "
-                f"{value!r} not converted."
-                for relation, value in (
-                    ('id', 'CVE-2021-45046'),
-                    ('created', '2021-11-30T00:00:00'),
-                    ('published', '2021-12-14T00:00:00'),
-                    ('cvss-score', '9.0')
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                vulnerability = self._vulnerability(
+                    (('vulnerability', 'id', 'CVE-2021-44228'),
+                     ('vulnerability', 'id', 'CVE-2021-45046'),
+                     ('datetime', 'created', '2021-11-26T00:00:00'),
+                     ('datetime', 'created', '2021-11-30T00:00:00'),
+                     ('datetime', 'published', '2021-12-10T00:00:00'),
+                     ('datetime', 'published', '2021-12-14T00:00:00'),
+                     ('float', 'cvss-score', '10.0'),
+                     ('float', 'cvss-score', '9.0')),
+                    version
                 )
-            ]
-        )
+                self.assertEqual(vulnerability.cve_id, 'CVE-2021-44228')
+                self.assertEqual(
+                    str(vulnerability.cvss_score.overall_score), '10.0'
+                )
+                features = f'vulnerability object (uuid: {self._OBJECT_UUID})'
+                self.assertEqual(
+                    self._warnings,
+                    [
+                        f"{relation!r} in the STIX 1 {features} has room for "
+                        f"one value: {value!r} not converted."
+                        for relation, value in (
+                            ('id', 'CVE-2021-45046'),
+                            ('created', '2021-11-30T00:00:00'),
+                            ('published', '2021-12-14T00:00:00'),
+                            ('cvss-score', '9.0')
+                        )
+                    ]
+                )
 
 
 class TestSTIX1CanonicalNumbers(TestSTIX):

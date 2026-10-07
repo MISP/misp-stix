@@ -2955,7 +2955,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     # every free text relation it has
                     vulnerability.add_description(value)
                 else:
-                    self._unwritable_relation_warning(relation, value, record)
+                    self._single_value_field_warning(relation, value, record)
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
