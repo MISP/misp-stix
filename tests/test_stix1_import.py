@@ -7,6 +7,7 @@ import inspect
 import json
 import pkgutil
 from collections import Counter
+from copy import deepcopy
 from cybox.common import Hash, HashList, ObjectProperties
 from cybox.common.object_properties import CustomProperties, Property
 from cybox.common.properties import BaseProperty
@@ -2819,6 +2820,37 @@ class TestSTIX1Import(TestSTIX):
             [('includes', converted_section.uuid)]
         )
 
+    def test_internal_failed_pe_under_its_file_comes_back_once(self):
+        """A `pe` the export fails on goes out as a `Custom` Observable, and
+        the `file` it was to be folded into holds none of it: the `pe` comes
+        back once, under its own uuid, the file referencing it."""
+        for version in ('1.1.1', '1.2'):
+            for relation, value in (('original-filename', True), ('type', 5)):
+                with self.subTest(version=version, relation=relation):
+                    event = deepcopy(get_event_with_file_and_pe_objects())
+                    file_object, pe_object, _ = event['Event']['Object']
+                    for attribute in pe_object['Attribute']:
+                        if attribute['object_relation'] == relation:
+                            attribute['value'] = value
+                    parser = self._parse_written_misp_export(
+                        event['Event'], version
+                    )
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    converted_pe, = parser.misp_event.get_objects_by_name('pe')
+                    self.assertEqual(converted_pe.uuid, pe_object['uuid'])
+                    converted_file, = parser.misp_event.get_objects_by_name(
+                        'file'
+                    )
+                    self.assertEqual(converted_file.uuid, file_object['uuid'])
+                    self.assertEqual(
+                        self._converted_content(converted_file),
+                        self._exported_content(file_object)
+                    )
+                    self.assertEqual(
+                        self._references(converted_file),
+                        [('includes', pe_object['uuid'])]
+                    )
+
     def test_internal_misp_export_file_with_one_attribute_keeps_its_pe(self):
         """One or two file attributes fold into a single MISP attribute, which
         has nowhere to reference the `pe` from: the `pe` sat in the event
@@ -4547,6 +4579,42 @@ class TestSTIX1Import(TestSTIX):
                     }
                     self.assertEqual(comments.pop(exported['uuid']), comment)
                     self.assertEqual(set(comments.values()) - {None}, set())
+
+    def test_internal_folded_pe_comment_round_trips(self):
+        """A `pe` folded under a `file` shares its Observable and its
+        Indicator: its comment travels on the CybOX Object and comes back on
+        the `pe`, the `file` keeping its own. An uncommented `pe` comes back
+        with none."""
+        for version in ('1.1.1', '1.2'):
+            for to_ids in (False, True):
+                for pe_comment in ('a pe comment', None):
+                    with self.subTest(version=version, to_ids=to_ids,
+                                      pe_comment=pe_comment):
+                        event = deepcopy(get_event_with_file_and_pe_objects())
+                        file_object, pe_object, _ = event['Event']['Object']
+                        for misp_object in event['Event']['Object']:
+                            misp_object.pop('comment', None)
+                            for attribute in misp_object['Attribute']:
+                                attribute['to_ids'] = to_ids
+                        file_object['comment'] = 'a file comment'
+                        if pe_comment is not None:
+                            pe_object['comment'] = pe_comment
+                        parser = self._parse_written_misp_export(
+                            event['Event'], version
+                        )
+                        self.assertEqual(parser.diagnostics()['errors'], {})
+                        converted_file, = parser.misp_event.get_objects_by_name(
+                            'file'
+                        )
+                        converted_pe, = parser.misp_event.get_objects_by_name(
+                            'pe'
+                        )
+                        self.assertEqual(
+                            converted_file.comment, 'a file comment'
+                        )
+                        self.assertEqual(
+                            getattr(converted_pe, 'comment', None), pe_comment
+                        )
 
     def test_internal_campaign_comment_and_tags_read_back(self):
         """The Campaign a `campaign-name` was exported as carries both, and
@@ -6782,6 +6850,103 @@ class TestSTIX1Import(TestSTIX):
         )
         self._assert_pe_section(parser, {})
         self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def _windows_executable_packages(self, build):
+        """The Windows executable `build` returns as an Observable of the
+        package, then as the Observable of an Indicator - one each, as the
+        CybOX Object holding it is its parent."""
+        observable = STIXPackage()
+        observable.observables = Observables(
+            [self._observable(build(), 'WinExecutableFile')]
+        )
+        indicated = STIXPackage()
+        cybox_object = Object(build())
+        cybox_object.id_ = f'MISP:WinExecutableFile-{_OBSERVABLE_UUID}'
+        indicated.add_indicator(
+            self._indicator(cybox_object, _OBSERVABLE_UUID)
+        )
+        yield 'observable', observable
+        yield 'indicator', indicated
+
+    def test_external_windows_executable_without_pe_data_is_a_file(self):
+        """A Windows executable holding file fields alone is a `file`, as a
+        File with the same fields would be: no empty `pe` under it."""
+        for label, stix_package in self._windows_executable_packages(
+                self._pe_without_pe_data):
+            with self.subTest(shape=label):
+                parser = self._parse_external_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [misp_object.name for misp_object in parser.misp_event.objects],
+                    ['file']
+                )
+                converted, = parser.misp_event.objects
+                self.assertEqual(converted.references, [])
+                self.assertEqual(
+                    {
+                        attribute.object_relation: str(attribute.value)
+                        for attribute in converted.attributes
+                    },
+                    {'filename': 'evil.exe', 'size-in-bytes': '1024'}
+                )
+
+    def test_external_windows_executable_without_pe_data_folds_as_a_file(self):
+        """One or two file fields fold into the single attribute they would
+        on a File."""
+        def file_name():
+            pe_file = WinExecutableFile()
+            pe_file.file_name = 'evil.exe'
+            return pe_file
+
+        def file_name_and_hash():
+            pe_file = file_name()
+            pe_file.add_hash(_MD5_HASH)
+            return pe_file
+
+        for build, expected in (
+                (file_name, ('filename', 'evil.exe')),
+                (file_name_and_hash, ('filename|md5', f'evil.exe|{_MD5_HASH}'))):
+            for label, stix_package in self._windows_executable_packages(build):
+                with self.subTest(fields=build.__name__, shape=label):
+                    parser = self._parse_external_package(stix_package)
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.misp_event.objects, [])
+                    self.assertEqual(
+                        [
+                            (attribute.type, attribute.value)
+                            for attribute in parser.misp_event.attributes
+                        ],
+                        [expected]
+                    )
+
+    @staticmethod
+    def _pe_without_pe_data():
+        pe_file = WinExecutableFile()
+        pe_file.file_name = 'evil.exe'
+        pe_file.size_in_bytes = 1024
+        return pe_file
+
+    def test_external_windows_executable_object_description_is_the_pe_comment(self):
+        """The CybOX Object holding a Windows executable describes the
+        executable-specific object: its description is the `pe` comment."""
+        for label, stix_package in self._windows_executable_packages(
+                self._pe_with_section):
+            with self.subTest(shape=label):
+                for observable in (
+                        *(stix_package.observables or ()),
+                        *(indicator.observable for indicator
+                          in stix_package.indicators or ())):
+                    observable.object_.description = 'a pe comment'
+                parser = self._parse_external_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted_pe, = parser.misp_event.get_objects_by_name('pe')
+                self.assertEqual(converted_pe.comment, 'a pe comment')
+                converted_file, = parser.misp_event.get_objects_by_name(
+                    'file'
+                )
+                self.assertNotIn(
+                    'a pe comment', getattr(converted_file, 'comment', None) or ''
+                )
 
     def test_external_file_with_an_other_typed_ssdeep_hash_converts(self):
         """The same `Type=Other` ssdeep on a plain file went through the same

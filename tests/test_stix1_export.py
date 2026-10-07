@@ -2126,9 +2126,8 @@ class TestSTIX1ObjectErrorFallback(TestSTIX):
                         )
 
     def test_pe_failing_under_its_file_is_written_standalone(self):
-        # The `file` goes out as it does without the `pe`; the `includes`
-        # reference between the two is lost with the `pe` the file failed to
-        # fold in
+        # The `file` goes out as it does without the `pe`, the `pe` as a
+        # `Custom` Observable the `file` still references
         for version in self._VERSIONS:
             with self.subTest(version=version):
                 event = get_event_with_file_and_pe_objects()
@@ -2158,6 +2157,52 @@ class TestSTIX1ObjectErrorFallback(TestSTIX):
                     observables[f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"],
                     'pe', pe_object['uuid']
                 )
+
+    def test_pe_failing_partway_leaves_nothing_on_its_file(self):
+        # A `type` cybox refuses fails the `pe` once its resources and
+        # headers are written, an `imphash` once its type and its first
+        # custom property are too: none of it stays on the file's object
+        for version in self._VERSIONS:
+            alone = deepcopy(get_event_with_file_and_pe_objects())
+            file_alone = alone['Event']['Object'][0]
+            file_alone['ObjectReference'] = []
+            alone['Event']['Object'] = [file_alone]
+            expected = self._written_observables(
+                self._parse_event(alone, version)
+            )[0].object_.properties
+            for relation, value in (('type', 5), ('imphash', True)):
+                with self.subTest(version=version, relation=relation):
+                    event = deepcopy(get_event_with_file_and_pe_objects())
+                    file_object, pe_object, _ = event['Event']['Object']
+                    for attribute in pe_object['Attribute']:
+                        if attribute['object_relation'] == relation:
+                            attribute['value'] = value
+                    parser = self._parse_event(event, version)
+                    self._assert_one_error(parser, 'pe', pe_object['uuid'])
+                    observables = {
+                        observable.id_: observable
+                        for observable in self._written_observables(parser)
+                    }
+                    written = observables[
+                        f"{_ORGNAME_ID}:Observable-{file_object['uuid']}"
+                    ].object_.properties
+                    for field in ('resources', 'headers', 'type_', 'sections'):
+                        self.assertIsNone(getattr(written, field), field)
+                    self.assertEqual(
+                        written.to_dict().get('custom_properties'),
+                        expected.to_dict().get('custom_properties')
+                    )
+                    pe_id = f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"
+                    self._assert_custom_observable(
+                        observables[pe_id], 'pe', pe_object['uuid']
+                    )
+                    self.assertEqual(
+                        [
+                            observable.id_ for observable
+                            in self._written_observables(parser)
+                        ].count(pe_id),
+                        1
+                    )
 
     def test_pe_section_failing_under_its_pe_is_written_standalone(self):
         for version in self._VERSIONS:
@@ -2358,6 +2403,119 @@ class TestSTIX1PlainObservableComment(TestSTIX):
                             b'Description',
                             observable.to_xml(include_namespaces=False)
                         )
+
+
+class TestSTIX1FoldedPEComment(TestSTIX):
+    """A `pe` folded under a `file` shares its Observable and its Indicator,
+    which carry the `file` comment: the CybOX Object holding the executable
+    carries the `pe` one, and an uncommented `pe` writes none. A section has
+    no description of its own, and its comment is warned of."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    @staticmethod
+    def _event(get_event, to_ids, comments):
+        event = deepcopy(get_event())
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+            misp_object.pop('comment', None)
+            if misp_object['name'] in comments:
+                misp_object['comment'] = comments[misp_object['name']]
+        return event
+
+    @staticmethod
+    def _parse_event(event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    def _file_observable(self, parser, to_ids):
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        if to_ids:
+            related, = incident.related_indicators
+            return related.item.observable
+        related, = incident.related_observables
+        return related.item
+
+    def test_folded_pe_comment_is_the_object_description(self):
+        comments = {'file': 'a file comment', 'pe': 'a pe comment'}
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = self._event(
+                        get_event_with_file_and_pe_objects, to_ids, comments
+                    )
+                    parser = self._parse_event(event, version)
+                    observable = self._file_observable(parser, to_ids)
+                    self.assertEqual(
+                        observable.object_.description.value, 'a pe comment'
+                    )
+                    self.assertIn(
+                        b'a pe comment',
+                        observable.object_.to_xml(include_namespaces=False)
+                    )
+
+    def test_uncommented_folded_pe_writes_no_object_description(self):
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    uncommented = self._parse_event(
+                        self._event(
+                            get_event_with_file_and_pe_objects, to_ids, {}
+                        ),
+                        version
+                    )
+                    empty = self._parse_event(
+                        self._event(
+                            get_event_with_file_and_pe_objects, to_ids,
+                            {'pe': ''}
+                        ),
+                        version
+                    )
+                    observable = self._file_observable(uncommented, to_ids)
+                    self.assertIsNone(observable.object_.description)
+                    self.assertEqual(
+                        empty.stix_package.to_xml(),
+                        uncommented.stix_package.to_xml()
+                    )
+
+    def test_folded_section_comment_is_warned(self):
+        for version in self._VERSIONS:
+            for get_event in (get_event_with_file_and_pe_objects,
+                              get_event_with_pe_objects):
+                with self.subTest(version=version, root=get_event.__name__):
+                    event = self._event(
+                        get_event, False, {'pe-section': 'a section comment'}
+                    )
+                    section = event['Event']['Object'][-1]
+                    parser = self._parse_event(event, version)
+                    self.assertEqual(parser.errors, {})
+                    warnings, = parser.warnings.values()
+                    self.assertEqual(
+                        [
+                            warning for warning in warnings
+                            if 'comment' in warning
+                        ],
+                        [
+                            'The comment of the pe-section object (uuid: '
+                            f"{section['uuid']}) is not converted: a STIX 1 "
+                            'PE section has no description.'
+                        ]
+                    )
+
+    def test_uncommented_folded_section_is_not_warned(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse_event(
+                    self._event(get_event_with_file_and_pe_objects, False, {}),
+                    version
+                )
+                for warning in (
+                        warning for warnings in parser.warnings.values()
+                        for warning in warnings):
+                    self.assertNotIn('comment', warning)
 
 
 class TestSTIX1ExploitTargetObjectComment(TestSTIX):
@@ -3517,6 +3675,94 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
                         ),
                         1
                     )
+
+    def test_folded_pe_reference_keeps_its_warning(self):
+        """A `pe` or a section folded under a `file` has no construct of its
+        own: the file's Indicator slot would read back as the file's
+        reference, so theirs are warned and not written."""
+        for version in self._VERSIONS:
+            event = deepcopy(self._event())
+            file_object, pe_object, section = deepcopy(
+                get_event_with_file_and_pe_objects()
+            )['Event']['Object']
+            for misp_object in (file_object, pe_object, section):
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = True
+            pe_object['ObjectReference'].append(
+                {
+                    'uuid': '0d6a4e1b-2c3f-4a5b-8c7d-9e0f1a2b3c4d',
+                    'object_uuid': pe_object['uuid'],
+                    'referenced_uuid': self._COA_UUID,
+                    'relationship_type': 'mitigated-by'
+                }
+            )
+            section['ObjectReference'] = [
+                {
+                    'uuid': '1e7b5f2c-3d4a-4b6c-9d8e-0f1a2b3c4d5e',
+                    'object_uuid': section['uuid'],
+                    'referenced_uuid': self._ATTACK_PATTERN_UUID,
+                    'relationship_type': 'uses'
+                }
+            ]
+            event['Event']['Object'].extend(
+                (file_object, pe_object, section)
+            )
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                folded = (
+                    file_object['uuid'], pe_object['uuid'], section['uuid']
+                )
+                self.assertEqual(
+                    [entry for entry in self._slots(parser)
+                     if entry[0] in folded],
+                    []
+                )
+                self.assertEqual(
+                    self._reference_warnings(parser),
+                    [
+                        "Reference 'mitigated-by' from the pe object (uuid: "
+                        f"{pe_object['uuid']}) to the course-of-action object "
+                        f'(uuid: {self._COA_UUID}) not converted: the STIX 1 '
+                        'document has no slot of the source naming the target.',
+                        "Reference 'uses' from the pe-section object (uuid: "
+                        f"{section['uuid']}) to the attack-pattern object "
+                        f'(uuid: {self._ATTACK_PATTERN_UUID}) not converted: '
+                        'the STIX 1 document has no slot of the source naming '
+                        'the target.'
+                    ]
+                )
+
+    def test_repeated_reference_is_written_per_reference(self):
+        """Two references naming the same target with the same relationship
+        are two MISP records, each written in the slot."""
+        event = deepcopy(self._event())
+        btc_wallet, = (
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == 'btc-wallet'
+        )
+        btc_wallet['ObjectReference'].append(
+            {
+                **btc_wallet['ObjectReference'][0],
+                'uuid': '2f8c6a3d-4e5b-4c7d-8e9f-1a2b3c4d5e6f'
+            }
+        )
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(
+                    [
+                        entry for entry in self._slots(parser)
+                        if entry[:2] == (self._BTC_WALLET_UUID, 'Suggested_COAs')
+                    ],
+                    [
+                        (
+                            self._BTC_WALLET_UUID, 'Suggested_COAs',
+                            self._coa(self._COA_UUID), 'protected-with'
+                        )
+                    ] * 2
+                )
 
     def test_galaxy_cluster_and_reference_share_the_slot(self):
         """A cluster on an object attribute fills the slot with the galaxy
