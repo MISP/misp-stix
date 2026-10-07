@@ -30,6 +30,22 @@ from ._test_stix_export import TestCollectionSTIX1Export
 _DEFAULT_ORGNAME = 'MISP-Project'
 _ORGNAME_ID = re.sub('[\W]+', '', _DEFAULT_ORGNAME.replace(' ', '_'))
 
+def _galaxy_failures(galaxy):
+    """The galaxies and tags of a record failing once the construct of the
+    galaxy is written: a tag with no name, read after every galaxy, or a
+    later cluster with no uuid."""
+    yield 'nameless tag', [galaxy], [{'colour': '#ffffff'}]
+    malformed = get_event_with_tool_galaxy()['Event']['Galaxy'][0]
+    del malformed['GalaxyCluster'][0]['uuid']
+    yield 'malformed cluster', [galaxy, malformed], []
+
+
+def _assert_no_galaxy_construct(test_case, stix_package):
+    test_case.assertIsNone(stix_package.ttps)
+    test_case.assertEqual(len(stix_package.courses_of_action or ()), 0)
+    test_case.assertEqual(len(stix_package.threat_actors or ()), 0)
+
+
 misp_reghive = {
     "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
     "HKCR": "HKEY_CLASSES_ROOT",
@@ -2264,6 +2280,76 @@ class TestSTIX1ObjectErrorFallback(TestSTIX):
                         1
                     )
 
+    def test_failing_object_leaves_no_galaxy_construct(self):
+        # The constructs the galaxies of the object wrote go with the route
+        # that failed: the `Custom` Observable references none, and the
+        # one written with `to_ids` fails on the same galaxies again
+        cases = (
+            (get_event_with_file_object, (True,)),
+            (get_event_with_vulnerability_object, (False, True)),
+            (get_event_with_attack_pattern_object, (False, True))
+        )
+        for version in self._VERSIONS:
+            for fixture, to_ids_values in cases:
+                for to_ids in to_ids_values:
+                    for case, galaxies, tags in _galaxy_failures(
+                            get_event_with_malware_galaxy()['Event']['Galaxy'][0]):
+                        with self.subTest(version=version, fixture=fixture.__name__,
+                                          to_ids=to_ids, case=case):
+                            event = fixture()
+                            misp_object = event['Event']['Object'][0]
+                            for attribute in misp_object['Attribute']:
+                                attribute['to_ids'] = to_ids
+                            misp_object['Attribute'][0]['Galaxy'] = galaxies
+                            misp_object['Attribute'][0]['Tag'] = tags
+                            parser = self._parse_event(event, version)
+                            self._assert_one_error(
+                                parser, misp_object['name'], misp_object['uuid']
+                            )
+                            _assert_no_galaxy_construct(self, parser.stix_package)
+                            incident = parser.stix_package.incidents[0]
+                            self.assertEqual(len(incident.related_indicators), 0)
+                            if to_ids:
+                                self.assertEqual(len(incident.related_observables), 0)
+                                continue
+                            related, = incident.related_observables
+                            self._assert_custom_observable(
+                                related.item, misp_object['name'],
+                                misp_object['uuid']
+                            )
+
+
+    def test_failing_file_keeps_the_galaxy_construct_of_its_written_pe(self):
+        # The `pe` failing under its `file` is written standalone by its own
+        # fallback, its galaxy construct with it: the `file` failing after
+        # it does not take that construct back from the `pe`'s Indicator
+        malware = get_event_with_malware_galaxy()['Event']['Galaxy'][0]
+        ttp_id = f"{_ORGNAME_ID}:TTP-{malware['GalaxyCluster'][0]['uuid']}"
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_and_pe_objects()
+                file_object, pe_object, _ = event['Event']['Object']
+                for attribute in pe_object['Attribute']:
+                    attribute['to_ids'] = True
+                    if attribute['object_relation'] == 'original-filename':
+                        attribute['value'] = True
+                pe_object['Attribute'][0]['Galaxy'] = [deepcopy(malware)]
+                _, galaxies, _ = list(_galaxy_failures(deepcopy(malware)))[1]
+                file_object['Attribute'][0]['Galaxy'] = galaxies[1:]
+                file_object['Attribute'][0]['to_ids'] = True
+                parser = self._parse_event(event, version)
+                errors, = parser.errors.values()
+                self.assertEqual(len(errors), 2)
+                ttp, = parser.stix_package.ttps.ttp
+                self.assertEqual(ttp.id_, ttp_id)
+                related, = parser.stix_package.incidents[0].related_indicators
+                indicator = related.item
+                self.assertEqual(
+                    indicator.observable.id_,
+                    f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"
+                )
+                indicated, = indicator.indicated_ttps
+                self.assertEqual(indicated.item.idref, ttp_id)
 
 class TestSTIX1AttributeErrorFallback(TestSTIX):
     """An attribute the `Custom` Observable fallback fails on as well is lost,
@@ -2332,6 +2418,90 @@ class TestSTIX1AttributeErrorFallback(TestSTIX):
                 self.assertEqual(len(indicators), 1)
                 self.assertIn(other['uuid'], indicators[0].id_)
                 self.assertEqual(len(parser.stix_package.observables or ()), 0)
+
+    _GALAXY_FIXTURES = (
+        get_event_with_course_of_action_galaxy,
+        get_event_with_malware_galaxy,
+        get_event_with_threat_actor_galaxy
+    )
+
+    @staticmethod
+    def _attribute_with_galaxies(galaxies, tags):
+        attribute = get_event_with_domain_attribute()['Event']['Attribute'][0]
+        attribute['to_ids'] = True
+        attribute['Galaxy'] = galaxies
+        attribute['Tag'] = tags
+        return attribute
+
+    def test_failing_attribute_leaves_no_galaxy_construct(self):
+        # The Indicator the fallback writes reads the same galaxies and
+        # tags, and fails again: the attribute is lost, the constructs its
+        # galaxies wrote twice with it, the Threat Actor's attribution to the
+        # Incident included
+        for version in self._VERSIONS:
+            for fixture in self._GALAXY_FIXTURES:
+                galaxy = fixture()['Event']['Galaxy'][0]
+                for case, galaxies, tags in _galaxy_failures(galaxy):
+                    with self.subTest(version=version, galaxy=galaxy['type'],
+                                      case=case, parser='events'):
+                        event = get_event_with_domain_attribute()
+                        attribute = self._attribute_with_galaxies(galaxies, tags)
+                        event['Event']['Attribute'] = [attribute]
+                        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                        parser.parse_misp_event(event['Event'])
+                        self._assert_one_error(parser, attribute)
+                        _assert_no_galaxy_construct(self, parser.stix_package)
+                        incident = parser.stix_package.incidents[0]
+                        self.assertEqual(len(incident.related_indicators), 0)
+                        self.assertEqual(
+                            len(incident.attributed_threat_actors or ()), 0
+                        )
+                    with self.subTest(version=version, galaxy=galaxy['type'],
+                                      case=case, parser='attributes collection'):
+                        attribute = self._attribute_with_galaxies(galaxies, tags)
+                        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                        parser.parse_json_content(
+                            {'response': {'Attribute': [attribute]}}
+                        )
+                        self._assert_one_error(parser, attribute)
+                        _assert_no_galaxy_construct(self, parser.stix_package)
+                        self.assertEqual(
+                            len(parser.stix_package.indicators or ()), 0
+                        )
+
+    def test_failing_attribute_does_not_cost_a_later_attribute_its_cluster(self):
+        # The construct a failing attribute wrote is rolled back with it,
+        # and a later attribute of the same cluster writes it again
+        galaxy = get_event_with_malware_galaxy()['Event']['Galaxy'][0]
+        ttp_id = f"{_ORGNAME_ID}:TTP-{galaxy['GalaxyCluster'][0]['uuid']}"
+        for version in self._VERSIONS:
+            failing = self._attribute_with_galaxies(
+                [deepcopy(galaxy)], [{'colour': '#ffffff'}]
+            )
+            later = self._attribute_with_galaxies([deepcopy(galaxy)], [])
+            later['uuid'] = '4a5b6c7d-8e9f-4a0b-9c1d-2e3f4a5b6c7d'
+            with self.subTest(version=version, parser='events'):
+                event = get_event_with_domain_attribute()
+                event['Event']['Attribute'] = [deepcopy(failing), deepcopy(later)]
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                parser.parse_misp_event(event['Event'])
+                self._assert_one_error(parser, failing)
+                ttp, = parser.stix_package.ttps.ttp
+                self.assertEqual(ttp.id_, ttp_id)
+                related, = parser.stix_package.incidents[0].related_indicators
+                indicated, = related.item.indicated_ttps
+                self.assertEqual(indicated.item.idref, ttp_id)
+            with self.subTest(version=version, parser='attributes collection'):
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content(
+                    {'response': {'Attribute': [deepcopy(failing), deepcopy(later)]}}
+                )
+                self._assert_one_error(parser, failing)
+                ttp, = parser.stix_package.ttps.ttp
+                self.assertEqual(ttp.id_, ttp_id)
+                indicator, = parser.stix_package.indicators
+                indicated, = indicator.indicated_ttps
+                self.assertEqual(indicated.item.idref, ttp_id)
 
 
 class TestSTIX1PlainObservableComment(TestSTIX):

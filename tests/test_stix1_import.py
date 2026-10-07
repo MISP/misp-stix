@@ -2565,12 +2565,13 @@ class TestSTIX1Import(TestSTIX):
         )
 
     def test_internal_attribute_galaxy_tag_counts_against_the_construct_tag(self):
-        """The construct tag is matched on value against every tag read in
-        the event, a record's included: a cluster value is shared across
-        galaxies - a MITRE and a malpedia cluster both named after the
-        malware - so the attribute tag of a malpedia cluster holds the
-        construct tag of a MITRE one off the event too. The collision the
-        match on value makes, named rather than read around."""
+        """The construct tag is matched on its value and its kind of
+        construct against every tag read in the event, a record's included:
+        a cluster value is shared across galaxies of one kind - a MITRE and a
+        malpedia cluster both named after the malware - so the attribute tag
+        of a malpedia cluster holds the construct tag of a MITRE one off the
+        event too. The collision the match makes, named rather than read
+        around."""
         event = get_event_with_malware_galaxy()
         attribute = get_event_with_domain_attribute()['Event']['Attribute'][0]
         attribute['to_ids'] = True
@@ -2586,6 +2587,62 @@ class TestSTIX1Import(TestSTIX):
             [tag.name for tag in parser.misp_event.attributes[0].tags],
             ['misp-galaxy:malpedia="BISCUIT - S0017"']
         )
+
+    def test_internal_unmapped_galaxy_tag_leaves_the_construct_tag_alone(self):
+        """A tag of a galaxy STIX 1 writes no construct for names another
+        cluster than the construct of the same value: the package an export
+        stripping the tag of every mapped cluster wrote holds the construct
+        as the only carrier of its cluster, which comes back next to the
+        unmapped one."""
+        construct_tag = 'misp-galaxy:mitre-malware="BISCUIT - S0017"'
+        sector_tag = 'misp-galaxy:sector="BISCUIT - S0017"'
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                event = get_event_with_malware_galaxy()
+                event['Event']['Tag'] = [{'name': sector_tag}]
+                stix_package = self._misp_export(event, version)
+                incident = stix_package.related_packages[0].item.incidents[0]
+                handling = Marking()
+                specification = MarkingSpecification()
+                specification.controlled_structure = (
+                    '../../../descendant-or-self::node()'
+                )
+                specification.marking_structures.append(
+                    SimpleMarkingStructure(statement=sector_tag)
+                )
+                handling.add_marking(specification)
+                # The shape an export stripping the mapped cluster tag wrote
+                incident.handling = handling
+                parser = self._parse_internal_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    self._galaxy_tags(parser.misp_event),
+                    {construct_tag, sector_tag}
+                )
+
+    def test_internal_failing_attribute_brings_back_no_galaxy_tag(self):
+        """The export rolls back the constructs the galaxies of a record it
+        loses wrote: none comes back as a cluster of the event, tied to no
+        record."""
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                event = get_event_with_domain_attribute()
+                attribute = event['Event']['Attribute'][0]
+                attribute['to_ids'] = True
+                attribute['Galaxy'] = get_event_with_malware_galaxy()['Event']['Galaxy']
+                attribute['Tag'] = [{'colour': '#ffffff'}]
+                # An attribute the export keeps, for the event not to be empty
+                kept = get_event_with_domain_attribute()['Event']['Attribute'][0]
+                kept['uuid'] = '4a5b6c7d-8e9f-4a0b-9c1d-2e3f4a5b6c7d'
+                event['Event']['Attribute'].append(kept)
+                parser = self._parse_internal_package(
+                    self._misp_export(event, version)
+                )
+                self.assertEqual(
+                    [converted.uuid for converted in parser.misp_event.attributes],
+                    [kept['uuid']]
+                )
+                self.assertEqual(self._galaxy_tags(parser.misp_event), set())
 
     _OBJECT_MARKINGS_WARNING = (
         'MISP objects carry no tag: the markings on the STIX objects a '
