@@ -548,6 +548,42 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
+    # Spellings stix2 reads with `int()` as another number or refuses with the
+    # whole record, and the ones pymisp lets through for a relation it
+    # validates as a number
+    _NON_CANONICAL_TEXT = ('0x1f', '+5', '1_000', '007', '٣')
+    _NON_CANONICAL_VALIDATED = ('007', '٣')
+
+    @staticmethod
+    def _non_canonical_number_warning(relation, value, record):
+        return (
+            f'{relation!r} in the {record} is not a canonical decimal '
+            f'integer: {value!r} written as a custom property.'
+        )
+
+    @staticmethod
+    def _object_record(misp_object):
+        return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
+
+    @staticmethod
+    def _spell_object_relations(event, name, values, *extra):
+        # The event's object named `name`, each relation of `values` holding
+        # the value given, and one more attribute per `(type, relation,
+        # value)` of `extra`
+        misp_object = next(
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == name
+        )
+        for attribute in misp_object['Attribute']:
+            if attribute['object_relation'] in values:
+                attribute['value'] = values[attribute['object_relation']]
+        misp_object['Attribute'].extend(
+            {'type': attribute_type, 'object_relation': relation,
+             'value': value}
+            for attribute_type, relation, value in extra
+        )
+        return misp_object
+
     def _add_metacharacter_relation(self, event, relation, value):
         misp_object = event['Event']['Object'][0]
         misp_object['Attribute'].append(

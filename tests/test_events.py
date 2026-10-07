@@ -5516,6 +5516,19 @@ def get_event_with_ip_port_attributes():
     return event
 
 
+def get_event_with_port_and_as_attributes():
+    # The fixtures of these attributes share one uuid: each gets its own here
+    event = get_event_with_ip_port_attributes()
+    for fixture, uuid in ((get_event_with_as_attribute,
+                           '9737c547-e5ac-4b8c-bd3f-6c87fada5bd4'),
+                          (get_event_with_hostname_port_attribute,
+                           '37010b6c-6475-4dea-885d-4bd50112ffe4')):
+        attribute, = fixture()['Event']['Attribute']
+        attribute['uuid'] = uuid
+        event['Event']['Attribute'].append(attribute)
+    return event
+
+
 def get_event_with_mac_address_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [

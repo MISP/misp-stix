@@ -3760,6 +3760,147 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.parser = InternalSTIX2toMISPParser()
         return self._import_object_attributes(bundle, name=name)
 
+    def _round_trip_non_canonical_numbers(self, export_parser_class):
+        # A number a native STIX integer property would rewrite or refuse is
+        # exported verbatim as a custom property, or with the whole record as
+        # the custom one, and read back as MISP spelled it, both halves of a
+        # `to_ids` record agreeing on it
+        from .test_events import (
+            get_event_with_asn_object, get_event_with_file_and_pe_objects,
+            get_event_with_file_object, get_event_with_hashlookup_object,
+            get_event_with_ip_port_object, get_event_with_lnk_object,
+            get_event_with_netflow_object,
+            get_event_with_network_connection_object,
+            get_event_with_network_socket_object,
+            get_event_with_port_and_as_attributes,
+            get_event_with_process_object, get_event_with_user_account_object,
+            get_event_with_x509_object)
+        text = ('0x1f', '+5', '1_000', '007', '٣')
+        validated = ('007', '٣')
+        ports = (('port', 'src-port'), ('port', 'dst-port'))
+        cases = (
+            (get_event_with_process_object, 'process', text,
+             (('text', 'pid'), ('text', 'parent-pid'), ('text', 'child-pid')),
+             ()),
+            (get_event_with_user_account_object, 'user-account', text,
+             (('text', 'group-id'),), ()),
+            (get_event_with_x509_object, 'x509', text,
+             (('text', 'pubkey-info-exponent'),), ()),
+            (get_event_with_file_object, 'file', validated,
+             (('size-in-bytes', 'size-in-bytes'),), ()),
+            (get_event_with_lnk_object, 'lnk', validated,
+             (('size-in-bytes', 'size-in-bytes'),), ()),
+            (get_event_with_hashlookup_object, 'hashlookup', validated,
+             (('size-in-bytes', 'FileSize'),), ()),
+            (get_event_with_file_and_pe_objects, 'pe', validated,
+             (('text', 'entrypoint-address'), ('counter', 'number-sections')),
+             ()),
+            (get_event_with_file_and_pe_objects, 'pe-section', validated,
+             (('size-in-bytes', 'size-in-bytes'),), ()),
+            (get_event_with_network_connection_object, 'network-connection',
+             validated, ports, ()),
+            (get_event_with_network_socket_object, 'network-socket',
+             validated, ports, ()),
+            (get_event_with_ip_port_object, 'ip-port', validated, ports,
+             (('port', 'src-port'),)),
+            (get_event_with_netflow_object, 'netflow', validated,
+             (*ports, ('size-in-bytes', 'byte-count'),
+              ('counter', 'packet-count')),
+             (('size-in-bytes', 'byte-count'), ('counter', 'packet-count'))),
+            (get_event_with_asn_object, 'asn', validated, (('AS', 'asn'),), ())
+        )
+        for to_ids in (False, True):
+            for fixture, name, values, relations, extra in cases:
+                for value in values:
+                    with self.subTest(name=name, value=value, to_ids=to_ids):
+                        event = fixture()
+                        misp_object = next(
+                            misp_object
+                            for misp_object in event['Event']['Object']
+                            if misp_object['name'] == name
+                        )
+                        misp_object['Attribute'].extend(
+                            {'type': attribute_type,
+                             'object_relation': relation, 'value': '1'}
+                            for attribute_type, relation in extra
+                        )
+                        for attribute in misp_object['Attribute']:
+                            if (attribute['type'], attribute['object_relation']) in relations:
+                                attribute['value'] = value
+                        attributes = self._round_trip_object_attributes(
+                            export_parser_class(), event, to_ids=to_ids,
+                            name=name
+                        )
+                        for attribute_type, relation in relations:
+                            self.assertIn(
+                                (attribute_type, relation, value), attributes
+                            )
+                        self.assertEqual(self.parser.warnings, {})
+                        self.assertEqual(self.parser.errors, {})
+            for value in text:
+                with self.subTest(name='parent-guid', value=value, to_ids=to_ids):
+                    event = get_event_with_process_object()
+                    misp_object = event['Event']['Object'][0]
+                    misp_object['Attribute'] = [
+                        attribute for attribute in misp_object['Attribute']
+                        if attribute['object_relation'] != 'parent-image'
+                    ]
+                    misp_object['Attribute'].append(
+                        {'type': 'text', 'object_relation': 'parent-guid',
+                         'value': 'guid-1'}
+                    )
+                    for attribute in misp_object['Attribute']:
+                        if attribute['object_relation'] == 'parent-pid':
+                            attribute['value'] = value
+                    attributes = self._round_trip_object_attributes(
+                        export_parser_class(), event, to_ids=to_ids
+                    )
+                    self.assertIn(('text', 'parent-pid', value), attributes)
+                    self.assertIn(('text', 'parent-guid', 'guid-1'), attributes)
+                    self.assertEqual(self.parser.warnings, {})
+                    self.assertEqual(self.parser.errors, {})
+            with self.subTest(name='x509 exponent only', to_ids=to_ids):
+                event = get_event_with_x509_object()
+                misp_object = event['Event']['Object'][0]
+                misp_object['Attribute'] = [
+                    attribute for attribute in misp_object['Attribute']
+                    if attribute['object_relation'] == 'pubkey-info-exponent'
+                ]
+                misp_object['Attribute'][0]['value'] = '0x1f'
+                attributes = self._round_trip_object_attributes(
+                    export_parser_class(), event, to_ids=to_ids
+                )
+                self.assertEqual(
+                    attributes, {('text', 'pubkey-info-exponent', '0x1f')}
+                )
+                self.assertEqual(self.parser.warnings, {})
+                self.assertEqual(self.parser.errors, {})
+            for value in validated:
+                with self.subTest(name='attributes', value=value, to_ids=to_ids):
+                    event = get_event_with_port_and_as_attributes()
+                    spellings = {
+                        'ip-src|port': f'1.2.3.4|{value}',
+                        'ip-dst|port': f'5.6.7.8|{value}',
+                        'AS': value, 'hostname|port': f'circl.lu|{value}'
+                    }
+                    for attribute in event['Event']['Attribute']:
+                        attribute.update(
+                            {'value': spellings[attribute['type']],
+                             'to_ids': to_ids}
+                        )
+                    export_parser = export_parser_class()
+                    export_parser.parse_misp_event(event['Event'])
+                    self.parser = InternalSTIX2toMISPParser()
+                    self.parser.load_stix_bundle(export_parser.bundle)
+                    self.parser.parse_stix_bundle()
+                    self.assertEqual(
+                        {(attribute.type, attribute.value)
+                         for attribute in self.parser.misp_event.attributes},
+                        set(spellings.items())
+                    )
+                    self.assertEqual(self.parser.warnings, {})
+                    self.assertEqual(self.parser.errors, {})
+
     @staticmethod
     def _indicator_only_bundle(bundle):
         kept = [

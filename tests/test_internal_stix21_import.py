@@ -4252,6 +4252,29 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             {attribute[:2] for attribute in attributes}
         )
 
+    def test_stix21_non_canonical_numbers_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._round_trip_non_canonical_numbers(MISPtoSTIX21Parser)
+
+    def test_stix21_non_canonical_pids_derived_uuids(self):
+        # A non canonical parent or child pid has no process of its own: its
+        # uuid is derived from the observed data, as every process
+        # attribute's is
+        from misp_stix_converter import MISPtoSTIX21Parser
+        from .test_events import get_event_with_process_object
+        event = get_event_with_process_object()
+        misp_object = event['Event']['Object'][0]
+        for attribute in misp_object['Attribute']:
+            if attribute['object_relation'] in ('parent-pid', 'child-pid'):
+                attribute['value'] = '+5'
+        self._round_trip_object_attributes(MISPtoSTIX21Parser(), event)
+        process, = self.parser.misp_event.objects
+        for attribute in process.attributes:
+            if attribute.object_relation in ('parent-pid', 'child-pid'):
+                self._check_object_attribute_uuid(
+                    attribute, f"observed-data--{misp_object['uuid']}"
+                )
+
     def test_stix21_unknown_custom_property_yields_an_attribute_and_a_warning(self):
         # A property neither the template nor the tables know keeps its value
         # as a text attribute under the folded relation, and the loss of
