@@ -374,17 +374,17 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     def _parse_test_mechanisms(self, indicator: Indicator) -> list:
         """Convert the test mechanisms of an Indicator into attributes.
 
+        The Indicator converts to no record of its own - what its observable
+        yields takes the id of the observable - so its uuid goes to the rules,
+        as the Internal parser gives it: the first takes it, the rest derive
+        theirs from it. A rule attribute carries nothing else the Indicator
+        holds.
+
         :param indicator: the Indicator carrying the test mechanisms
         :return: the uuids of the attributes the rules landed as
         """
-        test_mechanisms = []
-        for attribute_type, rule in self._read_test_mechanisms(indicator):
-            misp_attribute = self._add_attribute(
-                {'type': attribute_type, 'value': rule}, indicator.id_
-            )
-            if misp_attribute is not None:
-                test_mechanisms.append(misp_attribute.uuid)
-        return test_mechanisms
+        rules, _ = self._read_test_mechanisms(indicator)
+        return self._add_rule_attributes(indicator, rules, {})
 
     def _parse_threat_actor(self, threat_actor: ThreatActor):
         if getattr(threat_actor, 'title', None) is not None:

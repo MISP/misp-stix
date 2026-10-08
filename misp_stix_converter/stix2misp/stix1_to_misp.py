@@ -8,6 +8,7 @@ from ..tools.stix1_loading_helpers import load_stix1_package
 from .exceptions import MissingSTIXContentError
 from .importparser import STIXtoMISPParser
 from abc import ABCMeta
+from ast import literal_eval
 from base64 import b64decode, b64encode
 from collections import defaultdict
 from cybox.common import Hash
@@ -594,33 +595,106 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return str(self._create_v5_uuid(f'{object_uuid} - {feature}'))
 
     def _read_test_mechanisms(
-            self, indicator: Indicator) -> Iterator[tuple[str, str]]:
+            self, indicator: Indicator) -> tuple[list[tuple[str, str]], bool]:
         """Read the rules an Indicator carries as test mechanisms.
 
         A Yara mechanism carries one rule, a Snort one a list of them - the
         two python-stix shapes - and each rule reads as the MISP attribute
         type the mechanism maps to, with the rule text. A mechanism of a type
-        the mapping does not know records an error and reads as nothing.
+        the mapping does not know records an error naming the Indicator and
+        reads as nothing.
 
         :param indicator: the Indicator carrying the test mechanisms
-        :return: the `(attribute_type, rule)` pairs, one per rule
+        :return: the `(attribute_type, rule)` pairs, one per rule, and whether
+            a mechanism of an unknown type was recorded
         """
+        rules, unknown_type = [], False
         for test_mechanism in indicator.test_mechanisms or ():
             attribute_type = self._mapping.test_mechanism_mapping(
                 test_mechanism._XSI_TYPE
             )
             if attribute_type is None:
-                self._add_error(
-                    f'Unknown Test Mechanism type: {test_mechanism._XSI_TYPE}'
+                self._unknown_test_mechanism_error(
+                    test_mechanism._XSI_TYPE, indicator.id_
                 )
+                unknown_type = True
                 continue
-            rules = getattr(test_mechanism, 'rules', None)
-            if rules is None:
-                rules = (test_mechanism.rule,)
-            for rule in rules:
+            mechanism_rules = getattr(test_mechanism, 'rules', None)
+            if mechanism_rules is None:
+                mechanism_rules = (test_mechanism.rule,)
+            for rule in mechanism_rules:
                 value = self._value(rule)
                 if value is not None:
-                    yield attribute_type, value
+                    rules.append((attribute_type, self._unwrapped_rule(value)))
+        return rules, unknown_type
+
+    @staticmethod
+    def _unwrapped_rule(rule: str) -> str:
+        """Read a rule written as the old export wrote every one of them.
+
+        From the first release to 2026.9.16 - MISP core's exports included -
+        the export handed python-stix a dict holding the rule where it takes
+        the rule text, and the document carries the repr of that dict. The
+        rule is the text it holds, plain: nothing was ever encoded. Any other
+        text is the rule as written.
+
+        :param rule: the rule text the document carries
+        :return: the rule the repr holds when the text is that repr, the text
+            itself otherwise
+        """
+        try:
+            evaluated = literal_eval(rule)
+        except (ValueError, SyntaxError, TypeError, RecursionError,
+                MemoryError):
+            return rule
+        if (isinstance(evaluated, dict)
+                and evaluated.keys() == {'value', 'encoded'}
+                and isinstance(evaluated['value'], str)
+                and evaluated['encoded'] is True):
+            return evaluated['value']
+        return rule
+
+    def _add_rule_attributes(
+            self, indicator: Indicator, rules: list[tuple[str, str]],
+            attribute: dict) -> list[str]:
+        """Add the rules an Indicator carries as attributes.
+
+        The first rule takes the Indicator's uuid, the rest one derived from
+        it and the rule, so a re-import lands on the same records. A rule the
+        Indicator repeats carries nothing more - MISP would keep one of the
+        two - and is read once.
+
+        :param indicator: the Indicator carrying the rules
+        :param rules: the `(attribute_type, rule)` pairs read off it
+        :param attribute: what every rule attribute carries next to its type,
+            value and uuid
+        :return: the uuids of the attributes added
+        """
+        if not rules:
+            return []
+        # Read once: an Indicator carrying no id draws a random uuid on every
+        # read, and its rules derive from one
+        record = self._sanitise_attribute_uuid(
+            indicator.id_, attribute.get('comment')
+        )
+        added, uuids = set(), []
+        for index, (attribute_type, rule) in enumerate(rules):
+            if (attribute_type, rule) in added:
+                self._repeated_rule_warning(attribute_type, indicator.id_)
+                continue
+            rule_attribute = {'type': attribute_type, 'value': rule, **attribute}
+            if index == 0:
+                rule_attribute.update(record)
+            else:
+                rule_attribute['uuid'] = self._derived_uuid(
+                    record['uuid'], f'{attribute_type} - {rule}'
+                )
+            misp_attribute = self._add_attribute(rule_attribute, indicator.id_)
+            if misp_attribute is None:
+                continue
+            added.add((attribute_type, rule))
+            uuids.append(misp_attribute.uuid)
+        return uuids
 
     # Parse a course of action and add a MISP object to the event - stamped
     # with the timestamp the caller read, where there is one
@@ -2433,6 +2507,21 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._add_warning(
             f'The entropy range of a PE section{self._object_origin(object_id)}'
             f' cannot be stored as a MISP attribute: {bounds} not converted.'
+        )
+
+    def _repeated_rule_warning(self, attribute_type: str,
+                               indicator_id: Optional[str]):
+        # The rule is not quoted: it can run to many lines
+        self._add_warning(
+            f'Indicator{self._record_origin(indicator_id)} repeats an earlier '
+            f'{attribute_type} rule: read once'
+        )
+
+    def _unknown_test_mechanism_error(self, xsi_type: str,
+                                      indicator_id: Optional[str]):
+        self._add_error(
+            'Unable to convert the test mechanism of the Indicator'
+            f'{self._record_origin(indicator_id)}: unknown type {xsi_type}'
         )
 
     def _unnamed_object_error(self, object_uuid: Optional[str]):

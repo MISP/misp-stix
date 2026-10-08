@@ -910,16 +910,17 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         or `yara` attribute is the rule it carries as a test mechanism instead,
         with no observable - the one shape the export writes an Indicator with
         no observable in - and reads back one attribute per rule: a Snort
-        mechanism may carry several, never written by us, and the Indicator's
-        uuid goes to the first. An Indicator carrying no observable and no
-        rule is no export of ours, and the error records it.
+        mechanism may carry several, never written by us, the Indicator's
+        uuid goes to the first and the rest derive theirs from it. An
+        Indicator carrying no observable and no rule is no export of ours,
+        and the error records it.
 
         The comment and the tags come back with it: the export writes the
         comment as the description, falling back to the Record Title when
         there is none, and the tags as the handling. An Indicator yielding
-        several attributes gives each of them both - a uuid is an identity
-        and goes to the first alone, a comment and a tag are context the
-        Indicator carried for every rule it held.
+        several attributes gives each of them both - the Indicator's uuid is
+        an identity and goes to the first alone, a comment and a tag are
+        context the Indicator carried for every rule it held.
 
         :param indicator: the Indicator itself - the item of the Related
             Indicator an event export relates to its Incident, the Indicator
@@ -947,15 +948,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 indicator.observable, misp_attribute, indicator.id_, to_ids=True
             )
             return
-        rules = list(self._read_test_mechanisms(indicator))
+        rules, unknown_type = self._read_test_mechanisms(indicator)
         if not rules:
-            self._unconverted_indicator_error(indicator.id_)
+            # A mechanism of an unknown type is the loss, and already named
+            if not unknown_type:
+                self._unconverted_indicator_error(indicator.id_)
             return
-        for index, (attribute_type, rule) in enumerate(rules):
-            attribute = {'type': attribute_type, 'value': rule, **misp_attribute}
-            if index == 0:
-                attribute.update(self._sanitise_attribute_uuid(indicator.id_))
-            self._add_attribute(attribute, indicator.id_)
+        self._add_rule_attributes(indicator, rules, misp_attribute)
 
     def _parse_attribute_observable(
             self, observable: Observable, category: Optional[str] = None):
