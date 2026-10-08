@@ -162,6 +162,7 @@ _MD5_HASH = '8a2a5fc2ce56b3b04d58539a9d3d8d3e'
 _SHA1_HASH = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
 _VULNERABILITY_UUID = '6c3d4e5f-7a8b-4c9d-8e0f-1a2b3c4d5e6f'
 _PLAIN_OBJECT_UUID = '7d4e5f6a-8b9c-4d0e-9f1a-2b3c4d5e6f7a'
+_INDICATOR_UUID = '8e5f6a7b-9c0d-4e1f-8a2b-3c4d5e6f7a8c'
 # `Type=Other` with the value in `Simple_Hash_Value`: how MISP's own STIX 1
 # export wrote an ssdeep hash, cybox naming nothing better for its length
 _SSDEEP_HASH = '6144:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
@@ -170,6 +171,11 @@ _SSDEEP_HASH = '6144:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
 _SNORT_RULES = (
     'alert tcp any any -> any any (msg:"first")',
     'alert udp any any -> any any (msg:"second")'
+)
+# A rule the repr of the old export escapes: a line break and a quote
+_MULTILINE_YARA_RULE = (
+    'rule quoted {\n    strings:\n        $a = "it\'s"\n    condition:\n'
+    '        $a\n}'
 )
 
 
@@ -2507,50 +2513,184 @@ class TestSTIX1Import(TestSTIX):
                     parser, event['Event']['Attribute'], to_ids
                 )
 
+    @staticmethod
+    def _legacy_rule(rule):
+        """A rule as every release up to 2026.9.16 wrote it - MISP core's
+        exports included: the repr of the dict python-stix was handed in
+        place of the rule text."""
+        return str({'value': rule, 'encoded': True})
+
+    @classmethod
+    def _legacy_rule_attributes(cls):
+        """The test mechanism attributes, the yara rule one the repr escapes,
+        and the same attributes with each rule written as the repr."""
+        attributes = get_event_with_test_mechanism_attributes()['Event']['Attribute']
+        attributes[1]['value'] = _MULTILINE_YARA_RULE
+        legacy = [
+            {**attribute, 'value': cls._legacy_rule(attribute['value'])}
+            for attribute in attributes
+        ]
+        return attributes, legacy
+
+    def test_internal_misp_export_legacy_rule_repr_reads_back_as_the_rule(self):
+        """Every release up to 2026.9.16 wrote a `to_ids` snort or yara
+        attribute's rule as the repr of a dict holding it, and the import read
+        the repr back as the value. Read from the file, the rule comes back as
+        the rule text, with nothing to report: the repr is our own grammar."""
+        attributes, legacy = self._legacy_rule_attributes()
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                event = get_event_with_test_mechanism_attributes()
+                event['Event']['Attribute'] = legacy
+                stix_package = STIXPackage.from_xml(
+                    BytesIO(self._misp_export(event, version).to_xml())
+                )
+                parser = self._parse_internal_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self._assert_attributes_round_trip(parser, attributes, True)
+
+    @staticmethod
+    def _snort_indicator(indicator_id, rules):
+        indicator = Indicator()
+        indicator.id_ = indicator_id
+        test_mechanism = SnortTestMechanism()
+        test_mechanism.rules = list(rules)
+        indicator.add_test_mechanism(test_mechanism)
+        return indicator
+
+    def _parse_internal_snort_indicator(self, rules):
+        incident = self._incident_with_content()
+        incident.related_indicators.append(
+            RelatedIndicator(
+                self._snort_indicator(f'MISP:Indicator-{_IP_UUID}', rules),
+                relationship='Network activity'
+            )
+        )
+        return self._parse_internal_package(self._internal_package(incident))
+
+    def test_internal_rule_unwrapped_from_the_legacy_repr_alone(self):
+        """A rule is unwrapped when it is the repr the old export wrote - the
+        keys in any order - and kept verbatim otherwise: another dict, an
+        unencoded one, a value that is no text, text that does not evaluate.
+        Each rule of a Snort mechanism is read on its own."""
+        verbatim = (
+            "{'value': 'x', 'encoded': False}",
+            "{'value': 'x'}",
+            "{'value': 'x', 'encoded': True, 'other': 1}",
+            "{'value': 1, 'encoded': True}",
+            "{'value': "
+        )
+        parser = self._parse_internal_snort_indicator(
+            (*verbatim, "{'encoded': True, 'value': 'unwrapped'}")
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                attribute.value for attribute in parser.misp_event.attributes
+                if attribute.type == 'snort'
+            ],
+            [*verbatim, 'unwrapped']
+        )
+
     def test_internal_snort_mechanism_with_several_rules_yields_one_attribute_per_rule(self):
         """The export writes one rule per Snort mechanism; python-stix lets a
         mechanism carry several. Each is a `snort` attribute of its own under
         the Indicator's category, the Indicator's uuid on the first - the rest
-        take pymisp's."""
-        incident = self._incident_with_content()
-        indicator = Indicator()
-        indicator.id_ = f'MISP:Indicator-{_IP_UUID}'
-        test_mechanism = SnortTestMechanism()
-        test_mechanism.rules = list(_SNORT_RULES)
-        indicator.add_test_mechanism(test_mechanism)
-        incident.related_indicators.append(
-            RelatedIndicator(indicator, relationship='Network activity')
-        )
-        parser = self._parse_internal_package(self._internal_package(incident))
-        self.assertEqual(parser.diagnostics()['errors'], {})
-        snort_attributes = [
-            attribute for attribute in parser.misp_event.attributes
-            if attribute.type == 'snort'
-        ]
-        self.assertEqual(
-            [
-                (attribute.category, attribute.value, attribute.to_ids)
-                for attribute in snort_attributes
-            ],
-            [('Network activity', rule, True) for rule in _SNORT_RULES]
-        )
-        self.assertEqual(
-            [attribute.uuid == _IP_UUID for attribute in snort_attributes],
-            [True, False]
-        )
+        derive theirs from it and the rule, the same on every import."""
+        for _ in range(2):
+            parser = self._parse_internal_snort_indicator(_SNORT_RULES)
+            self.assertEqual(parser.diagnostics()['errors'], {})
+            self.assertEqual(
+                [
+                    (
+                        attribute.uuid, attribute.category, attribute.value,
+                        attribute.to_ids
+                    )
+                    for attribute in parser.misp_event.attributes
+                    if attribute.type == 'snort'
+                ],
+                [
+                    (_IP_UUID, 'Network activity', _SNORT_RULES[0], True),
+                    (
+                        str(
+                            uuid5(
+                                _UUIDv4,
+                                f'{_IP_UUID} - snort - {_SNORT_RULES[1]}'
+                            )
+                        ),
+                        'Network activity', _SNORT_RULES[1], True
+                    )
+                ]
+            )
+
+    def test_internal_repeated_rule_is_read_once(self):
+        """MISP keeps one of two identical attributes: a rule an Indicator
+        repeats is read once, and the warning says so - once, both repeats
+        saying the same. A rule repeated as the repr the old export wrote is
+        the same rule."""
+        first, second = _SNORT_RULES
+        for repeat in (first, self._legacy_rule(first)):
+            with self.subTest(repeat=repeat):
+                parser = self._parse_internal_snort_indicator(
+                    (first, second, repeat, second)
+                )
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        attribute.value
+                        for attribute in parser.misp_event.attributes
+                        if attribute.type == 'snort'
+                    ],
+                    list(_SNORT_RULES)
+                )
+                self.assertEqual(
+                    parser.diagnostics()['warnings'],
+                    {
+                        'misp event': [
+                            f'Indicator with id MISP:Indicator-{_IP_UUID} '
+                            'repeats an earlier snort rule: read once'
+                        ]
+                    }
+                )
 
     def test_internal_indicator_with_neither_observable_nor_rule_records_an_error(self):
         """An Indicator with no observable carries rules in a MISP export; one
         carrying neither - no mechanism at all, or a mechanism of a known type
         with no rule text - is no export of ours, and the error names it where
-        the import returned without a word. The rest of the event converts."""
-        for shape in ('no mechanism', 'yara mechanism with no rule'):
+        the import returned without a word. A mechanism of a type the mapping
+        does not know is its own error, naming the Indicator, and the one
+        recorded - once per such mechanism, each a loss of its own. The rest
+        of the event converts."""
+        no_rule = (
+            'Unable to convert the Indicator with id '
+            f'MISP:Indicator-{_IP_UUID}: no observable or test mechanism rule '
+            'to read a MISP attribute from'
+        )
+        unknown_type = (
+            'Unable to convert the test mechanism of the Indicator with id '
+            f'MISP:Indicator-{_IP_UUID}: unknown type '
+            'genericTM:GenericTestMechanismType'
+        )
+        for shape, mechanisms, error in (
+                ('no mechanism', (), no_rule),
+                ('yara mechanism with no rule', (YaraTestMechanism,), no_rule),
+                ('generic mechanism', (GenericTestMechanism,), unknown_type),
+                (
+                    'generic mechanism and a yara one with no rule',
+                    (GenericTestMechanism, YaraTestMechanism), unknown_type
+                ),
+                (
+                    'two generic mechanisms',
+                    (GenericTestMechanism, GenericTestMechanism),
+                    f'{unknown_type} (2 times)'
+                )):
             with self.subTest(shape=shape):
                 incident = self._incident_with_content()
                 indicator = Indicator()
                 indicator.id_ = f'MISP:Indicator-{_IP_UUID}'
-                if shape != 'no mechanism':
-                    indicator.add_test_mechanism(YaraTestMechanism())
+                for mechanism in mechanisms:
+                    indicator.add_test_mechanism(mechanism())
                 incident.related_indicators.append(
                     RelatedIndicator(indicator, relationship='Network activity')
                 )
@@ -2565,14 +2705,7 @@ class TestSTIX1Import(TestSTIX):
                     [('domain', 'circl.lu')]
                 )
                 self.assertEqual(
-                    parser.diagnostics()['errors'],
-                    {
-                        'misp event': [
-                            'Unable to convert the Indicator with id '
-                            f'MISP:Indicator-{_IP_UUID}: no observable or test '
-                            'mechanism rule to read a MISP attribute from'
-                        ]
-                    }
+                    parser.diagnostics()['errors'], {'misp event': [error]}
                 )
 
     def test_internal_victim_of_an_unreadable_shape_records_an_error(self):
@@ -6061,6 +6194,23 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(parser.diagnostics()['errors'], {})
         self._assert_attributes_round_trip(parser, attributes, True)
 
+    def test_internal_attributes_collection_legacy_rule_repr_reads_back_as_the_rule(self):
+        """An Attribute Collection of a release up to 2026.9.16 wrote the rule
+        as the same repr the event export did, and the package path reads it
+        back as the rule text alike."""
+        attributes, legacy = self._legacy_rule_attributes()
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                exporter = MISPtoSTIX1AttributesParser('MISP', version)
+                exporter.parse_json_content(legacy)
+                stix_package = STIXPackage.from_xml(
+                    BytesIO(exporter.stix_package.to_xml())
+                )
+                parser = self._parse_internal_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self._assert_attributes_round_trip(parser, attributes, True)
+
     def test_internal_attributes_collection_exploit_target_attributes_convert(self):
         """A `vulnerability` or `weakness` attribute is exported as a TTP with
         an exploit target, as a vulnerability galaxy is: in an event export
@@ -7992,9 +8142,15 @@ class TestSTIX1Import(TestSTIX):
             ],
             [('domain', 'circl.lu')]
         )
-        self.assertIn(
-            'Unknown Test Mechanism type: genericTM:GenericTestMechanismType',
-            parser.diagnostics()['errors']['misp event']
+        self.assertEqual(
+            parser.diagnostics()['errors'],
+            {
+                'misp event': [
+                    'Unable to convert the test mechanism of the Indicator '
+                    f'with id MISP:Indicator-{_DOMAIN_UUID}: unknown type '
+                    'genericTM:GenericTestMechanismType'
+                ]
+            }
         )
 
     def test_external_indicator_with_snort_test_mechanism_converts(self):
@@ -8002,25 +8158,127 @@ class TestSTIX1Import(TestSTIX):
         not know: an Indicator carrying one recorded an error and lost the
         rules. Each rule lands as a `snort` attribute next to what the
         observable yields - python-stix lets a Snort mechanism carry
-        several."""
-        indicator = self._ip_indicator('198.51.100.4')
-        test_mechanism = SnortTestMechanism()
-        test_mechanism.rules = list(_SNORT_RULES)
-        indicator.add_test_mechanism(test_mechanism)
+        several. The Indicator converts to no record of its own - the
+        observable's takes the id of its object - so the first rule takes the
+        Indicator's uuid, and the rest derive theirs from it and the rule,
+        the same on every import."""
+        for _ in range(2):
+            indicator = self._ip_indicator('198.51.100.4')
+            indicator.id_ = f'MISP:Indicator-{_INDICATOR_UUID}'
+            test_mechanism = SnortTestMechanism()
+            test_mechanism.rules = list(_SNORT_RULES)
+            indicator.add_test_mechanism(test_mechanism)
+            stix_package = STIXPackage()
+            stix_package.add_indicator(indicator)
+            parser = self._parse_external_package(stix_package)
+            self.assertEqual(parser.diagnostics()['errors'], {})
+            self.assertEqual(
+                sorted(
+                    (attribute.type, attribute.value, attribute.uuid)
+                    for attribute in parser.misp_event.attributes
+                ),
+                [
+                    ('ip-dst', '198.51.100.4', _IP_UUID),
+                    ('snort', _SNORT_RULES[0], _INDICATOR_UUID),
+                    (
+                        'snort', _SNORT_RULES[1],
+                        str(
+                            uuid5(
+                                _UUIDv4,
+                                f'{_INDICATOR_UUID} - snort - {_SNORT_RULES[1]}'
+                            )
+                        )
+                    )
+                ]
+            )
+
+    def test_external_rules_of_an_indicator_id_with_no_uuid_derive_from_the_id(self):
+        """An Indicator id ending with no uuid gives the first rule the uuid
+        derived from the whole id, and the comment keeping the id; the rest
+        derive theirs from that uuid."""
+        indicator_id = 'example:Indicator-1'
         stix_package = STIXPackage()
-        stix_package.add_indicator(indicator)
+        stix_package.add_indicator(
+            self._snort_indicator(indicator_id, _SNORT_RULES)
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        indicator_uuid = str(uuid5(_UUIDv4, indicator_id))
+        self.assertEqual(
+            [
+                (str(attribute.uuid), attribute.value, attribute.get('comment'))
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                (
+                    indicator_uuid, _SNORT_RULES[0],
+                    f'Original id was: {indicator_id}'
+                ),
+                (
+                    str(
+                        uuid5(
+                            _UUIDv4,
+                            f'{indicator_uuid} - snort - {_SNORT_RULES[1]}'
+                        )
+                    ),
+                    _SNORT_RULES[1], None
+                )
+            ]
+        )
+
+    def test_external_repeated_rule_is_read_once(self):
+        """A rule an Indicator repeats is read once, as the Internal parser
+        reads it, and the warning says so once."""
+        first, second = _SNORT_RULES
+        stix_package = STIXPackage()
+        stix_package.add_indicator(
+            self._snort_indicator(
+                f'MISP:Indicator-{_INDICATOR_UUID}',
+                (first, second, first, second)
+            )
+        )
         parser = self._parse_external_package(stix_package)
         self.assertEqual(parser.diagnostics()['errors'], {})
         self.assertEqual(
-            sorted(
-                (attribute.type, attribute.value)
-                for attribute in parser.misp_event.attributes
-            ),
-            [
-                ('ip-dst', '198.51.100.4'),
-                *(('snort', rule) for rule in _SNORT_RULES)
-            ]
+            [attribute.value for attribute in parser.misp_event.attributes],
+            list(_SNORT_RULES)
         )
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {
+                'misp event': [
+                    f'Indicator with id MISP:Indicator-{_INDICATOR_UUID} '
+                    'repeats an earlier snort rule: read once'
+                ]
+            }
+        )
+
+    def test_external_legacy_rule_repr_reads_back_as_the_rule(self):
+        """An Attribute Collection of a release up to 2026.9.16, written with
+        the default framing, carries nothing telling it is ours, and reads as
+        External: the rules it wrote as the repr of a dict come back as the
+        rule text all the same."""
+        attributes, legacy = self._legacy_rule_attributes()
+        for version in ('1.1.1', '1.2'):
+            with self.subTest(version=version):
+                exporter = MISPtoSTIX1AttributesParser('MISP', version)
+                exporter.parse_json_content(legacy)
+                stix_package = STIXPackage.from_xml(
+                    BytesIO(exporter.stix_package.to_xml())
+                )
+                parser = self._parse_external_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [
+                        (attribute['type'], attribute['value'])
+                        for attribute in attributes
+                    ]
+                )
 
     def test_external_ttp_with_resources_and_no_infrastructure_converts(self):
         """A TTP's resources may name tools and no infrastructure: the exploit
