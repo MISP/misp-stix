@@ -5,6 +5,7 @@ from .importparser import ExternalSTIXtoMISPParser
 from .stix1_mapping import ExternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
+from contextlib import contextmanager
 from cybox.core import Object, Observable, Observables
 from pymisp import MISPEvent
 from stix.campaign import Campaign
@@ -58,52 +59,29 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if self.stix_package.observables:
             self._parse_observables()
         if self.stix_package.ttps:
-            for ttp in self.stix_package.ttps.ttp:
-                self._parse_ttp(ttp)
+            self._parse_ttps(self.stix_package.ttps.ttp)
         if self.stix_package.courses_of_action:
             for course_of_action in self.stix_package.courses_of_action:
-                self._parse_course_of_action(course_of_action)
+                with self._record_boundary('Course of Action', course_of_action.id_):
+                    self._parse_course_of_action(course_of_action)
         if self.stix_package.threat_actors:
             for threat_actor in self.stix_package.threat_actors:
-                self._parse_threat_actor(threat_actor)
+                with self._record_boundary('Threat Actor', threat_actor.id_):
+                    self._parse_threat_actor(threat_actor)
         if self.stix_package.incidents:
             for incident in self.stix_package.incidents:
-                self._parse_incident(incident)
+                with self._record_boundary('Incident', incident.id_):
+                    self._parse_incident(incident)
         if self.stix_package.exploit_targets:
             for exploit_target in self.stix_package.exploit_targets:
-                self._parse_exploit_target(exploit_target)
+                with self._record_boundary('Exploit Target', exploit_target.id_):
+                    self._parse_exploit_target(exploit_target)
         if self.stix_package.campaigns:
             for campaign in self.stix_package.campaigns:
-                self._parse_campaign(campaign)
+                with self._record_boundary('Campaign', campaign.id_):
+                    self._parse_campaign(campaign)
         if self.dns_objects:
-            for domain in self.dns_objects['domain'].values():
-                domain_attribute = domain['data']
-                ip_reference = domain['related']
-                if ip_reference in self.dns_objects['ip']:
-                    domain_attribute['object_relation'] = "rrname"
-                    ip_address = self.dns_objects['ip'][ip_reference]['value']
-                    # Built through the shared object handler, which is where
-                    # the record boundary guard sits
-                    self._handle_object_case(
-                        'passive-dns',
-                        (
-                            domain_attribute,
-                            {
-                                'type': 'text', 'object_relation': 'rdata',
-                                'value': ip_address
-                            },
-                            {
-                                'type': 'text', 'object_relation': 'rrtype',
-                                'value': "AAAA" if ":" in ip_address else "A"
-                            }
-                        ),
-                        None
-                    )
-                else:
-                    self._add_attribute(domain_attribute)
-            for ip, ip_attribute in self.dns_objects['ip'].items():
-                if ip not in self.dns_ips:
-                    self._add_attribute(ip_attribute)
+            self._parse_dns_objects()
         self._set_distribution()
         self._apply_object_references()
         self._apply_event_galaxies()
@@ -246,6 +224,46 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 )
             self._add_attribute(misp_attribute, stix_object.id_)
 
+    def _parse_dns_objects(self):
+        """Convert the DNS bookkeeping, once the whole package is parsed: a
+        URL resolving to an address the package holds is a `passive-dns`
+        object, the rest is converted as read.
+
+        Each entry is a record of its own, converted inside its own boundary
+        as every record of the package is - named by its uuid, the id it was
+        read from being no longer kept.
+        """
+        for uuid, domain in self.dns_objects['domain'].items():
+            with self._record_boundary('Observable', uuid):
+                domain_attribute = domain['data']
+                ip_reference = domain['related']
+                if ip_reference in self.dns_objects['ip']:
+                    domain_attribute['object_relation'] = "rrname"
+                    ip_address = self.dns_objects['ip'][ip_reference]['value']
+                    # Built through the shared object handler, which is where
+                    # the guard against what MISP refuses sits
+                    self._handle_object_case(
+                        'passive-dns',
+                        (
+                            domain_attribute,
+                            {
+                                'type': 'text', 'object_relation': 'rdata',
+                                'value': ip_address
+                            },
+                            {
+                                'type': 'text', 'object_relation': 'rrtype',
+                                'value': "AAAA" if ":" in ip_address else "A"
+                            }
+                        ),
+                        None
+                    )
+                else:
+                    self._add_attribute(domain_attribute)
+        for ip, ip_attribute in self.dns_objects['ip'].items():
+            if ip not in self.dns_ips:
+                with self._record_boundary('Observable', ip):
+                    self._add_attribute(ip_attribute)
+
     def _parse_exploit_target(self, exploit_target: ExploitTarget):
         galaxies = set()
         records = self._read_exploit_target(exploit_target, galaxies)
@@ -290,8 +308,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         # Tested first: given no Observables, the parser reads the package's
         if observables:
             self._parse_observables(observables)
-        for ttp in self._inline_items(incident.leveraged_ttps):
-            self._parse_ttp(ttp)
+        self._parse_ttps(self._inline_items(incident.leveraged_ttps))
 
     def _parse_indicator(self, indicator: Indicator):
         # Converted before the observable: the rules an Indicator carries are
@@ -381,82 +398,88 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_indicators(self, indicators: Iterable[Indicator]):
         for indicator in indicators:
-            self._parse_indicator(indicator)
+            with self._record_boundary('Indicator', indicator.id_):
+                self._parse_indicator(indicator)
             for related in self._inline_items(indicator.related_indicators):
-                self._parse_indicator(related)
+                with self._record_boundary('Indicator', related.id_):
+                    self._parse_indicator(related)
 
     def _parse_observables(self, observables: Optional[Observables] = None, to_ids: bool = False):
         for observable in observables or self.stix_package.observables:
-            if self._has_properties(observable):
-                observable_object = observable.object_
-                properties = observable_object.properties
-                try:
-                    attribute_type, attribute_value, compl_data = self._read_record(properties, title=observable.title)
-                except StixObjectTypeError as xsi_type:
-                    self._stix_object_type_error(xsi_type, observable.id_)
-                    continue
-                record = self._record_uuid(observable)
-                uuid = record['uuid']
-                if isinstance(attribute_value, (str, int)):
-                    if observable.object_.related_objects:
-                        related_objects = observable.object_.related_objects
-                        resolving = (
-                            attribute_type == "url" and len(related_objects) == 1 and
-                            self._value(related_objects[0].relationship) == "Resolved_To"
-                        )
-                        if resolving:
-                            related_ip = self._sanitise_uuid(related_objects[0].idref)
-                            self.dns_objects['domain'][uuid] = {
-                                "related": related_ip, "data": {
-                                    "type": "text", "value": attribute_value
-                                }
+            with self._record_boundary('Observable', observable.id_):
+                self._parse_observable(observable, to_ids)
+
+    def _parse_observable(self, observable: Observable, to_ids: bool):
+        if self._has_properties(observable):
+            observable_object = observable.object_
+            properties = observable_object.properties
+            try:
+                attribute_type, attribute_value, compl_data = self._read_record(properties, title=observable.title)
+            except StixObjectTypeError as xsi_type:
+                self._stix_object_type_error(xsi_type, observable.id_)
+                return
+            record = self._record_uuid(observable)
+            uuid = record['uuid']
+            if isinstance(attribute_value, (str, int)):
+                if observable.object_.related_objects:
+                    related_objects = observable.object_.related_objects
+                    resolving = (
+                        attribute_type == "url" and len(related_objects) == 1 and
+                        self._value(related_objects[0].relationship) == "Resolved_To"
+                    )
+                    if resolving:
+                        related_ip = self._sanitise_uuid(related_objects[0].idref)
+                        self.dns_objects['domain'][uuid] = {
+                            "related": related_ip, "data": {
+                                "type": "text", "value": attribute_value
                             }
-                            if related_ip not in self.dns_ips:
-                                self.dns_ips.append(related_ip)
-                            continue
-                    # if the returned value is a simple value, we build an attribute
-                    attribute = {'to_ids': to_ids, 'uuid': uuid}
-                    if hasattr(observable, 'handling') and observable.handling:
-                        attribute['Tag'] = []
-                        for handling in observable.handling:
-                            attribute['Tag'].extend(self._parse_marking(handling))
-                    if attribute_type in ('ip-src', 'ip-dst'):
-                        attribute.update(
-                            {
-                                'type': attribute_type,
-                                'value': attribute_value, **record
-                            }
-                        )
-                        self.dns_objects['ip'][uuid] = attribute
-                        continue
-                    self._handle_attribute_case(
+                        }
+                        if related_ip not in self.dns_ips:
+                            self.dns_ips.append(related_ip)
+                        return
+                # if the returned value is a simple value, we build an attribute
+                attribute = {'to_ids': to_ids, 'uuid': uuid}
+                if hasattr(observable, 'handling') and observable.handling:
+                    attribute['Tag'] = []
+                    for handling in observable.handling:
+                        attribute['Tag'].extend(self._parse_marking(handling))
+                if attribute_type in ('ip-src', 'ip-dst'):
+                    attribute.update(
+                        {
+                            'type': attribute_type,
+                            'value': attribute_value, **record
+                        }
+                    )
+                    self.dns_objects['ip'][uuid] = attribute
+                    return
+                self._handle_attribute_case(
+                    attribute_type, attribute_value, compl_data,
+                    attribute, observable_object.id_,
+                    uuid_comment=record.get('comment')
+                )
+            elif attribute_value is not None:
+                if self._is_object_read(attribute_value):
+                    # it is a list of attributes, so we build an object
+                    self._handle_object_case(
                         attribute_type, attribute_value, compl_data,
-                        attribute, observable_object.id_,
+                        to_ids=to_ids, object_uuid=uuid,
                         uuid_comment=record.get('comment')
                     )
-                elif attribute_value is not None:
-                    if self._is_object_read(attribute_value):
-                        # it is a list of attributes, so we build an object
-                        self._handle_object_case(
-                            attribute_type, attribute_value, compl_data,
-                            to_ids=to_ids, object_uuid=uuid,
-                            uuid_comment=record.get('comment')
-                        )
-                        self._record_related_objects(observable_object, uuid)
-                    else:
-                        # it is a list of attribute values, so we add single attributes
-                        for value in attribute_value:
-                            self._add_attribute(
-                                {
-                                    'type': attribute_type, 'value': value,
-                                    'to_ids': to_ids
-                                },
-                                observable_object.id_
-                            )
+                    self._record_related_objects(observable_object, uuid)
                 else:
-                    self._unfilled_record_error(attribute_type, observable.id_)
+                    # it is a list of attribute values, so we add single attributes
+                    for value in attribute_value:
+                        self._add_attribute(
+                            {
+                                'type': attribute_type, 'value': value,
+                                'to_ids': to_ids
+                            },
+                            observable_object.id_
+                        )
             else:
-                self._parse_description(observable)
+                self._unfilled_record_error(attribute_type, observable.id_)
+        else:
+            self._parse_description(observable)
 
     def _parse_test_mechanisms(self, indicator: Indicator) -> list:
         """Convert the test mechanisms of an Indicator into attributes.
@@ -504,6 +527,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             if self._has_ttp_content(ttp) else []
         )
         self._add_construct_records(ttp.id_, records, galaxies)
+
+    def _parse_ttps(self, ttps: Iterable[TTP]):
+        for ttp in ttps:
+            with self._record_boundary('TTP', ttp.id_):
+                self._parse_ttp(ttp)
 
     def _add_construct_records(self, construct_id: Optional[str],
                                records: list, galaxies: set):
@@ -582,6 +610,29 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if title:
             return title
         return f"Imported from external STIX {self.stix_version} Package"
+
+    @contextmanager
+    def _record_boundary(self, kind: str, record_id: Optional[str]):
+        """Hold what converting one record raises to that record.
+
+        A third-party document is free to hold shapes no guard here was
+        written for, and what one of them raised escaped
+        `parse_stix_package()` with the whole package - every record already
+        converted and the diagnostics included. It costs the record it
+        happened in, and the Error names the record with the traceback, as
+        the STIX 2 import does. What the record added before it failed stays.
+
+        :param kind: the kind of STIX construct the record is read from
+        :param record_id: the id of the construct, None where it carries none
+        """
+        try:
+            yield
+        except Exception as exception:
+            self._add_error(
+                f'Error while parsing the {kind}'
+                f'{self._record_origin(record_id)}: '
+                f'{self._parse_traceback(exception)}'
+            )
 
     def _record_related_objects(self, observable_object: Object, uuid: str):
         # Recorded rather than applied: the objects they point to may not be
