@@ -6,6 +6,7 @@ import importlib
 import inspect
 import json
 import pkgutil
+from base64 import b64encode
 from collections import Counter
 from copy import deepcopy
 from cybox.common import Hash, HashList, ObjectProperties
@@ -14,6 +15,7 @@ from cybox.common.properties import BaseProperty
 from cybox.core import (
     Object, Observable, ObservableComposition, Observables, RelatedObject)
 from cybox.objects.account_object import Account, Authentication
+from cybox.objects.artifact_object import Artifact, RawArtifact
 from cybox.objects.address_object import Address, EmailAddress
 from cybox.objects.custom_object import Custom
 from cybox.objects.dns_record_object import DNSRecord
@@ -150,6 +152,7 @@ from .test_events import (
 
 _COA_UUID = '4c1e5f2a-8b3d-4a6c-9e7f-1d2b3c4d5e6f'
 _OBSERVABLE_UUID = '7a9b0c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d'
+_RECORD_OBSERVABLE_ID = f'MISP:Observable-{_OBSERVABLE_UUID}'
 _RELATED_UUID = '1b2c3d4e-5f6a-4b8c-9d0e-1f2a3b4c5d6e'
 _ACTOR_UUID = '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b'
 _DOMAIN_UUID = '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a'
@@ -6202,6 +6205,17 @@ class TestSTIX1Import(TestSTIX):
         return address
 
     @staticmethod
+    def _artifact(*hashes):
+        """An Artifact carrying its data Base64-encoded in its raw artifact,
+        as the export writes it."""
+        artifact = Artifact()
+        artifact.raw_artifact = RawArtifact(b64encode(b'payload').decode())
+        if hashes:
+            artifact.hashes = HashList()
+            artifact.hashes.hashes = list(hashes)
+        return artifact
+
+    @staticmethod
     def _pe_with_section(*hashes):
         """A Windows executable with one section: a `file` object including a
         `pe` object, itself including the `pe-section` the hashes go to."""
@@ -7819,6 +7833,66 @@ class TestSTIX1Import(TestSTIX):
         )
         self.assertEqual(parser.diagnostics()['errors'], {})
 
+    @classmethod
+    def _artifact_indicator(cls, title, *hashes):
+        artifact_object = Object(cls._artifact(*hashes))
+        artifact_object.id_ = f'MISP:Artifact-{_OBSERVABLE_UUID}'
+        indicator = cls._indicator(artifact_object, _OBSERVABLE_UUID)
+        indicator.observable.title = title
+        return indicator
+
+    def test_external_indicator_artifact_is_named_by_its_title(self):
+        """The title of the Observable an Indicator gives names the Artifact
+        it holds, as it does for an Observable of the package: the Artifact
+        comes back as a `malware-sample` with a hash, as an `attachment`
+        without one, carrying its data. The title was dropped, and the
+        Artifact refused as an `attachment` nothing named."""
+        for hashes, attribute_type in (
+                ((Hash(_MD5_HASH),), 'malware-sample'), ((), 'attachment')):
+            stix_package = STIXPackage()
+            stix_package.add_indicator(
+                self._artifact_indicator('evil.exe', *hashes)
+            )
+            parser = self._parse_external_package(stix_package)
+            with self.subTest(attribute_type):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                attribute, = parser.misp_event.attributes
+                # pymisp keeps the file name alone as the value of a sample
+                # handed its raw data: MISP computes the hash from the data
+                self.assertEqual(
+                    (
+                        attribute.type, attribute.value, attribute.to_ids,
+                        attribute.uuid, attribute.data.getvalue()
+                    ),
+                    (
+                        attribute_type, 'evil.exe', True, _OBSERVABLE_UUID,
+                        b'payload'
+                    )
+                )
+
+    def test_external_indicator_untitled_artifact_is_refused_with_an_error(self):
+        """An Artifact under an Indicator whose Observable carries no title
+        has no name to fill an `attachment` with, though it carries a hash:
+        refused with an error naming the Indicator, and the rest of the
+        package converts."""
+        indicator = self._artifact_indicator(None, Hash(_MD5_HASH))
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        stix_package.add_indicator(self._domain_indicator('circl.lu'))
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [attribute.value for attribute in parser.misp_event.attributes],
+            ['circl.lu']
+        )
+        errors, = parser.diagnostics()['errors'].values()
+        self.assertEqual(
+            errors,
+            [
+                f'Unable to convert the STIX object with id {indicator.id_}: '
+                'nothing to fill a MISP attachment attribute with'
+            ]
+        )
+
     @staticmethod
     def _yara_test_mechanism():
         test_mechanism = YaraTestMechanism()
@@ -8319,6 +8393,31 @@ class TestSTIX1Import(TestSTIX):
                     self.assertEqual(len(errors), 1)
                     self.assertIn('nothing to fill a MISP', errors[0])
 
+    def test_artifact_with_no_title_is_refused_with_an_error(self):
+        """An Artifact whose Observable carries no title has no name to fill
+        an `attachment` with, though it carries a hash and its data: refused
+        with an error naming the Observable, and the rest of the package
+        converts."""
+        for origin, parser in self._parse_valueless_record(
+                self._artifact(Hash(_MD5_HASH)), 'Artifact'):
+            with self.subTest(origin):
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('domain', 'circl.lu')]
+                )
+                errors, = parser.diagnostics()['errors'].values()
+                self.assertEqual(
+                    errors,
+                    [
+                        'Unable to convert the STIX object with id '
+                        f'{_RECORD_OBSERVABLE_ID}: nothing to fill a MISP '
+                        'attachment attribute with'
+                    ]
+                )
+
     def test_object_including_only_empty_objects_is_an_error(self):
         """A process whose one connection holds nothing, a Windows executable
         whose one section holds nothing: no object under them holds an
@@ -8347,23 +8446,24 @@ class TestSTIX1Import(TestSTIX):
 
     def _parse_valueless_record(self, properties, feature):
         """Parse a record next to a domain that converts, as a third party
-        publishes it and as it sits in an Incident of a MISP export."""
+        publishes it and as it sits in an Incident of a MISP export. The
+        record's Observable carries `_RECORD_OBSERVABLE_ID`, the id an error
+        refusing it names."""
+        record = self._observable(properties, feature)
+        record.id_ = _RECORD_OBSERVABLE_ID
         domain_name = DomainName()
         domain_name.value = 'circl.lu'
         stix_package = STIXPackage()
         stix_package.observables = Observables(
             [
-                self._observable(properties, feature),
+                record,
                 self._observable(domain_name, 'DomainName', _DOMAIN_UUID)
             ]
         )
         yield 'external', self._parse_external_package(stix_package)
         incident = self._incident_with_content()
         incident.related_observables.append(
-            RelatedObservable(
-                self._observable(properties, feature),
-                relationship='Network activity'
-            )
+            RelatedObservable(record, relationship='Network activity')
         )
         yield 'internal', self._parse_internal_package(
             self._internal_package(incident)
