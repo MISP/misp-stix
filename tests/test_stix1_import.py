@@ -2812,6 +2812,31 @@ class TestSTIX1Import(TestSTIX):
             ]
         )
 
+    def test_internal_misp_export_freetext_comment_round_trips(self):
+        """The comment MISP's freetext import stamps on an attribute is a
+        comment like any other: the Exploit Target a `vulnerability` or a
+        `weakness` is written in, and the Campaign a `campaign-name` is
+        written as, carry it the way an Indicator or an Observable does. A
+        `weakness` comes back as the one-attribute object, comment and all."""
+        comment = 'Imported via the freetext import.'
+        for fixture in (get_event_with_vulnerability_attribute,
+                        get_event_with_weakness_attribute,
+                        get_event_with_campaign_name_attribute):
+            event = fixture()
+            attribute = event['Event']['Attribute'][0]
+            attribute['comment'] = comment
+            with self.subTest(type=attribute['type']):
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (record.uuid, record.get('comment'))
+                        for record in (*parser.misp_event.attributes,
+                                       *parser.misp_event.objects)
+                    ],
+                    [(attribute['uuid'], comment)]
+                )
+
     def _assert_attributes_round_trip(self, parser, attributes, to_ids):
         """The attributes come back with the uuid, type, category and value
         they went out with, and the timestamp when exported as Indicators -
