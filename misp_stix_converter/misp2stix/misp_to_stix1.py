@@ -765,6 +765,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         # an event-level one does
         self._parse_threat_actor_galaxy(galaxy)
 
+    def _parse_threat_actor_galaxy(self, galaxy: dict):
+        # The actors go on the package; the events parser also attributes
+        # them to its Incident
+        for cluster in galaxy['GalaxyCluster']:
+            self._parse_threat_actor(cluster)
+
     def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         galaxy_name = galaxy['name']
         for cluster in galaxy['GalaxyCluster']:
@@ -1594,13 +1600,6 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         # No Incident to hold a journal entry, no STIX Header to describe:
         # the Custom observable keeps the value, uuid, comment and tags alike
         self._parse_custom_attribute(attribute)
-
-    ################################################################################
-    #                          GALAXIES PARSING FUNCTIONS                          #
-    ################################################################################
-    def _parse_threat_actor_galaxy(self, galaxy: dict):
-        for cluster in galaxy['GalaxyCluster']:
-            self._parse_threat_actor(cluster)
 
 
 class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
