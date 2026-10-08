@@ -1801,11 +1801,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     built = len(self._built_constructs)
                     try:
                         attributes, observable = self._parse_file_with_pe_object(misp_object)
-                        record = self._folded_record(misp_object, attributes)
-                        if self._fetch_ids_flag(attributes):
-                            self._handle_misp_object_with_context(record, observable)
-                        else:
-                            self._handle_misp_object(record, observable)
+                        self._handle_object_observable(
+                            self._folded_record(misp_object, attributes),
+                            observable, self._fetch_ids_flag(attributes)
+                        )
                     except Exception as exception:
                         self._roll_back_constructs(built)
                         self._object_error(misp_object, exception)
@@ -1816,11 +1815,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         file_object = WinExecutableFile()
                         attributes = self._parse_pe_object(file_object, misp_object)
                         observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
-                        record = self._folded_record(misp_object, attributes)
-                        if self._fetch_ids_flag(attributes):
-                            self._handle_misp_object_with_context(record, observable)
-                        else:
-                            self._handle_misp_object(record, observable)
+                        self._handle_object_observable(
+                            self._folded_record(misp_object, attributes),
+                            observable, self._fetch_ids_flag(attributes)
+                        )
                     except Exception as exception:
                         self._roll_back_constructs(built)
                         self._object_error(misp_object, exception)
