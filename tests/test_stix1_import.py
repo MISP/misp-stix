@@ -222,6 +222,19 @@ _HASH_TYPE_ROUND_TRIP = {
 }
 
 
+def _with_custom_properties(cybox_object, *properties):
+    """The CybOX object, holding one more custom property per `(name, value)`
+    pair, in the order given."""
+    if cybox_object.custom_properties is None:
+        cybox_object.custom_properties = CustomProperties()
+    for name, value in properties:
+        prop = Property()
+        prop.name = name
+        prop.value = value
+        cybox_object.custom_properties.append(prop)
+    return cybox_object
+
+
 class TestSTIX1Import(TestSTIX):
 
     # Every STIX 1 import mapping table, the object template of the object the
@@ -6068,11 +6081,7 @@ class TestSTIX1Import(TestSTIX):
         it names, with the warning."""
         custom = Custom()
         custom.custom_name = 'registry-key'
-        custom.custom_properties = CustomProperties()
-        key = Property()
-        key.name = 'key'
-        key.value = 'HKLM\\Software\\mthjk'
-        custom.custom_properties.append(key)
+        _with_custom_properties(custom, ('key', 'HKLM\\Software\\mthjk'))
         custom_object = Object(custom)
         custom_object.id_ = f'MISP:Custom-{_OBSERVABLE_UUID}'
         incident = self._incident_with_content()
@@ -6692,13 +6701,7 @@ class TestSTIX1Import(TestSTIX):
         custom = Custom()
         if name is not None:
             custom.custom_name = name
-        custom.custom_properties = CustomProperties()
-        for property_name, value in properties:
-            prop = Property()
-            prop.name = property_name
-            prop.value = value
-            custom.custom_properties.append(prop)
-        return custom
+        return _with_custom_properties(custom, *properties)
 
     @staticmethod
     def _file_with_three_properties():
@@ -6850,15 +6853,6 @@ class TestSTIX1Import(TestSTIX):
             }
         )
 
-    @staticmethod
-    def _with_property(cybox_object, name, value):
-        cybox_object.custom_properties = CustomProperties()
-        prop = Property()
-        prop.name = name
-        prop.value = value
-        cybox_object.custom_properties.append(prop)
-        return cybox_object
-
     def _process_with_connections(self, refused_index=None,
                                   refused_process=False):
         """A process listing three connections, the one at `refused_index` -
@@ -6867,7 +6861,7 @@ class TestSTIX1Import(TestSTIX):
         process.name = 'evil.exe'
         process.pid = 42
         if refused_process:
-            self._with_property(process, 'start-time', 'notadate')
+            _with_custom_properties(process, ('start-time', 'notadate'))
         process.network_connection_list = NetworkConnectionList()
         for index, ip in enumerate(('1.1.1.1', '2.2.2.2', '3.3.3.3')):
             connection = NetworkConnection()
@@ -6875,8 +6869,8 @@ class TestSTIX1Import(TestSTIX):
                 ip, 443
             )
             if index == refused_index:
-                self._with_property(
-                    connection, 'first-packet-seen', 'notadate'
+                _with_custom_properties(
+                    connection, ('first-packet-seen', 'notadate')
                 )
             process.network_connection_list.append(connection)
         return process
@@ -6974,15 +6968,15 @@ class TestSTIX1Import(TestSTIX):
         pe_file = WinExecutableFile()
         if with_file:
             pe_file.file_name = 'evil.exe'
-        self._with_property(
-            pe_file, 'compilation-timestamp',
-            'notadate' if refused_pe else '2020-01-01T00:00:00'
+        _with_custom_properties(
+            pe_file,
+            (
+                'compilation-timestamp',
+                'notadate' if refused_pe else '2020-01-01T00:00:00'
+            )
         )
         if refused_file:
-            prop = Property()
-            prop.name = 'creation-time'
-            prop.value = 'notadate'
-            pe_file.custom_properties.append(prop)
+            _with_custom_properties(pe_file, ('creation-time', 'notadate'))
         pe_file.sections = PESectionList()
         for name in ('.text', '.data', '.rsrc'):
             section = PESection()
@@ -7171,12 +7165,7 @@ class TestSTIX1Import(TestSTIX):
         if name is not None:
             mutex.name = name
         if custom_properties:
-            mutex.custom_properties = CustomProperties()
-            for prop_name, value in custom_properties.items():
-                prop = Property()
-                prop.name = prop_name
-                prop.value = value
-                mutex.custom_properties.append(prop)
+            _with_custom_properties(mutex, *custom_properties.items())
         return mutex
 
     def _parse_external_mutex(self, mutex, as_indicator: bool):
@@ -7313,14 +7302,10 @@ class TestSTIX1Import(TestSTIX):
         """cybox holds one signature, so the export writes the other
         fingerprints of an `x509` object as custom properties named after
         their relation: the bag was never read."""
-        x509 = X509Certificate()
-        x509.custom_properties = CustomProperties()
-        for name, value in (
-                ('x509-fingerprint-md5', _MD5_HASH), ('is_ca', 'True')):
-            prop = Property()
-            prop.name = name
-            prop.value = value
-            x509.custom_properties.append(prop)
+        x509 = _with_custom_properties(
+            X509Certificate(),
+            ('x509-fingerprint-md5', _MD5_HASH), ('is_ca', 'True')
+        )
         parser = self._parse_external_observable(x509, 'X509Certificate')
         misp_object = self._assert_single_object(
             parser, 'x509', {'x509-fingerprint-md5': _MD5_HASH, 'is_ca': 'True'}
@@ -7937,15 +7922,11 @@ class TestSTIX1Import(TestSTIX):
         `text` attribute, with a warning - a `text` attribute validates under
         any relation."""
         pdb = 'C:\\projects\\putty\\Release\\putty.pdb'
-        pe_file = WinExecutableFile()
-        pe_file.custom_properties = CustomProperties()
-        for name, value in (
-                ('pdb', pdb), ('compilation-timestamp', '2019-03-16T12:31:22'),
-                ('not-a-pe-relation', 'whatever')):
-            prop = Property()
-            prop.name = name
-            prop.value = value
-            pe_file.custom_properties.append(prop)
+        pe_file = _with_custom_properties(
+            WinExecutableFile(),
+            ('pdb', pdb), ('compilation-timestamp', '2019-03-16T12:31:22'),
+            ('not-a-pe-relation', 'whatever')
+        )
         parser = self._parse_external_observable(pe_file, 'WinExecutableFile')
         misp_object = self._assert_single_object(
             parser, 'pe',
@@ -8516,15 +8497,11 @@ class TestSTIX1Import(TestSTIX):
         `_hash_value` precedent - and a list holding several is no attribute
         value: refused rather than coerced, since `str()` would store it as
         its Python repr."""
-        file_object = File()
-        file_object.custom_properties = CustomProperties()
-        for name, value in (
-                ('magic', ['ELF 64-bit LSB executable']),
-                ('state', ['no', 'value'])):
-            prop = Property()
-            prop.name = name
-            prop.value = value
-            file_object.custom_properties.append(prop)
+        file_object = _with_custom_properties(
+            File(),
+            ('magic', ['ELF 64-bit LSB executable']),
+            ('state', ['no', 'value'])
+        )
         parser = self._parse_external_observable(file_object, 'File')
         self.assertEqual(parser.diagnostics()['errors'], {})
         self.assertEqual(
