@@ -75,8 +75,8 @@ from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement, ToolInformation
 from stix.common.related import (
-    RelatedIndicator, RelatedObservable, RelatedPackage, RelatedPackages,
-    RelatedTTP)
+    RelatedExploitTarget, RelatedIndicator, RelatedObservable, RelatedPackage,
+    RelatedPackages, RelatedTTP)
 from stix.common.vocabs import VocabString
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
@@ -651,6 +651,71 @@ class TestSTIX1Import(TestSTIX):
         )
         parser = self._parse_internal_package(self._internal_package(incident))
         self._assert_unknown_parameter_observable_skipped(parser)
+
+    @classmethod
+    def _course_of_action_with_propertyless_parameter_observables(cls):
+        """A Course of Action whose parameter observables are a domain and
+        four Observables holding no CybOX properties to read: one given by
+        reference, a composition, an empty one and one whose Object carries
+        none."""
+        course_of_action = cls._course_of_action()
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        composed = DomainName()
+        composed.value = 'composed.example'
+        composition = Observable()
+        composition.observable_composition = ObservableComposition(
+            operator='AND', observables=[Observable(Object(composed))]
+        )
+        course_of_action.parameter_observables = Observables(
+            [
+                Observable(idref=f'example:Observable-{_RELATED_UUID}'),
+                composition, Observable(), Observable(Object()),
+                Observable(Object(domain))
+            ]
+        )
+        return course_of_action
+
+    def test_course_of_action_propertyless_parameter_observables_are_skipped(self):
+        """A parameter Observable with no CybOX properties is skipped, as one
+        in a TTP's infrastructure is: reading them crashed the conversion of
+        the whole package. The Course of Action and the domain beside them
+        convert, with no message. The parser is shared, so both imports are
+        held to it."""
+        course_of_action = (
+            self._course_of_action_with_propertyless_parameter_observables()
+        )
+        external_package = STIXPackage()
+        external_package.add_course_of_action(course_of_action)
+        incident = Incident()
+        incident.title = 'Incident with a Course of Action taken'
+        incident.add_coa_taken(course_of_action)
+        for parse, stix_package in (
+                (self._parse_external_package, external_package),
+                (
+                    self._parse_internal_package,
+                    self._internal_package(incident)
+                )):
+            with self.subTest(parser=parse.__name__):
+                parser = parse(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        attribute.value
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    ['circl.lu']
+                )
+                coa_object, = parser.misp_event.get_objects_by_name(
+                    'course-of-action'
+                )
+                self.assertEqual(
+                    [
+                        reference.referenced_uuid
+                        for reference in coa_object.references
+                    ],
+                    [parser.misp_event.attributes[0].uuid]
+                )
 
     def test_internal_course_of_action_taken_converts(self):
         incident = Incident()
@@ -2077,6 +2142,69 @@ class TestSTIX1Import(TestSTIX):
         self.assertIn('tlp:amber tlp:red', tags)
         self.assertNotIn('tlp:amber" tlp:red', tags)
 
+    @staticmethod
+    def _colourless_tlp_handling():
+        """A Handling holding a TLP structure naming no colour, which the
+        schema leaves optional, and a Simple Marking."""
+        specification = MarkingSpecification()
+        specification.marking_structures.append(TLPMarkingStructure())
+        simple_marking = SimpleMarkingStructure()
+        simple_marking.statement = 'Kept'
+        specification.marking_structures.append(simple_marking)
+        handling = Marking()
+        handling.add_marking(specification)
+        return handling
+
+    def test_colourless_tlp_marking_writes_no_tag(self):
+        """A TLP marking naming no colour carries no tag, with no message:
+        reading the colour crashed the conversion of the whole package. The
+        marking beside it is read, and the rest of the package converts. The
+        marking parser is shared, so both imports are held to it."""
+        header_package = self._external_package()
+        header_package.stix_header = STIXHeader()
+        header_package.stix_header.handling = self._colourless_tlp_handling()
+        campaign = self._campaign('Op Marked')
+        campaign.handling = self._colourless_tlp_handling()
+        campaign_package = self._external_package()
+        campaign_package.add_campaign(campaign)
+        incident = Incident()
+        incident.title = 'Incident with a colourless TLP marking'
+        incident.handling = self._colourless_tlp_handling()
+        incident.add_coa_taken(self._course_of_action())
+        for label, parse, stix_package, tags in (
+                (
+                    'external header', self._parse_external_package,
+                    header_package, lambda event: event.tags
+                ),
+                (
+                    'external campaign', self._parse_external_package,
+                    campaign_package,
+                    lambda event: event.attributes[0].tags
+                ),
+                (
+                    'internal incident', self._parse_internal_package,
+                    self._internal_package(incident),
+                    lambda event: event.tags
+                )):
+            with self.subTest(label):
+                parser = parse(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.diagnostics()['warnings'], {})
+                self.assertEqual(
+                    [
+                        tag.name for tag in tags(parser.misp_event)
+                        if not tag.name.startswith('misp:tool')
+                    ],
+                    ['Kept']
+                )
+                self.assertEqual(
+                    [
+                        misp_object.name
+                        for misp_object in parser.misp_event.objects
+                    ],
+                    ['course-of-action']
+                )
+
     ############################################################################
     #                            EXPLOIT TARGETS.                              #
     ############################################################################
@@ -2200,6 +2328,30 @@ class TestSTIX1Import(TestSTIX):
             ],
             [('vulnerability', 'CVE-2021-44228', _EXPLOIT_TARGET_UUID)]
         )
+
+    def test_external_ttp_related_exploit_target_holding_nothing_is_skipped(self):
+        """A related Exploit Target holding no Exploit Target, which the
+        schema requires, is skipped with no message, with or without an
+        infrastructure beside it: reading it crashed the conversion of the
+        whole package. The CVE of the TTP's other Exploit Target converts."""
+        for infrastructure in (False, True):
+            with self.subTest(infrastructure=infrastructure):
+                ttp = self._ttp_with_exploit_target_cve('CVE-2021-44228')
+                ttp.exploit_targets.insert(0, RelatedExploitTarget())
+                if infrastructure:
+                    ttp.resources = Resource()
+                    ttp.resources.infrastructure = Infrastructure()
+                stix_package = STIXPackage()
+                stix_package.add_ttp(ttp)
+                parser = self._parse_external_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value, attribute.uuid)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('vulnerability', 'CVE-2021-44228', _ACTOR_UUID)]
+                )
 
     ############################################################################
     #                           EXTERNAL CAMPAIGNS.                            #
@@ -6623,6 +6775,41 @@ class TestSTIX1Import(TestSTIX):
             [('domain', 'circl.lu', False, _OBSERVABLE_UUID)]
         )
 
+    def test_external_observable_with_no_properties_converts_its_description(self):
+        """An Observable holding no CybOX properties gives its description as
+        a `text` attribute, as an Indicator does - in the package or inline
+        in an Incident, with no Object or an Object carrying no properties.
+        Reading the timestamp no Observable has crashed the conversion of the
+        whole package. The domain beside it converts."""
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        for label, cybox_object in (('no Object', None), ('empty Object', Object())):
+            for inline in (False, True):
+                with self.subTest(label, inline=inline):
+                    observable = Observable(cybox_object)
+                    observable.description = 'Free text only'
+                    stix_package = STIXPackage()
+                    stix_package.observables = Observables(
+                        [self._observable(domain, 'DomainName')]
+                    )
+                    if inline:
+                        incident = Incident()
+                        incident.related_observables.append(
+                            RelatedObservable(observable)
+                        )
+                        stix_package.add_incident(incident)
+                    else:
+                        stix_package.observables.add(observable)
+                    parser = self._parse_external_package(stix_package)
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(
+                        [
+                            (attribute.type, attribute.value)
+                            for attribute in parser.misp_event.attributes
+                        ],
+                        [('domain', 'circl.lu'), ('text', 'Free text only')]
+                    )
+
     def test_external_process_observable_converts(self):
         process = Process()
         process.name = 'svchost.exe'
@@ -7886,6 +8073,186 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(len(errors), 1)
         self.assertIn(f'file object with id {_OBSERVABLE_UUID}', errors[0])
         self.assertIn('not a date', errors[0])
+
+    @staticmethod
+    def _fail_first_call(method: str):
+        """Patch a parser method so its first call raises, as a bug no test
+        has met yet would, and every later call runs the method."""
+        original = getattr(ExternalSTIX1toMISPParser, method)
+        calls = []
+
+        def fail_first(parser, *args, **kwargs):
+            calls.append(args)
+            if len(calls) == 1:
+                raise RuntimeError('unforeseen')
+            return original(parser, *args, **kwargs)
+
+        return patch.object(
+            ExternalSTIX1toMISPParser, method, autospec=True,
+            side_effect=fail_first
+        )
+
+    @classmethod
+    def _records_of_each_kind(cls):
+        """For each kind of record the External import loops over: the kind,
+        the method its first record fails in, how to add a record of it to a
+        package with a given uuid and value, the id the failing one carries
+        and the values of the failing record and of the one after it."""
+
+        def domain(uuid, value):
+            domain_name = DomainName()
+            domain_name.value = value
+            cybox_object = Object(domain_name)
+            cybox_object.id_ = f'example:DomainName-{uuid}'
+            return cybox_object
+
+        def address(uuid, value):
+            ip_address = Address()
+            ip_address.address_value = value
+            ip_address.category = 'ipv4-addr'
+            cybox_object = Object(ip_address)
+            cybox_object.id_ = f'example:Address-{uuid}'
+            return cybox_object
+
+        def resolving_url(uuid, value):
+            uri = URI()
+            uri.value = value
+            uri.type_ = URI.TYPE_URL
+            cybox_object = Object(uri)
+            cybox_object.id_ = f'example:URI-{uuid}'
+            related_object = RelatedObject()
+            related_object.idref = f'example:Address-{_IP_UUID}'
+            related_object.relationship = 'Resolved_To'
+            cybox_object.related_objects.append(related_object)
+            return cybox_object
+
+        def add_observable(package, uuid, value):
+            observable = Observable(domain(uuid, value))
+            observable.id_ = f'example:Observable-{uuid}'
+            package.add_observable(observable)
+
+        def add_ttp(package, uuid, value):
+            ttp = cls._ttp_with_exploit_target_cve(value)
+            ttp.id_ = f'example:TTP-{uuid}'
+            package.add_ttp(ttp)
+
+        def add_course_of_action(package, uuid, value):
+            course_of_action = CourseOfAction()
+            course_of_action.id_ = f'example:CourseOfAction-{uuid}'
+            course_of_action.title = value
+            package.add_course_of_action(course_of_action)
+
+        def add_threat_actor(package, uuid, value):
+            threat_actor = cls._threat_actor(value)
+            threat_actor.id_ = f'example:ThreatActor-{uuid}'
+            package.add_threat_actor(threat_actor)
+
+        def add_incident(package, uuid, value):
+            incident = Incident()
+            incident.id_ = f'example:Incident-{uuid}'
+            incident.description = value
+            package.add_incident(incident)
+
+        def add_exploit_target(package, uuid, value):
+            exploit_target = cls._exploit_target((value, None))
+            exploit_target.id_ = f'example:ExploitTarget-{uuid}'
+            package.add_exploit_target(exploit_target)
+
+        def add_campaign(package, uuid, value):
+            campaign = cls._campaign(value)
+            campaign.id_ = f'example:Campaign-{uuid}'
+            package.add_campaign(campaign)
+
+        return (
+            (
+                'Indicator', '_parse_indicator',
+                lambda package, uuid, value: package.add_indicator(
+                    cls._indicator(domain(uuid, value), uuid)
+                ),
+                'MISP:Indicator-{}', ('first.example', 'second.example')
+            ),
+            (
+                'Observable', '_read_record', add_observable,
+                'example:Observable-{}', ('first.example', 'second.example')
+            ),
+            (
+                'TTP', '_parse_ttp', add_ttp, 'example:TTP-{}',
+                ('CVE-2021-0001', 'CVE-2021-0002')
+            ),
+            (
+                'Course of Action', '_parse_course_of_action',
+                add_course_of_action, 'example:CourseOfAction-{}',
+                ('Block it', 'Sinkhole it')
+            ),
+            (
+                'Threat Actor', '_parse_threat_actor', add_threat_actor,
+                'example:ThreatActor-{}', ('APT-A', 'APT-B')
+            ),
+            (
+                'Incident', '_parse_incident', add_incident,
+                'example:Incident-{}', ('First prose', 'Second prose')
+            ),
+            (
+                'Exploit Target', '_parse_exploit_target', add_exploit_target,
+                'example:ExploitTarget-{}', ('CVE-2021-0001', 'CVE-2021-0002')
+            ),
+            (
+                'Campaign', '_parse_campaign', add_campaign,
+                'example:Campaign-{}', ('Op First', 'Op Second')
+            ),
+            # The passive DNS bookkeeping is converted once the package is
+            # parsed, keyed on the uuid of the record: an address and a URL
+            # resolving to an address the package does not hold
+            (
+                'Observable', '_add_attribute',
+                lambda package, uuid, value: package.add_indicator(
+                    cls._indicator(address(uuid, value), uuid)
+                ),
+                '{}', ('198.51.100.1', '198.51.100.2')
+            ),
+            (
+                'Observable', '_add_attribute',
+                lambda package, uuid, value: package.add_indicator(
+                    cls._indicator(resolving_url(uuid, value), uuid)
+                ),
+                '{}', ('https://first.example', 'https://second.example')
+            )
+        )
+
+    def test_external_unforeseen_record_failure_costs_that_record_only(self):
+        """What a record of a third-party document raises past the guards
+        written for it - a shape no test has met yet - used to escape
+        `parse_stix_package()` and cost the whole package, every record
+        converted before it and the diagnostics included. It costs that
+        record: an Error names it, with the traceback, and the record of the
+        same kind after it converts as it does alone."""
+        for kind, method, add, record_id, values in self._records_of_each_kind():
+            with self.subTest(method, kind=kind, value=values[0]):
+                stix_package = STIXPackage()
+                add(stix_package, _RELATED_UUID, values[0])
+                add(stix_package, _PLAIN_OBJECT_UUID, values[1])
+                with self._fail_first_call(method):
+                    parser = self._parse_external_package(stix_package)
+                errors = parser.diagnostics()['errors']
+                self.assertEqual(list(errors), ['misp event'])
+                error, = errors['misp event']
+                self.assertTrue(
+                    error.startswith(
+                        f'Error while parsing the {kind} with id '
+                        f'{record_id.format(_RELATED_UUID)}: '
+                    ),
+                    error
+                )
+                self.assertIn('fail_first', error)
+                self.assertTrue(error.endswith('unforeseen'), error)
+                alone = STIXPackage()
+                add(alone, _PLAIN_OBJECT_UUID, values[1])
+                self.assertEqual(
+                    self._event_content(parser.misp_event),
+                    self._event_content(
+                        self._parse_external_package(alone).misp_event
+                    )
+                )
 
     def test_external_file_with_an_other_typed_tlsh_hash_converts(self):
         """A tlsh is 70 hexadecimal characters, optionally behind the `T1`
