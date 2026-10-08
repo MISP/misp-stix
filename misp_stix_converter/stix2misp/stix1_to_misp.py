@@ -1793,7 +1793,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     d_regkey['hive'], d_regkey['key']
                 )
                 if 'data' in d_regkey:
-                    return "regkey|value", f"{regkey} | {d_regkey['data']}", ""
+                    return "regkey|value", f"{regkey}|{d_regkey['data']}", ""
                 return "regkey", regkey, ""
         return name, attributes, compl_data
 
