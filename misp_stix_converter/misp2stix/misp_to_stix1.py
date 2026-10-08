@@ -187,12 +187,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         attribute_uuid = attribute['uuid']
         ttp = self._create_ttp(attribute)
         timestamp = self._optional_timestamp(attribute)
-        exploit_target = ExploitTarget(timestamp=timestamp)
-        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{attribute_uuid}"
-        if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
-            exploit_target.description = attribute['comment']
+        exploit_target = self._create_exploit_target(
+            attribute, stix_object, stix_type
+        )
         exploit_target.title = f"{stix_type.capitalize()} {attribute['value']}"
-        getattr(exploit_target, f"add_{stix_type}")(stix_object)
         ttp.add_exploit_target(exploit_target)
         tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
         if tags:
@@ -242,8 +240,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         campaign = Campaign(timestamp=timestamp)
         campaign.id_ = f"{self._orgname_id}:Campaign-{attribute['uuid']}"
         campaign.title = f"{attribute.get('category', 'Other')}: {attribute['value']} (MISP Attribute)"
-        if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
-            campaign.description = attribute['comment']
+        self._add_record_comment(campaign, attribute)
         names = Names()
         names.name = attribute['value']
         campaign.names = names
@@ -982,6 +979,26 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable = self._create_observable(domain_object, uuid, 'DomainName', alternative_uuid)
         return observable
 
+    def _create_exploit_target(
+            self, record: dict, stix_object: Union[Vulnerability, Weakness],
+            stix_type: str) -> ExploitTarget:
+        """The Exploit Target a `vulnerability` or `weakness` record, attribute
+        or object, is written in: its uuid, timestamp and comment, holding the
+        Vulnerability or Weakness built from it.
+
+        :param record: the MISP attribute or object
+        :param stix_object: the Vulnerability or Weakness built from it
+        :param stix_type: `vulnerability` or `weakness`
+        :return: the Exploit Target
+        """
+        exploit_target = ExploitTarget(
+            timestamp=self._optional_timestamp(record)
+        )
+        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{record['uuid']}"
+        self._add_record_comment(exploit_target, record)
+        getattr(exploit_target, f"add_{stix_type}")(stix_object)
+        return exploit_target
+
     @staticmethod
     def _create_file_object(filename: str) -> File:
         file_object = File()
@@ -1052,14 +1069,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _add_record_comment(
-            stix_object: Union[ExploitTarget, Observable, TTP], record: dict):
+            stix_object: Union[Campaign, ExploitTarget, Observable, TTP],
+            record: dict):
         # A record exported without `to_ids` has no Indicator to carry its
-        # comment, and a context object is a TTP with none either. The
-        # Observable's own description carries it, the Exploit Target's for a
-        # `vulnerability` or `weakness` object, the TTP's own for an
-        # `attack-pattern` object, whose Attack Pattern descriptions all carry
-        # relations. Only when there is one: an uncommented record writes no
-        # description
+        # comment, and a context record is a TTP or a Campaign with none
+        # either. The Observable's own description carries it, the Exploit
+        # Target's for a `vulnerability` or `weakness`, the Campaign's for a
+        # `campaign-name`, the TTP's own for an `attack-pattern` object, whose
+        # Attack Pattern descriptions all carry relations. Only when there is
+        # one: an uncommented record writes no description
         if record.get('comment'):
             stix_object.description = record['comment']
 
@@ -3094,10 +3112,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
-        exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
-        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
-        self._add_record_comment(exploit_target, misp_object)
-        exploit_target.add_vulnerability(vulnerability)
+        exploit_target = self._create_exploit_target(
+            misp_object, vulnerability, 'vulnerability'
+        )
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
         self._course_of_action_slots[misp_object['uuid']] = (
@@ -3121,10 +3138,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
-        exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
-        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
-        self._add_record_comment(exploit_target, misp_object)
-        exploit_target.add_weakness(weakness)
+        exploit_target = self._create_exploit_target(
+            misp_object, weakness, 'weakness'
+        )
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
         self._course_of_action_slots[misp_object['uuid']] = (
