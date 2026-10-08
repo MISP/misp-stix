@@ -3386,7 +3386,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     @staticmethod
     def _object_record_title(misp_object: dict) -> str:
-        return f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
+        return f"{misp_object.get('meta-category', 'misc')}: {misp_object['name']} (MISP Object)"
 
     @staticmethod
     def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
@@ -3422,7 +3422,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _create_ttp_from_object(self, misp_object: dict) -> TTP:
         ttp = TTP(timestamp=self._optional_timestamp(misp_object))
         ttp.id_ = f"{self._orgname_id}:TTP-{misp_object['uuid']}"
-        ttp.title = f"{misp_object.get('meta-category', 'misc')}: {misp_object['name']} (MISP Object)"
+        ttp.title = self._object_record_title(misp_object)
         return ttp
 
     def _create_unix_user_account_object(self, attributes: dict,
