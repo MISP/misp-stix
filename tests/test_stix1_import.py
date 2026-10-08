@@ -7401,6 +7401,56 @@ class TestSTIX1Import(TestSTIX):
             parser, 'email', {'to': 'to@example.com', 'bcc': 'bcc@example.com'}
         )
 
+    def test_external_email_raw_body_and_header_convert(self):
+        """The raw body and the raw header of an email are native CybOX
+        fields, read beside its header fields on a document of any origin."""
+        email = EmailMessage()
+        email.header = EmailHeader()
+        email.header.from_ = 'from@example.com'
+        email.raw_body = 'Hello'
+        email.raw_header = 'Received: x'
+        parser = self._parse_external_observable(email, 'EmailMessage')
+        self._assert_single_object(
+            parser, 'email',
+            {
+                'from': 'from@example.com', 'email-body': 'Hello',
+                'header': 'Received: x'
+            }
+        )
+
+    def test_external_email_raw_body_or_header_alone_is_an_attribute(self):
+        """The one field an email carries gives an attribute, as a Domain
+        Name does: `to_ids` unset on an Observable, set on an Indicator."""
+        for field, attribute_type, value in (
+                ('raw_body', 'email-body', 'Hello'),
+                ('raw_header', 'email-header', 'Received: x')):
+            email = EmailMessage()
+            setattr(email, field, value)
+            with self.subTest(field, path='Observable'):
+                parser = self._parse_external_observable(email, 'EmailMessage')
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value, attribute.to_ids)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [(attribute_type, value, False)]
+                )
+            with self.subTest(field, path='Indicator'):
+                stix_package = STIXPackage()
+                stix_package.add_indicator(
+                    self._indicator(Object(email), _OBSERVABLE_UUID)
+                )
+                parser = self._parse_external_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value, attribute.to_ids)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [(attribute_type, value, True)]
+                )
+
     def test_external_user_account_password_converts_in_any_case(self):
         """CybOX's vocabulary spells the authentication type `Password`, the
         export `password`: either is the password the account carries."""
@@ -9870,7 +9920,12 @@ class TestSTIX1Import(TestSTIX):
         event = get_event_with_registry_key_and_values_objects()
         registry_key = event['Event']['Object'][0]
         self.assertEqual(registry_key['name'], 'registry-key')
-        registry_key['description'] = _template_description('registry-key')
+        # The template description the export writes, spelt out rather than
+        # read through the helper the conversion itself reads it with
+        registry_key['description'] = (
+            'Registry key object describing a Windows registry key with value '
+            'and last-modified timestamp'
+        )
         converted, = self._round_trip_indicator_objects(
             event
         ).get_objects_by_name('registry-key')
@@ -10373,6 +10428,41 @@ class TestSTIX1Import(TestSTIX):
                 ('email-subject', 'subject', 'Re: Invoice')
             )
         )
+
+    def test_internal_email_keeps_every_bcc_recipient(self):
+        """Two `bcc` recipients come back, from the XML either version
+        writes, on an Observable as on an Indicator. A header field carries
+        no id, so each one's uuid is derived, one per value."""
+        for version in ('1.1.1', '1.2'):
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = get_event_with_email_object()
+                    exported = event['Event']['Object'][0]
+                    exported['Attribute'].append(
+                        {
+                            'uuid': '5d2c4e1a-7b3f-4c8e-9a6d-0e1f2a3b4c5d',
+                            'type': 'email-dst', 'object_relation': 'bcc',
+                            'value': 'second-bcc@example.com'
+                        }
+                    )
+                    for attribute in exported['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    parser = self._parse_written_misp_export(event, version)
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    self.assertEqual(parser.diagnostics()['warnings'], {})
+                    converted, = parser.misp_event.get_objects_by_name('email')
+                    bcc = converted.get_attributes_by_relation('bcc')
+                    self.assertEqual(
+                        sorted(
+                            (attribute.value, attribute.to_ids)
+                            for attribute in bcc
+                        ),
+                        [
+                            ('jfk@gov.us', to_ids),
+                            ('second-bcc@example.com', to_ids)
+                        ]
+                    )
+                    self.assertEqual(len({attribute.uuid for attribute in bcc}), 2)
 
     def test_internal_credential_format_and_type_keep_every_value(self):
         self._assert_values_round_trip(
