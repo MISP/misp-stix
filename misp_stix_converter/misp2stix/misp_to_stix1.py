@@ -201,6 +201,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if self.identifier != 'attributes collection':
             related_ttp = self._create_related_ttp(ttp.id_, attribute['type'], timestamp=timestamp)
             self._incident.add_leveraged_ttps(related_ttp)
+            # A reference from an object can name the attribute's TTP, in a
+            # Related_TTP or an Indicated_TTP, as it names an object's
+            self._contextualised_data.add(attribute_uuid)
+            self._written_ttps[attribute_uuid] = ttp
 
     def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: dict, ttp: TTP) -> tuple:
         galaxies = attribute.get('Galaxy', [])
@@ -1626,7 +1630,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._course_of_action_slots = {}
         self._written_indicators = {}
         self._written_courses_of_action = {}
-        self._written_object_ttps = {}
+        self._written_ttps = {}
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
@@ -1836,15 +1840,15 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         """Write the references of the MISP objects, once every record is
         written: a source may come before its target.
 
-        A reference between two objects written as TTPs is a Related_TTP. One
-        from an object written as a single CybOX Object to a record written as
-        one too is a Related_Object on the source's Object, pointing at the
-        target's. One a Related_Object cannot carry goes in the relationship
-        slot of the source's own construct naming the target's kind, where
-        there is one. A `pe` folded into its `file` and a section folded into
-        its `pe` take their reference with them. Every other reference has no
-        slot of the source's own to go in, or points at nothing the document
-        holds: it is named in a Warning.
+        A reference from an object written as a TTP to another record written
+        as one is a Related_TTP. One from an object written as a single CybOX
+        Object to a record written as one too is a Related_Object on the
+        source's Object, pointing at the target's. One a Related_Object cannot
+        carry goes in the relationship slot of the source's own construct
+        naming the target's kind, where there is one. A `pe` folded into its
+        `file` and a section folded into its `pe` take their reference with
+        them. Every other reference has no slot of the source's own to go in,
+        or points at nothing the document holds: it is named in a Warning.
         """
         written = self._write_related_ttps()
         for misp_object in self._misp_event.get('Object', []):
@@ -1883,8 +1887,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         a `course-of-action` object in the Potential_COAs of the Exploit
         Target of a `vulnerability` or `weakness`, the Related_COAs of a
         Course of Action or the Suggested_COAs of an Indicator; one from an
-        Indicator to an `attack-pattern`, `vulnerability` or `weakness` object
-        in its Indicated_TTP. The galaxy clusters fill the same slots.
+        Indicator to an `attack-pattern`, `vulnerability` or `weakness` object,
+        or to a `vulnerability` or `weakness` attribute, in its Indicated_TTP.
+        The galaxy clusters fill the same slots.
 
         :param source_uuid: the uuid of the object making the reference
         :param target_uuid: the uuid of the record it references
@@ -1903,7 +1908,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 )
             )
             return True
-        ttp = self._written_object_ttps.get(target_uuid)
+        ttp = self._written_ttps.get(target_uuid)
         indicator = self._written_indicators.get(source_uuid)
         if ttp is None or indicator is None:
             return False
@@ -2272,7 +2277,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._incident.add_leveraged_ttps(related_ttp)
         self._contextualised_data.add(misp_object['uuid'])
         self._stix_package.add_ttp(ttp)
-        self._written_object_ttps[misp_object['uuid']] = ttp
+        self._written_ttps[misp_object['uuid']] = ttp
 
     def _parse_asn_object(self, misp_object: dict) -> Optional[Observable]:
         attributes, repeated = self._extract_single_field_attributes(
