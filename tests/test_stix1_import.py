@@ -9878,6 +9878,25 @@ class TestSTIX1Import(TestSTIX):
         ).get_objects_by_name('registry-key')
         self.assertFalse(converted.get('comment'))
 
+    def test_internal_object_comment_spelling_its_record_title_is_kept(self):
+        """The export writes an object's comment, or its template's
+        description, as the description, never its Record Title: a comment
+        reading exactly as the title is the comment, on an Indicator as on an
+        Observable."""
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_domain_ip_object()
+                domain_ip = event['Event']['Object'][0]
+                domain_ip['comment'] = 'network: domain-ip (MISP Object)'
+                for attribute in domain_ip['Attribute']:
+                    attribute['to_ids'] = to_ids
+                parser = self._parse_internal_package(self._misp_export(event))
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                converted, = parser.misp_event.get_objects_by_name('domain-ip')
+                self.assertEqual(
+                    converted.comment, 'network: domain-ip (MISP Object)'
+                )
+
     def test_internal_registry_key_indicator_keeps_its_comment(self):
         event = get_event_with_registry_key_and_values_objects()
         registry_key = event['Event']['Object'][0]
