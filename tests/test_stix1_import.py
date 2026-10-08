@@ -5366,6 +5366,27 @@ class TestSTIX1Import(TestSTIX):
             parser.diagnostics()['errors']['misp event']
         )
 
+    def test_internal_untitled_ttp_vulnerability_id_is_an_attribute(self):
+        """A TTP with no title is not titled as a MISP object's: the
+        vulnerability it carries with its id alone is the `vulnerability`
+        attribute, which takes the TTP's uuid."""
+        inner_package = STIXPackage()
+        inner_package.add_incident(self._incident_with_content())
+        inner_package.add_ttp(self._ttp_with_exploit_target_cve('CVE-2021-44228'))
+        parser = self._parse_internal_package(
+            self._wrapped_package(inner_package)
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.misp_event.objects, [])
+        self.assertEqual(
+            [
+                (attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+                if attribute.type == 'vulnerability'
+            ],
+            [('CVE-2021-44228', _ACTOR_UUID)]
+        )
+
     def test_internal_incident_without_timestamp_converts(self):
         """A fresh Incident is stamped with the time of its creation - one an
         export left unstamped has none, and the merged event then has no date
