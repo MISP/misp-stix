@@ -560,20 +560,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 'no name to read a campaign-name attribute from'
             )
             return
-        misp_attribute = {'type': 'campaign-name', 'value': name}
+        misp_attribute = {
+            'type': 'campaign-name', 'value': name,
+            **self._read_campaign_context(campaign)
+        }
         category = self._category_from_title(campaign.title)
         if category is not None:
             misp_attribute['category'] = category
-        if campaign.timestamp:
-            misp_attribute['timestamp'] = self._timestamp_from_date(
-                campaign.timestamp
-            )
-        comment = self._read_comment(campaign.description)
-        if comment is not None:
-            misp_attribute['comment'] = comment
-        tags = tuple(self._read_markings(campaign.handling))
-        if tags:
-            misp_attribute['Tag'] = list(tags)
         misp_attribute.update(self._sanitise_attribute_uuid(campaign.id_))
         self._add_attribute(misp_attribute, campaign.id_)
 
@@ -954,7 +947,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             if not unknown_type:
                 self._unconverted_indicator_error(indicator.id_)
             return
-        self._add_rule_attributes(indicator, rules, misp_attribute)
+        self._add_attributes_from_one_id(
+            indicator.id_, rules, misp_attribute, self._repeated_rule_warning
+        )
 
     def _parse_attribute_observable(
             self, observable: Observable, category: Optional[str] = None):

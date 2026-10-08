@@ -7,10 +7,13 @@ from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
 from cybox.core import Object, Observable, Observables
 from pymisp import MISPEvent
+from stix.campaign import Campaign
+from stix.exploit_target import ExploitTarget
+from stix.incident import Incident
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP
-from typing import Optional, Union
+from typing import Iterable, Iterator, Optional, Union
 
 class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
@@ -51,14 +54,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 for tag in self._parse_marking(handling):
                     self.misp_event.add_tag(tag)
         if self.stix_package.indicators:
-            for indicator in self.stix_package.indicators:
-                self._parse_indicator(indicator)
-                for related_indicator in indicator.related_indicators or ():
-                    related = related_indicator.item
-                    # A related Indicator given by idref alone is converted
-                    # where the package defines it
-                    if related is not None and related.idref is None:
-                        self._parse_indicator(related)
+            self._parse_indicators(self.stix_package.indicators)
         if self.stix_package.observables:
             self._parse_observables()
         if self.stix_package.ttps:
@@ -70,6 +66,15 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if self.stix_package.threat_actors:
             for threat_actor in self.stix_package.threat_actors:
                 self._parse_threat_actor(threat_actor)
+        if self.stix_package.incidents:
+            for incident in self.stix_package.incidents:
+                self._parse_incident(incident)
+        if self.stix_package.exploit_targets:
+            for exploit_target in self.stix_package.exploit_targets:
+                self._parse_exploit_target(exploit_target)
+        if self.stix_package.campaigns:
+            for campaign in self.stix_package.campaigns:
+                self._parse_campaign(campaign)
         if self.dns_objects:
             for domain in self.dns_objects['domain'].values():
                 domain_attribute = domain['data']
@@ -173,22 +178,64 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         )
         if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
             for exploit_target in ttp.exploit_targets.exploit_target:
-                if exploit_target.item.vulnerabilities:
-                    for vulnerability in exploit_target.item.vulnerabilities:
-                        if vulnerability.cve_id:
-                            records.append(
-                                {
-                                    'type': 'vulnerability',
-                                    'value': vulnerability.cve_id
-                                }
-                            )
-                        elif vulnerability.title:
-                            galaxies.update(
-                                self._resolve_galaxy(
-                                    vulnerability.title, 'vulnerability'
-                                )
-                            )
+                records.extend(
+                    self._read_exploit_target(exploit_target.item, galaxies)
+                )
         return records
+
+    def _read_exploit_target(self, exploit_target: ExploitTarget,
+                             galaxies: set) -> list:
+        """Read the records an Exploit Target builds - one a TTP holds or
+        one the package gives at top level - none of them added yet.
+
+        A vulnerability with a CVE id is a `vulnerability` attribute, one
+        with a title alone a galaxy tag. An Exploit Target given by reference
+        alone holds nothing: it is read where the package defines it.
+
+        :param exploit_target: the Exploit Target
+        :param galaxies: the galaxy tags of the construct holding the
+            vulnerabilities, which the ones targeted by title only add to
+        :return: the `vulnerability` attributes, as pymisp takes them
+        """
+        records = []
+        for vulnerability in exploit_target.vulnerabilities or ():
+            if vulnerability.cve_id:
+                records.append(
+                    {'type': 'vulnerability', 'value': vulnerability.cve_id}
+                )
+            elif vulnerability.title:
+                galaxies.update(
+                    self._resolve_galaxy(vulnerability.title, 'vulnerability')
+                )
+        return records
+
+    def _parse_campaign(self, campaign: Campaign):
+        """Convert a Campaign into a `campaign-name` attribute per name it
+        holds, each carrying the timestamp, the description as its comment
+        and the handling as tags.
+
+        A Campaign naming nothing gives one from its title, and one with no
+        title either has no value to give: the warning records it. A
+        third-party title is no Record Title, so pymisp's default category
+        stands. Nothing else the Campaign holds is read.
+
+        :param campaign: the Campaign
+        """
+        names = [
+            name for name in map(self._value, campaign.names or ()) if name
+        ]
+        if not names and campaign.title:
+            names.append(campaign.title)
+        if not names:
+            self._add_warning(
+                'Unable to read a campaign-name attribute from the Campaign'
+                f'{self._record_origin(campaign.id_)}: no name or title'
+            )
+            return
+        self._add_attributes_from_one_id(
+            campaign.id_, [('campaign-name', name) for name in names],
+            self._read_campaign_context(campaign)
+        )
 
     def _parse_description(self, stix_object: Union[Indicator, Observable]):
         description = self._value(stix_object.description)
@@ -199,6 +246,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     stix_object.timestamp
                 )
             self._add_attribute(misp_attribute, stix_object.id_)
+
+    def _parse_exploit_target(self, exploit_target: ExploitTarget):
+        galaxies = set()
+        records = self._read_exploit_target(exploit_target, galaxies)
+        self._add_construct_records(exploit_target.id_, records, galaxies)
 
     def _parse_galaxies_from_ttp(self, ttp: TTP):
         if ttp.behavior:
@@ -211,6 +263,36 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if ttp.resources and ttp.resources.tools:
             for tool in ttp.resources.tools:
                 yield from self._parse_galaxy(tool, 'name', 'tool')
+
+    def _parse_incident(self, incident: Incident):
+        """Convert an Incident: its descriptions, and the Indicators,
+        Observables and TTPs it relates inline.
+
+        Each description is a `text` attribute, as the header's is - and as
+        the header's, it takes neither the timestamp nor the handling. A
+        related construct given by reference alone is converted where the
+        package defines it. Nothing else the Incident holds is read.
+
+        :param incident: the Incident
+        """
+        descriptions = [
+            ('text', value)
+            for value in map(self._value, incident.descriptions or ())
+            if value
+        ]
+        self._add_attributes_from_one_id(
+            incident.id_, descriptions,
+            {'comment': 'STIX Incident Description'}
+        )
+        self._parse_indicators(
+            self._inline_items(incident.related_indicators)
+        )
+        observables = list(self._inline_items(incident.related_observables))
+        # Tested first: given no Observables, the parser reads the package's
+        if observables:
+            self._parse_observables(observables)
+        for ttp in self._inline_items(incident.leveraged_ttps):
+            self._parse_ttp(ttp)
 
     def _parse_indicator(self, indicator: Indicator):
         # Converted before the observable: the rules an Indicator carries are
@@ -298,6 +380,12 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             else:
                 self._parse_description(indicator)
 
+    def _parse_indicators(self, indicators: Iterable[Indicator]):
+        for indicator in indicators:
+            self._parse_indicator(indicator)
+            for related in self._inline_items(indicator.related_indicators):
+                self._parse_indicator(related)
+
     def _parse_observables(self, observables: Optional[Observables] = None, to_ids: bool = False):
         for observable in observables or self.stix_package.observables:
             if self._has_properties(observable):
@@ -384,7 +472,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         :return: the uuids of the attributes the rules landed as
         """
         rules, _ = self._read_test_mechanisms(indicator)
-        return self._add_rule_attributes(indicator, rules, {})
+        return self._add_attributes_from_one_id(
+            indicator.id_, rules, {}, self._repeated_rule_warning
+        )
 
     def _parse_threat_actor(self, threat_actor: ThreatActor):
         if getattr(threat_actor, 'title', None) is not None:
@@ -410,34 +500,49 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_ttp(self, ttp: TTP):
         galaxies = set(self._parse_galaxies_from_ttp(ttp))
-        if self._has_ttp_content(ttp):
-            records = self._parse_records_from_ttp(ttp, galaxies)
-            # The sole record a TTP builds is the TTP, and takes its uuid
-            ttp_uuid = (
-                self._sanitise_attribute_uuid(ttp.id_)
-                if len(records) == 1 else None
-            )
-            tags = sorted(galaxies)
-            added = False
-            for record in records:
-                if isinstance(record, dict):
-                    added |= self._add_ttp_attribute(
-                        ttp.id_, record, tags, ttp_uuid
-                    )
-                else:
-                    added |= self._add_ttp_object(*record, tags, ttp_uuid)
-            if added:
-                return
-        # Nothing the TTP builds carries its galaxies: the event does
-        self.galaxies.update(galaxies)
+        records = (
+            self._parse_records_from_ttp(ttp, galaxies)
+            if self._has_ttp_content(ttp) else []
+        )
+        self._add_construct_records(ttp.id_, records, galaxies)
 
-    def _add_ttp_attribute(self, ttp_id: str, attribute: dict, tags: list,
-                           ttp_uuid: Optional[dict]) -> bool:
-        if ttp_uuid is not None:
-            attribute.update(ttp_uuid)
+    def _add_construct_records(self, construct_id: Optional[str],
+                               records: list, galaxies: set):
+        """Add the records a TTP or an Exploit Target builds, each carrying
+        the galaxy tags of the construct.
+
+        :param construct_id: the id of the TTP or Exploit Target
+        :param records: the records it builds - an attribute as pymisp takes
+            it, an object as the Observable it is read from and the read
+        :param galaxies: the galaxy tags of the construct
+        """
+        # The sole record a construct builds is the construct, and takes its
+        # uuid
+        construct_uuid = (
+            self._sanitise_attribute_uuid(construct_id)
+            if len(records) == 1 else None
+        )
+        tags = sorted(galaxies)
+        added = False
+        for record in records:
+            if isinstance(record, dict):
+                added |= self._add_construct_attribute(
+                    construct_id, record, tags, construct_uuid
+                )
+            else:
+                added |= self._add_ttp_object(*record, tags, construct_uuid)
+        if not added:
+            # Nothing the construct builds carries its galaxies: the event does
+            self.galaxies.update(galaxies)
+
+    def _add_construct_attribute(self, construct_id: Optional[str],
+                                 attribute: dict, tags: list,
+                                 construct_uuid: Optional[dict]) -> bool:
+        if construct_uuid is not None:
+            attribute.update(construct_uuid)
         if tags:
             attribute['Tag'] = tags
-        return self._add_attribute(attribute, ttp_id) is not None
+        return self._add_attribute(attribute, construct_id) is not None
 
     def _add_ttp_object(self, observable: Observable, read: tuple, tags: list,
                         ttp_uuid: Optional[dict]) -> bool:
@@ -507,6 +612,15 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             self._empty_record_error(name, object_id, 'attribute')
         else:
             self._unnamed_object_error(object_id)
+
+    @staticmethod
+    def _inline_items(relationships) -> Iterator:
+        # A construct given by idref alone is converted where the package
+        # defines it
+        for relationship in relationships or ():
+            item = relationship.item
+            if item is not None and item.idref is None:
+                yield item
 
     @staticmethod
     def _has_properties(observable):

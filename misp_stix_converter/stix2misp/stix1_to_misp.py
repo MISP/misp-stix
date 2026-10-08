@@ -30,6 +30,7 @@ from pymisp.api import describe_types
 from pymisp.exceptions import PyMISPError
 from pymisp import MISPAttribute, MISPObject
 import re
+from stix.campaign import Campaign
 from stix.coa import CourseOfAction
 from stix.core import STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
@@ -38,7 +39,7 @@ from stix.extensions.marking.simple_marking import SimpleMarkingStructure
 from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.indicator import Indicator
 from stix.threat_actor import ThreatActor
-from typing import Iterable, Iterator, Optional, Union
+from typing import Callable, Iterable, Iterator, Optional, Union
 from uuid import uuid4
 
 _ADDRESS_TYPING = Union[address_object.Address, address_object.EmailAddress]
@@ -654,47 +655,79 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return evaluated['value']
         return rule
 
-    def _add_rule_attributes(
-            self, indicator: Indicator, rules: list[tuple[str, str]],
-            attribute: dict) -> list[str]:
-        """Add the rules an Indicator carries as attributes.
+    def _add_attributes_from_one_id(
+            self, object_id: Optional[str],
+            typed_values: list[tuple[str, str]], attribute: dict,
+            repeated: Optional[Callable[[str, Optional[str]], None]] = None
+    ) -> list[str]:
+        """Add the attributes one STIX object holds several of - the rules of
+        an Indicator, the descriptions of an Incident, the names of a
+        Campaign.
 
-        The first rule takes the Indicator's uuid, the rest one derived from
-        it and the rule, so a re-import lands on the same records. A rule the
-        Indicator repeats carries nothing more - MISP would keep one of the
+        The first takes the object's uuid, the rest one derived from it, the
+        type and the value, so a re-import lands on the same records. A value
+        the object repeats carries nothing more - MISP would keep one of the
         two - and is read once.
 
-        :param indicator: the Indicator carrying the rules
-        :param rules: the `(attribute_type, rule)` pairs read off it
-        :param attribute: what every rule attribute carries next to its type,
+        :param object_id: the id of the STIX object holding the values
+        :param typed_values: the `(attribute_type, value)` pairs read off it
+        :param attribute: what every attribute carries next to its type,
             value and uuid
+        :param repeated: what records a repeated value, called with its type
+            and the object id, where one is recorded
         :return: the uuids of the attributes added
         """
-        if not rules:
+        if not typed_values:
             return []
-        # Read once: an Indicator carrying no id draws a random uuid on every
-        # read, and its rules derive from one
+        # Read once: an object carrying no id draws a random uuid on every
+        # read, and its attributes derive from one
         record = self._sanitise_attribute_uuid(
-            indicator.id_, attribute.get('comment')
+            object_id, attribute.get('comment')
         )
         added, uuids = set(), []
-        for index, (attribute_type, rule) in enumerate(rules):
-            if (attribute_type, rule) in added:
-                self._repeated_rule_warning(attribute_type, indicator.id_)
+        for index, (attribute_type, value) in enumerate(typed_values):
+            if (attribute_type, value) in added:
+                if repeated is not None:
+                    repeated(attribute_type, object_id)
                 continue
-            rule_attribute = {'type': attribute_type, 'value': rule, **attribute}
-            if index == 0:
-                rule_attribute.update(record)
-            else:
-                rule_attribute['uuid'] = self._derived_uuid(
-                    record['uuid'], f'{attribute_type} - {rule}'
+            uuid_fields = record if index == 0 else {
+                'uuid': self._derived_uuid(
+                    record['uuid'], f'{attribute_type} - {value}'
                 )
-            misp_attribute = self._add_attribute(rule_attribute, indicator.id_)
-            if misp_attribute is None:
+            }
+            added_attribute = self._add_attribute(
+                {
+                    'type': attribute_type, 'value': value, **attribute,
+                    **uuid_fields
+                },
+                object_id
+            )
+            if added_attribute is None:
                 continue
-            added.add((attribute_type, rule))
-            uuids.append(misp_attribute.uuid)
+            added.add((attribute_type, value))
+            uuids.append(added_attribute.uuid)
         return uuids
+
+    def _read_campaign_context(self, campaign: Campaign) -> dict:
+        """Read what a `campaign-name` attribute takes off the Campaign it is
+        read from next to its value: the timestamp, the description as the
+        comment and the handling as tags.
+
+        :param campaign: the Campaign
+        :return: the fields, as pymisp takes them
+        """
+        context = {}
+        if campaign.timestamp:
+            context['timestamp'] = self._timestamp_from_date(
+                campaign.timestamp
+            )
+        comment = self._read_comment(campaign.description)
+        if comment is not None:
+            context['comment'] = comment
+        tags = list(self._read_markings(campaign.handling))
+        if tags:
+            context['Tag'] = tags
+        return context
 
     # Parse a course of action and add a MISP object to the event - stamped
     # with the timestamp the caller read, where there is one
