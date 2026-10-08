@@ -25,7 +25,7 @@ from stix.incident.affected_asset import AffectedAsset
 from stix.indicator import Indicator, Observable
 from stix.ttp import TTP
 from stix.ttp.attack_pattern import AttackPattern
-from typing import Iterator, Optional
+from typing import Iterator, NamedTuple, Optional
 
 _MISP_categories = describe_types.get('categories')
 _MISP_type_defaults = describe_types['sane_defaults']
@@ -57,6 +57,20 @@ _JOURNAL_ATTRIBUTE_PREFIX = 'Attribute ('
 # The galaxy type and value slots of a galaxy tag,
 # `misp-galaxy:{galaxy type}="{value}"`
 _GALAXY_TAG = re.compile(r'^misp-galaxy:([^=]+)="(.*)"$')
+
+
+class _TTPContext(NamedTuple):
+    """The context a TTP carries for the record its content builds, read once
+    and handed to whichever builder makes the record. Every field is empty
+    for an identity no TTP targets: the Victim of an Incident."""
+    # The id of the TTP, which the record reads its uuid off
+    ttp_id: Optional[str] = None
+    # The comment read off the description the export wrote it as
+    comment: Optional[str] = None
+    # The tags read off the TTP handling
+    tags: tuple = ()
+    # The timestamp of the TTP
+    timestamp: Optional[int] = None
 
 
 class InternalSTIX1toMISPParser(STIX1toMISPParser):
@@ -455,20 +469,17 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         self._add_attribute(misp_attribute, self._event.id_)
 
     def _parse_attack_pattern_object(self, attack_pattern: AttackPattern,
-                                     ttp_id: str,
-                                     timestamp: Optional[int] = None,
-                                     related_weaknesses: tuple = (),
-                                     comment: Optional[str] = None):
+                                     context: _TTPContext,
+                                     related_weaknesses: tuple = ()):
         """Convert the attack pattern an `attack-pattern` object was exported
         as: its id and name, its descriptions, and the related weaknesses
         its TTP carries as Exploit Targets.
 
         :param attack_pattern: the attack pattern the TTP carries
-        :param ttp_id: the id of the TTP, which the object reads its uuid off
-        :param timestamp: the timestamp of the TTP
+        :param context: the context of the TTP, the comment read off its
+            description
         :param related_weaknesses: the `related-weakness` attributes read off
             the Exploit Targets of the TTP
-        :param comment: the comment read off the TTP description
         """
         attributes = []
         for key, relation in self._mapping.attack_pattern_object_mapping().items():
@@ -482,12 +493,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         attributes.extend(self._read_attack_pattern_descriptions(attack_pattern))
         attributes.extend(related_weaknesses)
         if attributes:
-            attack_pattern_object = MISPObject('attack-pattern')
-            if comment is not None:
-                attack_pattern_object.comment = comment
-            self._sanitise_object_uuid(attack_pattern_object, ttp_id)
-            if timestamp is not None:
-                attack_pattern_object.timestamp = timestamp
+            attack_pattern_object = self._ttp_object('attack-pattern', context)
             for attribute in attributes:
                 self._add_object_attribute(
                     attack_pattern_object, attack_pattern_object.uuid,
@@ -632,10 +638,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         # The title is what tells the two kinds apart here: the Related TTP
         # is named with the object name or the attribute type, `vulnerability`
         # either way
-        is_object = (ttp.title or '').endswith(_MISP_OBJECT_TITLE_SUFFIX)
-        tags = tuple(self._read_markings(ttp.handling))
-        timestamp = (
-            self._timestamp_from_date(ttp.timestamp) if ttp.timestamp else None
+        is_object = self._object_name_from_title(ttp.title) is not None
+        context = _TTPContext(
+            ttp_id=ttp.id_, tags=tuple(self._read_markings(ttp.handling)),
+            timestamp=(
+                self._timestamp_from_date(ttp.timestamp)
+                if ttp.timestamp else None
+            )
         )
         converted = False
         # The weaknesses an attack pattern's TTP carries are its related
@@ -643,34 +652,31 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         attack_patterns = ttp.behavior.attack_patterns if ttp.behavior else None
         if attack_patterns:
             related_weaknesses = tuple(self._read_related_weaknesses(ttp))
-            comment = self._read_comment(ttp.description)
+            commented = context._replace(
+                comment=self._read_comment(ttp.description)
+            )
             for attack_pattern in attack_patterns:
                 self._parse_attack_pattern_object(
-                    attack_pattern, ttp.id_, timestamp, related_weaknesses,
-                    comment
+                    attack_pattern, commented, related_weaknesses
                 )
-                self._read_object_markings(tags)
             converted = True
         if ttp.victim_targeting and ttp.victim_targeting.identity:
-            self._parse_victim_identity(
-                ttp.victim_targeting.identity, ttp.timestamp, tags
-            )
+            self._parse_victim_identity(ttp.victim_targeting.identity, context)
             converted = True
         if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
             for exploit_target in ttp.exploit_targets.exploit_target:
-                comment = self._read_comment(exploit_target.item.description)
+                commented = context._replace(
+                    comment=self._read_comment(exploit_target.item.description)
+                )
                 if exploit_target.item.vulnerabilities:
                     for vulnerability in exploit_target.item.vulnerabilities:
                         self._parse_vulnerability_object(
-                            vulnerability, ttp.id_, comment, tags, timestamp,
-                            is_object
+                            vulnerability, commented, is_object
                         )
                     converted = True
                 if exploit_target.item.weaknesses and not attack_patterns:
                     for weakness in exploit_target.item.weaknesses:
-                        self._parse_weakness_object(
-                            weakness, ttp.id_, comment, tags, timestamp
-                        )
+                        self._parse_weakness_object(weakness, commented)
                     converted = True
         if not converted:
             self._unconverted_ttp_error(ttp.id_)
@@ -730,8 +736,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             self.references[self._sanitise_uuid(source_id)].extend(references)
 
     def _parse_victim_identity(
-            self, identity: Identity, timestamp: Optional[datetime] = None,
-            tags: tuple = ()):
+            self, identity: Identity, context: _TTPContext = _TTPContext()):
         """Convert the CIQ identity a `target-*` attribute was exported as:
         the Victim of the Incident an Event Collection writes, the identity a
         TTP targets in an Attribute Collection.
@@ -746,10 +751,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         misclassified document - and the error records it.
 
         :param identity: the CIQ identity
-        :param timestamp: the timestamp of the TTP targeting the identity - a
-            Victim travels with none
-        :param tags: the tags the TTP targeting the identity carries on its
-            handling - a Victim carries none, the Incident holding it does
+        :param context: the context of the TTP targeting the identity, its
+            timestamp and tags - a Victim travels with none, the Incident
+            holding it does. The attribute reads its uuid off the identity
         """
         targets = list(self._read_target_identity_fields(identity))
         if len(targets) != 1:
@@ -765,30 +769,21 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             )
             return
         attribute_type, value = targets[0]
-        misp_attribute = {
-            'type': attribute_type, 'value': value, 'category': category
-        }
-        if timestamp:
-            misp_attribute['timestamp'] = self._timestamp_from_date(timestamp)
-        if tags:
-            misp_attribute['Tag'] = list(tags)
-        misp_attribute.update(self._sanitise_attribute_uuid(identity.id_))
-        self._add_attribute(misp_attribute, identity.id_)
+        self._add_ttp_attribute(
+            {'type': attribute_type, 'value': value, 'category': category},
+            identity.id_, context
+        )
 
     def _parse_vulnerability_object(
-            self, vulnerability: Vulnerability, ttp_id: str,
-            comment: Optional[str] = None, tags: tuple = (),
-            timestamp: Optional[int] = None, is_object: bool = False):
+            self, vulnerability: Vulnerability, context: _TTPContext,
+            is_object: bool):
         """Convert the vulnerability a TTP carries: a `vulnerability`
         attribute where it holds its id alone and the TTP is not titled as a
         MISP object's, a `vulnerability` object otherwise.
 
         :param vulnerability: the vulnerability
-        :param ttp_id: the id of the TTP carrying it, which the record reads
-            its uuid off
-        :param comment: the comment read off the Exploit Target
-        :param tags: the tags read off the TTP handling
-        :param timestamp: the timestamp of the TTP
+        :param context: the context of the TTP carrying it, the comment read
+            off the Exploit Target
         :param is_object: whether the TTP is titled `(MISP Object)` - an object
             holding its id alone is still an object
         """
@@ -825,23 +820,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         if attributes:
             if (not is_object and len(attributes) == 1
                     and attributes[0]['object_relation'] == 'id'):
-                attributes = {
-                    **attributes[0],
-                    **self._sanitise_attribute_uuid(ttp_id, comment)
-                }
-                if timestamp is not None:
-                    attributes['timestamp'] = timestamp
-                if tags:
-                    attributes['Tag'] = list(tags)
-                self._add_attribute(attributes, ttp_id)
+                self._add_ttp_attribute(
+                    dict(attributes[0]), context.ttp_id, context
+                )
             else:
-                vulnerability_object = MISPObject('vulnerability')
-                if comment is not None:
-                    vulnerability_object.comment = comment
-                self._sanitise_object_uuid(vulnerability_object, ttp_id)
-                if timestamp is not None:
-                    vulnerability_object.timestamp = timestamp
-                self._read_object_markings(tags)
+                vulnerability_object = self._ttp_object(
+                    'vulnerability', context
+                )
                 for attribute in attributes:
                     self._add_object_attribute(
                         vulnerability_object, vulnerability_object.uuid,
@@ -850,9 +835,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self.misp_event.add_object(vulnerability_object)
 
     def _parse_weakness_object(
-            self, weakness: Weakness, ttp_id: str,
-            comment: Optional[str] = None, tags: tuple = (),
-            timestamp: Optional[int] = None):
+            self, weakness: Weakness, context: _TTPContext):
         attributes = []
         for key, relation in self._mapping.weakness_object_mapping().items():
             # A Weakness takes several descriptions: each one is a
@@ -863,19 +846,52 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             )
             attributes.extend((relation, value) for value in values if value)
         if attributes:
-            weakness_object = MISPObject('weakness')
-            if comment is not None:
-                weakness_object.comment = comment
-            self._sanitise_object_uuid(weakness_object, ttp_id)
-            if timestamp is not None:
-                weakness_object.timestamp = timestamp
-            self._read_object_markings(tags)
+            weakness_object = self._ttp_object('weakness', context)
             for relation, value in attributes:
                 self._add_object_attribute(
                     weakness_object, weakness_object.uuid,
                     {'object_relation': relation, 'value': value}
                 )
             self.misp_event.add_object(weakness_object)
+
+    def _ttp_object(self, name: str, context: _TTPContext) -> MISPObject:
+        """Start the MISP object a TTP's content builds, with the TTP's
+        context: the comment, the uuid read off the TTP id, the timestamp. A
+        MISP object holds no tag: the markings are read as an object's are,
+        once per object built.
+
+        :param name: the object template name
+        :param context: the context of the TTP
+        :return: the object, holding no attribute yet
+        """
+        misp_object = MISPObject(name)
+        if context.comment is not None:
+            misp_object.comment = context.comment
+        self._sanitise_object_uuid(misp_object, context.ttp_id)
+        if context.timestamp is not None:
+            misp_object.timestamp = context.timestamp
+        self._read_object_markings(context.tags)
+        return misp_object
+
+    def _add_ttp_attribute(self, misp_attribute: dict, stix_id: str,
+                           context: _TTPContext):
+        """Add the attribute a TTP's content makes, with the TTP's context:
+        the comment, the timestamp and the tags.
+
+        :param misp_attribute: the attribute, its type and value
+        :param stix_id: the id of the STIX object the attribute reads its
+            uuid off - the TTP's for a vulnerability, the identity's for a
+            target the TTP names
+        :param context: the context of the TTP
+        """
+        misp_attribute.update(
+            self._sanitise_attribute_uuid(stix_id, context.comment)
+        )
+        if context.timestamp is not None:
+            misp_attribute['timestamp'] = context.timestamp
+        if context.tags:
+            misp_attribute['Tag'] = list(context.tags)
+        self._add_attribute(misp_attribute, stix_id)
 
     ############################################################################
     #                           MISP PARSING METHODS                           #
