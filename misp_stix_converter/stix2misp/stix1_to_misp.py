@@ -311,7 +311,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     # The value returned by the indicators or observables parser is a list of dictionaries
     # These dictionaries are the attributes we add in an object, itself added in the MISP event
     # The object is returned once added, None otherwise: a caller references only what the event holds
-    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, title=None, timestamp=None, uuid_comment=None) -> Optional[MISPObject]:
+    def _handle_object_case(self, name, attribute_value, compl_data, to_ids=False, object_uuid=None, test_mechanisms=[], description=None, timestamp=None, uuid_comment=None) -> Optional[MISPObject]:
         if not name:
             # An observable carrying nothing to name an object with is the
             # observable there is nothing to convert from
@@ -326,7 +326,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         try:
             misp_object = self._build_observable_object(
                 name, attribute_value, compl_data, to_ids, object_uuid,
-                description, title, timestamp, uuid_comment
+                description, timestamp, uuid_comment
             )
         except PyMISPError as exception:
             self._refused_object_error(name, exception, object_uuid)
@@ -348,7 +348,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _build_observable_object(
             self, name, attribute_value, compl_data, to_ids, object_uuid,
-            description, title, timestamp, uuid_comment) -> MISPObject:
+            description, timestamp, uuid_comment) -> MISPObject:
         """Build the MISP object the attributes read from an Observable make.
 
         Called through the guard above, which is where the refusal of the
@@ -363,7 +363,6 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         :param object_uuid: the uuid the object takes, and its attributes
             derive from - None for a random one, and random attribute uuids
         :param description: the STIX description field, or None
-        :param title: the Record Title, where the shape carries one
         :param timestamp: the timestamp of the carrier, None where it carries
             none and pymisp stamps the object
         :param uuid_comment: the comment keeping the original id when
@@ -379,7 +378,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         # names it, not the Observable id - so the description the export
         # writes for an object carrying no comment is told from a comment
         # against the template of the object the content actually builds
-        comment = self._read_object_comment(name, description, title)
+        comment = self._read_object_comment(name, description)
         if uuid_comment is not None:
             comment = (
                 uuid_comment if comment is None
@@ -2337,17 +2336,18 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @classmethod
     def _read_object_comment(
-            cls, name: Optional[str], description,
-            title: Optional[str]) -> Optional[str]:
+            cls, name: Optional[str], description) -> Optional[str]:
         """Read the comment a MISP object carried, guarded against the
         description its own template gives every object made from it.
 
+        The export never writes an object's Record Title as its description:
+        a comment spelling the title is the comment.
+
         :param name: the object template name, None when the shape names none
         :param description: the STIX description field, or None
-        :param title: the Record Title, where the shape carries one
         :return: the comment, None when the object carried none
         """
-        return cls._read_comment(description, title, _template_description(name))
+        return cls._read_comment(description, _template_description(name))
 
     @classmethod
     def _read_comment(

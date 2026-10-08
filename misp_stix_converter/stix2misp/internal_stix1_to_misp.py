@@ -1218,7 +1218,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             # refuses inside a composition costs that object and no more
             try:
                 self._build_composition_object(
-                    item, name, rejected_name, to_ids, description, title
+                    item, name, rejected_name, to_ids, description
                 )
             except PyMISPError as exception:
                 self._refused_object_error(
@@ -1239,7 +1239,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
     def _build_composition_object(self, item, name: str,
                                   rejected_name: Optional[str], to_ids: bool,
-                                  description, title):
+                                  description):
         """Build the MISP object an Observable composition was exported as,
         and add it to the event.
 
@@ -1252,11 +1252,10 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             where it kept the one the document carried
         :param to_ids: the `to_ids` flag the whole composition was written with
         :param description: the STIX description field, or None
-        :param title: the Record Title, where the shape carries one
         """
         misp_object = MISPObject(name, misp_objects_path_custom=_MISP_objects_path)
         self._sanitise_object_uuid(misp_object, item.id_)
-        comment = self._read_object_comment(name, description, title)
+        comment = self._read_object_comment(name, description)
         if comment is not None:
             misp_object.comment = comment
         if rejected_name is not None:
@@ -1445,7 +1444,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             # one-field `DNSRecord`, a nameless `Custom` - names no template
             # to tell the description from a comment: the name the Observable
             # carries is the only one there is
-            comment = self._read_object_comment(name, description, title)
+            comment = self._read_object_comment(name, description)
             if comment is not None:
                 attribute['comment'] = comment
             self._handle_attribute_case(
@@ -1455,7 +1454,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         else:
             self._handle_object_case(
                 attribute_type, attribute_value, compl_data, to_ids=to_ids,
-                object_uuid=uuid, description=description, title=title,
+                object_uuid=uuid, description=description,
                 timestamp=timestamp
             )
             self._read_related_objects(properties, uuid)
