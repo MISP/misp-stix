@@ -71,11 +71,13 @@ from pymisp.api import describe_types
 from pymisp.exceptions import NewAttributeError
 from unittest.mock import patch
 from uuid import UUID, uuid5
-from stix.campaign import Campaign
+from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction, Objective
 from stix.common import Statement, ToolInformation
 from stix.common.related import (
-    RelatedIndicator, RelatedObservable, RelatedPackage, RelatedPackages)
+    RelatedIndicator, RelatedObservable, RelatedPackage, RelatedPackages,
+    RelatedTTP)
+from stix.common.vocabs import VocabString
 from stix.core import STIXHeader, STIXPackage
 from stix.data_marking import Marking, MarkingSpecification
 from stix.extensions.marking.simple_marking import SimpleMarkingStructure
@@ -163,6 +165,9 @@ _SHA1_HASH = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
 _VULNERABILITY_UUID = '6c3d4e5f-7a8b-4c9d-8e0f-1a2b3c4d5e6f'
 _PLAIN_OBJECT_UUID = '7d4e5f6a-8b9c-4d0e-9f1a-2b3c4d5e6f7a'
 _INDICATOR_UUID = '8e5f6a7b-9c0d-4e1f-8a2b-3c4d5e6f7a8c'
+_INCIDENT_UUID = '9f6a7b8c-0d1e-4f2a-9b3c-4d5e6f7a8b9d'
+_CAMPAIGN_UUID = 'a07b8c9d-1e2f-4a3b-8c4d-5e6f7a8b9c0e'
+_EXPLOIT_TARGET_UUID = 'b18c9d0e-2f3a-4b4c-9d5e-6f7a8b9c0d1f'
 # `Type=Other` with the value in `Simple_Hash_Value`: how MISP's own STIX 1
 # export wrote an ssdeep hash, cybox naming nothing better for its length
 _SSDEEP_HASH = '6144:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
@@ -2073,7 +2078,7 @@ class TestSTIX1Import(TestSTIX):
         self.assertNotIn('tlp:amber" tlp:red', tags)
 
     ############################################################################
-    #                          TTP EXPLOIT TARGETS.                            #
+    #                            EXPLOIT TARGETS.                              #
     ############################################################################
 
     @staticmethod
@@ -2101,6 +2106,198 @@ class TestSTIX1Import(TestSTIX):
         attribute = parser.misp_event.attributes[0]
         self.assertEqual(attribute.type, 'vulnerability')
         self.assertEqual(attribute.value, 'CVE-2021-44228')
+
+    @staticmethod
+    def _exploit_target(*vulnerabilities):
+        """A top-level Exploit Target holding a vulnerability per
+        `(cve_id, title)` pair."""
+        exploit_target = ExploitTarget()
+        exploit_target.id_ = f'example:et-{_EXPLOIT_TARGET_UUID}'
+        for cve_id, title in vulnerabilities:
+            vulnerability = Vulnerability()
+            vulnerability.cve_id = cve_id
+            vulnerability.title = title
+            exploit_target.add_vulnerability(vulnerability)
+        return exploit_target
+
+    def test_external_exploit_target_converts_to_vulnerability(self):
+        """A top-level Exploit Target is read as one inside a TTP is: its CVE
+        lands as a `vulnerability` attribute, which takes the Exploit Target's
+        uuid as the sole record it builds."""
+        stix_package = STIXPackage()
+        stix_package.add_exploit_target(
+            self._exploit_target(('CVE-2021-44228', None))
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('vulnerability', 'CVE-2021-44228', _EXPLOIT_TARGET_UUID)]
+        )
+
+    def test_external_exploit_target_title_only_vulnerability_tags_the_event(self):
+        """A vulnerability named by its title alone is a galaxy tag, and the
+        Exploit Target builds no record to carry it: the event does."""
+        stix_package = STIXPackage()
+        stix_package.add_exploit_target(
+            self._exploit_target((None, 'Log4Shell'))
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.misp_event.attributes, [])
+        self.assertEqual(
+            [tag.name for tag in parser.misp_event.tags],
+            ['misp-galaxy:branded-vulnerability="Log4Shell"']
+        )
+
+    def test_external_exploit_target_galaxy_tags_its_vulnerability(self):
+        """The galaxy tag of a vulnerability named by its title alone goes
+        on the record the Exploit Target builds, as a TTP's tags go on its
+        records, and the event carries none."""
+        stix_package = STIXPackage()
+        stix_package.add_exploit_target(
+            self._exploit_target(('CVE-2021-44228', None), (None, 'Log4Shell'))
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.misp_event.tags, [])
+        self.assertEqual(
+            [
+                (
+                    attribute.type, attribute.value, attribute.uuid,
+                    [tag.name for tag in attribute.tags]
+                )
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                (
+                    'vulnerability', 'CVE-2021-44228', _EXPLOIT_TARGET_UUID,
+                    ['misp-galaxy:branded-vulnerability="Log4Shell"']
+                )
+            ]
+        )
+
+    def test_external_ttp_exploit_target_given_by_reference_keeps_its_cve(self):
+        """A TTP naming an Exploit Target by reference alone reads nothing
+        from it: the CVE comes back from the top-level Exploit Target."""
+        ttp = TTP()
+        ttp.id_ = f'example:ttp-{_ACTOR_UUID}'
+        ttp.add_exploit_target(
+            ExploitTarget(idref=f'example:et-{_EXPLOIT_TARGET_UUID}')
+        )
+        stix_package = STIXPackage()
+        stix_package.add_ttp(ttp)
+        stix_package.add_exploit_target(
+            self._exploit_target(('CVE-2021-44228', None))
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('vulnerability', 'CVE-2021-44228', _EXPLOIT_TARGET_UUID)]
+        )
+
+    ############################################################################
+    #                           EXTERNAL CAMPAIGNS.                            #
+    ############################################################################
+
+    @staticmethod
+    def _campaign(*names, title=None):
+        """A top-level Campaign holding the names and the title given."""
+        campaign = Campaign()
+        campaign.id_ = f'example:Campaign-{_CAMPAIGN_UUID}'
+        campaign.title = title
+        if names:
+            campaign.names = Names()
+            for name in names:
+                campaign.names.append(VocabString(name))
+        return campaign
+
+    def test_external_campaign_names_convert_to_campaign_name_attributes(self):
+        """A Campaign gives a `campaign-name` per name, a name it repeats read
+        once: the first takes the Campaign's uuid, the next one derived from
+        it and the name, and each carries the description as its comment, the
+        timestamp and the handling as tags."""
+        timestamp = datetime(2026, 10, 8, 12, tzinfo=timezone.utc)
+        campaign = self._campaign('Operation X', 'Operation Y', 'Operation X')
+        campaign.description = 'Spear-phishing wave'
+        campaign.timestamp = timestamp
+        campaign.handling = self._handling_with_statements('my:camp="tag"')
+        stix_package = STIXPackage()
+        stix_package.add_campaign(campaign)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        context = (
+            'Spear-phishing wave', int(timestamp.timestamp()),
+            ['my:camp="tag"']
+        )
+        self.assertEqual(
+            [
+                (
+                    attribute.type, attribute.value, attribute.uuid,
+                    attribute.comment, int(attribute.timestamp.timestamp()),
+                    [tag.name for tag in attribute.tags]
+                )
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                ('campaign-name', 'Operation X', _CAMPAIGN_UUID, *context),
+                (
+                    'campaign-name', 'Operation Y',
+                    str(
+                        uuid5(
+                            _UUIDv4,
+                            f'{_CAMPAIGN_UUID} - campaign-name - Operation Y'
+                        )
+                    ),
+                    *context
+                )
+            ]
+        )
+
+    def test_external_campaign_without_a_name_converts_its_title(self):
+        """A Campaign naming nothing gives its `campaign-name` from its
+        title."""
+        stix_package = STIXPackage()
+        stix_package.add_campaign(self._campaign(title='Operation X'))
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('campaign-name', 'Operation X', _CAMPAIGN_UUID)]
+        )
+
+    def test_external_campaign_without_a_name_or_title_records_a_warning(self):
+        """A Campaign holding neither a name nor a title has no value to give
+        a `campaign-name`: the warning names it, and the rest of the package
+        converts."""
+        stix_package = STIXPackage()
+        stix_package.add_indicator(self._domain_indicator('circl.lu'))
+        stix_package.add_campaign(self._campaign())
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [attribute.type for attribute in parser.misp_event.attributes],
+            ['domain']
+        )
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {
+                'misp event': [
+                    'Unable to read a campaign-name attribute from the '
+                    f'Campaign with id example:Campaign-{_CAMPAIGN_UUID}: '
+                    'no name or title'
+                ]
+            }
+        )
 
     ############################################################################
     #                         PARSER STATE ISOLATION.                          #
@@ -5914,9 +6111,8 @@ class TestSTIX1Import(TestSTIX):
         """Written without `single_output`, the attributes collection is the
         parser's own package: titled as a MISP export like the framed one, it
         reads back Internal with no `classification`, where an untitled one
-        read back External and lost the `campaign-name` silently, the
-        `regkey|value` as a `registry-key` object and the uuid of every
-        rule. Detection is the only Warning."""
+        read back External and lost the `regkey|value` as a `registry-key`
+        object. Detection is the only Warning."""
         attributes = [
             {
                 'uuid': 'c0a7a7e5-4f2a-4d0e-9a3c-1d6c2f5b8e01',
@@ -7982,6 +8178,117 @@ class TestSTIX1Import(TestSTIX):
             ['8.8.8.8', 'circl.lu']
         )
         self.assertEqual(parser.diagnostics()['errors'], {})
+
+    def test_external_incident_descriptions_convert_to_text_attributes(self):
+        """An Incident's descriptions can be a document's only report prose,
+        and a package holding nothing else converts. Each is a `text`
+        attribute, as the header's is: the first takes the Incident's uuid,
+        the next one derived from it and the description, the same on every
+        import, and a description repeated is read once."""
+        incident = Incident()
+        incident.id_ = f'example:Incident-{_INCIDENT_UUID}'
+        for description in ('First wave', 'Second wave', 'First wave'):
+            incident.add_description(description)
+        for _ in range(2):
+            stix_package = STIXPackage()
+            stix_package.add_incident(incident)
+            parser = self._parse_external_package(stix_package)
+            self.assertEqual(parser.diagnostics()['errors'], {})
+            self.assertEqual(parser.diagnostics()['warnings'], {})
+            self.assertEqual(
+                [
+                    (
+                        attribute.type, attribute.value, attribute.uuid,
+                        attribute.comment
+                    )
+                    for attribute in parser.misp_event.attributes
+                ],
+                [
+                    (
+                        'text', 'First wave', _INCIDENT_UUID,
+                        'STIX Incident Description'
+                    ),
+                    (
+                        'text', 'Second wave',
+                        str(
+                            uuid5(
+                                _UUIDv4,
+                                f'{_INCIDENT_UUID} - text - Second wave'
+                            )
+                        ),
+                        'STIX Incident Description'
+                    )
+                ]
+            )
+
+    def test_external_incident_inline_related_constructs_convert(self):
+        """An Incident's related Indicators, Observables and TTPs given inline
+        are read as the package's own are: the Indicator with the Indicators
+        it relates, the Observable as no detection."""
+        indicator = self._domain_indicator('circl.lu')
+        indicator.related_indicators.append(
+            RelatedIndicator(self._ip_indicator('198.51.100.4'))
+        )
+        domain = DomainName()
+        domain.value = 'misp-project.org'
+        incident = Incident()
+        incident.related_indicators.append(RelatedIndicator(indicator))
+        incident.related_observables.append(
+            RelatedObservable(self._observable(domain, 'DomainName'))
+        )
+        incident.leveraged_ttps.append(
+            RelatedTTP(self._ttp_with_exploit_target_cve('CVE-2021-44228'))
+        )
+        stix_package = STIXPackage()
+        stix_package.add_incident(incident)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value, attribute.to_ids)
+                for attribute in parser.misp_event.attributes
+            ),
+            [
+                ('domain', 'circl.lu', True),
+                ('domain', 'misp-project.org', False),
+                ('ip-dst', '198.51.100.4', True),
+                ('vulnerability', 'CVE-2021-44228', False)
+            ]
+        )
+
+    def test_external_incident_constructs_given_by_reference_convert_once(self):
+        """An Incident relating the package's own Indicators, Observables and
+        TTPs by reference alone adds nothing: each is read where the package
+        gives it."""
+        indicator = self._domain_indicator('circl.lu')
+        domain = DomainName()
+        domain.value = 'misp-project.org'
+        observable = self._observable(domain, 'DomainName')
+        observable.id_ = _RECORD_OBSERVABLE_ID
+        ttp = self._ttp_with_exploit_target_cve('CVE-2021-44228')
+        incident = Incident()
+        incident.related_indicators.append(
+            RelatedIndicator(Indicator(idref=indicator.id_))
+        )
+        incident.related_observables.append(
+            RelatedObservable(Observable(idref=observable.id_))
+        )
+        incident.leveraged_ttps.append(RelatedTTP(TTP(idref=ttp.id_)))
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        stix_package.observables = Observables([observable])
+        stix_package.add_ttp(ttp)
+        stix_package.add_incident(incident)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            sorted(
+                attribute.value for attribute in parser.misp_event.attributes
+            ),
+            ['CVE-2021-44228', 'circl.lu', 'misp-project.org']
+        )
 
     @classmethod
     def _artifact_indicator(cls, title, *hashes):
