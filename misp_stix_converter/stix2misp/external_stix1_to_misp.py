@@ -176,11 +176,8 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                                 'to_ids': False
                             }
                         )
-        if ttp.exploit_targets and ttp.exploit_targets.exploit_target:
-            for exploit_target in ttp.exploit_targets.exploit_target:
-                records.extend(
-                    self._read_exploit_target(exploit_target.item, galaxies)
-                )
+        for exploit_target in self._inline_items(ttp.exploit_targets):
+            records.extend(self._read_exploit_target(exploit_target, galaxies))
         return records
 
     def _read_exploit_target(self, exploit_target: ExploitTarget,
@@ -241,9 +238,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         description = self._value(stix_object.description)
         if description:
             misp_attribute = {'type': 'text', 'value': description}
-            if stix_object.timestamp:
+            # An Indicator carries a timestamp, a CybOX Observable none
+            timestamp = getattr(stix_object, 'timestamp', None)
+            if timestamp:
                 misp_attribute['timestamp'] = self._timestamp_from_date(
-                    stix_object.timestamp
+                    timestamp
                 )
             self._add_attribute(misp_attribute, stix_object.id_)
 
@@ -616,26 +615,17 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     @staticmethod
     def _inline_items(relationships) -> Iterator:
         # A construct given by idref alone is converted where the package
-        # defines it
+        # defines it, and a relationship holding none - the schema requires
+        # one - has nothing to convert
         for relationship in relationships or ():
             item = relationship.item
             if item is not None and item.idref is None:
                 yield item
 
-    @staticmethod
-    def _has_properties(observable):
-        if not hasattr(observable, 'object_') or not observable.object_:
-            return False
-        if hasattr(observable.object_, 'properties') and observable.object_.properties:
-            return True
-        return False
-
     def _has_ttp_content(self, ttp: TTP) -> bool:
         if ttp.resources is not None and ttp.resources.infrastructure is not None:
             return True
-        if ttp.exploit_targets is None or ttp.exploit_targets.exploit_target is None:
-            return False
         return any(
-            exploit_target.item.vulnerabilities
-            for exploit_target in ttp.exploit_targets.exploit_target
+            exploit_target.vulnerabilities
+            for exploit_target in self._inline_items(ttp.exploit_targets)
         )

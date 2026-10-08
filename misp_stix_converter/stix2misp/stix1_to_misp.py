@@ -186,6 +186,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             isinstance(value, dict) for value in attribute_value
         )
 
+    @staticmethod
+    def _has_properties(observable):
+        if not hasattr(observable, 'object_') or not observable.object_:
+            return False
+        if hasattr(observable.object_, 'properties') and observable.object_.properties:
+            return True
+        return False
+
     def _record_uuid(self, observable: Observable) -> dict:
         """Read the uuid of the record an Observable converts to.
 
@@ -766,6 +774,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
         if course_of_action.parameter_observables:
             for observable in course_of_action.parameter_observables.observables:
+                # One given by reference, a composition or one holding no
+                # CybOX properties has nothing to read here, as in the
+                # infrastructure of a TTP
+                if not self._has_properties(observable):
+                    continue
                 properties = observable.object_.properties
                 try:
                     attribute_type, attribute_value, compl_data = (
@@ -903,7 +916,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             yield statement
 
     def _parse_TLP_marking(self, marking: TLPMarkingStructure) -> Iterator[str]:
-        yield self._build_tag('tlp', marking.color.lower())
+        # The colour is optional, and a structure naming none states nothing
+        # to tag with - as a Simple Marking holding no statement
+        if marking.color is not None:
+            yield self._build_tag('tlp', marking.color.lower())
 
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
