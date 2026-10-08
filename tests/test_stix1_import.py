@@ -9419,11 +9419,22 @@ class TestSTIX1Import(TestSTIX):
             for reference in misp_object.get('ObjectReference', ())
         )
 
+    @staticmethod
+    def _record_uuids(event):
+        # Attributes and objects together: a `weakness` attribute comes back
+        # as the one-attribute `weakness` object its TTP is always read as,
+        # keeping its uuid
+        return sorted(
+            record['uuid']
+            for record in (*event['Attribute'], *event['Object'])
+        )
+
     def test_internal_object_references_in_relationship_slots_round_trip(self):
         """The Potential_COAs of a `vulnerability` or `weakness` Exploit
         Target, the Related_COAs of a Course of Action, the Suggested_COAs
-        and Indicated_TTP of an Indicator come back as the references the
-        objects made."""
+        and Indicated_TTP of an Indicator and the Related_TTPs of a TTP come
+        back as the references the objects made, to objects and attributes
+        alike."""
         event = self._slot_references_event()
         for version in ('1.1.1', '1.2'):
             with self.subTest(version=version):
@@ -9431,14 +9442,19 @@ class TestSTIX1Import(TestSTIX):
                 self.assertEqual(parser.diagnostics()['errors'], {})
                 self.assertEqual(parser.diagnostics()['warnings'], {})
                 self.assertEqual(
-                    sorted(
-                        misp_object.uuid
-                        for misp_object in parser.misp_event.objects
-                    ),
-                    sorted(
-                        misp_object['uuid']
-                        for misp_object in event['Event']['Object']
-                    )
+                    self._record_uuids(parser.misp_event),
+                    self._record_uuids(event['Event'])
+                )
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.uuid)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [
+                        (attribute['type'], attribute['uuid'])
+                        for attribute in event['Event']['Attribute']
+                        if attribute['type'] != 'weakness'
+                    ]
                 )
                 self.assertEqual(
                     self._object_references(parser.misp_event),
@@ -9457,8 +9473,8 @@ class TestSTIX1Import(TestSTIX):
                 self.assertEqual(
                     self._object_references(parser.misp_event),
                     self._fixture_references(
-                        event, 'course-of-action', 'vulnerability',
-                        'weakness'
+                        event, 'attack-pattern', 'course-of-action',
+                        'vulnerability', 'weakness'
                     )
                 )
 
@@ -9481,10 +9497,9 @@ class TestSTIX1Import(TestSTIX):
                 self.assertEqual(parser.diagnostics()['errors'], {})
                 self.assertEqual(parser.diagnostics()['warnings'], {})
                 self.assertEqual(
-                    len(parser.misp_event.objects),
-                    len(event['Event']['Object'])
+                    self._record_uuids(parser.misp_event),
+                    self._record_uuids(event['Event'])
                 )
-                self.assertEqual(parser.misp_event.attributes, [])
                 self.assertEqual(
                     self._object_references(parser.misp_event),
                     self._fixture_references(event)

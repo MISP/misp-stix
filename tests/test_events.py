@@ -6539,20 +6539,32 @@ def get_event_with_object_references_in_relationship_slots():
             for target, relationship in targets
         ]
 
+    # Uuids of their own: the attribute fixtures share theirs with others
+    vuln_attribute = {
+        **get_event_with_vulnerability_attribute()['Event']['Attribute'][0],
+        "uuid": "fc3532d3-2e24-4737-a6c6-275fe2fd0068"
+    }
+    weakness_attribute = {
+        **get_event_with_weakness_attribute()['Event']['Attribute'][0],
+        "uuid": "986dcb2f-266a-4da0-bd35-d33532685d75"
+    }
+
     btc_object['Attribute'][0]['to_ids'] = True
     ip_object['Attribute'][0]['to_ids'] = True
+    references(ap_object, (vuln_attribute, 'exploits'))
     references(
         btc_object, (coa_object, 'protected-with'), (ap_object, 'indicates'),
         (vuln_object, 'exploits')
     )
     references(
         ip_object, (other_coa_object, 'protected-with'),
-        (weakness_object, 'exploits')
+        (weakness_object, 'exploits'), (weakness_attribute, 'exploits')
     )
     references(vuln_object, (coa_object, 'mitigated-by'))
     references(weakness_object, (other_coa_object, 'mitigated-by'))
     references(coa_object, (other_coa_object, 'complemented-by'))
     event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [vuln_attribute, weakness_attribute]
     # Every source before its target, but the attack pattern's
     event['Event']['Object'] = [
         btc_object, ip_object, vuln_object, weakness_object, coa_object,

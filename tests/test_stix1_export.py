@@ -3652,8 +3652,8 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
     relationship slot of the source's own STIX construct naming the target's
     kind, the relationship verbatim: Potential_COAs on the Exploit Target of
     a `vulnerability` or `weakness`, Related_COAs on a Course of Action,
-    Suggested_COAs and Indicated_TTP on an Indicator. The galaxy clusters
-    fill the same slots."""
+    Suggested_COAs and Indicated_TTP on an Indicator, Related_TTPs on a TTP.
+    The galaxy clusters fill the same slots."""
 
     _VERSIONS = ('1.1.1', '1.2')
     _ATTACK_PATTERN_UUID = '7205da54-70de-4fa7-9b34-e14e63fe6787'
@@ -3662,7 +3662,9 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
     _IP_PORT_UUID = '5ac47edc-31e4-4402-a7b6-040d0a00020f'
     _OTHER_COA_UUID = '3c1e8f0a-5b2d-4e7f-9a6c-1d4b7e0f3a2c'
     _VULNERABILITY_UUID = '5e579975-e9cc-46c6-a6ad-1611a964451a'
+    _VULNERABILITY_ATTRIBUTE_UUID = 'fc3532d3-2e24-4737-a6c6-275fe2fd0068'
     _WEAKNESS_UUID = 'a1285743-3962-40e3-a824-0f21f10f3e19'
+    _WEAKNESS_ATTRIBUTE_UUID = '986dcb2f-266a-4da0-bd35-d33532685d75'
 
     @staticmethod
     def _event(to_ids=True):
@@ -3689,7 +3691,7 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
 
     @staticmethod
     def _slots(parser):
-        """Each entry of the four slots, as its source uuid, the slot, the
+        """Each entry of the five slots, as its source uuid, the slot, the
         idref and the relationship."""
         package = parser.stix_package
         slots = []
@@ -3714,6 +3716,7 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
                 course_of_action.related_coas
             )
         for ttp in package.ttps.ttp if package.ttps else ():
+            read(ttp.id_, 'Related_TTPs', ttp.related_ttps)
             for related in ttp.exploit_targets.exploit_target if ttp.exploit_targets else ():
                 read(ttp.id_, 'Potential_COAs', related.item.potential_coas)
         return sorted(slots)
@@ -3726,6 +3729,10 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
 
     def _non_indicator_slots(self):
         return [
+            (
+                self._ATTACK_PATTERN_UUID, 'Related_TTPs',
+                self._ttp(self._VULNERABILITY_ATTRIBUTE_UUID), 'exploits'
+            ),
             (
                 self._COA_UUID, 'Related_COAs',
                 self._coa(self._OTHER_COA_UUID), 'complemented-by'
@@ -3770,6 +3777,11 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
                                 self._ttp(self._WEAKNESS_UUID), 'exploits'
                             ),
                             (
+                                self._IP_PORT_UUID, 'Indicated_TTP',
+                                self._ttp(self._WEAKNESS_ATTRIBUTE_UUID),
+                                'exploits'
+                            ),
+                            (
                                 self._IP_PORT_UUID, 'Suggested_COAs',
                                 self._coa(self._OTHER_COA_UUID),
                                 'protected-with'
@@ -3780,7 +3792,7 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
 
     def test_slot_entries_name_a_written_target_with_its_timestamp(self):
         """Each entry points at a Course of Action or a TTP the package
-        holds, pinned to its timestamp as a Related_TTP is."""
+        holds, pinned to its timestamp."""
         for version in self._VERSIONS:
             with self.subTest(version=version):
                 parser = self._parse(self._event(), version)
@@ -3805,7 +3817,12 @@ class TestSTIX1ObjectReferenceSlots(TestSTIX):
                     for course_of_action in package.courses_of_action
                     for related in course_of_action.related_coas
                 )
-                self.assertEqual(len(related_items), 6)
+                related_items.extend(
+                    related
+                    for ttp in package.ttps.ttp
+                    for related in ttp.related_ttps
+                )
+                self.assertEqual(len(related_items), 8)
                 for related in related_items:
                     self.assertIn(related.item.idref, timestamps)
                     self.assertIsNotNone(related.item.timestamp)
