@@ -229,7 +229,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_autonomous_system_attribute(self, attribute: dict):
         value = attribute['value']
         if not self._is_as_handle(value):
-            if not self._canonical_attribute_integer(attribute, value):
+            if self._custom_attribute_unless_canonical(attribute, value):
                 return
         autonomous_system = self._create_autonomous_system_object(value)
         observable = self._create_observable(autonomous_system, attribute['uuid'], 'AS')
@@ -255,18 +255,18 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             campaign.handling = self._create_handling(sorted_tags)
         self._stix_package.add_campaign(campaign)
 
-    def _canonical_attribute_integer(self, attribute: dict, value: Any,
-                                     positive: bool = False) -> bool:
-        """Whether the native CybOX integer field of an attribute holds its
-        number unchanged - an attribute whose number the field would rewrite
-        or refuse goes out whole as a custom attribute instead, its value
-        under its type."""
+    def _custom_attribute_unless_canonical(
+            self, attribute: dict, value: Any, positive: bool = False) -> bool:
+        """Write an attribute whose number the native CybOX integer field
+        would rewrite or refuse as a custom attribute instead, whole, its
+        value under its type - and say whether it did: the caller writes the
+        native field only when it did not."""
         record = self._attribute_record(attribute)
         if self._canonical_integer(
                 value, attribute['type'], record, positive=positive):
-            return True
+            return False
         self._parse_custom_attribute(attribute)
-        return False
+        return True
 
     def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
@@ -406,7 +406,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 hostname, port = attribute['value'].split(separator)
-                if not self._canonical_attribute_integer(
+                if self._custom_attribute_unless_canonical(
                         attribute, port, positive=True):
                     break
                 socket_address = self._create_socket_address_object(
@@ -444,7 +444,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 ip, port = attribute['value'].split(separator)
-                if not self._canonical_attribute_integer(
+                if self._custom_attribute_unless_canonical(
                         attribute, port, positive=True):
                     break
                 ip_type = attribute['type'].split('|')[0]
@@ -500,7 +500,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute(attribute, observable)
 
     def _parse_port_attribute(self, attribute: dict):
-        if not self._canonical_attribute_integer(
+        if self._custom_attribute_unless_canonical(
                 attribute, attribute['value'], positive=True):
             return
         observable = self._create_port_observable(attribute['value'], attribute['uuid'])
@@ -532,7 +532,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_attribute(attribute, observable)
 
     def _parse_size_in_bytes_attribute(self, attribute: dict):
-        if not self._canonical_attribute_integer(attribute, attribute['value']):
+        if self._custom_attribute_unless_canonical(attribute, attribute['value']):
             return
         file_object = File()
         file_object.size_in_bytes = attribute['value']
