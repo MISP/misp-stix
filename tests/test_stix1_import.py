@@ -8343,6 +8343,40 @@ class TestSTIX1Import(TestSTIX):
                     {'name': '.text', 'size-in-bytes': '4096', 'md5': _MD5_HASH}
                 )
 
+    def test_file_hash_with_no_type_and_no_shape_is_kept_as_other(self):
+        """A file hash with no type whose value names none either is read as
+        an `other` hash, and warned. The `filename|other` the file name and
+        the hash would fold into is no MISP attribute type: both come back
+        as attributes of their own, and that is warned too."""
+        value = 'zz-no-shape'
+        object_id = f'MISP:File-{_OBSERVABLE_UUID}'
+        file_object = File()
+        file_object.file_name = 'evil.exe'
+        file_object.hashes = HashList()
+        file_object.hashes.hashes = [self._untyped_hash(value)]
+        for origin, parser in self._parse_either_way(file_object, 'File'):
+            with self.subTest(origin):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(parser.misp_event.objects, [])
+                self.assertEqual(
+                    sorted(
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ),
+                    [('filename', 'evil.exe'), ('other', value)]
+                )
+                warnings, = parser.diagnostics()['warnings'].values()
+                self.assertEqual(
+                    warnings,
+                    [
+                        'Unknown hash type in the object with id '
+                        f'{object_id}: {value} read as an other hash.',
+                        "'filename|other' is no MISP attribute type in the "
+                        f'object with id {object_id}: evil.exe and {value} '
+                        'converted separately.'
+                    ]
+                )
+
     def test_pe_section_hash_with_no_type_and_no_shape_warns(self):
         """A hash with no type whose value names none either is what a hash
         cybox types `Other` is: the `pe-section` template has no relation to
