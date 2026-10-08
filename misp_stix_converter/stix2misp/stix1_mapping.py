@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ..misp_stix_mapping import Mapping
-from typing import Optional, Union
+from typing import Optional
 
 
 class STIX1toMISPMapping:
@@ -264,11 +264,11 @@ class STIX1toMISPMapping:
 
     @classmethod
     def attribute_reductions_mapping(
-            cls, object_type: str) -> Union[str, None]:
+            cls, object_type: str) -> Optional[str]:
         return cls.__attribute_reductions_mapping.get(object_type)
 
     @classmethod
-    def attribute_types_mapping(cls, object_type: str) -> Union[str, None]:
+    def attribute_types_mapping(cls, object_type: str) -> Optional[str]:
         return cls.__attribute_types_mapping.get(object_type)
 
     @classmethod
@@ -284,7 +284,7 @@ class STIX1toMISPMapping:
         return cls.__email_mapping
 
     @classmethod
-    def event_types(cls, object_type: str) -> Union[dict, None]:
+    def event_types(cls, object_type: str) -> Optional[dict]:
         return cls.__event_types.get(object_type)
 
     @classmethod
@@ -294,6 +294,10 @@ class STIX1toMISPMapping:
     @classmethod
     def galaxy_types_mapping(cls, construct: str) -> str:
         return cls.__galaxy_types_mapping[construct]
+
+    @classmethod
+    def marking_mapping(cls, marking_type: str) -> Optional[str]:
+        return cls.__marking_mapping.get(marking_type)
 
     @classmethod
     def network_fields(cls) -> tuple:
@@ -310,10 +314,6 @@ class STIX1toMISPMapping:
     @classmethod
     def network_socket_fields(cls) -> tuple:
         return cls.__network_socket_fields
-
-    @classmethod
-    def marking_mapping(cls, marking_type: str) -> Union[str, None]:
-        return cls.__marking_mapping.get(marking_type)
 
     @classmethod
     def network_socket_mapping(cls) -> dict:
@@ -355,7 +355,7 @@ class STIX1toMISPMapping:
         return cls.__regkey_value_mapping
 
     @classmethod
-    def test_mechanism_mapping(cls, test_mechanism_type: str) -> Union[str, None]:
+    def test_mechanism_mapping(cls, test_mechanism_type: str) -> Optional[str]:
         return cls.__test_mechanism_mapping.get(test_mechanism_type)
 
     @classmethod
@@ -419,7 +419,7 @@ class InternalSTIX1toMISPMapping(STIX1toMISPMapping):
         return cls.__attack_pattern_description_relations
 
     @classmethod
-    def threat_level_mapping(cls, threat_level: str) -> Union[str, None]:
+    def threat_level_mapping(cls, threat_level: str) -> Optional[str]:
         return cls.__threat_level_mapping.get(threat_level)
 
     @classmethod

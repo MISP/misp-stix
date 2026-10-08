@@ -393,8 +393,6 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                     self._parse_ttp(ttp)
                 else:
                     self._parse_ttp_object(ttp)
-                # if ttp.handling:
-                #     self.parse_tlp_marking(ttp.handling)
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()

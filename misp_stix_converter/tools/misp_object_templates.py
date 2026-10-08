@@ -84,6 +84,24 @@ def _rejected_name_note(name: Any) -> str:
     return f'Original MISP object name: {name}'
 
 
+@lru_cache(maxsize=None)
+def _template_definition(name: str) -> Mapping[str, Any]:
+    """Read the definition pymisp resolves for a template, once per name.
+
+    pymisp exposes the resolved template as `_definition` only, so the private
+    read lives here, next to the name guard, rather than at each call site.
+    The callers guard the name, each where its contract says.
+
+    :param name: a MISP object template name
+    :return: the template definition, empty when the template is unknown to
+        pymisp
+    """
+    from pymisp import MISPObject
+    from pymisp.abstract import misp_objects_path
+    misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
+    return MappingProxyType(getattr(misp_object, '_definition', None) or {})
+
+
 def _template_attribute_types(name: str) -> dict:
     """Read the attribute types a template defines, by object relation.
 
@@ -91,18 +109,13 @@ def _template_attribute_types(name: str) -> dict:
     object, and refuses one whose object relation the template does not define.
     A converter that builds attributes from content-supplied relations has to
     know which of them the template can type, so it can fall back to `text`
-    for the rest rather than have pymisp refuse them. pymisp exposes the
-    resolved template as `_definition` only, so the private read lives here,
-    next to the name guard, rather than at each call site.
+    for the rest rather than have pymisp refuse them.
 
     :param name: a template name `_is_template_name` accepts
     :return: the MISP attribute type per object relation, empty when the
-        template is unknown to pymisp
+        template is unknown to pymisp - a fresh dict the caller may change
     """
-    from pymisp import MISPObject
-    from pymisp.abstract import misp_objects_path
-    misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
-    definition = getattr(misp_object, '_definition', None) or {}
+    definition = _template_definition(name)
     return {
         object_relation: attribute['misp-attribute']
         for object_relation, attribute in definition.get('attributes', {}).items()
@@ -125,11 +138,7 @@ def _template_description(name: Optional[str]) -> Optional[str]:
     """
     if not _is_template_name(name):
         return None
-    from pymisp import MISPObject
-    from pymisp.abstract import misp_objects_path
-    misp_object = MISPObject(name, misp_objects_path_custom=misp_objects_path)
-    definition = getattr(misp_object, '_definition', None) or {}
-    return definition.get('description')
+    return _template_definition(name).get('description')
 
 
 @lru_cache(maxsize=None)

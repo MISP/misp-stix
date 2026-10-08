@@ -1419,6 +1419,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         handling = Marking()
         marking_specification = MarkingSpecification()
         if 'tlp_tags' in sorted_tags:
+            # One colour per structure: the most restrictive tag wins
             tlp_marking = TLPMarkingStructure()
             tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
             marking_specification.marking_structures.append(tlp_marking)

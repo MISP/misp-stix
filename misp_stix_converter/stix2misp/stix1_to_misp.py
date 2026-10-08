@@ -741,7 +741,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_course_of_action(self, course_of_action,
                                 timestamp: Optional[int] = None):
         self._read_object_markings(
-            self._read_markings(getattr(course_of_action, 'handling', None))
+            self._read_markings(course_of_action.handling)
         )
         misp_object = MISPObject('course-of-action', misp_objects_path_custom=misp_objects_path)
         self._sanitise_object_uuid(misp_object, course_of_action.id_)
@@ -854,6 +854,11 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         tags and a Simple Marking per other tag. The colour comes back as a
         Built Tag, the statements as Copied Tags.
 
+        The TLP structure holds one colour: a record carrying several TLP
+        tags comes back with the most restrictive one alone. A TLP tag whose
+        colour that structure does not know - `tlp:clear`, `tlp:amber+strict`
+        and the like - travels as a statement and comes back whole.
+
         :param handling: the Handling, None where the object carries none
         :return: the tags, in the order the markings hold them
         """
@@ -882,9 +887,10 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if unread:
             self._object_markings_warning()
 
-    def _parse_marking(self, handling: MarkingSpecification) -> Iterator[str]:
-        if getattr(handling, 'marking_structures', None):
-            for marking in handling.marking_structures:
+    def _parse_marking(
+            self, marking_specification: MarkingSpecification) -> Iterator[str]:
+        if getattr(marking_specification, 'marking_structures', None):
+            for marking in marking_specification.marking_structures:
                 parser = self._mapping.marking_mapping(marking._XSI_TYPE)
                 if parser is not None:
                     # A marking field a taxonomy tag can be made of nothing
