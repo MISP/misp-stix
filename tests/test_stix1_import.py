@@ -7131,6 +7131,40 @@ class TestSTIX1Import(TestSTIX):
                     [('regkey', expected)]
                 )
 
+    def test_external_registry_key_value_joins_with_a_bare_pipe(self):
+        """A hive, a key and a value's data fold into a `regkey|value` whose
+        two halves are split on `|` as written: no padding around it, as an
+        Observable and as an Indicator."""
+        registry_key = WinRegistryKey()
+        registry_key.hive = 'HKEY_LOCAL_MACHINE'
+        registry_key.key = 'Software\\mthjk'
+        value = RegistryValue()
+        value.data = '%DATA%'
+        registry_key.values = RegistryValues([value])
+        indicator_package = STIXPackage()
+        indicator_package.add_indicator(
+            self._indicator(Object(registry_key), _OBSERVABLE_UUID)
+        )
+        for path, parser in (
+                ('Observable', self._parse_external_observable(
+                    registry_key, 'WindowsRegistryKey'
+                )),
+                ('Indicator', self._parse_external_package(indicator_package))):
+            with self.subTest(path):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [
+                        (
+                            'regkey|value',
+                            'HKEY_LOCAL_MACHINE\\Software\\mthjk|%DATA%'
+                        )
+                    ]
+                )
+
     @staticmethod
     def _mutex(name=None, **custom_properties):
         mutex = Mutex()
