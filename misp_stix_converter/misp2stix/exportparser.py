@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import traceback
 from ..abstract import AbstractParser
 from ..tools.misp_object_templates import (
@@ -12,10 +13,15 @@ from .stix21_mapping import MISPtoSTIX21Mapping
 from collections import defaultdict
 from datetime import datetime, timezone
 from io import BufferedIOBase, TextIOBase
+from math import isfinite
 from pathlib import Path
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.hashes import Hash
 from typing import Any, IO, Optional, Union
+
+# The decimal literal a native float field writes back as the number it reads:
+# `float()` takes more, a `nan`, an `inf`, digits of any script, underscores
+_CANONICAL_FLOAT = re.compile(r'[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?')
 
 
 class MISPtoSTIXParser(AbstractParser):
@@ -281,6 +287,25 @@ class MISPtoSTIXParser(AbstractParser):
             **misp_object, 'name': name,
             'comment': f'{comment}\n{note}' if comment else note
         }
+
+    @staticmethod
+    def _is_canonical_float(value: Any) -> bool:
+        """Whether a value is spelled as a native float field holds it: a
+        decimal literal of a finite number. `float()` also reads a `nan`, an
+        `inf`, digits of any script and underscores, and a literal too large
+        for a float as an infinity, which no JSON holds."""
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, int):
+            return True
+        if isinstance(value, float):
+            return isfinite(value)
+        if isinstance(value, str):
+            return (
+                _CANONICAL_FLOAT.fullmatch(value) is not None
+                and isfinite(float(value))
+            )
+        return False
 
     @staticmethod
     def _is_canonical_integer(value: Any, signed: bool = False) -> bool:

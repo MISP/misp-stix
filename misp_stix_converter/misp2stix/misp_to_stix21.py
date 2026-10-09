@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import InvalidHashValueError
+from .exceptions import InvalidHashValueError, _UnbuildableRecordError
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix21_mapping import MISPtoSTIX21Mapping
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
+from math import isfinite
 from pycountry import countries
 from pymisp import (
     MISPAttribute, MISPEventReport, MISPGalaxy, MISPGalaxyCluster, MISPNote,
@@ -1062,6 +1063,22 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return file_args, objects
 
     def _parse_geolocation_object(self, misp_object: MISPObject | dict):
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes(misp_object['Attribute'])
+        )
+        non_canonical = self._pop_non_canonical_floats(
+            attributes, ('latitude', 'longitude', 'accuracy-radius'),
+            misp_object
+        )
+        if 'latitude' in non_canonical or 'longitude' in non_canonical:
+            # stix2 refuses a coordinate without its other half, and a
+            # location with no place left: the object then goes out whole as
+            # the custom object, before any of its galaxies is written
+            for half in ('latitude', 'longitude'):
+                if half in attributes:
+                    non_canonical[half] = attributes.pop(half)
+            if not (attributes.get('countrycode') or attributes.get('region')):
+                raise _UnbuildableRecordError
         location_id = self._parse_stix_object_id(
             'object', 'location', misp_object
         )
@@ -1078,20 +1095,18 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         if markings:
             self._handle_markings(location_args, markings)
-        attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes(misp_object['Attribute'])
-        )
-        precision = (
-            attributes.get('accuracy-radius') and attributes.get('latitude')
-            and attributes.get('longitude')
-        )
-        if precision:
-            location_args['precision'] = (
-                float(attributes.pop('accuracy-radius')) * 1000
-            )
+        if (attributes.get('accuracy-radius') and attributes.get('latitude')
+                and attributes.get('longitude')):
+            # A radius in kilometres too large for a float in metres stays
+            # custom, as MISP spelled it
+            precision = float(attributes['accuracy-radius']) * 1000
+            if isfinite(precision):
+                location_args['precision'] = precision
+                del attributes['accuracy-radius']
         for key, feature in self._mapping.geolocation_object_mapping().items():
             if attributes.get(key):
                 location_args[feature] = attributes.pop(key)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             location_args.update(self._handle_observable_properties(attributes))

@@ -83,9 +83,6 @@ _FILE_SINGLE_ATTRIBUTES = (
     "sha1", "sha224", "sha256", "sha384", "sha512", "sha512/224", "sha512/256",
     "size-in-bytes", "ssdeep", "tlsh", "vhash"
 )
-# The decimal literal a native CybOX float field writes back as the number it
-# reads: `float()` takes more, a `nan`, an `inf`, digits of any script
-_CANONICAL_FLOAT = re.compile(r'[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?')
 # The spellings of a boolean a MISP value of a `boolean` relation takes
 _MISP_BOOLEAN_SPELLINGS = {
     '1': True, 'true': True, 'True': True,
@@ -1248,18 +1245,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         """Whether a native CybOX float field holds a MISP value as the
         number it spells: `float()` reads a `nan`, an `inf`, digits of any
         script and underscores, and refuses a `0x1f` with the whole object.
-        Any value but a decimal literal is warned of, for the property bag to
-        carry verbatim under its relation."""
-        if isinstance(value, bool):
-            canonical = False
-        elif isinstance(value, int):
-            canonical = True
-        elif isinstance(value, float):
-            canonical = not (isnan(value) or isinf(value))
-        elif isinstance(value, str):
-            canonical = _CANONICAL_FLOAT.fullmatch(value) is not None
-        else:
-            canonical = False
+        Any value but a decimal literal of a finite number is warned of, for
+        the property bag to carry verbatim under its relation."""
+        canonical = self._is_canonical_float(value)
         if not canonical:
             self._non_canonical_number_warning(
                 relation, value, record, 'decimal number'

@@ -3048,7 +3048,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 optional_header[feature] = attributes.pop(key)
         if optional_header:
             extension['optional_header'] = optional_header
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             custom = True
@@ -3066,9 +3066,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         pe_section['misp_object']['Attribute']
                     )
                 )
-                non_canonical = self._pop_non_canonical_integers(
-                    attributes, ('size-in-bytes',), pe_section['misp_object']
-                )
+                non_canonical = {
+                    **self._pop_non_canonical_integers(
+                        attributes, ('size-in-bytes',),
+                        pe_section['misp_object']
+                    ),
+                    **self._pop_non_canonical_floats(
+                        attributes, ('entropy',), pe_section['misp_object']
+                    )
+                }
                 for key, feature in self._mapping.pe_section_mapping().items():
                     if attributes.get(key):
                         section[feature] = attributes.pop(key)
@@ -3085,7 +3091,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                                 attribute_type, pe_object
                             )
                             attributes[attribute_type].append(value)
-                self._restore_non_canonical_integers(attributes, non_canonical)
+                self._restore_non_canonical_numbers(attributes, non_canonical)
                 self._restore_repeated_values(attributes, repeated)
                 if attributes:
                     custom = True
@@ -4818,7 +4824,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 file_args[feature] = self._datetime_from_str(
                     self._select_single_feature(attributes, key)
                 )
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             file_args.update(
@@ -4848,7 +4854,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 file_args['hashes'][hash_type] = self._select_single_feature(
                     attributes, hash_type
                 )
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             file_args.update(self._handle_observable_properties(attributes))
@@ -4897,7 +4903,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for key, feature in mapping('timeline').items():
             if attributes.get(key):
                 args[feature] = self._datetime_from_str(attributes.pop(key))
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             args.update(self._handle_observable_multiple_properties(attributes))
@@ -4930,7 +4936,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes.get(key):
                 value = self._select_single_feature(attributes, key)
                 file_args[feature] = self._datetime_from_str(value)
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             file_args.update(
@@ -5003,7 +5009,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for key, feature in timeline_mapping.items():
             if attributes.get(key):
                 args[feature] = self._datetime_from_str(attributes.pop(key))
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             args.update(self._handle_observable_properties(attributes))
@@ -5049,7 +5055,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if not protocols:
             protocols.append('tcp')
         network_traffic_args['protocols'] = protocols
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             network_traffic_args.update(
@@ -5098,7 +5104,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     else:
                         attributes['state'].append(state)
             network_traffic_args['extensions']['socket-ext'] = socket_ext
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             network_traffic_args.update(
@@ -5117,7 +5123,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         # A non canonical parent or child pid goes on this process too: stix2
         # refuses a parent or child process holding a custom property only
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             process_args.update(
@@ -5304,7 +5310,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
         if extension:
             user_account_args['extensions'] = {'unix-account-ext': extension}
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             user_account_args.update(
@@ -5354,7 +5360,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if extension:
             name = ','.join(extension)
             x509_args['x509_v3_extensions']['subject_alternative_name'] = name
-        self._restore_non_canonical_integers(attributes, non_canonical)
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             x509_args.update(self._handle_observable_properties(attributes))
@@ -5648,6 +5654,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         return False
 
+    def _native_float(self, value: Any, relation: str, record: str) -> bool:
+        """Whether a native STIX float property holds a MISP value as the
+        number it spells.
+
+        stix2 reads a float property with `float(value)`: `'1_000'` or `'٣'`
+        would go out as the number they denote, and a `nan` or an `inf` as
+        a value no JSON holds, failing the serialisation of the whole
+        bundle. Only a decimal literal of a finite number goes native, any
+        other value is warned of, for a custom property to carry verbatim.
+        """
+        if self._is_canonical_float(value):
+            return True
+        self._non_canonical_number_warning(
+            relation, value, record, 'decimal number'
+        )
+        return False
+
     def _native_port(
             self, attribute: MISPAttribute | dict, separator: str) -> bool:
         # A custom property on the observable is not read back: a port the
@@ -5779,20 +5802,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             return self._datetime_from_timestamp(misp_data_layer['timestamp'])
         return datetime.now(UTC)
 
+    def _pop_non_canonical_floats(
+            self, attributes: dict, relations: tuple,
+            misp_object: MISPObject | dict) -> dict:
+        return self._pop_non_canonical_numbers(
+            attributes, relations, misp_object, self._native_float
+        )
+
     def _pop_non_canonical_integers(
             self, attributes: dict, relations: tuple,
             misp_object: MISPObject | dict) -> dict:
-        """Take the values native STIX integer properties would rewrite or
+        return self._pop_non_canonical_numbers(
+            attributes, relations, misp_object, self._native_integer
+        )
+
+    def _pop_non_canonical_numbers(
+            self, attributes: dict, relations: tuple,
+            misp_object: MISPObject | dict, native: Callable) -> dict:
+        """Take the values native STIX number properties would rewrite or
         refuse out of the relations those properties hold, warning of each.
 
         Once the native properties are mapped, the values taken go back with
-        `_restore_non_canonical_integers`, for the record to carry them
+        `_restore_non_canonical_numbers`, for the record to carry them
         verbatim with the relations no property maps.
 
         :param attributes: the values of the object, by relation - a single
             value or a list, each value possibly paired with its uuid
-        :param relations: the relations native integer properties hold
+        :param relations: the relations native number properties hold
         :param misp_object: the MISP object the values belong to
+        :param native: whether a value goes native, warning of it otherwise
+            - `_native_integer` or `_native_float`
         :return: the non canonical values by relation, without their uuid
         """
         record = self._object_features(misp_object)
@@ -5803,14 +5842,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             values = attributes[relation]
             if not isinstance(values, list):
                 value = values[0] if isinstance(values, tuple) else values
-                if not self._native_integer(value, relation, record):
+                if not native(value, relation, record):
                     del attributes[relation]
                     non_canonical[relation] = value
                 continue
             canonical, others = [], []
             for entry in values:
                 value = entry[0] if isinstance(entry, tuple) else entry
-                if self._native_integer(value, relation, record):
+                if native(value, relation, record):
                     canonical.append(entry)
                 else:
                     others.append(value)
@@ -5849,8 +5888,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 del args[_ORIGINAL_NAMES_PROPERTY]
 
     @staticmethod
-    def _restore_non_canonical_integers(attributes: dict, non_canonical: dict):
-        """Give the values `_pop_non_canonical_integers` took back to their
+    def _restore_non_canonical_numbers(attributes: dict, non_canonical: dict):
+        """Give the values `_pop_non_canonical_numbers` took back to their
         relations, next to the values a repeated relation still holds once
         its native property took one, for the custom properties."""
         for relation, values in non_canonical.items():
