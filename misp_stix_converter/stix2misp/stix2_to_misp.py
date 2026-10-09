@@ -370,7 +370,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if isinstance(values, list):
                 for value in values:
-                    if isinstance(value, _EXTENSION_TYPES):
+                    if isinstance(value, (dict, *_EXTENSION_TYPES)):
                         yield from self._fetch_observable_references(value)
                         continue
                     yield value

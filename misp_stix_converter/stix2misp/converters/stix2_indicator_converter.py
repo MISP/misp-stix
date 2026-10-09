@@ -2016,34 +2016,22 @@ class InternalSTIX2IndicatorConverter(
     def _object_from_account_with_attachment_indicator(
             self, indicator: _INDICATOR_TYPING, name: str):
         misp_object = self._create_misp_object(name, indicator)
-        attachments: defaultdict = defaultdict(dict)
+        custom_data: defaultdict = defaultdict(list)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             key, value = self._extract_features_from_pattern(pattern)
             if key == 'account_type':
                 continue
-            if key.startswith('x_misp_') and '.' in key:
-                feature, key = key.split('.')
-                attachments[feature][key] = value
-            else:
-                attributes = self._handle_object_attributes(
-                    value, self._pattern_attribute(name, key, indicator.id),
-                    indicator.id
-                )
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-        if attachments:
-            for feature, attribute in attachments.items():
-                value = attribute['value']
-                attribute.update(
-                    **self._pattern_attribute(name, feature, indicator.id)
-                )
-                misp_object.add_attribute(
-                    **attribute, to_ids=True,
-                    uuid=self.main_parser._create_v5_uuid(
-                        f"{indicator.id} - {attribute['object_relation']}"
-                        f' - {value}'
-                    )
-                )
+            if self._collect_custom_data(key, value, custom_data):
+                continue
+            attributes = self._handle_object_attributes(
+                value, self._pattern_attribute(name, key, indicator.id),
+                indicator.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        self._add_custom_data_attributes(
+            misp_object, name, custom_data, indicator
+        )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_android_app_indicator(self, indicator: _INDICATOR_TYPING):
@@ -2202,9 +2190,12 @@ class InternalSTIX2IndicatorConverter(
         attachment: dict
         attachments: list = []
         extension: defaultdict = defaultdict(lambda: defaultdict(dict))
+        custom_data: defaultdict = defaultdict(list)
         in_attachment: bool = False
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
+            if self._collect_custom_data(feature, value, custom_data):
+                continue
             if "extensions.'windows-pebinary-ext'." in feature:
                 if '.sections[' in feature:
                     parsed = feature.split('.')[2:]
@@ -2252,6 +2243,9 @@ class InternalSTIX2IndicatorConverter(
                         f" - {attribute['value']}"
                     )
                 )
+        self._add_custom_data_attributes(
+            file_object, 'file', custom_data, indicator
+        )
         misp_object = self.main_parser._add_misp_object(file_object, indicator)
         if extension:
             pe_uuid = self._object_from_file_extension_pattern(
@@ -2329,14 +2323,17 @@ class InternalSTIX2IndicatorConverter(
     def _object_from_image_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('image', indicator)
         attachment = {'type': 'attachment', 'object_relation': 'attachment'}
+        custom_data: defaultdict = defaultdict(list)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             field, value = self._extract_features_from_pattern(pattern)
             if field == 'content_ref.mime_type':
                 continue
+            if self._collect_custom_data(field, value, custom_data):
+                continue
             if 'payload_bin' in field:
                 attachment['data'] = value
                 continue
-            if 'x_misp_filename' in field:
+            if field == 'content_ref.x_misp_filename':
                 attachment['value'] = value
                 continue
             attributes = self._handle_object_attributes(
@@ -2352,6 +2349,9 @@ class InternalSTIX2IndicatorConverter(
                     f"{indicator.id} - attachment - {attachment['value']}"
                 )
             )
+        self._add_custom_data_attributes(
+            misp_object, 'image', custom_data, indicator
+        )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_ip_port_indicator(self, indicator: _INDICATOR_TYPING):
@@ -2393,10 +2393,13 @@ class InternalSTIX2IndicatorConverter(
     def _object_from_lnk_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('lnk', indicator)
         attachment: dict = {}
+        custom_data: defaultdict = defaultdict(list)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if 'content_ref.' in feature:
                 attachment[feature.split('.')[-1]] = value
+                continue
+            if self._collect_custom_data(feature, value, custom_data):
                 continue
             attributes = self._handle_object_attributes(
                 value, self._pattern_attribute('lnk', feature, indicator.id),
@@ -2415,6 +2418,9 @@ class InternalSTIX2IndicatorConverter(
             if 'payload_bin' in attachment:
                 attribute['data'] = attachment['payload_bin']
             misp_object.add_attribute(**attribute, **mapping, to_ids=True)
+        self._add_custom_data_attributes(
+            misp_object, 'lnk', custom_data, indicator
+        )
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_mutex_indicator(self, indicator: _INDICATOR_TYPING):
@@ -2626,8 +2632,12 @@ class InternalSTIX2IndicatorConverter(
         misp_object = self._create_misp_object('registry-key-value', indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
-            mapping = self._mapping.registry_key_values_pattern_mapping(
-                feature.split('.')[-1]
+            mapping = self._object_relation_mapping(
+                'registry-key-value', feature,
+                self._mapping.registry_key_values_pattern_mapping(
+                    feature.split('.')[-1]
+                ),
+                indicator.id
             )
             attributes = self._handle_object_attributes(
                 value, mapping, indicator.id
@@ -2635,6 +2645,42 @@ class InternalSTIX2IndicatorConverter(
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
+
+    @staticmethod
+    def _collect_custom_data(
+            feature: str, value: str, custom_data: dict) -> bool:
+        """Collect a comparison on a custom property carrying a value with its
+        data, compared as `x_misp_<relation>.data` then `.value`, for the
+        two to make one attribute.
+
+        :param feature: the property the comparison is made on
+        :param value: the value it is compared with
+        :param custom_data: the values with their data collected so far, by
+            custom property
+        :return: whether the comparison was one of those
+        """
+        name, _, key = feature.partition('.')
+        if not name.startswith('x_misp_') or key not in ('data', 'value'):
+            return False
+        values = custom_data[name]
+        if not values or key in values[-1]:
+            values.append({})
+        values[-1][key] = value
+        return True
+
+    def _add_custom_data_attributes(
+            self, misp_object: MISPObject, name: str, custom_data: dict,
+            indicator: _INDICATOR_TYPING):
+        for feature, values in custom_data.items():
+            mapping = self._pattern_attribute(name, feature, indicator.id)
+            for attribute in values:
+                misp_object.add_attribute(
+                    **attribute, **mapping, to_ids=True,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f"{indicator.id} - {mapping['object_relation']}"
+                        f" - {attribute['value']}"
+                    )
+                )
 
     def _object_from_standard_pattern(
             self, indicator: _INDICATOR_TYPING, name: str):

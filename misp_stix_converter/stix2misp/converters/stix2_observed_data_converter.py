@@ -3531,8 +3531,10 @@ class InternalSTIX2ObservedDataConverter(
         )
         for observable in observables.values():
             if observable.type == 'file':
-                attributes = self._observables._parse_generic_observable(
-                    observable, 'image', observed_data.id
+                attributes = (
+                    self._observables._parse_observable_fields_with_data(
+                        observable, 'image', observed_data.id
+                    )
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -3944,10 +3946,12 @@ class InternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object(
             'registry-key-value', observed_data, object_id=object_id
         )
-        mapping = self._mapping.registry_key_values_object_mapping
-        for field, attribute in mapping().items():
-            if hasattr(registry_value, field):
-                value = getattr(registry_value, field)
+        fields = self._observables._parse_object_fields(
+            registry_value, 'registry-key-value',
+            self._mapping.registry_key_values_object_mapping(), object_id
+        )
+        for attribute, values in fields:
+            for value in values if isinstance(values, list) else [values]:
                 misp_object.add_attribute(
                     **self._populate_object_attribute(
                         value, attribute,
