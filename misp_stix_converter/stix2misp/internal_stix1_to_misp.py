@@ -13,7 +13,7 @@ from pymisp.api import describe_types
 from pymisp.exceptions import PyMISPError
 import re
 from cybox.common.vocabs import ObjectRelationship
-from cybox.core import RelatedObject
+from cybox.core import Object, RelatedObject
 from datetime import datetime
 from stix.campaign import Campaign
 from stix.coa import CourseOfAction
@@ -1471,7 +1471,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 object_uuid=uuid, description=description,
                 timestamp=timestamp
             )
-            self._read_related_objects(properties, uuid)
+            self._record_related_objects(properties.parent, uuid)
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -1565,7 +1565,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             return value.lower().replace('_', '-')
         return value
 
-    def _read_related_objects(self, properties, uuid: str):
+    def _record_related_objects(self, observable_object: Object, uuid: str):
         """Record the references the Related_Objects of a CybOX object carry:
         the export writes one for each reference a MISP object makes to a
         record it writes as a single CybOX Object, pointing at that Object.
@@ -1574,7 +1574,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         on its own, so the shared handlers do not. An inline Related_Object -
         the File an email embeds as its attachment - is no reference.
 
-        :param properties: the CybOX object properties
+        :param observable_object: the CybOX object
         :param uuid: the uuid of the object the CybOX object became
         """
         references = [
@@ -1585,7 +1585,7 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 # same package: a target the import refused points at nothing
                 'built_only': True
             }
-            for related in properties.parent.related_objects or ()
+            for related in observable_object.related_objects or ()
             if related.idref is not None
         ]
         if references:

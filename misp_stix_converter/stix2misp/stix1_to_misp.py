@@ -7,12 +7,12 @@ from ..tools.misp_object_templates import (
 from ..tools.stix1_loading_helpers import load_stix1_package
 from .exceptions import MissingSTIXContentError
 from .importparser import STIXtoMISPParser
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from ast import literal_eval
 from base64 import b64decode, b64encode
 from collections import defaultdict
 from cybox.common import Hash
-from cybox.core import Observable
+from cybox.core import Object, Observable
 from cybox.objects import (
     account_object, address_object, artifact_object, as_object,
     custom_object, email_message_object, dns_record_object,
@@ -211,6 +211,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             observable.object_.id_ or observable.id_
         )
 
+    @abstractmethod
+    def _record_related_objects(self, observable_object: Object, uuid: str):
+        """Record the references the Related_Objects of a CybOX Object carry,
+        applied once the whole package is parsed. Each import reads them its
+        own way: the Internal one only towards a record it built, the
+        External one towards a target outside the package too.
+
+        :param observable_object: the CybOX Object
+        :param uuid: the uuid of the MISP object it became
+        """
+
     def _reduce(self, properties, read: tuple) -> tuple:
         """Reduce a CybOX object read through the reduction its type names.
 
@@ -241,11 +252,20 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             raise StixObjectTypeError(xsi_type)
         return getattr(self, parser)(*args)
 
+    @staticmethod
+    def _file_content(attribute_type: str, data) -> dict:
+        # An `attachment` or a `malware-sample` holds the file it names: the
+        # raw data of the Artifact it is read from
+        if attribute_type in ('attachment', 'malware-sample'):
+            return {'data': data}
+        return {}
+
     def _handle_attribute_case(self, attribute_type, attribute_value, data,
                                attribute, object_id: Optional[str] = None,
                                uuid_comment: Optional[str] = None):
-        if attribute_type in ('attachment', 'malware-sample'):
-            attribute['data'] = data
+        file_content = self._file_content(attribute_type, data)
+        if file_content:
+            attribute.update(file_content)
         elif attribute_type == 'text':
             # The relation stands in for a comment the record did not carry,
             # never for one its author wrote
@@ -781,7 +801,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 properties = observable.object_.properties
                 try:
                     attribute_type, attribute_value, compl_data = (
-                        self._read_record(properties)
+                        self._read_record(properties, title=observable.title)
                     )
                 except StixObjectTypeError as xsi_type:
                     self._stix_object_type_error(xsi_type, course_of_action.id_)
@@ -800,6 +820,9 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         object_uuid=record['uuid'],
                         uuid_comment=record.get('comment')
                     )
+                    self._record_related_objects(
+                        observable.object_, record['uuid']
+                    )
                     if referenced is not None:
                         misp_object.add_reference(
                             referenced.uuid, 'observable'
@@ -809,7 +832,14 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attribute.type, attribute.value = attribute_type, attribute_value
                 referenced_uuid = str(uuid4())
                 attribute.uuid = referenced_uuid
-                if self._add_attribute(dict(attribute), course_of_action.id_) is None:
+                added = self._add_attribute(
+                    {
+                        **attribute,
+                        **self._file_content(attribute_type, compl_data)
+                    },
+                    course_of_action.id_
+                )
+                if added is None:
                     # A reference to an attribute MISP refused points at
                     # nothing: the refusal is recorded, and the object keeps
                     # only the references it can resolve

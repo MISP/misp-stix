@@ -103,11 +103,13 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         continue
                     properties = observable.object_.properties
                     try:
-                        read = self._read_record(properties)
+                        read = self._read_record(
+                            properties, title=observable.title
+                        )
                     except StixObjectTypeError as xsi_type:
                         self._stix_object_type_error(xsi_type, ttp.id_)
                         continue
-                    attribute_type, attribute_value, _ = read
+                    attribute_type, attribute_value, compl_data = read
                     if attribute_value is None:
                         self._unfilled_record_error(attribute_type, ttp.id_)
                         continue
@@ -122,8 +124,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                         records.append(
                             {
                                 'type': attribute_type,
-                                'value': attribute_value,
-                                'to_ids': False
+                                'value': attribute_value, 'to_ids': False,
+                                **self._file_content(
+                                    attribute_type, compl_data
+                                )
                             }
                         )
         for exploit_target in self._inline_items(ttp.exploit_targets):
@@ -681,6 +685,7 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             *read, object_uuid=record_uuid['uuid'],
             uuid_comment=record_uuid.get('comment')
         )
+        self._record_related_objects(observable.object_, record_uuid['uuid'])
         built = self.misp_event.objects[count:]
         for misp_object in built:
             for attribute in misp_object.attributes:
