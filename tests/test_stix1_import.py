@@ -736,6 +736,104 @@ class TestSTIX1Import(TestSTIX):
                     [parser.misp_event.attributes[0].uuid]
                 )
 
+    def _parse_course_of_action_either_way(self, *observables):
+        """Parse a Course of Action over the parameter observables given
+        with both parsers: the External one as a package's own, the Internal
+        one as the Course of Action an Incident took: both imports read a
+        Course of Action through the same code."""
+        course_of_action = self._course_of_action()
+        course_of_action.parameter_observables = Observables(list(observables))
+        external_package = STIXPackage()
+        external_package.add_course_of_action(course_of_action)
+        incident = Incident()
+        incident.title = 'Incident with a Course of Action taken'
+        incident.add_coa_taken(course_of_action)
+        yield 'external', self._parse_external_package(external_package)
+        yield 'internal', self._parse_internal_package(
+            self._internal_package(incident)
+        )
+
+    def test_course_of_action_parameter_artifact_is_named_by_its_title(self):
+        """The title of a parameter Observable names the Artifact it holds,
+        as on the Observable and Indicator paths, and the Artifact keeps its
+        data. It was read with no name and refused as an `attachment`
+        nothing named, its data dropped."""
+        for hashes, attribute_type in (
+                ((Hash(_MD5_HASH),), 'malware-sample'), ((), 'attachment')):
+            for origin, parser in self._parse_course_of_action_either_way(
+                    self._titled_artifact(*hashes)):
+                with self.subTest(attribute_type, parser=origin):
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    attribute, = parser.misp_event.attributes
+                    self.assertEqual(
+                        (
+                            attribute.type, attribute.value,
+                            attribute.data.getvalue()
+                        ),
+                        (attribute_type, 'evil.exe', b'payload')
+                    )
+                    coa_object, = parser.misp_event.objects
+                    self.assertEqual(
+                        self._references(coa_object),
+                        [('observable', attribute.uuid)]
+                    )
+
+    def test_course_of_action_parameter_object_carries_its_related_objects(self):
+        """An object read from a parameter Observable carries the references
+        its Related_Objects name, as one read from an Observable of the
+        package does: they were dropped with no message. Each import keeps
+        its own rule: the Internal one references only a record it built,
+        the External one a target outside the package too."""
+        file_observable = Observable(
+            self._object_with_related_object(self._file_with_three_properties())
+        )
+        target = self._observable(
+            self._two_field_email(), 'EmailMessage', _RELATED_UUID
+        )
+        reference = [('contains', _RELATED_UUID)]
+        for observables, expected in (
+                ((file_observable, target),
+                 {'external': reference, 'internal': reference}),
+                ((file_observable,),
+                 {'external': reference, 'internal': []})):
+            for origin, parser in self._parse_course_of_action_either_way(
+                    *observables):
+                with self.subTest(parser=origin, built=len(observables) == 2):
+                    self.assertEqual(parser.diagnostics()['errors'], {})
+                    file_object, = parser.misp_event.get_objects_by_name('file')
+                    self.assertEqual(
+                        self._references(file_object), expected[origin]
+                    )
+
+    def test_infrastructure_and_parameter_url_resolving_to_an_address_stays_a_url(self):
+        """A URL resolving to an address is held back as a `passive-dns`
+        pair on the Observable and Indicator paths, built once the whole
+        package is read. A TTP's infrastructure and a Course of Action's
+        parameters keep it as the `url` attribute they read: the pair would
+        drop the TTP's galaxy tags and leave the Course of Action nothing to
+        reference."""
+        def url_observable():
+            return Observable(
+                self._url_indicator('https://circl.lu/evil').observable.object_
+            )
+        parsers = (
+            ('ttp', self._parse_ttp_with(url_observable())),
+            *self._parse_course_of_action_either_way(url_observable())
+        )
+        for origin, parser in parsers:
+            with self.subTest(origin):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (attribute.type, attribute.value)
+                        for attribute in parser.misp_event.attributes
+                    ],
+                    [('url', 'https://circl.lu/evil')]
+                )
+                self.assertEqual(
+                    parser.misp_event.get_objects_by_name('passive-dns'), []
+                )
+
     def test_internal_course_of_action_taken_converts(self):
         incident = Incident()
         incident.title = 'Incident with a Course of Action taken'
@@ -2025,6 +2123,49 @@ class TestSTIX1Import(TestSTIX):
         errors = parser.diagnostics()['errors']['misp event']
         self.assertEqual(len(errors), 1)
         self.assertIn('Error with the datetime attribute: not a date', errors[0])
+
+    def test_external_ttp_infrastructure_artifact_is_named_by_its_title(self):
+        """The title of an infrastructure Observable names the Artifact it
+        holds, as on the Observable and Indicator paths, and the Artifact
+        keeps its data. It was read with no name and refused as an
+        `attachment` nothing named, its data dropped."""
+        for hashes, attribute_type in (
+                ((Hash(_MD5_HASH),), 'malware-sample'), ((), 'attachment')):
+            parser = self._parse_ttp_with(self._titled_artifact(*hashes))
+            with self.subTest(attribute_type):
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                attribute, = parser.misp_event.attributes
+                # pymisp keeps the file name alone as the value of a sample
+                # handed its raw data: MISP computes the hash from the data
+                self.assertEqual(
+                    (
+                        attribute.type, attribute.value, attribute.to_ids,
+                        attribute.uuid, attribute.data.getvalue(),
+                        tuple(tag.name for tag in attribute.tags)
+                    ),
+                    (
+                        attribute_type, 'evil.exe', False, _ACTOR_UUID,
+                        b'payload', ('misp-galaxy:mitre-malware="WannaCry"',)
+                    )
+                )
+
+    def test_external_ttp_infrastructure_object_carries_its_related_objects(self):
+        """An object read from a TTP's infrastructure carries the references
+        its Related_Objects name, as one read from an Observable of the
+        package does: they were dropped with no message."""
+        parser = self._parse_ttp_with(
+            Observable(
+                self._object_with_related_object(
+                    self._file_with_three_properties()
+                )
+            )
+        )
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        misp_object, = parser.misp_event.objects
+        self.assertEqual(
+            (misp_object.uuid, self._references(misp_object)),
+            (_ACTOR_UUID, [('contains', _RELATED_UUID)])
+        )
 
     def test_external_threat_actor_galaxy_lands_on_the_event(self):
         """A threat actor names no attribute or object of its own: the galaxy
@@ -6921,6 +7062,13 @@ class TestSTIX1Import(TestSTIX):
             artifact.hashes = HashList()
             artifact.hashes.hashes = list(hashes)
         return artifact
+
+    @classmethod
+    def _titled_artifact(cls, *hashes):
+        """An Artifact whose Observable title names it."""
+        observable = cls._observable(cls._artifact(*hashes), 'Artifact')
+        observable.title = 'evil.exe'
+        return observable
 
     @staticmethod
     def _pe_with_section(*hashes):
