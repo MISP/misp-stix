@@ -1625,10 +1625,6 @@ class TestSTIX1Import(TestSTIX):
 
     def test_stix_1_classification_forced_external_warns_on_mismatch(self):
         stix_package = self._internal_titled_package()
-        # The External parser reads the wrapper package only, and a MISP export
-        # carries nothing there: a conversion yielding nothing is refused, so
-        # the wrapper is given something the warning can be reported next to
-        stix_package.add_course_of_action(self._course_of_action())
         with TemporaryDirectory() as tmp_dir:
             filename = self._write_package(tmp_dir, stix_package, 'internal.xml')
             results = stix_1_to_misp(
@@ -1722,7 +1718,7 @@ class TestSTIX1Import(TestSTIX):
     def test_conversion_yielding_nothing_raises(self):
         """An event with no attribute, object or galaxy is what a document the
         parser could read nothing from produces - a package made of a header,
-        a MISP export parsed as External - and reporting it as a success shows
+        or relating packages made of one - and reporting it as a success shows
         the user an imported event holding nothing. The error is the one MISP
         core already reads as `contains nothing to import`."""
         with self.assertRaises(MissingSTIXContentError) as context:
@@ -1737,7 +1733,11 @@ class TestSTIX1Import(TestSTIX):
         with self.assertRaises(MissingSTIXContentError):
             self._parse_internal_package(self._internal_package(Incident()))
         with self.assertRaises(MissingSTIXContentError):
-            self._parse_external_package(self._internal_titled_package())
+            self._parse_external_package(
+                self._wrapped_package(
+                    self._header_only_package('Threat report')
+                )
+            )
 
     def test_stix_1_to_misp_reports_a_conversion_yielding_nothing(self):
         with TemporaryDirectory() as tmp_dir:

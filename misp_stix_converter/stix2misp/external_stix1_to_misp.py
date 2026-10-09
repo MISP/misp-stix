@@ -6,12 +6,14 @@ from .stix1_mapping import ExternalSTIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
 from contextlib import contextmanager
-from cybox.core import Object, Observable, Observables
+from cybox.core import Object, Observable
 from pymisp import MISPEvent
 from stix.campaign import Campaign
+from stix.core import STIXPackage
 from stix.exploit_target import ExploitTarget
 from stix.incident import Incident
 from stix.indicator import Indicator
+from stix.report import Report
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP
 from typing import Iterable, Iterator, Optional, Union
@@ -40,48 +42,14 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 self.misp_event.date = stix_date
             self.misp_event.timestamp = self._timestamp_from_date(stix_date)
         self.misp_event.info = self._get_event_info()
-        header = self.stix_package.stix_header
-        description = self._value(header, 'description')
-        if description:
-            self._add_attribute(
-                {
-                    'type': 'text', 'value': description,
-                    'comment': 'STIX Header Description'
-                },
-                self.stix_package.id_
-            )
-        if getattr(header, 'handling', None):
-            for handling in header.handling:
-                for tag in self._parse_marking(handling):
-                    self.misp_event.add_tag(tag)
-        if self.stix_package.indicators:
-            self._parse_indicators(self.stix_package.indicators)
-        if self.stix_package.observables:
-            self._parse_observables()
-        if self.stix_package.ttps:
-            self._parse_ttps(self.stix_package.ttps.ttp)
-        if self.stix_package.courses_of_action:
-            for course_of_action in self.stix_package.courses_of_action:
-                with self._record_boundary('Course of Action', course_of_action.id_):
-                    self._parse_course_of_action(course_of_action)
-        if self.stix_package.threat_actors:
-            for threat_actor in self.stix_package.threat_actors:
-                with self._record_boundary('Threat Actor', threat_actor.id_):
-                    self._parse_threat_actor(threat_actor)
-        if self.stix_package.incidents:
-            for incident in self.stix_package.incidents:
-                with self._record_boundary('Incident', incident.id_):
-                    self._parse_incident(incident)
-        if self.stix_package.exploit_targets:
-            for exploit_target in self.stix_package.exploit_targets:
-                with self._record_boundary('Exploit Target', exploit_target.id_):
-                    self._parse_exploit_target(exploit_target)
-        if self.stix_package.campaigns:
-            for campaign in self.stix_package.campaigns:
-                with self._record_boundary('Campaign', campaign.id_):
-                    self._parse_campaign(campaign)
+        for container, header, comment in self._containers(self.stix_package):
+            self._parse_header(header, container.id_, comment)
+            self._parse_content(container)
         if self.dns_objects:
             self._parse_dns_objects()
+        for kind, source_id, idref in self.__indicator_references:
+            if idref not in self.__read_indicator_ids:
+                self._unread_related_indicator_warning(kind, source_id, idref)
         self._set_distribution()
         self._apply_object_references()
         self._apply_event_galaxies()
@@ -94,6 +62,10 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         # carrying the passive DNS records of the first one
         self.__dns_objects = defaultdict(dict)
         self.__dns_ips = []
+        # Which Indicator a related one given by reference names is only
+        # known once the whole package is read
+        self.__indicator_references = []
+        self.__read_indicator_ids = set()
 
     ############################################################################
     #                                PROPERTIES                                #
@@ -164,13 +136,19 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         one the package gives at top level - none of them added yet.
 
         A vulnerability with a CVE id is a `vulnerability` attribute, one
-        with a title alone a galaxy tag. An Exploit Target given by reference
-        alone holds nothing: it is read where the package defines it.
+        with a title alone a galaxy tag, and a weakness with a CWE id a
+        `weakness` attribute: the Exploit Target's title is the comment of
+        both, and a `text` attribute where there is neither. Each description,
+        and each CCE id and description of a configuration, is a `text`
+        attribute, a value repeated under one heading read once. The Courses
+        of Action it holds are records of their own, not read here. An
+        Exploit Target given by reference alone holds nothing: it is read
+        where the package defines it.
 
         :param exploit_target: the Exploit Target
         :param galaxies: the galaxy tags of the construct holding the
             vulnerabilities, which the ones targeted by title only add to
-        :return: the `vulnerability` attributes, as pymisp takes them
+        :return: the attributes, as pymisp takes them
         """
         records = []
         for vulnerability in exploit_target.vulnerabilities or ():
@@ -182,7 +160,65 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                 galaxies.update(
                     self._resolve_galaxy(vulnerability.title, 'vulnerability')
                 )
+        records.extend(
+            {'type': 'weakness', 'value': weakness.cwe_id}
+            for weakness in exploit_target.weaknesses or ()
+            if weakness.cwe_id
+        )
+        texts = []
+        if exploit_target.title:
+            if records:
+                for record in records:
+                    record['comment'] = exploit_target.title
+            else:
+                texts.append(
+                    (exploit_target.title, 'STIX Exploit Target Title')
+                )
+        texts.extend(
+            (self._value(description), 'STIX Exploit Target Description')
+            for description in exploit_target.descriptions or ()
+        )
+        for configuration in exploit_target.configuration or ():
+            texts.append(
+                (configuration.cce_id, 'STIX Exploit Target Configuration')
+            )
+            texts.extend(
+                (self._value(description), 'STIX Exploit Target Configuration')
+                for description in configuration.descriptions or ()
+            )
+        records.extend(
+            {'type': 'text', 'value': value, 'comment': comment}
+            for value, comment in dict.fromkeys(texts) if value
+        )
         return records
+
+    def _parse_content(self, container: Union[STIXPackage, Report]):
+        """Convert the constructs a package or a Report holds.
+
+        A Report mostly names the package's constructs by reference alone:
+        those are converted where the package gives them.
+
+        :param container: the package or the Report
+        """
+        self._parse_indicators(self._inline_constructs(container.indicators))
+        self._parse_observables(self._inline_constructs(container.observables))
+        # The TTPs sit in a wrapper, absent where there are none
+        self._parse_ttps(self._inline_constructs(getattr(container.ttps, 'ttp', None)))
+        self._parse_courses_of_action(
+            self._inline_constructs(container.courses_of_action)
+        )
+        for threat_actor in self._inline_constructs(container.threat_actors):
+            with self._record_boundary('Threat Actor', threat_actor.id_):
+                self._parse_threat_actor(threat_actor)
+        for incident in self._inline_constructs(container.incidents):
+            with self._record_boundary('Incident', incident.id_):
+                self._parse_incident(incident)
+        for exploit_target in self._inline_constructs(container.exploit_targets):
+            with self._record_boundary('Exploit Target', exploit_target.id_):
+                self._parse_exploit_target(exploit_target)
+        for campaign in self._inline_constructs(container.campaigns):
+            with self._record_boundary('Campaign', campaign.id_):
+                self._parse_campaign(campaign)
 
     def _parse_campaign(self, campaign: Campaign):
         """Convert a Campaign into a `campaign-name` attribute per name it
@@ -223,6 +259,11 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
                     timestamp
                 )
             self._add_attribute(misp_attribute, stix_object.id_)
+
+    def _parse_courses_of_action(self, courses_of_action: Iterable):
+        for course_of_action in courses_of_action:
+            with self._record_boundary('Course of Action', course_of_action.id_):
+                self._parse_course_of_action(course_of_action)
 
     def _parse_dns_objects(self):
         """Convert the DNS bookkeeping, once the whole package is parsed: a
@@ -268,6 +309,9 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         galaxies = set()
         records = self._read_exploit_target(exploit_target, galaxies)
         self._add_construct_records(exploit_target.id_, records, galaxies)
+        self._parse_courses_of_action(
+            self._inline_items(exploit_target.potential_coas)
+        )
 
     def _parse_galaxies_from_ttp(self, ttp: TTP):
         if ttp.behavior:
@@ -280,6 +324,29 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         if ttp.resources and ttp.resources.tools:
             for tool in ttp.resources.tools:
                 yield from self._parse_galaxy(tool, 'name', 'tool')
+
+    def _parse_header(self, header, construct_id: Optional[str],
+                      comment: str):
+        """Convert a header: each description is a `text` attribute, as an
+        Incident's are, and the handling is the event's tags.
+
+        :param header: the header, None where the construct carries none
+        :param construct_id: the id of the construct the header belongs to
+        :param comment: the comment of the description attributes
+        """
+        if header is None:
+            return
+        descriptions = [
+            ('text', value)
+            for value in map(self._value, header.descriptions or ())
+            if value
+        ]
+        self._add_attributes_from_one_id(
+            construct_id, descriptions, {'comment': comment}
+        )
+        for handling in header.handling or ():
+            for tag in self._parse_marking(handling):
+                self.misp_event.add_tag(tag)
 
     def _parse_incident(self, incident: Incident):
         """Convert an Incident: its descriptions, and the Indicators,
@@ -301,13 +368,12 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             incident.id_, descriptions,
             {'comment': 'STIX Incident Description'}
         )
-        self._parse_indicators(
-            self._inline_items(incident.related_indicators)
+        self._parse_related_indicators(
+            'Incident', incident.id_, incident.related_indicators
         )
-        observables = list(self._inline_items(incident.related_observables))
-        # Tested first: given no Observables, the parser reads the package's
-        if observables:
-            self._parse_observables(observables)
+        self._parse_observables(
+            self._inline_items(incident.related_observables)
+        )
         self._parse_ttps(self._inline_items(incident.leveraged_ttps))
 
     def _parse_indicator(self, indicator: Indicator):
@@ -398,14 +464,38 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_indicators(self, indicators: Iterable[Indicator]):
         for indicator in indicators:
+            if indicator.id_:
+                self.__read_indicator_ids.add(indicator.id_)
             with self._record_boundary('Indicator', indicator.id_):
                 self._parse_indicator(indicator)
-            for related in self._inline_items(indicator.related_indicators):
-                with self._record_boundary('Indicator', related.id_):
-                    self._parse_indicator(related)
+            self._parse_related_indicators(
+                'Indicator', indicator.id_, indicator.related_indicators
+            )
 
-    def _parse_observables(self, observables: Optional[Observables] = None, to_ids: bool = False):
-        for observable in observables or self.stix_package.observables:
+    def _parse_related_indicators(self, kind: str, source_id: Optional[str],
+                                  relationships):
+        """Convert the Indicators an Indicator or an Incident relates.
+
+        One given inline is read as the package's own are, the Indicators it
+        relates in turn included, at every depth: the XML nests them, so no
+        chain of them loops back. One given by reference alone is read where
+        the package gives it, and one the package gives nowhere is warned.
+
+        :param kind: the kind of STIX construct relating the Indicators
+        :param source_id: the id of the construct, None where it carries none
+        :param relationships: the related Indicators
+        """
+        for relationship in relationships or ():
+            item = relationship.item
+            if item is not None and item.idref is not None:
+                self.__indicator_references.append(
+                    (kind, source_id, item.idref)
+                )
+        self._parse_indicators(self._inline_items(relationships))
+
+    def _parse_observables(self, observables: Iterable[Observable],
+                           to_ids: bool = False):
+        for observable in observables:
             with self._record_boundary('Observable', observable.id_):
                 self._parse_observable(observable, to_ids)
 
@@ -522,11 +612,12 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
 
     def _parse_ttp(self, ttp: TTP):
         galaxies = set(self._parse_galaxies_from_ttp(ttp))
-        records = (
-            self._parse_records_from_ttp(ttp, galaxies)
-            if self._has_ttp_content(ttp) else []
-        )
+        records = self._parse_records_from_ttp(ttp, galaxies)
         self._add_construct_records(ttp.id_, records, galaxies)
+        for exploit_target in self._inline_items(ttp.exploit_targets):
+            self._parse_courses_of_action(
+                self._inline_items(exploit_target.potential_coas)
+            )
 
     def _parse_ttps(self, ttps: Iterable[TTP]):
         for ttp in ttps:
@@ -543,12 +634,15 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
             it, an object as the Observable it is read from and the read
         :param galaxies: the galaxy tags of the construct
         """
-        # The sole record a construct builds is the construct, and takes its
-        # uuid
-        construct_uuid = (
-            self._sanitise_attribute_uuid(construct_id)
-            if len(records) == 1 else None
-        )
+        construct_uuid = None
+        if len(records) == 1:
+            # The sole record a construct builds is the construct, and takes
+            # its uuid - next to the comment an attribute already carries
+            record = records[0]
+            construct_uuid = self._sanitise_attribute_uuid(
+                construct_id,
+                record.get('comment') if isinstance(record, dict) else None
+            )
         tags = sorted(galaxies)
         added = False
         for record in records:
@@ -598,17 +692,41 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     #                             UTILITY METHODS.                             #
     ############################################################################
 
+    def _containers(self, package: STIXPackage) -> Iterator[tuple]:
+        """Walk what holds the content of a document, in reading order: the
+        package, its Reports, then each package it relates inline in turn.
+
+        Every package the document holds is one event, so a related package
+        is read as the document is: a document whose content sits in them or
+        in its Reports alone converted to nothing. One given by reference
+        alone holds nothing to read.
+
+        :param package: the package
+        :return: each package or Report, its header and the comment of the
+            attributes its header descriptions convert to
+        """
+        yield package, package.stix_header, 'STIX Header Description'
+        for report in self._inline_constructs(package.reports):
+            yield from self._reports(report)
+        for related_package in self._inline_items(package.related_packages):
+            yield from self._containers(related_package)
+
+    def _reports(self, report: Report) -> Iterator[tuple]:
+        yield report, report.header, 'STIX Report Description'
+        for related_report in self._inline_items(report.related_reports):
+            yield from self._reports(related_report)
+
     def _get_event_info(self):
-        # Testing the value, not the attribute: a STIX header always carries a
-        # `title` field, set to None when absent, so `hasattr` would return the
-        # missing title instead of falling through.
-        if getattr(self.stix_package, 'title', None):
-            return self.stix_package.title
-        title = getattr(
-            getattr(self.stix_package, 'stix_header', None), 'title', None
-        )
-        if title:
-            return title
+        # The first title in reading order: the document's own, then the ones
+        # of its Reports and of the packages it relates. Testing the value, not
+        # the attribute: a STIX header always carries a `title` field, set to
+        # None when absent, so `hasattr` would return the missing title
+        # instead of falling through.
+        for container, header, _ in self._containers(self.stix_package):
+            for title in (getattr(container, 'title', None),
+                          getattr(header, 'title', None)):
+                if title:
+                    return title
         return f"Imported from external STIX {self.stix_version} Package"
 
     @contextmanager
@@ -663,20 +781,29 @@ class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
         else:
             self._unnamed_object_error(object_id)
 
-    @staticmethod
-    def _inline_items(relationships) -> Iterator:
-        # A construct given by idref alone is converted where the package
-        # defines it, and a relationship holding none - the schema requires
-        # one - has nothing to convert
-        for relationship in relationships or ():
-            item = relationship.item
-            if item is not None and item.idref is None:
-                yield item
+    def _unread_related_indicator_warning(
+            self, kind: str, source_id: Optional[str], idref: str):
+        # An Indicator only a construct the import does not read gives is
+        # unread too: the message says no more than what was read
+        self._add_warning(
+            f'Unable to convert the Indicator with id {idref} the {kind}'
+            f'{self._record_origin(source_id)} relates by reference: no '
+            'Indicator read from the package carries that id'
+        )
 
-    def _has_ttp_content(self, ttp: TTP) -> bool:
-        if ttp.resources is not None and ttp.resources.infrastructure is not None:
-            return True
-        return any(
-            exploit_target.vulnerabilities
-            for exploit_target in self._inline_items(ttp.exploit_targets)
+    @staticmethod
+    def _inline_constructs(constructs) -> Iterator:
+        # A construct given by idref alone is converted where the package
+        # defines it
+        for construct in constructs or ():
+            if construct.idref is None:
+                yield construct
+
+    @classmethod
+    def _inline_items(cls, relationships) -> Iterator:
+        # A relationship holding no construct - the schema requires one - has
+        # nothing to convert
+        yield from cls._inline_constructs(
+            relationship.item for relationship in relationships or ()
+            if relationship.item is not None
         )

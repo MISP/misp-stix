@@ -2075,8 +2075,7 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         """Refuse the event a package converted nothing into.
 
         An event with no attribute, object, galaxy or tag is what a document
-        the parser could read nothing from yields - a MISP export parsed as
-        External finds nothing at package level, a package made of a header
+        the parser could read nothing from yields - a package made of a header
         has nothing below it - and a caller told the conversion succeeded
         writes it as an imported event holding nothing. Raised as the error
         MISP core already reads as `contains nothing to import`, so that the
