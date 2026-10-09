@@ -22,12 +22,12 @@ from misp_stix_converter.tools.misp_object_templates import (
     _custom_property_name, _custom_property_relation,
     _ORIGINAL_NAMES_PROPERTY, _template_custom_properties)
 from pathlib import Path
-from pymisp import AbstractMISP
+from pymisp import AbstractMISP, MISPAttribute
 from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import UUID, uuid5
-from ._test_stix import PLANTED_TEMPLATE, TestSTIX
+from ._test_stix import PLANTED_TEMPLATE, TestSTIX, append_further_values
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
@@ -3900,6 +3900,100 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                     )
                     self.assertEqual(self.parser.warnings, {})
                     self.assertEqual(self.parser.errors, {})
+
+    def _round_trip_repeated_single_value_relations(self, export_parser_class):
+        # A relation the export writes one value of natively comes back with
+        # every value its MISP object repeats it with, read from the record or
+        # its observable, and from its pattern alone, nothing else of the
+        # object moving and no message added
+        from .test_events import (
+            get_event_with_file_object, get_event_with_pe_objects,
+            get_event_with_registry_key_and_values_objects,
+            get_event_with_registry_key_object,
+            get_event_with_registry_key_value_object)
+        # Round trips that fail with no repeat, so cannot show one: a file
+        # read from its pattern alone raises, a pe with no file is not read at
+        # all, a registry key read from its pattern keeps the pattern escapes
+        failing = {
+            (get_event_with_file_object, True),
+            (get_event_with_pe_objects, False),
+            (get_event_with_pe_objects, True),
+            (get_event_with_registry_key_and_values_objects, True),
+            (get_event_with_registry_key_object, True),
+            (get_event_with_registry_key_value_object, True)
+        }
+        modes = ((False, False), (True, False), (True, True))
+        for fixture, name, relation, values in self._REPEATED_RELATIONS:
+            if not isinstance(values, tuple):
+                values = (values,)
+            for to_ids, pattern_path in modes:
+                if (fixture, pattern_path) in failing:
+                    continue
+                with self.subTest(name=name, relation=relation, to_ids=to_ids,
+                                  pattern_path=pattern_path):
+                    event = fixture()
+                    misp_object = next(
+                        misp_object for misp_object in event['Event']['Object']
+                        if misp_object['name'] == name
+                    )
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    base = self._round_trip_misp_object(
+                        export_parser_class, event, misp_object, pattern_path
+                    )
+                    if base is None:
+                        continue
+                    messages = (self.parser.warnings, self.parser.errors)
+                    further = set()
+                    for attribute in append_further_values(
+                            misp_object, relation, values, to_ids):
+                        loaded = MISPAttribute()
+                        loaded.from_dict(**attribute)
+                        further.add(
+                            (loaded.type, relation, str(loaded.value))
+                        )
+                    self.assertEqual(
+                        self._round_trip_misp_object(
+                            export_parser_class, event, misp_object,
+                            pattern_path
+                        ),
+                        base | further
+                    )
+                    self.assertEqual(
+                        (self.parser.warnings, self.parser.errors), messages
+                    )
+
+    def _round_trip_misp_object(
+            self, export_parser_class, event: dict, misp_object: dict,
+            pattern_path: bool) -> set | None:
+        # The attributes of one MISP object through the export and back -
+        # found by its uuid, or when the import derives the uuid, of every
+        # object holding its name - or None when the pattern path has no
+        # indicator of the object to read
+        export_parser = export_parser_class()
+        export_parser.parse_misp_event(event['Event'])
+        bundle = export_parser.bundle
+        if pattern_path:
+            indicator_id = f"indicator--{misp_object['uuid']}"
+            if all(stix_object.id != indicator_id
+                   for stix_object in export_parser.stix_objects):
+                return None
+            bundle = self._indicator_only_bundle(bundle)
+        self.parser = InternalSTIX2toMISPParser()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        imported = [
+            imported for imported in self.parser.misp_event.objects
+            if imported.uuid == misp_object['uuid']
+        ] or [
+            imported for imported in self.parser.misp_event.objects
+            if imported.name == misp_object['name']
+        ]
+        self.assertTrue(imported)
+        return {
+            (attribute.type, attribute.object_relation, str(attribute.value))
+            for misp_object in imported for attribute in misp_object.attributes
+        }
 
     @staticmethod
     def _indicator_only_bundle(bundle):

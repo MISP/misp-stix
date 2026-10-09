@@ -4,6 +4,7 @@
 import json
 import misp_stix_converter
 import os
+import re
 import unittest
 from base64 import b64encode
 from collections import defaultdict
@@ -19,7 +20,9 @@ from tempfile import TemporaryDirectory
 from typing import Optional
 from unittest.mock import patch
 from uuid import uuid5, UUID
-from ._test_stix import PLANTED_TEMPLATE, TestSTIX
+from misp_stix_converter.tools.misp_object_templates import (
+    _custom_property_name)
+from ._test_stix import PLANTED_TEMPLATE, TestSTIX, append_further_values
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
@@ -580,6 +583,132 @@ class TestSTIX2Export(TestSTIX):
             for attribute_type, relation, value in extra
         )
         return misp_object
+
+    # A relation the export writes one value of natively keeps every value
+    # its MISP object repeats it with: the first one stays in the native
+    # property, each other one is carried under the custom property of the
+    # relation, the rest of the record as it was written without the repeat.
+    # Its pattern keeps every comparison and compares the repeat too
+
+    def _test_repeated_single_value_relations(self, parser_class):
+        for fixture, name, relation, values in self._REPEATED_RELATIONS:
+            if not isinstance(values, tuple):
+                values = (values,)
+            for to_ids in (False, True):
+                with self.subTest(name=name, relation=relation, to_ids=to_ids):
+                    event = fixture()
+                    misp_object = next(
+                        misp_object for misp_object in event['Event']['Object']
+                        if misp_object['name'] == name
+                    )
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    base = self._export_event(parser_class, event)
+                    append_further_values(misp_object, relation, values, to_ids)
+                    repeated = self._export_event(parser_class, event)
+                    self.assertEqual(repeated.errors, base.errors)
+                    self.assertEqual(repeated.warnings, base.warnings)
+                    self.assertEqual(
+                        self._without_custom_values(repeated.stix_objects),
+                        self._without_custom_values(base.stix_objects)
+                    )
+                    custom_values = self._custom_values(
+                        repeated.stix_objects, _custom_property_name(relation)
+                    )
+                    for value in values:
+                        self.assertIn(value, custom_values)
+                    indicator_id = f"indicator--{misp_object['uuid']}"
+                    patterns = [
+                        self._pattern_comparisons(parser, indicator_id)
+                        for parser in (base, repeated)
+                    ]
+                    if patterns[0] is None:
+                        continue
+                    if not to_ids:
+                        self.assertEqual(*patterns)
+                        continue
+                    self.assertLessEqual(*patterns)
+                    # A further value with data compares its data too
+                    self.assertEqual(
+                        {
+                            self._comparable(self._compared_value(comparison))
+                            for comparison in patterns[1] - patterns[0]
+                            if not comparison.split(' = ')[0].endswith('.data')
+                        },
+                        {self._comparable(value) for value in values}
+                    )
+
+    def _export_event(self, parser_class, event):
+        parser = parser_class()
+        parser.parse_misp_event(self._parser_input(event))
+        return parser
+
+    @staticmethod
+    def _without_custom_values(stix_objects):
+        # The STIX objects as written, without their custom properties nor
+        # their pattern
+        def strip(content):
+            if isinstance(content, dict):
+                return {
+                    key: strip(value) for key, value in content.items()
+                    if not key.startswith('x_misp_')
+                }
+            if isinstance(content, list):
+                return [strip(value) for value in content]
+            return content
+        stripped = []
+        for stix_object in stix_objects:
+            content = strip(json.loads(stix_object.serialize()))
+            content.pop('pattern', None)
+            stripped.append(content)
+        return stripped
+
+    @staticmethod
+    def _custom_values(stix_objects, feature):
+        # Every value a custom property carries, on any STIX object or any
+        # dictionary in it - the value of a value carried with its data
+        values = []
+        def collect(content):
+            if isinstance(content, dict):
+                for key, value in content.items():
+                    if key != feature:
+                        collect(value)
+                        continue
+                    for item in value if isinstance(value, list) else [value]:
+                        values.append(
+                            item['value'] if isinstance(item, dict) else item
+                        )
+            elif isinstance(content, list):
+                for value in content:
+                    collect(value)
+        for stix_object in stix_objects:
+            collect(json.loads(stix_object.serialize()))
+        return values
+
+    @staticmethod
+    def _pattern_comparisons(parser, indicator_id):
+        # The comparisons of an indicator's STIX pattern, when there is one
+        for stix_object in parser.stix_objects:
+            if stix_object.id == indicator_id:
+                if stix_object.get('pattern_type', 'stix') != 'stix':
+                    return None
+                return set(stix_object.pattern.strip('[]').split(' AND '))
+
+    @staticmethod
+    def _compared_value(comparison):
+        # The value a pattern comparison is made with, as written
+        value, = re.findall(r"= '((?:[^'\\]|\\.)*)'\)?$", comparison)
+        return value
+
+    @staticmethod
+    def _comparable(value):
+        # A value without the escapes a pattern adds, a date as the date it
+        # names whichever way it is written
+        value = value.replace('\\', '')
+        try:
+            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except ValueError:
+            return value
 
     def _add_metacharacter_relation(self, event, relation, value):
         misp_object = event['Event']['Object'][0]

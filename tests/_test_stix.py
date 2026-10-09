@@ -4,6 +4,159 @@
 import json
 import unittest
 from datetime import datetime
+from uuid import UUID, uuid5
+from .test_events import (
+    get_event_with_account_objects,
+    get_event_with_account_objects_with_attachment,
+    get_event_with_android_app_object, get_event_with_annotation_object,
+    get_event_with_artifact_payload_object, get_event_with_asn_object,
+    get_event_with_attack_pattern_object,
+    get_event_with_course_of_action_object, get_event_with_cpe_asset_object,
+    get_event_with_credential_object, get_event_with_directory_object,
+    get_event_with_domain_ip_object_custom,
+    get_event_with_domain_ip_object_standard, get_event_with_employee_object,
+    get_event_with_file_and_pe_objects, get_event_with_file_object,
+    get_event_with_file_object_with_artifact,
+    get_event_with_geolocation_object, get_event_with_hashlookup_object,
+    get_event_with_http_request_object, get_event_with_identity_object,
+    get_event_with_image_object, get_event_with_intrusion_set_object,
+    get_event_with_ip_port_object, get_event_with_legal_entity_object,
+    get_event_with_lnk_object, get_event_with_malware_analysis_object,
+    get_event_with_malware_object, get_event_with_mutex_object,
+    get_event_with_netflow_object, get_event_with_network_connection_object,
+    get_event_with_network_socket_object, get_event_with_news_agency_object,
+    get_event_with_organization_object,
+    get_event_with_patterning_language_objects, get_event_with_pe_objects,
+    get_event_with_person_object, get_event_with_process_object,
+    get_event_with_registry_key_and_values_objects,
+    get_event_with_registry_key_object,
+    get_event_with_registry_key_value_object, get_event_with_script_objects,
+    get_event_with_url_object, get_event_with_user_account_object,
+    get_event_with_x509_object)
+
+_REPEAT_NAMESPACE = UUID('0b4c5e64-6c8c-4f3e-9b1a-7f0d6c2e8a51')
+
+
+def append_further_values(misp_object: dict, relation: str, values: tuple,
+                          to_ids: bool) -> list:
+    # Further values of a relation the MISP object holds: each a copy of its
+    # first attribute, data included, with a value and a uuid of its own
+    first = next(
+        attribute for attribute in misp_object['Attribute']
+        if attribute['object_relation'] == relation
+    )
+    further = [
+        {
+            **{key: first[key] for key in ('type', 'object_relation', 'data')
+               if key in first},
+            'value': value, 'to_ids': to_ids,
+            'uuid': str(uuid5(_REPEAT_NAMESPACE, value))
+        }
+        for value in values
+    ]
+    misp_object['Attribute'].extend(further)
+    return further
+
+
+def _get_event_with_domain_ip_object_standard_and_hostname():
+    event = get_event_with_domain_ip_object_standard()
+    event['Event']['Object'][0]['Attribute'].append(
+        {
+            'type': 'hostname', 'object_relation': 'hostname',
+            'value': 'circl.lu', 'uuid': 'c5f4a3f3-4f69-4c2b-9b3e-3a1d0d2b6e11'
+        }
+    )
+    return event
+
+
+# One relation per place the STIX 2 export reads a relation it writes one
+# value of, with a further value of the attribute's type as pymisp loads it,
+# or several: (event, object name, relation, further value or values)
+_REPEATED_RELATIONS = (
+    (get_event_with_account_objects, 'gitlab-user', 'username', 'j0hnd03'),
+    (get_event_with_account_objects_with_attachment, 'github-user',
+     'username', 'octodog'),
+    (get_event_with_android_app_object, 'android-app', 'name', 'Messenger'),
+    (get_event_with_artifact_payload_object, 'artifact', 'mime_type',
+     'application/octet-stream'),
+    (get_event_with_artifact_payload_object, 'artifact', 'payload_bin',
+     'artifact2.bin'),
+    (get_event_with_asn_object, 'asn', 'asn', '66643'),
+    (get_event_with_asn_object, 'asn', 'description', 'Another AS name'),
+    (get_event_with_attack_pattern_object, 'attack-pattern', 'name',
+     'Buffer Overflow in Environment Variables'),
+    (get_event_with_course_of_action_object, 'course-of-action', 'name',
+     'Block traffic to PIVY C2 Server (10.10.10.11)'),
+    (get_event_with_cpe_asset_object, 'cpe-asset', 'vendor',
+     'Microsoft Corporation'),
+    (get_event_with_credential_object, 'credential', 'username', 'admin'),
+    (get_event_with_directory_object, 'directory', 'path',
+     '/var/www/MISP/app/tmp'),
+    (get_event_with_domain_ip_object_custom, 'domain-ip', 'hostname',
+     'misp-project.org'),
+    (_get_event_with_domain_ip_object_standard_and_hostname, 'domain-ip',
+     'hostname', 'misp-project.org'),
+    (get_event_with_employee_object, 'employee', 'first-name', 'Jane'),
+    (get_event_with_file_object, 'file', 'md5',
+     'b2a5abfeef9e36964281a31e17b57c97'),
+    (get_event_with_file_object, 'file', 'path', '/var/www/MISP/app/tmp'),
+    (get_event_with_file_object, 'file', 'malware-sample',
+     'oui2|b2a5abfeef9e36964281a31e17b57c97'),
+    (get_event_with_file_object, 'file', 'attachment', 'non2'),
+    (get_event_with_file_object_with_artifact, 'file', 'attachment',
+     'non2'),
+    (get_event_with_file_and_pe_objects, 'pe', 'imphash',
+     ('b2a5abfeef9e36964281a31e17b57c97',
+      'c3a5abfeef9e36964281a31e17b57c97')),
+    (get_event_with_file_and_pe_objects, 'pe-section', 'name', '.text'),
+    (get_event_with_pe_objects, 'pe', 'imphash',
+     'b2a5abfeef9e36964281a31e17b57c97'),
+    (get_event_with_pe_objects, 'pe-section', 'name', '.text'),
+    (get_event_with_hashlookup_object, 'hashlookup', 'MD5',
+     'b2a5abfeef9e36964281a31e17b57c97'),
+    (get_event_with_http_request_object, 'http-request', 'host',
+     'misp-project.org'),
+    (get_event_with_identity_object, 'identity', 'name', 'Jane Doe'),
+    (get_event_with_image_object, 'image', 'filename', 'MISP.png'),
+    (get_event_with_image_object, 'image', 'attachment', 'MISP.png'),
+    (get_event_with_intrusion_set_object, 'intrusion-set', 'name',
+     'Bobcat Breakout'),
+    (get_event_with_ip_port_object, 'ip-port', 'first-seen',
+     '2020-10-26T16:22:00Z'),
+    (get_event_with_legal_entity_object, 'legal-entity', 'name',
+     'Umbrella Holdings'),
+    (get_event_with_lnk_object, 'lnk', 'md5',
+     'b2a5abfeef9e36964281a31e17b57c97'),
+    (get_event_with_lnk_object, 'lnk', 'malware-sample',
+     'oui2|b2a5abfeef9e36964281a31e17b57c97'),
+    (get_event_with_malware_object, 'malware', 'name', 'Poison Ivy 2'),
+    (get_event_with_mutex_object, 'mutex', 'name', 'MutexTest2'),
+    (get_event_with_netflow_object, 'netflow', 'src-port', '8080'),
+    (get_event_with_network_connection_object, 'network-connection',
+     'ip-dst', '5.6.7.9'),
+    (get_event_with_network_socket_object, 'network-socket', 'dst-port',
+     '8443'),
+    (get_event_with_news_agency_object, 'news-agency', 'name',
+     'Agence France-Presse International'),
+    (get_event_with_organization_object, 'organization', 'name', 'CIRCL'),
+    (get_event_with_person_object, 'person', 'first-name', 'Jane'),
+    (get_event_with_process_object, 'process', 'pid', '2511'),
+    (get_event_with_process_object, 'process', 'parent-pid', '2108'),
+    (get_event_with_process_object, 'process', 'image', 'other_process.exe'),
+    (get_event_with_registry_key_object, 'registry-key', 'key',
+     'hkey_local_machine\\system\\bar\\baz'),
+    (get_event_with_registry_key_object, 'registry-key', 'last-modified',
+     '2020-10-26T16:22:00Z'),
+    (get_event_with_registry_key_and_values_objects, 'registry-key', 'key',
+     'hkey_local_machine\\system\\bar\\baz'),
+    (get_event_with_registry_key_and_values_objects, 'registry-key-value',
+     'name', 'Bar'),
+    (get_event_with_script_objects, 'script', 'filename', 'infected2.py'),
+    (get_event_with_url_object, 'url', 'url', 'https://www.circl.lu/services'),
+    (get_event_with_user_account_object, 'user-account', 'username',
+     'adulau'),
+    (get_event_with_x509_object, 'x509', 'issuer', 'Other Issuer Name')
+)
 
 # Stands in for any `definition.json` a traversing object name could reach:
 # the values are recognisable so a leak into the converted data is obvious.
@@ -130,6 +283,8 @@ class TestSTIX(unittest.TestCase):
 
 
 class TestSTIX20(TestSTIX):
+    _REPEATED_RELATIONS = _REPEATED_RELATIONS
+
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',
@@ -154,6 +309,29 @@ class TestSTIX20(TestSTIX):
 
 
 class TestSTIX21(TestSTIX):
+    _REPEATED_RELATIONS = (
+        *_REPEATED_RELATIONS,
+        (get_event_with_annotation_object, 'annotation', 'text',
+         'Cloudflare public DNS'),
+        (get_event_with_geolocation_object, 'geolocation', 'city', 'Columbia'),
+        (get_event_with_malware_analysis_object, 'malware-analysis', 'result',
+         'benign'),
+        (get_event_with_registry_key_value_object, 'registry-key-value',
+         'data', '%DATA%\\asdfghjkl'),
+        (get_event_with_patterning_language_objects, 'owasp-crs-rule',
+         'rule-id', '942101'),
+        (get_event_with_patterning_language_objects, 'nova-rule', 'rule-name',
+         'Other nova rule'),
+        (get_event_with_patterning_language_objects, 'sigma',
+         'sigma-rule-name', 'Other sigma rule'),
+        (get_event_with_patterning_language_objects, 'suricata', 'version',
+         '7.0'),
+        (get_event_with_patterning_language_objects, 'wazuh-rule', 'rule-id',
+         '100002'),
+        (get_event_with_patterning_language_objects, 'yara',
+         'yara-rule-name', 'Other yara rule')
+    )
+
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',

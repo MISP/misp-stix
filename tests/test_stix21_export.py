@@ -6358,6 +6358,9 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_number_attributes_non_canonical(self):
         self._test_event_with_number_attributes_non_canonical()
 
+    def test_event_with_repeated_single_value_relations(self):
+        self._test_repeated_single_value_relations(MISPtoSTIX21Parser)
+
 
 class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
     def test_embedded_indicator_object_galaxy(self):
@@ -6938,6 +6941,9 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_number_attributes_non_canonical(self):
         self._test_event_with_number_attributes_non_canonical()
+
+    def test_event_with_repeated_single_value_relations(self):
+        self._test_repeated_single_value_relations(MISPtoSTIX21Parser)
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):

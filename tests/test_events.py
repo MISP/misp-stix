@@ -2835,6 +2835,61 @@ _TEST_LNK_OBJECT = {
     ]
 }
 
+_TEST_MALWARE_OBJECT = {
+    "name": "malware",
+    "meta-category": "misc",
+    "description": "Malware is a type of TTP that is also known as malicious code and malicious software",
+    "uuid": "5ea2f8a3-8d51-4f41-9d6b-ec4e4fd09f3c",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Poison Ivy"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "Remote access trojan"
+        },
+        {
+            "type": "boolean",
+            "object_relation": "is_family",
+            "value": "1"
+        },
+        {
+            "type": "text",
+            "object_relation": "alias",
+            "value": "PIVY"
+        }
+    ]
+}
+
+_TEST_MALWARE_ANALYSIS_OBJECT = {
+    "name": "malware-analysis",
+    "meta-category": "misc",
+    "description": "Malware Analysis captures the metadata and results of a particular static or dynamic analysis performed on a malware instance or family",
+    "uuid": "6ea2f8a3-8d51-4f41-9d6b-ec4e4fd09f3c",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "product",
+            "value": "VirusTotal"
+        },
+        {
+            "type": "text",
+            "object_relation": "result",
+            "value": "malicious"
+        },
+        {
+            "type": "text",
+            "object_relation": "version",
+            "value": "3.0"
+        }
+    ]
+}
+
 _TEST_MUTEX_OBJECT = {
     "name": "mutex",
     "meta-category": "misc",
@@ -6362,6 +6417,22 @@ def get_event_with_lnk_object():
     with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
         lnk_object['Attribute'][5]['data'] = b64encode(f.read()).decode()
     event['Event']['Object'] = [lnk_object]
+    return event
+
+
+def get_event_with_malware_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_MALWARE_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_malware_analysis_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_MALWARE_ANALYSIS_OBJECT))
+    ]
     return event
 
 

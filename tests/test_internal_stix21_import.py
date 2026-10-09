@@ -4256,6 +4256,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX21Parser)
 
+    def test_stix21_repeated_single_value_relations_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._round_trip_repeated_single_value_relations(MISPtoSTIX21Parser)
+
     def test_stix21_non_canonical_pids_derived_uuids(self):
         # A non canonical parent or child pid has no process of its own: its
         # uuid is derived from the observed data, as every process

@@ -3554,6 +3554,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         from misp_stix_converter import MISPtoSTIX20Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX20Parser)
 
+    def test_stix20_repeated_single_value_relations_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._round_trip_repeated_single_value_relations(MISPtoSTIX20Parser)
+
     def test_stix20_unknown_custom_property_yields_an_attribute_and_a_warning(self):
         # A property neither the template nor the tables know keeps its value
         # as a text attribute under the folded relation, and the loss of
