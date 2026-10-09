@@ -89,7 +89,9 @@ from stix.extensions.test_mechanism.snort_test_mechanism import (
 from stix.extensions.test_mechanism.yara_test_mechanism import (
     YaraTestMechanism)
 from stix.exploit_target import ExploitTarget
+from stix.exploit_target.configuration import Configuration
 from stix.exploit_target.vulnerability import Vulnerability
+from stix.exploit_target.weakness import Weakness
 from stix.extensions.identity.ciq_identity_3_0 import (
     CIQIdentity3_0Instance, ElectronicAddressIdentifier, PartyName,
     STIXCIQIdentity3_0)
@@ -97,6 +99,7 @@ from stix.incident import Incident
 from stix.incident.affected_asset import AffectedAsset
 from stix.incident.history import History, HistoryItem, JournalEntry
 from stix.indicator import Indicator
+from stix.report import Header, Report
 from stix.threat_actor import ThreatActor
 from stix.ttp import TTP, Behavior
 from stix.ttp.attack_pattern import AttackPattern
@@ -168,6 +171,9 @@ _INDICATOR_UUID = '8e5f6a7b-9c0d-4e1f-8a2b-3c4d5e6f7a8c'
 _INCIDENT_UUID = '9f6a7b8c-0d1e-4f2a-9b3c-4d5e6f7a8b9d'
 _CAMPAIGN_UUID = 'a07b8c9d-1e2f-4a3b-8c4d-5e6f7a8b9c0e'
 _EXPLOIT_TARGET_UUID = 'b18c9d0e-2f3a-4b4c-9d5e-6f7a8b9c0d1f'
+_PACKAGE_UUID = 'c29d0e1f-3a4b-4c5d-8e6f-7a8b9c0d1e2a'
+_RELATED_PACKAGE_UUID = 'd30e1f2a-4b5c-4d6e-9f7a-8b9c0d1e2f3b'
+_REPORT_UUID = 'e41f2a3b-5c6d-4e7f-8a8b-9c0d1e2f3a4c'
 # `Type=Other` with the value in `Simple_Hash_Value`: how MISP's own STIX 1
 # export wrote an ssdeep hash, cybox naming nothing better for its length
 _SSDEEP_HASH = '6144:BvqbV6zoA5yJlTKCjXsJK4Tdv:BvqbV6zoA5yJlTKCjXsJK4T'
@@ -2366,6 +2372,134 @@ class TestSTIX1Import(TestSTIX):
                     [('vulnerability', 'CVE-2021-44228', _ACTOR_UUID)]
                 )
 
+    @staticmethod
+    def _weakness(cwe_id):
+        weakness = Weakness()
+        weakness.cwe_id = cwe_id
+        return weakness
+
+    def test_external_exploit_target_reads_every_field(self):
+        """An Exploit Target's weaknesses, configurations, title,
+        descriptions and potential Courses of Action were dropped with no
+        message. A CWE is a `weakness` attribute, as a CVE is a
+        `vulnerability` one, and the title is the comment of both; each
+        description, and each CCE id and description of a configuration, is a
+        `text` attribute, a description repeated read once; a Course of
+        Action given inline is read as the package's own are, one given by
+        reference where the package gives it."""
+        title = 'Javascript vulnerability in MSIE 6-11'
+        exploit_target = self._exploit_target(('CVE-2013-3893', None))
+        exploit_target.title = title
+        exploit_target.add_weakness(self._weakness('CWE-416'))
+        for description in ('Use-after-free', 'Remote code execution',
+                            'Use-after-free'):
+            exploit_target.add_description(description)
+        configuration = Configuration()
+        configuration.cce_id = 'CCE-1234-5'
+        configuration.add_description('Default IE settings')
+        exploit_target.add_configuration(configuration)
+        exploit_target.potential_coas.append(self._course_of_action())
+        exploit_target.potential_coas.append(
+            CourseOfAction(idref='example:coa-elsewhere')
+        )
+        stix_package = STIXPackage()
+        stix_package.add_exploit_target(exploit_target)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        description_comment = 'STIX Exploit Target Description'
+        configuration_comment = 'STIX Exploit Target Configuration'
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.comment)
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                ('vulnerability', 'CVE-2013-3893', title),
+                ('weakness', 'CWE-416', title),
+                ('text', 'Use-after-free', description_comment),
+                ('text', 'Remote code execution', description_comment),
+                ('text', 'CCE-1234-5', configuration_comment),
+                ('text', 'Default IE settings', configuration_comment)
+            ]
+        )
+        self.assertEqual(
+            [
+                (misp_object.name, misp_object.uuid)
+                for misp_object in parser.misp_event.objects
+            ],
+            [('course-of-action', _COA_UUID)]
+        )
+
+    def test_external_exploit_target_title_alone_is_a_text_attribute(self):
+        """An Exploit Target's title with no vulnerability or weakness to be
+        the comment of is a `text` attribute of its own, the sole record the
+        Exploit Target builds and so taking its uuid."""
+        exploit_target = ExploitTarget()
+        exploit_target.id_ = f'example:et-{_EXPLOIT_TARGET_UUID}'
+        exploit_target.title = 'Unpatched mail gateways'
+        stix_package = STIXPackage()
+        stix_package.add_exploit_target(exploit_target)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (
+                    attribute.type, attribute.value, attribute.uuid,
+                    attribute.comment
+                )
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                (
+                    'text', 'Unpatched mail gateways', _EXPLOIT_TARGET_UUID,
+                    'STIX Exploit Target Title'
+                )
+            ]
+        )
+
+    def test_external_exploit_target_title_survives_a_replaced_id(self):
+        """The sole record an Exploit Target builds takes its uuid, and an id
+        holding none gives one with a comment naming it: the title the
+        record carries as its comment stays in front of it."""
+        exploit_target = self._exploit_target(('CVE-2013-3893', None))
+        exploit_target.id_ = 'example:et-1'
+        exploit_target.title = 'Javascript vulnerability in MSIE 6-11'
+        stix_package = STIXPackage()
+        stix_package.add_exploit_target(exploit_target)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            parser.misp_event.attributes[0].comment,
+            'Javascript vulnerability in MSIE 6-11 - Original id was: '
+            'example:et-1'
+        )
+
+    def test_external_ttp_exploit_target_with_no_vulnerability_converts(self):
+        """A TTP's Exploit Target holding a weakness and a Course of Action,
+        and no vulnerability, was not read at all: the weakness is the sole
+        record the TTP builds, and takes its uuid."""
+        exploit_target = ExploitTarget()
+        exploit_target.add_weakness(self._weakness('CWE-79'))
+        exploit_target.potential_coas.append(self._course_of_action())
+        ttp = TTP()
+        ttp.id_ = f'example:ttp-{_ACTOR_UUID}'
+        ttp.add_exploit_target(exploit_target)
+        stix_package = STIXPackage()
+        stix_package.add_ttp(ttp)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('weakness', 'CWE-79', _ACTOR_UUID)]
+        )
+        self.assertEqual(
+            [misp_object.name for misp_object in parser.misp_event.objects],
+            ['course-of-action']
+        )
+
     ############################################################################
     #                           EXTERNAL CAMPAIGNS.                            #
     ############################################################################
@@ -2526,6 +2660,32 @@ class TestSTIX1Import(TestSTIX):
         self.assertEqual(parser.references, {})
         self.assertEqual(parser.dns_objects, {})
         self.assertEqual(parser.dns_ips, [])
+
+    def test_external_parser_reused_checks_related_indicators_per_package(self):
+        """A related Indicator given by reference is checked against the
+        Indicators of its own package: one the previous package gave does not
+        make it read."""
+        first = STIXPackage()
+        first.add_indicator(self._domain_indicator('circl.lu'))
+        indicator = self._ip_indicator('8.8.8.8')
+        indicator.related_indicators.append(
+            RelatedIndicator(Indicator(idref=f'MISP:Indicator-{_DOMAIN_UUID}'))
+        )
+        second = STIXPackage()
+        second.add_indicator(indicator)
+        parser = self._parse_external_package(first)
+        self._parse_external_package(second, parser)
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {
+                'misp event': [
+                    'Unable to convert the Indicator with id '
+                    f'MISP:Indicator-{_DOMAIN_UUID} the Indicator with id '
+                    f'{indicator.id_} relates by reference: no Indicator read '
+                    'from the package carries that id'
+                ]
+            }
+        )
 
     def test_internal_parser_reused_for_a_second_package_starts_clean(self):
         """The Internal parser merges every related package of one document
@@ -8621,6 +8781,52 @@ class TestSTIX1Import(TestSTIX):
             ['8.8.8.8', 'circl.lu']
         )
 
+    def test_external_related_indicators_are_followed_at_every_depth(self):
+        """A related Indicator's own related Indicators are read too: only
+        the first level was, and what the deeper ones held was lost with no
+        message."""
+        related = self._domain_indicator('circl.lu')
+        related.related_indicators.append(
+            RelatedIndicator(self._ip_indicator('198.51.100.4'))
+        )
+        indicator = Indicator()
+        indicator.related_indicators.append(RelatedIndicator(related))
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            sorted(
+                (attribute.type, attribute.value)
+                for attribute in parser.misp_event.attributes
+            ),
+            [('domain', 'circl.lu'), ('ip-dst', '198.51.100.4')]
+        )
+
+    def test_external_indicator_empty_composition_reads_nothing_more(self):
+        """An Indicator whose Observable composition holds nothing converts
+        nothing: the package's Observables were read again in its place, a
+        second time and as detections."""
+        domain = DomainName()
+        domain.value = 'circl.lu'
+        indicator = Indicator()
+        indicator.observable = Observable()
+        indicator.observable.observable_composition = ObservableComposition()
+        stix_package = STIXPackage()
+        stix_package.observables = Observables(
+            [self._observable(domain, 'DomainName')]
+        )
+        stix_package.add_indicator(indicator)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.to_ids)
+                for attribute in parser.misp_event.attributes
+            ],
+            [('domain', 'circl.lu', False)]
+        )
+
     def test_external_indicator_read_from_xml_without_related_indicators_converts(self):
         """An Indicator read from XML holds no related Indicators list at all
         when it names none, unlike one built in memory."""
@@ -8652,6 +8858,42 @@ class TestSTIX1Import(TestSTIX):
             ['8.8.8.8', 'circl.lu']
         )
         self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
+    def test_external_related_indicator_the_package_does_not_give_is_warned(self):
+        """A related Indicator given by reference to an Indicator the package
+        gives nowhere has nothing to convert, and was dropped with no
+        message: an Indicator's and an Incident's alike."""
+        absent = f'example:indicator-{_INDICATOR_UUID}'
+        indicator = self._ip_indicator('8.8.8.8')
+        indicator.related_indicators.append(
+            RelatedIndicator(Indicator(idref=absent))
+        )
+        incident = Incident()
+        incident.id_ = f'example:Incident-{_INCIDENT_UUID}'
+        incident.add_description('First wave')
+        incident.related_indicators.append(
+            RelatedIndicator(Indicator(idref=absent))
+        )
+        stix_package = STIXPackage()
+        stix_package.add_indicator(indicator)
+        stix_package.add_incident(incident)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(
+            parser.diagnostics()['warnings'],
+            {
+                'misp event': [
+                    f'Unable to convert the Indicator with id {absent} the '
+                    f'{kind} with id {source} relates by reference: no '
+                    'Indicator read from the package carries that id'
+                    for kind, source in (
+                        ('Indicator', indicator.id_),
+                        ('Incident', incident.id_)
+                    )
+                ]
+            }
+        )
 
     def test_external_incident_descriptions_convert_to_text_attributes(self):
         """An Incident's descriptions can be a document's only report prose,
@@ -8762,6 +9004,128 @@ class TestSTIX1Import(TestSTIX):
                 attribute.value for attribute in parser.misp_event.attributes
             ),
             ['CVE-2021-44228', 'circl.lu', 'misp-project.org']
+        )
+
+    def test_external_header_descriptions_convert_to_text_attributes(self):
+        """A 1.2 header carries several descriptions, and only the first was
+        read. Each is a `text` attribute, as an Incident's are: the first
+        takes the package's uuid, the next one derived from it, and a
+        description repeated is read once."""
+        stix_package = STIXPackage()
+        stix_package.id_ = f'example:Package-{_PACKAGE_UUID}'
+        stix_package.stix_header = STIXHeader()
+        for description in ('Summary', 'Details', 'Summary'):
+            stix_package.stix_header.add_description(description)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(
+            [
+                (
+                    attribute.type, attribute.value, attribute.uuid,
+                    attribute.comment
+                )
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                ('text', 'Summary', _PACKAGE_UUID, 'STIX Header Description'),
+                (
+                    'text', 'Details',
+                    str(uuid5(_UUIDv4, f'{_PACKAGE_UUID} - text - Details')),
+                    'STIX Header Description'
+                )
+            ]
+        )
+
+    def test_external_related_packages_convert_as_the_package(self):
+        """A document whose content sits in the packages it relates imported
+        as nothing, and was refused. Each related package is read as the
+        document is, its own related packages included: its header
+        descriptions are `text` attributes taking its uuid, its handling the
+        event's tags, its title the event info when the document has none."""
+        inner = STIXPackage()
+        inner.id_ = f'example:Package-{_RELATED_PACKAGE_UUID}'
+        inner.stix_header = self._stix_header('Threat report')
+        inner.stix_header.add_description('Summary')
+        inner.stix_header.handling = self._handling_with_statements(
+            'PAP:AMBER'
+        )
+        innermost = STIXPackage()
+        innermost.add_indicator(self._domain_indicator('circl.lu'))
+        inner.related_packages = RelatedPackages()
+        inner.related_packages.append(RelatedPackage(innermost))
+        stix_package = self._wrapped_package(inner)
+        stix_package.related_packages.append(
+            RelatedPackage(STIXPackage(idref='example:Package-elsewhere'))
+        )
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(parser.misp_event.info, 'Threat report')
+        self.assertEqual(
+            [tag.name for tag in parser.misp_event.tags], ['PAP:AMBER']
+        )
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                ('text', 'Summary', _RELATED_PACKAGE_UUID),
+                ('domain', 'circl.lu', _DOMAIN_UUID)
+            ]
+        )
+
+    def test_external_reports_convert_their_content(self):
+        """A 1.2 Report holds its own content next to the references to the
+        package's, and a document whose content sat in one imported as
+        nothing. What a Report gives inline is read as the package's own is,
+        the Reports it relates included; a construct it names by reference is
+        read where the package gives it. Its header is read as the package's:
+        each description a `text` attribute taking its uuid, its handling the
+        event's tags, its title the event info when the document has none."""
+        top_level = self._ip_indicator('198.51.100.4')
+        domain = DomainName()
+        domain.value = 'misp-project.org'
+        related_report = Report()
+        related_report.observables = Observables(
+            [self._observable(domain, 'DomainName')]
+        )
+        report = Report()
+        report.id_ = f'example:Report-{_REPORT_UUID}'
+        report.header = Header()
+        report.header.title = 'Campaign report'
+        report.header.add_description('Summary')
+        report.header.handling = self._handling_with_statements('PAP:AMBER')
+        report.add_indicator(self._domain_indicator('circl.lu'))
+        report.add_indicator(Indicator(idref=top_level.id_))
+        report.add_ttp(self._ttp_with_exploit_target_cve('CVE-2021-44228'))
+        report.add_related_report(related_report)
+        stix_package = STIXPackage()
+        stix_package.add_indicator(top_level)
+        stix_package.add_report(report)
+        parser = self._parse_external_package(stix_package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+        self.assertEqual(parser.misp_event.info, 'Campaign report')
+        self.assertEqual(
+            [tag.name for tag in parser.misp_event.tags], ['PAP:AMBER']
+        )
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+            ],
+            [
+                ('text', 'Summary', _REPORT_UUID),
+                ('domain', 'circl.lu', _DOMAIN_UUID),
+                ('vulnerability', 'CVE-2021-44228', _ACTOR_UUID),
+                ('domain', 'misp-project.org', _OBSERVABLE_UUID),
+                ('ip-dst', '198.51.100.4', _IP_UUID)
+            ]
+        )
+        self.assertEqual(
+            parser.misp_event.attributes[0].comment, 'STIX Report Description'
         )
 
     @classmethod
