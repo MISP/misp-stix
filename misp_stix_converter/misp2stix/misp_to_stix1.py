@@ -2081,8 +2081,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 attributes_dict[relation] = value
         return attributes_dict, repeated
 
-    @staticmethod
-    def _extract_single_field_attributes(attributes: list,
+    def _extract_single_field_attributes(self, attributes: list,
                                          force_single: tuple) -> tuple:
         """Extract the values of a MISP object by relation, a relation whose
         native field holds one value taking its first value alone.
@@ -2092,17 +2091,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         :return: the values by relation, and the further values of each
             relation forced single, which the field has no room for
         """
-        attributes_dict = defaultdict(list)
-        repeated = defaultdict(list)
-        for attribute in attributes:
-            relation = attribute['object_relation']
-            if relation not in force_single:
-                attributes_dict[relation].append(attribute['value'])
-            elif relation in attributes_dict:
-                repeated[relation].append(attribute['value'])
-            else:
-                attributes_dict[relation] = attribute['value']
-        return attributes_dict, repeated
+        return self._split_single_field_values(
+            self._extract_multiple_object_attributes(attributes), force_single
+        )
 
     def _add_repeated_values(self, stix_object: Any, repeated: dict,
                              misp_object: dict):

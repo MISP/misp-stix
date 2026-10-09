@@ -51,17 +51,8 @@ class MISPtoSTIXParser(AbstractParser):
     ############################################################################
 
     @staticmethod
-    def _extract_multiple_object_attributes(
-            attributes: list, force_single: Optional[tuple] = None) -> dict:
+    def _extract_multiple_object_attributes(attributes: list) -> dict:
         attributes_dict = defaultdict(list)
-        if force_single is not None:
-            for attribute in attributes:
-                relation = attribute['object_relation']
-                if relation in force_single:
-                    attributes_dict[relation] = attribute['value']
-                else:
-                    attributes_dict[relation].append(attribute['value'])
-            return attributes_dict
         for attribute in attributes:
             attributes_dict[attribute['object_relation']].append(
                 attribute['value']
@@ -70,17 +61,13 @@ class MISPtoSTIXParser(AbstractParser):
 
     @staticmethod
     def _extract_multiple_object_attributes_with_data(
-            attributes: list, force_single: Optional[tuple] = (),
-            with_data: Optional[tuple] = ()) -> dict:
+            attributes: list, with_data: Optional[tuple] = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
             value = attribute['value']
             if relation in with_data and attribute.get('data'):
                 value = (value, attribute['data'])
-            if relation in force_single:
-                attributes_dict[relation] = value
-                continue
             attributes_dict[relation].append(value)
         return attributes_dict
 
@@ -104,28 +91,36 @@ class MISPtoSTIXParser(AbstractParser):
         return attributes_dict
 
     @staticmethod
-    def _extract_object_attributes(attributes: list) -> dict:
-        return {
-            attribute['object_relation']: attribute['value']
-            for attribute in attributes
-        }
+    def _split_single_field_values(
+            attributes: dict, force_single: Optional[tuple] = None,
+            with_uuid: tuple = ()) -> tuple[dict, dict]:
+        """Keep the first value of each relation a native field holds one
+        value of, and return its further values apart.
 
-    @staticmethod
-    def _extract_object_attributes_with_uuid(
-            attributes: list, with_uuid: Optional[tuple] = None) -> dict:
-        if with_uuid is not None:
-            attributes_dict = {}
-            for attribute in attributes:
-                relation = attribute['object_relation']
-                attributes_dict[relation] = (
-                    (attribute['value'], attribute['uuid'])
-                    if relation in with_uuid else attribute['value']
-                )
-            return attributes_dict
-        return {
-            attr['object_relation']: (attr['value'], attr['uuid'])
-            for attr in attributes
-        }
+        :param attributes: every value of a MISP object, by relation
+        :param force_single: the relations a native field holds one value
+            of - every relation when None
+        :param with_uuid: the relations whose values are paired with their
+            attribute uuid, last in the tuple: a further value goes without
+            it, no native object being identified by it
+        :return: the values by relation, a relation forced single holding its
+            first value alone, and the further values of each relation forced
+            single, by relation
+        """
+        repeated = {}
+        for relation, values in list(attributes.items()):
+            if force_single is not None and relation not in force_single:
+                continue
+            attributes[relation], *further = values
+            if not further:
+                continue
+            if relation in with_uuid:
+                further = [
+                    value[0] if len(value) == 2 else value[:-1]
+                    for value in further
+                ]
+            repeated[relation] = further
+        return attributes, repeated
 
     def _extract_object_attribute_tags_and_galaxies(
             self, misp_object: dict) -> tuple:

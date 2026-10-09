@@ -638,43 +638,20 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     @staticmethod
     def _extract_multiple_object_attributes_with_uuid_and_data(
-            attributes: list, force_single: tuple = (), with_uuid: tuple = (),
+            attributes: list, with_uuid: tuple = (),
             with_data: tuple = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
             if relation not in with_uuid and relation not in with_data:
-                if relation in force_single:
-                    attributes_dict[relation] = attribute['value']
-                else:
-                    attributes_dict[relation].append(attribute['value'])
+                attributes_dict[relation].append(attribute['value'])
                 continue
             value = [attribute['value']]
             if relation in with_data and attribute.get('data'):
                 value.append(attribute['data'])
             if relation in with_uuid:
                 value.append(attribute['uuid'])
-            if relation in force_single:
-                attributes_dict[relation] = tuple(value)
-            else:
-                attributes_dict[relation].append(tuple(value))
-        return attributes_dict
-
-    @staticmethod
-    def _extract_object_attributes_with_multiple_and_uuid(
-        attributes: list, force_single: tuple = (),
-        with_uuid: tuple = ()) -> dict:
-        attributes_dict = defaultdict(list)
-        for attribute in attributes:
-            relation = attribute['object_relation']
-            value = (
-                (attribute['value'], attribute['uuid'])
-                if relation in with_uuid else attribute['value']
-            )
-            if relation in force_single:
-                attributes_dict[relation] = value
-            else:
-                attributes_dict[relation].append(value)
+            attributes_dict[relation].append(tuple(value))
         return attributes_dict
 
     def _handle_file_observable_object(self, args: dict) -> list:
@@ -739,13 +716,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         if markings:
             self._handle_markings(note_args, markings)
-        attributes = self._extract_multiple_object_attributes_with_data(
-            misp_object['Attribute'],
-            force_single=self._mapping.annotation_single_fields(),
-            with_data=self._mapping.annotation_data_fields()
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                with_data=self._mapping.annotation_data_fields()
+            ),
+            self._mapping.annotation_single_fields()
         )
         if attributes.get('text'):
             note_args['content'] = attributes.pop('text')
+        self._restore_repeated_values(attributes, repeated)
         if attributes:
             note_args['allow_custom'] = True
             for key, values in attributes.items():
@@ -802,7 +782,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 references.append(reference)
                 continue
             feature = self._mapping.crs_rule_object_mapping(relation)
-            if feature is not None:
+            if feature is not None and feature not in indicator_args:
                 if relation == "raw-rule":
                     indicator_args["pattern_type"] = "crs"
                 indicator_args[feature] = value
@@ -822,7 +802,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_artifact_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes = self._extract_multiple_object_attributes_with_data(
-            misp_object['Attribute'], with_data=('payload_bin',)
+            misp_object['Attribute'],
+            with_data=self._mapping.artifact_data_fields()
         )
         artifact_args = {
             'id': self._parse_stix_object_id('object', 'artifact', misp_object),
@@ -835,7 +816,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 )
         if attributes:
             artifact_args.update(
-                self._handle_observable_multiple_properties(attributes)
+                self._handle_observable_multiple_properties_with_data(
+                    attributes, 'artifact'
+                )
             )
         return self._handle_object_observable(
             misp_object, [Artifact(**artifact_args)]
@@ -843,12 +826,17 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_directory_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
         directory_args = {
             'id': self._parse_stix_object_id(
                 'object', 'directory', misp_object
             ),
-            **self._parse_directory_args(attributes)
+            **self._parse_directory_args(
+                *self._split_single_field_values(
+                    self._extract_multiple_object_attributes(
+                        misp_object['Attribute']
+                    )
+                )
+            )
         }
         return self._handle_object_observable(
             misp_object, [Directory(**directory_args)]
@@ -865,10 +853,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_domain_ip_object_custom(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes_with_multiple_and_uuid(
-            misp_object['Attribute'],
-            force_single=self._mapping.domain_ip_single_fields(),
-            with_uuid=('ip',)
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'], with_uuid=('ip',)
+            ),
+            self._mapping.domain_ip_single_fields(), with_uuid=('ip',)
         )
         observables, resolves_to_refs = self._parse_domainip_ip_attributes(
             attributes
@@ -879,16 +868,18 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 'object', 'domain-name', misp_object
             )
         }
-        domain_args.update(self._parse_domain_args(attributes))
+        domain_args.update(self._parse_domain_args(attributes, repeated))
         observables.insert(0, DomainName(**domain_args))
         return self._handle_object_observable(misp_object, observables)
 
     def _parse_domain_ip_object_standard(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes_with_multiple_and_uuid(
-            misp_object['Attribute'],
-            force_single=self._mapping.domain_ip_single_fields(),
-            with_uuid=self._mapping.domain_ip_standard_fields()
+        standard_fields = self._mapping.domain_ip_standard_fields()
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'], with_uuid=standard_fields
+            ),
+            self._mapping.domain_ip_single_fields(), with_uuid=standard_fields
         )
         observables, resolves_to_refs = self._parse_domainip_ip_attributes(
             attributes
@@ -899,6 +890,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 'id': f'domain-name--{uuid}', 'value': value,
                 'resolves_to_refs': resolves_to_refs
             }
+            # The hostname is the one relation of a standard domain-ip that
+            # holds one value
+            if repeated:
+                domain_args.update(
+                    self._handle_observable_multiple_properties(repeated)
+                )
             observables.append(DomainName(**domain_args))
         if attributes.get('domain'):
             for domain in attributes['domain']:
@@ -1000,11 +997,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_file_observable_object(
             self, misp_object: MISPObject | dict) -> tuple:
-        attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
-            misp_object['Attribute'],
-            force_single=self._mapping.file_single_fields(),
-            with_uuid=self._mapping.file_uuid_fields(),
-            with_data=self._mapping.file_data_fields()
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid_and_data(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.file_uuid_fields(),
+                with_data=self._mapping.file_data_fields()
+            ),
+            self._mapping.file_single_fields(),
+            with_uuid=self._mapping.file_uuid_fields()
         )
         objects: list = []
         file_args: defaultdict = defaultdict(dict)
@@ -1028,12 +1028,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 objects.append(Artifact(**args))
                 file_args['content_ref'] = artifact_id
             else:
-                file_args.update(
-                    {'allow_custom': True, 'x_misp_malware_sample': value[0]}
-                )
+                # The leftovers write it as a custom property, next to its
+                # further values
+                attributes['malware-sample'] = value[0]
             if attributes.get('attachment'):
                 value = self._select_single_feature(attributes, 'attachment')
-                file_args.update(self._parse_custom_attachment(value))
+                file_args.update(
+                    self._parse_custom_attachment(
+                        value, *repeated.pop('attachment', [])
+                    )
+                )
         elif attributes.get('attachment'):
             value = self._select_single_feature(attributes, 'attachment')
             if len(value) == 3:
@@ -1042,13 +1046,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 args['id'] = f'artifact--{uuid}'
                 objects.append(Artifact(**args))
             else:
-                file_args.update(
-                    {'allow_custom': True, 'x_misp_attachment': value[0]}
-                )
-        if attributes:
+                # The leftovers write it as a custom property, next to its
+                # further values
+                attributes['attachment'] = value[0]
+        if attributes or repeated:
             file_args.update(
                 self._parse_file_args(
-                    attributes,
+                    attributes, repeated,
                     {'uuid': misp_object['uuid'], 'name': misp_object['name']}
                 )
             )
@@ -1074,7 +1078,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         if markings:
             self._handle_markings(location_args, markings)
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes(misp_object['Attribute'])
+        )
         precision = (
             attributes.get('accuracy-radius') and attributes.get('latitude')
             and attributes.get('longitude')
@@ -1086,6 +1092,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         for key, feature in self._mapping.geolocation_object_mapping().items():
             if attributes.get(key):
                 location_args[feature] = attributes.pop(key)
+        self._restore_repeated_values(attributes, repeated)
         if attributes:
             location_args.update(self._handle_observable_properties(attributes))
         location = self._create_location(location_args)
@@ -1094,9 +1101,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_http_request_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes_with_multiple_and_uuid(
-            misp_object['Attribute'],
-            force_single=self._mapping.http_request_single_fields(),
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.http_request_uuid_fields()
+            ),
+            self._mapping.http_request_single_fields(),
             with_uuid=self._mapping.http_request_uuid_fields()
         )
         network_traffic_args = {
@@ -1124,34 +1134,46 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             else:
                 network_traffic_args['dst_ref'] = domain_id
             objects.append(DomainName(**domain_args))
-        network_traffic_args.update(self._parse_http_request_args(attributes))
+        network_traffic_args.update(
+            self._parse_http_request_args(attributes, repeated)
+        )
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         return self._handle_object_observable(misp_object, objects)
 
     def _parse_identity_object(self, misp_object: MISPObject | dict):
-        identity_args = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.identity_single_fields()
+        identity_args, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes(misp_object['Attribute']),
+            self._mapping.identity_single_fields()
         )
+        if repeated:
+            identity_args.update(
+                self._handle_observable_multiple_properties(repeated)
+            )
         self._handle_non_indicator_object(
             misp_object, identity_args, 'identity'
         )
 
     def _parse_hashlookup_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes(misp_object['Attribute'])
+        )
         file_args = {
             'id': self._parse_stix_object_id('object', 'file', misp_object),
-            **self._parse_hashlookup_args(attributes, misp_object)
+            **self._parse_hashlookup_args(attributes, repeated, misp_object)
         }
         return self._handle_object_observable(misp_object, [File(**file_args)])
 
     def _parse_image_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
-            misp_object['Attribute'],
-            with_uuid=self._mapping.image_uuid_fields(),
-            with_data=self._mapping.image_data_fields()
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid_and_data(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.image_uuid_fields(),
+                with_data=self._mapping.image_data_fields()
+            ),
+            self._mapping.image_single_fields(),
+            with_uuid=self._mapping.image_uuid_fields()
         )
         artifact_args = self._parse_image_args(attributes)
         file_args = {
@@ -1161,9 +1183,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             file_args['name'] = self._select_single_feature(
                 attributes, 'filename'
             )
+        self._restore_repeated_values(attributes, repeated)
         if attributes:
             file_args.update(
-                self._handle_observable_multiple_properties(attributes)
+                self._handle_observable_multiple_properties_with_data(
+                    attributes, 'image'
+                )
             )
         if artifact_args is not None:
             file_args['content_ref'] = artifact_args['id']
@@ -1173,9 +1198,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_ip_port_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes_with_multiple_and_uuid(
-            misp_object['Attribute'],
-            force_single=self._mapping.ip_port_single_fields(),
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.ip_port_uuid_fields()
+            ),
+            self._mapping.ip_port_single_fields(),
             with_uuid=self._mapping.ip_port_uuid_fields()
         )
         protocols: dict[str, None] = {}
@@ -1205,9 +1233,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     attributes[feature] = [
                         value[0] for value in attributes.pop(feature)
                     ]
-        if attributes:
+        if attributes or repeated:
             network_traffic_args.update(
-                self._parse_ip_port_args(attributes, protocols, misp_object)
+                self._parse_ip_port_args(
+                    attributes, repeated, protocols, misp_object
+                )
             )
         else:
             network_traffic_args['protocols'] = (
@@ -1218,11 +1248,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_lnk_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
-            misp_object['Attribute'],
-            force_single=self._mapping.lnk_single_fields(),
-            with_uuid=self._mapping.lnk_uuid_fields(),
-            with_data=self._mapping.lnk_data_fields()
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid_and_data(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.lnk_uuid_fields(),
+                with_data=self._mapping.lnk_data_fields()
+            ),
+            self._mapping.lnk_single_fields(),
+            with_uuid=self._mapping.lnk_uuid_fields()
         )
         objects: list = []
         file_args = {'id': f"file--{misp_object['uuid']}"}
@@ -1252,12 +1285,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 objects.append(Artifact(**args))
                 file_args['content_ref'] = artifact_id
             else:
-                file_args.update(
-                    {'allow_custom': True, 'x_misp_malware_sample': value[0]}
-                )
+                # The leftovers write it as a custom property, next to its
+                # further values
+                attributes['malware-sample'] = value[0]
         file_args.update(
             self._parse_lnk_args(
-                attributes,
+                attributes, repeated,
                 {'uuid': misp_object['uuid'], 'name': misp_object['name']}
             )
         )
@@ -1265,8 +1298,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return self._handle_object_observable(misp_object, objects)
 
     def _parse_malware_analysis_object(self, misp_object: MISPObject | dict):
-        attributes = self._extract_object_attributes_escaped(
-            misp_object['Attribute']
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_escaped(
+                misp_object['Attribute']
+            )
         )
         mapping = self._mapping.malware_analysis_object_mapping
         analysis_args = {
@@ -1274,6 +1309,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             for key, feature in mapping().items()
             if key in attributes
         }
+        self._restore_repeated_values(attributes, repeated)
         if attributes:
             analysis_args.update(
                 self._handle_observable_properties(attributes)
@@ -1292,8 +1328,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_netflow_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes_with_uuid(
-            misp_object['Attribute'],
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.netflow_uuid_fields()
+            ),
             with_uuid=self._mapping.netflow_uuid_fields()
         )
         network_traffic_args = {
@@ -1329,23 +1368,28 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 attribute = attributes.pop(f'{ref_type}-as')
                 attributes[f'{ref_type}-as'] = attribute[0]
         network_traffic_args.update(
-            self._parse_netflow_args(attributes, misp_object)
+            self._parse_netflow_args(attributes, repeated, misp_object)
         )
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         return self._handle_object_observable(misp_object, objects)
 
     def _parse_network_connection_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
-        attributes = self._extract_object_attributes_with_uuid(
-            misp_object['Attribute'],
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.network_traffic_uuid_fields()
+            ),
             with_uuid=self._mapping.network_traffic_uuid_fields()
         )
         network_traffic_args, objects = self._parse_network_references(
             attributes
         )
         network_traffic_args.update(
-            self._parse_network_connection_args(attributes, misp_object)
-            if attributes else {'protocols': ['tcp']}
+            self._parse_network_connection_args(
+                attributes, repeated, misp_object
+            )
+            if attributes or repeated else {'protocols': ['tcp']}
         )
         network_traffic_args['id'] = self._parse_stix_object_id(
             'object', 'network-traffic', misp_object
@@ -1376,17 +1420,20 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_network_socket_object(
             self, misp_object: MISPObject | dict):
-        attributes = self._extract_object_attributes_with_multiple_and_uuid(
-            misp_object['Attribute'],
-            force_single=self._mapping.network_socket_single_fields(),
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.network_traffic_uuid_fields()
+            ),
+            self._mapping.network_socket_single_fields(),
             with_uuid=self._mapping.network_traffic_uuid_fields()
         )
         network_traffic_args, objects = self._parse_network_references(
             attributes
         )
         network_traffic_args.update(
-            self._parse_network_socket_args(attributes, misp_object)
-            if attributes else {'protocols': ['tcp']}
+            self._parse_network_socket_args(attributes, repeated, misp_object)
+            if attributes or repeated else {'protocols': ['tcp']}
         )
         network_traffic_args['id'] = self._parse_stix_object_id(
             'object', 'network-traffic', misp_object
@@ -1419,7 +1466,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 references.append(reference)
                 continue
             feature = self._mapping.nova_rule_object_mapping(relation)
-            if feature is not None:
+            if feature is not None and feature not in indicator_args:
                 if relation == 'raw-rule':
                     indicator_args['pattern_type'] = 'nova'
                 indicator_args[feature] = value
@@ -1439,9 +1486,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     def _parse_process_object(self, misp_object: MISPObject | dict):
-        attributes = self._extract_object_attributes_with_multiple_and_uuid(
-            misp_object['Attribute'],
-            force_single=self._mapping.process_single_fields(),
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_uuid(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.process_uuid_fields()
+            ),
+            self._mapping.process_single_fields(),
             with_uuid=self._mapping.process_uuid_fields()
         )
         # The parent pid's uuid names the parent process whether its value
@@ -1492,7 +1542,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             objects.append(File(id=image_uuid, name=filename))
             process_args['image_ref'] = image_uuid
         process_args.update(
-            self._parse_process_args(attributes, 'features', non_canonical)
+            self._parse_process_args(
+                attributes, 'features', non_canonical, repeated
+            )
         )
         self._check_native_properties(process_args, non_canonical)
         process_args['id'] = self._parse_stix_object_id(
@@ -1597,10 +1649,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 reference = {'source_name': 'url', 'url': value}
                 if attribute.get('comment'):
                     reference['description'] = attribute['comment']
-                indicator_args['external_references'] = [reference]
+                indicator_args.setdefault('external_references', []).append(
+                    reference
+                )
                 continue
             feature = self._mapping.sigma_object_mapping(relation)
-            if feature is not None:
+            if feature is not None and feature not in indicator_args:
                 if relation == 'sigma':
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
@@ -1617,6 +1671,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_suricata_object(self, misp_object: MISPObject | dict):
         indicator_args = {}
+        custom_fields = defaultdict(list)
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
             value = attribute['value']
@@ -1624,15 +1679,24 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 reference = {'source_name': 'url', 'url': value}
                 if attribute.get('comment'):
                     reference['description'] = attribute['comment']
-                indicator_args['external_references'] = [reference]
+                indicator_args.setdefault('external_references', []).append(
+                    reference
+                )
                 continue
             feature = self._mapping.suricata_object_mapping(relation)
-            if feature is not None:
+            if feature is not None and feature not in indicator_args:
                 if relation == 'suricata':
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
-                indicator_args[self._custom_property_name(relation)] = value
+                custom_fields[self._custom_property_name(relation)].append(value)
+        if custom_fields:
+            indicator_args.update(
+                {
+                    key: value[0] if len(value) == 1 else value
+                    for key, value in custom_fields.items()
+                }
+            )
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     def _parse_url_object_observable(
@@ -1673,10 +1737,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 reference = {'source_name': 'url', 'url': value}
                 if attribute.get('comment'):
                     reference['description'] = attribute['comment']
-                indicator_args['external_references'] = [reference]
+                indicator_args.setdefault('external_references', []).append(
+                    reference
+                )
                 continue
             feature = self._mapping.wazuh_rule_object_mapping(relation)
-            if feature is not None:
+            if feature is not None and feature not in indicator_args:
                 if relation == 'wazuh-rule':
                     indicator_args['pattern_type'] = 'wazuh'
                 indicator_args[feature] = value
@@ -1695,16 +1761,24 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_yara_object(self, misp_object: MISPObject | dict):
         indicator_args = {}
+        custom_fields = defaultdict(list)
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
             value = attribute['value']
             feature = self._mapping.yara_object_mapping(relation)
-            if feature is not None:
+            if feature is not None and feature not in indicator_args:
                 if relation == 'yara':
                     indicator_args['pattern_type'] = attribute['type']
                 indicator_args[feature] = value
             else:
-                indicator_args[self._custom_property_name(relation)] = value
+                custom_fields[self._custom_property_name(relation)].append(value)
+        if custom_fields:
+            indicator_args.update(
+                {
+                    key: value[0] if len(value) == 1 else value
+                    for key, value in custom_fields.items()
+                }
+            )
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     ############################################################################
