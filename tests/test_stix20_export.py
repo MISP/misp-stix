@@ -4381,6 +4381,43 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(extension.number_of_sections, 31)
         self.assertEqual(extension.sections[0].size, 31)
 
+    def _test_event_with_pe_section_object_non_canonical_entropy(self):
+        # A nan or an infinity in the native property made the whole bundle
+        # unserialisable
+        for value in self._NON_CANONICAL_FLOAT:
+            with self.subTest(value=value):
+                event = get_event_with_file_and_pe_objects()
+                section_object = self._spell_object_relations(
+                    event, 'pe-section', {'entropy': value}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'entropy', value,
+                            self._object_record(section_object),
+                            kind='decimal number'
+                        )
+                    ]
+                )
+                section, = self._record_observables()['0'].extensions[
+                    'windows-pebinary-ext'
+                ].sections
+                self.assertNotIn('entropy', section)
+                self.assertEqual(section.x_misp_entropy, value)
+                self.parser.bundle.serialize()
+        for value, number in (('7.5', 7.5), ('-1.5e3', -1500.0), ('7', 7.0)):
+            with self.subTest(value=value):
+                event = get_event_with_file_and_pe_objects()
+                self._spell_object_relations(
+                    event, 'pe-section', {'entropy': value}
+                )
+                self.assertEqual(self._parse_non_canonical(event), [])
+                section, = self._record_observables()['0'].extensions[
+                    'windows-pebinary-ext'
+                ].sections
+                self.assertEqual(section.entropy, number)
+
     def _test_event_with_network_objects_non_canonical_numbers(self):
         ports = {
             'src-port': ('src_port', 'x_misp_src_port'),
@@ -5256,6 +5293,9 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_pe_objects_non_canonical_numbers(self):
         self._test_event_with_pe_objects_non_canonical_numbers()
 
+    def test_event_with_pe_section_object_non_canonical_entropy(self):
+        self._test_event_with_pe_section_object_non_canonical_entropy()
+
     def test_event_with_pe_object_falling_back_keeps_its_sections(self):
         self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX20Parser)
 
@@ -5829,6 +5869,9 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
 
     def test_event_with_pe_objects_non_canonical_numbers(self):
         self._test_event_with_pe_objects_non_canonical_numbers()
+
+    def test_event_with_pe_section_object_non_canonical_entropy(self):
+        self._test_event_with_pe_section_object_non_canonical_entropy()
 
     def test_event_with_pe_object_falling_back_keeps_its_sections(self):
         self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX20Parser)

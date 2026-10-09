@@ -1824,7 +1824,7 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
     def test_file_entropy_non_canonical_goes_to_the_bag(self):
         # `float('0x1f')` raises: the file was lost
         record = f'file object (uuid: {self._OBJECT_UUID})'
-        for value in ('0x1f', 'nan', '1_000', ' 7 '):
+        for value in ('0x1f', 'nan', '1e400', '1_000', ' 7 '):
             with self.subTest(value=value):
                 file_object = self._parse_object(
                     'file', (('filename', 'filename', 'test.exe'),

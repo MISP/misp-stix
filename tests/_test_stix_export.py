@@ -553,12 +553,16 @@ class TestSTIX2Export(TestSTIX):
     # validates as a number
     _NON_CANONICAL_TEXT = ('0x1f', '+5', '1_000', '007', '٣')
     _NON_CANONICAL_VALIDATED = ('007', '٣')
+    # The spellings pymisp lets through for a `float` relation that stix2
+    # reads as another number, or as a nan or an infinity no JSON holds
+    _NON_CANONICAL_FLOAT = ('nan', 'inf', '1e400', '1_000', '٣')
 
     @staticmethod
-    def _non_canonical_number_warning(relation, value, record):
+    def _non_canonical_number_warning(
+            relation, value, record, kind='decimal integer'):
         return (
-            f'{relation!r} in the {record} is not a canonical decimal '
-            f'integer: {value!r} written as a custom property.'
+            f'{relation!r} in the {record} is not a canonical {kind}: '
+            f'{value!r} written as a custom property.'
         )
 
     @staticmethod

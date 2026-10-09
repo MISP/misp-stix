@@ -3785,13 +3785,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         return self._import_object_attributes(bundle, name=name)
 
     def _round_trip_non_canonical_numbers(self, export_parser_class):
-        # A number a native STIX integer property would rewrite or refuse is
-        # exported verbatim as a custom property, or with the whole record as
-        # the custom one, and read back as MISP spelled it, both halves of a
-        # `to_ids` record agreeing on it
+        # A number a native STIX integer or float property would rewrite or
+        # refuse is exported verbatim as a custom property, or with the whole
+        # record as the custom one, and read back as MISP spelled it, both
+        # halves of a `to_ids` record agreeing on it
         from .test_events import (
             get_event_with_asn_object, get_event_with_file_and_pe_objects,
-            get_event_with_file_object, get_event_with_hashlookup_object,
+            get_event_with_file_object, get_event_with_geolocation_object,
+            get_event_with_hashlookup_object,
             get_event_with_ip_port_object, get_event_with_lnk_object,
             get_event_with_netflow_object,
             get_event_with_network_connection_object,
@@ -3801,6 +3802,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             get_event_with_x509_object)
         text = ('0x1f', '+5', '1_000', '007', '٣')
         validated = ('007', '٣')
+        floats = ('nan', 'inf', '1e400', '1_000', '٣')
         ports = (('port', 'src-port'), ('port', 'dst-port'))
         cases = (
             (get_event_with_process_object, 'process', text,
@@ -3821,6 +3823,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
              ()),
             (get_event_with_file_and_pe_objects, 'pe-section', validated,
              (('size-in-bytes', 'size-in-bytes'),), ()),
+            (get_event_with_file_and_pe_objects, 'pe-section', floats,
+             (('float', 'entropy'),), ()),
+            (get_event_with_geolocation_object, 'geolocation', floats,
+             (('float', 'latitude'),), ()),
+            (get_event_with_geolocation_object, 'geolocation', floats,
+             (('float', 'accuracy-radius'),), ()),
             (get_event_with_network_connection_object, 'network-connection',
              validated, ports, ()),
             (get_event_with_network_socket_object, 'network-socket',

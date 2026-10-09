@@ -5485,6 +5485,150 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(extension.number_of_sections, 31)
         self.assertEqual(extension.sections[0].size, 31)
 
+    def _test_event_with_pe_section_object_non_canonical_entropy(self):
+        # A nan or an infinity in the native property made the whole bundle
+        # unserialisable
+        for value in self._NON_CANONICAL_FLOAT:
+            with self.subTest(value=value):
+                event = get_event_with_file_and_pe_objects()
+                file_object = self._spell_object_relations(event, 'file', {})
+                section_object = self._spell_object_relations(
+                    event, 'pe-section', {'entropy': value}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'entropy', value,
+                            self._object_record(section_object),
+                            kind='decimal number'
+                        )
+                    ]
+                )
+                section, = self._record_observables()[
+                    f"file--{file_object['uuid']}"
+                ].extensions['windows-pebinary-ext'].sections
+                self.assertNotIn('entropy', section)
+                self.assertEqual(section.x_misp_entropy, value)
+                self.parser.bundle.serialize()
+        for value, number in (('7.5', 7.5), ('-1.5e3', -1500.0), ('7', 7.0)):
+            with self.subTest(value=value):
+                event = get_event_with_file_and_pe_objects()
+                file_object = self._spell_object_relations(event, 'file', {})
+                self._spell_object_relations(
+                    event, 'pe-section', {'entropy': value}
+                )
+                self.assertEqual(self._parse_non_canonical(event), [])
+                section, = self._record_observables()[
+                    f"file--{file_object['uuid']}"
+                ].extensions['windows-pebinary-ext'].sections
+                self.assertEqual(section.entropy, number)
+
+    def _test_event_with_geolocation_object_non_canonical_coordinates(self):
+        # stix2 refuses a coordinate without its other half, and a precision
+        # without the coordinate: both go custom with the non canonical half
+        for relation, other, other_value in (
+                ('latitude', 'longitude', '-76.771389'),
+                ('longitude', 'latitude', '39.108889')):
+            for value in self._NON_CANONICAL_FLOAT:
+                with self.subTest(relation=relation, value=value):
+                    event = get_event_with_geolocation_object()
+                    misp_object = self._spell_object_relations(
+                        event, 'geolocation', {relation: value}
+                    )
+                    self.assertEqual(
+                        self._parse_non_canonical(event),
+                        [
+                            self._non_canonical_number_warning(
+                                relation, value,
+                                self._object_record(misp_object),
+                                kind='decimal number'
+                            )
+                        ]
+                    )
+                    location, = (
+                        stix_object for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'location'
+                    )
+                    for feature in ('latitude', 'longitude', 'precision'):
+                        self.assertNotIn(feature, location)
+                    self.assertEqual(location[f'x_misp_{relation}'], value)
+                    self.assertEqual(
+                        location[f'x_misp_{other}'], other_value
+                    )
+                    self.assertEqual(location.x_misp_accuracy_radius, '1')
+                    self.assertEqual(location.country, 'US')
+                    self.parser.bundle.serialize()
+        for value in self._NON_CANONICAL_FLOAT:
+            with self.subTest(relation='accuracy-radius', value=value):
+                event = get_event_with_geolocation_object()
+                misp_object = self._spell_object_relations(
+                    event, 'geolocation', {'accuracy-radius': value}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'accuracy-radius', value,
+                            self._object_record(misp_object),
+                            kind='decimal number'
+                        )
+                    ]
+                )
+                location, = (
+                    stix_object for stix_object in self.parser.stix_objects
+                    if stix_object.type == 'location'
+                )
+                self.assertNotIn('precision', location)
+                self.assertEqual(location.x_misp_accuracy_radius, value)
+                self.assertEqual(location.latitude, 39.108889)
+                self.assertEqual(location.longitude, -76.771389)
+                self.parser.bundle.serialize()
+        with self.subTest(relation='accuracy-radius', value='1e306'):
+            # Canonical in kilometres, but an infinity in metres
+            event = get_event_with_geolocation_object()
+            self._spell_object_relations(
+                event, 'geolocation', {'accuracy-radius': '1e306'}
+            )
+            self.assertEqual(self._parse_non_canonical(event), [])
+            location, = (
+                stix_object for stix_object in self.parser.stix_objects
+                if stix_object.type == 'location'
+            )
+            self.assertNotIn('precision', location)
+            self.assertEqual(location.x_misp_accuracy_radius, '1e306')
+            self.parser.bundle.serialize()
+        with self.subTest(place=False):
+            # With no country or region left, stix2 refuses the location: the
+            # object goes out whole as the custom object, with no error
+            event = get_event_with_geolocation_object()
+            misp_object = self._spell_object_relations(
+                event, 'geolocation', {'latitude': 'nan'}
+            )
+            misp_object['Attribute'] = [
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] not in ('countrycode', 'region')
+            ]
+            self.assertEqual(
+                self._parse_non_canonical(event),
+                [
+                    self._non_canonical_number_warning(
+                        'latitude', 'nan', self._object_record(misp_object),
+                        kind='decimal number'
+                    )
+                ]
+            )
+            self.assertEqual(
+                [stix_object.type for stix_object in self.parser.stix_objects],
+                ['identity', 'grouping', 'x-misp-object']
+            )
+            *_, custom = self.parser.stix_objects
+            self.assertIn(
+                ('latitude', 'nan'),
+                [(attribute['object_relation'], attribute['value'])
+                 for attribute in custom.x_misp_attributes]
+            )
+
     def _test_event_with_network_objects_non_canonical_numbers(self):
         ports = {
             'src-port': ('src_port', 'x_misp_src_port'),
@@ -6399,6 +6543,12 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_pe_objects_non_canonical_numbers(self):
         self._test_event_with_pe_objects_non_canonical_numbers()
 
+    def test_event_with_pe_section_object_non_canonical_entropy(self):
+        self._test_event_with_pe_section_object_non_canonical_entropy()
+
+    def test_event_with_geolocation_object_non_canonical_coordinates(self):
+        self._test_event_with_geolocation_object_non_canonical_coordinates()
+
     def test_event_with_pe_object_falling_back_keeps_its_sections(self):
         self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX21Parser)
 
@@ -6985,6 +7135,12 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_pe_objects_non_canonical_numbers(self):
         self._test_event_with_pe_objects_non_canonical_numbers()
+
+    def test_event_with_pe_section_object_non_canonical_entropy(self):
+        self._test_event_with_pe_section_object_non_canonical_entropy()
+
+    def test_event_with_geolocation_object_non_canonical_coordinates(self):
+        self._test_event_with_geolocation_object_non_canonical_coordinates()
 
     def test_event_with_pe_object_falling_back_keeps_its_sections(self):
         self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX21Parser)
