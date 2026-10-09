@@ -243,6 +243,42 @@ class TestSTIX20InputContract(TestSTIX20GenericExport):
         self.assertIn(second['Event']['uuid'], warnings)
         self.assertNotIn(first['Event']['uuid'], warnings)
 
+    def test_unloadable_records_named_by_their_uuid(self):
+        # pymisp says what fails to load, not which record: the Error filed
+        # under the event or the collection names the uuid of the record lost
+        attribute = self._unloadable(get_indicator_attribute() | {
+            'uuid': '11111111-1111-4111-8111-111111111111',
+            'type': 'ip-src', 'value': '1.2.3.4'
+        })
+        misp_object = self._unloadable(get_domain_ip_object())
+        event = get_base_event()
+        event['Event']['Attribute'] = [attribute]
+        event['Event']['Object'] = [misp_object]
+        lost_attribute = f"Error loading Attribute <{attribute['uuid']}>: "
+        lost_object = f"Error loading Object <{misp_object['uuid']}>: "
+        for entry_point, content, identifier, prefixes in (
+                ('parse_json_content', event, event['Event']['uuid'],
+                 [lost_attribute, lost_object]),
+                ('parse_misp_attributes', [attribute],
+                 'attributes collection', [lost_attribute]),
+                ('parse_misp_attribute', attribute, 'attribute feed',
+                 [lost_attribute]),
+                ('parse_misp_object', misp_object, 'objects collection',
+                 [lost_object]),
+                ('parse_misp_object', {'Object': [misp_object]},
+                 'objects collection', [lost_object]),
+                ('parse_misp_objects', [{'Object': misp_object}],
+                 'objects collection', [lost_object]),
+                ('parse_misp_attributes', [{'uuid': 123, 'type': 'ip-src'}],
+                 'attributes collection', ['Error loading Attribute: '])):
+            with self.subTest(entry_point=entry_point, identifier=identifier):
+                self.setUp()
+                getattr(self.parser, entry_point)(deepcopy(content))
+                errors = self.parser.errors[identifier]
+                self.assertEqual(len(errors), len(prefixes))
+                for error, prefix in zip(errors, prefixes):
+                    self.assertTrue(error.startswith(prefix), error)
+
     def test_unloadable_object_in_objects_entry_points(self):
         bad = self._unloadable(get_domain_ip_object())
         good = get_domain_ip_object() | {
