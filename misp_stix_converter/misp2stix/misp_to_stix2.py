@@ -2800,9 +2800,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         )
                     )
                 if attributes.get(f'{ref_type}-as'):
-                    value = self._parse_AS_value(
-                        attributes.pop(f'{ref_type}-as')
-                    )
+                    # The pattern compares the value as MISP spelled it, a
+                    # non canonical one too
+                    value = attributes.pop(f'{ref_type}-as')
                     reference.append(
                         f"{feature}.belongs_to_refs[0].number = '{value}'"
                     )
@@ -5014,6 +5014,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes:
             args.update(self._handle_observable_properties(attributes))
         return args
+
+    def _pop_netflow_non_canonical_AS(
+            self, attributes: dict, misp_object: MISPObject | dict) -> dict:
+        # An AS number is native only as the autonomous system an address
+        # belongs to: with no address, it is a custom property either way
+        return self._pop_non_canonical_integers(
+            attributes,
+            tuple(
+                f'{ref_type}-as' for ref_type in ('src', 'dst')
+                if attributes.get(f'ip-{ref_type}')
+            ),
+            misp_object
+        )
 
     @staticmethod
     def _parse_netflow_protocol(attributes: dict) -> dict:

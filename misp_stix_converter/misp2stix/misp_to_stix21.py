@@ -1350,6 +1350,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             ),
             with_uuid=self._mapping.netflow_uuid_fields()
         )
+        non_canonical = self._pop_netflow_non_canonical_AS(
+            attributes, misp_object
+        )
         network_traffic_args = {
             'id': self._parse_stix_object_id(
                 'object', 'network-traffic', misp_object
@@ -1382,6 +1385,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             elif attributes.get(f'{ref_type}-as'):
                 attribute = attributes.pop(f'{ref_type}-as')
                 attributes[f'{ref_type}-as'] = attribute[0]
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         network_traffic_args.update(
             self._parse_netflow_args(attributes, repeated, misp_object)
         )

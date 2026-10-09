@@ -1219,6 +1219,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 misp_object['Attribute']
             )
         )
+        non_canonical = self._pop_netflow_non_canonical_AS(
+            attributes, misp_object
+        )
         observable_object = {}
         network_args: defaultdict = defaultdict(dict)
         index = 1
@@ -1248,6 +1251,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 network_args['_valid_refs'][str_index] = address_object._type
                 network_args[f'{ref_type}_ref'] = str_index
                 index += 1
+        self._restore_non_canonical_numbers(attributes, non_canonical)
         network_args.update(
             self._parse_netflow_args(attributes, repeated, misp_object)
         )
