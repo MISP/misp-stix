@@ -3550,6 +3550,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         )
         self.assertEqual(dict(self.parser.errors), {})
 
+    def test_stix20_empty_event_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._round_trip_empty_event(MISPtoSTIX20Parser)
+
     def test_stix20_non_canonical_numbers_round_trip(self):
         from misp_stix_converter import MISPtoSTIX20Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX20Parser)

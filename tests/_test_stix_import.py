@@ -3742,6 +3742,30 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertGreater(entries, 0)
         self.assertEqual(disagreements, self._RELATIONS_THE_TEMPLATE_DROPPED)
 
+    def _round_trip_empty_event(self, export_parser_class):
+        # An event the export finds nothing to write in is written with a note
+        # saying so, published or not: the note holds no MISP content, and the
+        # event comes back as empty as it went, with no message
+        from .test_events import get_base_event, get_published_event
+        for fixture in (get_base_event, get_published_event):
+            with self.subTest(fixture=fixture.__name__):
+                event = fixture()['Event']
+                export_parser = export_parser_class()
+                export_parser.parse_misp_event(event)
+                self.parser = InternalSTIX2toMISPParser()
+                self.parser.load_stix_bundle(export_parser.bundle)
+                self.parser.parse_stix_bundle()
+                misp_event = self.parser.misp_event
+                self.assertEqual(misp_event.uuid, event['uuid'])
+                self.assertEqual(misp_event.info, event['info'])
+                self.assertEqual(
+                    (misp_event.attributes, misp_event.objects,
+                     misp_event.event_reports),
+                    ([], [], [])
+                )
+                self.assertEqual(self.parser.warnings, {})
+                self.assertEqual(self.parser.errors, {})
+
     def _round_trip_object_attributes(
             self, export_parser, event: dict, to_ids: bool = False,
             pattern_path: bool = False, name=None) -> set:
