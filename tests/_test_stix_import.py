@@ -3837,7 +3837,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
              (('port', 'src-port'),)),
             (get_event_with_netflow_object, 'netflow', validated,
              (*ports, ('size-in-bytes', 'byte-count'),
-              ('counter', 'packet-count')),
+              ('counter', 'packet-count'), ('AS', 'src-as'), ('AS', 'dst-as')),
              (('size-in-bytes', 'byte-count'), ('counter', 'packet-count'))),
             (get_event_with_asn_object, 'asn', validated, (('AS', 'asn'),), ())
         )

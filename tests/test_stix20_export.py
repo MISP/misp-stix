@@ -4473,6 +4473,88 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
                 for feature, _ in features.values():
                     self.assertEqual(network_traffic[feature], 31)
 
+    def _test_event_with_netflow_object_non_canonical_AS_numbers(self):
+        # The number of an autonomous system an address belongs to goes to
+        # the network traffic as a custom property, with no autonomous
+        # system; the pattern still compares it as MISP spelled it
+        relations = ('src-as', 'dst-as')
+        for value in self._NON_CANONICAL_VALIDATED:
+            for to_ids in (False, True):
+                with self.subTest(value=value, to_ids=to_ids):
+                    event = get_event_with_netflow_object()
+                    misp_object = self._spell_object_relations(
+                        event, 'netflow', dict.fromkeys(relations, value)
+                    )
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    self.assertEqual(
+                        self._parse_non_canonical(event),
+                        [
+                            self._non_canonical_number_warning(
+                                relation, value,
+                                self._object_record(misp_object)
+                            ) for relation in relations
+                        ]
+                    )
+                    observables = self._record_observables()
+                    self.assertEqual(
+                        sorted(observable.type
+                               for observable in observables.values()),
+                        ['ipv4-addr', 'ipv4-addr', 'network-traffic']
+                    )
+                    for observable in observables.values():
+                        self.assertNotIn('belongs_to_refs', observable)
+                    self.assertEqual(observables['0'].x_misp_src_as, value)
+                    self.assertEqual(observables['0'].x_misp_dst_as, value)
+                    patterns = [
+                        stix_object.pattern
+                        for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'indicator'
+                    ]
+                    if not to_ids:
+                        self.assertEqual(patterns, [])
+                        continue
+                    pattern, = patterns
+                    for ref_type in ('src', 'dst'):
+                        self.assertIn(
+                            f"network-traffic:{ref_type}_ref"
+                            f".belongs_to_refs[0].number = '{value}'",
+                            pattern
+                        )
+        with self.subTest(value='007', address=False):
+            # With no address to belong to, the number was a custom property
+            # already: nothing is warned of
+            event = get_event_with_netflow_object()
+            misp_object = self._spell_object_relations(
+                event, 'netflow', dict.fromkeys(relations, '007')
+            )
+            misp_object['Attribute'] = [
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] != 'ip-src'
+            ]
+            self.assertEqual(
+                self._parse_non_canonical(event),
+                [
+                    self._non_canonical_number_warning(
+                        'dst-as', '007', self._object_record(misp_object)
+                    )
+                ]
+            )
+            self.assertEqual(self._record_observables()['0'].x_misp_src_as, '007')
+        with self.subTest(value='31'):
+            event = get_event_with_netflow_object()
+            self._spell_object_relations(
+                event, 'netflow', dict.fromkeys(relations, '31')
+            )
+            self.assertEqual(self._parse_non_canonical(event), [])
+            observables = self._record_observables()
+            self.assertEqual(
+                [observable.number for observable in observables.values()
+                 if observable.type == 'autonomous-system'],
+                [31, 31]
+            )
+            self.assertNotIn('x_misp_src_as', observables['0'])
+
     def _test_event_with_asn_object_non_canonical_number(self):
         # An autonomous system cannot be built without its number: the
         # object goes out whole as the custom object, with no indicator
@@ -5302,6 +5384,9 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_network_objects_non_canonical_numbers(self):
         self._test_event_with_network_objects_non_canonical_numbers()
 
+    def test_event_with_netflow_object_non_canonical_AS_numbers(self):
+        self._test_event_with_netflow_object_non_canonical_AS_numbers()
+
     def test_event_with_asn_object_non_canonical_number(self):
         self._test_event_with_asn_object_non_canonical_number()
 
@@ -5878,6 +5963,9 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
 
     def test_event_with_network_objects_non_canonical_numbers(self):
         self._test_event_with_network_objects_non_canonical_numbers()
+
+    def test_event_with_netflow_object_non_canonical_AS_numbers(self):
+        self._test_event_with_netflow_object_non_canonical_AS_numbers()
 
     def test_event_with_asn_object_non_canonical_number(self):
         self._test_event_with_asn_object_non_canonical_number()
