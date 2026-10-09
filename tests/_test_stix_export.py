@@ -41,12 +41,9 @@ _UNMAPPED_ATTRIBUTE = {
     'timestamp': '1756425600', 'to_ids': False
 }
 # Three attributes failing validation the same way: the message pymisp raises
-# for a missing value names neither the uuid nor the type, so they are one
-# distinct error recorded three times
-_VALUELESS_ATTRIBUTES = [
-    {'uuid': f'5d2d6f1e-0d8a-4c3b-9e7f-00000000000{index}', 'type': 'ip-src'}
-    for index in range(1, 4)
-]
+# for a missing value names no type, and with no uuid there is no record to
+# name either, so they are one distinct error recorded three times
+_VALUELESS_ATTRIBUTES = [{'type': 'ip-src'} for _ in range(3)]
 # A second unmapped type that passes validation: with the `anonymised` one
 # above, two warnings the Diagnostics list in the order they were recorded
 _UNMAPPED_PDB_ATTRIBUTE = {
@@ -1541,9 +1538,9 @@ class TestSTIX2Export(TestSTIX):
         self.assertIn(rejected_name, name_warnings[0])
 
     def _check_diagnostics_count_error_occurrences(self):
-        # Most error messages carry no uuid, so three attributes failing the
-        # same way are one distinct message: how many times it happened is
-        # the volume signal, and the total counts every occurrence.
+        # Three attributes with nothing to tell them apart failing the same
+        # way are one distinct message: how many times it happened is the
+        # volume signal, and the total counts every occurrence.
         self.parser.parse_json_content(
             {'Attribute': deepcopy(_VALUELESS_ATTRIBUTES)}
         )

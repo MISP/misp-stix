@@ -41,7 +41,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from typing import Any, Optional, Union
+from typing import Any, Callable, Iterator, Optional, Union
 
 try:
     from datetime import UTC
@@ -102,7 +102,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         try:
             misp_attribute = validate_attribute(attribute)
         except PyMISPError as exception:
-            self._validation_errors(str(exception))
+            self._validation_errors(
+                self._record_load_error(str(exception), attribute)
+            )
             return
         self._resolve_attribute(misp_attribute)
         if self.relationships:
@@ -131,7 +133,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             try:
                 attribute = validate_attribute(attribute)
             except PyMISPError as exception:
-                self._validation_errors(str(exception))
+                self._validation_errors(
+                    self._record_load_error(str(exception), attribute)
+                )
                 continue
             self._resolve_attribute(attribute)
         if self._markings:
@@ -163,7 +167,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             objects = [
                 self._sanitise_object_template_name(obj) for obj in misp_object
             ]
-            for obj in validate_objects(objects, errors):
+            valid_objects = self._validate_records(
+                validate_objects, objects, errors
+            )
+            for obj in valid_objects:
                 self._bind_shared_args(
                     self._handle_identity_from_feed(obj.get('Event', event))
                 )
@@ -203,8 +210,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _resolve_valid_object(
             self, misp_object: MISPObject | dict, errors: dict):
         # An object pymisp cannot load is skipped, its error recorded.
-        for valid_object in validate_objects(
-                [self._sanitise_object_template_name(misp_object)], errors):
+        valid_objects = self._validate_records(
+            validate_objects,
+            [self._sanitise_object_template_name(misp_object)], errors
+        )
+        for valid_object in valid_objects:
             self._resolve_object(valid_object)
 
     def _parse_json_content(self, json_content: dict | list):
@@ -334,10 +344,45 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         except PyMISPError as exception:
             self._validation_errors(str(exception))
             return None
-        loaded_event.attributes = list(validate_attributes(attributes, errors))
-        for misp_object in validate_objects(objects, errors):
+        loaded_event.attributes = list(
+            self._validate_records(validate_attributes, attributes, errors)
+        )
+        for misp_object in self._validate_records(
+                validate_objects, objects, errors):
             loaded_event.add_object(misp_object)
         return loaded_event
+
+    def _validate_records(
+            self, validate: Callable, records: list,
+            errors: dict) -> Iterator[MISPAttribute | MISPObject]:
+        """Validate records one at a time, for the Error of a record pymisp
+        cannot load to name the record.
+
+        :param validate: pymisp's `validate_attributes` or `validate_objects`
+        :param records: the attributes or the objects to load
+        :param errors: dictionary populated with the validation messages
+        :return: the records pymisp loads
+        """
+        for record in records:
+            record_errors = defaultdict(list)
+            yield from validate([record], record_errors)
+            for message_type, messages in record_errors.items():
+                if message_type == 'errors':
+                    messages = [
+                        self._record_load_error(message, record)
+                        for message in messages
+                    ]
+                errors[message_type].extend(messages)
+
+    @staticmethod
+    def _record_load_error(message: str, record: dict) -> str:
+        # pymisp says what fails to load, not which record: the uuid goes
+        # where pymisp's own validation messages put it
+        uuid = record.get('uuid') if isinstance(record, dict) else None
+        if not isinstance(uuid, str) or not uuid or uuid in message:
+            return message
+        label, separator, cause = message.partition(': ')
+        return f'{label} <{uuid}>{separator}{cause}'
 
     def _define_stix_object_id(
             self, feature: str, misp_object: MISPObject | dict) -> str:
