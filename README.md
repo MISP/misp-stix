@@ -315,12 +315,14 @@ from misp_stix_converter import misp_to_stix1
 
 response = misp_to_stix1(
     filename, # file name of the file containing a MISP Event
-    'xml', # return format (XML or JSON)
-    '1.1.1' # STIX1 version (1.1.1 or 1.2)
+    return_format='xml', # return format (XML or JSON)
+    version='1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
 # if everything went well, response is a dictionary where `success` = 1
 ```
 The resulting STIX1 Package is then available in a `filename.out` file
+
+STIX 1 is an XML standard: the JSON return format is python-stix's dictionary form of the STIX Package, which `stix.core.STIXPackage.from_json` reads back and other STIX 1 tools do not. `stix_1_to_misp` reads XML only, so export a STIX Package as XML if it is to come back into MISP.
 
 **STIX 1 export is not thread-safe.** The identifier namespace an exported STIX 1
 Package uses lives in a module-level generator inside `mixbox`, so it is process-wide.
