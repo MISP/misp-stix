@@ -3342,6 +3342,89 @@ class TestSTIX1Import(TestSTIX):
                     }
                 )
 
+    def test_internal_indicator_reads_its_rules_next_to_its_observable(self):
+        """The export writes an Indicator's observable or its rules, never
+        both; python-stix lets an Indicator carry both, and the rules were
+        dropped without a word. They come back next to the observable, which
+        keeps the Indicator's uuid: each rule takes one derived from it and
+        the rule, the same on every import, and the Indicator's context."""
+        for _ in range(2):
+            incident = self._incident_with_content()
+            indicator = self._snort_indicator(
+                f'MISP:Indicator-{_IP_UUID}', _SNORT_RULES
+            )
+            indicator.description = 'observable and rules'
+            indicator.add_observable(
+                self._address_observable('1.2.3.4', f'MISP:Address-{_IP_UUID}')
+            )
+            incident.related_indicators.append(
+                RelatedIndicator(indicator, relationship='Network activity')
+            )
+            parser = self._parse_internal_package(
+                self._internal_package(incident)
+            )
+            self.assertEqual(parser.diagnostics()['errors'], {})
+            self.assertEqual(parser.diagnostics()['warnings'], {})
+            self.assertEqual(
+                [
+                    (
+                        attribute.type, attribute.value, attribute.uuid,
+                        attribute.category, attribute.to_ids,
+                        attribute.comment
+                    )
+                    for attribute in parser.misp_event.attributes
+                    if attribute.type != 'domain'
+                ],
+                [
+                    (
+                        'ip-dst', '1.2.3.4', _IP_UUID, 'Network activity',
+                        True, 'observable and rules'
+                    ),
+                    *(
+                        (
+                            'snort', rule,
+                            str(uuid5(_UUIDv4, f'{_IP_UUID} - snort - {rule}')),
+                            'Network activity', True, 'observable and rules'
+                        )
+                        for rule in _SNORT_RULES
+                    )
+                ]
+            )
+
+    def test_internal_unknown_mechanism_next_to_an_observable_records_an_error(self):
+        """A mechanism of a type the mapping does not know is a loss next to
+        an observable too, where it went without a word: the error names the
+        Indicator, and the observable converts."""
+        incident = self._incident_with_content()
+        indicator = Indicator()
+        indicator.id_ = f'MISP:Indicator-{_IP_UUID}'
+        indicator.add_observable(
+            self._address_observable('1.2.3.4', f'MISP:Address-{_IP_UUID}')
+        )
+        indicator.add_test_mechanism(GenericTestMechanism())
+        incident.related_indicators.append(
+            RelatedIndicator(indicator, relationship='Network activity')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.uuid)
+                for attribute in parser.misp_event.attributes
+                if attribute.type != 'domain'
+            ],
+            [('ip-dst', '1.2.3.4', _IP_UUID)]
+        )
+        self.assertEqual(
+            parser.diagnostics()['errors'],
+            {
+                'misp event': [
+                    'Unable to convert the test mechanism of the Indicator '
+                    f'with id MISP:Indicator-{_IP_UUID}: unknown type '
+                    'genericTM:GenericTestMechanismType'
+                ]
+            }
+        )
+
     def test_internal_indicator_with_neither_observable_nor_rule_records_an_error(self):
         """An Indicator with no observable carries rules in a MISP export; one
         carrying neither - no mechanism at all, or a mechanism of a known type
@@ -10238,6 +10321,148 @@ class TestSTIX1Import(TestSTIX):
         )
         self.assertEqual(
             attribute.comment, 'myprop - Original id was: example:Custom-1'
+        )
+
+    def _internal_packages_with_replaced_ids(self):
+        """The Indicators, the Observables and the Campaign an attribute is
+        exported as, each with a description and an id holding no uuid, and
+        the attribute each reads back as: a value, the value an object yield
+        reduces to, a composite value, a name."""
+        registry_key = WinRegistryKey()
+        registry_key.key = 'HKLM\\Software\\mthjk'
+        registry_value = RegistryValue()
+        registry_value.data = '%DATA%'
+        registry_key.values = RegistryValues(registry_value)
+        for indicator_id, observable, relationship, attribute in (
+                (
+                    'MISP:Indicator-1',
+                    self._address_observable(
+                        '1.2.3.4', f'MISP:Address-{_IP_UUID}'
+                    ),
+                    'Network activity', ('ip-dst', '1.2.3.4')
+                ),
+                (
+                    'MISP:Indicator-2',
+                    self._observable(registry_key, 'WindowsRegistryKey'),
+                    'Persistence mechanism',
+                    ('regkey|value', 'HKLM\\Software\\mthjk|%DATA%')
+                )):
+            incident = self._incident_with_content()
+            indicator = Indicator()
+            indicator.id_ = indicator_id
+            indicator.description = 'indicator comment'
+            indicator.add_observable(observable)
+            incident.related_indicators.append(
+                RelatedIndicator(indicator, relationship=relationship)
+            )
+            yield (
+                indicator_id, self._internal_package(incident), *attribute,
+                'indicator comment'
+            )
+        domain = DomainName()
+        domain.value = 'example.com'
+        composition = self._composition_observable(
+            self._observable(domain, 'DomainName', _DOMAIN_UUID),
+            self._address_observable('1.2.3.4', f'MISP:Address-{_IP_UUID}')
+        )
+        composition.id_ = 'MISP:Observable-2'
+        for observable, attribute in (
+                (
+                    self._address_observable(
+                        '1.2.3.4', f'MISP:Address-{_IP_UUID}',
+                        'MISP:Observable-1'
+                    ),
+                    ('ip-dst', '1.2.3.4')
+                ),
+                (composition, ('domain|ip', 'example.com|1.2.3.4'))):
+            incident = self._incident_with_content()
+            observable.description = 'observable comment'
+            incident.related_observables.append(
+                RelatedObservable(observable, relationship='Network activity')
+            )
+            yield (
+                observable.id_, self._internal_package(incident), *attribute,
+                'observable comment'
+            )
+        campaign = self._campaign(
+            'Operation X', title='Attribution: Operation X (MISP Attribute)'
+        )
+        campaign.id_ = 'MISP:Campaign-1'
+        campaign.description = 'campaign comment'
+        inner_package = STIXPackage()
+        inner_package.add_incident(self._incident_with_content())
+        inner_package.add_campaign(campaign)
+        yield (
+            campaign.id_, self._wrapped_package(inner_package),
+            'campaign-name', 'Operation X', 'campaign comment'
+        )
+
+    def test_internal_replaced_uuid_keeps_the_comment(self):
+        """The comment keeping the original id of an Indicator, an Observable
+        or a Campaign is appended to the one its description carries, as a
+        rule's has been, never put in its place - whatever the observable
+        reads back as."""
+        for stix_id, stix_package, attribute_type, value, comment in (
+                self._internal_packages_with_replaced_ids()):
+            with self.subTest(stix_id=stix_id):
+                parser = self._parse_internal_package(stix_package)
+                self.assertEqual(parser.diagnostics()['errors'], {})
+                self.assertEqual(
+                    [
+                        (
+                            attribute.type, attribute.value,
+                            str(attribute.uuid), attribute.comment
+                        )
+                        for attribute in parser.misp_event.attributes
+                        if attribute.type != 'domain'
+                    ],
+                    [
+                        (
+                            attribute_type, value,
+                            str(uuid5(_UUIDv4, stix_id)),
+                            f'{comment} - Original id was: {stix_id}'
+                        )
+                    ]
+                )
+
+    def test_internal_replaced_uuid_comment_is_appended_last(self):
+        """The comment keeping the original id comes after what reads the
+        comment the record carried: the template description an Indicator
+        read as an object carries for no comment still reads as none, and
+        the relation a `text` attribute takes as its comment stays in front
+        of it."""
+        incident = self._incident_with_content()
+        indicator = Indicator()
+        indicator.id_ = 'MISP:Indicator-1'
+        indicator.description = _template_description('file')
+        indicator.add_observable(
+            self._observable(self._file_with_three_properties(), 'File')
+        )
+        incident.related_indicators.append(
+            RelatedIndicator(indicator, relationship='Payload delivery')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        misp_object, = parser.misp_event.objects
+        self.assertEqual(
+            (misp_object.name, misp_object.comment),
+            ('file', 'Original id was: MISP:Indicator-1')
+        )
+        incident = self._incident_with_content()
+        observable = self._observable(
+            self._custom(None, ('myprop', 'some text')), 'Custom'
+        )
+        observable.id_ = 'MISP:Observable-1'
+        incident.related_observables.append(
+            RelatedObservable(observable, relationship='Other')
+        )
+        parser = self._parse_internal_package(self._internal_package(incident))
+        self.assertEqual(
+            [
+                (attribute.type, attribute.value, attribute.comment)
+                for attribute in parser.misp_event.attributes
+                if attribute.type != 'domain'
+            ],
+            [('text', 'some text', 'myprop - Original id was: MISP:Observable-1')]
         )
 
     def test_internal_composition_object_keeps_its_uuid(self):
