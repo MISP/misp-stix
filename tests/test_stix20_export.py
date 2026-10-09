@@ -4543,6 +4543,64 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         ]
         self.assertEqual(numbers, [31, 31, 31, 31])
 
+    def _test_event_with_asdot_AS_values(self):
+        # pymisp validation gives an asdot AS value as the integer it
+        # denotes, which the attribute and the objects number natively
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_port_and_as_attributes()
+                event['Event']['Attribute'] = [
+                    attribute for attribute in event['Event']['Attribute']
+                    if attribute['type'] == 'AS'
+                ]
+                event['Event']['Object'] = [
+                    self._spell_object_relations(
+                        get_event_with_asn_object(), 'asn', {'asn': 'AS1.2'}
+                    ),
+                    self._spell_object_relations(
+                        get_event_with_netflow_object(), 'netflow',
+                        {'src-as': 'AS1.2', 'dst-as': 'AS2.3'}
+                    )
+                ]
+                attributes = [
+                    *event['Event']['Attribute'],
+                    *(attribute for misp_object in event['Event']['Object']
+                      for attribute in misp_object['Attribute'])
+                ]
+                for attribute in attributes:
+                    attribute['to_ids'] = to_ids
+                event['Event']['Attribute'][0]['value'] = 'AS1.2'
+                self.assertEqual(self._parse_non_canonical(event), [])
+                numbers = [
+                    observable.number
+                    for stix_object in self.parser.stix_objects
+                    if stix_object.type == 'observed-data'
+                    for observable in stix_object.objects.values()
+                    if observable.type == 'autonomous-system'
+                ]
+                self.assertEqual(numbers, [65538, 65538, 65538, 131075])
+                patterns = [
+                    stix_object.pattern
+                    for stix_object in self.parser.stix_objects
+                    if stix_object.type == 'indicator'
+                ]
+                if not to_ids:
+                    self.assertEqual(patterns, [])
+                    continue
+                AS_pattern, asn_pattern, netflow_pattern = patterns
+                self.assertEqual(
+                    AS_pattern, "[autonomous-system:number = '65538']"
+                )
+                self.assertIn(
+                    "autonomous-system:number = '65538'", asn_pattern
+                )
+                for ref_type, number in (('src', 65538), ('dst', 131075)):
+                    self.assertIn(
+                        f"network-traffic:{ref_type}_ref.belongs_to_refs[0]"
+                        f".number = '{number}'",
+                        netflow_pattern
+                    )
+
 
 class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     @classmethod
@@ -5213,6 +5271,9 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_number_attributes_non_canonical(self):
         self._test_event_with_number_attributes_non_canonical()
 
+    def test_event_with_asdot_AS_values(self):
+        self._test_event_with_asdot_AS_values()
+
     def test_event_with_repeated_single_value_relations(self):
         self._test_repeated_single_value_relations(MISPtoSTIX20Parser)
 
@@ -5783,6 +5844,9 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
 
     def test_event_with_number_attributes_non_canonical(self):
         self._test_event_with_number_attributes_non_canonical()
+
+    def test_event_with_asdot_AS_values(self):
+        self._test_event_with_asdot_AS_values()
 
     def test_event_with_repeated_single_value_relations(self):
         self._test_repeated_single_value_relations(MISPtoSTIX20Parser)
