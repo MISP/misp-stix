@@ -3068,7 +3068,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 extension['sections'].append(
                     self._create_windowsPESection(section)
                 )
-                pe_section['used'] = True
         return self._create_PE_extension(extension), custom
 
     def _parse_pe_extensions_pattern(
@@ -3463,6 +3462,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         file_args, observable = self._parse_file_observable_object(
             file_object
         )
+        custom = extension_built = False
         try:
             extension_args, custom = self._parse_pe_extensions_observable(
                 pe_object['misp_object'], section_uuids
@@ -3470,6 +3470,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             file_args['extensions'] = {
                 'windows-pebinary-ext': extension_args
             }
+            extension_built = True
         except Exception as exception:
             self._object_error(pe_object['misp_object'], exception)
         if 'allow_custom' not in file_args and custom:
@@ -3491,6 +3492,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(file_object, *stix_objects)
         pe_object['used'] = True
+        if extension_built:
+            self._use_pe_sections(section_uuids)
 
     def _resolve_registry_key_to_parse(self, registry_key: dict):
         value_uuids = self._fetch_included_reference_uuids(
@@ -3623,6 +3626,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
             stix_objects.append(indicator)
         self._handle_object_analyst_fields(pe_object, *stix_objects)
+        self._use_pe_sections(section_uuids)
+
+    def _use_pe_sections(self, section_uuids: list):
+        # The sections a built pe carries: those of a pe the export fails to
+        # build are left to go out as custom objects, as the pe does
+        for section_uuid in section_uuids:
+            self._objects_to_parse['pe-section'][section_uuid]['used'] = True
 
     ############################################################################
     #                        GALAXIES PARSING FUNCTIONS                        #
