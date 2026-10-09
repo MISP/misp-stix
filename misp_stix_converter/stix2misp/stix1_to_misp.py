@@ -294,17 +294,38 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         **filename_attribute, 'uuid': filename_uuid
                     }
                 self._add_attribute(filename_attribute, object_id)
-        # Appended last: the relation standing in for a comment is read
-        # first, and the filename above takes its own uuid, not this one
-        if uuid_comment is not None:
-            attribute['comment'] = (
-                f"{attribute['comment']} - {uuid_comment}"
-                if 'comment' in attribute else uuid_comment
-            )
+        # The comment keeping the original id is appended last: the relation
+        # standing in for a comment is read first, and the filename above
+        # takes its own uuid, not this one
         self._add_attribute(
-            {'type': attribute_type, 'value': attribute_value, **attribute},
+            {
+                'type': attribute_type, 'value': attribute_value,
+                **self._with_uuid_comment(attribute, uuid_comment)
+            },
             object_id
         )
+
+    @staticmethod
+    def _with_uuid_comment(attribute: dict,
+                           uuid_comment: Optional[str]) -> dict:
+        """Append the comment keeping the original id a replaced uuid gives
+        to the comment the attribute carries, never put in its place.
+
+        :param attribute: the attribute, as pymisp takes it
+        :param uuid_comment: the comment keeping the original id when the
+            uuid replaces it, None otherwise
+        :return: the attribute with the comment, a copy where it changes
+        """
+        if uuid_comment is None:
+            return attribute
+        comment = attribute.get('comment')
+        return {
+            **attribute,
+            'comment': (
+                uuid_comment if comment is None
+                else f'{comment} - {uuid_comment}'
+            )
+        }
 
     def _add_attribute(self, attribute: dict,
                        object_id: Optional[str] = None) -> Optional[MISPAttribute]:
@@ -685,16 +706,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _add_attributes_from_one_id(
             self, object_id: Optional[str],
             typed_values: list[tuple[str, str]], attribute: dict,
-            repeated: Optional[Callable[[str, Optional[str]], None]] = None
-    ) -> list[str]:
+            repeated: Optional[Callable[[str, Optional[str]], None]] = None,
+            derived_from: Optional[str] = None) -> list[str]:
         """Add the attributes one STIX object holds several of - the rules of
         an Indicator, the descriptions of an Incident, the names of a
         Campaign.
 
         The first takes the object's uuid, the rest one derived from it, the
-        type and the value, so a re-import lands on the same records. A value
-        the object repeats carries nothing more - MISP would keep one of the
-        two - and is read once.
+        type and the value, so a re-import lands on the same records. Where
+        another record of the object already took its uuid, every one derives
+        its own. A value the object repeats carries nothing more - MISP would
+        keep one of the two - and is read once.
 
         :param object_id: the id of the STIX object holding the values
         :param typed_values: the `(attribute_type, value)` pairs read off it
@@ -702,24 +724,29 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             value and uuid
         :param repeated: what records a repeated value, called with its type
             and the object id, where one is recorded
+        :param derived_from: the uuid the object's id gave another record,
+            where one did
         :return: the uuids of the attributes added
         """
         if not typed_values:
             return []
-        # Read once: an object carrying no id draws a random uuid on every
-        # read, and its attributes derive from one
-        record = self._sanitise_attribute_uuid(
-            object_id, attribute.get('comment')
-        )
+        record, base_uuid = None, derived_from
+        if base_uuid is None:
+            # Read once: an object carrying no id draws a random uuid on every
+            # read, and its attributes derive from one
+            record = self._sanitise_attribute_uuid(
+                object_id, attribute.get('comment')
+            )
+            base_uuid = record['uuid']
         added, uuids = set(), []
         for index, (attribute_type, value) in enumerate(typed_values):
             if (attribute_type, value) in added:
                 if repeated is not None:
                     repeated(attribute_type, object_id)
                 continue
-            uuid_fields = record if index == 0 else {
+            uuid_fields = record if index == 0 and record is not None else {
                 'uuid': self._derived_uuid(
-                    record['uuid'], f'{attribute_type} - {value}'
+                    base_uuid, f'{attribute_type} - {value}'
                 )
             }
             added_attribute = self._add_attribute(

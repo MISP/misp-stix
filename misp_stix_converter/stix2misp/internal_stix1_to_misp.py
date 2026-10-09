@@ -552,8 +552,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         the timestamp, the comment it writes as the description and the tags
         as the handling. The description needs no guard as an Indicator's
         does: the export writes it only when the attribute has a comment of
-        its own. A Campaign with no name is no export of ours, and the error
-        records it.
+        its own. Where the id holds no uuid MISP takes, the comment naming it
+        follows that one. A Campaign with no name is no export of ours, and
+        the error records it.
 
         :param campaign: the Campaign the package carries
         """
@@ -571,7 +572,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         category = self._category_from_title(campaign.title)
         if category is not None:
             misp_attribute['category'] = category
-        misp_attribute.update(self._sanitise_attribute_uuid(campaign.id_))
+        misp_attribute.update(
+            self._sanitise_attribute_uuid(
+                campaign.id_, misp_attribute.get('comment')
+            )
+        )
         self._add_attribute(misp_attribute, campaign.id_)
 
     # Parse indicators of a STIX document coming from our exporter
@@ -919,15 +924,19 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         no observable in - and reads back one attribute per rule: a Snort
         mechanism may carry several, never written by us, the Indicator's
         uuid goes to the first and the rest derive theirs from it. An
-        Indicator carrying no observable and no rule is no export of ours,
-        and the error records it.
+        Indicator carrying both, never written by us either, reads both: the
+        observable takes the Indicator's uuid, and every rule one derived
+        from it. An Indicator carrying no observable and no rule is no export
+        of ours, and the error records it.
 
         The comment and the tags come back with it: the export writes the
         comment as the description, falling back to the Record Title when
         there is none, and the tags as the handling. An Indicator yielding
         several attributes gives each of them both - the Indicator's uuid is
         an identity and goes to the first alone, a comment and a tag are
-        context the Indicator carried for every rule it held.
+        context the Indicator carried for every rule it held. Where the id
+        holds no uuid MISP takes, the comment naming it follows the
+        Indicator's.
 
         :param indicator: the Indicator itself - the item of the Related
             Indicator an event export relates to its Incident, the Indicator
@@ -949,20 +958,26 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         tags = tuple(self._read_markings(indicator.handling))
         if tags:
             misp_attribute['Tag'] = list(tags)
-        if indicator.observable:
-            misp_attribute.update(self._sanitise_attribute_uuid(indicator.id_))
-            self._parse_misp_attribute(
-                indicator.observable, misp_attribute, indicator.id_, to_ids=True
-            )
-            return
         rules, unknown_type = self._read_test_mechanisms(indicator)
-        if not rules:
+        indicator_uuid = None
+        if indicator.observable:
+            record = self._sanitise_attribute_uuid(indicator.id_)
+            indicator_uuid = record['uuid']
+            self._parse_misp_attribute(
+                indicator.observable,
+                {**misp_attribute, 'uuid': indicator_uuid}, indicator.id_,
+                to_ids=True, uuid_comment=record.get('comment')
+            )
+        elif not rules:
             # A mechanism of an unknown type is the loss, and already named
             if not unknown_type:
                 self._unconverted_indicator_error(indicator.id_)
             return
+        # Next to an observable, which takes the Indicator's uuid, every rule
+        # derives its own from it
         self._add_attributes_from_one_id(
-            indicator.id_, rules, misp_attribute, self._repeated_rule_warning
+            indicator.id_, rules, misp_attribute, self._repeated_rule_warning,
+            derived_from=indicator_uuid
         )
 
     def _parse_attribute_observable(
@@ -972,8 +987,9 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
 
         The comment comes back with it: the export writes it as the
         Observable's description, and writes none when the attribute has no
-        comment. The tags do not - a CybOX Observable has no room for a
-        marking.
+        comment. Where the id holds no uuid MISP takes, the comment naming it
+        follows the Observable's. The tags do not come back - a CybOX
+        Observable has no room for a marking.
 
         :param observable: the Observable itself - the item of the Related
             Observable an event export relates to its Incident, the Observable
@@ -988,12 +1004,34 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
         comment = self._read_comment(observable.description)
         if comment is not None:
             misp_attribute['comment'] = comment
-        misp_attribute.update(self._sanitise_attribute_uuid(observable.id_))
-        self._parse_misp_attribute(observable, misp_attribute, observable.id_)
+        record = self._sanitise_attribute_uuid(observable.id_)
+        misp_attribute['uuid'] = record['uuid']
+        self._parse_misp_attribute(
+            observable, misp_attribute, observable.id_,
+            uuid_comment=record.get('comment')
+        )
 
     def _parse_misp_attribute(
             self, observable: Observable, misp_attribute: dict,
-            stix_object_id: str, to_ids: Optional[bool] = False):
+            stix_object_id: str, to_ids: Optional[bool] = False,
+            uuid_comment: Optional[str] = None):
+        """Read the observable of an Indicator or an Observable an attribute
+        was exported as.
+
+        The comment keeping the original id, where the carrier's id holds no
+        uuid MISP takes, is appended once the record has read its own
+        comment: an object reads the description it is handed against its
+        template description, and a `text` attribute takes its relation as
+        its comment where it carries none.
+
+        :param observable: the observable
+        :param misp_attribute: the attribute context the caller read - the
+            uuid, the category, the comment, the tags, the timestamp
+        :param stix_object_id: the id of the Indicator or the Observable
+        :param to_ids: the `to_ids` flag the carrier was written with
+        :param uuid_comment: the comment keeping the original id when the
+            uuid replaces it, None otherwise
+        """
         if getattr(observable.object_, 'properties', None) is not None:
             properties = observable.object_.properties
             try:
@@ -1009,12 +1047,13 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                         attribute_type = 'link'
                     self._handle_attribute_case(
                         attribute_type, attribute_value, compl_data,
-                        misp_attribute, stix_object_id
+                        misp_attribute, stix_object_id,
+                        uuid_comment=uuid_comment
                     )
                 else:
                     self._handle_attribute_yield(
                         attribute_type, attribute_value, compl_data,
-                        misp_attribute, stix_object_id, to_ids
+                        misp_attribute, stix_object_id, to_ids, uuid_comment
                     )
             except StixObjectTypeError as xsi_type:
                 self._stix_object_type_error(xsi_type, stix_object_id)
@@ -1055,14 +1094,15 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
                 self._add_attribute(
                     {
                         'type': attribute_type, 'value': attribute_value,
-                        **misp_attribute
+                        **self._with_uuid_comment(misp_attribute, uuid_comment)
                     },
                     stix_object_id
                 )
 
     def _handle_attribute_yield(
             self, name: Optional[str], attributes, compl_data,
-            misp_attribute: dict, stix_object_id: str, to_ids: bool):
+            misp_attribute: dict, stix_object_id: str, to_ids: bool,
+            uuid_comment: Optional[str] = None):
         """Read an Attribute Observable back as the MISP attribute it was
         exported from, where the handler reading its CybOX object yields the
         attributes of an object.
@@ -1092,6 +1132,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             uuid, the category, the comment, the tags, the timestamp
         :param stix_object_id: the id of the Indicator or the Observable
         :param to_ids: the `to_ids` flag the carrier was written with
+        :param uuid_comment: the comment keeping the original id when the
+            uuid replaces it, None otherwise
         """
         if not name:
             # Nothing to name an object with: recorded by the object branch
@@ -1109,7 +1151,11 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             attribute = self._attribute_from_yield(name, attributes)
             if attribute is not None:
                 self._add_attribute(
-                    {**attribute, **misp_attribute}, stix_object_id
+                    {
+                        **attribute,
+                        **self._with_uuid_comment(misp_attribute, uuid_comment)
+                    },
+                    stix_object_id
                 )
                 return
         self._unread_attribute_warning(name, stix_object_id)
@@ -1120,7 +1166,8 @@ class InternalSTIX1toMISPParser(STIX1toMISPParser):
             name, attributes, compl_data, to_ids=to_ids,
             object_uuid=misp_attribute.get('uuid'),
             description=misp_attribute.get('comment'),
-            timestamp=misp_attribute.get('timestamp')
+            timestamp=misp_attribute.get('timestamp'),
+            uuid_comment=uuid_comment
         )
 
     @staticmethod
