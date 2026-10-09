@@ -6343,6 +6343,9 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_pe_objects_non_canonical_numbers(self):
         self._test_event_with_pe_objects_non_canonical_numbers()
 
+    def test_event_with_pe_object_falling_back_keeps_its_sections(self):
+        self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX21Parser)
+
     def test_event_with_network_objects_non_canonical_numbers(self):
         self._test_event_with_network_objects_non_canonical_numbers()
 
@@ -6920,6 +6923,9 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_pe_objects_non_canonical_numbers(self):
         self._test_event_with_pe_objects_non_canonical_numbers()
+
+    def test_event_with_pe_object_falling_back_keeps_its_sections(self):
+        self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX21Parser)
 
     def test_event_with_network_objects_non_canonical_numbers(self):
         self._test_event_with_network_objects_non_canonical_numbers()
