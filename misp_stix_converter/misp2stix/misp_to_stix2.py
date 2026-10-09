@@ -813,7 +813,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
     @staticmethod
-    def _parse_AS_value(value: str) -> int:
+    def _parse_AS_value(value: Union[int, str]) -> int:
+        # pymisp validation gives an asdot value (`AS1.2`) as the integer it
+        # denotes
+        if isinstance(value, int):
+            return value
         value = ''.join(
             digit for digit in value if digit.isnumeric() or digit == '.'
         )
