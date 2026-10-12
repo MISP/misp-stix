@@ -1220,6 +1220,23 @@ class TestSTIX1Import(TestSTIX):
                     [('comment', 'Other', 'same')]
                 )
                 self.assertEqual(self._warning_texts(parser), warnings)
+        with self.subTest('entry pymisp refuses'):
+            # Only an added entry is seen: the repeat of a refused one is
+            # tried, and refused, again
+            entry = 'Attribute (Other - datetime): not a date'
+            parser = self._parse_internal_package(
+                self._journal_package(entry, entry)
+            )
+            self.assertEqual(self._journal_attributes(parser), [])
+            error, = parser.diagnostics()['errors']['misp event']
+            self.assertTrue(
+                error.startswith(
+                    'Error with the datetime attribute: not a date in the '
+                    f'object with id {incident_id}: '
+                )
+            )
+            self.assertEqual(parser.diagnostics()['counts']['errors'], 2)
+            self.assertEqual(parser.diagnostics()['warnings'], {})
         with self.subTest('incident with no id'):
             stix_package = self._journal_package(
                 *('Attribute (Other - comment): same',) * 2
