@@ -383,10 +383,6 @@ class STIX1toMISPMapping:
         return cls.__x509_pubkey_types
 
 
-class ExternalSTIX1toMISPMapping(STIX1toMISPMapping):
-    pass
-
-
 class InternalSTIX1toMISPMapping(STIX1toMISPMapping):
     __attack_pattern_object_mapping = Mapping(
         capec_id = 'id',

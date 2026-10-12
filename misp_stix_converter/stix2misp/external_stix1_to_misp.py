@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .importparser import ExternalSTIXtoMISPParser
-from .stix1_mapping import ExternalSTIX1toMISPMapping
+from .stix1_mapping import STIX1toMISPMapping
 from .stix1_to_misp import StixObjectTypeError, STIX1toMISPParser
 from collections import defaultdict
 from contextlib import contextmanager
@@ -21,7 +21,7 @@ from typing import Iterable, Iterator, Optional, Union
 class ExternalSTIX1toMISPParser(STIX1toMISPParser, ExternalSTIXtoMISPParser):
     def __init__(self):
         super().__init__()
-        self._mapping = ExternalSTIX1toMISPMapping
+        self._mapping = STIX1toMISPMapping
 
     def parse_stix_package(self, cluster_distribution: Optional[int] = 0,
                            cluster_sharing_group_id: Optional[int] = None,
