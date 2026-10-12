@@ -1616,9 +1616,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, indicator = bundle.objects
         attribute = self._check_misp_event_features(event, report)[0]
-        pattern = self._check_indicator_attribute(attribute, indicator)
+        self._check_indicator_attribute(attribute, indicator)
         self.assertEqual(attribute.type, 'regkey')
-        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        # The pattern's escapes taken off
+        self.assertEqual(attribute.value, 'HKLM\\Software\\mthjk')
         self.assertTrue(attribute.to_ids)
         self._populate_documentation(
             attribute=json.loads(attribute.to_json()), indicator=indicator
@@ -1660,12 +1661,12 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, indicator = bundle.objects
         attribute = self._check_misp_event_features(event, report)[0]
-        pattern = self._check_indicator_attribute(attribute, indicator)
+        self._check_indicator_attribute(attribute, indicator)
         self.assertEqual(attribute.type, 'regkey|value')
-        key_pattern, data_pattern = pattern[1:-1].split(' AND ')
-        key_value = self._get_pattern_value(key_pattern)
-        data_value = self._get_pattern_value(data_pattern)
-        self.assertEqual(attribute.value, f'{key_value}|{data_value}')
+        # The pattern's escapes taken off, the `%` ones included
+        self.assertEqual(
+            attribute.value, 'HKLM\\Software\\mthjk|%DATA%\\1234567890'
+        )
         self.assertTrue(attribute.to_ids)
         self._populate_documentation(
             attribute=json.loads(attribute.to_json()), indicator=indicator

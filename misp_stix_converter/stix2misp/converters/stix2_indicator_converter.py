@@ -49,6 +49,10 @@ _PATTERN_FIELDS_TO_SKIP = (
     *_OBSERVABLE_FIELDS_TO_SKIP, 'content_disposition', 'decryption_key',
     'encryption_algorithm', 'mime_type'
 )
+# The string a pattern compares a property with, its quotes and backslashes
+# escaped inside
+_PATTERN_STRING_RE = re.compile(r"'((?:[^'\\]|\\.)*)'")
+_PATTERN_ESCAPE_RE = re.compile(r"\\(['\\])")
 
 
 class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
@@ -2201,8 +2205,8 @@ class InternalSTIX2IndicatorConverter(
                 attachment = {feature: value}
                 in_attachment = True
                 continue
-            if value.endswith("')"):
-                attachment[feature] = value[:-2]
+            if pattern.endswith(')'):
+                attachment[feature] = value
                 attachments.append(attachment)
                 in_attachment = False
                 continue
@@ -2362,7 +2366,7 @@ class InternalSTIX2IndicatorConverter(
                 continue
             if pattern.endswith(')'):
                 reference.update(
-                    self._parse_ip_port_reference(feature, value[:-2])
+                    self._parse_ip_port_reference(feature, value)
                 )
                 misp_object.add_attribute(
                     **reference, uuid=self.main_parser._create_v5_uuid(
@@ -2433,9 +2437,7 @@ class InternalSTIX2IndicatorConverter(
                 if pattern.startswith('('):
                     reference = defaultdict(dict)
                 elif pattern.endswith(')'):
-                    self._parse_netflow_reference(
-                        reference, feature, value[:-2]
-                    )
+                    self._parse_netflow_reference(reference, feature, value)
                     for attribute in reference.values():
                         misp_object.add_attribute(
                             **attribute, uuid=self.main_parser._create_v5_uuid(
@@ -2480,7 +2482,7 @@ class InternalSTIX2IndicatorConverter(
                 continue
             if pattern.endswith(')'):
                 reference.update(
-                    self._parse_network_reference(feature, value[:-2])
+                    self._parse_network_reference(feature, value)
                 )
                 reference['uuid'] = self.main_parser._create_v5_uuid(
                     f"{indicator.id} - {reference['object_relation']}"
@@ -2916,14 +2918,40 @@ class InternalSTIX2IndicatorConverter(
             name, feature, mapping(feature), object_id
         )
 
-    @staticmethod
-    def _extract_value_from_pattern(pattern: str) -> str:
-        return pattern.split(' = ')[1].strip("'")
+    @classmethod
+    def _extract_value_from_pattern(cls, pattern: str) -> str:
+        return cls._pattern_comparison_value(*pattern.split(' = ', 1))
+
+    @classmethod
+    def _extract_features_from_pattern(cls, pattern: str) -> tuple[str]:
+        identifier, constant = pattern.split(' = ', 1)
+        return (
+            identifier.split(':')[1],
+            cls._pattern_comparison_value(identifier, constant)
+        )
 
     @staticmethod
-    def _extract_features_from_pattern(pattern: str) -> tuple[str]:
-        identifier, value = pattern.split(' = ')
-        return identifier.split(':')[1], value.strip("'")
+    def _pattern_comparison_value(identifier: str, constant: str) -> str:
+        """The value a comparison of a pattern the export writes holds.
+
+        The string the property is compared with is read whole, a ` = ` in
+        it included, without its quotes and without the parenthesis that may
+        close a group after it, then without the escapes of its quotes and
+        backslashes. The export also escapes the `%` of every value a
+        registry key pattern compares; a `%` MISP gave after a backslash is
+        written the same way, so it comes back without the backslash.
+
+        :param identifier: the object path the comparison is made on
+        :param constant: what the object path is compared with
+        :return: the value as MISP gave it
+        """
+        string = _PATTERN_STRING_RE.match(constant)
+        if string is None:
+            return constant.rstrip(')')
+        value = _PATTERN_ESCAPE_RE.sub(r'\1', string.group(1))
+        if 'windows-registry-key:' in identifier:
+            return value.replace('\\%', '%')
+        return value
 
     @staticmethod
     def _get_contained_value(first_value: str, second_value: str) -> tuple[str]:

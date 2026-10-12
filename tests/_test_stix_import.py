@@ -5424,17 +5424,19 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     def _check_http_request_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 8)
         self.assertTrue(all(attribute.to_ids for attribute in attributes))
-        _, src_ref, _, dst_ref, _, domain_ref, request_method, request_uri, request_url, header_content_type, header_user_agent = pattern[1:-1].split(' AND ')
+        *_, request_method, request_uri, request_url, header_content_type, header_user_agent = pattern[1:-1].split(' AND ')
         ip_src, ip_dst, host, method, content_type, user_agent, uri, url = attributes
+        # The values of the referenced addresses and domain, without the
+        # parenthesis closing their group
         self.assertEqual(ip_src.type, 'ip-src')
         self.assertEqual(ip_src.object_relation, 'ip-src')
-        self.assertEqual(ip_src.value, self._get_pattern_value(src_ref))
+        self.assertEqual(ip_src.value, '8.8.8.8')
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
-        self.assertEqual(ip_dst.value, self._get_pattern_value(dst_ref))
+        self.assertEqual(ip_dst.value, '149.13.33.14')
         self.assertEqual(host.type, 'hostname')
         self.assertEqual(host.object_relation, 'host')
-        self.assertEqual(host.value, self._get_pattern_value(domain_ref))
+        self.assertEqual(host.value, 'circl.lu')
         self.assertEqual(method.type, 'http-method')
         self.assertEqual(method.object_relation, 'method')
         self.assertEqual(method.value, self._get_pattern_value(request_method))
@@ -6361,12 +6363,13 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertTrue(all(attribute.to_ids for attribute in attributes))
         key, data, data_type, name, hive, last_modified = attributes
         _key, _data, _data_type, _name, _hive, modified_time = pattern
+        # The pattern's escapes taken off, the `%` ones included
         self.assertEqual(key.type, 'regkey')
         self.assertEqual(key.object_relation, 'key')
-        self.assertEqual(key.value, self._get_pattern_value(_key))
+        self.assertEqual(key.value, 'hkey_local_machine\\system\\bar\\foo')
         self.assertEqual(data.type, 'text')
         self.assertEqual(data.object_relation, 'data')
-        self.assertEqual(data.value, self._get_pattern_value(_data))
+        self.assertEqual(data.value, '%DATA%\\qwertyuiop')
         self.assertEqual(data_type.type, 'text')
         self.assertEqual(data_type.object_relation, 'data-type')
         self.assertEqual(data_type.value, self._get_pattern_value(_data_type))
