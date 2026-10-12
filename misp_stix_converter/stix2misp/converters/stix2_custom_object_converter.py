@@ -68,7 +68,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         attribute = {
             "type": custom_attribute.x_misp_type,
             "timestamp": self._timestamp_from_date(custom_attribute.modified),
-            "value": self._sanitise_value(custom_attribute.x_misp_value)
+            "value": custom_attribute.x_misp_value
         }
         for field in _attribute_additional_fields:
             if hasattr(custom_attribute, f'x_misp_{field}'):
@@ -183,7 +183,3 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         note = _rejected_name_note(name)
         comment = getattr(misp_object, 'comment', None)
         misp_object.comment = f'{comment}\n{note}' if comment else note
-
-    @staticmethod
-    def _sanitise_value(value: str) -> str:
-        return value.replace('\\\\', '\\')
