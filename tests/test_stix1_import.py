@@ -3359,6 +3359,41 @@ class TestSTIX1Import(TestSTIX):
                     }
                 )
 
+    def test_internal_refused_rule_is_tried_again_on_its_repeat(self):
+        """A rule is read once it is added: one MISP refused was not, so its
+        repeat is tried again rather than warned of as a repeat. The parser
+        sanitises every rule pymisp would refuse, so the refusal is a mock."""
+        rule, _ = _SNORT_RULES
+        add_attribute = MISPEvent.add_attribute
+        refused = []
+
+        def refuse_first_rule(misp_event, *args, **kwargs):
+            if kwargs.get('type') == 'snort' and not refused:
+                refused.append(kwargs['value'])
+                raise NewAttributeError('refused')
+            return add_attribute(misp_event, *args, **kwargs)
+
+        with patch.object(MISPEvent, 'add_attribute', refuse_first_rule):
+            parser = self._parse_internal_snort_indicator((rule, rule))
+        self.assertEqual(refused, [rule])
+        self.assertEqual(
+            [
+                attribute.value for attribute in parser.misp_event.attributes
+                if attribute.type == 'snort'
+            ],
+            [rule]
+        )
+        self.assertEqual(
+            parser.diagnostics()['errors'],
+            {
+                'misp event': [
+                    f'Error with the snort attribute: {rule} in the object '
+                    f'with id MISP:Indicator-{_IP_UUID}: refused'
+                ]
+            }
+        )
+        self.assertEqual(parser.diagnostics()['warnings'], {})
+
     def test_internal_indicator_reads_its_rules_next_to_its_observable(self):
         """The export writes an Indicator's observable or its rules, never
         both; python-stix lets an Indicator carry both, and the rules were
