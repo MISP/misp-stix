@@ -5443,6 +5443,9 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
     def test_event_with_non_pattern_values_as_given(self):
         self._test_non_pattern_values_as_given(MISPtoSTIX20Parser)
 
+    def test_event_with_netflow_object_with_icmp_type(self):
+        self._test_netflow_object_with_icmp_type(MISPtoSTIX20Parser)
+
 
 class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
     def test_embedded_indicator_object_galaxy(self):
@@ -6025,6 +6028,9 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
 
     def test_event_with_non_pattern_values_as_given(self):
         self._test_non_pattern_values_as_given(MISPtoSTIX20Parser)
+
+    def test_event_with_netflow_object_with_icmp_type(self):
+        self._test_netflow_object_with_icmp_type(MISPtoSTIX20Parser)
 
 
 class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):

@@ -4273,6 +4273,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX21Parser)
 
+    def test_stix21_netflow_icmp_type_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._round_trip_netflow_icmp_type(MISPtoSTIX21Parser)
+
     def test_stix21_pe_from_pattern_round_trip(self):
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_pe_from_pattern(MISPtoSTIX21Parser)

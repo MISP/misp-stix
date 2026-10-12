@@ -3571,6 +3571,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         from misp_stix_converter import MISPtoSTIX20Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX20Parser)
 
+    def test_stix20_netflow_icmp_type_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._round_trip_netflow_icmp_type(MISPtoSTIX20Parser)
+
     def test_stix20_pe_from_pattern_round_trip(self):
         from misp_stix_converter import MISPtoSTIX20Parser
         self._round_trip_pe_from_pattern(MISPtoSTIX20Parser)

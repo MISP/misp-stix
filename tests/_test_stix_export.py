@@ -681,6 +681,44 @@ class TestSTIX2Export(TestSTIX):
             collect(json.loads(stix_object.serialize()))
         return values
 
+    # A netflow object's ICMP type goes out as a custom property of the
+    # network traffic: the ICMP extension requires a code the netflow
+    # template has no relation for. The protocols stay the ones the TCP
+    # flags and the object's own protocol name, and the pattern compares
+    # the type of the extension still
+
+    def _test_netflow_object_with_icmp_type(self, parser_class):
+        from .test_events import get_event_with_netflow_object
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_netflow_object()
+                misp_object = self._spell_object_relations(
+                    event, 'netflow', {}, ('text', 'icmp-type', '08')
+                )
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = to_ids
+                self.parser = self._export_event(parser_class, event)
+                self.assertEqual(self.parser.errors, {})
+                self.assertEqual(self.parser.warnings, {})
+                network_traffic, = (
+                    observable
+                    for observable in self._record_observables().values()
+                    if observable.type == 'network-traffic'
+                )
+                self.assertEqual(network_traffic.x_misp_icmp_type, '08')
+                self.assertEqual(network_traffic.protocols, ['tcp', 'ip'])
+                self.assertEqual(list(network_traffic.extensions), ['tcp-ext'])
+                comparisons = self._pattern_comparisons(
+                    self.parser, f"indicator--{misp_object['uuid']}"
+                )
+                if not to_ids:
+                    self.assertIsNone(comparisons)
+                    continue
+                self.assertIn(
+                    "network-traffic:extensions.'icmp-ext'.icmp_type_hex = '08'",
+                    comparisons
+                )
+
     def _export_event(self, parser_class, event):
         parser = parser_class()
         parser.parse_misp_event(self._parser_input(event))

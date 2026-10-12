@@ -3862,6 +3862,41 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(self.parser.warnings, {})
         self.assertEqual(self.parser.errors, {})
 
+    def _round_trip_netflow_icmp_type(self, export_parser_class):
+        # A netflow object's ICMP type comes back from the custom property of
+        # its network traffic or from its pattern alone, nothing else of the
+        # object moving: its own protocol comes back next to the TCP flags,
+        # whichever protocol it names
+        from .test_events import get_event_with_netflow_object
+        modes = ((False, False), (True, False), (True, True))
+        for protocol in ('IP', 'ICMP', 'TCP'):
+            for to_ids, pattern_path in modes:
+                with self.subTest(protocol=protocol, to_ids=to_ids,
+                                  pattern_path=pattern_path):
+                    event = get_event_with_netflow_object()
+                    misp_object = event['Event']['Object'][0]
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                        if attribute['object_relation'] == 'protocol':
+                            attribute['value'] = protocol
+                    base = self._round_trip_misp_object(
+                        export_parser_class, event, misp_object, pattern_path
+                    )
+                    self.assertIn(('text', 'protocol', protocol), base)
+                    misp_object['Attribute'].append(
+                        {'type': 'text', 'object_relation': 'icmp-type',
+                         'value': '08', 'to_ids': to_ids}
+                    )
+                    self.assertEqual(
+                        self._round_trip_misp_object(
+                            export_parser_class, event, misp_object,
+                            pattern_path
+                        ),
+                        base | {('text', 'icmp-type', '08')}
+                    )
+                    self.assertEqual(self.parser.warnings, {})
+                    self.assertEqual(self.parser.errors, {})
+
     def _round_trip_pe_from_pattern(self, export_parser_class):
         # A pe read from its pattern alone comes back with every section the
         # pattern holds, none or more than ten, and with every value the pe
