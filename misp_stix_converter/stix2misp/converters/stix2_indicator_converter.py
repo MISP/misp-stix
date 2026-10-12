@@ -2135,52 +2135,51 @@ class InternalSTIX2IndicatorConverter(
 
     def _object_from_file_extension_pattern(
             self, extension: dict, indicator: _INDICATOR_TYPING) -> str:
-        object_id = f'{indicator.id} - windows-pebinary-ext'
         pe_object = self._create_misp_object(
-            'pe', indicator, object_id=object_id
+            'pe', indicator,
+            object_id=f'{indicator.id} - windows-pebinary-ext'
         )
+        return self._object_from_pe_extension_pattern(
+            pe_object, extension, indicator
+        )
+
+    def _object_from_pe_extension_pattern(
+            self, pe_object: MISPObject, extension: dict,
+            indicator: _INDICATOR_TYPING) -> str:
+        object_id = f'{indicator.id} - windows-pebinary-ext'
         if 'address_of_entry_point' in extension['pe']:
-            value = extension['pe'].pop('address_of_entry_point')
-            pe_object.add_attribute(
-                **self._mapping.entrypoint_address_attribute(), value=value,
-                to_ids=True, uuid=self.main_parser._create_v5_uuid(
-                    f"{object_id} - entrypoint-address - {value}"
-                )
+            attributes = self._handle_object_attributes(
+                extension['pe'].pop('address_of_entry_point'),
+                self._mapping.entrypoint_address_attribute(), object_id
             )
-        for feature, value in extension['pe'].items():
-            mapping = self._pattern_attribute('pe', feature, object_id)
-            pe_object.add_attribute(
-                **mapping, value=value, to_ids=True,
-                uuid=self.main_parser._create_v5_uuid(
-                    f"{object_id} - {mapping['object_relation']} - {value}"
-                )
+            for attribute in attributes:
+                pe_object.add_attribute(**attribute)
+        for feature, values in extension['pe'].items():
+            attributes = self._handle_object_attributes(
+                values, self._pattern_attribute('pe', feature, object_id),
+                object_id
             )
+            for attribute in attributes:
+                pe_object.add_attribute(**attribute)
         misp_object = self.main_parser._add_misp_object(pe_object, indicator)
-        for section_index, section in extension.get('sections').items():
+        for section_index, section in extension['sections'].items():
             section_id = f'{object_id} - sections - {section_index}'
             section_object = self._create_misp_object(
                 'pe-section', indicator, object_id=section_id
             )
-            for feature, value in section.items():
-                attribute = self._pattern_attribute(
+            for feature, values in section.items():
+                mapping = self._pattern_attribute(
                     'pe-section', feature, section_id
                 )
-                if attribute is not None:
-                    relation = attribute['object_relation']
-                    section_object.add_attribute(
-                        **attribute, value=value, to_ids=True,
-                        uuid=self.main_parser._create_v5_uuid(
-                            f"{section_id} - {relation} - {value}"
-                        )
+                if mapping is None:
+                    mapping = self._mapping.file_hashes_mapping(
+                        feature.strip("'")
                     )
-                    continue
-                mapping = self._mapping.file_hashes_mapping(feature.strip("'"))
-                section_object.add_attribute(
-                    **mapping, value=value, to_ids=True,
-                    uuid=self.main_parser._create_v5_uuid(
-                        f"{section_id} - {mapping['object_relation']} - {value}"
-                    )
+                attributes = self._handle_object_attributes(
+                    values, mapping, section_id
                 )
+                for attribute in attributes:
+                    section_object.add_attribute(**attribute)
             self.main_parser._add_misp_object(section_object, indicator)
             misp_object.add_reference(section_object.uuid, 'includes')
         return misp_object.uuid
@@ -2196,12 +2195,7 @@ class InternalSTIX2IndicatorConverter(
             feature, value = self._extract_features_from_pattern(pattern)
             if self._collect_custom_data(feature, value, custom_data):
                 continue
-            if "extensions.'windows-pebinary-ext'." in feature:
-                if '.sections[' in feature:
-                    parsed = feature.split('.')[2:]
-                    extension['sections'][parsed[0][-2]][parsed[-1]] = value
-                else:
-                    extension['pe'][feature.split('.')[-1]] = value
+            if self._collect_pe_extension_data(feature, value, extension):
                 continue
             if pattern.startswith('('):
                 attachment = {feature: value}
@@ -2541,6 +2535,17 @@ class InternalSTIX2IndicatorConverter(
                 misp_object.add_attribute(value=reference.url, **kwargs)
         self.main_parser._add_misp_object(misp_object, indicator)
 
+    def _object_from_pe_indicator(self, indicator: _INDICATOR_TYPING):
+        # A pe no file carries: its pattern compares the extension alone
+        extension: defaultdict = defaultdict(lambda: defaultdict(dict))
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            self._collect_pe_extension_data(
+                *self._extract_features_from_pattern(pattern), extension
+            )
+        self._object_from_pe_extension_pattern(
+            self._create_misp_object('pe', indicator), extension, indicator
+        )
+
     def _object_from_process_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('process', indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
@@ -2670,6 +2675,29 @@ class InternalSTIX2IndicatorConverter(
         if not values or key in values[-1]:
             values.append({})
         values[-1][key] = value
+        return True
+
+    @staticmethod
+    def _collect_pe_extension_data(
+            feature: str, value: str, extension: dict) -> bool:
+        """Collect a comparison on the pe extension of a file, by the pe or
+        by the index of its section, every value a property is compared with
+        kept.
+
+        :param feature: the property the comparison is made on
+        :param value: the value it is compared with
+        :param extension: the pe values and the section values collected so
+            far, by property
+        :return: whether the comparison was on the pe extension
+        """
+        if "extensions.'windows-pebinary-ext'." not in feature:
+            return False
+        field = feature.split('.')[-1]
+        if '.sections[' in feature:
+            index = feature.split('sections[')[1].split(']')[0]
+            extension['sections'][index].setdefault(field, []).append(value)
+        else:
+            extension['pe'].setdefault(field, []).append(value)
         return True
 
     def _add_custom_data_attributes(

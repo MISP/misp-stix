@@ -3340,11 +3340,19 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_file_extension_observable(
             self, extension: _EXTENSION_TYPING,
             observed_data: _OBSERVED_DATA_TYPING) -> str:
+        pe_object = self._create_misp_object(
+            'pe', observed_data,
+            object_id=f'{observed_data.id} - windows-pebinary-ext'
+        )
+        return self._object_from_pe_extension_observable(
+            pe_object, extension, observed_data
+        )
+
+    def _object_from_pe_extension_observable(
+            self, pe_object: MISPObject, extension: _EXTENSION_TYPING,
+            observed_data: _OBSERVED_DATA_TYPING) -> str:
         object_id = observed_data.id
         pe_prefix = f'{object_id} - windows-pebinary-ext'
-        pe_object = self._create_misp_object(
-            'pe', observed_data, object_id=pe_prefix
-        )
         attributes = self._observables._parse_pe_extension_observable(extension, object_id)
         for attribute in attributes:
             pe_object.add_attribute(**attribute)
@@ -3812,6 +3820,24 @@ class InternalSTIX2ObservedDataConverter(
         self._object_from_account_with_attachment_observable(
             observed_data, 'parler-account', 'v21'
         )
+
+    def _object_from_pe_observable(
+            self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        # A pe no file carries: the file the export writes around its
+        # extension holds nothing else, its name being the pe's own file name
+        observable = getattr(self, f'_fetch_observables_{version}')(
+            observed_data
+        )
+        self._object_from_pe_extension_observable(
+            self._create_misp_object('pe', observed_data),
+            observable.extensions['windows-pebinary-ext'], observed_data
+        )
+
+    def _object_from_pe_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_pe_observable(observed_data, 'v20')
+
+    def _object_from_pe_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_pe_observable(observed_data, 'v21')
 
     def _object_from_process_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
