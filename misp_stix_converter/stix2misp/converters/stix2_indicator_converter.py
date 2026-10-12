@@ -2214,6 +2214,10 @@ class InternalSTIX2IndicatorConverter(
                 continue
             if in_attachment:
                 attachment[feature] = value
+            elif feature == 'content_ref.x_misp_filename':
+                # An attachment with no data is its file name alone, written
+                # with no parentheses around it
+                attachments.append({feature: value})
             else:
                 attributes = self._handle_object_attributes(
                     value, self._pattern_attribute('file', feature, indicator.id),
