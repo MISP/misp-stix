@@ -4856,7 +4856,15 @@ class TestSTIX1Import(TestSTIX):
                 exported = self._with_repeated_values(event, name, values)
                 parser = self._parse_internal_package(self._misp_export(event))
                 self.assertEqual(parser.diagnostics()['errors'], {})
-                self.assertEqual(parser.diagnostics()['warnings'], {})
+                # The `user-account` avatar travels in the property bag,
+                # which carries no data
+                self.assertEqual(
+                    [
+                        warning.partition(' carries no data')[0]
+                        for warning in self._warning_texts(parser)
+                    ],
+                    ["'user-avatar'"] if name == 'user-account' else []
+                )
                 converted, = parser.misp_event.get_objects_by_name(name)
                 self._assert_relations_round_trip(
                     converted, exported, tuple(values)

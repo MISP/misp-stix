@@ -2362,7 +2362,12 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
                 continue
             if prop.name in template_types:
-                yield (template_types[prop.name], value, prop.name)
+                attribute_type = template_types[prop.name]
+                if attribute_type in ('attachment', 'malware-sample'):
+                    self._attribute_without_data_warning(
+                        prop.name, value, attribute_type, object_id
+                    )
+                yield (attribute_type, value, prop.name)
                 continue
             if template_types:
                 self._off_template_property_warning(
@@ -2568,6 +2573,17 @@ class STIX1toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._add_warning(
             f'{relation!r} cannot be stored as a MISP attribute'
             f'{self._object_origin(object_id)}: {value} not converted.'
+        )
+
+    def _attribute_without_data_warning(
+            self, relation: str, value: str, attribute_type: str,
+            object_id: Optional[str]):
+        # A property carries a value, never the file an `attachment` or a
+        # `malware-sample` holds: whatever data the writer had, none is lost
+        # here. The data of a `file` attribute travels in an Artifact instead
+        self._add_warning(
+            f'{relation!r} carries no data{self._object_origin(object_id)}: '
+            f'{value} converted, the {attribute_type} attribute holding none.'
         )
 
     def _refused_attribute_error(
