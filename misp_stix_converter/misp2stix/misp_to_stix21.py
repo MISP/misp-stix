@@ -1314,9 +1314,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_malware_analysis_object(self, misp_object: MISPObject | dict):
         attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes_escaped(
-                misp_object['Attribute']
-            )
+            self._extract_multiple_object_attributes(misp_object['Attribute'])
         )
         mapping = self._mapping.malware_analysis_object_mapping
         analysis_args = {

@@ -1215,9 +1215,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_netflow_object_observable(
             self, misp_object: MISPObject | dict) -> ObservedData:
         attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes_escaped(
-                misp_object['Attribute']
-            )
+            self._extract_multiple_object_attributes(misp_object['Attribute'])
         )
         non_canonical = self._pop_netflow_non_canonical_AS(
             attributes, misp_object

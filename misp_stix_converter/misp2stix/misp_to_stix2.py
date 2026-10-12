@@ -1562,14 +1562,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             attributes_dict[relation].append(value)
         return attributes_dict
 
-    def _extract_multiple_object_attributes_escaped(
-            self, attributes: list) -> dict:
-        attributes_dict = defaultdict(list)
-        for attribute in attributes:
-            value = self._handle_value_for_pattern(attribute['value'])
-            attributes_dict[attribute['object_relation']].append(value)
-        return attributes_dict
-
     def _handle_non_indicator_object(
             self, misp_object: MISPObject | dict, object_args: dict,
             object_type: str, killchain: bool = False):
@@ -1911,9 +1903,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_course_of_action_object(
             self, misp_object: MISPObject | dict):
         attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes_escaped(
-                misp_object['Attribute']
-            )
+            self._extract_multiple_object_attributes(misp_object['Attribute'])
         )
         course_of_action_args = {
             feature: attributes.pop(feature)
@@ -2523,9 +2513,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_intrusion_set_object(self, misp_object: MISPObject | dict):
         attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes_escaped(
-                misp_object['Attribute']
-            ),
+            self._extract_multiple_object_attributes(misp_object['Attribute']),
             self._mapping.intrusion_set_single_fields()
         )
         mapping = self._mapping.intrusion_set_object_mapping
@@ -2696,9 +2684,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_malware_object(self, misp_object: MISPObject | dict):
         attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes_escaped(
-                misp_object['Attribute']
-            ),
+            self._extract_multiple_object_attributes(misp_object['Attribute']),
             self._mapping.malware_single_fields()
         )
         malware_args = {
@@ -3030,9 +3016,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self, pe_object: dict, uuids: Optional[list] = None) -> dict:
         custom = False
         attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes_escaped(
-                pe_object['Attribute']
-            ),
+            self._extract_multiple_object_attributes(pe_object['Attribute']),
             self._mapping.pe_object_single_fields()
         )
         non_canonical = self._pop_non_canonical_integers(
@@ -3062,7 +3046,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     section_uuid
                 )
                 attributes, repeated = self._split_single_field_values(
-                    self._extract_multiple_object_attributes_escaped(
+                    self._extract_multiple_object_attributes(
                         pe_section['misp_object']['Attribute']
                     )
                 )
@@ -3405,7 +3389,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_vulnerability_object(self, misp_object: MISPObject | dict):
         vulnerability_args = defaultdict(list)
-        attributes = self._extract_multiple_object_attributes_escaped(
+        attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute']
         )
         if attributes.get('id'):
