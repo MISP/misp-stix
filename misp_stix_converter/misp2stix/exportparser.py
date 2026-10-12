@@ -453,7 +453,7 @@ class MISPtoSTIXParser(AbstractParser):
     def _object_error(self, misp_object: dict, exception: Exception):
         tb = self._parse_traceback(exception)
         self._add_error(
-            f"Error with the {self._object_features(misp_object)}:\n{tb}."
+            f"Error with the {self._object_record(misp_object)}:\n{tb}."
         )
         if self._raised_from(exception, self._parse_custom_object.__name__):
             # The custom object route is the fallback: retrying what just
@@ -480,7 +480,7 @@ class MISPtoSTIXParser(AbstractParser):
         return f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
 
     @staticmethod
-    def _object_features(misp_object: Union[MISPObject, dict]) -> str:
+    def _object_record(misp_object: Union[MISPObject, dict]) -> str:
         return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
 
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, name: str):
@@ -511,7 +511,7 @@ class MISPtoSTIXParser(AbstractParser):
 
     def _pe_section_comment_warning(self, misp_pe_section: dict):
         self._add_warning(
-            f'The comment of the {self._object_features(misp_pe_section)} '
+            f'The comment of the {self._object_record(misp_pe_section)} '
             'is not converted: a STIX 1 PE section has no description.'
         )
 
@@ -559,7 +559,7 @@ class MISPtoSTIXParser(AbstractParser):
         # The object is not written at all: nothing else it holds has a
         # field to go in without the one the STIX object is built around
         self._add_error(
-            f"Error with the {self._object_features(misp_object)}: no "
+            f"Error with the {self._object_record(misp_object)}: no "
             f"{relation} attribute to build it from, the object is not "
             'exported.'
         )

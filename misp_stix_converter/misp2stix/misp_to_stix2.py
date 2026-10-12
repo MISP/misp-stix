@@ -4644,7 +4644,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if asn is None:
             self._required_fields_missing_warning('AutonomousSystem', 'asn')
             raise _UnbuildableRecordError
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         if not self._native_integer(asn, 'asn', record):
             raise _UnbuildableRecordError
         as_args = {'number': self._parse_AS_value(asn)}
@@ -5826,7 +5826,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             - `_native_integer` or `_native_float`
         :return: the non canonical values by relation, without their uuid
         """
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         non_canonical = {}
         for relation in relations:
             if relation not in attributes:

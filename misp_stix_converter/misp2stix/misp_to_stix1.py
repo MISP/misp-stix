@@ -1107,7 +1107,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         :param written: the relations the composition writes a member for
         :return: the members, one per value a property can carry
         """
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         observables = []
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
@@ -1143,7 +1143,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         :param feature: the side a port is on, where the relation names one
         :return: the members, one per value a property can carry
         """
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         observables = []
         for port, uuid in ports:
             if self._canonical_integer(port, relation, record, positive=True):
@@ -1273,7 +1273,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         # A value the bag cannot carry either is warned of there, once
         if self._lexical_form(value) is not None:
             self._unrecognised_boolean_warning(
-                relation, value, self._object_features(misp_object)
+                relation, value, self._object_record(misp_object)
             )
         return None
 
@@ -1870,7 +1870,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                             reference['relationship_type']):
                         continue
                     self._unwritten_object_reference_warning(
-                        self._object_features(misp_object),
+                        self._object_record(misp_object),
                         reference['relationship_type'],
                         self._referenced_record(reference['referenced_uuid'])
                     )
@@ -1953,7 +1953,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 return self._attribute_record(attribute)
         for misp_object in self._misp_event.get('Object', []):
             if misp_object['uuid'] == uuid:
-                return self._object_features(misp_object)
+                return self._object_record(misp_object)
         return f'record (uuid: {uuid})'
 
     @staticmethod
@@ -2013,7 +2013,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             stix_object.custom_properties = CustomProperties()
         self._append_property(
             stix_object.custom_properties, name, value,
-            self._object_features(misp_object)
+            self._object_record(misp_object)
         )
 
     def _check_object_name(self, misp_object: dict) -> bool:
@@ -2121,7 +2121,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         :param repeated: the further values, by relation
         :param misp_object: the MISP object they belong to
         """
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for relation, values in repeated.items():
             for value in values:
                 self._single_value_field_warning(relation, value, record)
@@ -2167,7 +2167,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _handle_custom_properties(self, attributes: dict,
                                   misp_object: dict) -> CustomProperties:
         custom_properties = CustomProperties()
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for object_relation, values in attributes.items():
             # A relation its parser forced single is a scalar here, not a
             # list: iterating it spreads a string over one property per
@@ -2187,7 +2187,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         :param misp_object: the MISP object
         :param written: the relations the STIX type has room for
         """
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for attribute in misp_object['Attribute']:
             if attribute['object_relation'] not in written:
                 self._unwritable_relation_warning(
@@ -2197,7 +2197,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _handle_misp_object(self, misp_object: dict, observable: Observable):
         self._add_record_comment(observable, misp_object)
         self._warn_plain_observable_galaxies(
-            misp_object['Attribute'], self._object_features(misp_object)
+            misp_object['Attribute'], self._object_record(misp_object)
         )
         related_observable = RelatedObservable(
             observable,
@@ -2285,7 +2285,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             return None
         asn = attributes['asn']
         if self._is_as_handle(asn) or self._canonical_integer(
-                asn, 'asn', self._object_features(misp_object)):
+                asn, 'asn', self._object_record(misp_object)):
             as_object = self._create_autonomous_system_object(
                 attributes.pop('asn')
             )
@@ -2422,7 +2422,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if misp_object.get('description'):
             custom_object.description = misp_object['description']
         custom_object.custom_properties = CustomProperties()
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for attribute in misp_object['Attribute']:
             self._append_property(
                 custom_object.custom_properties,
@@ -2503,7 +2503,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             filename = self._select_single_feature(attributes, 'filename')
             file_object.file_name = filename
             file_object.file_name.condition = 'Equals'
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         numbers = {
             'entropy': self._canonical_float,
             'size-in-bytes': self._canonical_integer
@@ -2761,7 +2761,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         bagged = None
         if attributes.get('number-sections') and not self._canonical_integer(
                 attributes['number-sections'], 'number-sections',
-                self._object_features(misp_pe)):
+                self._object_record(misp_pe)):
             bagged = attributes.pop('number-sections')
         headers_fields = ('entrypoint-address', 'impfuzzy', 'imphash', 'number-sections', 'pehash')
         if any(feature in attributes for feature in headers_fields):
@@ -2867,7 +2867,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         if section_attributes.get('entropy') and not self._canonical_float(
                 section_attributes['entropy'], 'entropy',
-                self._object_features(misp_pe_section)):
+                self._object_record(misp_pe_section)):
             return None
         pe_section = PESection()
         if section_attributes.get('entropy'):
@@ -2905,7 +2905,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             misp_object['Attribute'], self._mapping.process_single_fields()
         )
         process_object = Process()
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for key, feature in self._mapping.process_object_mapping().items():
             if not attributes.get(key):
                 continue
@@ -2982,7 +2982,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict,
                                 fields: tuple, misp_object: dict):
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for key, field in zip(('src', 'dst'), fields):
             args = {}
             if attributes.get(f'ip-{key}'):
@@ -3175,7 +3175,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         content = defaultdict(bool)
         # The two integers are signed: a negative one is written natively
         bagged = defaultdict(list)
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
             feature = self._mapping.x509_creation_mapping(relation)
@@ -3408,7 +3408,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _create_unix_user_account_object(self, attributes: dict,
                                          misp_object: dict) -> UnixUserAccount:
         account_object = UnixUserAccount()
-        record = self._object_features(misp_object)
+        record = self._object_record(misp_object)
         for relation, feature in (('user-id', 'user_id'), ('group-id', 'group_id')):
             values = self._pop_canonical_integers(attributes, relation, record)
             if values:
