@@ -3559,6 +3559,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         from misp_stix_converter import MISPtoSTIX20Parser
         self._round_trip_escaped_pattern_values(MISPtoSTIX20Parser)
 
+    def test_stix20_non_pattern_values_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._round_trip_non_pattern_values(MISPtoSTIX20Parser)
+
     def test_stix20_non_canonical_numbers_round_trip(self):
         from misp_stix_converter import MISPtoSTIX20Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX20Parser)

@@ -27,7 +27,8 @@ from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import UUID, uuid5
-from ._test_stix import PLANTED_TEMPLATE, TestSTIX, append_further_values
+from ._test_stix import (
+    PLANTED_TEMPLATE, TestSTIX, append_further_values, spell_non_pattern_value)
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
@@ -3809,6 +3810,32 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertIn(('text', 'name', "'Global\\it's = 1'"), attributes)
             self.assertEqual(self.parser.warnings, {})
             self.assertEqual(self.parser.errors, {})
+
+    def _round_trip_non_pattern_values(self, export_parser_class):
+        # A value holding a quote or a backslash comes back as MISP gave it
+        # from every property that is no pattern, native or custom. Only the
+        # value is checked: the import names some properties with another
+        # relation, a vulnerability's summary coming back as its description.
+        # A `to_ids` record's Observed Data says the value its pattern
+        # compares, so the merge of the two stays quiet
+        value = "it's c:\\tmp"
+        for fixture, name, relations in self._NON_PATTERN_RELATIONS:
+            for relation in relations:
+                for to_ids in (False, True):
+                    with self.subTest(name=name, relation=relation,
+                                      to_ids=to_ids):
+                        event = spell_non_pattern_value(
+                            fixture(), name, relation, value, to_ids
+                        )
+                        attributes = self._round_trip_object_attributes(
+                            export_parser_class(), event, to_ids=to_ids,
+                            name=name
+                        )
+                        self.assertIn(
+                            value, {imported for *_, imported in attributes}
+                        )
+                        self.assertEqual(self.parser.warnings, {})
+                        self.assertEqual(self.parser.errors, {})
 
     def _round_trip_pe_from_pattern(self, export_parser_class):
         # A pe read from its pattern alone comes back with every section the

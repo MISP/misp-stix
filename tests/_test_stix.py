@@ -32,7 +32,7 @@ from .test_events import (
     get_event_with_registry_key_object,
     get_event_with_registry_key_value_object, get_event_with_script_objects,
     get_event_with_url_object, get_event_with_user_account_object,
-    get_event_with_x509_object)
+    get_event_with_vulnerability_object, get_event_with_x509_object)
 
 _REPEAT_NAMESPACE = UUID('0b4c5e64-6c8c-4f3e-9b1a-7f0d6c2e8a51')
 
@@ -56,6 +56,32 @@ def append_further_values(misp_object: dict, relation: str, values: tuple,
     ]
     misp_object['Attribute'].extend(further)
     return further
+
+
+def spell_non_pattern_value(event: dict, name: str, relation: str,
+                            value: str, to_ids: bool = False) -> dict:
+    # The event with `to_ids` set the same way on every attribute, so that no
+    # pattern is written unless asked for, and the value in each attribute of
+    # the relation its object named `name` holds, or in a `text` attribute
+    # added with it when it holds none
+    for misp_object in event['Event']['Object']:
+        for attribute in misp_object['Attribute']:
+            attribute['to_ids'] = to_ids
+    misp_object = next(
+        misp_object for misp_object in event['Event']['Object']
+        if misp_object['name'] == name
+    )
+    attributes = [
+        attribute for attribute in misp_object['Attribute']
+        if attribute['object_relation'] == relation
+    ]
+    if not attributes:
+        misp_object['Attribute'].append(
+            {'type': 'text', 'object_relation': relation, 'value': value}
+        )
+    for attribute in attributes:
+        attribute['value'] = value
+    return event
 
 
 def _get_event_with_domain_ip_object_standard_and_hostname():
@@ -156,6 +182,21 @@ _REPEATED_RELATIONS = (
     (get_event_with_user_account_object, 'user-account', 'username',
      'adulau'),
     (get_event_with_x509_object, 'x509', 'issuer', 'Other Issuer Name')
+)
+
+# MISP objects the STIX 2 export writes as properties that are no pattern,
+# with the relations to spell a quote and a backslash in, written to native
+# or custom properties, a relation the object does not hold added as `text`:
+# (event, object name, relations)
+_NON_PATTERN_RELATIONS = (
+    (get_event_with_course_of_action_object, 'course-of-action',
+     ('name', 'objective')),
+    (get_event_with_intrusion_set_object, 'intrusion-set',
+     ('name', 'primary-motivation')),
+    (get_event_with_malware_object, 'malware', ('name', 'alias')),
+    (get_event_with_vulnerability_object, 'vulnerability', ('summary',)),
+    (get_event_with_pe_objects, 'pe', ('file-description', 'original-filename')),
+    (get_event_with_pe_objects, 'pe-section', ('name',))
 )
 
 # Stands in for any `definition.json` a traversing object name could reach:
@@ -283,6 +324,10 @@ class TestSTIX(unittest.TestCase):
 
 
 class TestSTIX20(TestSTIX):
+    _NON_PATTERN_RELATIONS = (
+        *_NON_PATTERN_RELATIONS,
+        (get_event_with_netflow_object, 'netflow', ('community-id',))
+    )
     _REPEATED_RELATIONS = _REPEATED_RELATIONS
 
     __hash_types_mapping = {
@@ -309,6 +354,11 @@ class TestSTIX20(TestSTIX):
 
 
 class TestSTIX21(TestSTIX):
+    _NON_PATTERN_RELATIONS = (
+        *_NON_PATTERN_RELATIONS,
+        (get_event_with_malware_analysis_object, 'malware-analysis',
+         ('product', 'result'))
+    )
     _REPEATED_RELATIONS = (
         *_REPEATED_RELATIONS,
         (get_event_with_annotation_object, 'annotation', 'text',

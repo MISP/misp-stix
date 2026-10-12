@@ -22,7 +22,8 @@ from unittest.mock import patch
 from uuid import uuid5, UUID
 from misp_stix_converter.tools.misp_object_templates import (
     _custom_property_name)
-from ._test_stix import PLANTED_TEMPLATE, TestSTIX, append_further_values
+from ._test_stix import (
+    PLANTED_TEMPLATE, TestSTIX, append_further_values, spell_non_pattern_value)
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
@@ -641,6 +642,44 @@ class TestSTIX2Export(TestSTIX):
                         },
                         {self._comparable(value) for value in values}
                     )
+
+    # A value holding a quote or a backslash goes out as MISP gave it in
+    # every property that is no pattern: only a pattern escapes them, a
+    # native property or a custom one carries the value itself
+
+    def _test_non_pattern_values_as_given(self, parser_class):
+        value = "it's c:\\tmp"
+        escaped = "it\\'s c:\\\\tmp"
+        for fixture, name, relations in self._NON_PATTERN_RELATIONS:
+            for relation in relations:
+                with self.subTest(name=name, relation=relation):
+                    event = spell_non_pattern_value(
+                        fixture(), name, relation, value
+                    )
+                    parser = self._export_event(parser_class, event)
+                    self.assertEqual(parser.errors, {})
+                    values = self._string_values(parser.stix_objects)
+                    self.assertIn(value, values)
+                    self.assertFalse(
+                        any(escaped in string for string in values)
+                    )
+
+    @staticmethod
+    def _string_values(stix_objects):
+        # Every string a STIX object holds, at any depth
+        values = []
+        def collect(content):
+            if isinstance(content, dict):
+                for value in content.values():
+                    collect(value)
+            elif isinstance(content, list):
+                for value in content:
+                    collect(value)
+            elif isinstance(content, str):
+                values.append(content)
+        for stix_object in stix_objects:
+            collect(json.loads(stix_object.serialize()))
+        return values
 
     def _export_event(self, parser_class, event):
         parser = parser_class()
