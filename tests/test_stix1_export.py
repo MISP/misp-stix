@@ -1500,6 +1500,8 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
     as 31 and `'-3'` into an unsigned field. Any other spelling goes to the
     property bag under its relation, with one warning."""
 
+    # Under 1.2 too, by `TestSTIX12CanonicalNumbers`
+    _VERSION = '1.1.1'
     _OBJECT_UUID = '3d5f7a9b-1c2e-4f60-8a1b-2c3d4e5f6a7b'
     _ATTRIBUTE_UUID = '4e6a8b0c-2d3f-4a71-9b2c-3d4e5f6a7b8c'
     _NON_CANONICAL = (
@@ -1507,7 +1509,7 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
     )
 
     def _parse(self, event):
-        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, self._VERSION)
         parser.parse_misp_event(event['Event'])
         self.assertEqual(parser.errors, {})
         self._warnings = parser.warnings.get(event['Event']['uuid'], [])
@@ -1901,6 +1903,11 @@ class TestSTIX1CanonicalNumbers(TestSTIX):
                 "document has no slot of the source naming the target."
             ]
         )
+
+
+class TestSTIX12CanonicalNumbers(TestSTIX1CanonicalNumbers):
+    # A number's canonical form does not change with the STIX version
+    _VERSION = '1.2'
 
 
 class TestSTIX1UnreferencedPESection(TestSTIX):
