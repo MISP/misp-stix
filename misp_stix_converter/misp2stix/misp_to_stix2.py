@@ -4643,10 +4643,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         asn = attributes.pop('asn', None)
         if asn is None:
             self._required_fields_missing_warning('AutonomousSystem', 'asn')
-            raise _UnbuildableRecordError
+            raise _UnbuildableRecordError('AutonomousSystem with no asn')
         record = self._object_record(misp_object)
         if not self._native_integer(asn, 'asn', record):
-            raise _UnbuildableRecordError
+            raise _UnbuildableRecordError(f'Non canonical asn: {asn!r}')
         as_args = {'number': self._parse_AS_value(asn)}
         if attributes.get('description'):
             as_args['name'] = attributes.pop('description')
@@ -5474,7 +5474,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             for key in args
         )
         if non_canonical and not native:
-            raise _UnbuildableRecordError
+            raise _UnbuildableRecordError(
+                'Record with no native property left'
+            )
 
     @staticmethod
     def _define_address_type(address):

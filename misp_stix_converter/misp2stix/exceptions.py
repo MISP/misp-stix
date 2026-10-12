@@ -16,7 +16,7 @@ class InvalidMISPInputError(MISPtoSTIXError):
     pass
 
 
-class _UnbuildableRecordError(Exception):
+class _UnbuildableRecordError(MISPtoSTIXError):
     """A record whose STIX object cannot be built once the values no native
     property holds went to custom properties: it goes out whole as the
     custom record, with the warnings those values already gave and no

@@ -1078,7 +1078,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 if half in attributes:
                     non_canonical[half] = attributes.pop(half)
             if not (attributes.get('countrycode') or attributes.get('region')):
-                raise _UnbuildableRecordError
+                raise _UnbuildableRecordError('Location with no place left')
         location_id = self._parse_stix_object_id(
             'object', 'location', misp_object
         )
