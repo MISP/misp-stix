@@ -411,7 +411,9 @@ class STIXtoMISPParser(AbstractParser):
     #                     UUID SANITATION HANDLING METHODS                     #
     ############################################################################
 
-    def _check_uuid(self, object_id: str):
+    def _register_uuid(self, object_id: str):
+        """Register the id's replacement uuid, if it takes one, on load, so
+        a warning naming a record never converted gives the uuid it takes."""
         self._read_uuid(object_id)
 
     def _read_uuid(self, object_id: Optional[str]) -> tuple[str, bool]:
