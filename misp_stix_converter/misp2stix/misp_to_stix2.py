@@ -5014,23 +5014,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _parse_netflow_protocol(attributes: dict) -> dict:
+        # The ICMP extension requires a code the netflow template has no
+        # relation for: the ICMP type is left to the custom properties, and
+        # names no protocol the object's own one could merge into
         protocols: dict[str, None] = {}
-        extensions = defaultdict(dict)
-        if attributes.get('icmp-type'):
-            extensions['icmp-ext']['icmp_tpye_hex'] = attributes.pop(
-                'icmp-type'
-            )
-            protocols['icmp'] = None
+        args = {}
         if attributes.get('tcp-flags'):
-            extensions['tcp-ext']['src_flags_hex'] = attributes.pop('tcp-flags')
+            args['extensions'] = {
+                'tcp-ext': {'src_flags_hex': attributes.pop('tcp-flags')}
+            }
             protocols['tcp'] = None
         if attributes.get('protocol'):
             protocols[attributes.pop('protocol').lower()] = None
-        if extensions:
-            return {'extensions': extensions, 'protocols': list(protocols)}
-        if protocols:
-            return {'protocols': list(protocols)}
-        return {'protocols': ['ip']}
+        args['protocols'] = list(protocols) or ['ip']
+        return args
 
     def _parse_network_connection_args(
             self, attributes: dict, repeated: dict,
