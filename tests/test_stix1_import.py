@@ -6855,6 +6855,30 @@ class TestSTIX1Import(TestSTIX):
             }
         )
 
+    def test_internal_attributes_collection_dates_the_event_from_the_package(self):
+        """With no Incident to take them from, the event takes the date and
+        timestamp of the package an Attribute Collection writes its
+        attributes on, not those of the attributes."""
+        exporter = MISPtoSTIX1AttributesParser('MISP', '1.1.1')
+        exporter.parse_json_content(
+            [
+                {
+                    'uuid': _DOMAIN_UUID, 'type': 'domain',
+                    'category': 'Network activity', 'value': 'circl.lu',
+                    'to_ids': True, 'timestamp': '1603642920'
+                }
+            ]
+        )
+        package = exporter.stix_package
+        # Earlier than the attribute: the event does not take the latest
+        package.timestamp = datetime(2019, 6, 1, 12, tzinfo=timezone.utc)
+        parser = self._parse_internal_package(package)
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        self.assertEqual(parser.misp_event.date, package.timestamp.date())
+        self.assertEqual(
+            parser.misp_event.timestamp, int(package.timestamp.timestamp())
+        )
+
     def test_internal_attributes_collection_link_round_trip(self):
         """The Attribute Collection writes the category of a `to_ids` record
         on the Record Title, which is where the `link` a URI can only have
