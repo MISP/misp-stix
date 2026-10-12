@@ -4277,6 +4277,12 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_netflow_icmp_type(MISPtoSTIX21Parser)
 
+    def test_stix21_stix2_pattern_object_round_trip(self):
+        # The STIX 2.1 export gives every Indicator a pattern version, 2.1
+        # when the MISP record states none
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._round_trip_stix2_pattern_object(MISPtoSTIX21Parser, '2.1')
+
     def test_stix21_pe_from_pattern_round_trip(self):
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_pe_from_pattern(MISPtoSTIX21Parser)

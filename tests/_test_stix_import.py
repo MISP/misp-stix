@@ -3897,6 +3897,67 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                     self.assertEqual(self.parser.warnings, {})
                     self.assertEqual(self.parser.errors, {})
 
+    def _round_trip_stix2_pattern_object(
+            self, export_parser_class, written_version=None):
+        # A stix2-pattern object comes back from its Indicator: the pattern,
+        # the description as its comment, the first version spelled as the
+        # template's defaults are, though the export writes the number alone,
+        # and every further version as written, each attribute uuid derived
+        # from the Indicator, with no message. An object with no version comes
+        # back with the one the export writes on every Indicator, if any
+        from .test_events import get_event_with_stix2_pattern_object
+        version = ('text', 'version', 'stix 2.1')
+        base = {
+            ('stix2-pattern', 'stix2-pattern',
+             "[network-traffic:dst_port = '443' AND "
+             "network-traffic:dst_ref.value = '8.8.8.8']"),
+            ('comment', 'comment', 'HTTPS traffic to the Google public DNS')
+        }
+        for further in ((), ('stix 2.0',)):
+            with self.subTest(further_versions=further):
+                event = get_event_with_stix2_pattern_object()
+                misp_object = event['Event']['Object'][0]
+                append_further_values(misp_object, 'version', further, False)
+                self.assertEqual(
+                    self._round_trip_stix2_pattern_attributes(
+                        export_parser_class, event, misp_object
+                    ),
+                    base | {version} | {
+                        ('text', 'version', value) for value in further
+                    }
+                )
+        with self.subTest(version=None):
+            event = get_event_with_stix2_pattern_object()
+            misp_object = event['Event']['Object'][0]
+            misp_object['Attribute'] = [
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] != 'version'
+            ]
+            written = set()
+            if written_version is not None:
+                written.add(('text', 'version', f'stix {written_version}'))
+            self.assertEqual(
+                self._round_trip_stix2_pattern_attributes(
+                    export_parser_class, event, misp_object
+                ),
+                base | written
+            )
+
+    def _round_trip_stix2_pattern_attributes(
+            self, export_parser_class, event: dict, misp_object: dict) -> set:
+        attributes = self._round_trip_misp_object(
+            export_parser_class, event, misp_object, pattern_path=False
+        )
+        self.assertEqual(self.parser.warnings, {})
+        self.assertEqual(self.parser.errors, {})
+        imported, = self.parser.misp_event.objects
+        self.assertEqual(imported.uuid, misp_object['uuid'])
+        for attribute in imported.attributes:
+            self._check_object_attribute_uuid(
+                attribute, f"indicator--{misp_object['uuid']}"
+            )
+        return attributes
+
     def _round_trip_pe_from_pattern(self, export_parser_class):
         # A pe read from its pattern alone comes back with every section the
         # pattern holds, none or more than ten, and with every value the pe
