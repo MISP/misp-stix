@@ -11,21 +11,40 @@ from misp_stix_converter import (InvalidMISPInputError, MISPtoSTIX1AttributesPar
                                  misp_event_collection_to_stix1, misp_to_stix1)
 from misp_stix_converter import misp_stix_converter as converter_module
 from misp_stix_converter.tools.stix1_framing import (
-    _handle_namespaces, _scoped_id_namespace)
+    NS_DICT, _handle_namespaces, _scoped_id_namespace)
 from mixbox import idgen
-from mixbox.namespaces import Namespace
+from mixbox.namespaces import Namespace, lookup_name
 from pymisp import MISPEvent
 from shutil import copyfile
+from stix.core import STIXPackage
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4, uuid5, UUID
 from .test_events import *
-from .test_events import _INDICATOR_ATTRIBUTE
+from .test_events import (
+    _INDICATOR_ATTRIBUTE, _TEST_MALWARE_GALAXY, _TEST_SECTOR_GALAXY,
+    _TEST_USER_ACCOUNT_OBJECT)
 from ._test_stix import TestSTIX
 from ._test_stix_export import TestCollectionSTIX1Export
 
 _DEFAULT_ORGNAME = 'MISP-Project'
 _ORGNAME_ID = re.sub('[\W]+', '', _DEFAULT_ORGNAME.replace(' ', '_'))
+
+def _galaxy_failures(galaxy):
+    """The galaxies and tags of a record failing once the construct of the
+    galaxy is written: a tag with no name, read after every galaxy, or a
+    later cluster with no uuid."""
+    yield 'nameless tag', [galaxy], [{'colour': '#ffffff'}]
+    malformed = get_event_with_tool_galaxy()['Event']['Galaxy'][0]
+    del malformed['GalaxyCluster'][0]['uuid']
+    yield 'malformed cluster', [galaxy, malformed], []
+
+
+def _assert_no_galaxy_construct(test_case, stix_package):
+    test_case.assertIsNone(stix_package.ttps)
+    test_case.assertEqual(len(stix_package.courses_of_action or ()), 0)
+    test_case.assertEqual(len(stix_package.threat_actors or ()), 0)
+
 
 misp_reghive = {
     "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
@@ -118,6 +137,3890 @@ class TestSTIX1InputContract(TestSTIX):
             {'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)]}
         )
         self.assertIsNotNone(parser.stix_package)
+
+
+class TestSTIX1CustomPropertyValues(TestSTIX):
+    """What a CybOX custom property carries for a MISP value cybox refuses: a
+    MISP object template names the type of the relation it declares, so the
+    value goes out in the lexical form XSD has for that type under the CybOX
+    `datatype`, and a value with no such form is skipped with a warning
+    rather than raising."""
+
+    _OBJECT_UUID = '2b8f4e2a-9d31-4c6e-8f1a-7c3b5d6e9a04'
+
+    @staticmethod
+    def _events_parser():
+        return MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+
+    def _event_with_object(self, misp_object, uuid=None):
+        event = get_base_event()
+        if uuid is not None:
+            event['Event']['uuid'] = uuid
+        event['Event']['Object'] = [misp_object]
+        return event
+
+    def _custom_object(self, attributes, name='parler-account'):
+        return {
+            'name': name, 'meta-category': 'misc',
+            'description': 'Parler account.', 'uuid': self._OBJECT_UUID,
+            'timestamp': '1603642920', 'Attribute': attributes
+        }
+
+    def _custom_properties(self, parser):
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return observable.item.object_.properties.custom_properties
+
+    def test_numeric_relation_values_carry_their_datatype(self):
+        # `counter`, `port` and `integer` all become `int`: CybOX names
+        # neither of the first two, and `int` is what a consumer can act on
+        parser = self._events_parser()
+        parser.parse_misp_event(
+            self._event_with_object(
+                self._custom_object(
+                    [
+                        {
+                            'type': 'counter', 'object_relation': 'comments',
+                            'value': 1337
+                        },
+                        {
+                            'type': 'port', 'object_relation': 'port',
+                            'value': 8080
+                        },
+                        {
+                            'type': 'float', 'object_relation': 'score',
+                            'value': 9.5
+                        },
+                        {
+                            'type': 'integer', 'object_relation': 'views',
+                            'value': 10 ** 12
+                        }
+                    ]
+                )
+            )['Event']
+        )
+        self.assertEqual(parser.errors, {})
+        properties = self._custom_properties(parser)
+        self.assertEqual(
+            [(prop.name, prop.value, prop.datatype) for prop in properties],
+            [
+                ('comments', '1337', 'int'), ('port', '8080', 'int'),
+                ('score', '9.5', 'float'),
+                # The name is the true one: XSD's `int` is 32-bit
+                ('views', '1000000000000', 'long')
+            ]
+        )
+
+    def test_typed_object_boolean_relation_carries_its_datatype(self):
+        # The typed export sites reach the same code by another route: a
+        # `user-account` relation CybOX has no field for is a custom property
+        # on the UserAccount object
+        user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
+        user_account['Attribute'].append(
+            {
+                'type': 'boolean', 'object_relation': 'privileged',
+                'value': False
+            }
+        )
+        parser = self._events_parser()
+        parser.parse_misp_event(self._event_with_object(user_account)['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        properties = incident.related_observables.observable[0].item.object_.properties
+        self.assertEqual(properties._XSI_TYPE, 'UserAccountObjectType')
+        privileged = next(
+            prop for prop in properties.custom_properties
+            if prop.name == 'privileged'
+        )
+        self.assertEqual(privileged.value, 'false')
+        self.assertEqual(privileged.datatype, 'boolean')
+
+    def test_list_valued_property_is_coerced_element_by_element(self):
+        # cybox validates a list element by element, so a list is the same
+        # question one value further in: every element takes its lexical
+        # form, and one element with none costs the property
+        parser = self._events_parser()
+        parser.parse_misp_event(
+            self._event_with_object(
+                self._custom_object(
+                    [
+                        {
+                            'type': 'boolean', 'object_relation': 'human',
+                            'value': [False, True]
+                        },
+                        {
+                            'type': 'text', 'object_relation': 'account-name',
+                            'value': ['ParlerOctocat', {'name': 'octocat'}]
+                        }
+                    ]
+                )
+            )['Event']
+        )
+        self.assertEqual(parser.errors, {})
+        properties = self._custom_properties(parser)
+        self.assertEqual(len(properties), 1)
+        self.assertEqual(properties[0].name, 'human')
+        self.assertEqual(properties[0].value, ['false', 'true'])
+        self.assertEqual(properties[0].datatype, 'boolean')
+        self.assertIn(
+            "'account-name' has no lexical form STIX 1 can carry",
+            parser.warnings[get_base_event()['Event']['uuid']][0]
+        )
+
+    def test_single_valued_relation_is_one_property(self):
+        # A relation its parser forced single reaches the property bag as a
+        # scalar: iterating it spread `hello` over five properties named
+        # `text`, and a `process` `hidden` of False - which the typed site
+        # does not pop, being falsy - was not iterable at all
+        user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
+        user_account['Attribute'].append(
+            {'type': 'text', 'object_relation': 'text', 'value': 'hello'}
+        )
+        parser = self._events_parser()
+        parser.parse_misp_event(self._event_with_object(user_account)['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        properties = incident.related_observables.observable[0].item.object_.properties
+        self.assertEqual(
+            [
+                (prop.name, prop.value)
+                for prop in properties.custom_properties
+                if prop.name == 'text'
+            ],
+            [('text', 'hello')]
+        )
+        process = {
+            'name': 'process', 'meta-category': 'misc',
+            'description': 'Object describing a system process.',
+            'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+            'Attribute': [
+                {'type': 'text', 'object_relation': 'pid', 'value': '2510'},
+                {
+                    'type': 'boolean', 'object_relation': 'hidden',
+                    'value': False
+                }
+            ]
+        }
+        parser = self._events_parser()
+        parser.parse_misp_event(self._event_with_object(process)['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        properties = incident.related_observables.observable[0].item.object_.properties
+        self.assertEqual(properties._XSI_TYPE, 'ProcessObjectType')
+        # The native field carries every boolean it can, False included:
+        # the bag entry was a fallback, not a shape
+        self.assertIsNone(properties.custom_properties)
+        self.assertIs(properties.is_hidden, False)
+
+    def test_values_with_no_lexical_form_are_skipped_with_a_warning(self):
+        # The three arms a property value can take beyond a plain string: a
+        # one-element list is the value it holds, and what has no lexical
+        # form is skipped - the property is built from routes nothing above
+        # catches, so raising loses the whole conversion
+        parser = self._events_parser()
+        parser.parse_misp_event(
+            self._event_with_object(
+                self._custom_object(
+                    [
+                        {
+                            'type': 'text', 'object_relation': 'account-id',
+                            'value': ['42']
+                        },
+                        {
+                            'type': 'text', 'object_relation': 'account-name',
+                            'value': None
+                        },
+                        {
+                            'type': 'link', 'object_relation': 'link',
+                            'value': {'url': 'https://parler.com/octocat'}
+                        }
+                    ]
+                )
+            )['Event']
+        )
+        self.assertEqual(parser.errors, {})
+        properties = self._custom_properties(parser)
+        self.assertEqual(
+            [(prop.name, prop.value) for prop in properties],
+            [('account-id', '42')]
+        )
+        features = f'parler-account object (uuid: {self._OBJECT_UUID})'
+        self.assertEqual(
+            parser.warnings[get_base_event()['Event']['uuid']],
+            [
+                f"'account-name' has no lexical form STIX 1 can carry in "
+                f'the {features}: None not converted.',
+                f"'link' has no lexical form STIX 1 can carry in the "
+                f"{features}: {{'url': 'https://parler.com/octocat'}} "
+                'not converted.',
+                'MISP Object name parler-account not mapped.'
+            ]
+        )
+
+    def test_failing_custom_object_route_is_not_retried(self):
+        # The custom object route is what `_object_error` falls back to:
+        # retrying what just raised raises again, with nothing left to catch
+        # it - and from a collection that costs every other event too
+        first = self._event_with_object(
+            self._custom_object(
+                [
+                    {
+                        'type': 'text', 'object_relation': 'account-id',
+                        'value': '42'
+                    }
+                ]
+            )
+        )
+        second = get_event_with_domain_attribute()
+        second['Event']['uuid'] = '31f0d1b0-8a2f-4e18-9a0e-2f5b6c7d8e90'
+        parser = self._events_parser()
+        with patch.object(
+                MISPtoSTIX1EventsParser, '_create_property',
+                side_effect=ValueError('Value must be a string')):
+            parser.parse_json_content({'response': [first, second]})
+        packages = parser.stix_package.related_packages
+        self.assertEqual(len(packages), 2)
+        self.assertEqual(
+            list(parser.errors), [first['Event']['uuid']]
+        )
+        error = parser.errors[first['Event']['uuid']][0]
+        self.assertIn(
+            f'Error with the parler-account object '
+            f'(uuid: {self._OBJECT_UUID})', error
+        )
+        self.assertIn('Value must be a string', error)
+        # The object is lost, the event it sits in is not, and neither is the
+        # event after it
+        first_package, second_package = packages
+        self.assertEqual(
+            len(first_package.item.incidents[0].related_observables.observable),
+            0
+        )
+        self.assertEqual(
+            len(second_package.item.incidents[0].related_indicators.indicator),
+            1
+        )
+
+
+class TestSTIX1NativeFieldValues(TestSTIX):
+    """What the export writes into a native CybOX field whose MISP value it
+    used to corrupt: the two booleans CybOX holds natively,
+    `process` `hidden` and `user-account` `disabled`, and the `registry-key`
+    hive."""
+
+    _OBJECT_UUID = '6c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f'
+    _TRUE_VALUES = (True, '1', 'true', 'True')
+    _FALSE_VALUES = (False, '0', 'false', 'False')
+
+    def _parse_object(self, name, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': attributes
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return parser, observable.item.object_.properties
+
+    def _process(self, hidden):
+        return self._parse_object(
+            'process',
+            [
+                {'type': 'text', 'object_relation': 'pid', 'value': '2510'},
+                {
+                    'type': 'boolean', 'object_relation': 'hidden',
+                    'value': hidden
+                }
+            ]
+        )
+
+    def _user_account(self, disabled):
+        return self._parse_object(
+            'user-account',
+            [
+                {
+                    'type': 'text', 'object_relation': 'username',
+                    'value': 'octocat'
+                },
+                {
+                    'type': 'boolean', 'object_relation': 'disabled',
+                    'value': disabled
+                }
+            ]
+        )
+
+    def _registry_key(self, hive):
+        return self._parse_object(
+            'registry-key',
+            [
+                {
+                    'type': 'regkey', 'object_relation': 'key',
+                    'value': 'system\\bar\\foo'
+                },
+                {'type': 'text', 'object_relation': 'hive', 'value': hive}
+            ]
+        )
+
+    def test_process_hidden_is_written_as_the_boolean_it_spells(self):
+        # `'0'` went out as `is_hidden="true"`, and `False` into the bag
+        for values, expected in ((self._TRUE_VALUES, True),
+                                 (self._FALSE_VALUES, False)):
+            for value in values:
+                with self.subTest(value=value):
+                    parser, properties = self._process(value)
+                    self.assertEqual(parser.errors, {})
+                    self.assertEqual(parser.warnings, {})
+                    self.assertEqual(properties._XSI_TYPE, 'ProcessObjectType')
+                    self.assertIs(properties.is_hidden, expected)
+                    self.assertIsNone(properties.custom_properties)
+
+    def test_user_account_disabled_is_written_as_the_boolean_it_spells(self):
+        # Any truthy value raised on the `.condition` the generic loop set,
+        # and the object went out as a custom one
+        for values, expected in ((self._TRUE_VALUES, True),
+                                 (self._FALSE_VALUES, False)):
+            for value in values:
+                with self.subTest(value=value):
+                    parser, properties = self._user_account(value)
+                    self.assertEqual(parser.errors, {})
+                    self.assertEqual(parser.warnings, {})
+                    self.assertEqual(
+                        properties._XSI_TYPE, 'UserAccountObjectType'
+                    )
+                    self.assertIs(properties.disabled, expected)
+                    self.assertIsNone(properties.custom_properties)
+
+    def test_unrecognised_boolean_goes_to_the_bag_with_a_warning(self):
+        features = f'object (uuid: {self._OBJECT_UUID})'
+        for build, relation, name in (
+                (self._process, 'hidden', 'process'),
+                (self._user_account, 'disabled', 'user-account')):
+            with self.subTest(relation=relation):
+                parser, properties = build('yes')
+                self.assertEqual(parser.errors, {})
+                self.assertIsNone(getattr(
+                    properties, 'is_hidden' if name == 'process' else relation
+                ))
+                self.assertEqual(
+                    [
+                        (prop.name, prop.value, prop.datatype)
+                        for prop in properties.custom_properties
+                    ],
+                    [(relation, 'yes', 'string')]
+                )
+                self.assertEqual(
+                    parser.warnings[get_base_event()['Event']['uuid']],
+                    [
+                        f"{relation!r} in the {name} {features} is not a "
+                        "boolean: 'yes' written as a custom property."
+                    ]
+                )
+
+    def test_boolean_no_bag_can_carry_is_warned_of_once(self):
+        # `None` is neither a boolean nor a value the bag can write: the
+        # bag's own warning says so, and no second one claims it was written
+        parser, properties = self._process(None)
+        self.assertEqual(parser.errors, {})
+        self.assertIsNone(properties.is_hidden)
+        warning, = parser.warnings[get_base_event()['Event']['uuid']]
+        self.assertIn("'hidden' has no lexical form STIX 1 can carry", warning)
+
+    def test_registry_key_hive_in_the_enumeration_is_coerced(self):
+        for hive in ('hklm', 'HKLM', 'HKEY_LOCAL_MACHINE',
+                     'hkey_local_machine', '\\HKLM'):
+            with self.subTest(hive=hive):
+                parser, properties = self._registry_key(hive)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(properties.hive.value, 'HKEY_LOCAL_MACHINE')
+
+    def test_registry_key_hive_outside_the_enumeration_is_verbatim(self):
+        # The template calls `hive` a file on disk: upper-casing it and
+        # stripping its leading backslash corrupted it
+        for hive in ('C:\\Windows\\System32\\config\\SYSTEM',
+                     '\\\\server\\share\\ntuser.dat'):
+            with self.subTest(hive=hive):
+                parser, properties = self._registry_key(hive)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(properties.hive.value, hive)
+
+    def test_asn_without_its_number_is_refused_with_an_error(self):
+        # The CybOX `AS` is built around the number the template requires:
+        # the object raised a `KeyError`, reported as a traceback next to a
+        # warning calling the `asn` template unmapped
+        for to_ids in (True, False):
+            with self.subTest(to_ids=to_ids):
+                event = get_base_event()
+                event['Event']['Object'] = [
+                    {
+                        'name': 'asn', 'meta-category': 'network',
+                        'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                        'Attribute': [
+                            {
+                                'type': 'text', 'object_relation': 'description',
+                                'value': 'Transit provider', 'to_ids': to_ids
+                            }
+                        ]
+                    }
+                ]
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+                parser.parse_misp_event(event['Event'])
+                self.assertEqual(
+                    parser.errors,
+                    {
+                        event['Event']['uuid']: [
+                            f'Error with the asn object (uuid: '
+                            f'{self._OBJECT_UUID}): no asn attribute to build '
+                            'it from, the object is not exported.'
+                        ]
+                    }
+                )
+                self.assertEqual(parser.warnings, {})
+                incident = parser.stix_package.incidents[0]
+                self.assertFalse(incident.related_observables)
+                self.assertFalse(incident.related_indicators)
+
+
+class TestSTIX1ObjectsWithoutPropertyBag(TestSTIX):
+    """What the export writes for a relation of an object whose STIX type has
+    no property bag: a composition takes one more member, an attack pattern
+    fills the room its TTP gives it, and what has no room at all is warned
+    rather than dropped in silence."""
+
+    _OBJECT_UUID = '3a7c9e1b-5d2f-4b8a-9c6e-0f1d2e3a4b5c'
+
+    def _parse_object(self, name, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': attributes
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _members(parser):
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return observable.item.observable_composition.observables
+
+    @staticmethod
+    def _ttp(parser):
+        return parser.stix_package.ttps.ttp[0]
+
+    @classmethod
+    def _attribute(cls, relation, value, attribute_type='text'):
+        uuid = uuid5(UUID(cls._OBJECT_UUID), f'{relation} - {value}')
+        return {
+            'uuid': str(uuid), 'type': attribute_type,
+            'object_relation': relation, 'value': value
+        }
+
+    def _warnings(self, parser):
+        return parser.warnings.get(get_base_event()['Event']['uuid'], [])
+
+    def _assert_custom_member(self, member, attribute, datatype='string'):
+        self.assertEqual(member.id_, f"{_ORGNAME_ID}:Observable-{attribute['uuid']}")
+        custom = member.object_
+        self.assertEqual(custom.id_, f"{_ORGNAME_ID}:Custom-{attribute['uuid']}")
+        properties = custom.properties
+        self.assertEqual(properties._XSI_TYPE, 'CustomObjectType')
+        self.assertIsNone(properties.custom_name)
+        prop, = properties.custom_properties
+        self.assertEqual(prop.name, attribute['object_relation'])
+        self.assertEqual(prop.value, attribute['value'])
+        self.assertEqual(prop.datatype, datatype)
+
+    def test_url_writes_every_relation_it_has_no_member_for(self):
+        url = self._attribute('url', 'https://circl.lu/team', 'url')
+        weird = self._attribute('weird-relation', 'custom value')
+        odd = self._attribute('Odd.Case/Relation', 'odd value')
+        scheme = self._attribute('scheme', 'https')
+        parser = self._parse_object('url', [url, weird, odd, scheme])
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        uri, *members = self._members(parser)
+        self.assertEqual(uri.object_.properties.value.value, url['value'])
+        self.assertEqual(len(members), 3)
+        for member, attribute in zip(members, (weird, odd, scheme)):
+            with self.subTest(relation=attribute['object_relation']):
+                self._assert_custom_member(member, attribute)
+
+    def test_domain_ip_hostname_is_a_hostname_member(self):
+        domain = self._attribute('domain', 'circl.lu', 'domain')
+        hostname = self._attribute('hostname', 'www.circl.lu', 'hostname')
+        parser = self._parse_object('domain-ip', [domain, hostname])
+        self.assertEqual(parser.errors, {})
+        _, member = self._members(parser)
+        self.assertEqual(member.id_, f"{_ORGNAME_ID}:Observable-{hostname['uuid']}")
+        self.assertEqual(member.object_.id_, f"{_ORGNAME_ID}:Hostname-{hostname['uuid']}")
+        properties = member.object_.properties
+        self.assertEqual(properties._XSI_TYPE, 'HostnameObjectType')
+        self.assertEqual(properties.hostname_value.value, hostname['value'])
+
+    def test_domain_ip_writes_every_other_relation_as_a_custom_member(self):
+        domain = self._attribute('domain', 'circl.lu', 'domain')
+        text = self._attribute('text', 'CIRCL website')
+        parser = self._parse_object('domain-ip', [domain, text])
+        self.assertEqual(parser.errors, {})
+        _, member = self._members(parser)
+        self._assert_custom_member(member, text)
+
+    def test_ip_port_first_seen_is_a_custom_member(self):
+        ip = self._attribute('ip', '149.13.33.14', 'ip-dst')
+        first_seen = self._attribute(
+            'first-seen', '2020-10-25T16:22:00Z', 'datetime'
+        )
+        parser = self._parse_object('ip-port', [ip, first_seen])
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        _, member = self._members(parser)
+        self._assert_custom_member(member, first_seen)
+
+    def test_composition_member_no_property_can_carry_is_warned(self):
+        # The property's own warning says so, and no member is written for
+        # a value it could not build
+        ip = self._attribute('ip', '149.13.33.14', 'ip-dst')
+        parser = self._parse_object(
+            'ip-port', [ip, self._attribute('text', {'not': 'a value'})]
+        )
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(len(self._members(parser)), 1)
+        warning, = self._warnings(parser)
+        self.assertIn("'text' has no lexical form STIX 1 can carry", warning)
+
+    def test_composition_with_nothing_left_over_is_unchanged(self):
+        # Every relation has a member of its own: no custom member is added
+        attributes = [
+            self._attribute('ip', '149.13.33.14', 'ip-dst'),
+            self._attribute('dst-port', '443', 'port'),
+            self._attribute('domain', 'circl.lu', 'domain'),
+            self._attribute('hostname', 'www.circl.lu', 'hostname')
+        ]
+        parser = self._parse_object('ip-port', attributes)
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(
+            [member.object_.properties._XSI_TYPE for member in self._members(parser)],
+            ['AddressObjectType', 'PortObjectType', 'DomainNameObjectType',
+             'HostnameObjectType']
+        )
+
+    def test_attack_pattern_writes_prerequisites_and_solutions(self):
+        summary = self._attribute('summary', 'An attack pattern.')
+        prerequisites = self._attribute('prerequisites', 'A vulnerable host.')
+        solutions = self._attribute('solutions', 'Patch the host.')
+        parser = self._parse_object(
+            'attack-pattern',
+            [self._attribute('id', '9'), prerequisites, summary, solutions]
+        )
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        attack_pattern = self._ttp(parser).behavior.attack_patterns[0]
+        # The summary stays the untagged description it is
+        self.assertEqual(attack_pattern.description.value, summary['value'])
+        self.assertIsNone(attack_pattern.description.structuring_format)
+        self.assertEqual(
+            [
+                (description.structuring_format, description.value)
+                for description in attack_pattern.descriptions
+            ],
+            [
+                (None, summary['value']),
+                ('prerequisites', prerequisites['value']),
+                ('solutions', solutions['value'])
+            ]
+        )
+
+    def test_attack_pattern_writes_related_weaknesses_as_exploit_targets(self):
+        weaknesses = [
+            self._attribute('related-weakness', 'CWE-118', 'weakness'),
+            self._attribute('related-weakness', 'CWE-120', 'weakness')
+        ]
+        parser = self._parse_object(
+            'attack-pattern', [self._attribute('id', '9'), *weaknesses]
+        )
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(self._warnings(parser), [])
+        ttp = self._ttp(parser)
+        self.assertEqual(len(ttp.behavior.attack_patterns), 1)
+        exploit_targets = ttp.exploit_targets.exploit_target
+        self.assertEqual(len(exploit_targets), 2)
+        for related, attribute in zip(exploit_targets, weaknesses):
+            with self.subTest(value=attribute['value']):
+                exploit_target = related.item
+                self.assertEqual(
+                    exploit_target.id_,
+                    f"{_ORGNAME_ID}:ExploitTarget-{attribute['uuid']}"
+                )
+                self.assertFalse(exploit_target.vulnerabilities)
+                weakness, = exploit_target.weaknesses
+                self.assertEqual(weakness.cwe_id, attribute['value'])
+
+    def test_attack_pattern_with_nothing_left_over_is_unchanged(self):
+        parser = self._parse_object(
+            'attack-pattern',
+            [
+                self._attribute('id', '9'),
+                self._attribute('summary', 'An attack pattern.')
+            ]
+        )
+        self.assertEqual(self._warnings(parser), [])
+        ttp = self._ttp(parser)
+        self.assertEqual(len(ttp.behavior.attack_patterns[0].descriptions), 1)
+        self.assertFalse(ttp.exploit_targets)
+
+    def test_relations_with_no_room_are_warned(self):
+        for name, attributes, relation, value in (
+                ('attack-pattern', [self._attribute('id', '9')],
+                 'references', 'https://capec.mitre.org/data/definitions/9.html'),
+                ('course-of-action', [self._attribute('name', 'Block')],
+                 'weird-relation', 'custom value'),
+                ('vulnerability', [self._attribute('id', 'CVE-2021-29921', 'vulnerability')],
+                 'modified', '2021-05-07T00:00:00Z'),
+                ('weakness', [self._attribute('id', 'CWE-79', 'weakness')],
+                 'status', 'Stable')):
+            with self.subTest(name=name):
+                parser = self._parse_object(
+                    name, [*attributes, self._attribute(relation, value)]
+                )
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(
+                    self._warnings(parser),
+                    [
+                        f"{relation!r} has no place in the STIX 1 "
+                        f"{name} object (uuid: {self._OBJECT_UUID}): "
+                        f"{value!r} not converted."
+                    ]
+                )
+
+    def test_url_repeated_relation_takes_one_member_per_value(self):
+        """A `url` composition writes a member per value of a relation it
+        has a member for, as `domain-ip` and `ip-port` do."""
+        attributes = [
+            self._attribute('url', 'https://circl.lu/team', 'url'),
+            self._attribute('domain', 'circl.lu', 'domain'),
+            self._attribute('domain', 'misp-project.org', 'domain'),
+            self._attribute('host', 'www.circl.lu', 'hostname'),
+            self._attribute('host', 'misp.circl.lu', 'hostname'),
+            self._attribute('ip', '149.13.33.14', 'ip-dst'),
+            self._attribute('ip', '149.13.33.4', 'ip-dst'),
+            self._attribute('port', '443', 'port'),
+            self._attribute('port', '8443', 'port')
+        ]
+        parser = self._parse_object('url', attributes)
+        self.assertEqual(self._warnings(parser), [])
+        members = self._members(parser)
+        self.assertEqual(
+            [member.id_ for member in members],
+            [
+                f"{_ORGNAME_ID}:Observable-{attribute['uuid']}"
+                for attribute in attributes
+            ]
+        )
+
+    def test_pe_section_relation_with_no_room_is_warned(self):
+        section_uuid = '4b8d0f2c-6e3a-4c9b-8d7f-1a2b3c4d5e6f'
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': 'pe', 'meta-category': 'file',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    self._attribute('original-filename', 'PuTTy', 'filename')
+                ],
+                'ObjectReference': [
+                    {
+                        'referenced_uuid': section_uuid,
+                        'relationship_type': 'includes',
+                        'Object': {'name': 'pe-section'}
+                    }
+                ]
+            },
+            {
+                'name': 'pe-section', 'meta-category': 'file',
+                'uuid': section_uuid, 'timestamp': '1603642920',
+                'Attribute': [
+                    self._attribute('name', '.rsrc'),
+                    self._attribute('virtual_address', '0x00012345', 'hex')
+                ]
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        self.assertEqual(
+            self._warnings(parser),
+            [
+                "'virtual_address' has no place in the STIX 1 pe-section "
+                f"object (uuid: {section_uuid}): '0x00012345' not converted."
+            ]
+        )
+
+
+class TestSTIX1ValuesBeyondTheNativeField(TestSTIX):
+    """What the export writes for a relation whose native CybOX field holds
+    one value, or a vocabulary short of what MISP holds: the field takes what
+    it can, and the rest goes to the property bag under the relation."""
+
+    _OBJECT_UUID = '8f2b4d6a-0c7e-4a3f-9b1d-5e6f7a8b9c0d'
+    _VERSIONS = ('1.1.1', '1.2')
+
+    def _parse_object(self, name, attributes, version='1.1.1'):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': attribute_type, 'object_relation': relation,
+                     'value': value}
+                    for attribute_type, relation, value in attributes
+                ]
+            }
+        ]
+        parser = self._parse_event(event, version)
+        incident = parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        return observable.item.object_.properties
+
+    def _parse_event(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
+        # The version only shows in the serialisation
+        parser.stix_package.to_xml()
+        return parser
+
+    @staticmethod
+    def _bag(properties):
+        return sorted(
+            (prop.name, prop.value)
+            for prop in properties.custom_properties or ()
+        )
+
+    def test_email_header_fields_keep_every_value(self):
+        email = self._parse_object(
+            'email',
+            (
+                ('email-src', 'from', 'first@example.com'),
+                ('email-src', 'from', 'second@example.com'),
+                ('email-subject', 'subject', 'Invoice'),
+                ('email-subject', 'subject', 'Re: Invoice'),
+                ('email-reply-to', 'reply-to', 'reply@example.com')
+            )
+        )
+        header = email.header
+        self.assertEqual(header.from_.address_value.value, 'first@example.com')
+        self.assertEqual(header.subject.value, 'Invoice')
+        self.assertEqual(
+            header.reply_to.address_value.value, 'reply@example.com'
+        )
+        self.assertEqual(
+            self._bag(email),
+            [('from', 'second@example.com'), ('subject', 'Re: Invoice')]
+        )
+
+    def test_email_header_fields_of_one_value_write_no_bag(self):
+        email = self._parse_object(
+            'email',
+            (
+                ('email-src', 'from', 'first@example.com'),
+                ('email-subject', 'subject', 'Invoice')
+            )
+        )
+        self.assertIsNone(email.custom_properties)
+
+    def test_credential_format_and_type_keep_every_value(self):
+        credential = self._parse_object(
+            'credential',
+            (
+                ('text', 'username', 'admin'),
+                ('text', 'password', 'P4ssw0rd'),
+                ('text', 'format', 'clear-text'),
+                ('text', 'format', 'hashed'),
+                ('text', 'type', 'password'),
+                ('text', 'type', 'api-key')
+            )
+        )
+        authentication, = credential.authentication
+        self.assertEqual(
+            authentication.structured_authentication_mechanism.description.value,
+            'clear-text'
+        )
+        self.assertEqual(authentication.authentication_type.value, 'password')
+        self.assertEqual(
+            self._bag(credential), [('format', 'hashed'), ('type', 'api-key')]
+        )
+
+    def test_network_socket_state_outside_the_cybox_booleans(self):
+        socket = self._parse_object(
+            'network-socket',
+            (
+                ('ip-dst', 'ip-dst', '198.51.100.4'),
+                ('text', 'state', 'listening'),
+                ('text', 'state', 'established')
+            )
+        )
+        self.assertTrue(socket.is_listening)
+        self.assertEqual(self._bag(socket), [('state', 'established')])
+
+    def test_single_value_fields_keep_the_first_and_bag_the_others(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        for name, attributes, read in (
+                (
+                    'asn',
+                    (('AS', 'asn', 'AS1234'), ('AS', 'asn', 'AS5678'),
+                     ('text', 'description', 'Transit'),
+                     ('text', 'description', 'Peering')),
+                    lambda asn: (asn.handle.value, asn.name.value)
+                ),
+                (
+                    'credential',
+                    (('text', 'username', 'admin'),
+                     ('text', 'username', 'root'),
+                     ('text', 'text', 'First'), ('text', 'text', 'Second')),
+                    lambda account: (
+                        account.username.value, account.description.value
+                    )
+                ),
+                (
+                    'mutex',
+                    (('mutex', 'name', 'FirstMutex'),
+                     ('mutex', 'name', 'SecondMutex')),
+                    lambda mutex: (mutex.name.value,)
+                ),
+                (
+                    'network-connection',
+                    (('ip-dst', 'ip-dst', '198.51.100.4'),
+                     ('ip-dst', 'ip-dst', '198.51.100.5'),
+                     ('port', 'dst-port', '8080'), ('port', 'dst-port', '8443'),
+                     ('text', 'layer4-protocol', 'TCP'),
+                     ('text', 'layer4-protocol', 'UDP')),
+                    lambda connection: (
+                        connection.destination_socket_address.ip_address.address_value.value,
+                        str(connection.destination_socket_address.port.port_value.value),
+                        connection.layer4_protocol.value
+                    )
+                ),
+                (
+                    'network-socket',
+                    (('ip-src', 'ip-src', '198.51.100.4'),
+                     ('ip-src', 'ip-src', '198.51.100.5'),
+                     ('port', 'src-port', '8080'), ('port', 'src-port', '8443'),
+                     ('text', 'protocol', 'TCP'), ('text', 'protocol', 'UDP')),
+                    lambda socket: (
+                        socket.local_address.ip_address.address_value.value,
+                        str(socket.local_address.port.port_value.value),
+                        socket.protocol.value
+                    )
+                ),
+                (
+                    'process',
+                    (('text', 'name', 'first.exe'),
+                     ('text', 'name', 'second.exe'),
+                     ('text', 'pid', '1234'), ('text', 'pid', '5678')),
+                    lambda process: (process.name.value, str(process.pid.value))
+                ),
+                (
+                    'registry-key',
+                    (('regkey', 'key', 'HKLM\\Software\\First'),
+                     ('regkey', 'key', 'HKLM\\Software\\Second'),
+                     ('text', 'name', 'FirstName'),
+                     ('text', 'name', 'SecondName'),
+                     ('text', 'data', 'FirstData'),
+                     ('text', 'data', 'SecondData')),
+                    lambda registry_key: (
+                        registry_key.key.value,
+                        registry_key.values[0].name.value,
+                        registry_key.values[0].data.value
+                    )
+                ),
+                (
+                    'user-account',
+                    (('text', 'username', 'admin'),
+                     ('text', 'username', 'root'),
+                     ('text', 'display-name', 'Admin'),
+                     ('text', 'display-name', 'Root')),
+                    lambda account: (
+                        account.username.value, account.full_name.value
+                    )
+                ),
+                (
+                    'whois',
+                    (('whois-registrar', 'registrar', 'First Registrar'),
+                     ('whois-registrar', 'registrar', 'Second Registrar'),
+                     ('whois-registrant-name', 'registrant-name', 'Alice'),
+                     ('whois-registrant-name', 'registrant-name', 'Bob')),
+                    lambda whois: (
+                        whois.registrar_info.name.value,
+                        whois.registrants[0].name.value
+                    )
+                )):
+            for version in self._VERSIONS:
+                with self.subTest(name=name, version=version):
+                    properties = self._parse_object(name, attributes, version)
+                    self.assertEqual(
+                        read(properties),
+                        tuple(value for _, _, value in attributes[::2])
+                    )
+                    self.assertEqual(
+                        self._bag(properties),
+                        sorted(
+                            (relation, value)
+                            for _, relation, value in attributes[1::2]
+                        )
+                    )
+                    self.assertEqual(self._warnings, [])
+
+    def test_pe_single_value_fields_keep_the_first_and_bag_the_others(self):
+        event = get_base_event()
+        pe_uuid = '9a3c5e7b-1d8f-4b4a-8c2e-6f7a8b9c0d1e'
+        event['Event']['Object'] = [
+            {
+                'name': 'file', 'meta-category': 'file',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': 'filename', 'object_relation': 'filename',
+                     'value': 'oui.exe'}
+                ],
+                'ObjectReference': [
+                    {'referenced_uuid': pe_uuid,
+                     'relationship_type': 'includes',
+                     'Object': {'name': 'pe'}}
+                ]
+            },
+            {
+                'name': 'pe', 'meta-category': 'file', 'uuid': pe_uuid,
+                'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': attribute_type, 'object_relation': relation,
+                     'value': value}
+                    for attribute_type, relation, value in (
+                        ('text', 'company-name', 'First Company'),
+                        ('text', 'company-name', 'Second Company'),
+                        ('imphash', 'imphash', 'a' * 32),
+                        ('imphash', 'imphash', 'b' * 32),
+                        ('text', 'type', 'exe'), ('text', 'type', 'dll')
+                    )
+                ]
+            }
+        ]
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse_event(event, version)
+                incident = parser.stix_package.incidents[0]
+                observable = incident.related_observables.observable[0]
+                pe = observable.item.object_.properties
+                self.assertEqual(
+                    pe.resources[0].companyname.value, 'First Company'
+                )
+                hash_value, = pe.headers.file_header.hashes
+                self.assertEqual(hash_value.simple_hash_value.value, 'a' * 32)
+                self.assertEqual(pe.type_.value, 'exe')
+                self.assertEqual(
+                    self._bag(pe),
+                    [('company-name', 'Second Company'),
+                     ('imphash', 'b' * 32), ('type', 'dll')]
+                )
+
+    def _parse_file(self, attributes, with_pe, version):
+        """The CybOX objects written for a `file` object, alone or with a
+        `pe` folded into it: the File, or the WindowsExecutableFile, and
+        the members of its composition before it."""
+        file_object = {
+            'name': 'file', 'meta-category': 'file',
+            'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+            'Attribute': [
+                {'type': attribute_type, 'object_relation': relation,
+                 'value': value, **(extra[0] if extra else {})}
+                for attribute_type, relation, value, *extra in attributes
+            ]
+        }
+        event = get_base_event()
+        event['Event']['Object'] = [file_object]
+        if with_pe:
+            pe_uuid = '9a3c5e7b-1d8f-4b4a-8c2e-6f7a8b9c0d1e'
+            file_object['ObjectReference'] = [
+                {'referenced_uuid': pe_uuid, 'relationship_type': 'includes',
+                 'Object': {'name': 'pe'}}
+            ]
+            event['Event']['Object'].append(
+                {
+                    'name': 'pe', 'meta-category': 'file', 'uuid': pe_uuid,
+                    'timestamp': '1603642920',
+                    'Attribute': [
+                        {'type': 'text', 'object_relation': 'type',
+                         'value': 'exe'}
+                    ]
+                }
+            )
+        parser = self._parse_event(event, version)
+        item = parser.stix_package.incidents[0].related_observables.observable[0].item
+        if item.observable_composition is None:
+            return item.object_.properties, []
+        *members, file_observable = item.observable_composition.observables
+        return (
+            file_observable.object_.properties,
+            [member.object_.properties for member in members]
+        )
+
+    def test_file_single_value_fields_keep_the_first_and_bag_the_others(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        attributes = (
+            ('filename', 'filename', 'oui.exe'),
+            ('float', 'entropy', '7.1'), ('float', 'entropy', '7.2'),
+            ('size-in-bytes', 'size-in-bytes', '100'),
+            ('size-in-bytes', 'size-in-bytes', '200'),
+            ('md5', 'md5', 'a' * 32), ('md5', 'md5', 'b' * 32),
+            ('sha256', 'sha256', 'c' * 64), ('sha256', 'sha256', 'd' * 64),
+            ('malware-sample', 'malware-sample', f"first.exe|{'a' * 32}"),
+            ('malware-sample', 'malware-sample', f"second.exe|{'b' * 32}")
+        )
+        for with_pe in (False, True):
+            for version in self._VERSIONS:
+                with self.subTest(with_pe=with_pe, version=version):
+                    file_object, members = self._parse_file(
+                        attributes, with_pe, version
+                    )
+                    self.assertEqual(members, [])
+                    self.assertEqual(file_object.peak_entropy.value, 7.1)
+                    self.assertEqual(file_object.size_in_bytes.value, 100)
+                    self.assertEqual(
+                        [str(hash_value.simple_hash_value)
+                         for hash_value in file_object.hashes],
+                        ['a' * 32, 'c' * 64]
+                    )
+                    self.assertEqual(
+                        self._bag(file_object),
+                        [('entropy', '7.2'), ('malware-sample',
+                                              f"first.exe|{'a' * 32}"),
+                         ('malware-sample', f"second.exe|{'b' * 32}"),
+                         ('md5', 'b' * 32), ('sha256', 'd' * 64),
+                         ('size-in-bytes', '200')]
+                    )
+                    self.assertEqual(self._warnings, [])
+
+    def test_file_repeated_sample_carrying_data_is_one_more_artifact(self):
+        # The first sample and its payload were dropped, in silence
+        data = 'Tm9uLW1hbGljaW91cyBmaWxlCg=='
+        attributes = (
+            ('filename', 'filename', 'oui.exe'),
+            ('malware-sample', 'malware-sample', f"first.exe|{'a' * 32}",
+             {'data': data, 'uuid': '1b2c3d4e-5f60-4a71-8b2c-3d4e5f6a7b8c'}),
+            ('malware-sample', 'malware-sample', f"second.exe|{'b' * 32}",
+             {'data': data, 'uuid': '2c3d4e5f-6a71-4b82-9c3d-4e5f6a7b8c9d'}),
+            ('malware-sample', 'malware-sample', f"third.exe|{'c' * 32}"),
+            ('attachment', 'attachment', 'first.txt',
+             {'data': data, 'uuid': '3d4e5f6a-7b82-4c93-8d4e-5f6a7b8c9d0e'}),
+            ('attachment', 'attachment', 'second.txt',
+             {'data': data, 'uuid': '4e5f6a7b-8c93-4da4-9e5f-6a7b8c9d0e1f'})
+        )
+        for with_pe in (False, True):
+            for version in self._VERSIONS:
+                with self.subTest(with_pe=with_pe, version=version):
+                    file_object, members = self._parse_file(
+                        attributes, with_pe, version
+                    )
+                    self.assertEqual(
+                        [member.parent.id_ for member in members],
+                        [f'{_ORGNAME_ID}:Artifact-{uuid}' for uuid in (
+                            '1b2c3d4e-5f60-4a71-8b2c-3d4e5f6a7b8c',
+                            '2c3d4e5f-6a71-4b82-9c3d-4e5f6a7b8c9d',
+                            '3d4e5f6a-7b82-4c93-8d4e-5f6a7b8c9d0e',
+                            '4e5f6a7b-8c93-4da4-9e5f-6a7b8c9d0e1f'
+                        )]
+                    )
+                    self.assertEqual(
+                        self._bag(file_object),
+                        [('malware-sample', f"third.exe|{'c' * 32}")]
+                    )
+                    self.assertEqual(self._warnings, [])
+
+    def test_process_pid_that_is_no_integer_goes_to_the_bag(self):
+        # cybox takes a pid as an integer, the template as text: the object
+        # was lost, with a traceback and a warning calling it unmapped
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                process = self._parse_object(
+                    'process',
+                    (('text', 'name', 'first.exe'),
+                     ('text', 'pid', 'pid-1234'),
+                     ('text', 'parent-pid', 'unknown')),
+                    version
+                )
+                self.assertEqual(process._XSI_TYPE, 'ProcessObjectType')
+                self.assertIsNone(process.pid)
+                self.assertIsNone(process.parent_pid)
+                self.assertEqual(
+                    self._bag(process),
+                    [('parent-pid', 'unknown'), ('pid', 'pid-1234')]
+                )
+                features = f'process object (uuid: {self._OBJECT_UUID})'
+                self.assertEqual(
+                    self._warnings,
+                    [
+                        f"'pid' in the {features} is not a canonical "
+                        "unsigned decimal integer: 'pid-1234' written as a "
+                        "custom property.",
+                        f"'parent-pid' in the {features} is not a canonical "
+                        "unsigned decimal integer: 'unknown' written as a "
+                        "custom property."
+                    ]
+                )
+
+    def _vulnerability(self, attributes, version='1.1.1'):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': 'vulnerability', 'meta-category': 'vulnerability',
+                'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {'type': attribute_type, 'object_relation': relation,
+                     'value': value}
+                    for attribute_type, relation, value in attributes
+                ]
+            }
+        ]
+        parser = self._parse_event(event, version)
+        ttp, = parser.stix_package.ttps.ttp
+        exploit_target = ttp.exploit_targets[0].item
+        vulnerability, = exploit_target.vulnerabilities
+        return vulnerability
+
+    def test_vulnerability_repeated_summary_is_one_more_description(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                vulnerability = self._vulnerability(
+                    (('vulnerability', 'id', 'CVE-2021-44228'),
+                     ('text', 'summary', 'Log4Shell'),
+                     ('text', 'summary', 'JNDI lookup')),
+                    version
+                )
+                self.assertEqual(
+                    [description.value
+                     for description in vulnerability.descriptions],
+                    ['Log4Shell', 'JNDI lookup']
+                )
+                self.assertEqual(self._warnings, [])
+
+    def test_vulnerability_repeated_single_value_is_warned(self):
+        # A repeated `id` reached the CVE field as a list: the object was
+        # lost with a traceback; the others went in silence
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                vulnerability = self._vulnerability(
+                    (('vulnerability', 'id', 'CVE-2021-44228'),
+                     ('vulnerability', 'id', 'CVE-2021-45046'),
+                     ('datetime', 'created', '2021-11-26T00:00:00'),
+                     ('datetime', 'created', '2021-11-30T00:00:00'),
+                     ('datetime', 'published', '2021-12-10T00:00:00'),
+                     ('datetime', 'published', '2021-12-14T00:00:00'),
+                     ('float', 'cvss-score', '10.0'),
+                     ('float', 'cvss-score', '9.0')),
+                    version
+                )
+                self.assertEqual(vulnerability.cve_id, 'CVE-2021-44228')
+                self.assertEqual(
+                    str(vulnerability.cvss_score.overall_score), '10.0'
+                )
+                features = f'vulnerability object (uuid: {self._OBJECT_UUID})'
+                self.assertEqual(
+                    self._warnings,
+                    [
+                        f"{relation!r} in the STIX 1 {features} has room for "
+                        f"one value: {value!r} not converted."
+                        for relation, value in (
+                            ('id', 'CVE-2021-45046'),
+                            ('created', '2021-11-30T00:00:00'),
+                            ('published', '2021-12-14T00:00:00'),
+                            ('cvss-score', '9.0')
+                        )
+                    ]
+                )
+
+    def test_ttp_family_repeated_values_are_described_or_warned(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        for name, attributes, read, warned in (
+                (
+                    'attack-pattern',
+                    (('text', 'id', '9'), ('text', 'id', '10'),
+                     ('text', 'name', 'Buffer Overflow'),
+                     ('text', 'name', 'Stack Overflow'),
+                     ('text', 'summary', 'First summary'),
+                     ('text', 'summary', 'Second summary')),
+                    lambda package: (
+                        lambda attack_pattern: (
+                            attack_pattern.capec_id.removeprefix('CAPEC-'),
+                            str(attack_pattern.title),
+                            [str(description.value) for description
+                             in attack_pattern.descriptions]
+                        )
+                    )(package.ttps.ttp[0].behavior.attack_patterns[0]),
+                    (('id', '10'), ('name', 'Stack Overflow'))
+                ),
+                (
+                    'course-of-action',
+                    (('text', 'name', 'Block the C2'),
+                     ('text', 'name', 'Sinkhole the C2'),
+                     ('text', 'description', 'First description'),
+                     ('text', 'description', 'Second description'),
+                     ('text', 'cost', 'Low'), ('text', 'cost', 'High')),
+                    lambda package: (
+                        lambda course_of_action: (
+                            str(course_of_action.title),
+                            str(course_of_action.cost.value),
+                            [str(description.value) for description
+                             in course_of_action.descriptions]
+                        )
+                    )(package.courses_of_action[0]),
+                    (('name', 'Sinkhole the C2'), ('cost', 'High'))
+                ),
+                (
+                    'weakness',
+                    (('weakness', 'id', 'CWE-119'),
+                     ('weakness', 'id', 'CWE-120'),
+                     ('text', 'description', 'First description'),
+                     ('text', 'description', 'Second description')),
+                    lambda package: (
+                        lambda weakness: (
+                            weakness.cwe_id,
+                            [str(description.value) for description
+                             in weakness.descriptions]
+                        )
+                    )(package.ttps.ttp[0].exploit_targets[0].item.weaknesses[0]),
+                    (('id', 'CWE-120'),)
+                )):
+            event = get_base_event()
+            event['Event']['Object'] = [
+                {
+                    'name': name, 'meta-category': 'misc',
+                    'uuid': self._OBJECT_UUID, 'timestamp': '1603642920',
+                    'Attribute': [
+                        {'type': attribute_type, 'object_relation': relation,
+                         'value': value}
+                        for attribute_type, relation, value in attributes
+                    ]
+                }
+            ]
+            for version in self._VERSIONS:
+                with self.subTest(name=name, version=version):
+                    parser = self._parse_event(event, version)
+                    *native, descriptions = read(parser.stix_package)
+                    self.assertEqual(
+                        tuple(native),
+                        tuple(
+                            value for _, relation, value in attributes[::2]
+                            if relation not in ('summary', 'description')
+                        )
+                    )
+                    self.assertEqual(
+                        descriptions,
+                        ['First summary', 'Second summary']
+                        if name == 'attack-pattern' else
+                        ['First description', 'Second description']
+                    )
+                    features = f'{name} object (uuid: {self._OBJECT_UUID})'
+                    self.assertEqual(
+                        self._warnings,
+                        [
+                            f"{relation!r} in the STIX 1 {features} has room "
+                            f"for one value: {value!r} not converted."
+                            for relation, value in warned
+                        ]
+                    )
+
+    def test_pe_section_repeated_hash_is_one_more_hash(self):
+        # The last value took the field and every other one was dropped, in
+        # silence
+        event = get_event_with_file_and_pe_objects()
+        *_, section = event['Event']['Object']
+        original = {
+            attribute['object_relation']: attribute['value']
+            for attribute in section['Attribute']
+        }
+        repeats = (
+            ('text', 'name', '.text'),
+            ('size-in-bytes', 'size-in-bytes', '1024'),
+            ('float', 'entropy', '6.5'),
+            ('md5', 'md5', 'a' * 32)
+        )
+        section['Attribute'].extend(
+            {'type': attribute_type, 'object_relation': relation,
+             'value': value}
+            for attribute_type, relation, value in repeats
+        )
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse_event(event, version)
+                incident = parser.stix_package.incidents[0]
+                pe = incident.related_observables.observable[0].item.object_.properties
+                pe_section, = pe.sections
+                header = pe_section.section_header
+                self.assertEqual(header.name.value, original['name'])
+                self.assertEqual(
+                    str(header.size_of_raw_data.value),
+                    original['size-in-bytes']
+                )
+                self.assertEqual(
+                    str(pe_section.entropy.value), original['entropy']
+                )
+                self.assertEqual(
+                    [str(hash_value.simple_hash_value)
+                     for hash_value in pe_section.data_hashes
+                     if str(hash_value.type_) == 'MD5'],
+                    [original['md5'], 'a' * 32]
+                )
+                features = f"pe-section object (uuid: {section['uuid']})"
+                self.assertEqual(
+                    self._warnings,
+                    [
+                        f"{relation!r} in the STIX 1 {features} has room for "
+                        f"one value: {value!r} not converted."
+                        for _, relation, value in repeats[:3]
+                    ]
+                )
+
+
+class TestSTIX1CanonicalNumbers(TestSTIX):
+    """A MISP value goes into a native CybOX integer or float field only
+    where the field writes it back unchanged: cybox reads a string with
+    `int(value, 0)` or `float(value)` and checks no sign, so `'0x1f'` went out
+    as 31 and `'-3'` into an unsigned field. Any other spelling goes to the
+    property bag under its relation, with one warning."""
+
+    # Under 1.2 too, by `TestSTIX12CanonicalNumbers`
+    _VERSION = '1.1.1'
+    _OBJECT_UUID = '3d5f7a9b-1c2e-4f60-8a1b-2c3d4e5f6a7b'
+    _ATTRIBUTE_UUID = '4e6a8b0c-2d3f-4a71-9b2c-3d4e5f6a7b8c'
+    _NON_CANONICAL = (
+        '0x1f', '0b11', '1_000', '+5', ' 7 ', '٣', '-3', '007', 'pid-1'
+    )
+
+    def _parse(self, event):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, self._VERSION)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        self._warnings = parser.warnings.get(event['Event']['uuid'], [])
+        return parser.stix_package.incidents[0].related_observables.observable
+
+    def _parse_object(self, name, attributes):
+        event = get_base_event()
+        event['Event']['Object'] = [self._misp_object(name, attributes)]
+        observable, = self._parse(event)
+        return observable.item
+
+    def _misp_object(self, name, attributes, uuid=None):
+        return {
+            'name': name, 'meta-category': 'misc',
+            'uuid': uuid or self._OBJECT_UUID, 'timestamp': '1603642920',
+            'Attribute': [
+                {'type': attribute_type, 'object_relation': relation,
+                 'value': value, 'uuid': str(uuid5(UUID(self._OBJECT_UUID), relation + str(index)))}
+                for index, (attribute_type, relation, value)
+                in enumerate(attributes)
+            ]
+        }
+
+    def _parse_attribute(self, attribute_type, value):
+        event = get_base_event()
+        event['Event']['Attribute'] = [
+            {'type': attribute_type, 'category': 'Network activity',
+             'value': value, 'uuid': self._ATTRIBUTE_UUID, 'to_ids': False}
+        ]
+        observable, = self._parse(event)
+        return observable.item.object_
+
+    @staticmethod
+    def _bag(properties):
+        return sorted(
+            (prop.name, prop.value)
+            for prop in properties.custom_properties or ()
+        )
+
+    def _warning(self, relation, value, kind='unsigned decimal integer',
+                 record=None):
+        record = record or f'process object (uuid: {self._OBJECT_UUID})'
+        return (
+            f'{relation!r} in the {record} is not a canonical {kind}: '
+            f'{value!r} written as a custom property.'
+        )
+
+    def test_process_pid_goes_native_only_in_canonical_form(self):
+        for value in self._NON_CANONICAL:
+            with self.subTest(value=value):
+                process = self._parse_object(
+                    'process', (('text', 'pid', value),)
+                ).object_.properties
+                self.assertIsNone(process.pid)
+                self.assertEqual(self._bag(process), [('pid', value)])
+                self.assertEqual(
+                    self._warnings, [self._warning('pid', value)]
+                )
+        process = self._parse_object(
+            'process', (('text', 'pid', '31'),)
+        ).object_.properties
+        self.assertEqual(process.pid.value, 31)
+        self.assertEqual(self._bag(process), [])
+        self.assertEqual(self._warnings, [])
+
+    def test_child_pid_no_integer_keeps_the_process(self):
+        # `pid` and `parent-pid` alone were guarded: cybox refusing a
+        # child cost the whole process
+        process = self._parse_object(
+            'process',
+            (('text', 'name', 'first.exe'), ('text', 'child-pid', '42'),
+             ('text', 'child-pid', 'pid-1'))
+        ).object_.properties
+        self.assertEqual(process._XSI_TYPE, 'ProcessObjectType')
+        self.assertEqual(process.name.value, 'first.exe')
+        self.assertEqual(
+            [child.value for child in process.child_pid_list], [42]
+        )
+        self.assertEqual(self._bag(process), [('child-pid', 'pid-1')])
+        self.assertEqual(
+            self._warnings, [self._warning('child-pid', 'pid-1')]
+        )
+
+    def test_port_attributes_non_canonical_are_custom(self):
+        # A port is a positive integer: cybox types it so, and wrote a 0
+        record = f'{{}} attribute (uuid: {self._ATTRIBUTE_UUID})'
+        for attribute_type, value, port in (
+                ('port', '0x1f', '0x1f'),
+                ('port', '0', '0'),
+                ('port', 0, 0),
+                ('hostname|port', 'circl.lu|+5', '+5'),
+                ('hostname|port', 'circl.lu|0', '0'),
+                ('ip-dst|port', '5.6.7.8|-3', '-3'),
+                ('ip-dst|port', '5.6.7.8|0', '0')):
+            with self.subTest(type=attribute_type, value=value):
+                custom = self._parse_attribute(attribute_type, value)
+                self.assertEqual(
+                    self._bag(custom.properties),
+                    [(attribute_type, str(value))]
+                )
+                self.assertEqual(
+                    self._warnings,
+                    [self._warning(attribute_type, port,
+                                   kind='positive decimal integer',
+                                   record=record.format(attribute_type))]
+                )
+        for value in ('8080', '1', 1):
+            with self.subTest(value=value):
+                port = self._parse_attribute('port', value)
+                self.assertEqual(port.properties.port_value.value, int(value))
+                self.assertEqual(self._warnings, [])
+
+    def test_object_ports_non_canonical_go_to_the_bag(self):
+        for name, relation, other in (
+                ('network-connection', 'dst-port',
+                 ('ip-dst', 'ip-dst', '5.6.7.8')),
+                ('network-socket', 'src-port',
+                 ('ip-dst', 'ip-dst', '5.6.7.8')),
+                ('process', 'port', ('text', 'name', 'first.exe'))):
+            for value in ('0x1f', '0', 0):
+                with self.subTest(name=name, value=value):
+                    properties = self._parse_object(
+                        name, (('port', relation, value), other)
+                    ).object_.properties
+                    self.assertEqual(
+                        self._bag(properties), [(relation, str(value))]
+                    )
+                    self.assertEqual(
+                        self._warnings,
+                        [self._warning(
+                            relation, value, kind='positive decimal integer',
+                            record=f'{name} object (uuid: {self._OBJECT_UUID})'
+                        )]
+                    )
+
+    def test_composition_ports_non_canonical_are_custom_members(self):
+        for name, relation, other in (
+                ('ip-port', 'dst-port', ('ip-dst', 'ip-dst', '5.6.7.8')),
+                ('domain-ip', 'port', ('domain', 'domain', 'circl.lu')),
+                ('url', 'port', ('url', 'url', 'https://circl.lu'))):
+            with self.subTest(name=name):
+                observable = self._parse_object(
+                    name, (other, ('port', relation, '0x1f'),
+                           ('port', relation, '0'), ('port', relation, 0),
+                           ('port', relation, '443'))
+                )
+                members = observable.observable_composition.observables
+                customs = [
+                    member.object_.properties for member in members
+                    if member.object_.properties._XSI_TYPE
+                    == 'CustomObjectType'
+                ]
+                ports = [
+                    member.object_.properties.port_value.value
+                    for member in members
+                    if member.object_.properties._XSI_TYPE == 'PortObjectType'
+                ]
+                self.assertEqual(ports, [443])
+                self.assertEqual(
+                    [self._bag(custom) for custom in customs],
+                    [[(relation, '0x1f')], [(relation, '0')], [(relation, '0')]]
+                )
+                self.assertEqual(
+                    self._warnings,
+                    [self._warning(
+                        relation, value, kind='positive decimal integer',
+                        record=f'{name} object (uuid: {self._OBJECT_UUID})'
+                    ) for value in ('0x1f', '0', 0)]
+                )
+
+    def test_sizes_non_canonical_go_to_the_bag(self):
+        custom = self._parse_attribute('size-in-bytes', '1_000')
+        self.assertEqual(
+            self._bag(custom.properties), [('size-in-bytes', '1_000')]
+        )
+        file_object = self._parse_object(
+            'file', (('filename', 'filename', 'test.exe'),
+                     ('size-in-bytes', 'size-in-bytes', '1_000'))
+        ).object_.properties
+        self.assertIsNone(file_object.size_in_bytes)
+        self.assertEqual(
+            self._bag(file_object), [('size-in-bytes', '1_000')]
+        )
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'size-in-bytes', '1_000',
+                record=f'file object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
+
+    def test_asn_non_canonical_goes_to_the_bag(self):
+        custom = self._parse_attribute('AS', '0x1f')
+        self.assertEqual(self._bag(custom.properties), [('AS', '0x1f')])
+        # A handle is a string, whatever follows its `AS`
+        handle = self._parse_attribute('AS', 'AS0x1f').properties
+        self.assertEqual(handle.handle.value, 'AS0x1f')
+        number = self._parse_attribute('AS', '1234').properties
+        self.assertEqual(number.number.value, 1234)
+        self.assertEqual(self._warnings, [])
+        autonomous_system = self._parse_object(
+            'asn', (('AS', 'asn', '0x1f'), ('text', 'description', 'CIRCL'))
+        ).object_.properties
+        self.assertIsNone(autonomous_system.number)
+        self.assertEqual(autonomous_system.name.value, 'CIRCL')
+        self.assertEqual(self._bag(autonomous_system), [('asn', '0x1f')])
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'asn', '0x1f',
+                record=f'asn object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
+
+    def test_asn_integer_value_goes_native(self):
+        # An integer is the number itself: no handle to tell apart
+        number = self._parse_attribute('AS', 1234).properties
+        self.assertEqual(number.number.value, 1234)
+        autonomous_system = self._parse_object(
+            'asn', (('AS', 'asn', 1234),)
+        ).object_.properties
+        self.assertEqual(autonomous_system.number.value, 1234)
+        self.assertEqual(self._bag(autonomous_system), [])
+        self.assertEqual(self._warnings, [])
+
+    def _parse_file_with_pe(self, pe_attributes, section_attributes=()):
+        file_uuid = '5f7b9c1d-3e4a-4b82-8c3d-4e5f6a7b8c9d'
+        pe_uuid = '6a8c0d2e-4f5b-4c93-9d4e-5f6a7b8c9d0e'
+        section_uuid = '7b9d1e3f-5a6c-4da4-8e5f-6a7b8c9d0e1f'
+        file_object = self._misp_object(
+            'file', (('filename', 'filename', 'test.exe'),), uuid=file_uuid
+        )
+        file_object['ObjectReference'] = [
+            {'referenced_uuid': pe_uuid, 'relationship_type': 'includes',
+             'Object': {'name': 'pe'}}
+        ]
+        pe = self._misp_object('pe', pe_attributes, uuid=pe_uuid)
+        objects = [file_object, pe]
+        if section_attributes:
+            pe['ObjectReference'] = [
+                {'referenced_uuid': section_uuid,
+                 'relationship_type': 'includes',
+                 'Object': {'name': 'pe-section'}}
+            ]
+            objects.append(
+                self._misp_object(
+                    'pe-section', section_attributes, uuid=section_uuid
+                )
+            )
+        event = get_base_event()
+        event['Event']['Object'] = objects
+        return self._parse(event)
+
+    def test_pe_number_sections_non_canonical_goes_to_the_bag(self):
+        observable, = self._parse_file_with_pe(
+            (('counter', 'number-sections', '0x1f'),)
+        )
+        pe = observable.item.object_.properties
+        self.assertIsNone(pe.headers)
+        self.assertEqual(self._bag(pe), [('number-sections', '0x1f')])
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'number-sections', '0x1f',
+                record='pe object (uuid: 6a8c0d2e-4f5b-4c93-9d4e-5f6a7b8c9d0e)'
+            )]
+        )
+
+    def test_x509_signed_integers(self):
+        x509 = self._parse_object(
+            'x509', (('text', 'version', '-3'),
+                     ('text', 'pubkey-info-exponent', '0x10001'))
+        ).object_.properties
+        self.assertEqual(x509.certificate.version.value, -3)
+        self.assertIsNone(x509.certificate.subject_public_key)
+        self.assertEqual(
+            self._bag(x509), [('pubkey-info-exponent', '0x10001')]
+        )
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'pubkey-info-exponent', '0x10001', kind='decimal integer',
+                record=f'x509 object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
+
+    def test_unix_user_account_numbers(self):
+        # The group list was built twice, popping `group` twice: numeric
+        # groups cost the whole account a `KeyError`
+        account = self._parse_object(
+            'user-account',
+            (('text', 'account-type', 'unix'), ('text', 'username', 'root'),
+             ('text', 'user-id', '+0'), ('text', 'group-id', '1000'),
+             ('text', 'group', '1000'), ('text', 'group', '1001'),
+             ('text', 'group', '0x3e9'))
+        ).object_.properties
+        self.assertEqual(account._XSI_TYPE, 'UnixUserAccountObjectType')
+        self.assertIsNone(account.user_id)
+        self.assertEqual(account.group_id.value, 1000)
+        self.assertEqual(
+            [group.group_id.value for group in account.group_list],
+            [1000, 1001]
+        )
+        self.assertEqual(
+            self._bag(account), [('group', '0x3e9'), ('user-id', '+0')]
+        )
+        record = f'user-account object (uuid: {self._OBJECT_UUID})'
+        self.assertEqual(
+            self._warnings,
+            [self._warning('user-id', '+0', record=record),
+             self._warning('group', '0x3e9', record=record)]
+        )
+
+    def test_file_entropy_non_canonical_goes_to_the_bag(self):
+        # `float('0x1f')` raises: the file was lost
+        record = f'file object (uuid: {self._OBJECT_UUID})'
+        for value in ('0x1f', 'nan', '1e400', '1_000', ' 7 '):
+            with self.subTest(value=value):
+                file_object = self._parse_object(
+                    'file', (('filename', 'filename', 'test.exe'),
+                             ('float', 'entropy', value))
+                ).object_.properties
+                self.assertEqual(file_object.file_name.value, 'test.exe')
+                self.assertIsNone(file_object.peak_entropy)
+                self.assertEqual(self._bag(file_object), [('entropy', value)])
+                self.assertEqual(
+                    self._warnings,
+                    [self._warning('entropy', value, kind='decimal number',
+                                   record=record)]
+                )
+        for value in ('7.5', '-1.5e3', 7.836462238824369):
+            with self.subTest(value=value):
+                file_object = self._parse_object(
+                    'file', (('float', 'entropy', value),)
+                ).object_.properties
+                self.assertEqual(file_object.peak_entropy.value, float(value))
+                self.assertEqual(self._warnings, [])
+
+    def test_file_entropy_repeated_non_canonical_first_goes_to_the_bag(self):
+        # The last value took the field: the first was dropped, in silence,
+        # and the canonical check saw the survivor alone
+        file_object = self._parse_object(
+            'file', (('filename', 'filename', 'test.exe'),
+                     ('float', 'entropy', '0x1f'),
+                     ('float', 'entropy', '7.2'))
+        ).object_.properties
+        self.assertIsNone(file_object.peak_entropy)
+        self.assertEqual(
+            self._bag(file_object), [('entropy', '0x1f'), ('entropy', '7.2')]
+        )
+        self.assertEqual(
+            self._warnings,
+            [self._warning(
+                'entropy', '0x1f', kind='decimal number',
+                record=f'file object (uuid: {self._OBJECT_UUID})'
+            )]
+        )
+
+    def test_pe_section_entropy_non_canonical_section_goes_standalone(self):
+        # A section has no property bag: it goes out as the object error
+        # fallback writes it, with the warning in place of an error
+        section_uuid = '7b9d1e3f-5a6c-4da4-8e5f-6a7b8c9d0e1f'
+        observables = self._parse_file_with_pe(
+            (('text', 'type', 'exe'),),
+            (('text', 'name', '.text'), ('float', 'entropy', '0x1f'))
+        )
+        # The section is written while its pe is, before the file
+        section_observable, file_observable = observables
+        pe = file_observable.item.object_.properties
+        self.assertEqual(pe.type_.value, 'exe')
+        self.assertIsNone(pe.sections)
+        custom = section_observable.item.object_
+        self.assertEqual(custom.id_, f'{_ORGNAME_ID}:Custom-{section_uuid}')
+        self.assertEqual(custom.properties.custom_name, 'pe-section')
+        self.assertEqual(
+            self._bag(custom.properties),
+            [('entropy', '0x1f'), ('name', '.text')]
+        )
+        # The pe is folded into the file's object, the section is not: the
+        # reference between them has no Object of the pe to go on
+        self.assertEqual(
+            self._warnings,
+            [
+                self._warning(
+                    'entropy', '0x1f', kind='decimal number',
+                    record=f'pe-section object (uuid: {section_uuid})'
+                ),
+                "Reference 'includes' from the pe object (uuid: "
+                "6a8c0d2e-4f5b-4c93-9d4e-5f6a7b8c9d0e) to the pe-section "
+                f"object (uuid: {section_uuid}) not converted: the STIX 1 "
+                "document has no slot of the source naming the target."
+            ]
+        )
+
+
+class TestSTIX12CanonicalNumbers(TestSTIX1CanonicalNumbers):
+    # A number's canonical form does not change with the STIX version
+    _VERSION = '1.2'
+
+
+class TestSTIX1UnreferencedPESection(TestSTIX):
+    """A `pe-section` no `pe` references has no `WindowsExecutableFile` to
+    fold into: it is exported as every other unmapped object is, one `Custom`
+    Observable carrying its relations. The template is mapped, under a `pe`:
+    no warning claims otherwise."""
+
+    _SECTION_UUID = '5c9e1a3d-7f4b-4d0c-9e8a-2b3c4d5e6f70'
+
+    def _parse_section(self, to_ids):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            {
+                'name': 'pe-section', 'meta-category': 'file',
+                'uuid': self._SECTION_UUID, 'timestamp': '1603642920',
+                'Attribute': [
+                    {
+                        'type': 'text', 'object_relation': 'name',
+                        'value': '.rsrc', 'to_ids': to_ids
+                    },
+                    {
+                        'type': 'float', 'object_relation': 'entropy',
+                        'value': 7.836462238824369, 'to_ids': False
+                    }
+                ]
+            }
+        ]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    def test_unreferenced_pe_section_is_a_custom_observable(self):
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                parser = self._parse_section(to_ids)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(parser.warnings, {})
+                incident = parser.stix_package.incidents[0]
+                if to_ids:
+                    related, = incident.related_indicators.indicator
+                    observable = related.item.observable
+                else:
+                    related, = incident.related_observables.observable
+                    observable = related.item
+                custom = observable.object_
+                self.assertEqual(
+                    custom.id_, f'{_ORGNAME_ID}:Custom-{self._SECTION_UUID}'
+                )
+                self.assertEqual(custom.properties.custom_name, 'pe-section')
+                self.assertEqual(
+                    sorted(
+                        (prop.name, prop.value)
+                        for prop in custom.properties.custom_properties
+                    ),
+                    [('entropy', '7.836462238824369'), ('name', '.rsrc')]
+                )
+
+
+class TestSTIX1FoldedPEToIds(TestSTIX):
+    """A `file` or a lone `pe` is an Indicator when an attribute folded into
+    its `WindowsExecutableFile` is `to_ids`: a section written standalone, or
+    one the export failed on, carries its own Indicator and does not count."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _CASES = (
+        (get_event_with_file_and_pe_objects, 'file'),
+        (get_event_with_pe_objects, 'pe')
+    )
+
+    @staticmethod
+    def _section_flagged_event(get_event, section_value=None):
+        """The event `get_event` returns, its first section attribute the only
+        one flagged `to_ids`, and the section value of the relation named in
+        `section_value` replaced by the value given there."""
+        event = get_event()
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = False
+            if misp_object['name'] == 'pe-section':
+                misp_object['Attribute'][0]['to_ids'] = True
+                if section_value is not None:
+                    relation, value = section_value
+                    for attribute in misp_object['Attribute']:
+                        if attribute['object_relation'] == relation:
+                            attribute['value'] = value
+        return event
+
+    @staticmethod
+    def _object(event, name):
+        misp_object, = (
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == name
+        )
+        return misp_object
+
+    def _written(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        incident = parser.stix_package.incidents[0]
+        return (
+            parser,
+            {related.item.id_ for related in incident.related_indicators},
+            {related.item.id_ for related in incident.related_observables}
+        )
+
+    def test_unfolded_flagged_section_does_not_flag_its_record(self):
+        # An entropy its field would rewrite sends the section out
+        # standalone, a name cybox refuses sends it to the object error
+        # fallback: either way it is not in the record
+        section_values = (('entropy', '0x1p1'), ('name', True))
+        for version in self._VERSIONS:
+            for get_event, root in self._CASES:
+                for section_value in section_values:
+                    with self.subTest(version=version, root=root,
+                                      section_value=section_value):
+                        event = self._section_flagged_event(
+                            get_event, section_value
+                        )
+                        root_uuid = self._object(event, root)['uuid']
+                        section_uuid = self._object(event, 'pe-section')['uuid']
+                        _, indicators, observables = self._written(
+                            event, version
+                        )
+                        self.assertEqual(
+                            indicators,
+                            {f'{_ORGNAME_ID}:Indicator-{section_uuid}'}
+                        )
+                        self.assertEqual(
+                            observables,
+                            {f'{_ORGNAME_ID}:Observable-{root_uuid}'}
+                        )
+
+    def test_folded_flagged_section_flags_its_record(self):
+        for version in self._VERSIONS:
+            for get_event, root in self._CASES:
+                with self.subTest(version=version, root=root):
+                    event = self._section_flagged_event(get_event)
+                    root_uuid = self._object(event, root)['uuid']
+                    parser, indicators, observables = self._written(
+                        event, version
+                    )
+                    self.assertEqual(parser.errors, {})
+                    self.assertEqual(
+                        indicators, {f'{_ORGNAME_ID}:Indicator-{root_uuid}'}
+                    )
+                    self.assertEqual(observables, set())
+
+
+class TestSTIX1ObjectErrorFallback(TestSTIX):
+    """An object a mapped route fails on still goes out, the way an unmapped
+    one does: a `Custom` Observable named after its template, carrying its
+    relations. The error says what failed; no warning claims the template is
+    not mapped."""
+
+    _OBJECT_UUID = '7d2e3f4a-5b6c-4d7e-8f90-a1b2c3d4e5f6'
+    _VERSIONS = ('1.1.1', '1.2')
+
+    def _failing_objects(self):
+        # A mutex name and a registry key datetime cybox refuses
+        yield 'mutex', [
+            {'type': 'text', 'object_relation': 'name', 'value': True}
+        ]
+        yield 'registry-key', [
+            {
+                'type': 'regkey', 'object_relation': 'key',
+                'value': 'HKLM\\Software\\Run'
+            },
+            {
+                'type': 'datetime', 'object_relation': 'last-modified',
+                'value': 'not a date'
+            }
+        ]
+
+    def _parse_event(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _written_observables(parser):
+        incident = parser.stix_package.incidents[0]
+        observables = [
+            related.item for related in incident.related_observables
+        ]
+        observables.extend(
+            related.item.observable for related in incident.related_indicators
+        )
+        return observables
+
+    @staticmethod
+    def _warnings(parser):
+        return [
+            warning for warnings in parser.warnings.values()
+            for warning in warnings
+        ]
+
+    def _assert_one_error(self, parser, name, uuid):
+        errors, = parser.errors.values()
+        self.assertEqual(len(errors), 1)
+        self.assertIn(f'Error with the {name} object (uuid: {uuid})', errors[0])
+
+    def _assert_custom_observable(self, observable, name, uuid):
+        custom = observable.object_
+        self.assertEqual(custom.id_, f'{_ORGNAME_ID}:Custom-{uuid}')
+        self.assertEqual(custom.properties.custom_name, name)
+
+    def test_failed_object_is_a_custom_observable(self):
+        for version in self._VERSIONS:
+            for name, attributes in self._failing_objects():
+                for to_ids in (False, True):
+                    with self.subTest(version=version, name=name, to_ids=to_ids):
+                        event = get_base_event()
+                        event['Event']['Object'] = [
+                            {
+                                'name': name, 'meta-category': 'misc',
+                                'uuid': self._OBJECT_UUID,
+                                'timestamp': '1603642920',
+                                'Attribute': [
+                                    {**attribute, 'to_ids': to_ids}
+                                    for attribute in attributes
+                                ]
+                            }
+                        ]
+                        parser = self._parse_event(event, version)
+                        self._assert_one_error(parser, name, self._OBJECT_UUID)
+                        self.assertEqual(self._warnings(parser), [])
+                        incident = parser.stix_package.incidents[0]
+                        if to_ids:
+                            related, = incident.related_indicators
+                            observable = related.item.observable
+                            self.assertEqual(len(incident.related_observables), 0)
+                        else:
+                            related, = incident.related_observables
+                            observable = related.item
+                            self.assertEqual(len(incident.related_indicators), 0)
+                        self._assert_custom_observable(
+                            observable, name, self._OBJECT_UUID
+                        )
+
+    def test_pe_failing_under_its_file_is_written_standalone(self):
+        # The `file` goes out as it does without the `pe`, the `pe` as a
+        # `Custom` Observable the `file` still references
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_and_pe_objects()
+                file_object, pe_object, _ = event['Event']['Object']
+                for attribute in pe_object['Attribute']:
+                    if attribute['object_relation'] == 'original-filename':
+                        attribute['value'] = True
+                parser = self._parse_event(event, version)
+                self._assert_one_error(parser, 'pe', pe_object['uuid'])
+                for name in ('pe', 'pe-section'):
+                    self.assertNotIn(
+                        f'MISP Object name {name} not mapped.',
+                        self._warnings(parser)
+                    )
+                observables = {
+                    observable.id_: observable
+                    for observable in self._written_observables(parser)
+                }
+                written_file = observables[
+                    f"{_ORGNAME_ID}:Observable-{file_object['uuid']}"
+                ]
+                self.assertEqual(
+                    written_file.object_.properties._XSI_TYPE,
+                    'WindowsExecutableFileObjectType'
+                )
+                self._assert_custom_observable(
+                    observables[f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"],
+                    'pe', pe_object['uuid']
+                )
+
+    def test_pe_failing_partway_leaves_nothing_on_its_file(self):
+        # A `type` cybox refuses fails the `pe` once its resources and
+        # headers are written, an `imphash` once its type and its first
+        # custom property are too: none of it stays on the file's object
+        for version in self._VERSIONS:
+            alone = deepcopy(get_event_with_file_and_pe_objects())
+            file_alone = alone['Event']['Object'][0]
+            file_alone['ObjectReference'] = []
+            alone['Event']['Object'] = [file_alone]
+            expected = self._written_observables(
+                self._parse_event(alone, version)
+            )[0].object_.properties
+            for relation, value in (('type', 5), ('imphash', True)):
+                with self.subTest(version=version, relation=relation):
+                    event = deepcopy(get_event_with_file_and_pe_objects())
+                    file_object, pe_object, _ = event['Event']['Object']
+                    for attribute in pe_object['Attribute']:
+                        if attribute['object_relation'] == relation:
+                            attribute['value'] = value
+                    parser = self._parse_event(event, version)
+                    self._assert_one_error(parser, 'pe', pe_object['uuid'])
+                    observables = {
+                        observable.id_: observable
+                        for observable in self._written_observables(parser)
+                    }
+                    written = observables[
+                        f"{_ORGNAME_ID}:Observable-{file_object['uuid']}"
+                    ].object_.properties
+                    for field in ('resources', 'headers', 'type_', 'sections'):
+                        self.assertIsNone(getattr(written, field), field)
+                    self.assertEqual(
+                        written.to_dict().get('custom_properties'),
+                        expected.to_dict().get('custom_properties')
+                    )
+                    pe_id = f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"
+                    self._assert_custom_observable(
+                        observables[pe_id], 'pe', pe_object['uuid']
+                    )
+                    self.assertEqual(
+                        [
+                            observable.id_ for observable
+                            in self._written_observables(parser)
+                        ].count(pe_id),
+                        1
+                    )
+
+    def test_pe_section_failing_under_its_pe_is_written_standalone(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_pe_objects()
+                pe_object, section = event['Event']['Object']
+                for attribute in section['Attribute']:
+                    if attribute['object_relation'] == 'name':
+                        attribute['value'] = True
+                parser = self._parse_event(event, version)
+                self._assert_one_error(parser, 'pe-section', section['uuid'])
+                self.assertEqual(self._warnings(parser), [])
+                observables = {
+                    observable.id_: observable
+                    for observable in self._written_observables(parser)
+                }
+                written_pe = observables[
+                    f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"
+                ]
+                self.assertEqual(
+                    written_pe.object_.properties._XSI_TYPE,
+                    'WindowsExecutableFileObjectType'
+                )
+                self.assertIsNone(written_pe.object_.properties.sections)
+                self._assert_custom_observable(
+                    observables[f"{_ORGNAME_ID}:Observable-{section['uuid']}"],
+                    'pe-section', section['uuid']
+                )
+
+    def test_failing_record_write_is_not_retried(self):
+        # The fallback writes its Observable from the same object fields the
+        # failed route wrote from: an object timestamp the Indicator cannot
+        # parse fails again there, with nothing left to catch it, and from a
+        # collection costs every other event too
+        for version in self._VERSIONS:
+            for fixture in (get_event_with_mutex_object,
+                            get_event_with_vulnerability_object):
+                with self.subTest(version=version, fixture=fixture.__name__):
+                    first = fixture()
+                    misp_object = first['Event']['Object'][0]
+                    misp_object['timestamp'] = 'not a timestamp'
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = True
+                    second = get_event_with_domain_attribute()
+                    second['Event']['uuid'] = '31f0d1b0-8a2f-4e18-9a0e-2f5b6c7d8e90'
+                    parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                    parser.parse_json_content({'response': [first, second]})
+                    self._assert_one_error(
+                        parser, misp_object['name'], misp_object['uuid']
+                    )
+                    first_package, second_package = (
+                        parser.stix_package.related_packages
+                    )
+                    first_incident = first_package.item.incidents[0]
+                    self.assertEqual(len(first_incident.related_indicators), 0)
+                    self.assertEqual(len(first_incident.related_observables), 0)
+                    self.assertEqual(
+                        len(second_package.item.incidents[0].related_indicators),
+                        1
+                    )
+
+    def test_failing_object_leaves_no_galaxy_construct(self):
+        # The constructs the galaxies of the object wrote go with the route
+        # that failed: the `Custom` Observable references none, and the
+        # one written with `to_ids` fails on the same galaxies again
+        cases = (
+            (get_event_with_file_object, (True,)),
+            (get_event_with_vulnerability_object, (False, True)),
+            (get_event_with_attack_pattern_object, (False, True))
+        )
+        for version in self._VERSIONS:
+            for fixture, to_ids_values in cases:
+                for to_ids in to_ids_values:
+                    for case, galaxies, tags in _galaxy_failures(
+                            get_event_with_malware_galaxy()['Event']['Galaxy'][0]):
+                        with self.subTest(version=version, fixture=fixture.__name__,
+                                          to_ids=to_ids, case=case):
+                            event = fixture()
+                            misp_object = event['Event']['Object'][0]
+                            for attribute in misp_object['Attribute']:
+                                attribute['to_ids'] = to_ids
+                            misp_object['Attribute'][0]['Galaxy'] = galaxies
+                            misp_object['Attribute'][0]['Tag'] = tags
+                            parser = self._parse_event(event, version)
+                            self._assert_one_error(
+                                parser, misp_object['name'], misp_object['uuid']
+                            )
+                            _assert_no_galaxy_construct(self, parser.stix_package)
+                            incident = parser.stix_package.incidents[0]
+                            self.assertEqual(len(incident.related_indicators), 0)
+                            if to_ids:
+                                self.assertEqual(len(incident.related_observables), 0)
+                                continue
+                            related, = incident.related_observables
+                            self._assert_custom_observable(
+                                related.item, misp_object['name'],
+                                misp_object['uuid']
+                            )
+
+
+    def test_failing_file_keeps_the_galaxy_construct_of_its_written_pe(self):
+        # The `pe` failing under its `file` is written standalone by its own
+        # fallback, its galaxy construct with it: the `file` failing after
+        # it does not take that construct back from the `pe`'s Indicator
+        malware = get_event_with_malware_galaxy()['Event']['Galaxy'][0]
+        ttp_id = f"{_ORGNAME_ID}:TTP-{malware['GalaxyCluster'][0]['uuid']}"
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_and_pe_objects()
+                file_object, pe_object, _ = event['Event']['Object']
+                for attribute in pe_object['Attribute']:
+                    attribute['to_ids'] = True
+                    if attribute['object_relation'] == 'original-filename':
+                        attribute['value'] = True
+                pe_object['Attribute'][0]['Galaxy'] = [deepcopy(malware)]
+                _, galaxies, _ = list(_galaxy_failures(deepcopy(malware)))[1]
+                file_object['Attribute'][0]['Galaxy'] = galaxies[1:]
+                file_object['Attribute'][0]['to_ids'] = True
+                parser = self._parse_event(event, version)
+                errors, = parser.errors.values()
+                self.assertEqual(len(errors), 2)
+                ttp, = parser.stix_package.ttps.ttp
+                self.assertEqual(ttp.id_, ttp_id)
+                related, = parser.stix_package.incidents[0].related_indicators
+                indicator = related.item
+                self.assertEqual(
+                    indicator.observable.id_,
+                    f"{_ORGNAME_ID}:Observable-{pe_object['uuid']}"
+                )
+                indicated, = indicator.indicated_ttps
+                self.assertEqual(indicated.item.idref, ttp_id)
+
+class TestSTIX1AttributeErrorFallback(TestSTIX):
+    """An attribute the `Custom` Observable fallback fails on as well is lost,
+    with its error: retrying the route that just raised raises again, with
+    nothing left to catch it."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    @staticmethod
+    def _failing_attribute(event):
+        # The Indicator parses the timestamp, on the mapped route and on the
+        # fallback alike
+        attribute = event['Event']['Attribute'][0]
+        attribute['to_ids'] = True
+        attribute['timestamp'] = 'not a timestamp'
+        return attribute
+
+    def _assert_one_error(self, parser, attribute):
+        errors, = parser.errors.values()
+        self.assertEqual(len(errors), 1)
+        self.assertIn(
+            f"Error with the {attribute['type']} attribute: "
+            f"{attribute['value']} (uuid: {attribute['uuid']})", errors[0]
+        )
+
+    def test_failing_event_attribute_is_not_retried(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                first = get_event_with_domain_attribute()
+                attribute = self._failing_attribute(first)
+                second = get_event_with_domain_attribute()
+                second['Event']['uuid'] = '31f0d1b0-8a2f-4e18-9a0e-2f5b6c7d8e90'
+                second['Event']['Attribute'][0]['to_ids'] = True
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                parser.parse_json_content({'response': [first, second]})
+                self.assertEqual(
+                    list(parser.errors), [first['Event']['uuid']]
+                )
+                self._assert_one_error(parser, attribute)
+                first_package, second_package = (
+                    parser.stix_package.related_packages
+                )
+                first_incident = first_package.item.incidents[0]
+                self.assertEqual(len(first_incident.related_indicators), 0)
+                self.assertEqual(len(first_incident.related_observables), 0)
+                self.assertEqual(
+                    len(second_package.item.incidents[0].related_indicators),
+                    1
+                )
+
+    def test_failing_collection_attribute_is_not_retried(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                attribute = self._failing_attribute(
+                    get_event_with_domain_attribute()
+                )
+                other = get_event_with_domain_attribute()['Event']['Attribute'][0]
+                other['uuid'] = '4a5b6c7d-8e9f-4a0b-9c1d-2e3f4a5b6c7d'
+                other['to_ids'] = True
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content(
+                    {'response': {'Attribute': [attribute, other]}}
+                )
+                self._assert_one_error(parser, attribute)
+                indicators = parser.stix_package.indicators
+                self.assertEqual(len(indicators), 1)
+                self.assertIn(other['uuid'], indicators[0].id_)
+                self.assertEqual(len(parser.stix_package.observables or ()), 0)
+
+    _GALAXY_FIXTURES = (
+        get_event_with_course_of_action_galaxy,
+        get_event_with_malware_galaxy,
+        get_event_with_threat_actor_galaxy
+    )
+
+    @staticmethod
+    def _attribute_with_galaxies(galaxies, tags):
+        attribute = get_event_with_domain_attribute()['Event']['Attribute'][0]
+        attribute['to_ids'] = True
+        attribute['Galaxy'] = galaxies
+        attribute['Tag'] = tags
+        return attribute
+
+    def test_failing_attribute_leaves_no_galaxy_construct(self):
+        # The Indicator the fallback writes reads the same galaxies and
+        # tags, and fails again: the attribute is lost, the constructs its
+        # galaxies wrote twice with it, the Threat Actor's attribution to the
+        # Incident included
+        for version in self._VERSIONS:
+            for fixture in self._GALAXY_FIXTURES:
+                galaxy = fixture()['Event']['Galaxy'][0]
+                for case, galaxies, tags in _galaxy_failures(galaxy):
+                    with self.subTest(version=version, galaxy=galaxy['type'],
+                                      case=case, parser='events'):
+                        event = get_event_with_domain_attribute()
+                        attribute = self._attribute_with_galaxies(galaxies, tags)
+                        event['Event']['Attribute'] = [attribute]
+                        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                        parser.parse_misp_event(event['Event'])
+                        self._assert_one_error(parser, attribute)
+                        _assert_no_galaxy_construct(self, parser.stix_package)
+                        incident = parser.stix_package.incidents[0]
+                        self.assertEqual(len(incident.related_indicators), 0)
+                        self.assertEqual(
+                            len(incident.attributed_threat_actors or ()), 0
+                        )
+                    with self.subTest(version=version, galaxy=galaxy['type'],
+                                      case=case, parser='attributes collection'):
+                        attribute = self._attribute_with_galaxies(galaxies, tags)
+                        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                        parser.parse_json_content(
+                            {'response': {'Attribute': [attribute]}}
+                        )
+                        self._assert_one_error(parser, attribute)
+                        _assert_no_galaxy_construct(self, parser.stix_package)
+                        self.assertEqual(
+                            len(parser.stix_package.indicators or ()), 0
+                        )
+
+    def test_failing_attribute_does_not_cost_a_later_attribute_its_cluster(self):
+        # The construct a failing attribute wrote is rolled back with it,
+        # and a later attribute of the same cluster writes it again
+        galaxy = get_event_with_malware_galaxy()['Event']['Galaxy'][0]
+        ttp_id = f"{_ORGNAME_ID}:TTP-{galaxy['GalaxyCluster'][0]['uuid']}"
+        for version in self._VERSIONS:
+            failing = self._attribute_with_galaxies(
+                [deepcopy(galaxy)], [{'colour': '#ffffff'}]
+            )
+            later = self._attribute_with_galaxies([deepcopy(galaxy)], [])
+            later['uuid'] = '4a5b6c7d-8e9f-4a0b-9c1d-2e3f4a5b6c7d'
+            with self.subTest(version=version, parser='events'):
+                event = get_event_with_domain_attribute()
+                event['Event']['Attribute'] = [deepcopy(failing), deepcopy(later)]
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                parser.parse_misp_event(event['Event'])
+                self._assert_one_error(parser, failing)
+                ttp, = parser.stix_package.ttps.ttp
+                self.assertEqual(ttp.id_, ttp_id)
+                related, = parser.stix_package.incidents[0].related_indicators
+                indicated, = related.item.indicated_ttps
+                self.assertEqual(indicated.item.idref, ttp_id)
+            with self.subTest(version=version, parser='attributes collection'):
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content(
+                    {'response': {'Attribute': [deepcopy(failing), deepcopy(later)]}}
+                )
+                self._assert_one_error(parser, failing)
+                ttp, = parser.stix_package.ttps.ttp
+                self.assertEqual(ttp.id_, ttp_id)
+                indicator, = parser.stix_package.indicators
+                indicated, = indicator.indicated_ttps
+                self.assertEqual(indicated.item.idref, ttp_id)
+
+
+class TestSTIX1PlainObservableComment(TestSTIX):
+    """A record exported without `to_ids` is a plain Observable, with no
+    Indicator to carry its comment: the Observable's own description carries
+    it instead, and an uncommented record writes no description."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    @staticmethod
+    def _plain_attribute(comment):
+        attribute = get_event_with_domain_attribute()['Event']['Attribute'][0]
+        attribute['to_ids'] = False
+        attribute.pop('comment', None)
+        if comment is not None:
+            attribute['comment'] = comment
+        return attribute
+
+    @staticmethod
+    def _plain_object(comment):
+        misp_object = get_event_with_domain_ip_object()['Event']['Object'][0]
+        for attribute in misp_object['Attribute']:
+            attribute['to_ids'] = False
+        misp_object.pop('comment', None)
+        if comment is not None:
+            misp_object['comment'] = comment
+        return misp_object
+
+    def _event_observables(self, version, comment):
+        event = get_base_event()
+        event['Event']['Attribute'] = [self._plain_attribute(comment)]
+        event['Event']['Object'] = [self._plain_object(comment)]
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        return [
+            related.item for related in incident.related_observables.observable
+        ]
+
+    def _collection_observables(self, version, comment):
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content(
+            {'response': {'Attribute': [self._plain_attribute(comment)]}}
+        )
+        self.assertEqual(parser.errors, {})
+        return list(parser.stix_package.observables)
+
+    def test_plain_observable_carries_the_comment(self):
+        for version in self._VERSIONS:
+            for observables in (
+                    self._event_observables(version, 'a comment'),
+                    self._collection_observables(version, 'a comment')):
+                for observable in observables:
+                    with self.subTest(version=version, id=observable.id_):
+                        self.assertEqual(
+                            observable.description.value, 'a comment'
+                        )
+
+    def test_uncommented_plain_observable_writes_no_description(self):
+        for version in self._VERSIONS:
+            for observables in (
+                    self._event_observables(version, None),
+                    self._collection_observables(version, None)):
+                for observable in observables:
+                    with self.subTest(version=version, id=observable.id_):
+                        self.assertIsNone(observable.description)
+                        self.assertNotIn(
+                            b'Description',
+                            observable.to_xml(include_namespaces=False)
+                        )
+
+
+class TestSTIX1FoldedPEComment(TestSTIX):
+    """A `pe` folded under a `file` shares its Observable and its Indicator,
+    which carry the `file` comment: the CybOX Object holding the executable
+    carries the `pe` one, and an uncommented `pe` writes none. A section has
+    no description of its own, and its comment is warned of."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    @staticmethod
+    def _event(get_event, to_ids, comments):
+        event = deepcopy(get_event())
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+            misp_object.pop('comment', None)
+            if misp_object['name'] in comments:
+                misp_object['comment'] = comments[misp_object['name']]
+        return event
+
+    @staticmethod
+    def _parse_event(event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    def _file_observable(self, parser, to_ids):
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        if to_ids:
+            related, = incident.related_indicators
+            return related.item.observable
+        related, = incident.related_observables
+        return related.item
+
+    def test_folded_pe_comment_is_the_object_description(self):
+        comments = {'file': 'a file comment', 'pe': 'a pe comment'}
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = self._event(
+                        get_event_with_file_and_pe_objects, to_ids, comments
+                    )
+                    parser = self._parse_event(event, version)
+                    observable = self._file_observable(parser, to_ids)
+                    self.assertEqual(
+                        observable.object_.description.value, 'a pe comment'
+                    )
+                    self.assertIn(
+                        b'a pe comment',
+                        observable.object_.to_xml(include_namespaces=False)
+                    )
+
+    def test_uncommented_folded_pe_writes_no_object_description(self):
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    uncommented = self._parse_event(
+                        self._event(
+                            get_event_with_file_and_pe_objects, to_ids, {}
+                        ),
+                        version
+                    )
+                    empty = self._parse_event(
+                        self._event(
+                            get_event_with_file_and_pe_objects, to_ids,
+                            {'pe': ''}
+                        ),
+                        version
+                    )
+                    observable = self._file_observable(uncommented, to_ids)
+                    self.assertIsNone(observable.object_.description)
+                    self.assertEqual(
+                        empty.stix_package.to_xml(),
+                        uncommented.stix_package.to_xml()
+                    )
+
+    def test_folded_section_comment_is_warned(self):
+        for version in self._VERSIONS:
+            for get_event in (get_event_with_file_and_pe_objects,
+                              get_event_with_pe_objects):
+                with self.subTest(version=version, root=get_event.__name__):
+                    event = self._event(
+                        get_event, False, {'pe-section': 'a section comment'}
+                    )
+                    section = event['Event']['Object'][-1]
+                    parser = self._parse_event(event, version)
+                    self.assertEqual(parser.errors, {})
+                    warnings, = parser.warnings.values()
+                    self.assertEqual(
+                        [
+                            warning for warning in warnings
+                            if 'comment' in warning
+                        ],
+                        [
+                            'The comment of the pe-section object (uuid: '
+                            f"{section['uuid']}) is not converted: a STIX 1 "
+                            'PE section has no description.'
+                        ]
+                    )
+
+    def test_uncommented_folded_section_is_not_warned(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse_event(
+                    self._event(get_event_with_file_and_pe_objects, False, {}),
+                    version
+                )
+                for warning in (
+                        warning for warnings in parser.warnings.values()
+                        for warning in warnings):
+                    self.assertNotIn('comment', warning)
+
+
+class TestSTIX1ExploitTargetObjectComment(TestSTIX):
+    """A `vulnerability` or a `weakness` object is exported as a TTP holding
+    one Exploit Target: the Exploit Target's description carries the
+    object's comment, as it does an attribute's, and an uncommented object
+    writes no description."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    def _exploit_targets(self, version, comment):
+        event = get_base_event()
+        event['Event']['Object'] = [
+            fixture()['Event']['Object'][0]
+            for fixture in (get_event_with_vulnerability_object,
+                            get_event_with_weakness_object)
+        ]
+        for misp_object in event['Event']['Object']:
+            misp_object.pop('comment', None)
+            if comment is not None:
+                misp_object['comment'] = comment
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        return [
+            ttp.exploit_targets[0].item
+            for ttp in parser.stix_package.ttps.ttp
+        ]
+
+    def test_exploit_target_carries_the_object_comment(self):
+        for version in self._VERSIONS:
+            exploit_targets = self._exploit_targets(version, 'a comment')
+            self.assertEqual(len(exploit_targets), 2)
+            for exploit_target in exploit_targets:
+                with self.subTest(version=version, id=exploit_target.id_):
+                    self.assertEqual(
+                        exploit_target.description.value, 'a comment'
+                    )
+
+    def test_uncommented_object_writes_no_exploit_target_description(self):
+        for version in self._VERSIONS:
+            exploit_targets = self._exploit_targets(version, None)
+            self.assertEqual(len(exploit_targets), 2)
+            for exploit_target in exploit_targets:
+                with self.subTest(version=version, id=exploit_target.id_):
+                    self.assertIsNone(exploit_target.description)
+
+
+class TestSTIX1AttackPatternComment(TestSTIX):
+    """An `attack-pattern` object is exported as a TTP holding one Attack
+    Pattern, whose descriptions all carry relations: the TTP's own
+    description carries the object's comment, and an uncommented object
+    writes none."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+
+    def _ttp(self, version, comment):
+        event = get_event_with_attack_pattern_object()
+        misp_object = event['Event']['Object'][0]
+        misp_object.pop('comment', None)
+        if comment is not None:
+            misp_object['comment'] = comment
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        self.assertEqual(parser.errors, {})
+        ttp, = parser.stix_package.ttps.ttp
+        return ttp
+
+    def test_ttp_carries_the_object_comment(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                ttp = self._ttp(version, 'a comment')
+                self.assertEqual(ttp.description.value, 'a comment')
+                # The Attack Pattern's descriptions are unchanged
+                attack_pattern, = ttp.behavior.attack_patterns
+                self.assertNotIn(
+                    'a comment',
+                    [
+                        description.value
+                        for description in attack_pattern.descriptions
+                    ]
+                )
+
+    def test_uncommented_object_writes_no_ttp_description(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                self.assertIsNone(self._ttp(version, None).description)
+
+
+class TestSTIX1GalaxyTags(TestSTIX):
+    """What the export writes for the tag of a galaxy cluster: a STIX 1
+    construct names a cluster by its value, and a galaxy of a type no
+    construct holds is written nowhere, so the `misp-galaxy:` tag goes on the
+    handling of the record the galaxy is attached to, mapped or not - once,
+    whether the MISP record carries it already or not."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _SECTOR_TAG = 'misp-galaxy:sector="IT - Security"'
+
+    def _parse_event(self, event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _markings(stix_object):
+        return tuple(
+            marking.statement
+            for marking in stix_object.handling[0].marking_structures
+        )
+
+    def test_unmapped_event_galaxy_tag_reaches_the_incident(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_sector_galaxy()
+                parser = self._parse_event(event, version)
+                incident = parser.stix_package.incidents[0]
+                self.assertEqual(self._markings(incident), (self._SECTOR_TAG,))
+                self.assertIn(
+                    'sector galaxy in event not mapped.',
+                    parser.warnings[event['Event']['uuid']]
+                )
+
+    def test_event_galaxy_tag_the_event_carries_is_written_once(self):
+        """A MISP event carries the tag of every cluster it holds: the
+        Incident handling is the one the event tags alone make."""
+        tags = [{'name': 'tlp:white'}, {'name': self._SECTOR_TAG}]
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_sector_galaxy()
+                event['Event']['Tag'] = deepcopy(tags)
+                untouched = get_base_event()
+                untouched['Event']['Tag'] = deepcopy(tags)
+                self.assertEqual(
+                    self._parse_event(event, version).stix_package.incidents[0].handling.to_dict(),
+                    self._parse_event(untouched, version).stix_package.incidents[0].handling.to_dict()
+                )
+
+    def test_cluster_tag_name_is_the_tag_written(self):
+        """A custom galaxy's cluster tag names the cluster by uuid, not by the
+        value a tag built from the type would hold."""
+        event = get_event_with_custom_malware_galaxy('2.1')
+        cluster = event['Event']['Galaxy'][0]['GalaxyCluster'][0]
+        tag_name = f'misp-galaxy:stix-2.1-malware="{cluster["uuid"]}"'
+        cluster['tag_name'] = tag_name
+        for version in self._VERSIONS:
+            with self.subTest(version=version, tagged=False):
+                incident = self._parse_event(deepcopy(event), version).stix_package.incidents[0]
+                self.assertEqual(self._markings(incident), (tag_name,))
+            with self.subTest(version=version, tagged=True):
+                tagged = deepcopy(event)
+                tagged['Event']['Tag'] = [{'name': tag_name}]
+                incident = self._parse_event(tagged, version).stix_package.incidents[0]
+                self.assertEqual(self._markings(incident), (tag_name,))
+
+    def test_mapped_event_galaxy_keeps_its_tag(self):
+        """A `ransomware` cluster is written as a malware TTP naming its value:
+        the tag is what tells the import its galaxy is not `mitre-malware`."""
+        event = get_event_with_malware_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        galaxy['type'] = 'ransomware'
+        cluster = galaxy['GalaxyCluster'][0]
+        cluster['type'] = 'ransomware'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                stix_package = self._parse_event(deepcopy(event), version).stix_package
+                self.assertEqual(len(stix_package.ttps.ttp), 1)
+                self.assertEqual(
+                    self._markings(stix_package.incidents[0]),
+                    (f'misp-galaxy:ransomware="{cluster["value"]}"',)
+                )
+
+    def test_unmapped_attribute_galaxy_tag_reaches_the_indicator(self):
+        for version in self._VERSIONS:
+            for tags in ([], [{'name': self._SECTOR_TAG}]):
+                with self.subTest(version=version, tagged=bool(tags)):
+                    event = get_base_event()
+                    attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+                    attribute['Galaxy'] = [deepcopy(_TEST_SECTOR_GALAXY)]
+                    attribute['Tag'] = deepcopy(tags)
+                    event['Event']['Attribute'] = [attribute]
+                    parser = self._parse_event(event, version)
+                    incident = parser.stix_package.incidents[0]
+                    indicator = incident.related_indicators.indicator[0].item
+                    self.assertEqual(self._markings(indicator), (self._SECTOR_TAG,))
+                    self.assertIsNone(incident.handling)
+
+    _MALWARE_TAG = 'misp-galaxy:mitre-malware="BISCUIT - S0017"'
+
+    @staticmethod
+    def _plain_observable_warning(tag_name, record):
+        return (
+            f'Galaxy cluster {tag_name} of the {record} not exported: a '
+            'record without to_ids is written as a plain Observable, which '
+            'carries no marking.'
+        )
+
+    def test_plain_observable_attribute_galaxies_are_warned(self):
+        """A record exported without `to_ids` is a plain Observable, with no
+        handling to write a cluster tag on: each cluster, mapped or not, is
+        one warning, since nothing else in the document says it was there.
+        The event export and the attributes collection alike."""
+        for version in self._VERSIONS:
+            attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+            attribute['to_ids'] = False
+            attribute['Galaxy'] = [
+                deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)
+            ]
+            record = f'domain attribute (uuid: {attribute["uuid"]})'
+            expected = [
+                self._plain_observable_warning(self._MALWARE_TAG, record),
+                self._plain_observable_warning(self._SECTOR_TAG, record)
+            ]
+            with self.subTest(version=version, export='event'):
+                event = get_base_event()
+                event['Event']['Attribute'] = [deepcopy(attribute)]
+                parser = self._parse_event(event, version)
+                warnings = parser.warnings[event['Event']['uuid']]
+                for warning in expected:
+                    self.assertIn(warning, warnings)
+                incident = parser.stix_package.incidents[0]
+                self.assertEqual(len(incident.related_observables), 1)
+                self.assertIsNone(parser.stix_package.ttps)
+            with self.subTest(version=version, export='attributes collection'):
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content([deepcopy(attribute)])
+                warnings = [
+                    warning for recorded in parser.warnings.values()
+                    for warning in recorded
+                ]
+                for warning in expected:
+                    self.assertIn(warning, warnings)
+
+    def test_plain_observable_object_galaxies_are_warned(self):
+        """The same for a MISP object exported without `to_ids`: one warning
+        per cluster its attributes carry, a cluster on two of them once."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_object()
+                misp_object = event['Event']['Object'][0]
+                first, second = misp_object['Attribute'][:2]
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = False
+                first['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
+                second['Galaxy'] = [
+                    deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)
+                ]
+                parser = self._parse_event(event, version)
+                record = f'file object (uuid: {misp_object["uuid"]})'
+                warnings = [
+                    warning for warning in parser.warnings[event['Event']['uuid']]
+                    if warning.startswith('Galaxy cluster ')
+                ]
+                self.assertEqual(
+                    warnings,
+                    [
+                        self._plain_observable_warning(self._MALWARE_TAG, record),
+                        self._plain_observable_warning(self._SECTOR_TAG, record)
+                    ]
+                )
+                self.assertIsNone(parser.stix_package.ttps)
+
+    def test_indicator_galaxies_are_not_warned(self):
+        """A record with `to_ids` set is an Indicator, which carries the
+        cluster tags on its handling: no warning."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_file_object()
+                misp_object = event['Event']['Object'][0]
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = True
+                misp_object['Attribute'][0]['Galaxy'] = [
+                    deepcopy(_TEST_MALWARE_GALAXY)
+                ]
+                parser = self._parse_event(event, version)
+                self.assertFalse(
+                    any(
+                        warning.startswith('Galaxy cluster ')
+                        for warning in parser.warnings.get(
+                            event['Event']['uuid'], ()
+                        )
+                    )
+                )
+
+    _PE_TAG = 'my:custom="tag"'
+
+    @staticmethod
+    def _folded_pe_event(get_event, name, galaxies, to_ids, tags=()):
+        """The event `get_event` returns, the first attribute of its `name`
+        object carrying the galaxies and the tags, every attribute flagged
+        `to_ids` or none."""
+        event = get_event()
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+            if misp_object['name'] == name:
+                misp_object['Attribute'][0]['Galaxy'] = deepcopy(galaxies)
+                misp_object['Attribute'][0]['Tag'] = [
+                    {'name': tag} for tag in tags
+                ]
+        return event
+
+    @staticmethod
+    def _statements(stix_object):
+        return {
+            marking.statement
+            for specification in stix_object.handling
+            for marking in specification.marking_structures
+            if hasattr(marking, 'statement')
+        }
+
+    def test_folded_pe_markings_reach_the_indicator(self):
+        """A `pe` and its sections fold into the CybOX object of the `file`
+        referencing them, or of the lone `pe`: the Indicator wrapping it
+        carries the tags and the clusters of every attribute folded in, not
+        those of the `file` or the lone `pe` alone."""
+        cases = (
+            (get_event_with_file_and_pe_objects, 'pe'),
+            (get_event_with_file_and_pe_objects, 'pe-section'),
+            (get_event_with_pe_objects, 'pe-section')
+        )
+        for version in self._VERSIONS:
+            for get_event, name in cases:
+                with self.subTest(version=version, event=get_event.__name__, name=name):
+                    event = self._folded_pe_event(
+                        get_event, name, [_TEST_SECTOR_GALAXY], True,
+                        tags=(self._PE_TAG,)
+                    )
+                    parser = self._parse_event(event, version)
+                    self.assertEqual(parser.errors, {})
+                    incident = parser.stix_package.incidents[0]
+                    indicator, = (
+                        related.item
+                        for related in incident.related_indicators.indicator
+                    )
+                    self.assertEqual(
+                        self._statements(indicator),
+                        {self._SECTOR_TAG, self._PE_TAG}
+                    )
+                    self.assertEqual(len(incident.related_observables), 0)
+
+    def test_standalone_pe_section_keeps_its_markings(self):
+        """A section whose entropy its field would rewrite is not folded: it
+        goes out standalone, its Indicator carrying its own markings, and the
+        `file` Indicator none of them."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = self._folded_pe_event(
+                    get_event_with_file_and_pe_objects, 'pe-section',
+                    [_TEST_SECTOR_GALAXY], True, tags=(self._PE_TAG,)
+                )
+                section, = (
+                    misp_object for misp_object in event['Event']['Object']
+                    if misp_object['name'] == 'pe-section'
+                )
+                for attribute in section['Attribute']:
+                    if attribute['object_relation'] == 'entropy':
+                        attribute['value'] = '0x1f'
+                parser = self._parse_event(event, version)
+                indicators = {
+                    related.item.id_: related.item for related in
+                    parser.stix_package.incidents[0].related_indicators.indicator
+                }
+                file_object, = (
+                    misp_object for misp_object in event['Event']['Object']
+                    if misp_object['name'] == 'file'
+                )
+                self.assertIsNone(
+                    indicators[f'{_ORGNAME_ID}:Indicator-{file_object["uuid"]}'].handling
+                )
+                self.assertEqual(
+                    self._statements(
+                        indicators[f'{_ORGNAME_ID}:Indicator-{section["uuid"]}']
+                    ),
+                    {self._SECTOR_TAG, self._PE_TAG}
+                )
+
+    def test_folded_pe_mapped_galaxy_is_written(self):
+        """A mapped cluster on a folded section is the TTP the Indicator
+        indicates, its tag on the handling beside it."""
+        galaxy = deepcopy(_TEST_MALWARE_GALAXY)
+        galaxy['type'] = 'ransomware'
+        galaxy['GalaxyCluster'][0]['type'] = 'ransomware'
+        tag_name = 'misp-galaxy:ransomware="BISCUIT - S0017"'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = self._folded_pe_event(
+                    get_event_with_file_and_pe_objects, 'pe-section', [galaxy],
+                    True
+                )
+                parser = self._parse_event(event, version)
+                self.assertEqual(parser.errors, {})
+                stix_package = parser.stix_package
+                ttp, = stix_package.ttps.ttp
+                indicator, = (
+                    related.item for related in
+                    stix_package.incidents[0].related_indicators.indicator
+                )
+                self.assertEqual(
+                    [related.item.idref for related in indicator.indicated_ttps],
+                    [ttp.id_]
+                )
+                self.assertEqual(self._statements(indicator), {tag_name})
+
+    def test_folded_pe_plain_observable_galaxies_are_warned(self):
+        """Without `to_ids` the folded object is a plain Observable: each
+        cluster of an attribute folded in is one warning naming the record
+        the object is written as."""
+        cases = (
+            (get_event_with_file_and_pe_objects, 'pe', 'file'),
+            (get_event_with_file_and_pe_objects, 'pe-section', 'file'),
+            (get_event_with_pe_objects, 'pe-section', 'pe')
+        )
+        galaxies = [_TEST_MALWARE_GALAXY, _TEST_SECTOR_GALAXY]
+        for version in self._VERSIONS:
+            for get_event, name, root in cases:
+                with self.subTest(version=version, event=get_event.__name__, name=name):
+                    event = self._folded_pe_event(
+                        get_event, name, galaxies, False
+                    )
+                    root_object, = (
+                        misp_object for misp_object in event['Event']['Object']
+                        if misp_object['name'] == root
+                    )
+                    parser = self._parse_event(event, version)
+                    self.assertEqual(parser.errors, {})
+                    record = f'{root} object (uuid: {root_object["uuid"]})'
+                    self.assertEqual(
+                        [
+                            warning for warning in
+                            parser.warnings[event['Event']['uuid']]
+                            if warning.startswith('Galaxy cluster ')
+                        ],
+                        [
+                            self._plain_observable_warning(self._MALWARE_TAG, record),
+                            self._plain_observable_warning(self._SECTOR_TAG, record)
+                        ]
+                    )
+
+    @staticmethod
+    def _journal_entry_warning(tag_name, record):
+        return (
+            f'Galaxy cluster {tag_name} of the {record} not exported: the '
+            'attribute is written as text, a journal entry of the Incident '
+            'or the package description, which carries no marking.'
+        )
+
+    def test_journal_entry_galaxies_are_warned(self):
+        """A `comment`, `text` or `other` attribute is written as a journal
+        entry of the Incident, the header description one as the package
+        description: neither has a handling, so each cluster, mapped or not,
+        is one warning - whether the attribute is `to_ids` or not."""
+        galaxies = [deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)]
+        for version in self._VERSIONS:
+            for to_ids in (True, False):
+                events = []
+                for attribute_type in ('comment', 'text', 'other'):
+                    event = get_base_event()
+                    event['Event']['Attribute'] = [
+                        {
+                            'uuid': '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                            'type': attribute_type, 'category': 'Other',
+                            'value': f'My {attribute_type} value'
+                        }
+                    ]
+                    events.append((attribute_type, event))
+                events.append(('header', get_event_with_undefined_attributes()))
+                for label, event in events:
+                    with self.subTest(version=version, to_ids=to_ids, attribute=label):
+                        attribute = event['Event']['Attribute'][0]
+                        attribute['to_ids'] = to_ids
+                        attribute['Galaxy'] = deepcopy(galaxies)
+                        parser = self._parse_event(event, version)
+                        self.assertEqual(parser.errors, {})
+                        record = (
+                            f'{attribute["type"]} attribute '
+                            f'(uuid: {attribute["uuid"]})'
+                        )
+                        self.assertEqual(
+                            [
+                                warning for warning in
+                                parser.warnings[event['Event']['uuid']]
+                                if warning.startswith('Galaxy cluster ')
+                            ],
+                            [
+                                self._journal_entry_warning(self._MALWARE_TAG, record),
+                                self._journal_entry_warning(self._SECTOR_TAG, record)
+                            ]
+                        )
+                        self.assertIsNone(parser.stix_package.ttps)
+                        self.assertIsNone(
+                            parser.stix_package.incidents[0].handling
+                        )
+
+    def test_header_description_attributes_in_the_journal_warn_their_galaxies(self):
+        """More than one header description attribute goes to the journal
+        instead: each cluster of each is still one warning."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = get_event_with_undefined_attributes()
+                for attribute in event['Event']['Attribute']:
+                    attribute['comment'] = 'Imported from STIX header description'
+                    attribute['Galaxy'] = [deepcopy(_TEST_SECTOR_GALAXY)]
+                parser = self._parse_event(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertIsNone(parser.stix_package.stix_header.description)
+                self.assertEqual(
+                    [
+                        warning for warning in
+                        parser.warnings[event['Event']['uuid']]
+                        if warning.startswith('Galaxy cluster ')
+                    ],
+                    [
+                        self._journal_entry_warning(
+                            self._SECTOR_TAG,
+                            f'comment attribute (uuid: {attribute["uuid"]})'
+                        )
+                        for attribute in event['Event']['Attribute']
+                    ]
+                )
+
+    def test_attributes_collection_undefined_attribute_galaxies(self):
+        """The attributes collection writes a `comment`, `text` or `other`
+        attribute, the header description one included, as a Custom
+        observable: its clusters are those of any record taking that route,
+        warned on a plain Observable, carried by the Indicator's handling -
+        never the journal entry warning."""
+        galaxies = [deepcopy(_TEST_MALWARE_GALAXY), deepcopy(_TEST_SECTOR_GALAXY)]
+        header, comment = get_event_with_undefined_attributes()['Event']['Attribute']
+        header = {**header, 'type': 'text'}
+        for version in self._VERSIONS:
+            for attribute in (header, comment, {**comment, 'type': 'text'},
+                              {**comment, 'type': 'other'}):
+                label = 'header' if attribute is header else attribute['type']
+                for to_ids in (True, False):
+                    with self.subTest(version=version, to_ids=to_ids, attribute=label):
+                        exported = {
+                            **attribute, 'to_ids': to_ids,
+                            'Galaxy': deepcopy(galaxies)
+                        }
+                        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                        parser.parse_json_content([exported])
+                        self.assertEqual(parser.errors, {})
+                        warnings = [
+                            warning for recorded in parser.warnings.values()
+                            for warning in recorded
+                            if warning.startswith('Galaxy cluster ')
+                        ]
+                        record = (
+                            f'{attribute["type"]} attribute '
+                            f'(uuid: {attribute["uuid"]})'
+                        )
+                        if to_ids:
+                            self.assertEqual(warnings, [])
+                            indicator, = parser.stix_package.indicators
+                            self.assertEqual(
+                                self._markings(indicator),
+                                (self._MALWARE_TAG, self._SECTOR_TAG)
+                            )
+                        else:
+                            self.assertEqual(
+                                warnings,
+                                [
+                                    self._plain_observable_warning(
+                                        self._MALWARE_TAG, record
+                                    ),
+                                    self._plain_observable_warning(
+                                        self._SECTOR_TAG, record
+                                    )
+                                ]
+                            )
+
+
+class TestSTIX1RegistryKeyValueReferences(TestSTIX):
+    """A `registry-key-value` goes out as its own `Custom` Observable: each
+    reference a `registry-key` makes to one is a Related_Object on the
+    `WindowsRegistryKey`, pointing at that Observable's object - `contains`
+    as the CybOX vocabulary term, any other relationship verbatim."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _KEY_UUID = '5ac3379c-3e74-44ba-9160-04120a00020f'
+    _VALUE_UUIDS = (
+        '0b88c0c4-1f3a-4e6b-9a2d-1c4d5e6f7a81',
+        '1c99d1d5-2f4b-4f7c-8b3e-2d5e6f7a8b92'
+    )
+
+    @staticmethod
+    def _event(to_ids):
+        event = get_event_with_registry_key_and_values_objects()
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = to_ids
+        return event
+
+    def _cybox_objects(self, event, version, as_misp_event=False):
+        """The CybOX objects the export writes for the event, by id."""
+        if as_misp_event:
+            misp_event = MISPEvent()
+            misp_event.from_dict(**event)
+            event = misp_event
+        else:
+            event = event['Event']
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event)
+        self.assertEqual(parser.errors, {})
+        incident = parser.stix_package.incidents[0]
+        observables = [
+            related.item.observable
+            for related in incident.related_indicators.indicator
+        ] if incident.related_indicators else []
+        if incident.related_observables:
+            observables.extend(
+                related.item
+                for related in incident.related_observables.observable
+            )
+        return {
+            observable.object_.id_: observable.object_
+            for observable in observables
+        }
+
+    def test_references_to_values_are_related_objects(self):
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                for as_misp_event in (False, True):
+                    with self.subTest(
+                            version=version, to_ids=to_ids,
+                            as_misp_event=as_misp_event):
+                        cybox_objects = self._cybox_objects(
+                            self._event(to_ids), version, as_misp_event
+                        )
+                        registry_key = cybox_objects[
+                            f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                        ]
+                        self.assertEqual(
+                            [
+                                related.idref
+                                for related in registry_key.related_objects
+                            ],
+                            [
+                                f'{_ORGNAME_ID}:Custom-{value_uuid}'
+                                for value_uuid in self._VALUE_UUIDS
+                            ]
+                        )
+                        for related in registry_key.related_objects:
+                            self.assertIn(related.idref, cybox_objects)
+                            self.assertIsNone(related.properties)
+                            self.assertEqual(
+                                related.relationship.value, 'Contains'
+                            )
+                            self.assertEqual(
+                                related.relationship.xsi_type,
+                                'cyboxVocabs:ObjectRelationshipVocab-1.1'
+                            )
+
+    def test_other_relationship_is_written_verbatim(self):
+        event = self._event(False)
+        reference = event['Event']['Object'][0]['ObjectReference'][0]
+        reference['relationship_type'] = 'stores-value'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                registry_key = self._cybox_objects(event, version)[
+                    f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                ]
+                related = registry_key.related_objects[0]
+                self.assertEqual(related.relationship.value, 'stores-value')
+                self.assertIsNone(related.relationship.xsi_type)
+                self.assertEqual(
+                    registry_key.related_objects[1].relationship.value,
+                    'Contains'
+                )
+
+    def test_reference_to_anything_else(self):
+        """A reference to a record the event does not hold points at no
+        Observable: nothing is written. One to an object that is no
+        `registry-key-value`, written as a single CybOX Object too, is a
+        Related_Object all the same."""
+        event = self._event(False)
+        registry_key = event['Event']['Object'][0]
+        registry_key['ObjectReference'][0]['referenced_uuid'] = (
+            '9e1f0a2b-3c4d-4e5f-8a6b-7c8d9e0f1a2b'
+        )
+        event['Event']['Object'][2]['name'] = 'registry-key-data'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                cybox_object = self._cybox_objects(event, version)[
+                    f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                ]
+                self.assertEqual(
+                    [related.idref for related in cybox_object.related_objects],
+                    [f'{_ORGNAME_ID}:Custom-{self._VALUE_UUIDS[1]}']
+                )
+
+    def test_reference_to_a_value_the_export_loses_writes_nothing(self):
+        """A value whose own export fails, its fallback with it, is lost
+        with an Error: the key points at no Observable missing from the
+        document."""
+        event = self._event(True)
+        event['Event']['Object'][1]['timestamp'] = 'not-a-time'
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+                parser.parse_misp_event(event['Event'])
+                self.assertIn(self._VALUE_UUIDS[0], ''.join(
+                    error for errors in parser.errors.values()
+                    for error in errors
+                ))
+                incident = parser.stix_package.incidents[0]
+                cybox_objects = {
+                    related.item.observable.object_.id_:
+                        related.item.observable.object_
+                    for related in incident.related_indicators.indicator
+                }
+                self.assertNotIn(
+                    f'{_ORGNAME_ID}:Custom-{self._VALUE_UUIDS[0]}',
+                    cybox_objects
+                )
+                registry_key = cybox_objects[
+                    f'{_ORGNAME_ID}:WindowsRegistryKey-{self._KEY_UUID}'
+                ]
+                self.assertEqual(
+                    [related.idref for related in registry_key.related_objects],
+                    [f'{_ORGNAME_ID}:Custom-{self._VALUE_UUIDS[1]}']
+                )
+
+    def test_key_with_no_reference_writes_no_related_object(self):
+        event = get_event_with_registry_key_object()
+        for version in self._VERSIONS:
+            for cybox_object in self._cybox_objects(event, version).values():
+                with self.subTest(version=version):
+                    self.assertNotIn(
+                        b'Related_Object',
+                        cybox_object.to_xml(include_namespaces=False)
+                    )
+
+
+class TestSTIX1ObjectReferences(TestSTIX):
+    """A reference from a MISP object written as a single CybOX Object to a
+    record written as one too is a Related_Object on the source's Object,
+    pointing at the target's - a CybOX ObjectRelationship term where the
+    relationship is one, free text otherwise. Every other reference the
+    export cannot write is named in one Warning."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _FILE_UUID = '4b2a0e1c-7d3f-4e5a-9b6c-8d7e6f5a4b3c'
+    _IP_UUID = '6c5d4e3f-2a1b-4c0d-8e9f-a0b1c2d3e4f5'
+
+    @staticmethod
+    def _event(to_ids, relationship='downloaded-from'):
+        event = get_event_with_file_object_referencing_an_attribute()
+        event['Event']['Attribute'][0]['to_ids'] = to_ids
+        misp_object, = event['Event']['Object']
+        for attribute in misp_object['Attribute']:
+            attribute['to_ids'] = to_ids
+        misp_object['ObjectReference'][0]['relationship_type'] = relationship
+        return event
+
+    @staticmethod
+    def _parse(event, version, as_misp_event=False):
+        if as_misp_event:
+            misp_event = MISPEvent()
+            misp_event.from_dict(**event)
+            event = misp_event
+        else:
+            event = event['Event']
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event)
+        return parser
+
+    @staticmethod
+    def _cybox_objects(parser):
+        """The single CybOX Objects the export writes, by id."""
+        incident = parser.stix_package.incidents[0]
+        observables = [
+            related.item.observable
+            for related in incident.related_indicators.indicator
+        ] if incident.related_indicators else []
+        if incident.related_observables:
+            observables.extend(
+                related.item
+                for related in incident.related_observables.observable
+            )
+        return {
+            observable.object_.id_: observable.object_
+            for observable in observables if observable.object_ is not None
+        }
+
+    @staticmethod
+    def _warnings(parser):
+        return parser.warnings.get(get_base_event()['Event']['uuid'], [])
+
+    def test_reference_to_an_attribute_is_a_related_object(self):
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                for as_misp_event in (False, True):
+                    with self.subTest(
+                            version=version, to_ids=to_ids,
+                            as_misp_event=as_misp_event):
+                        parser = self._parse(
+                            self._event(to_ids), version, as_misp_event
+                        )
+                        self.assertEqual(parser.errors, {})
+                        self.assertEqual(self._warnings(parser), [])
+                        cybox_objects = self._cybox_objects(parser)
+                        file_object = cybox_objects[
+                            f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                        ]
+                        related, = file_object.related_objects
+                        self.assertEqual(
+                            related.idref,
+                            f'{_ORGNAME_ID}:Address-{self._IP_UUID}'
+                        )
+                        self.assertIn(related.idref, cybox_objects)
+                        self.assertIsNone(related.properties)
+                        self.assertEqual(
+                            related.relationship.value, 'Downloaded_From'
+                        )
+                        self.assertEqual(
+                            related.relationship.xsi_type,
+                            'cyboxVocabs:ObjectRelationshipVocab-1.1'
+                        )
+
+    def test_vocabulary_term_matched_whatever_the_separator_and_case(self):
+        """`Sub-domain_Of` mixes both separators: the term is matched from
+        the vocabulary, not spelled by a rule."""
+        for relationship, term in (('Downloaded_From', 'Downloaded_From'),
+                                   ('sub-domain-of', 'Sub-domain_Of'),
+                                   ('SUB_DOMAIN_OF', 'Sub-domain_Of')):
+            for version in self._VERSIONS:
+                with self.subTest(relationship=relationship, version=version):
+                    parser = self._parse(
+                        self._event(False, relationship), version
+                    )
+                    related, = self._cybox_objects(parser)[
+                        f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                    ].related_objects
+                    self.assertEqual(related.relationship.value, term)
+                    self.assertEqual(
+                        related.relationship.xsi_type,
+                        'cyboxVocabs:ObjectRelationshipVocab-1.1'
+                    )
+
+    def test_other_relationship_is_free_text(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(
+                    self._event(False, 'fetched-over'), version
+                )
+                related, = self._cybox_objects(parser)[
+                    f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                ].related_objects
+                self.assertEqual(related.relationship.value, 'fetched-over')
+                self.assertIsNone(related.relationship.xsi_type)
+
+    def test_reference_to_a_target_the_export_loses_is_warned(self):
+        """An object whose own export fails, its fallback with it, is lost
+        with an Error: the file points at no Object missing from the
+        document."""
+        event = self._event(True)
+        event['Event']['Attribute'] = []
+        event['Event']['Object'].append(
+            {
+                'name': 'mutex',
+                'meta-category': 'misc',
+                'description': 'Object to describe mutual exclusion locks',
+                'uuid': self._IP_UUID,
+                'timestamp': 'not-a-time',
+                'Attribute': [
+                    {
+                        'uuid': 'a0b9c8d7-6e5f-4a4b-8c3d-e4f5a6b7c8d9',
+                        'type': 'text',
+                        'category': 'Other',
+                        'object_relation': 'name',
+                        'value': 'MutexTest',
+                        'to_ids': True,
+                        'timestamp': '1603642920'
+                    }
+                ]
+            }
+        )
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertNotEqual(parser.errors, {})
+                file_object = self._cybox_objects(parser)[
+                    f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                ]
+                self.assertEqual(list(file_object.related_objects), [])
+                warning, = self._warnings(parser)
+                self.assertIn(self._FILE_UUID, warning)
+                self.assertIn('downloaded-from', warning)
+                self.assertIn(self._IP_UUID, warning)
+
+    def test_reference_to_a_record_the_event_does_not_hold_is_warned(self):
+        event = self._event(False)
+        event['Event']['Attribute'] = []
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                file_object = self._cybox_objects(parser)[
+                    f'{_ORGNAME_ID}:File-{self._FILE_UUID}'
+                ]
+                self.assertEqual(list(file_object.related_objects), [])
+                warning, = self._warnings(parser)
+                self.assertIn(self._IP_UUID, warning)
+
+    def test_references_with_no_single_object_end_are_warned(self):
+        """Every reference of the fixture touches an `ip-port` composition,
+        a TTP or a Course of Action: none is a Related_Object. The `ip-port`
+        one to the Course of Action is a Suggested_COA once the `ip-port` is
+        an Indicator; every other one is warned once."""
+        for version in self._VERSIONS:
+            for to_ids in (False, True):
+                with self.subTest(version=version, to_ids=to_ids):
+                    event = get_event_with_object_references()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    parser = self._parse(event, version)
+                    self.assertEqual(parser.errors, {})
+                    for cybox_object in self._cybox_objects(parser).values():
+                        self.assertEqual(
+                            list(cybox_object.related_objects or ()), []
+                        )
+                    warned = [
+                        warning for warning in self._warnings(parser)
+                        if warning.startswith('Reference ')
+                    ]
+                    references = [
+                        (misp_object['uuid'], reference)
+                        for misp_object in event['Event']['Object']
+                        for reference in misp_object['ObjectReference']
+                        if not (to_ids and misp_object['name'] == 'ip-port')
+                    ]
+                    self.assertEqual(len(warned), len(references))
+                    for source_uuid, reference in references:
+                        self.assertEqual(
+                            len(
+                                [
+                                    warning for warning in warned
+                                    if source_uuid in warning
+                                    and reference['relationship_type'] in warning
+                                    and reference['referenced_uuid'] in warning
+                                ]
+                            ),
+                            1
+                        )
+
+    def test_related_ttp_reference_is_not_warned(self):
+        event = get_event_with_vulnerability_and_weakness_objects()
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(
+                    [
+                        warning for warning in self._warnings(parser)
+                        if warning.startswith('Reference ')
+                    ],
+                    []
+                )
+
+
+class TestSTIX1ObjectReferenceSlots(TestSTIX):
+    """A reference a CybOX Related_Object cannot carry goes in the
+    relationship slot of the source's own STIX construct naming the target's
+    kind, the relationship verbatim: Potential_COAs on the Exploit Target of
+    a `vulnerability` or `weakness`, Related_COAs on a Course of Action,
+    Suggested_COAs and Indicated_TTP on an Indicator, Related_TTPs on a TTP.
+    The galaxy clusters fill the same slots."""
+
+    _VERSIONS = ('1.1.1', '1.2')
+    _ATTACK_PATTERN_UUID = '7205da54-70de-4fa7-9b34-e14e63fe6787'
+    _BTC_WALLET_UUID = '6f7509f1-f324-4acc-bf06-bbe726ab8fc7'
+    _COA_UUID = '5d514ff9-ac30-4fb5-b9e7-3eb4a964451a'
+    _IP_PORT_UUID = '5ac47edc-31e4-4402-a7b6-040d0a00020f'
+    _OTHER_COA_UUID = '3c1e8f0a-5b2d-4e7f-9a6c-1d4b7e0f3a2c'
+    _VULNERABILITY_UUID = '5e579975-e9cc-46c6-a6ad-1611a964451a'
+    _VULNERABILITY_ATTRIBUTE_UUID = 'fc3532d3-2e24-4737-a6c6-275fe2fd0068'
+    _WEAKNESS_UUID = 'a1285743-3962-40e3-a824-0f21f10f3e19'
+    _WEAKNESS_ATTRIBUTE_UUID = '986dcb2f-266a-4da0-bd35-d33532685d75'
+
+    @staticmethod
+    def _event(to_ids=True):
+        event = get_event_with_object_references_in_relationship_slots()
+        for misp_object in event['Event']['Object']:
+            if misp_object['name'] in ('btc-wallet', 'ip-port'):
+                misp_object['Attribute'][0]['to_ids'] = to_ids
+        return event
+
+    @staticmethod
+    def _parse(event, version):
+        parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, version)
+        parser.parse_misp_event(event['Event'])
+        return parser
+
+    @staticmethod
+    def _reference_warnings(parser):
+        return [
+            warning for warning in parser.warnings.get(
+                get_base_event()['Event']['uuid'], []
+            )
+            if warning.startswith('Reference ')
+        ]
+
+    @staticmethod
+    def _slots(parser):
+        """Each entry of the five slots, as its source uuid, the slot, the
+        idref and the relationship."""
+        package = parser.stix_package
+        slots = []
+
+        def read(source_id, slot, related_items):
+            slots.extend(
+                (
+                    source_id[-36:], slot, related.item.idref,
+                    related.relationship.value
+                )
+                for related in related_items
+            )
+
+        incident = package.incidents[0]
+        for related in incident.related_indicators.indicator if incident.related_indicators else ():
+            indicator = related.item
+            read(indicator.id_, 'Suggested_COAs', indicator.suggested_coas)
+            read(indicator.id_, 'Indicated_TTP', indicator.indicated_ttps)
+        for course_of_action in package.courses_of_action or ():
+            read(
+                course_of_action.id_, 'Related_COAs',
+                course_of_action.related_coas
+            )
+        for ttp in package.ttps.ttp if package.ttps else ():
+            read(ttp.id_, 'Related_TTPs', ttp.related_ttps)
+            for related in ttp.exploit_targets.exploit_target if ttp.exploit_targets else ():
+                read(ttp.id_, 'Potential_COAs', related.item.potential_coas)
+        return sorted(slots)
+
+    def _coa(self, uuid):
+        return f'{_ORGNAME_ID}:CourseOfAction-{uuid}'
+
+    def _ttp(self, uuid):
+        return f'{_ORGNAME_ID}:TTP-{uuid}'
+
+    def _non_indicator_slots(self):
+        return [
+            (
+                self._ATTACK_PATTERN_UUID, 'Related_TTPs',
+                self._ttp(self._VULNERABILITY_ATTRIBUTE_UUID), 'exploits'
+            ),
+            (
+                self._COA_UUID, 'Related_COAs',
+                self._coa(self._OTHER_COA_UUID), 'complemented-by'
+            ),
+            (
+                self._VULNERABILITY_UUID, 'Potential_COAs',
+                self._coa(self._COA_UUID), 'mitigated-by'
+            ),
+            (
+                self._WEAKNESS_UUID, 'Potential_COAs',
+                self._coa(self._OTHER_COA_UUID), 'mitigated-by'
+            )
+        ]
+
+    def test_references_go_in_the_source_relationship_slots(self):
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(self._event(), version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(self._reference_warnings(parser), [])
+                self.assertEqual(
+                    self._slots(parser),
+                    sorted(
+                        [
+                            *self._non_indicator_slots(),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._ATTACK_PATTERN_UUID),
+                                'indicates'
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._VULNERABILITY_UUID),
+                                'exploits'
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Suggested_COAs',
+                                self._coa(self._COA_UUID), 'protected-with'
+                            ),
+                            (
+                                self._IP_PORT_UUID, 'Indicated_TTP',
+                                self._ttp(self._WEAKNESS_UUID), 'exploits'
+                            ),
+                            (
+                                self._IP_PORT_UUID, 'Indicated_TTP',
+                                self._ttp(self._WEAKNESS_ATTRIBUTE_UUID),
+                                'exploits'
+                            ),
+                            (
+                                self._IP_PORT_UUID, 'Suggested_COAs',
+                                self._coa(self._OTHER_COA_UUID),
+                                'protected-with'
+                            )
+                        ]
+                    )
+                )
+
+    def test_slot_entries_name_a_written_target_with_its_timestamp(self):
+        """Each entry points at a Course of Action or a TTP the package
+        holds, pinned to its timestamp."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(self._event(), version)
+                package = parser.stix_package
+                timestamps = {
+                    construct.id_: construct.timestamp
+                    for construct in (
+                        *package.courses_of_action, *package.ttps.ttp
+                    )
+                }
+                incident = package.incidents[0]
+                related_items = [
+                    related
+                    for indicator in incident.related_indicators.indicator
+                    for related in (
+                        *indicator.item.suggested_coas,
+                        *indicator.item.indicated_ttps
+                    )
+                ]
+                related_items.extend(
+                    related
+                    for course_of_action in package.courses_of_action
+                    for related in course_of_action.related_coas
+                )
+                related_items.extend(
+                    related
+                    for ttp in package.ttps.ttp
+                    for related in ttp.related_ttps
+                )
+                self.assertEqual(len(related_items), 8)
+                for related in related_items:
+                    self.assertIn(related.item.idref, timestamps)
+                    self.assertIsNotNone(related.item.timestamp)
+                    self.assertEqual(
+                        related.item.timestamp,
+                        timestamps[related.item.idref]
+                    )
+
+    def test_plain_observable_source_is_warned(self):
+        """A source written as a plain Observable has no slot: each of its
+        references is warned once, and nothing is written for it."""
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                event = self._event(False)
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(
+                    self._slots(parser), sorted(self._non_indicator_slots())
+                )
+                warned = self._reference_warnings(parser)
+                references = [
+                    (misp_object['uuid'], reference)
+                    for misp_object in event['Event']['Object']
+                    if misp_object['name'] in ('btc-wallet', 'ip-port')
+                    for reference in misp_object['ObjectReference']
+                ]
+                self.assertEqual(len(warned), len(references))
+                for source_uuid, reference in references:
+                    self.assertEqual(
+                        len(
+                            [
+                                warning for warning in warned
+                                if source_uuid in warning
+                                and reference['relationship_type'] in warning
+                                and reference['referenced_uuid'] in warning
+                            ]
+                        ),
+                        1
+                    )
+
+    def test_folded_pe_reference_keeps_its_warning(self):
+        """A `pe` or a section folded under a `file` has no construct of its
+        own: the file's Indicator slot would read back as the file's
+        reference, so theirs are warned and not written."""
+        for version in self._VERSIONS:
+            event = deepcopy(self._event())
+            file_object, pe_object, section = deepcopy(
+                get_event_with_file_and_pe_objects()
+            )['Event']['Object']
+            for misp_object in (file_object, pe_object, section):
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = True
+            pe_object['ObjectReference'].append(
+                {
+                    'uuid': '0d6a4e1b-2c3f-4a5b-8c7d-9e0f1a2b3c4d',
+                    'object_uuid': pe_object['uuid'],
+                    'referenced_uuid': self._COA_UUID,
+                    'relationship_type': 'mitigated-by'
+                }
+            )
+            section['ObjectReference'] = [
+                {
+                    'uuid': '1e7b5f2c-3d4a-4b6c-9d8e-0f1a2b3c4d5e',
+                    'object_uuid': section['uuid'],
+                    'referenced_uuid': self._ATTACK_PATTERN_UUID,
+                    'relationship_type': 'uses'
+                }
+            ]
+            event['Event']['Object'].extend(
+                (file_object, pe_object, section)
+            )
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                folded = (
+                    file_object['uuid'], pe_object['uuid'], section['uuid']
+                )
+                self.assertEqual(
+                    [entry for entry in self._slots(parser)
+                     if entry[0] in folded],
+                    []
+                )
+                self.assertEqual(
+                    self._reference_warnings(parser),
+                    [
+                        "Reference 'mitigated-by' from the pe object (uuid: "
+                        f"{pe_object['uuid']}) to the course-of-action object "
+                        f'(uuid: {self._COA_UUID}) not converted: the STIX 1 '
+                        'document has no slot of the source naming the target.',
+                        "Reference 'uses' from the pe-section object (uuid: "
+                        f"{section['uuid']}) to the attack-pattern object "
+                        f'(uuid: {self._ATTACK_PATTERN_UUID}) not converted: '
+                        'the STIX 1 document has no slot of the source naming '
+                        'the target.'
+                    ]
+                )
+
+    def test_repeated_reference_is_written_per_reference(self):
+        """Two references naming the same target with the same relationship
+        are two MISP records, each written in the slot."""
+        event = deepcopy(self._event())
+        btc_wallet, = (
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == 'btc-wallet'
+        )
+        btc_wallet['ObjectReference'].append(
+            {
+                **btc_wallet['ObjectReference'][0],
+                'uuid': '2f8c6a3d-4e5b-4c7d-8e9f-1a2b3c4d5e6f'
+            }
+        )
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(
+                    [
+                        entry for entry in self._slots(parser)
+                        if entry[:2] == (self._BTC_WALLET_UUID, 'Suggested_COAs')
+                    ],
+                    [
+                        (
+                            self._BTC_WALLET_UUID, 'Suggested_COAs',
+                            self._coa(self._COA_UUID), 'protected-with'
+                        )
+                    ] * 2
+                )
+
+    def test_galaxy_cluster_and_reference_share_the_slot(self):
+        """A cluster on an object attribute fills the slot with the galaxy
+        name as relationship, the reference beside it."""
+        event = self._event()
+        coa_galaxy = get_event_with_course_of_action_galaxy()['Event']['Galaxy'][0]
+        attack_pattern_galaxy = get_event_with_attack_pattern_galaxy()['Event']['Galaxy'][0]
+        for misp_object in event['Event']['Object']:
+            if misp_object['uuid'] == self._COA_UUID:
+                misp_object['Attribute'][0]['Galaxy'] = [coa_galaxy]
+            elif misp_object['name'] == 'btc-wallet':
+                misp_object['Attribute'][0]['Galaxy'] = [attack_pattern_galaxy]
+        coa_cluster_uuid = coa_galaxy['GalaxyCluster'][0]['uuid']
+        attack_pattern_cluster_uuid = attack_pattern_galaxy['GalaxyCluster'][0]['uuid']
+        for version in self._VERSIONS:
+            with self.subTest(version=version):
+                parser = self._parse(event, version)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(self._reference_warnings(parser), [])
+                slots = self._slots(parser)
+                self.assertEqual(
+                    [
+                        entry for entry in slots
+                        if entry[:2] == (self._COA_UUID, 'Related_COAs')
+                    ],
+                    sorted(
+                        [
+                            (
+                                self._COA_UUID, 'Related_COAs',
+                                self._coa(coa_cluster_uuid), coa_galaxy['name']
+                            ),
+                            (
+                                self._COA_UUID, 'Related_COAs',
+                                self._coa(self._OTHER_COA_UUID),
+                                'complemented-by'
+                            )
+                        ]
+                    )
+                )
+                self.assertEqual(
+                    [
+                        entry for entry in slots
+                        if entry[:2] == (self._BTC_WALLET_UUID, 'Indicated_TTP')
+                    ],
+                    sorted(
+                        [
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(attack_pattern_cluster_uuid),
+                                attack_pattern_galaxy['name']
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._ATTACK_PATTERN_UUID),
+                                'indicates'
+                            ),
+                            (
+                                self._BTC_WALLET_UUID, 'Indicated_TTP',
+                                self._ttp(self._VULNERABILITY_UUID),
+                                'exploits'
+                            )
+                        ]
+                    )
+                )
 
 
 class _STIX1NamespaceTestCase(TestSTIX):
@@ -231,6 +4134,15 @@ class TestSTIX1NamespaceParameter(_STIX1NamespaceTestCase):
             ],
             'MISP'
         )
+
+    def test_declared_prefixes_are_the_ones_the_libraries_write(self):
+        # python-stix and cybox write an extension's `xsi:type` with the
+        # prefix they register for its namespace, whatever the framing
+        # declares: any other prefix leaves that `xsi:type` undeclared, and
+        # the document cannot be loaded back
+        for namespace, prefix in NS_DICT.items():
+            with self.subTest(namespace=namespace):
+                self.assertEqual(prefix, lookup_name(namespace))
 
 
 class TestSTIX1IdNamespaceScope(_STIX1NamespaceTestCase):
@@ -412,18 +4324,19 @@ class TestStix1Export(TestSTIX):
     def _check_coa_taken(self, coa_taken, uuid, timestamp=None):
         self.assertEqual(coa_taken.course_of_action.idref, f'{_ORGNAME_ID}:CourseOfAction-{uuid}')
         if timestamp is not None:
-            if isinstance(timestamp, str):
-                self.assertEqual(
-                    coa_taken.course_of_action.timestamp,
-                    datetime.fromtimestamp(
-                        int(timestamp), timezone.utc
-                    )
-                )
-            else:
-                self.assertEqual(coa_taken.course_of_action.timestamp, timestamp)
+            self._check_timestamp(coa_taken.course_of_action.timestamp, timestamp)
+
+    def _check_timestamp(self, stix_timestamp, timestamp):
+        if isinstance(timestamp, str):
+            timestamp = datetime.fromtimestamp(int(timestamp), timezone.utc)
+        self.assertEqual(stix_timestamp, timestamp)
 
     def _check_course_of_action_fields(self, course_of_action, misp_object):
         self.assertEqual(course_of_action.id_, f"{_ORGNAME_ID}:CourseOfAction-{misp_object['uuid']}")
+        # Stamped with the object's timestamp, as the COA_Taken referencing
+        # it is, rather than with the export time python-stix gives an
+        # unstamped one
+        self._check_timestamp(course_of_action.timestamp, misp_object['timestamp'])
         name, description, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
         self.assertEqual(course_of_action.title, name['value'])
         self.assertEqual(course_of_action.description.value, description['value'])
@@ -444,6 +4357,10 @@ class TestStix1Export(TestSTIX):
                     self._datetime_from_str(custom.value).timestamp(),
                     value.timestamp()
                 )
+                continue
+            if isinstance(value, bool):
+                self.assertEqual(custom.value, 'true' if value else 'false')
+                self.assertEqual(custom.datatype, 'boolean')
                 continue
             self.assertEqual(custom.value, value)
 
@@ -595,9 +4512,9 @@ class TestStix1Export(TestSTIX):
 
     def _check_ip_port_observables(self, observables, misp_object):
         attributes = misp_object['Attribute']
-        self.assertEqual(len(observables), len(attributes) - 1)
-        ip, port, domain, _ = attributes
-        ip_observable, port_observable, domain_observable = observables
+        self.assertEqual(len(observables), len(attributes))
+        ip, port, domain, first_seen = attributes
+        ip_observable, port_observable, domain_observable, first_seen_observable = observables
         ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
         self.assertEqual(ip_properties.address_value.value, ip['value'])
         self.assertEqual(port_observable.id_, f"{_ORGNAME_ID}:Observable-{port['uuid']}")
@@ -608,6 +4525,10 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(port_properties.port_value.value, int(port['value']))
         domain_properties = self._check_observable_features(domain_observable, domain, "DomainName")
         self.assertEqual(domain_properties.value.value, domain['value'])
+        # No member of its own: a nameless custom one, named by the relation
+        first_seen_properties = self._check_observable_features(first_seen_observable, first_seen, 'Custom')
+        self.assertIsNone(first_seen_properties.custom_name)
+        self._check_custom_properties((first_seen,), first_seen_properties.custom_properties)
 
     def _check_malware_sample_properties(self, observable, attribute):
         filename, md5 = attribute['value'].split('|')
@@ -739,6 +4660,26 @@ class TestStix1Export(TestSTIX):
             modified_value = self._datetime_from_str(modified_value)
         self.assertEqual(properties.modified_time.value, modified_value)
 
+    def _check_attributed_threat_actor(self, incident, galaxy, threat_actor_id):
+        self.assertEqual(len(incident.attributed_threat_actors.threat_actor), 1)
+        related_threat_actor = incident.attributed_threat_actors.threat_actor[0]
+        self.assertEqual(related_threat_actor.relationship.value, galaxy['name'])
+        self.assertEqual(related_threat_actor.item.idref, threat_actor_id)
+
+    @staticmethod
+    def _cluster_tags(galaxy):
+        return tuple(
+            f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
+            for cluster in galaxy['GalaxyCluster']
+        )
+
+    def _check_handling_markings(self, stix_object, expected):
+        markings = tuple(
+            self._get_marking_value(marking)
+            for marking in stix_object.handling[0].marking_structures
+        )
+        self.assertEqual(markings, expected)
+
     def _check_related_object(self, related_ttp, galaxy_name, cluster_uuid, timestamp=None, object_type='TTP'):
         self.assertEqual(related_ttp.relationship.value, galaxy_name)
         self.assertEqual(related_ttp.item.idref, f"{_ORGNAME_ID}:{object_type}-{cluster_uuid}")
@@ -786,6 +4727,18 @@ class TestStix1Export(TestSTIX):
             timestamp=attribute['timestamp']
         )
         return ttp
+
+    def _check_threat_actor_from_galaxy(self, stix_package, galaxy):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(len(stix_package.threat_actors), 1)
+        threat_actor = stix_package.threat_actors[0]
+        threat_actor_id = f"{_ORGNAME_ID}:ThreatActor-{cluster['uuid']}"
+        self.assertEqual(threat_actor.id_, threat_actor_id)
+        self.assertEqual(threat_actor.title, cluster['value'])
+        self.assertEqual(threat_actor.description.value, cluster['description'])
+        intended_effect = threat_actor.intended_effects[0]
+        self.assertEqual(intended_effect.value, cluster['meta']['cfr-type-of-incident'][0])
+        return threat_actor_id
 
     def _check_ttp_fields_from_galaxy(self, stix_package, cluster_uuid, galaxy_name):
         ttp = self._check_ttp_length(stix_package, 1)[0]
@@ -1200,19 +5153,21 @@ class TestStix1Export(TestSTIX):
         )
         indicator = incident.related_indicators.indicator[0].item
         self.assertEqual(indicator.confidence.value, 'High')
+        # An object's tags are written in the order its attributes carry
+        # them, whatever the hash seed of the run
         indicator_marking = indicator.handling[0]
         self.assertEqual(len(indicator_marking.marking_structures), 3)
         self.assertEqual(
-            set(self._parse_tag(attr['Tag'][0]['name']) for attr in ip_port['Attribute'][:3]),
-            set(self._get_marking_value(marking) for marking in indicator_marking.marking_structures)
+            tuple(self._parse_tag(attr['Tag'][0]['name']) for attr in ip_port['Attribute'][:3]),
+            tuple(self._get_marking_value(marking) for marking in indicator_marking.marking_structures)
         )
         coa = self.parser.stix_package.courses_of_action[0]
         self.assertFalse(hasattr(coa, 'confidence'))
         coa_marking = coa.handling[0]
         self.assertEqual(len(coa_marking.marking_structures), 3)
         self.assertEqual(
-            set(self._parse_tag(attr['Tag'][0]['name']) for attr in course_of_action['Attribute'][:3]),
-            set(self._get_marking_value(marking) for marking in coa_marking.marking_structures)
+            tuple(self._parse_tag(attr['Tag'][0]['name']) for attr in course_of_action['Attribute'][:3]),
+            tuple(self._get_marking_value(marking) for marking in coa_marking.marking_structures)
         )
         observable = incident.related_observables.observable[0].item
         self.assertFalse(hasattr(observable, 'confidence'))
@@ -1221,11 +5176,17 @@ class TestStix1Export(TestSTIX):
     def _test_event_with_tags(self, event):
         self.parser.parse_misp_event(event)
         marking = self.parser.stix_package.incidents[0].handling[0]
-        self.assertEqual(len(marking.marking_structures), 3)
+        # The tag of the cluster the attack pattern TTP carries stays on the
+        # Incident with the others: the TTP names the cluster, not its galaxy
+        self.assertEqual(len(marking.marking_structures), 4)
         markings = tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
         self.assertIn('WHITE', markings)
         self.assertIn('misp:tool="misp2stix"', markings)
         self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
+        self.assertIn(
+            'misp-galaxy:mitre-attack-pattern="Access Token Manipulation - T1134"',
+            markings
+        )
 
     def _test_published_event(self, event):
         self.parser.parse_misp_event(event)
@@ -1351,6 +5312,128 @@ class TestStix1Export(TestSTIX):
             attribute_cluster['uuid']
         )
         self._check_coa_taken(incident.coa_taken[0], coa_cluster['uuid'])
+
+    def _test_embedded_threat_actor_attribute_galaxy(self, event):
+        galaxy = event['Attribute'][0]['Galaxy'][0]
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        stix_package = self.parser.stix_package
+        threat_actor_id = self._check_threat_actor_from_galaxy(
+            stix_package, galaxy
+        )
+        # A STIX 1 Indicator has no threat actor slot: the actor is attributed
+        # to the Incident, the way an event-level one is
+        incident = stix_package.incidents[0]
+        self._check_attributed_threat_actor(incident, galaxy, threat_actor_id)
+        # A STIX 1 construct names the cluster by its value alone: the
+        # `misp-galaxy:` tag stays on the Indicator's handling, next to the
+        # attribute's other tag, and carries the galaxy type back
+        self._check_handling_markings(
+            incident.related_indicators.indicator[0].item,
+            ('WHITE', *self._cluster_tags(galaxy))
+        )
+
+    def _test_attributes_collection_with_target_attributes(self, version, attributes):
+        email, external, location, machine, org, user = attributes
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content(attributes)
+        self.assertEqual(parser.errors, {})
+        stix_package = parser.stix_package
+        # No Incident to hold an Affected_Asset: the machine falls back to the
+        # Custom observable, like every type with no slot on this parser
+        observables = stix_package.observables.observables
+        self.assertEqual(len(observables), 1)
+        properties = self._check_observable_features(
+            observables[0], machine, 'Custom'
+        )
+        self._check_custom_property(
+            machine, properties.custom_properties.property_[0]
+        )
+        # The other five stand as TTPs targeting the victim identity
+        ttps = self._check_ttp_length(stix_package, 5)
+        for ttp, attribute in zip(ttps, (email, external, location, org, user)):
+            self._check_ttp_fields(
+                ttp, attribute['uuid'],
+                f"{attribute['category']}: {attribute['value']}", 'Attribute'
+            )
+            self._check_identity_features(
+                ttp.victim_targeting.identity, attribute
+            )
+        # The comment travels the Custom way: as the description of a plain
+        # observable, as the Indicator's once the attribute is `to_ids`
+        self.assertEqual(observables[0].description.value, machine['comment'])
+        machine = {**machine, 'to_ids': True}
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content([machine])
+        self.assertEqual(parser.errors, {})
+        indicator = parser.stix_package.indicators[0]
+        self.assertEqual(
+            indicator.id_, f"{_ORGNAME_ID}:Indicator-{machine['uuid']}"
+        )
+        self.assertEqual(indicator.description.value, machine['comment'])
+        properties = self._check_observable_features(
+            indicator.observable, machine, 'Custom'
+        )
+        self._check_custom_property(
+            machine, properties.custom_properties.property_[0]
+        )
+
+    def _test_attributes_collection_with_undefined_attributes(self, version, attributes):
+        # No Incident to write a journal entry on, and a STIX Header that is
+        # the MISP export title, not a description: `comment`, `text` and
+        # `other`, the header description one included, take the Custom
+        # observable, which keeps their uuid and comment
+        header, comment = attributes
+        attributes = [
+            {**header, 'type': 'text'}, comment,
+            {**comment, 'uuid': '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+             'type': 'text', 'value': 'Test text'},
+            {**comment, 'uuid': '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f',
+             'type': 'other', 'value': 'Test other'}
+        ]
+        for to_ids in (False, True):
+            with self.subTest(version=version, to_ids=to_ids):
+                exported = [
+                    {**attribute, 'to_ids': to_ids} for attribute in attributes
+                ]
+                parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+                parser.parse_json_content(exported)
+                self.assertEqual(parser.errors, {})
+                self.assertEqual(parser.warnings, {})
+                stix_package = parser.stix_package
+                self.assertIsNone(stix_package.stix_header.description)
+                if to_ids:
+                    self.assertEqual(len(stix_package.observables), 0)
+                    records = stix_package.indicators
+                    observables = [record.observable for record in records]
+                else:
+                    self.assertEqual(len(stix_package.indicators), 0)
+                    records = observables = stix_package.observables.observables
+                self.assertEqual(len(records), len(exported))
+                for record, observable, attribute in zip(records, observables, exported):
+                    properties = self._check_observable_features(
+                        observable, attribute, 'Custom'
+                    )
+                    self._check_custom_property(
+                        attribute, properties.custom_properties.property_[0]
+                    )
+                    if attribute.get('comment'):
+                        self.assertEqual(
+                            record.description.value, attribute['comment']
+                        )
+
+    def _test_attributes_collection_with_threat_actor_galaxy(self, version, attribute):
+        parser = MISPtoSTIX1AttributesParser(_ORGNAME_ID, version)
+        parser.parse_json_content([attribute])
+        self.assertEqual(parser.errors, {})
+        stix_package = parser.stix_package
+        # No Incident to attribute the actor to: it stands in the STIX Package
+        # on its own, and the Indicator keeps the `misp-galaxy:` tag
+        galaxy = attribute['Galaxy'][0]
+        self._check_threat_actor_from_galaxy(stix_package, galaxy)
+        self._check_handling_markings(
+            stix_package.indicators[0], ('WHITE', *self._cluster_tags(galaxy))
+        )
 
     def _test_embedded_observable_attribute_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -1741,11 +5824,24 @@ class TestStix1Export(TestSTIX):
         snort_indicator = self._check_indicator_attribute_features(r_snort, snort, orgc)
         snort_tm = snort_indicator.test_mechanisms[0]
         self.assertEqual(snort_tm._XSI_TYPE, 'snortTM:SnortTestMechanismType')
-        self.assertEqual(snort_tm.rules[0].value['value'], snort['value'])
+        self.assertEqual(snort_tm.rules[0].value, snort['value'])
         yara_indicator = self._check_indicator_attribute_features(r_yara, yara, orgc)
         yara_tm = yara_indicator.test_mechanisms[0]
         self.assertEqual(yara_tm._XSI_TYPE, 'yaraTM:YaraTestMechanismType')
-        self.assertEqual(yara_tm.rule.value['value'], yara['value'])
+        self.assertEqual(yara_tm.rule.value, yara['value'])
+
+    @staticmethod
+    def _two_header_description_attributes():
+        event = get_event_with_undefined_attributes()
+        header, journal = event['Event']['Attribute']
+        event['Event']['Attribute'] = [
+            header,
+            {
+                **journal, 'type': 'text', 'category': 'Internal reference',
+                'comment': header['comment']
+            }
+        ]
+        return event
 
     def _test_event_with_undefined_attributes(self, event):
         header, comment = event['Attribute']
@@ -1761,6 +5857,25 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(
             journal_entry.journal_entry.value,
             f"Attribute ({comment['category']} - {comment['type']}): {comment['value']}"
+        )
+
+    def _test_event_with_two_header_description_attributes(self, event):
+        """The header holds one description: with two attributes commented
+        as imported from one, the export wrote neither of them, anywhere.
+        Each goes to the journal like an unmarked attribute of its type."""
+        self.parser.parse_misp_event(event)
+        self.assertIsNone(self.parser.stix_package.stix_header.description)
+        incident = self.parser.stix_package.incidents[0]
+        self.assertEqual(
+            [
+                entry.journal_entry.value
+                for entry in incident.history.history_items
+            ][1:],
+            [
+                f"Attribute ({attribute['category']} - {attribute['type']}): "
+                f"{attribute['value']}"
+                for attribute in event['Attribute']
+            ]
         )
 
     def _test_event_with_url_attribute(self, event):
@@ -1991,6 +6106,61 @@ class TestStix1Export(TestSTIX):
             cluster['uuid']
         )
 
+    def _test_embedded_threat_actor_object_galaxy(self, event):
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Object'][0])
+        galaxy = misp_object['Attribute'][0]['Galaxy'][0]
+        orgc = event['Orgc']['name']
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(self.parser.warnings, {})
+        stix_package = self.parser.stix_package
+        threat_actor_id = self._check_threat_actor_from_galaxy(
+            stix_package, galaxy
+        )
+        # An object's Indicator has no threat actor slot any more than an
+        # attribute's: the actor an object attribute carries is attributed
+        # to the Incident
+        incident = stix_package.incidents[0]
+        self._check_attributed_threat_actor(incident, galaxy, threat_actor_id)
+        indicator = self._check_indicator_object_features(
+            incident.related_indicators.indicator[0], misp_object, orgc
+        )
+        # The `misp-galaxy:` tag stays on the Indicator's handling, next to
+        # the object attribute's other tag
+        self._check_handling_markings(
+            indicator, ('WHITE', *self._cluster_tags(galaxy))
+        )
+
+    def _test_event_with_account_objects_with_attachment(self, event):
+        # The `parler-account` template declares `human` a `boolean`, and a
+        # boolean is what the event carries: cybox refuses the value, and
+        # the whole conversion used to raise on it
+        misp_objects = deepcopy(event['Object'])
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        incident = self.parser.stix_package.incidents[0]
+        observables = incident.related_observables.observable
+        self.assertEqual(len(observables), len(misp_objects))
+        for observable, misp_object in zip(observables, misp_objects):
+            properties = self._check_observable_features(
+                observable.item, misp_object, 'Custom'
+            )
+            self.assertEqual(properties.custom_name, misp_object['name'])
+            self._check_custom_properties(
+                misp_object['Attribute'], properties.custom_properties
+            )
+        parler = next(
+            observable.item.object_.properties for observable in observables
+            if observable.item.object_.properties.custom_name
+            == 'parler-account'
+        )
+        human = next(
+            prop for prop in parler.custom_properties if prop.name == 'human'
+        )
+        self.assertEqual(human.value, 'false')
+        self.assertEqual(human.datatype, 'boolean')
+
     def _test_event_with_asn_object_indicator(self, event):
         properties, attributes = self._run_indicator_from_object_tests(event, 'AS')
         self._check_asn_properties(properties, attributes)
@@ -2006,10 +6176,27 @@ class TestStix1Export(TestSTIX):
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         attack_pattern = ttp.behavior.attack_patterns[0]
         self.assertEqual(attack_pattern.id_, f"{_ORGNAME_ID}:AttackPattern-{misp_object['uuid']}")
-        id_, name, summary, _, _, _, _ = misp_object['Attribute']
+        id_, name, summary, weakness1, weakness2, prerequisites, solutions = misp_object['Attribute']
         self.assertEqual(attack_pattern.capec_id, f"CAPEC-{id_['value']}")
         self.assertEqual(attack_pattern.title, name['value'])
         self.assertEqual(attack_pattern.description.value, summary['value'])
+        self.assertEqual(
+            [
+                (description.structuring_format, description.value)
+                for description in attack_pattern.descriptions
+            ],
+            [
+                (None, summary['value']),
+                ('prerequisites', prerequisites['value']),
+                ('solutions', solutions['value'])
+            ]
+        )
+        exploit_targets = ttp.exploit_targets.exploit_target
+        self.assertEqual(len(exploit_targets), 2)
+        for related, weakness in zip(exploit_targets, (weakness1, weakness2)):
+            exploit_target = related.item
+            self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{weakness['uuid']}")
+            self.assertEqual(exploit_target.weaknesses[0].cwe_id, weakness['value'])
         self._check_related_object(
             stix_package.incidents[0].leveraged_ttps.ttp[0],
             misp_object['name'],
@@ -2036,13 +6223,24 @@ class TestStix1Export(TestSTIX):
             'UserAccount'
         )
         self._check_credential_properties(properties, attributes)
+        # The Indicator carries the Record Title: the Observable under it
+        # takes none
+        indicator = self.parser.stix_package.incidents[0].related_indicators.indicator[0]
+        self.assertIsNone(indicator.item.observable.title)
 
     def _test_event_with_credential_object_observable(self, event):
+        meta_category = event['Object'][0]['meta-category']
         properties, attributes = self._run_observable_from_object_tests(
             event,
             'UserAccount'
         )
         self._check_credential_properties(properties, attributes)
+        # A `user-account` is a `UserAccount` too: with no Indicator, the
+        # Observable carries the Record Title saying which template wrote it
+        observable = self.parser.stix_package.incidents[0].related_observables.observable[0]
+        self.assertEqual(
+            observable.item.title, f'{meta_category}: credential (MISP Object)'
+        )
 
     def _test_event_with_custom_objects(self, event):
         account, btc, report = deepcopy(event['Object'])
@@ -2202,6 +6400,35 @@ class TestStix1Export(TestSTIX):
         )
         self._check_pe_and_section_properties(properties, *misp_objects)
 
+    def _test_event_with_pe_object_without_pe_headers_observable(self, event):
+        """The PE header the export writes the `pe` hashes on is created for
+        two relations only - `entrypoint-address` and `number-sections` - and
+        written whatever the object carries: a `pe` carrying an
+        `authentihash` or an `impfuzzy` and neither of those two, the common
+        case, cost the whole object and every section under it, with one
+        recorded error. The hashes create the header they are written on."""
+        pe_object = event['Object'][0]
+        expected = {
+            attribute['object_relation']: attribute['value']
+            for attribute in pe_object['Attribute']
+            if attribute['object_relation'] in (
+                'authentihash', 'impfuzzy', 'imphash', 'pehash'
+            )
+        }
+        properties, _ = self._run_observable_from_objects_tests(
+            event, 'WindowsExecutableFile'
+        )
+        self.assertEqual(self.parser.errors, {})
+        file_header = properties.headers.file_header
+        self.assertEqual(
+            sorted(
+                hash_property.simple_hash_value.value
+                for hash_property in file_header.hashes
+            ),
+            sorted(expected.values())
+        )
+        self.assertIsNone(file_header.number_of_sections)
+
     def _test_event_with_process_object_indicator(self, event):
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -2264,6 +6491,9 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(user_observable.relationship, user['meta-category'])
         user_properties = self._check_observable_features(user_observable.item, user, 'UserAccount')
         self._check_user_account_properties(user_properties, user['Attribute'])
+        # The title a `credential` carries is not written for the template
+        # the import names a `UserAccount` by default
+        self.assertIsNone(user_observable.item.title)
         self.assertEqual(unix_observable.relationship, unix['meta-category'])
         unix_properties = self._check_observable_features(unix_observable.item, unix, 'UnixUserAccount')
         self._check_unix_user_account_properties(unix_properties, unix['Attribute'])
@@ -2395,20 +6625,14 @@ class TestStix1Export(TestSTIX):
 
     def _test_event_with_threat_actor_galaxy(self, event):
         galaxy = event['Galaxy'][0]
-        cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
-        self.assertEqual(len(stix_package.threat_actors), 1)
-        threat_actor = stix_package.threat_actors[0]
-        threat_actor_id = f"{_ORGNAME_ID}:ThreatActor-{cluster['uuid']}"
-        self.assertEqual(threat_actor.id_, threat_actor_id)
-        self.assertEqual(threat_actor.title, cluster['value'])
-        self.assertEqual(threat_actor.description.value, cluster['description'])
-        intended_effect = threat_actor.intended_effects[0]
-        self.assertEqual(intended_effect.value, cluster['meta']['cfr-type-of-incident'][0])
-        related_threat_actor = stix_package.incidents[0].attributed_threat_actors.threat_actor[0]
-        self.assertEqual(related_threat_actor.relationship.value, galaxy['name'])
-        self.assertEqual(related_threat_actor.item.idref, threat_actor_id)
+        threat_actor_id = self._check_threat_actor_from_galaxy(
+            stix_package, galaxy
+        )
+        self._check_attributed_threat_actor(
+            stix_package.incidents[0], galaxy, threat_actor_id
+        )
 
     def _test_event_with_tool_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -2479,6 +6703,15 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_embedded_observable_attribute_galaxy(self):
         event = get_embedded_observable_attribute_galaxy()
         self._test_embedded_observable_attribute_galaxy(event['Event'])
+
+    def test_attributes_collection_with_threat_actor_galaxy(self):
+        self._test_attributes_collection_with_threat_actor_galaxy(
+            '1.1.1', get_indicator_attribute_with_threat_actor_galaxy()
+        )
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        self._test_embedded_threat_actor_attribute_galaxy(event['Event'])
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
@@ -2592,6 +6825,18 @@ class TestSTIX11JSONExport(TestSTIX11Export):
         event = get_event_with_target_attributes()
         self._test_event_with_target_attributes(event['Event'])
 
+    def test_attributes_collection_with_target_attributes(self):
+        event = get_event_with_target_attributes()
+        self._test_attributes_collection_with_target_attributes(
+            '1.1.1', event['Event']['Attribute']
+        )
+
+    def test_attributes_collection_with_undefined_attributes(self):
+        event = get_event_with_undefined_attributes()
+        self._test_attributes_collection_with_undefined_attributes(
+            '1.1.1', event['Event']['Attribute']
+        )
+
     def test_event_with_test_mechanism_attributes(self):
         event = get_event_with_test_mechanism_attributes()
         self._test_event_with_test_mechanism_attributes(event['Event'])
@@ -2599,6 +6844,10 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_event_with_undefined_attributes(self):
         event = get_event_with_undefined_attributes()
         self._test_event_with_undefined_attributes(event['Event'])
+
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        self._test_event_with_two_header_description_attributes(event['Event'])
 
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()
@@ -2647,6 +6896,14 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_embedded_observable_object_galaxy(self):
         event = get_embedded_observable_object_galaxy()
         self._test_embedded_observable_object_galaxy(event['Event'])
+
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        self._test_embedded_threat_actor_object_galaxy(event['Event'])
+
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        self._test_event_with_account_objects_with_attachment(event['Event'])
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
@@ -2755,6 +7012,18 @@ class TestSTIX11JSONExport(TestSTIX11Export):
     def test_event_with_pe_and_section_object_observable(self):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_object_observable(event['Event'])
+
+    def test_event_with_pe_object_without_pe_headers_observable(self):
+        event = get_event_with_pe_object_without_pe_headers()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
+
+    def test_event_with_pe_object_with_one_header_hash_observable(self):
+        event = get_event_with_pe_object_with_one_header_hash()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
 
     def test_event_with_process_object_indicator(self):
         event = get_event_with_process_object()
@@ -2901,6 +7170,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_attribute_galaxy(misp_event)
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_attribute_galaxy(misp_event)
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
@@ -3082,6 +7357,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event.from_dict(**event)
         self._test_event_with_undefined_attributes(misp_event)
 
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_two_header_description_attributes(misp_event)
+
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()
         misp_event = MISPEvent()
@@ -3151,6 +7432,18 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_object_galaxy(misp_event)
+
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_object_galaxy(misp_event)
+
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_account_objects_with_attachment(misp_event)
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
@@ -3491,6 +7784,15 @@ class TestSTIX12JSONExport(TestSTIX12Export):
         event = get_embedded_observable_attribute_galaxy()
         self._test_embedded_observable_attribute_galaxy(event['Event'])
 
+    def test_attributes_collection_with_threat_actor_galaxy(self):
+        self._test_attributes_collection_with_threat_actor_galaxy(
+            '1.2', get_indicator_attribute_with_threat_actor_galaxy()
+        )
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        self._test_embedded_threat_actor_attribute_galaxy(event['Event'])
+
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
         self._test_event_with_as_attribute(event['Event'])
@@ -3603,6 +7905,18 @@ class TestSTIX12JSONExport(TestSTIX12Export):
         event = get_event_with_target_attributes()
         self._test_event_with_target_attributes(event['Event'])
 
+    def test_attributes_collection_with_target_attributes(self):
+        event = get_event_with_target_attributes()
+        self._test_attributes_collection_with_target_attributes(
+            '1.2', event['Event']['Attribute']
+        )
+
+    def test_attributes_collection_with_undefined_attributes(self):
+        event = get_event_with_undefined_attributes()
+        self._test_attributes_collection_with_undefined_attributes(
+            '1.2', event['Event']['Attribute']
+        )
+
     def test_event_with_test_mechanism_attributes(self):
         event = get_event_with_test_mechanism_attributes()
         self._test_event_with_test_mechanism_attributes(event['Event'])
@@ -3610,6 +7924,10 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_event_with_undefined_attributes(self):
         event = get_event_with_undefined_attributes()
         self._test_event_with_undefined_attributes(event['Event'])
+
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        self._test_event_with_two_header_description_attributes(event['Event'])
 
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()
@@ -3658,6 +7976,14 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_embedded_observable_object_galaxy(self):
         event = get_embedded_observable_object_galaxy()
         self._test_embedded_observable_object_galaxy(event['Event'])
+
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        self._test_embedded_threat_actor_object_galaxy(event['Event'])
+
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        self._test_event_with_account_objects_with_attachment(event['Event'])
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
@@ -3766,6 +8092,18 @@ class TestSTIX12JSONExport(TestSTIX12Export):
     def test_event_with_pe_and_section_object_observable(self):
         event = get_event_with_pe_objects()
         self._test_event_with_pe_and_section_object_observable(event['Event'])
+
+    def test_event_with_pe_object_without_pe_headers_observable(self):
+        event = get_event_with_pe_object_without_pe_headers()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
+
+    def test_event_with_pe_object_with_one_header_hash_observable(self):
+        event = get_event_with_pe_object_with_one_header_hash()
+        self._test_event_with_pe_object_without_pe_headers_observable(
+            event['Event']
+        )
 
     def test_event_with_process_object_indicator(self):
         event = get_event_with_process_object()
@@ -3912,6 +8250,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_attribute_galaxy(misp_event)
+
+    def test_embedded_threat_actor_attribute_galaxy(self):
+        event = get_embedded_threat_actor_attribute_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_attribute_galaxy(misp_event)
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
@@ -4093,6 +8437,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event.from_dict(**event)
         self._test_event_with_undefined_attributes(misp_event)
 
+    def test_event_with_two_header_description_attributes(self):
+        event = self._two_header_description_attributes()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_two_header_description_attributes(misp_event)
+
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attributes()
         misp_event = MISPEvent()
@@ -4162,6 +8512,18 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_embedded_observable_object_galaxy(misp_event)
+
+    def test_embedded_threat_actor_object_galaxy(self):
+        event = get_embedded_threat_actor_object_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_embedded_threat_actor_object_galaxy(misp_event)
+
+    def test_event_with_account_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_account_objects_with_attachment(misp_event)
 
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
@@ -4766,6 +9128,49 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
                 ),
                 ['Ali Baba', 'MartyMcFly']
             )
+
+    def _unframed_package(self, output_file: Path, return_format: str) -> dict:
+        with open(output_file, 'rt', encoding='utf-8') as f:
+            if return_format == 'json':
+                return json.load(f)
+        return STIXPackage.from_xml(str(output_file)).to_dict()
+
+    def test_attributes_collection_unframed_output_carries_the_misp_title(self):
+        # Written without `single_output`, the package is the parser's own: it
+        # is the one the framed output ships, titled as a MISP export (the
+        # title is what the import reads to tell a MISP export apart) and
+        # carrying the version it was asked for
+        input_files = self._collection_files('test_attributes_collection')
+        for version in ('1.1.1', '1.2'):
+            for return_format in ('xml', 'json'):
+                for count in (1, 2):
+                    with self.subTest(
+                            version=version, return_format=return_format,
+                            inputs=count), TemporaryDirectory() as tmp_dir:
+                        copies = self._copy_inputs(tmp_dir, *input_files[:count])
+                        results = misp_attribute_collection_to_stix1(
+                            *copies, return_format=return_format,
+                            version=version
+                        )
+                        self.assertEqual(results['success'], 1)
+                        self.assertEqual(len(results['results']), count)
+                        for output_file in results['results']:
+                            package = self._unframed_package(
+                                output_file, return_format
+                            )
+                            self.assertEqual(package['version'], version)
+                            self.assertRegex(
+                                package['id'], r'^MISP:STIXPackage-'
+                            )
+                            self.assertTrue(package.get('timestamp'))
+                            header = package['stix_header']
+                            self.assertEqual(
+                                header['title'], "Export from MISP's MISP"
+                            )
+                            self.assertEqual(
+                                header['package_intent'][0]['value'],
+                                'Threat Report'
+                            )
 
     def test_attribute_collection_export_11(self):
         name = 'test_attributes_collection'

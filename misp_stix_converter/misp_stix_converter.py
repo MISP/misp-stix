@@ -175,7 +175,7 @@ def misp_attribute_collection_to_stix1(
                         for threat_actor in current.threat_actors:
                             stix_package.add_threat_actor(threat_actor)
                         if current.ttps is not None:
-                            for ttp in current.ttps:
+                            for ttp in current.ttps.ttp:
                                 stix_package.add_ttp(ttp)
                     except Exception as exception:
                         traceback['fails'].append(

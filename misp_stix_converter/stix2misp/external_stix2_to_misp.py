@@ -139,7 +139,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser, ExternalSTIXtoMISPParser):
         super()._load_opinion(opinion['id'], opinion_dict)
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
-        self._check_uuid(observable['id'])
+        self._register_uuid(observable['id'])
         to_load = {'used': {}, 'observable': observable}
         try:
             self._observable[observable['id']] = to_load

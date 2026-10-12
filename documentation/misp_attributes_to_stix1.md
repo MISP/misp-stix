@@ -2419,7 +2419,7 @@ So for the rest of this documentation, in order to keep the content clear enough
         <indicator:Valid_Time_Position/>
         <indicator:Test_Mechanisms>
             <indicator:Test_Mechanism xsi:type='snortTM:SnortTestMechanismType'>
-                <snortTM:Rule><![CDATA[{'value': 'alert tcp any any -> any any (msg:"oui")', 'encoded': True}]]></snortTM:Rule>
+                <snortTM:Rule><![CDATA[alert tcp any any -> any any (msg:"oui")]]></snortTM:Rule>
             </indicator:Test_Mechanism>
         </indicator:Test_Mechanisms>
         <indicator:Confidence timestamp="2020-10-25T16:22:00+00:00">
@@ -3229,7 +3229,7 @@ So for the rest of this documentation, in order to keep the content clear enough
         <indicator:Valid_Time_Position/>
         <indicator:Test_Mechanisms>
             <indicator:Test_Mechanism xsi:type='yaraTM:YaraTestMechanismType'>
-                <yaraTM:Rule><![CDATA[{'value': 'import "pe" rule single_section{condition:pe.number_of_sections == 1}', 'encoded': True}]]></yaraTM:Rule>
+                <yaraTM:Rule><![CDATA[import "pe" rule single_section{condition:pe.number_of_sections == 1}]]></yaraTM:Rule>
             </indicator:Test_Mechanism>
         </indicator:Test_Mechanisms>
         <indicator:Confidence timestamp="2020-10-25T16:22:00+00:00">

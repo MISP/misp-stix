@@ -183,8 +183,8 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     def test_stix2_cli_aggregation_keeps_both_errors_and_warnings(self):
         # the CLI aggregation wrote errors then warnings into the same `fails`
         # entry, keyed on the same identifier - now that both are reported
-        # without `debug`, the warnings overwrote the errors this ticket
-        # exists to surface.
+        # without `debug`, the warnings overwrote the errors the entry exists
+        # to surface.
         from misp_stix_converter.misp_stix_converter import (
             _process_stix_to_misp_instance)
         from pathlib import Path
@@ -559,7 +559,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
     def test_stix21_default_input_size_limit_is_the_documented_one(self):
         # The documented default is what a caller setting no limit of its own
-        # gets - the value the README and ADR-0011 name.
+        # gets - the value the README names.
         from misp_stix_converter import STIXInputSizeError
         from misp_stix_converter.tools import input_limits, load_stix2_content
         from unittest.mock import patch
@@ -571,7 +571,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
     def test_stix21_parser_honours_the_input_size_limit(self):
         # MISP core converts through the parser rather than through the entry
-        # functions (ADR-0009), so the limit has to be reachable there too.
+        # functions, so the limit has to be reachable there too.
         from misp_stix_converter import STIXInputSizeError
         from pathlib import Path
         from tempfile import TemporaryDirectory
@@ -1025,7 +1025,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertNotIn(earlier_id, reported)
 
     def test_stix21_unreferenced_invalid_object_loss_lands_in_the_result_dict(self):
-        # the ticket's reproduction: a bundle whose only object fails `stix2`
+        # a bundle whose only object fails `stix2`
         # validation converted with `{"success": 1}` and no `errors`, in
         # quiet and debug mode alike - the result dict now carries the loss
         # without `debug`.
@@ -1281,7 +1281,8 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         indicated, observed = event.attributes
         record_uuid = indicator.id.split('--')[1]
         # Both attributes keep the uuid their STIX id yields: re-deriving one
-        # of them would cost it the round-trip ADR-0006 guarantees.
+        # of them would break the round trip, where a record converted back
+        # must find the uuid it left with.
         self.assertEqual(indicated.value, 'first.example.com')
         self.assertEqual(indicated.uuid, record_uuid)
         self.assertEqual(observed.value, 'second.example.com')

@@ -147,6 +147,177 @@ class TestSTIX21InputContract(TestSTIX21GenericExport):
         self.assertIn('attributes collection', self.parser.errors)
         self.assertNotIn('misp event', self.parser.errors)
 
+    @staticmethod
+    def _unloadable(record: dict) -> dict:
+        # pymisp reads every timestamp as an int: this one cannot be loaded.
+        return {**record, 'timestamp': 'not a timestamp'}
+
+    def _object_ids(self, uuid: str) -> list:
+        return [
+            stix_object.id for stix_object in self.parser.stix_objects
+            if stix_object.id.endswith(uuid)
+        ]
+
+    def test_unloadable_attribute_costs_only_that_attribute(self):
+        event = get_base_event()
+        event['Event']['Attribute'] = [
+            self._unloadable(get_indicator_attribute() | {
+                'uuid': '11111111-1111-4111-8111-111111111111',
+                'type': 'ip-src', 'value': '1.2.3.4'
+            }),
+            get_indicator_attribute()
+        ]
+        self.parser.parse_json_content(event)
+        event_uuid = event['Event']['uuid']
+        attribute_uuid = get_indicator_attribute()['uuid']
+        self.assertIn(
+            f'indicator--{attribute_uuid}', self._object_ids(attribute_uuid)
+        )
+        self.assertFalse(
+            self._object_ids('11111111-1111-4111-8111-111111111111')
+        )
+        errors = self.parser.errors[event_uuid]
+        self.assertTrue(
+            any(error.startswith('Error loading Attribute') for error in errors)
+        )
+        self.assertFalse(
+            any(error.startswith('Error loading Event') for error in errors)
+        )
+
+    def test_unloadable_object_attribute_costs_only_that_object(self):
+        event = get_base_event()
+        misp_object = get_domain_ip_object()
+        misp_object['Attribute'][0] = self._unloadable(
+            misp_object['Attribute'][0]
+        )
+        event['Event']['Attribute'] = [get_indicator_attribute()]
+        event['Event']['Object'] = [misp_object]
+        self.parser.parse_json_content(event)
+        self.assertTrue(self._object_ids(get_indicator_attribute()['uuid']))
+        self.assertFalse(self._object_ids(misp_object['uuid']))
+        self.assertTrue(
+            any(o.type in ('grouping', 'report')
+                for o in self.parser.stix_objects)
+        )
+        self.assertTrue(
+            any(error.startswith('Error loading Object')
+                for error in self.parser.errors[event['Event']['uuid']])
+        )
+
+    def test_unloadable_event_costs_only_that_event_of_a_collection(self):
+        bad = self._unloadable(get_base_event()['Event'])
+        bad['uuid'] = '44444444-4444-4444-8444-444444444444'
+        good = get_event_with_domain_attribute()
+        for label, events in (('first', [{'Event': bad}, good]),
+                              ('last', [good, {'Event': bad}])):
+            with self.subTest(label):
+                self.setUp()
+                self.parser.parse_json_content(
+                    {'response': deepcopy(events)}
+                )
+                self.assertTrue(
+                    self._object_ids(get_indicator_attribute()['uuid'])
+                )
+                self.assertTrue(self._object_ids(good['Event']['uuid']))
+                self.assertFalse(self._object_ids(bad['uuid']))
+                self.assertTrue(
+                    any(error.startswith('Error loading Event')
+                        for error in self.parser.errors[bad['uuid']])
+                )
+                self.assertEqual(
+                    self.parser.bundle.id, f"bundle--{good['Event']['uuid']}"
+                )
+
+    def test_unloadable_lone_event_is_recorded_not_raised(self):
+        event = get_event_with_domain_attribute()
+        event['Event'] = self._unloadable(event['Event'])
+        self.parser.parse_json_content(event)
+        self.assertFalse(self.parser.stix_objects)
+        self.assertEqual(self.parser.bundle.type, 'bundle')
+        self.assertTrue(
+            any(error.startswith('Error loading Event')
+                for error in self.parser.errors[event['Event']['uuid']])
+        )
+
+    def test_event_conversion_leaves_the_input_untouched(self):
+        event = get_event_with_domain_attribute()
+        event['Event']['Object'] = [get_domain_ip_object()]
+        original = deepcopy(event)
+        self.parser.parse_json_content(event)
+        self.assertTrue(self._object_ids(event['Event']['Object'][0]['uuid']))
+        self.assertEqual(event, original)
+
+    def test_event_validation_warnings_filed_under_their_event(self):
+        first = get_event_with_domain_attribute()
+        second = get_base_event()
+        second['Event']['uuid'] = '55555555-5555-4555-8555-555555555555'
+        second['Event']['Attribute'] = [
+            get_indicator_attribute() | {
+                'uuid': '66666666-6666-4666-8666-666666666666',
+                'type': 'ip-src', 'value': 'not an ip address'
+            }
+        ]
+        self.parser.parse_json_content([first, second])
+        warnings = self.parser.warnings
+        self.assertIn(second['Event']['uuid'], warnings)
+        self.assertNotIn(first['Event']['uuid'], warnings)
+
+    def test_unloadable_records_named_by_their_uuid(self):
+        # pymisp says what fails to load, not which record: the Error filed
+        # under the event or the collection names the uuid of the record lost
+        attribute = self._unloadable(get_indicator_attribute() | {
+            'uuid': '11111111-1111-4111-8111-111111111111',
+            'type': 'ip-src', 'value': '1.2.3.4'
+        })
+        misp_object = self._unloadable(get_domain_ip_object())
+        event = get_base_event()
+        event['Event']['Attribute'] = [attribute]
+        event['Event']['Object'] = [misp_object]
+        lost_attribute = f"Error loading Attribute <{attribute['uuid']}>: "
+        lost_object = f"Error loading Object <{misp_object['uuid']}>: "
+        for entry_point, content, identifier, prefixes in (
+                ('parse_json_content', event, event['Event']['uuid'],
+                 [lost_attribute, lost_object]),
+                ('parse_misp_attributes', [attribute],
+                 'attributes collection', [lost_attribute]),
+                ('parse_misp_attribute', attribute, 'attribute feed',
+                 [lost_attribute]),
+                ('parse_misp_object', misp_object, 'objects collection',
+                 [lost_object]),
+                ('parse_misp_object', {'Object': [misp_object]},
+                 'objects collection', [lost_object]),
+                ('parse_misp_objects', [{'Object': misp_object}],
+                 'objects collection', [lost_object]),
+                ('parse_misp_attributes', [{'uuid': 123, 'type': 'ip-src'}],
+                 'attributes collection', ['Error loading Attribute: '])):
+            with self.subTest(entry_point=entry_point, identifier=identifier):
+                self.setUp()
+                getattr(self.parser, entry_point)(deepcopy(content))
+                errors = self.parser.errors[identifier]
+                self.assertEqual(len(errors), len(prefixes))
+                for error, prefix in zip(errors, prefixes):
+                    self.assertTrue(error.startswith(prefix), error)
+
+    def test_unloadable_object_in_objects_entry_points(self):
+        bad = self._unloadable(get_domain_ip_object())
+        good = get_domain_ip_object() | {
+            'uuid': '77777777-7777-4777-8777-777777777777'
+        }
+        for entry_point, content, converted in (
+                ('parse_misp_object', bad, ()),
+                ('parse_misp_objects', [{'Object': bad}, {'Object': good}],
+                 (good['uuid'],))):
+            with self.subTest(entry_point):
+                self.setUp()
+                getattr(self.parser, entry_point)(deepcopy(content))
+                self.assertTrue(
+                    any(error.startswith('Error loading Object')
+                        for error in self.parser.errors['objects collection'])
+                )
+                self.assertFalse(self._object_ids(bad['uuid']))
+                for uuid in converted:
+                    self.assertTrue(self._object_ids(uuid))
+
 
 class TestSTIX21Diagnostics(TestSTIX21GenericExport):
     def test_diagnostics_count_error_occurrences(self):
@@ -219,9 +390,11 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
                 misp_object['Attribute'][2]['Tag'][0]['name']
             )
         )
+        # An object's tags are written in the order its attributes carry
+        # them, whatever the hash seed of the run
         self.assertEqual(
-            set(stix_object.labels[-2:]),
-            set(attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3])
+            stix_object.labels[-2:],
+            [attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3]]
         )
 
     def _check_opinion_features(self, opinion, sighting, *object_ids):
@@ -4981,6 +5154,796 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             vuln_ind_relation, vuln_ref, observed_data2_ref, 'affects', timestamp
         )
 
+    # A MISP value goes into a native STIX integer property only as the
+    # decimal digits stix2 writes back: any other spelling is carried
+    # verbatim under its custom property name, with one warning, where the
+    # record holds the relations no property maps
+
+    def _parse_non_canonical(self, event):
+        self.parser = MISPtoSTIX21Parser()
+        self.parser.parse_misp_event(self._parser_input(event))
+        self.assertEqual(self.parser.errors, {})
+        return self.parser.warnings.get(event['Event']['uuid'], [])
+
+    def _record_observables(self):
+        observed_data, = (
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.type == 'observed-data'
+        )
+        return {
+            stix_object.id: stix_object
+            for stix_object in self.parser.stix_objects
+            if stix_object.id in observed_data.object_refs
+        }
+
+    def _test_event_with_process_object_non_canonical_pids(self):
+        relations = ('pid', 'parent-pid', 'child-pid')
+        for value in self._NON_CANONICAL_TEXT:
+            with self.subTest(value=value):
+                event = get_event_with_process_object()
+                misp_object = self._spell_object_relations(
+                    event, 'process', dict.fromkeys(relations, value)
+                )
+                record = self._object_record(misp_object)
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            relation, value, record
+                        ) for relation in relations
+                    ]
+                )
+                observables = self._record_observables()
+                process = observables.pop(f"process--{misp_object['uuid']}")
+                for feature in ('pid', 'child_refs'):
+                    self.assertNotIn(feature, process)
+                self.assertEqual(process.x_misp_pid, value)
+                self.assertEqual(process.x_misp_parent_pid, value)
+                self.assertEqual(process.x_misp_child_pid, value)
+                parent_pid = next(
+                    attribute for attribute in misp_object['Attribute']
+                    if attribute['object_relation'] == 'parent-pid'
+                )
+                self.assertEqual(
+                    process.parent_ref, f"process--{parent_pid['uuid']}"
+                )
+                parent = observables.pop(process.parent_ref)
+                self.assertNotIn('pid', parent)
+                self.assertEqual(
+                    observables[parent.image_ref].name, 'parent_process.exe'
+                )
+                self.assertEqual(
+                    sorted(observable.type for observable in observables.values()),
+                    ['file', 'file']
+                )
+        event = get_event_with_process_object()
+        misp_object = self._spell_object_relations(
+            event, 'process',
+            {'pid': '-3', 'parent-pid': '31', 'child-pid': '31'}
+        )
+        self.assertEqual(self._parse_non_canonical(event), [])
+        observables = self._record_observables()
+        process = observables[f"process--{misp_object['uuid']}"]
+        self.assertEqual(process.pid, -3)
+        self.assertEqual(observables[process.parent_ref].pid, 31)
+        child_ref, = process.child_refs
+        self.assertEqual(observables[child_ref].pid, 31)
+
+    def _test_event_with_process_object_non_canonical_parent_pid_alone(self):
+        # Nothing is left for a parent process to hold natively: a parent
+        # relation only a custom property holds stays with the process too
+        for extra in ((), (('text', 'parent-guid', 'guid-1'),)):
+            with self.subTest(extra=extra):
+                event = get_event_with_process_object()
+                misp_object = event['Event']['Object'][0]
+                misp_object['Attribute'] = [
+                    attribute for attribute in misp_object['Attribute']
+                    if attribute['object_relation'] != 'parent-image'
+                ]
+                self._spell_object_relations(
+                    event, 'process', {'parent-pid': '0x1f'}, *extra
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'parent-pid', '0x1f', self._object_record(misp_object)
+                        )
+                    ]
+                )
+                observables = self._record_observables()
+                process = observables[f"process--{misp_object['uuid']}"]
+                self.assertNotIn('parent_ref', process)
+                self.assertEqual(process.x_misp_parent_pid, '0x1f')
+                if extra:
+                    self.assertEqual(process.x_misp_parent_guid, 'guid-1')
+                self.assertEqual(
+                    sorted(observable.type for observable in observables.values()),
+                    ['file', 'process', 'process']
+                )
+
+    def _test_event_with_process_object_left_with_custom_properties_only(self):
+        # A STIX 2.1 process name is a custom property: the process cannot be
+        # built without its pid and goes out whole as the custom object, with
+        # no indicator next to it
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_process_object()
+                misp_object = event['Event']['Object'][0]
+                misp_object['Attribute'] = [
+                    attribute for attribute in misp_object['Attribute']
+                    if attribute['object_relation'] in ('pid', 'name')
+                ]
+                pid, _ = misp_object['Attribute']
+                pid.update({'value': '0x1f', 'to_ids': to_ids})
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'pid', '0x1f', self._object_record(misp_object)
+                        )
+                    ]
+                )
+                *_, custom = self.parser.stix_objects
+                self.assertEqual(
+                    [stix_object.type for stix_object in self.parser.stix_objects],
+                    ['identity', 'grouping', 'x-misp-object']
+                )
+                self.assertEqual(
+                    [(attribute['object_relation'], attribute['value'])
+                     for attribute in custom.x_misp_attributes],
+                    [('pid', '0x1f'), ('name', 'TestProcess')]
+                )
+
+    def _test_event_with_user_account_object_non_canonical_group_id(self):
+        for value in self._NON_CANONICAL_TEXT:
+            with self.subTest(value=value):
+                event = get_event_with_user_account_object()
+                misp_object = self._spell_object_relations(
+                    event, 'user-account', {'group-id': value}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'group-id', value, self._object_record(misp_object)
+                        )
+                    ]
+                )
+                user_account = self._record_observables()[
+                    f"user-account--{misp_object['uuid']}"
+                ]
+                extension = user_account.extensions['unix-account-ext']
+                self.assertNotIn('gid', extension)
+                self.assertNotIn('x_misp_group_id', extension)
+                self.assertEqual(user_account.x_misp_group_id, value)
+        event = get_event_with_user_account_object()
+        misp_object = self._spell_object_relations(
+            event, 'user-account', {'group-id': '-3'}
+        )
+        self.assertEqual(self._parse_non_canonical(event), [])
+        user_account = self._record_observables()[
+            f"user-account--{misp_object['uuid']}"
+        ]
+        self.assertEqual(user_account.extensions['unix-account-ext'].gid, -3)
+
+    def _test_event_with_x509_object_non_canonical_exponent(self):
+        for value in self._NON_CANONICAL_TEXT:
+            with self.subTest(value=value):
+                event = get_event_with_x509_object()
+                misp_object = self._spell_object_relations(
+                    event, 'x509', {'pubkey-info-exponent': value}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'pubkey-info-exponent', value,
+                            self._object_record(misp_object)
+                        )
+                    ]
+                )
+                x509 = self._record_observables()[
+                    f"x509-certificate--{misp_object['uuid']}"
+                ]
+                self.assertNotIn('subject_public_key_exponent', x509)
+                self.assertEqual(x509.x_misp_pubkey_info_exponent, value)
+        event = get_event_with_x509_object()
+        misp_object = self._spell_object_relations(
+            event, 'x509', {'pubkey-info-exponent': '-3'}
+        )
+        self.assertEqual(self._parse_non_canonical(event), [])
+        x509 = self._record_observables()[
+            f"x509-certificate--{misp_object['uuid']}"
+        ]
+        self.assertEqual(x509.subject_public_key_exponent, -3)
+        # A STIX 2.1 certificate cannot be built without a native property:
+        # it goes out whole as the custom object, with no indicator
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_x509_object()
+                misp_object = event['Event']['Object'][0]
+                misp_object['Attribute'] = [
+                    attribute for attribute in misp_object['Attribute']
+                    if attribute['object_relation'] == 'pubkey-info-exponent'
+                ]
+                misp_object['Attribute'][0].update(
+                    {'value': '0x1f', 'to_ids': to_ids}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'pubkey-info-exponent', '0x1f',
+                            self._object_record(misp_object)
+                        )
+                    ]
+                )
+                self.assertEqual(
+                    [stix_object.type for stix_object in self.parser.stix_objects],
+                    ['identity', 'grouping', 'x-misp-object']
+                )
+
+    def _test_event_with_file_objects_non_canonical_sizes(self):
+        for name, relation, custom, fixture in (
+                ('file', 'size-in-bytes', 'x_misp_size_in_bytes',
+                 get_event_with_file_object),
+                ('lnk', 'size-in-bytes', 'x_misp_size_in_bytes',
+                 get_event_with_lnk_object),
+                ('hashlookup', 'FileSize', 'x_misp_filesize',
+                 get_event_with_hashlookup_object)):
+            for value in self._NON_CANONICAL_VALIDATED:
+                with self.subTest(name=name, value=value):
+                    event = fixture()
+                    misp_object = self._spell_object_relations(
+                        event, name, {relation: value}
+                    )
+                    self.assertEqual(
+                        self._parse_non_canonical(event),
+                        [
+                            self._non_canonical_number_warning(
+                                relation, value,
+                                self._object_record(misp_object)
+                            )
+                        ]
+                    )
+                    file_object = self._record_observables()[
+                        f"file--{misp_object['uuid']}"
+                    ]
+                    self.assertNotIn('size', file_object)
+                    self.assertEqual(file_object[custom], value)
+            with self.subTest(name=name, value='31'):
+                event = fixture()
+                misp_object = self._spell_object_relations(
+                    event, name, {relation: '31'}
+                )
+                self.assertEqual(self._parse_non_canonical(event), [])
+                file_object = self._record_observables()[
+                    f"file--{misp_object['uuid']}"
+                ]
+                self.assertEqual(file_object.size, 31)
+
+    def _test_event_with_pe_objects_non_canonical_numbers(self):
+        # The custom properties go to the root of the extension, an optional
+        # header left empty is dropped, and the sections stay
+        for value, sections, section_size in (
+                ('007', '007', '007'), ('٣', '٣', '٣'),
+                ('0x1f', '8', '305152')):
+            with self.subTest(value=value):
+                event = get_event_with_file_and_pe_objects()
+                file_object = self._spell_object_relations(event, 'file', {})
+                pe_object = self._spell_object_relations(
+                    event, 'pe',
+                    {'entrypoint-address': value, 'number-sections': sections}
+                )
+                section_object = self._spell_object_relations(
+                    event, 'pe-section', {'size-in-bytes': section_size}
+                )
+                warnings = [
+                    self._non_canonical_number_warning(
+                        'number-sections', sections,
+                        self._object_record(pe_object)
+                    ),
+                    self._non_canonical_number_warning(
+                        'entrypoint-address', value,
+                        self._object_record(pe_object)
+                    ),
+                    self._non_canonical_number_warning(
+                        'size-in-bytes', section_size,
+                        self._object_record(section_object)
+                    )
+                ]
+                if value == '0x1f':
+                    warnings = warnings[1:2]
+                self.assertEqual(self._parse_non_canonical(event), warnings)
+                extension = self._record_observables()[
+                    f"file--{file_object['uuid']}"
+                ].extensions['windows-pebinary-ext']
+                self.assertNotIn('optional_header', extension)
+                self.assertEqual(extension.x_misp_entrypoint_address, value)
+                section, = extension.sections
+                self.assertEqual(section.name, '.rsrc')
+                if value == '0x1f':
+                    self.assertEqual(extension.number_of_sections, 8)
+                    self.assertEqual(section.size, 305152)
+                    continue
+                self.assertNotIn('number_of_sections', extension)
+                self.assertEqual(extension.x_misp_number_sections, value)
+                self.assertNotIn('size', section)
+                self.assertEqual(section.x_misp_size_in_bytes, value)
+        event = get_event_with_file_and_pe_objects()
+        file_object = self._spell_object_relations(event, 'file', {})
+        self._spell_object_relations(
+            event, 'pe', {'entrypoint-address': '-3', 'number-sections': '31'}
+        )
+        self._spell_object_relations(
+            event, 'pe-section', {'size-in-bytes': '31'}
+        )
+        self.assertEqual(self._parse_non_canonical(event), [])
+        extension = self._record_observables()[
+            f"file--{file_object['uuid']}"
+        ].extensions['windows-pebinary-ext']
+        self.assertEqual(extension.optional_header.address_of_entry_point, -3)
+        self.assertEqual(extension.number_of_sections, 31)
+        self.assertEqual(extension.sections[0].size, 31)
+
+    def _test_event_with_pe_section_object_non_canonical_entropy(self):
+        # A nan or an infinity in the native property made the whole bundle
+        # unserialisable
+        for value in self._NON_CANONICAL_FLOAT:
+            with self.subTest(value=value):
+                event = get_event_with_file_and_pe_objects()
+                file_object = self._spell_object_relations(event, 'file', {})
+                section_object = self._spell_object_relations(
+                    event, 'pe-section', {'entropy': value}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'entropy', value,
+                            self._object_record(section_object),
+                            kind='decimal number'
+                        )
+                    ]
+                )
+                section, = self._record_observables()[
+                    f"file--{file_object['uuid']}"
+                ].extensions['windows-pebinary-ext'].sections
+                self.assertNotIn('entropy', section)
+                self.assertEqual(section.x_misp_entropy, value)
+                self.parser.bundle.serialize()
+        for value, number in (('7.5', 7.5), ('-1.5e3', -1500.0), ('7', 7.0)):
+            with self.subTest(value=value):
+                event = get_event_with_file_and_pe_objects()
+                file_object = self._spell_object_relations(event, 'file', {})
+                self._spell_object_relations(
+                    event, 'pe-section', {'entropy': value}
+                )
+                self.assertEqual(self._parse_non_canonical(event), [])
+                section, = self._record_observables()[
+                    f"file--{file_object['uuid']}"
+                ].extensions['windows-pebinary-ext'].sections
+                self.assertEqual(section.entropy, number)
+
+    def _test_event_with_geolocation_object_non_canonical_coordinates(self):
+        # stix2 refuses a coordinate without its other half, and a precision
+        # without the coordinate: both go custom with the non canonical half
+        for relation, other, other_value in (
+                ('latitude', 'longitude', '-76.771389'),
+                ('longitude', 'latitude', '39.108889')):
+            for value in self._NON_CANONICAL_FLOAT:
+                with self.subTest(relation=relation, value=value):
+                    event = get_event_with_geolocation_object()
+                    misp_object = self._spell_object_relations(
+                        event, 'geolocation', {relation: value}
+                    )
+                    self.assertEqual(
+                        self._parse_non_canonical(event),
+                        [
+                            self._non_canonical_number_warning(
+                                relation, value,
+                                self._object_record(misp_object),
+                                kind='decimal number'
+                            )
+                        ]
+                    )
+                    location, = (
+                        stix_object for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'location'
+                    )
+                    for feature in ('latitude', 'longitude', 'precision'):
+                        self.assertNotIn(feature, location)
+                    self.assertEqual(location[f'x_misp_{relation}'], value)
+                    self.assertEqual(
+                        location[f'x_misp_{other}'], other_value
+                    )
+                    self.assertEqual(location.x_misp_accuracy_radius, '1')
+                    self.assertEqual(location.country, 'US')
+                    self.parser.bundle.serialize()
+        for value in self._NON_CANONICAL_FLOAT:
+            with self.subTest(relation='accuracy-radius', value=value):
+                event = get_event_with_geolocation_object()
+                misp_object = self._spell_object_relations(
+                    event, 'geolocation', {'accuracy-radius': value}
+                )
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'accuracy-radius', value,
+                            self._object_record(misp_object),
+                            kind='decimal number'
+                        )
+                    ]
+                )
+                location, = (
+                    stix_object for stix_object in self.parser.stix_objects
+                    if stix_object.type == 'location'
+                )
+                self.assertNotIn('precision', location)
+                self.assertEqual(location.x_misp_accuracy_radius, value)
+                self.assertEqual(location.latitude, 39.108889)
+                self.assertEqual(location.longitude, -76.771389)
+                self.parser.bundle.serialize()
+        with self.subTest(relation='accuracy-radius', value='1e306'):
+            # Canonical in kilometres, but an infinity in metres
+            event = get_event_with_geolocation_object()
+            self._spell_object_relations(
+                event, 'geolocation', {'accuracy-radius': '1e306'}
+            )
+            self.assertEqual(self._parse_non_canonical(event), [])
+            location, = (
+                stix_object for stix_object in self.parser.stix_objects
+                if stix_object.type == 'location'
+            )
+            self.assertNotIn('precision', location)
+            self.assertEqual(location.x_misp_accuracy_radius, '1e306')
+            self.parser.bundle.serialize()
+        with self.subTest(place=False):
+            # With no country or region left, stix2 refuses the location: the
+            # object goes out whole as the custom object, with no error
+            event = get_event_with_geolocation_object()
+            misp_object = self._spell_object_relations(
+                event, 'geolocation', {'latitude': 'nan'}
+            )
+            misp_object['Attribute'] = [
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] not in ('countrycode', 'region')
+            ]
+            self.assertEqual(
+                self._parse_non_canonical(event),
+                [
+                    self._non_canonical_number_warning(
+                        'latitude', 'nan', self._object_record(misp_object),
+                        kind='decimal number'
+                    )
+                ]
+            )
+            self.assertEqual(
+                [stix_object.type for stix_object in self.parser.stix_objects],
+                ['identity', 'grouping', 'x-misp-object']
+            )
+            *_, custom = self.parser.stix_objects
+            self.assertIn(
+                ('latitude', 'nan'),
+                [(attribute['object_relation'], attribute['value'])
+                 for attribute in custom.x_misp_attributes]
+            )
+
+    def _test_event_with_network_objects_non_canonical_numbers(self):
+        ports = {
+            'src-port': ('src_port', 'x_misp_src_port'),
+            'dst-port': ('dst_port', 'x_misp_dst_port')
+        }
+        cases = (
+            ('network-connection', get_event_with_network_connection_object,
+             ports, ()),
+            ('network-socket', get_event_with_network_socket_object,
+             ports, ()),
+            ('ip-port', get_event_with_ip_port_object, ports,
+             (('port', 'src-port', '8080'),)),
+            ('netflow', get_event_with_netflow_object,
+             {**ports,
+              'byte-count': ('src_byte_count', 'x_misp_byte_count'),
+              'packet-count': ('src_packets', 'x_misp_packet_count')},
+             (('size-in-bytes', 'byte-count', '1234'),
+              ('counter', 'packet-count', '12')))
+        )
+        for name, fixture, features, extra in cases:
+            for value in self._NON_CANONICAL_VALIDATED:
+                with self.subTest(name=name, value=value):
+                    event = fixture()
+                    misp_object = self._spell_object_relations(
+                        event, name, {}, *extra
+                    )
+                    for attribute in misp_object['Attribute']:
+                        if attribute['object_relation'] in features:
+                            attribute['value'] = value
+                    self.assertEqual(
+                        self._parse_non_canonical(event),
+                        [
+                            self._non_canonical_number_warning(
+                                relation, value,
+                                self._object_record(misp_object)
+                            ) for relation in features
+                        ]
+                    )
+                    network_traffic = self._record_observables()[
+                        f"network-traffic--{misp_object['uuid']}"
+                    ]
+                    for feature, custom in features.values():
+                        self.assertNotIn(feature, network_traffic)
+                        self.assertEqual(network_traffic[custom], value)
+            with self.subTest(name=name, value='31'):
+                event = fixture()
+                misp_object = self._spell_object_relations(
+                    event, name, {}, *extra
+                )
+                for attribute in misp_object['Attribute']:
+                    if attribute['object_relation'] in features:
+                        attribute['value'] = '31'
+                self.assertEqual(self._parse_non_canonical(event), [])
+                network_traffic = self._record_observables()[
+                    f"network-traffic--{misp_object['uuid']}"
+                ]
+                for feature, _ in features.values():
+                    self.assertEqual(network_traffic[feature], 31)
+
+    def _test_event_with_netflow_object_non_canonical_AS_numbers(self):
+        # The number of an autonomous system an address belongs to goes to
+        # the network traffic as a custom property, with no autonomous
+        # system; the pattern still compares it as MISP spelled it
+        relations = ('src-as', 'dst-as')
+        for value in self._NON_CANONICAL_VALIDATED:
+            for to_ids in (False, True):
+                with self.subTest(value=value, to_ids=to_ids):
+                    event = get_event_with_netflow_object()
+                    misp_object = self._spell_object_relations(
+                        event, 'netflow', dict.fromkeys(relations, value)
+                    )
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    self.assertEqual(
+                        self._parse_non_canonical(event),
+                        [
+                            self._non_canonical_number_warning(
+                                relation, value,
+                                self._object_record(misp_object)
+                            ) for relation in relations
+                        ]
+                    )
+                    observables = self._record_observables()
+                    self.assertEqual(
+                        sorted(observable.type
+                               for observable in observables.values()),
+                        ['ipv4-addr', 'ipv4-addr', 'network-traffic']
+                    )
+                    for observable in observables.values():
+                        self.assertNotIn('belongs_to_refs', observable)
+                    network_traffic = observables[
+                        f"network-traffic--{misp_object['uuid']}"
+                    ]
+                    self.assertEqual(network_traffic.x_misp_src_as, value)
+                    self.assertEqual(network_traffic.x_misp_dst_as, value)
+                    patterns = [
+                        stix_object.pattern
+                        for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'indicator'
+                    ]
+                    if not to_ids:
+                        self.assertEqual(patterns, [])
+                        continue
+                    pattern, = patterns
+                    for ref_type in ('src', 'dst'):
+                        self.assertIn(
+                            f"network-traffic:{ref_type}_ref"
+                            f".belongs_to_refs[0].number = '{value}'",
+                            pattern
+                        )
+        with self.subTest(value='007', address=False):
+            # With no address to belong to, the number was a custom property
+            # already: nothing is warned of
+            event = get_event_with_netflow_object()
+            misp_object = self._spell_object_relations(
+                event, 'netflow', dict.fromkeys(relations, '007')
+            )
+            misp_object['Attribute'] = [
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] != 'ip-src'
+            ]
+            self.assertEqual(
+                self._parse_non_canonical(event),
+                [
+                    self._non_canonical_number_warning(
+                        'dst-as', '007', self._object_record(misp_object)
+                    )
+                ]
+            )
+            network_traffic = self._record_observables()[
+                f"network-traffic--{misp_object['uuid']}"
+            ]
+            self.assertEqual(network_traffic.x_misp_src_as, '007')
+        with self.subTest(value='31'):
+            event = get_event_with_netflow_object()
+            misp_object = self._spell_object_relations(
+                event, 'netflow', dict.fromkeys(relations, '31')
+            )
+            self.assertEqual(self._parse_non_canonical(event), [])
+            observables = self._record_observables()
+            self.assertEqual(
+                [observable.number for observable in observables.values()
+                 if observable.type == 'autonomous-system'],
+                [31, 31]
+            )
+            self.assertNotIn(
+                'x_misp_src_as',
+                observables[f"network-traffic--{misp_object['uuid']}"]
+            )
+
+    def _test_event_with_asn_object_non_canonical_number(self):
+        # An autonomous system cannot be built without its number: the
+        # object goes out whole as the custom object, with no indicator
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_asn_object()
+                misp_object = self._spell_object_relations(
+                    event, 'asn', {'asn': 'AS007'}
+                )
+                misp_object['Attribute'][0]['to_ids'] = to_ids
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            'asn', '007', self._object_record(misp_object)
+                        )
+                    ]
+                )
+                *_, custom = self.parser.stix_objects
+                self.assertEqual(
+                    [stix_object.type for stix_object in self.parser.stix_objects],
+                    ['identity', 'grouping', 'x-misp-object']
+                )
+                self.assertIn(
+                    ('asn', '007'),
+                    [(attribute['object_relation'], attribute['value'])
+                     for attribute in custom.x_misp_attributes]
+                )
+
+        event = get_event_with_asn_object()
+        misp_object = self._spell_object_relations(event, 'asn', {'asn': 'AS31'})
+        self.assertEqual(self._parse_non_canonical(event), [])
+        autonomous_system = self._record_observables()[
+            f"autonomous-system--{misp_object['uuid']}"
+        ]
+        self.assertEqual(autonomous_system.number, 31)
+
+    def _test_event_with_asn_object_without_its_number(self):
+        # pymisp validation removes the number and warns of it: the object
+        # goes out whole as the custom object, with no error
+        event = get_event_with_asn_object()
+        self._spell_object_relations(event, 'asn', {'asn': 'AS 31'})
+        validation, requirement = self._parse_non_canonical(event)
+        self.assertIn('Failed validation for AS Attribute', validation)
+        self.assertEqual(
+            requirement,
+            'Missing minimum requirement to build a AutonomousSystem object '
+            'from a asn MISP Object.'
+        )
+        *_, custom = self.parser.stix_objects
+        self.assertEqual(
+            [stix_object.type for stix_object in self.parser.stix_objects],
+            ['identity', 'grouping', 'x-misp-object']
+        )
+        self.assertNotIn(
+            'asn',
+            [attribute['object_relation']
+             for attribute in custom.x_misp_attributes]
+        )
+
+    def _test_event_with_number_attributes_non_canonical(self):
+        # A custom property on the observable is not read back: the
+        # attribute goes out whole as the custom attribute, with no indicator
+        for value in self._NON_CANONICAL_VALIDATED:
+            with self.subTest(value=value):
+                event = get_event_with_port_and_as_attributes()
+                spellings = (
+                    ('ip-src|port', f'1.2.3.4|{value}'),
+                    ('ip-dst|port', f'5.6.7.8|{value}'),
+                    ('AS', value), ('hostname|port', f'circl.lu|{value}')
+                )
+                attributes = event['Event']['Attribute']
+                for attribute, (_, spelling) in zip(attributes, spellings):
+                    attribute.update({'value': spelling, 'to_ids': True})
+                self.assertEqual(
+                    self._parse_non_canonical(event),
+                    [
+                        self._non_canonical_number_warning(
+                            attribute['type'], value,
+                            f"{attribute['type']} attribute "
+                            f"(uuid: {attribute['uuid']})"
+                        ) for attribute in attributes
+                    ]
+                )
+                identity, grouping, *custom_attributes = self.parser.stix_objects
+                self.assertEqual(
+                    [custom.type for custom in custom_attributes],
+                    ['x-misp-attribute'] * 4
+                )
+                self.assertEqual(
+                    [(custom.x_misp_type, custom.x_misp_value)
+                     for custom in custom_attributes],
+                    list(spellings)
+                )
+        event = get_event_with_port_and_as_attributes()
+        for attribute, spelling in zip(
+                event['Event']['Attribute'],
+                ('1.2.3.4|31', '5.6.7.8|31', 'AS31', 'circl.lu|31')):
+            attribute['value'] = spelling
+        self.assertEqual(self._parse_non_canonical(event), [])
+        numbers = [
+            stix_object[feature] for stix_object in self.parser.stix_objects
+            for feature in ('src_port', 'dst_port', 'number')
+            if feature in stix_object
+        ]
+        self.assertEqual(numbers, [31, 31, 31, 31])
+
+    def _test_event_with_asdot_AS_values(self):
+        # pymisp validation gives an asdot AS value as the integer it
+        # denotes, which the attribute and the objects number natively
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_port_and_as_attributes()
+                event['Event']['Attribute'] = [
+                    attribute for attribute in event['Event']['Attribute']
+                    if attribute['type'] == 'AS'
+                ]
+                event['Event']['Object'] = [
+                    self._spell_object_relations(
+                        get_event_with_asn_object(), 'asn', {'asn': 'AS1.2'}
+                    ),
+                    self._spell_object_relations(
+                        get_event_with_netflow_object(), 'netflow',
+                        {'src-as': 'AS1.2', 'dst-as': 'AS2.3'}
+                    )
+                ]
+                attributes = [
+                    *event['Event']['Attribute'],
+                    *(attribute for misp_object in event['Event']['Object']
+                      for attribute in misp_object['Attribute'])
+                ]
+                for attribute in attributes:
+                    attribute['to_ids'] = to_ids
+                event['Event']['Attribute'][0]['value'] = 'AS1.2'
+                self.assertEqual(self._parse_non_canonical(event), [])
+                numbers = [
+                    stix_object.number
+                    for stix_object in self.parser.stix_objects
+                    if stix_object.type == 'autonomous-system'
+                ]
+                self.assertEqual(numbers, [65538, 65538, 65538, 131075])
+                patterns = [
+                    stix_object.pattern
+                    for stix_object in self.parser.stix_objects
+                    if stix_object.type == 'indicator'
+                ]
+                if not to_ids:
+                    self.assertEqual(patterns, [])
+                    continue
+                AS_pattern, asn_pattern, netflow_pattern = patterns
+                self.assertEqual(
+                    AS_pattern, "[autonomous-system:number = '65538']"
+                )
+                self.assertIn(
+                    "autonomous-system:number = '65538'", asn_pattern
+                )
+                for ref_type, number in (('src', 65538), ('dst', 131075)):
+                    self.assertIn(
+                        f"network-traffic:{ref_type}_ref.belongs_to_refs[0]"
+                        f".number = '{number}'",
+                        netflow_pattern
+                    )
+
 
 class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     @classmethod
@@ -5648,6 +6611,70 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_object_references()
         self._test_object_references(event['Event'])
 
+    @staticmethod
+    def _parser_input(event):
+        return event['Event']
+
+    def test_event_with_process_object_non_canonical_pids(self):
+        self._test_event_with_process_object_non_canonical_pids()
+
+    def test_event_with_process_object_non_canonical_parent_pid_alone(self):
+        self._test_event_with_process_object_non_canonical_parent_pid_alone()
+
+    def test_event_with_process_object_left_with_custom_properties_only(self):
+        self._test_event_with_process_object_left_with_custom_properties_only()
+
+    def test_event_with_user_account_object_non_canonical_group_id(self):
+        self._test_event_with_user_account_object_non_canonical_group_id()
+
+    def test_event_with_x509_object_non_canonical_exponent(self):
+        self._test_event_with_x509_object_non_canonical_exponent()
+
+    def test_event_with_file_objects_non_canonical_sizes(self):
+        self._test_event_with_file_objects_non_canonical_sizes()
+
+    def test_event_with_pe_objects_non_canonical_numbers(self):
+        self._test_event_with_pe_objects_non_canonical_numbers()
+
+    def test_event_with_pe_section_object_non_canonical_entropy(self):
+        self._test_event_with_pe_section_object_non_canonical_entropy()
+
+    def test_event_with_geolocation_object_non_canonical_coordinates(self):
+        self._test_event_with_geolocation_object_non_canonical_coordinates()
+
+    def test_event_with_pe_object_falling_back_keeps_its_sections(self):
+        self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX21Parser)
+
+    def test_event_with_network_objects_non_canonical_numbers(self):
+        self._test_event_with_network_objects_non_canonical_numbers()
+
+    def test_event_with_netflow_object_non_canonical_AS_numbers(self):
+        self._test_event_with_netflow_object_non_canonical_AS_numbers()
+
+    def test_event_with_asn_object_non_canonical_number(self):
+        self._test_event_with_asn_object_non_canonical_number()
+
+    def test_event_with_asn_object_without_its_number(self):
+        self._test_event_with_asn_object_without_its_number()
+
+    def test_event_with_number_attributes_non_canonical(self):
+        self._test_event_with_number_attributes_non_canonical()
+
+    def test_event_with_asdot_AS_values(self):
+        self._test_event_with_asdot_AS_values()
+
+    def test_event_with_repeated_single_value_relations(self):
+        self._test_repeated_single_value_relations(MISPtoSTIX21Parser)
+
+    def test_event_with_non_pattern_values_as_given(self):
+        self._test_non_pattern_values_as_given(MISPtoSTIX21Parser)
+
+    def test_event_with_netflow_object_with_icmp_type(self):
+        self._test_netflow_object_with_icmp_type(MISPtoSTIX21Parser)
+
+    def test_event_with_stix2_pattern_object(self):
+        self._test_stix2_pattern_object(MISPtoSTIX21Parser)
+
 
 class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
     def test_embedded_indicator_object_galaxy(self):
@@ -6186,6 +7213,73 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event.from_dict(**event)
         self._test_object_references(misp_event)
 
+    @staticmethod
+    def _parser_input(event):
+        # pymisp pops the keys it loads: the test keeps reading the event
+        misp_event = MISPEvent()
+        misp_event.from_dict(**deepcopy(event))
+        return misp_event
+
+    def test_event_with_process_object_non_canonical_pids(self):
+        self._test_event_with_process_object_non_canonical_pids()
+
+    def test_event_with_process_object_non_canonical_parent_pid_alone(self):
+        self._test_event_with_process_object_non_canonical_parent_pid_alone()
+
+    def test_event_with_process_object_left_with_custom_properties_only(self):
+        self._test_event_with_process_object_left_with_custom_properties_only()
+
+    def test_event_with_user_account_object_non_canonical_group_id(self):
+        self._test_event_with_user_account_object_non_canonical_group_id()
+
+    def test_event_with_x509_object_non_canonical_exponent(self):
+        self._test_event_with_x509_object_non_canonical_exponent()
+
+    def test_event_with_file_objects_non_canonical_sizes(self):
+        self._test_event_with_file_objects_non_canonical_sizes()
+
+    def test_event_with_pe_objects_non_canonical_numbers(self):
+        self._test_event_with_pe_objects_non_canonical_numbers()
+
+    def test_event_with_pe_section_object_non_canonical_entropy(self):
+        self._test_event_with_pe_section_object_non_canonical_entropy()
+
+    def test_event_with_geolocation_object_non_canonical_coordinates(self):
+        self._test_event_with_geolocation_object_non_canonical_coordinates()
+
+    def test_event_with_pe_object_falling_back_keeps_its_sections(self):
+        self._test_pe_object_falling_back_keeps_its_sections(MISPtoSTIX21Parser)
+
+    def test_event_with_network_objects_non_canonical_numbers(self):
+        self._test_event_with_network_objects_non_canonical_numbers()
+
+    def test_event_with_netflow_object_non_canonical_AS_numbers(self):
+        self._test_event_with_netflow_object_non_canonical_AS_numbers()
+
+    def test_event_with_asn_object_non_canonical_number(self):
+        self._test_event_with_asn_object_non_canonical_number()
+
+    def test_event_with_asn_object_without_its_number(self):
+        self._test_event_with_asn_object_without_its_number()
+
+    def test_event_with_number_attributes_non_canonical(self):
+        self._test_event_with_number_attributes_non_canonical()
+
+    def test_event_with_asdot_AS_values(self):
+        self._test_event_with_asdot_AS_values()
+
+    def test_event_with_repeated_single_value_relations(self):
+        self._test_repeated_single_value_relations(MISPtoSTIX21Parser)
+
+    def test_event_with_non_pattern_values_as_given(self):
+        self._test_non_pattern_values_as_given(MISPtoSTIX21Parser)
+
+    def test_event_with_netflow_object_with_icmp_type(self):
+        self._test_netflow_object_with_icmp_type(MISPtoSTIX21Parser)
+
+    def test_event_with_stix2_pattern_object(self):
+        self._test_stix2_pattern_object(MISPtoSTIX21Parser)
+
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
     def _check_attack_pattern_meta_fields(self, stix_object, meta):
@@ -6325,11 +7419,18 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(location1.labels[0], f'misp:galaxy-name="{country["name"]}"')
         self.assertEqual(location1.labels[1], f'misp:galaxy-type="{country["type"]}"')
         # The country cluster's meta keys are CamelCase (`Capital`, `ISO3`),
-        # which the custom property name rule folds to lowercase.
+        # which the custom property name rule folds to lowercase. `country`
+        # maps to an SDO in 2.1 only, so this is the one galaxy whose keys the
+        # fold changes here and not in 2.0: the channel carries all 8, and
+        # `tld` - which the fold leaves alone - stays out of it.
         for key, name in _COUNTRY_META_PROPERTY_NAMES.items():
             self.assertEqual(getattr(location1, name), cluster['meta'][key])
         self.assertFalse(hasattr(location1, 'x_misp_Capital'))
         self._check_custom_property_names(location1)
+        self._check_original_names(
+            location1,
+            {name: key for key, name in _COUNTRY_META_PROPERTY_NAMES.items()}
+        )
         cluster = region['GalaxyCluster'][0]
         self.assertEqual(location2.id, f"{location2.type}--{cluster['uuid']}")
         self.assertEqual(location2.created, timestamp)
@@ -6438,16 +7539,23 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         vulnerability = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp)
+
     def _test_event_with_colliding_galaxy_meta_keys(self, event):
         cluster = event['Galaxy'][0]['GalaxyCluster'][0]
         self.parser.parse_misp_event(event)
         threat_actor = self.parser.stix_objects[-1]
         self.assertEqual(threat_actor.type, 'threat-actor')
         # `TTP` and `ttp` share one property, the last value wins - the same
-        # rule as on observables - and the fold is reported.
+        # rule as on observables - and the fold is reported. The channel can
+        # carry one spelling per name: it follows the value the property keeps,
+        # written as MISP spelled it, so `TTP` is not listed.
         self.assertEqual(threat_actor.x_misp_ttp, cluster['meta']['ttp'])
         self.assertFalse(hasattr(threat_actor, 'x_misp_TTP'))
         self._check_custom_property_names(threat_actor)
+        self._check_original_names(
+            threat_actor,
+            {'x_misp_cfr_type_of_incident': 'cfr-type-of-incident'}
+        )
         collision_warnings = [
             warning for warning in self.parser.warnings[event['uuid']]
             if 'x_misp_ttp' in warning
@@ -6455,6 +7563,61 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(len(collision_warnings), 1)
         self.assertIn(f'"{cluster["value"]}"', collision_warnings[0])
         self.assertIn('"ttp"', collision_warnings[0])
+        self.assertIn('only its spelling is carried', collision_warnings[0])
+
+    def _test_event_with_galaxy_meta_key_folding_to_the_channel(self, event):
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        threat_actor = self.parser.stix_objects[-1]
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        # The channel keeps the name and the spelling record it carries; the
+        # colliding key is dropped, and said so rather than raising.
+        self._check_original_names(
+            threat_actor,
+            {'x_misp_cfr_type_of_incident': 'cfr-type-of-incident'}
+        )
+        self.assertEqual(dict(self.parser.errors), {})
+        reserved_warnings = [
+            warning for warning in self.parser.warnings[event['uuid']]
+            if 'x_misp_original_names' in warning
+        ]
+        self.assertEqual(len(reserved_warnings), 1)
+        self.assertIn(f'"{cluster["value"]}"', reserved_warnings[0])
+        self.assertIn('"Original Names"', reserved_warnings[0])
+        self.assertIn('the key is dropped', reserved_warnings[0])
+
+    def _test_event_with_galaxy_meta_keys_outside_the_charset(self, event):
+        galaxy = event['Galaxy'][0]
+        meta = galaxy['GalaxyCluster'][0]['meta']
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        threat_actor = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        self._check_galaxy_features(threat_actor, galaxy, timestamp)
+        # Every leftover key lands under its folded name, with the value MISP
+        # had; the channel lists the ones the fold changed, by folded name,
+        # and not the control the fold left alone.
+        self.assertEqual(threat_actor.x_misp_capital, meta['Capital'])
+        self.assertEqual(
+            threat_actor.x_misp_origin_storm_0558, meta['origin:Storm-0558']
+        )
+        self.assertEqual(
+            threat_actor.x_misp_procedure_examples, meta['Procedure Examples']
+        )
+        self.assertEqual(
+            threat_actor.x_misp_target_category, meta['target_category']
+        )
+        self._check_original_names(
+            threat_actor,
+            {
+                'x_misp_capital': 'Capital',
+                'x_misp_cfr_type_of_incident': 'cfr-type-of-incident',
+                'x_misp_origin_storm_0558': 'origin:Storm-0558',
+                'x_misp_procedure_examples': 'Procedure Examples'
+            }
+        )
+        self.assertEqual(self.parser.warnings, {})
 
 
 class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
@@ -6481,6 +7644,22 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
     def test_event_with_colliding_galaxy_meta_keys(self):
         event = get_event_with_colliding_galaxy_meta_keys()
         self._test_event_with_colliding_galaxy_meta_keys(event['Event'])
+
+    def test_event_with_galaxy_meta_keys_outside_the_charset(self):
+        event = get_event_with_galaxy_meta_keys_outside_the_charset()
+        self._test_event_with_galaxy_meta_keys_outside_the_charset(
+            event['Event']
+        )
+
+    def test_event_with_galaxy_meta_key_folding_to_the_channel(self):
+        event = get_event_with_galaxy_meta_key_folding_to_the_channel()
+        self._test_event_with_galaxy_meta_key_folding_to_the_channel(
+            event['Event']
+        )
+
+    def test_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset(self):
+        event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
+        self._test_event_with_custom_galaxy(event['Event'])
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
@@ -6741,6 +7920,24 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_colliding_galaxy_meta_keys(misp_event)
+
+    def test_event_with_galaxy_meta_keys_outside_the_charset(self):
+        event = get_event_with_galaxy_meta_keys_outside_the_charset()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxy_meta_keys_outside_the_charset(misp_event)
+
+    def test_event_with_galaxy_meta_key_folding_to_the_channel(self):
+        event = get_event_with_galaxy_meta_key_folding_to_the_channel()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxy_meta_key_folding_to_the_channel(misp_event)
+
+    def test_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset(self):
+        event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_custom_galaxy(misp_event)
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()

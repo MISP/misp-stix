@@ -1127,8 +1127,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __attributes_mapping = {
         'vulnerability': '_parse_vulnerability_attribute'
     }
+    # Legacy only, frozen: the galaxy cluster meta keys whose `-` the import
+    # restores from the property name alone, for the bundles exported before
+    # `x_misp_original_names` carried the spelling. Takes no new entry - a key
+    # a bundle exports from now on travels with its spelling, and an entry
+    # added here would force `-` on any custom cluster key that folds to the
+    # same name. `test_stix2X_dash_meta_fields_are_frozen`.
     __dash_meta_fields = (
         'x_misp_attribution_confidence',
+        # The `country` galaxy maps to an SDO in 2.1 only, so a 2.0 bundle
+        # never carries this key: a 2.1 bundle written before
+        # `x_misp_original_names` does, and needs its `-` back.
+        'x_misp_budapest_convention',
         'x_misp_cfr_suspected_state_sponsor',
         'x_misp_cfr_suspected_victims',
         'x_misp_cfr_target_category',
@@ -1217,12 +1227,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'news-agency': '_parse_news_agency_object',
             'organization': '_parse_organization_object',
             'parler-account': '_object_from_parler_account',
+            'pe': '_object_from_pe',
             'person': '_parse_person_object',
             'process': '_object_from_process',
             'reddit-account': '_object_from_reddit_account',
             'registry-key': '_object_from_registry_key',
             'registry-key-value': '_object_from_registry_key_value',
             'script': '_parse_script_object',
+            'stix2-pattern': '_object_from_stix2_pattern',
             'telegram-account': '_object_from_telegram_account',
             'twitter-account': '_object_from_twitter_account',
             'url': '_object_from_url',
@@ -1463,7 +1475,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_hostname=__hostname_attribute,
         x_misp_ip=STIX2Mapping.ip_attribute(),
         x_misp_text=STIX2Mapping.text_attribute(),
-        # spelling exported before the custom property name fold (ADR-0013)
+        # spelling exported before the custom property name fold
         x_misp_AS=__ip_port_as_attribute
     )
     __lnk_object_mapping = Mapping(
@@ -1517,8 +1529,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_community_id=__community_id_attribute,
         x_misp_direction={'type': 'text', 'object_relation': 'direction'},
         x_misp_flow_count={'type': 'counter', 'object_relation': 'flow-count'},
-        x_misp_ip_protocol_number={'type': 'size-in-bytes', 'object_relation': 'ip-protocol-number'},
-        x_misp_ip_version={'type': 'counter', 'object_relation': 'ip_version'}
+        x_misp_ip_protocol_number={'type': 'integer', 'object_relation': 'ip-protocol-number'},
+        x_misp_ip_version={'type': 'integer', 'object_relation': 'ip_version'}
     )
     __network_connection_object_mapping = Mapping(
         src_port=STIX2Mapping.src_port_attribute(),
@@ -1547,7 +1559,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         account_login=__account_name_attribute,
         x_misp_archive=__archive_attribute,
         x_misp_attachment=__attachment_attribute,
-        x_misp_badge={'type': 'link', 'object_relation': 'badge'},
+        x_misp_badge={'type': 'float', 'object_relation': 'badge'},
         x_misp_bio=__bio_attribute,
         x_misp_comments={'type': 'text', 'object_relation': 'comments'},
         x_misp_cover_photo={'type': 'attachment', 'object_relation': 'cover-photo'},
@@ -1622,8 +1634,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_attachment=__attachment_attribute,
         x_misp_description=STIX2Mapping.description_attribute(),
         x_misp_link=__link_attribute,
-        x_misp_moderator_of={'type': '', 'object_relation': 'moderator-of'},
-        x_misp_trophies={'type': '', 'object_relation': 'trophies'},
+        x_misp_moderator_of={'type': 'text', 'object_relation': 'moderator-of'},
+        x_misp_trophies={'type': 'text', 'object_relation': 'trophies'},
         x_misp_url=STIX2Mapping.url_attribute()
     )
     __registry_key_object_mapping = Mapping(
@@ -1652,7 +1664,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_followers=__followers_attribute,
         x_misp_following=__following_attribute,
         x_misp_hashtag={'type': 'text', 'object_relation': 'hashtag'},
-        x_misp_joined_date={'type': 'text', 'object_relation': 'joined-date'},
+        x_misp_joined_date={'type': 'datetime', 'object_relation': 'joined-date'},
         x_misp_likes=__likes_attribute,
         x_misp_link=__link_attribute,
         x_misp_listed={'type': 'text', 'object_relation': 'listed'},

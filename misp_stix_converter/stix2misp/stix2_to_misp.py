@@ -4,6 +4,7 @@
 from __future__ import annotations
 from ..tools.exceptions import (
     STIXInputSizeError, STIXLoadingError, _reduce_input_path)
+from ..tools.misp_object_templates import _ORIGINAL_NAMES_PROPERTY
 from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
     MarkingDefinitionLoadingError, MissingSTIXContentError,
@@ -369,7 +370,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if isinstance(values, list):
                 for value in values:
-                    if isinstance(value, _EXTENSION_TYPES):
+                    if isinstance(value, (dict, *_EXTENSION_TYPES)):
                         yield from self._fetch_observable_references(value)
                         continue
                     yield value
@@ -434,14 +435,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _load_attack_pattern(
             self,
             attack_pattern: AttackPattern_v20 | AttackPattern_v21 | dict):
-        self._check_uuid(attack_pattern['id'])
+        self._register_uuid(attack_pattern['id'])
         try:
             self._attack_pattern[attack_pattern['id']] = attack_pattern
         except AttributeError:
             self._attack_pattern = {attack_pattern['id']: attack_pattern}
 
     def _load_campaign(self, campaign: Campaign_v20 | Campaign_v21 | dict):
-        self._check_uuid(campaign['id'])
+        self._register_uuid(campaign['id'])
         try:
             self._campaign[campaign['id']] = campaign
         except AttributeError:
@@ -450,28 +451,28 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _load_course_of_action(
             self,
             course_of_action: CourseOfAction_v20 | CourseOfAction_v21 | dict):
-        self._check_uuid(course_of_action['id'])
+        self._register_uuid(course_of_action['id'])
         try:
             self._course_of_action[course_of_action['id']] = course_of_action
         except AttributeError:
             self._course_of_action = {course_of_action['id']: course_of_action}
 
     def _load_grouping(self, grouping: Grouping | dict):
-        self._check_uuid(grouping['id'])
+        self._register_uuid(grouping['id'])
         try:
             self._grouping[grouping['id']] = grouping
         except AttributeError:
             self._grouping = {grouping['id']: grouping}
 
     def _load_identity(self, identity: Identity_v20 | Identity_v21 | dict):
-        self._check_uuid(identity['id'])
+        self._register_uuid(identity['id'])
         try:
             self._identity[identity['id']] = identity
         except AttributeError:
             self._identity = {identity['id']: identity}
 
     def _load_indicator(self, indicator: Indicator_v20 | Indicator_v21 | dict):
-        self._check_uuid(indicator['id'])
+        self._register_uuid(indicator['id'])
         try:
             self._indicator[indicator['id']] = indicator
         except AttributeError:
@@ -479,28 +480,28 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_intrusion_set(
             self, intrusion_set: IntrusionSet_v20 | IntrusionSet_v21 | dict):
-        self._check_uuid(intrusion_set['id'])
+        self._register_uuid(intrusion_set['id'])
         try:
             self._intrusion_set[intrusion_set['id']] = intrusion_set
         except AttributeError:
             self._intrusion_set = {intrusion_set['id']: intrusion_set}
 
     def _load_location(self, location: Location | dict):
-        self._check_uuid(location['id'])
+        self._register_uuid(location['id'])
         try:
             self._location[location['id']] = location
         except AttributeError:
             self._location = {location['id']: location}
 
     def _load_malware(self, malware: Malware_v20 | Malware_v21 | dict):
-        self._check_uuid(malware['id'])
+        self._register_uuid(malware['id'])
         try:
             self._malware[malware['id']] = malware
         except AttributeError:
             self._malware = {malware['id']: malware}
 
     def _load_malware_analysis(self, malware_analysis: MalwareAnalysis | dict):
-        self._check_uuid(malware_analysis['id'])
+        self._register_uuid(malware_analysis['id'])
         try:
             self._malware_analysis[malware_analysis['id']] = malware_analysis
         except AttributeError:
@@ -522,7 +523,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_observed_data(
             self, observed_data: ObservedData_v20 | ObservedData_v21 | dict):
-        self._check_uuid(observed_data['id'])
+        self._register_uuid(observed_data['id'])
         try:
             self._observed_data[observed_data['id']] = observed_data
         except AttributeError:
@@ -546,7 +547,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._relationship[source_uuid].add(reference)
 
     def _load_report(self, report: _REPORT_TYPING):
-        self._check_uuid(report['id'])
+        self._register_uuid(report['id'])
         try:
             self._report[report['id']] = report
         except AttributeError:
@@ -554,14 +555,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_threat_actor(
             self, threat_actor: ThreatActor_v20 | ThreatActor_v21 | dict):
-        self._check_uuid(threat_actor['id'])
+        self._register_uuid(threat_actor['id'])
         try:
             self._threat_actor[threat_actor['id']] = threat_actor
         except AttributeError:
             self._threat_actor = {threat_actor['id']: threat_actor}
 
     def _load_tool(self, tool: Tool_v20 | Tool_v21 | dict):
-        self._check_uuid(tool['id'])
+        self._register_uuid(tool['id'])
         try:
             self._tool[tool['id']] = tool
         except AttributeError:
@@ -570,7 +571,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _load_vulnerability(
             self,
             vulnerability: Vulnerability_v20 | Vulnerability_v21 | dict):
-        self._check_uuid(vulnerability['id'])
+        self._register_uuid(vulnerability['id'])
         try:
             self._vulnerability[vulnerability['id']] = vulnerability
         except AttributeError:
@@ -1072,9 +1073,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if 'definition_type' in marking_definition:
             # The tag a marking is read as is one this library writes out of
             # the two fields below, so it goes through the tag builder like
-            # every other built tag (ADR-0012): a `definition` carrying a `"`
-            # would otherwise decide what else the data it governs is tagged
-            # with. A marking naming its own type keeps the slots it named.
+            # every other built tag: a `definition` carrying a `"` would
+            # otherwise decide what else the data it governs is tagged with.
+            # A marking naming its own type keeps the slots it named.
             definition_type = marking_definition['definition_type']
             definition = str(marking_definition['definition'][definition_type])
             slots = (
@@ -1553,6 +1554,25 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _unknown_marking_definition_extension_error(self, identifier: str):
         self._add_error(
             f'Unknown STIX Marking Definition extension: {identifier}'
+        )
+
+    def _unknown_custom_property_warning(
+            self, name: str, object_id: str, field: str, relation: str):
+        self._add_warning(
+            f'Unknown custom property "{field}" on the MISP object "{name}" '
+            f'converted from {object_id}: neither the object template nor '
+            'the import mapping knows the object relation it carries, so it '
+            'is imported as a text attribute with the object relation '
+            f'"{relation}".'
+        )
+
+    def _unknown_original_names_warning(self, object_id: str, names: list):
+        quoted = ', '.join(f'"{name}"' for name in names)
+        self._add_warning(
+            f'Ignored the {_ORIGINAL_NAMES_PROPERTY} '
+            f"{'entries' if len(names) > 1 else 'entry'} {quoted} of "
+            f'{object_id}: the object carries no such property or meta key '
+            'to spell.'
         )
 
     def _unknown_network_protocol_warning(

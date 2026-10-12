@@ -2835,6 +2835,61 @@ _TEST_LNK_OBJECT = {
     ]
 }
 
+_TEST_MALWARE_OBJECT = {
+    "name": "malware",
+    "meta-category": "misc",
+    "description": "Malware is a type of TTP that is also known as malicious code and malicious software",
+    "uuid": "5ea2f8a3-8d51-4f41-9d6b-ec4e4fd09f3c",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Poison Ivy"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "Remote access trojan"
+        },
+        {
+            "type": "boolean",
+            "object_relation": "is_family",
+            "value": "1"
+        },
+        {
+            "type": "text",
+            "object_relation": "alias",
+            "value": "PIVY"
+        }
+    ]
+}
+
+_TEST_MALWARE_ANALYSIS_OBJECT = {
+    "name": "malware-analysis",
+    "meta-category": "misc",
+    "description": "Malware Analysis captures the metadata and results of a particular static or dynamic analysis performed on a malware instance or family",
+    "uuid": "6ea2f8a3-8d51-4f41-9d6b-ec4e4fd09f3c",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "product",
+            "value": "VirusTotal"
+        },
+        {
+            "type": "text",
+            "object_relation": "result",
+            "value": "malicious"
+        },
+        {
+            "type": "text",
+            "object_relation": "version",
+            "value": "3.0"
+        }
+    ]
+}
+
 _TEST_MUTEX_OBJECT = {
     "name": "mutex",
     "meta-category": "misc",
@@ -3409,6 +3464,171 @@ _TEST_PE_OBJECT = {
     ]
 }
 
+_TEST_FULL_PE_OBJECT = {
+    "name": "pe",
+    "meta-category": "file",
+    "description": "Object describing a Portable Executable",
+    "uuid": "ad5d5f31-1f54-4fc5-9c7e-9d0f9f1f2a26",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "type",
+            "value": "exe"
+        },
+        {
+            "type": "counter",
+            "object_relation": "number-sections",
+            "value": "8"
+        },
+        {
+            "type": "text",
+            "object_relation": "entrypoint-address",
+            "value": "5369222868"
+        },
+        {
+            "type": "imphash",
+            "object_relation": "imphash",
+            "value": "23ea835ab4b9017c74dfb023d2301c99"
+        },
+        {
+            "type": "pehash",
+            "object_relation": "pehash",
+            "value": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+        },
+        {
+            "type": "authentihash",
+            "object_relation": "authentihash",
+            "value": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b"
+        },
+        {
+            "type": "impfuzzy",
+            "object_relation": "impfuzzy",
+            "value": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+        },
+        {
+            "type": "text",
+            "object_relation": "company-name",
+            "value": "Simoe Tatham"
+        },
+        {
+            "type": "text",
+            "object_relation": "file-description",
+            "value": "SSH, Telnet and Rlogin client"
+        },
+        {
+            "type": "text",
+            "object_relation": "file-version",
+            "value": "Release 0.71 (with embedded help)"
+        },
+        {
+            "type": "filename",
+            "object_relation": "internal-filename",
+            "value": "PuTTy"
+        },
+        {
+            "type": "text",
+            "object_relation": "lang-id",
+            "value": "080904B0"
+        },
+        {
+            "type": "text",
+            "object_relation": "legal-copyright",
+            "value": "Copyright \u00a9 1997-2019 Simon Tatham."
+        },
+        {
+            "type": "filename",
+            "object_relation": "original-filename",
+            "value": "PuTTy"
+        },
+        {
+            "type": "text",
+            "object_relation": "product-name",
+            "value": "PuTTy suite"
+        },
+        {
+            "type": "text",
+            "object_relation": "product-version",
+            "value": "Release 0.71"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "compilation-timestamp",
+            "value": "2019-03-16T12:31:22Z"
+        },
+        {
+            "type": "text",
+            "object_relation": "entrypoint-section-at-position",
+            "value": ".text|0"
+        },
+        {
+            "type": "hex",
+            "object_relation": "characteristics-hex",
+            "value": "0102"
+        },
+        {
+            "type": "text",
+            "object_relation": "machine-type",
+            "value": "Intel 386 or later processors"
+        },
+        {
+            "type": "hex",
+            "object_relation": "machine-type-hex",
+            "value": "014c"
+        },
+        {
+            "type": "counter",
+            "object_relation": "number-of-symbols",
+            "value": "42"
+        },
+        {
+            "type": "hex",
+            "object_relation": "pointer-to-symbol-table",
+            "value": "1a2b3c4d"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "size-of-optional-header",
+            "value": "224"
+        },
+        {
+            "type": "text",
+            "object_relation": "text",
+            "value": "Portable Executable of the PuTTy suite"
+        },
+        {
+            "type": "text",
+            "object_relation": "characteristics",
+            "value": "EXECUTABLE_IMAGE"
+        },
+        {
+            "type": "text",
+            "object_relation": "characteristics",
+            "value": "32BIT_MACHINE"
+        },
+        {
+            "type": "pdb",
+            "object_relation": "pdb",
+            "value": "C:\\projects\\putty\\Release\\putty.pdb"
+        },
+        {
+            "type": "pdb",
+            "object_relation": "pdb",
+            "value": "C:\\projects\\putty\\Debug\\putty.pdb"
+        },
+        {
+            "type": "md5",
+            "object_relation": "richpe",
+            "value": "5f2b7b1bd3c2a4f0a1b0c9d8e7f60504"
+        },
+        {
+            "type": "md5",
+            "object_relation": "richpe",
+            "value": "9a8b7c6d5e4f30211f0e0d0c0b0a0908"
+        }
+    ]
+}
+
 _TEST_PE_SECTION_OBJECT = {
     "name": "pe-section",
     "meta-category": "file",
@@ -3953,6 +4173,34 @@ _TEST_SIGHTINGS = [
     }
 ]
 
+_TEST_STIX2_PATTERN_OBJECT = {
+    "name": "stix2-pattern",
+    "meta-category": "misc",
+    "description": "An object describing a STIX pattern.",
+    "uuid": "6d1e3c8a-2f4b-4a7e-9c5d-8b0f1e2a3c4d",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "7e2f4d9b-3a5c-4b8f-8d6e-9c1a2f3b4d5e",
+            "type": "stix2-pattern",
+            "object_relation": "stix2-pattern",
+            "value": "[network-traffic:dst_port = '443' AND network-traffic:dst_ref.value = '8.8.8.8']"
+        },
+        {
+            "uuid": "8f3a5e0c-4b6d-4c9a-9e7f-0d2b3a4c5e6f",
+            "type": "text",
+            "object_relation": "version",
+            "value": "stix 2.1"
+        },
+        {
+            "uuid": "9a4b6f1d-5c7e-4dab-8f8a-1e3c4b5d6f7a",
+            "type": "comment",
+            "object_relation": "comment",
+            "value": "HTTPS traffic to the Google public DNS"
+        }
+    ]
+}
+
 _TEST_URL_OBJECT = {
     "name": "url",
     "meta-category": "network",
@@ -4101,12 +4349,12 @@ _TEST_WEAKNESS_OBJECT = {
     "timestamp": "1603642920",
     "Attribute": [
         {
-            "text": "text",
+            "type": "weakness",
             "object_relation": "id",
             "value": "CWE-119"
         },
         {
-            "text": "text",
+            "type": "text",
             "object_relation": "description",
             "value": "The software performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer"
         }
@@ -4722,13 +4970,55 @@ def get_event_with_threat_actor_galaxy():
 
 
 def get_event_with_colliding_galaxy_meta_keys():
-    # Two meta keys that differ only in case fold to one custom property name
-    # (ADR-0013): the export keeps the last value and warns about the first.
+    # Two meta keys that differ only in case fold to one custom property name:
+    # the export keeps the last value and warns about the first.
     event = deepcopy(_BASE_EVENT)
     galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
     galaxy['GalaxyCluster'][0]['meta'].update(
         {'TTP': ['spear phishing'], 'ttp': ['watering hole']}
     )
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_galaxy_meta_keys_outside_the_charset():
+    # Leftover meta keys the custom property name fold changes: upper case,
+    # `:`, space, and the `-` of `cfr-type-of-incident` the base cluster
+    # already carries. `target_category` is the control: the fold leaves it
+    # as it is, so the channel does not list it - even though
+    # `dash_meta_fields` lists the name it folds to.
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta'].update(
+        {
+            'Capital': 'Tehran',
+            'origin:Storm-0558': ['China'],
+            'Procedure Examples': ['Spear phishing'],
+            'target_category': ['Government']
+        }
+    )
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_galaxy_meta_key_folding_to_the_channel():
+    # A meta key whose folded name is the channel's own property name. The
+    # channel owns it - handing it a meta value would destroy the spelling
+    # record of every other key - so the key is dropped with a warning, not a
+    # traceback. `cfr-type-of-incident` is there to be the record it protects.
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['Original Names'] = ['not a spelling']
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset():
+    # An `x_misp_meta` key a STIX dictionary cannot carry as MISP spells it
+    # (§2.3 allows `-` and case, not `:`), next to the two the base cluster has
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_TEA_MATRIX_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['origin:Storm-0558'] = ['China']
     event['Event']['Galaxy'] = [galaxy]
     return event
 
@@ -4878,6 +5168,16 @@ def get_indicator_attribute_with_location_galaxy():
     return attribute
 
 
+def get_indicator_attribute_with_threat_actor_galaxy():
+    attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+    attribute['Galaxy'] = [deepcopy(_TEST_THREAT_ACTOR_GALAXY)]
+    attribute['Tag'] = [
+        {'name': 'tlp:white'},
+        {'name': 'misp-galaxy:threat-actor="Cutting Kitten"'}
+    ]
+    return attribute
+
+
 def get_embedded_indicator_attribute_galaxy():
     attribute = get_indicator_attribute_with_galaxy()
     attribute['Galaxy'].append(deepcopy(_TEST_TEA_MATRIX_GALAXY))
@@ -4914,6 +5214,14 @@ def get_embedded_observable_attribute_galaxy():
     event['Event']['Attribute'] = [attribute]
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
+def get_embedded_threat_actor_attribute_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        get_indicator_attribute_with_threat_actor_galaxy()
     ]
     return event
 
@@ -5288,6 +5596,19 @@ def get_event_with_ip_port_attributes():
             "comment": "Destination IP | Port test attribute"
         }
     ]
+    return event
+
+
+def get_event_with_port_and_as_attributes():
+    # The fixtures of these attributes share one uuid: each gets its own here
+    event = get_event_with_ip_port_attributes()
+    for fixture, uuid in ((get_event_with_as_attribute,
+                           '9737c547-e5ac-4b8c-bd3f-6c87fada5bd4'),
+                          (get_event_with_hostname_port_attribute,
+                           '37010b6c-6475-4dea-885d-4bd50112ffe4')):
+        attribute, = fixture()['Event']['Attribute']
+        attribute['uuid'] = uuid
+        event['Event']['Attribute'].append(attribute)
     return event
 
 
@@ -5787,6 +6108,19 @@ def get_embedded_observable_object_galaxy():
     return event
 
 
+def get_embedded_threat_actor_object_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    misp_object = dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
+    attribute = misp_object['Attribute'][0]
+    attribute['Galaxy'] = [deepcopy(_TEST_THREAT_ACTOR_GALAXY)]
+    attribute['Tag'] = [
+        {'name': 'tlp:white'},
+        {'name': 'misp-galaxy:threat-actor="Cutting Kitten"'}
+    ]
+    event['Event']['Object'] = [misp_object]
+    return event
+
+
 def get_event_with_account_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -5993,6 +6327,60 @@ def get_event_with_file_object():
     return event
 
 
+def get_event_with_file_object_referencing_an_attribute():
+    file_uuid = '4b2a0e1c-7d3f-4e5a-9b6c-8d7e6f5a4b3c'
+    ip_uuid = '6c5d4e3f-2a1b-4c0d-8e9f-a0b1c2d3e4f5'
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": ip_uuid,
+            "type": "ip-src",
+            "category": "Network activity",
+            "value": "1.2.3.4",
+            "to_ids": False,
+            "timestamp": "1603642920"
+        }
+    ]
+    event['Event']['Object'] = [
+        {
+            "name": "file",
+            "meta-category": "file",
+            "description": "File object describing a file",
+            "uuid": file_uuid,
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "uuid": "7d6e5f4a-3b2c-4d1e-9f0a-b1c2d3e4f5a6",
+                    "type": "filename",
+                    "category": "Payload delivery",
+                    "object_relation": "filename",
+                    "value": "oui",
+                    "to_ids": False,
+                    "timestamp": "1603642920"
+                },
+                {
+                    "uuid": "8e7f6a5b-4c3d-4e2f-8a1b-c2d3e4f5a6b7",
+                    "type": "md5",
+                    "category": "Payload delivery",
+                    "object_relation": "md5",
+                    "value": "b2a5abfeef9e36964281a31e17b57c97",
+                    "to_ids": False,
+                    "timestamp": "1603642920"
+                }
+            ],
+            "ObjectReference": [
+                {
+                    "uuid": "9f8a7b6c-5d4e-4f3a-9b2c-d3e4f5a6b7c8",
+                    "object_uuid": file_uuid,
+                    "referenced_uuid": ip_uuid,
+                    "relationship_type": "downloaded-from"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_geolocation_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -6057,6 +6445,22 @@ def get_event_with_lnk_object():
     with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
         lnk_object['Attribute'][5]['data'] = b64encode(f.read()).decode()
     event['Event']['Object'] = [lnk_object]
+    return event
+
+
+def get_event_with_malware_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_MALWARE_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_malware_analysis_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_MALWARE_ANALYSIS_OBJECT))
+    ]
     return event
 
 
@@ -6192,6 +6596,82 @@ def get_event_with_object_references():
     return event
 
 
+def get_event_with_object_references_in_relationship_slots():
+    ap_object = dict(_populate_object(_TEST_ATTACK_PATTERN_OBJECT))
+    btc_object = dict(_populate_object(_TEST_BTC_WALLET_OBJECT))
+    coa_object = dict(_populate_object(_TEST_COURSE_OF_ACTION_OBJECT))
+    ip_object = dict(_populate_object(_TEST_IP_PORT_OBJECT))
+    vuln_object = dict(_populate_object(_TEST_VULNERABILITY_OBJECT))
+    weakness_object = dict(_populate_object(_TEST_WEAKNESS_OBJECT))
+    other_coa_object = dict(
+        _populate_object(
+            {
+                "name": "course-of-action",
+                "meta-category": "misc",
+                "description": "An object describing a specific measure taken to prevent or respond to an attack.",
+                "uuid": "3c1e8f0a-5b2d-4e7f-9a6c-1d4b7e0f3a2c",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "Patch the ipaddress library"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "type",
+                        "value": "Patching"
+                    }
+                ]
+            }
+        )
+    )
+
+    def references(source, *targets):
+        source['ObjectReference'] = [
+            {
+                "uuid": uuid5(_TEST_UUID, f"{source['uuid']} - {target['uuid']}").__str__(),
+                "object_uuid": source['uuid'],
+                "referenced_uuid": target['uuid'],
+                "relationship_type": relationship
+            }
+            for target, relationship in targets
+        ]
+
+    # Uuids of their own: the attribute fixtures share theirs with others
+    vuln_attribute = {
+        **get_event_with_vulnerability_attribute()['Event']['Attribute'][0],
+        "uuid": "fc3532d3-2e24-4737-a6c6-275fe2fd0068"
+    }
+    weakness_attribute = {
+        **get_event_with_weakness_attribute()['Event']['Attribute'][0],
+        "uuid": "986dcb2f-266a-4da0-bd35-d33532685d75"
+    }
+
+    btc_object['Attribute'][0]['to_ids'] = True
+    ip_object['Attribute'][0]['to_ids'] = True
+    references(ap_object, (vuln_attribute, 'exploits'))
+    references(
+        btc_object, (coa_object, 'protected-with'), (ap_object, 'indicates'),
+        (vuln_object, 'exploits')
+    )
+    references(
+        ip_object, (other_coa_object, 'protected-with'),
+        (weakness_object, 'exploits'), (weakness_attribute, 'exploits')
+    )
+    references(vuln_object, (coa_object, 'mitigated-by'))
+    references(weakness_object, (other_coa_object, 'mitigated-by'))
+    references(coa_object, (other_coa_object, 'complemented-by'))
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [vuln_attribute, weakness_attribute]
+    # Every source before its target, but the attack pattern's
+    event['Event']['Object'] = [
+        btc_object, ip_object, vuln_object, weakness_object, coa_object,
+        other_coa_object, ap_object
+    ]
+    return event
+
+
 def get_event_with_organization_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -6247,6 +6727,47 @@ def get_event_with_non_conforming_object_relations():
             )
         )
     event['Event']['Object'] = [sigma_object, suricata_object, url_object]
+    return event
+
+
+def get_event_with_full_pe_object():
+    """A `pe` object carrying every relation its template defines - the four
+    hashes the export writes as PE header hashes, the nine the version info
+    resource carries, and the ones no cybox field holds, repeated values
+    included. Import-only: the export documentation is hand-maintained, and
+    the export tests unpack `_TEST_PE_OBJECT` positionally."""
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_FULL_PE_OBJECT))
+    ]
+    return event
+
+
+def get_event_with_pe_object_without_pe_headers():
+    """The same `pe` object without either relation the export writes a PE
+    header for: the header hashes it carries have nowhere to be written unless
+    the export creates the header where it writes them."""
+    event = get_event_with_full_pe_object()
+    pe_object = event['Event']['Object'][0]
+    pe_object['Attribute'] = [
+        attribute for attribute in pe_object['Attribute']
+        if attribute['object_relation'] not in (
+            'entrypoint-address', 'number-sections'
+        )
+    ]
+    return event
+
+
+def get_event_with_pe_object_with_one_header_hash():
+    """The same `pe` object reduced to a single header hash: the export
+    builds a PE header for neither of the two relations it is built for, so
+    the hash has no header at all to be written on."""
+    event = get_event_with_pe_object_without_pe_headers()
+    pe_object = event['Event']['Object'][0]
+    pe_object['Attribute'] = [
+        attribute for attribute in pe_object['Attribute']
+        if attribute['object_relation'] == 'authentihash'
+    ]
     return event
 
 
@@ -6432,6 +6953,14 @@ def get_event_with_script_objects():
     event['Event']['Object'] = [
         dict(_populate_object(script_to_malware_object)),
         dict(_populate_object(script_to_tool_object))
+    ]
+    return event
+
+
+def get_event_with_stix2_pattern_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_STIX2_PATTERN_OBJECT))
     ]
     return event
 

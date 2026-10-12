@@ -3122,7 +3122,7 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._observables._parse_generic_observable_with_data(
-            observable, name.replace('-', '_'), observed_data.id
+            observable, name, observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3219,13 +3219,15 @@ class InternalSTIX2ObservedDataConverter(
         object_id = observed_data.id
         for observable in observed_data.objects.values():
             if observable.type == 'domain-name':
-                for field, attribute in mapping.items():
-                    if hasattr(observable, field):
-                        attributes = self._observables._handle_object_attributes(
-                            attribute, getattr(observable, field), object_id
-                        )
-                        for attribute in attributes:
-                            misp_object.add_attribute(**attribute)
+                fields = self._observables._parse_object_fields(
+                    observable, 'domain-ip', mapping, object_id
+                )
+                for attribute, value in fields:
+                    attributes = self._observables._handle_object_attributes(
+                        attribute, value, object_id
+                    )
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
                 if hasattr(observable, 'resolves_to_refs'):
                     attribute = self._mapping.ip_attribute()
                     for reference in observable.resolves_to_refs:
@@ -3338,11 +3340,19 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_file_extension_observable(
             self, extension: _EXTENSION_TYPING,
             observed_data: _OBSERVED_DATA_TYPING) -> str:
+        pe_object = self._create_misp_object(
+            'pe', observed_data,
+            object_id=f'{observed_data.id} - windows-pebinary-ext'
+        )
+        return self._object_from_pe_extension_observable(
+            pe_object, extension, observed_data
+        )
+
+    def _object_from_pe_extension_observable(
+            self, pe_object: MISPObject, extension: _EXTENSION_TYPING,
+            observed_data: _OBSERVED_DATA_TYPING) -> str:
         object_id = observed_data.id
         pe_prefix = f'{object_id} - windows-pebinary-ext'
-        pe_object = self._create_misp_object(
-            'pe', observed_data, object_id=pe_prefix
-        )
         attributes = self._observables._parse_pe_extension_observable(extension, object_id)
         for attribute in attributes:
             pe_object.add_attribute(**attribute)
@@ -3421,7 +3431,7 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._observables._parse_generic_observable(
-            observable, name.replace('-', '_'), observed_data.id
+            observable, name, observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3490,7 +3500,7 @@ class InternalSTIX2ObservedDataConverter(
                     misp_object.add_attribute(**attribute)
                 continue
             attributes = self._observables._parse_generic_observable(
-                observable, 'http_request', object_id
+                observable, 'http-request', object_id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
@@ -3529,8 +3539,10 @@ class InternalSTIX2ObservedDataConverter(
         )
         for observable in observables.values():
             if observable.type == 'file':
-                attributes = self._observables._parse_generic_observable(
-                    observable, 'image', observed_data.id
+                attributes = (
+                    self._observables._parse_observable_fields_with_data(
+                        observable, 'image', observed_data.id
+                    )
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -3597,7 +3609,7 @@ class InternalSTIX2ObservedDataConverter(
                             }
                         )
                 attributes = self._observables._parse_generic_observable(
-                    observable, 'ip_port', observed_data.id
+                    observable, 'ip-port', observed_data.id
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -3782,7 +3794,7 @@ class InternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object(name, observed_data)
         observable = observables[observable_id]
         attributes = self._observables._parse_generic_observable(
-            observable, name.replace('-', '_'), observed_data.id
+            observable, name, observed_data.id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -3808,6 +3820,24 @@ class InternalSTIX2ObservedDataConverter(
         self._object_from_account_with_attachment_observable(
             observed_data, 'parler-account', 'v21'
         )
+
+    def _object_from_pe_observable(
+            self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        # A pe no file carries: the file the export writes around its
+        # extension holds nothing else, its name being the pe's own file name
+        observable = getattr(self, f'_fetch_observables_{version}')(
+            observed_data
+        )
+        self._object_from_pe_extension_observable(
+            self._create_misp_object('pe', observed_data),
+            observable.extensions['windows-pebinary-ext'], observed_data
+        )
+
+    def _object_from_pe_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_pe_observable(observed_data, 'v20')
+
+    def _object_from_pe_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_pe_observable(observed_data, 'v21')
 
     def _object_from_process_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
@@ -3942,10 +3972,12 @@ class InternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object(
             'registry-key-value', observed_data, object_id=object_id
         )
-        mapping = self._mapping.registry_key_values_object_mapping
-        for field, attribute in mapping().items():
-            if hasattr(registry_value, field):
-                value = getattr(registry_value, field)
+        fields = self._observables._parse_object_fields(
+            registry_value, 'registry-key-value',
+            self._mapping.registry_key_values_object_mapping(), object_id
+        )
+        for attribute, values in fields:
+            for value in values if isinstance(values, list) else [values]:
                 misp_object.add_attribute(
                     **self._populate_object_attribute(
                         value, attribute,
@@ -3977,7 +4009,7 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._observables._parse_registry_key_observable(
-            observable, observed_data.id
+            observable, observed_data.id, name='registry-key-value'
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -4029,7 +4061,7 @@ class InternalSTIX2ObservedDataConverter(
         )
         object_id = observed_data.id
         attributes = self._observables._parse_generic_observable_with_data(
-            observable, 'user_account', object_id
+            observable, 'user-account', object_id
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)

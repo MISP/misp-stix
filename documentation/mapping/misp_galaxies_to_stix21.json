@@ -156,6 +156,16 @@
             "x_misp_iso": "SE",
             "x_misp_iso3": "SWE",
             "x_misp_languages": "sv-SE,se,sma,fi-SE",
+            "x_misp_original_names": {
+                "x_misp_capital": "Capital",
+                "x_misp_continent": "Continent",
+                "x_misp_currencycode": "CurrencyCode",
+                "x_misp_currencyname": "CurrencyName",
+                "x_misp_iso": "ISO",
+                "x_misp_iso3": "ISO3",
+                "x_misp_languages": "Languages",
+                "x_misp_population": "Population"
+            },
             "x_misp_population": "9828655",
             "x_misp_tld": ".se"
         }
@@ -1374,7 +1384,10 @@
             ],
             "x_misp_cfr_type_of_incident": [
                 "Denial of service"
-            ]
+            ],
+            "x_misp_original_names": {
+                "x_misp_cfr_type_of_incident": "cfr-type-of-incident"
+            }
         }
     },
     "Tool": {

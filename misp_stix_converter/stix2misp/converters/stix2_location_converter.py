@@ -53,7 +53,7 @@ class STIX2LocationConverter(STIX2Converter, metaclass=ABCMeta):
         misp_object = self._create_misp_object('geolocation', location)
         if 'description' in location:
             misp_object.comment = location['description']
-        for attribute in self._generic_parser(location):
+        for attribute in self._generic_parser(location, name='geolocation'):
             misp_object.add_attribute(**attribute)
         if 'precision' in location:
             mapping = self._mapping.accuracy_radius_attribute()
@@ -143,8 +143,8 @@ class InternalSTIX2LocationMapping(
             'x_misp_altitude': {'type': 'float', 'object_relation': 'altitude'},
             'x_misp_country': {'type': 'text', 'object_relation': 'country'},
             'x_misp_epsg': {'type': 'text', 'object_relation': 'epsg'},
-            'x_misp_first_seen': InternalSTIX2Mapping.first_seen_attribute,
-            'x_misp_last_seen': InternalSTIX2Mapping.last_seen_attribute,
+            'x_misp_first_seen': InternalSTIX2Mapping.first_seen_attribute(),
+            'x_misp_last_seen': InternalSTIX2Mapping.last_seen_attribute(),
             'x_misp_neighborhood': {
                 'type': 'text', 'object_relation': 'neighborhood'
             },

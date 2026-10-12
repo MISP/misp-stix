@@ -315,12 +315,14 @@ from misp_stix_converter import misp_to_stix1
 
 response = misp_to_stix1(
     filename, # file name of the file containing a MISP Event
-    'xml', # return format (XML or JSON)
-    '1.1.1' # STIX1 version (1.1.1 or 1.2)
+    return_format='xml', # return format (XML or JSON)
+    version='1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
 # if everything went well, response is a dictionary where `success` = 1
 ```
 The resulting STIX1 Package is then available in a `filename.out` file
+
+STIX 1 is an XML standard: the JSON return format is python-stix's dictionary form of the STIX Package, which `stix.core.STIXPackage.from_json` reads back and other STIX 1 tools do not. `stix_1_to_misp` reads XML only, so export a STIX Package as XML if it is to come back into MISP.
 
 **STIX 1 export is not thread-safe.** The identifier namespace an exported STIX 1
 Package uses lives in a module-level generator inside `mixbox`, so it is process-wide.
@@ -422,6 +424,8 @@ stix21_response = misp_collection_to_stix2(
 Again, all the responses should have a `success` field equal to 1 and the resulting STIX1 Package and STIX 2.0 & 2.1 Bundles are available in the specific output file names.
 
 Note that `success` = 1 only tells you the conversion wrote its output: a conversion that dropped part of the content says so as well. Any response - from the conversion functions in both directions - may therefore carry an `errors` field, and a `warnings` one, next to `success`, both keyed by the event or bundle identifier the messages belong to. The `debug` argument controls how detailed both fields are, never whether they are reported: by default each distinct message appears once - errors with the number of times each happened - capped at ten messages per identifier with a trailing entry naming how many were left out, and `debug=True` returns the full lists instead. When driving the parser classes in memory rather than through these functions, `parser.diagnostics()` returns the same default summary as a dict, plus a `counts` entry giving the number of distinct warnings and of error occurrences taken before the cap. The two warnings about the import classification - the Internal parser chosen from the document content, or a detection result the `classification` parameter overruled - are recorded through `parser.record_classification(detected, overridden=...)`, which the conversion functions call once the document is loaded; an in-memory consumer running the detection itself (`is_stix2_from_misp`, `is_stix1_from_misp`) calls it the same way to get them.
+
+A STIX 1 conversion that yields an event with no attribute, object or galaxy is not a success either: the parser raises `MissingSTIXContentError` - naming the number of errors recorded on the way, when the content was there but could not be read - and the conversion functions report it in `errors` instead of writing an empty event.
 
 ### Samples and examples
 

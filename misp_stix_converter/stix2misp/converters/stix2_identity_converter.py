@@ -139,7 +139,7 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
         description={'type': 'text', 'object_relation': 'text'},
         roles=__employee_type_attribute,
         x_misp_business_unit={
-            'type': 'target-org', 'object_relation': 'business_unit'
+            'type': 'target-org', 'object_relation': 'business-unit'
         },
         x_misp_employee_type=__employee_type_attribute,
         x_misp_first_name={
@@ -204,7 +204,7 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
             'type': 'text', 'object_relation': 'type-of-organization'
         },
         x_misp_vat=__organization_vat_attribute,
-        # spelling exported before the custom property name fold (ADR-0013)
+        # spelling exported before the custom property name fold
         x_misp_VAT=__organization_vat_attribute
     )
     __person_contact_information_mapping = Mapping(
@@ -245,7 +245,7 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
             'type': 'passport-country', 'object_relation': 'passport-country'
         },
         x_misp_passport_creation={
-            'type': 'passport-creation', 'object_relation': 'passport-creation'
+            'type': 'datetime', 'object_relation': 'passport-creation'
         },
         x_misp_passport_expiration={
             'type': 'passport-expiration',
@@ -385,32 +385,12 @@ class InternalSTIX2IdentityConverter(
         misp_object = self._parse_identity_object_attributes(
             identity, 'legal-entity'
         )
-        if hasattr(identity, 'x_misp_logo'):
-            misp_object.add_attribute(
-                **self._populate_object_attribute_with_data(
-                    identity.x_misp_logo,
-                    {'type': 'attachment', 'object_relation': 'logo'},
-                    uuid=self.main_parser._create_v5_uuid(
-                        f'{identity.id} - logo - {identity.x_misp_logo}'
-                    )
-                )
-            )
         self.main_parser._add_misp_object(misp_object, identity)
 
     def _parse_news_agency_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object_attributes(
             identity, 'news-agency'
         )
-        if hasattr(identity, 'x_misp_attachment'):
-            misp_object.add_attribute(
-                **self._populate_object_attribute_with_data(
-                    identity.x_misp_attachment,
-                    {'type': 'attachment', 'object_relation': 'attachment'},
-                    uuid=self.main_parser._create_v5_uuid(
-                        f'{identity.id} - attachment - {identity.x_misp_attachment}'
-                    )
-                )
-            )
         self.main_parser._add_misp_object(misp_object, identity)
 
     def _parse_organization_object(self, identity: _IDENTITY_TYPING):
@@ -421,14 +401,4 @@ class InternalSTIX2IdentityConverter(
 
     def _parse_person_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object_attributes(identity, 'person')
-        if hasattr(identity, 'x_misp_portrait'):
-            misp_object.add_attribute(
-                **self._populate_object_attribute_with_data(
-                    identity.x_misp_portrait,
-                    {'type': 'attachment', 'object_relation': 'portrait'},
-                    uuid=self.main_parser._create_v5_uuid(
-                        f'{identity.id} - portrait - {identity.x_misp_portrait}'
-                    )
-                )
-            )
         self.main_parser._add_misp_object(misp_object, identity)

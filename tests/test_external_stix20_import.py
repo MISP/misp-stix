@@ -424,7 +424,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
 
     def test_stix20_default_input_size_limit_is_the_documented_one(self):
         # The documented default is what a caller setting no limit of its own
-        # gets - the value the README and ADR-0011 name.
+        # gets - the value the README names.
         from misp_stix_converter import STIXInputSizeError
         from misp_stix_converter.tools import input_limits, load_stix2_content
         from unittest.mock import patch
@@ -436,7 +436,7 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
 
     def test_stix20_parser_honours_the_input_size_limit(self):
         # MISP core converts through the parser rather than through the entry
-        # functions (ADR-0009), so the limit has to be reachable there too.
+        # functions, so the limit has to be reachable there too.
         from misp_stix_converter import STIXInputSizeError
         from pathlib import Path
         from tempfile import TemporaryDirectory
@@ -860,7 +860,8 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         indicated, observed = event.attributes
         record_uuid = indicator.id.split('--')[1]
         # Both attributes keep the uuid their STIX id yields: re-deriving one
-        # of them would cost it the round-trip ADR-0006 guarantees.
+        # of them would break the round trip, where a record converted back
+        # must find the uuid it left with.
         self.assertEqual(indicated.value, 'first.example.com')
         self.assertEqual(indicated.uuid, record_uuid)
         self.assertEqual(observed.value, 'second.example.com')

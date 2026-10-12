@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import traceback
 from ..abstract import AbstractParser
 from ..tools.misp_object_templates import (
@@ -12,10 +13,15 @@ from .stix21_mapping import MISPtoSTIX21Mapping
 from collections import defaultdict
 from datetime import datetime, timezone
 from io import BufferedIOBase, TextIOBase
+from math import isfinite
 from pathlib import Path
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.hashes import Hash
 from typing import Any, IO, Optional, Union
+
+# The decimal literal a native float field writes back as the number it reads:
+# `float()` takes more, a `nan`, an `inf`, digits of any script, underscores
+_CANONICAL_FLOAT = re.compile(r'[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?')
 
 
 class MISPtoSTIXParser(AbstractParser):
@@ -51,17 +57,8 @@ class MISPtoSTIXParser(AbstractParser):
     ############################################################################
 
     @staticmethod
-    def _extract_multiple_object_attributes(
-            attributes: list, force_single: Optional[tuple] = None) -> dict:
+    def _extract_multiple_object_attributes(attributes: list) -> dict:
         attributes_dict = defaultdict(list)
-        if force_single is not None:
-            for attribute in attributes:
-                relation = attribute['object_relation']
-                if relation in force_single:
-                    attributes_dict[relation] = attribute['value']
-                else:
-                    attributes_dict[relation].append(attribute['value'])
-            return attributes_dict
         for attribute in attributes:
             attributes_dict[attribute['object_relation']].append(
                 attribute['value']
@@ -70,17 +67,13 @@ class MISPtoSTIXParser(AbstractParser):
 
     @staticmethod
     def _extract_multiple_object_attributes_with_data(
-            attributes: list, force_single: Optional[tuple] = (),
-            with_data: Optional[tuple] = ()) -> dict:
+            attributes: list, with_data: Optional[tuple] = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
             value = attribute['value']
             if relation in with_data and attribute.get('data'):
                 value = (value, attribute['data'])
-            if relation in force_single:
-                attributes_dict[relation] = value
-                continue
             attributes_dict[relation].append(value)
         return attributes_dict
 
@@ -104,32 +97,42 @@ class MISPtoSTIXParser(AbstractParser):
         return attributes_dict
 
     @staticmethod
-    def _extract_object_attributes(attributes: list) -> dict:
-        return {
-            attribute['object_relation']: attribute['value']
-            for attribute in attributes
-        }
+    def _split_single_field_values(
+            attributes: dict, force_single: Optional[tuple] = None,
+            with_uuid: tuple = ()) -> tuple[dict, dict]:
+        """Keep the first value of each relation a native field holds one
+        value of, and return its further values apart.
 
-    @staticmethod
-    def _extract_object_attributes_with_uuid(
-            attributes: list, with_uuid: Optional[tuple] = None) -> dict:
-        if with_uuid is not None:
-            attributes_dict = {}
-            for attribute in attributes:
-                relation = attribute['object_relation']
-                attributes_dict[relation] = (
-                    (attribute['value'], attribute['uuid'])
-                    if relation in with_uuid else attribute['value']
-                )
-            return attributes_dict
-        return {
-            attr['object_relation']: (attr['value'], attr['uuid'])
-            for attr in attributes
-        }
+        :param attributes: every value of a MISP object, by relation
+        :param force_single: the relations a native field holds one value
+            of - every relation when None
+        :param with_uuid: the relations whose values are paired with their
+            attribute uuid, last in the tuple: a further value goes without
+            it, no native object being identified by it
+        :return: the values by relation, a relation forced single holding its
+            first value alone, and the further values of each relation forced
+            single, by relation
+        """
+        repeated = {}
+        for relation, values in list(attributes.items()):
+            if force_single is not None and relation not in force_single:
+                continue
+            attributes[relation], *further = values
+            if not further:
+                continue
+            if relation in with_uuid:
+                further = [
+                    value[0] if len(value) == 2 else value[:-1]
+                    for value in further
+                ]
+            repeated[relation] = further
+        return attributes, repeated
 
     def _extract_object_attribute_tags_and_galaxies(
             self, misp_object: dict) -> tuple:
-        tags: set = set()
+        # The tag names in the order the attributes carry them, each once: a
+        # set would write them in the order of the run's hash seed
+        tag_names: dict = {}
         galaxies: dict = {}
         for attribute in misp_object['Attribute']:
             if attribute.get('Galaxy'):
@@ -142,8 +145,10 @@ class MISPtoSTIXParser(AbstractParser):
                     else:
                         galaxies[galaxy_type] = galaxy
             if attribute.get('Tag'):
-                tags.update(tag['name'] for tag in attribute['Tag'])
-        return tags, galaxies
+                tag_names.update(
+                    dict.fromkeys(tag['name'] for tag in attribute['Tag'])
+                )
+        return tuple(tag_names), galaxies
 
     def _handle_event_tags_and_galaxies(self) -> tuple:
         if self._misp_event.get('Galaxy'):
@@ -288,6 +293,43 @@ class MISPtoSTIXParser(AbstractParser):
         }
 
     @staticmethod
+    def _is_canonical_float(value: Any) -> bool:
+        """Whether a value is spelled as a native float field holds it: a
+        decimal literal of a finite number. `float()` also reads a `nan`, an
+        `inf`, digits of any script and underscores, and a literal too large
+        for a float as an infinity, which no JSON holds."""
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, int):
+            return True
+        if isinstance(value, float):
+            return isfinite(value)
+        if isinstance(value, str):
+            return (
+                _CANONICAL_FLOAT.fullmatch(value) is not None
+                and isfinite(float(value))
+            )
+        return False
+
+    @staticmethod
+    def _is_canonical_integer(value: Any, signed: bool = False) -> bool:
+        """Whether a value is spelled as a native integer field writes it
+        back: ASCII decimal digits equal to `str(int(value))`, with a leading
+        `-` only when the field is `signed`. `'007'`, `'+5'`, `'1_000'`,
+        `'0x1f'` or `'٣'` denote a number without being its spelling."""
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, int):
+            return signed or value >= 0
+        if isinstance(value, str):
+            digits = value[1:] if signed and value.startswith('-') else value
+            return (
+                digits.isascii() and digits.isdigit()
+                and value == str(int(value))
+            )
+        return False
+
+    @staticmethod
     def _select_single_feature(
             attributes: dict, feature: str) -> Union[str, tuple]:
         if isinstance(attributes[feature], list):
@@ -309,6 +351,11 @@ class MISPtoSTIXParser(AbstractParser):
         )
         tb = self._parse_traceback(exception)
         self._add_error(f"Error with the {features}:\n{tb}.")
+        self._write_custom_attribute(attribute)
+
+    def _write_custom_attribute(self, attribute: dict):
+        """The attribute error fallback: the custom attribute route adds the
+        attribute to the results itself."""
         self._parse_custom_attribute(attribute)
 
     def _attribute_galaxy_not_mapped_warning(
@@ -374,12 +421,22 @@ class MISPtoSTIXParser(AbstractParser):
             f'{galaxy_type} galaxy in event not mapped.'
         )
 
+    def _galaxy_meta_key_reserved_warning(
+            self, value: str, key: str, feature: str):
+        self._add_warning(
+            f'Galaxy cluster "{value}": meta key "{key}" folds to the custom '
+            f'property "{feature}", which carries the spelling of the keys '
+            'the fold changed on this cluster and cannot also carry a meta '
+            'value, so the key is dropped.'
+        )
+
     def _galaxy_meta_key_collision_warning(
             self, value: str, key: str, feature: str):
         self._add_warning(
             f'Galaxy cluster "{value}": meta key "{key}" folds to the custom '
             f'property "{feature}" already set by another meta key of the '
-            'same cluster, the last value wins.'
+            'same cluster, the last value wins and only its spelling is '
+            'carried.'
         )
 
     def _missing_orgc_error(self):
@@ -394,10 +451,37 @@ class MISPtoSTIXParser(AbstractParser):
         )
 
     def _object_error(self, misp_object: dict, exception: Exception):
-        features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
         tb = self._parse_traceback(exception)
-        self._add_error(f"Error with the {features}:\n{tb}.")
+        self._add_error(
+            f"Error with the {self._object_record(misp_object)}:\n{tb}."
+        )
+        if self._raised_from(exception, self._parse_custom_object.__name__):
+            # The custom object route is the fallback: retrying what just
+            # raised raises again, with nothing left to catch it - the
+            # traceback escapes the parser and, from a collection, costs
+            # every other event too. The object is lost either way
+            return
+        self._write_custom_object(misp_object)
+
+    def _write_custom_object(self, misp_object: dict):
+        """The object error fallback: the custom object route adds the object
+        to the results itself."""
         self._parse_custom_object(misp_object)
+
+    def _non_canonical_number_warning(
+            self, relation: str, value: Any, record: str, kind: str):
+        self._add_warning(
+            f'{relation!r} in the {record} is not a canonical {kind}: '
+            f'{value!r} written as a custom property.'
+        )
+
+    @staticmethod
+    def _attribute_record(attribute: Union[MISPAttribute, dict]) -> str:
+        return f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
+
+    @staticmethod
+    def _object_record(misp_object: Union[MISPObject, dict]) -> str:
+        return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
 
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, name: str):
         self._add_warning(
@@ -425,10 +509,42 @@ class MISPtoSTIXParser(AbstractParser):
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
 
+    def _pe_section_comment_warning(self, misp_pe_section: dict):
+        self._add_warning(
+            f'The comment of the {self._object_record(misp_pe_section)} '
+            'is not converted: a STIX 1 PE section has no description.'
+        )
+
     def _pe_reference_warning(self, file_uuid: str):
         self._add_warning(
             'Unable to find the pe object related to '
             f'the file object {file_uuid}.'
+        )
+
+    @staticmethod
+    def _raised_from(exception: Exception, method: str) -> bool:
+        """Whether the given method is among the frames the exception came
+        through - which is what tells a failed conversion route from a failed
+        fallback."""
+        tb = exception.__traceback__
+        while tb is not None:
+            if tb.tb_frame.f_code.co_name == method:
+                return True
+            tb = tb.tb_next
+        return False
+
+    def _plain_observable_galaxy_warning(self, tag_name: str, record: str):
+        self._add_warning(
+            f'Galaxy cluster {tag_name} of the {record} not exported: a '
+            'record without to_ids is written as a plain Observable, which '
+            'carries no marking.'
+        )
+
+    def _journal_entry_galaxy_warning(self, tag_name: str, record: str):
+        self._add_warning(
+            f'Galaxy cluster {tag_name} of the {record} not exported: the '
+            'attribute is written as text, a journal entry of the Incident '
+            'or the package description, which carries no marking.'
         )
 
     def _referenced_object_name_warning(
@@ -436,6 +552,16 @@ class MISPtoSTIXParser(AbstractParser):
         self._add_warning(
             f'Reference to a non existing {object_name} '
             f'object with uuid: {referenced_uuid}.'
+        )
+
+    def _required_relation_missing_error(
+            self, misp_object: Union[MISPObject, dict], relation: str):
+        # The object is not written at all: nothing else it holds has a
+        # field to go in without the one the STIX object is built around
+        self._add_error(
+            f"Error with the {self._object_record(misp_object)}: no "
+            f"{relation} attribute to build it from, the object is not "
+            'exported.'
         )
 
     def _required_fields_missing_warning(
@@ -449,6 +575,51 @@ class MISPtoSTIXParser(AbstractParser):
         self._add_warning(
             f'The file object {file_uuid} has more than one reference '
             f"to pe objects: {', '.join(pe_uuids)}"
+        )
+
+    def _unrecognised_boolean_warning(
+            self, relation: str, value: Any, record: str):
+        self._add_warning(
+            f'{relation!r} in the {record} is not a boolean: {value!r} '
+            'written as a custom property.'
+        )
+
+    def _unstorable_property_warning(
+            self, relation: str, value: Any, record: Optional[str] = None):
+        # The relation and the record name what the reader lost, the value
+        # says what shape it had. Not merged with any other message: a caller
+        # filtering tells a value no format can write from a value written
+        # under another name
+        origin = f' in the {record}' if record else ''
+        self._add_warning(
+            f'{relation!r} has no lexical form STIX 1 can carry'
+            f'{origin}: {value!r} not converted.'
+        )
+
+    def _unwritable_relation_warning(
+            self, relation: str, value: Any, record: str):
+        # Not the unstorable property warning: the value has a form, the
+        # STIX type the record is written as has nowhere to put it
+        self._add_warning(
+            f'{relation!r} has no place in the STIX 1 {record}: '
+            f'{value!r} not converted.'
+        )
+
+    def _single_value_field_warning(
+            self, relation: str, value: Any, record: str):
+        # Not the unwritable relation warning: the relation has its field,
+        # which holds the first value
+        self._add_warning(
+            f'{relation!r} in the STIX 1 {record} has room for one value: '
+            f'{value!r} not converted.'
+        )
+
+    def _unwritten_object_reference_warning(
+            self, source: str, relationship: str, target: str):
+        self._add_warning(
+            f'Reference {relationship!r} from the {source} to the {target} '
+            'not converted: the STIX 1 document has no slot of the source '
+            'naming the target.'
         )
 
     def _validation_errors(self, *messages: tuple[str]):
