@@ -390,9 +390,11 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
                 misp_object['Attribute'][2]['Tag'][0]['name']
             )
         )
+        # An object's tags are written in the order its attributes carry
+        # them, whatever the hash seed of the run
         self.assertEqual(
-            set(stix_object.labels[-2:]),
-            set(attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3])
+            stix_object.labels[-2:],
+            [attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3]]
         )
 
     def _check_opinion_features(self, opinion, sighting, *object_ids):

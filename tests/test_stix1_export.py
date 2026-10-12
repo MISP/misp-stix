@@ -5146,19 +5146,21 @@ class TestStix1Export(TestSTIX):
         )
         indicator = incident.related_indicators.indicator[0].item
         self.assertEqual(indicator.confidence.value, 'High')
+        # An object's tags are written in the order its attributes carry
+        # them, whatever the hash seed of the run
         indicator_marking = indicator.handling[0]
         self.assertEqual(len(indicator_marking.marking_structures), 3)
         self.assertEqual(
-            set(self._parse_tag(attr['Tag'][0]['name']) for attr in ip_port['Attribute'][:3]),
-            set(self._get_marking_value(marking) for marking in indicator_marking.marking_structures)
+            tuple(self._parse_tag(attr['Tag'][0]['name']) for attr in ip_port['Attribute'][:3]),
+            tuple(self._get_marking_value(marking) for marking in indicator_marking.marking_structures)
         )
         coa = self.parser.stix_package.courses_of_action[0]
         self.assertFalse(hasattr(coa, 'confidence'))
         coa_marking = coa.handling[0]
         self.assertEqual(len(coa_marking.marking_structures), 3)
         self.assertEqual(
-            set(self._parse_tag(attr['Tag'][0]['name']) for attr in course_of_action['Attribute'][:3]),
-            set(self._get_marking_value(marking) for marking in coa_marking.marking_structures)
+            tuple(self._parse_tag(attr['Tag'][0]['name']) for attr in course_of_action['Attribute'][:3]),
+            tuple(self._get_marking_value(marking) for marking in coa_marking.marking_structures)
         )
         observable = incident.related_observables.observable[0].item
         self.assertFalse(hasattr(observable, 'confidence'))

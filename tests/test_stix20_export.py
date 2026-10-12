@@ -338,6 +338,14 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
             self._datetime_from_str(misp_layer['modified'])
         )
 
+    def _check_object_confidence_tags(self, stix_object, misp_object):
+        # An object's tags are written in the order its attributes carry
+        # them, whatever the hash seed of the run
+        self.assertEqual(
+            stix_object.labels[-2:],
+            [attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3]]
+        )
+
     def _check_opinion_features(self, opinion, sighting, *object_ids):
         self.assertEqual(opinion.type, 'x-misp-opinion')
         self.assertEqual(opinion.id, f"x-misp-opinion--{sighting['uuid']}")
@@ -490,6 +498,26 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         object_ids = {stix_object.id for stix_object in stix_objects}
         self.assertEqual(set(object_refs), object_ids)
 
+    def _test_event_with_object_confidence_tags(self, event):
+        tlp_tag, *confidence_tags = event['Tag']
+        self.parser.parse_misp_event(event)
+        ip_port, course_of_action, asn = self.parser._misp_event.objects
+        bundle = self._check_bundle_features(8)
+        _, report, observed_data1, _, coa, observed_data2, _, marking = bundle.objects
+        self.assertEqual(report.labels[-2:], [tag['name'] for tag in confidence_tags])
+        self._assert_multiple_equal(
+            [marking.id], report.object_marking_refs,
+            observed_data1.object_marking_refs, coa.object_marking_refs,
+            observed_data2.object_marking_refs
+        )
+        self.assertEqual(
+            f'{marking.definition_type}:{marking.definition[marking.definition_type]}',
+            tlp_tag['name']
+        )
+        self._check_object_confidence_tags(observed_data1, ip_port)
+        self._check_object_confidence_tags(coa, course_of_action)
+        self._check_object_confidence_tags(observed_data2, asn)
+
     def _test_event_with_sightings(self, event):
         orgc = event['Orgc']
         attribute1, attribute2 = event['Attribute']
@@ -593,6 +621,10 @@ class TestSTIX20JSONEventExport(TestSTIX20EventExport):
         event = get_event_with_event_report()
         self._test_event_with_event_report(event['Event'])
 
+    def test_event_with_object_confidence_tags(self):
+        event = get_event_with_object_confidence_tags()
+        self._test_event_with_object_confidence_tags(event['Event'])
+
     def test_event_with_sightings(self):
         event = get_event_with_sightings()
         self._test_event_with_sightings(event['Event'])
@@ -634,6 +666,12 @@ class TestSTIX20MISPEventExport(TestSTIX20EventExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_event_report(misp_event)
+
+    def test_event_with_object_confidence_tags(self):
+        event = get_event_with_object_confidence_tags()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_object_confidence_tags(misp_event)
 
     def test_event_with_sightings(self):
         event = get_event_with_sightings()
