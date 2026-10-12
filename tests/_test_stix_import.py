@@ -3837,6 +3837,31 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                         self.assertEqual(self.parser.warnings, {})
                         self.assertEqual(self.parser.errors, {})
 
+    def _round_trip_custom_attribute_values(self, export_parser_class):
+        # An attribute written as a custom object comes back with its value
+        # as MISP gave it: the custom object carries the value itself, so a
+        # doubled backslash, as a UNC path starts with, is no escape
+        from .test_events import get_event_with_stix2_custom_attributes
+        event = get_event_with_stix2_custom_attributes()['Event']
+        user_agent = next(
+            attribute for attribute in event['Attribute']
+            if attribute['type'] == 'user-agent'
+        )
+        user_agent['value'] = "\\\\server\\share\\it's"
+        export_parser = export_parser_class()
+        export_parser.parse_misp_event(event)
+        self.parser = InternalSTIX2toMISPParser()
+        self.parser.load_stix_bundle(export_parser.bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(
+            [(attribute.type, attribute.value)
+             for attribute in self.parser.misp_event.attributes],
+            [(attribute['type'], attribute['value'])
+             for attribute in event['Attribute']]
+        )
+        self.assertEqual(self.parser.warnings, {})
+        self.assertEqual(self.parser.errors, {})
+
     def _round_trip_pe_from_pattern(self, export_parser_class):
         # A pe read from its pattern alone comes back with every section the
         # pattern holds, none or more than ten, and with every value the pe

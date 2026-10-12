@@ -4265,6 +4265,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_non_pattern_values(MISPtoSTIX21Parser)
 
+    def test_stix21_custom_attribute_values_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._round_trip_custom_attribute_values(MISPtoSTIX21Parser)
+
     def test_stix21_non_canonical_numbers_round_trip(self):
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX21Parser)
