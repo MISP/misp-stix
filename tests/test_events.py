@@ -4321,12 +4321,12 @@ _TEST_WEAKNESS_OBJECT = {
     "timestamp": "1603642920",
     "Attribute": [
         {
-            "text": "text",
+            "type": "weakness",
             "object_relation": "id",
             "value": "CWE-119"
         },
         {
-            "text": "text",
+            "type": "text",
             "object_relation": "description",
             "value": "The software performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer"
         }
