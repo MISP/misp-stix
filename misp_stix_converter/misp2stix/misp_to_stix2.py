@@ -3289,9 +3289,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if feature is None:
                 continue
             if feature in indicator_args:
-                custom_fields[self._custom_property_name(relation)].append(
-                    attribute['value']
-                )
+                custom_fields[relation].append(attribute['value'])
                 continue
             if relation == 'version':
                 indicator_args[feature] = attribute['value'].strip(
