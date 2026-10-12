@@ -1573,6 +1573,10 @@ class InternalSTIX2IndicatorMapping(
         **STIX2IndicatorMapping.sigma_object_mapping(),
         x_misp_context={'type': 'text', 'object_relation': 'context'}
     )
+    __stix2_pattern_object_mapping = Mapping(
+        pattern={'type': 'stix2-pattern', 'object_relation': 'stix2-pattern'},
+        description=STIX2Mapping.comment_attribute()
+    )
     __x509_pattern_mapping = Mapping(
         **{
             'hashes.MD5': STIX2Mapping.x509_md5_attribute(),
@@ -1692,6 +1696,10 @@ class InternalSTIX2IndicatorMapping(
     @classmethod
     def sigma_object_mapping(cls) -> dict:
         return cls.__sigma_object_mapping
+
+    @classmethod
+    def stix2_pattern_object_mapping(cls) -> dict:
+        return cls.__stix2_pattern_object_mapping
 
     @classmethod
     def telegram_account_pattern_mapping(cls, field: str) -> dict | None:
@@ -2727,6 +2735,24 @@ class InternalSTIX2IndicatorConverter(
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
+        self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _object_from_stix2_pattern_indicator(
+            self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('stix2-pattern', indicator)
+        attributes = self._generic_parser(indicator, feature='stix2_pattern')
+        if indicator.get('pattern_version') is not None:
+            # The export writes the version number alone, where the template
+            # spells its versions `stix 2.0` and `stix 2.1`
+            attributes = chain(
+                self._populate_object_attributes(
+                    self._mapping.version_attribute(),
+                    f"stix {indicator['pattern_version']}", indicator.id
+                ),
+                attributes
+            )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
 
     def _object_from_telegram_account_indicator(

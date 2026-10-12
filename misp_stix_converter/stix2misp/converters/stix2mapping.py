@@ -1234,6 +1234,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'registry-key': '_object_from_registry_key',
             'registry-key-value': '_object_from_registry_key_value',
             'script': '_parse_script_object',
+            'stix2-pattern': '_object_from_stix2_pattern',
             'telegram-account': '_object_from_telegram_account',
             'twitter-account': '_object_from_twitter_account',
             'url': '_object_from_url',
