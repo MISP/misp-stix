@@ -1135,9 +1135,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     # same name. `test_stix2X_dash_meta_fields_are_frozen`.
     __dash_meta_fields = (
         'x_misp_attribution_confidence',
-        # The `country` galaxy maps to an SDO in 2.1 only, so ticket 38 pruned
-        # this one as dead on a 2.0-only reading: a 2.1 bundle from before the
-        # channel does carry it, and needs the `-` back.
+        # The `country` galaxy maps to an SDO in 2.1 only, so a 2.0 bundle
+        # never carries this key: a 2.1 bundle written before
+        # `x_misp_original_names` does, and needs its `-` back.
         'x_misp_budapest_convention',
         'x_misp_cfr_suspected_state_sponsor',
         'x_misp_cfr_suspected_victims',
