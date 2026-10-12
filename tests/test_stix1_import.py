@@ -5737,6 +5737,38 @@ class TestSTIX1Import(TestSTIX):
             self._exported_content(pe_object)
         )
 
+    def test_internal_bagged_attachment_and_malware_sample_warn_of_no_data(self):
+        """An `attachment` or a `malware-sample` carrying data is written as
+        an Artifact of its own; one carrying none goes in the property bag,
+        and came back typed per the template without a word, though the
+        attribute holds the file it names. It is kept, with one Warning per
+        attribute saying it arrives holding no data."""
+        event = get_event_with_file_object()
+        file_object = event['Event']['Object'][0]
+        parser = self._parse_internal_package(self._misp_export(event))
+        self.assertEqual(parser.diagnostics()['errors'], {})
+        converted, = parser.misp_event.get_objects_by_name('file')
+        self.assertEqual(
+            self._converted_content(converted),
+            self._exported_content(file_object)
+        )
+        for relation in ('attachment', 'malware-sample'):
+            with self.subTest(relation=relation):
+                attribute, = converted.get_attributes_by_relation(relation)
+                self.assertIsNone(getattr(attribute, 'data', None))
+        object_id = f"MISP:File-{file_object['uuid']}"
+        self.assertEqual(
+            sorted(self._warning_texts(parser)),
+            [
+                f"'attachment' carries no data in the object with id "
+                f'{object_id}: non converted, the attachment attribute '
+                'holding none.',
+                f"'malware-sample' carries no data in the object with id "
+                f'{object_id}: oui|8764605c6f388c89096b534d33565802 '
+                'converted, the malware-sample attribute holding none.'
+            ]
+        )
+
     def test_internal_misp_object_ttp_with_unconvertible_content_records_an_error(self):
         """A TTP the export titles as a MISP attribute or object is read for
         the attack pattern, vulnerability or weakness those are written as:
