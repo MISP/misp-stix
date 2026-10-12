@@ -4257,9 +4257,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_empty_event(MISPtoSTIX21Parser)
 
+    def test_stix21_escaped_pattern_values_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._round_trip_escaped_pattern_values(MISPtoSTIX21Parser)
+
     def test_stix21_non_canonical_numbers_round_trip(self):
         from misp_stix_converter import MISPtoSTIX21Parser
         self._round_trip_non_canonical_numbers(MISPtoSTIX21Parser)
+
+    def test_stix21_pe_from_pattern_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._round_trip_pe_from_pattern(MISPtoSTIX21Parser)
 
     def test_stix21_repeated_single_value_relations_round_trip(self):
         from misp_stix_converter import MISPtoSTIX21Parser

@@ -3766,6 +3766,174 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                 self.assertEqual(self.parser.warnings, {})
                 self.assertEqual(self.parser.errors, {})
 
+    def _round_trip_escaped_pattern_values(self, export_parser_class):
+        # A value holding a quote or a backslash, and in a registry key
+        # pattern a `%`, comes back from its pattern as MISP gave it, not with
+        # the escapes the pattern writes it with, a quote ending it included,
+        # and whole when it holds a ` = `; a `\%` outside a registry key
+        # pattern is no escape and stays
+        from .test_events import (
+            get_event_with_filename_attribute, get_event_with_mutex_object,
+            get_event_with_regkey_value_attribute)
+        attributes = (
+            (get_event_with_filename_attribute, "'C:\\%TEMP%\\it's.exe'"),
+            (get_event_with_regkey_value_attribute,
+             "HKLM\\Software\\it's = 1|%DATA%\\1234567890")
+        )
+        for fixture, value in attributes:
+            with self.subTest(fixture=fixture.__name__):
+                event = fixture()
+                event['Event']['Attribute'][0]['value'] = value
+                export_parser = export_parser_class()
+                export_parser.parse_misp_event(event['Event'])
+                self.parser = InternalSTIX2toMISPParser()
+                self.parser.load_stix_bundle(
+                    self._indicator_only_bundle(export_parser.bundle)
+                )
+                self.parser.parse_stix_bundle()
+                self.assertEqual(
+                    [attribute.value
+                     for attribute in self.parser.misp_event.attributes],
+                    [value]
+                )
+                self.assertEqual(self.parser.warnings, {})
+                self.assertEqual(self.parser.errors, {})
+        with self.subTest(fixture='get_event_with_mutex_object'):
+            event = get_event_with_mutex_object()
+            event['Event']['Object'][0]['Attribute'][0]['value'] = (
+                "'Global\\it's = 1'"
+            )
+            attributes = self._round_trip_object_attributes(
+                export_parser_class(), event, to_ids=True, pattern_path=True
+            )
+            self.assertIn(('text', 'name', "'Global\\it's = 1'"), attributes)
+            self.assertEqual(self.parser.warnings, {})
+            self.assertEqual(self.parser.errors, {})
+
+    def _round_trip_pe_from_pattern(self, export_parser_class):
+        # A pe read from its pattern alone comes back with every section the
+        # pattern holds, none or more than ten, and with every value the pe
+        # or a section repeats a relation with, whether a file carries the pe
+        # or not
+        from .test_events import (
+            get_event_with_file_and_pe_objects, get_event_with_pe_objects)
+        names = ('.rsrc', *(f'.s{index}' for index in range(1, 12)))
+        for fixture in (get_event_with_file_and_pe_objects,
+                        get_event_with_pe_objects):
+            for count in (0, len(names)):
+                with self.subTest(fixture=fixture.__name__, sections=count):
+                    event = self._with_pe_sections(fixture(), names[:count])
+                    _, sections = self._pe_imphashes_and_section_names(
+                        export_parser_class, event
+                    )
+                    self.assertEqual(
+                        sections, [(name,) for name in sorted(names[:count])]
+                    )
+            with self.subTest(fixture=fixture.__name__, repeated=True):
+                event = fixture()
+                pe, section = (
+                    next(
+                        misp_object
+                        for misp_object in event['Event']['Object']
+                        if misp_object['name'] == name
+                    ) for name in ('pe', 'pe-section')
+                )
+                further = ('b2a5abfeef9e36964281a31e17b57c97',
+                           'c3a5abfeef9e36964281a31e17b57c97')
+                append_further_values(pe, 'imphash', further, True)
+                append_further_values(section, 'name', ('.text', '.data'), True)
+                imphashes, sections = self._pe_imphashes_and_section_names(
+                    export_parser_class, event
+                )
+                self.assertEqual(
+                    imphashes, {'23ea835ab4b9017c74dfb023d2301c99', *further}
+                )
+                self.assertEqual(sections, [('.data', '.rsrc', '.text')])
+
+    @staticmethod
+    def _with_pe_sections(event: dict, names: tuple) -> dict:
+        # The event's pe with one section per name, each a copy of the
+        # event's section holding that name
+        objects = event['Event']['Object']
+        pe = next(
+            misp_object for misp_object in objects
+            if misp_object['name'] == 'pe'
+        )
+        section = next(
+            misp_object for misp_object in objects
+            if misp_object['name'] == 'pe-section'
+        )
+        reference = pe['ObjectReference'][0]
+        sections, references = [], []
+        for name in names:
+            section_uuid = str(uuid5(UUID(section['uuid']), name))
+            attributes = []
+            for attribute in section['Attribute']:
+                attribute = {
+                    key: value for key, value in attribute.items()
+                    if key != 'uuid'
+                }
+                if attribute['object_relation'] == 'name':
+                    attribute['value'] = name
+                attributes.append(attribute)
+            sections.append(
+                {**section, 'uuid': section_uuid, 'Attribute': attributes}
+            )
+            references.append(
+                {
+                    **reference, 'uuid': str(uuid5(UUID(reference['uuid']), name)),
+                    'referenced_uuid': section_uuid,
+                    'Object': {**reference['Object'], 'uuid': section_uuid}
+                }
+            )
+        pe['ObjectReference'] = references
+        event['Event']['Object'] = [
+            misp_object for misp_object in objects
+            if misp_object['name'] != 'pe-section'
+        ] + sections
+        return event
+
+    def _pe_imphashes_and_section_names(
+            self, export_parser_class, event: dict) -> tuple:
+        # The imphash values of the pe an event's Indicator alone gives back,
+        # and the sorted name values of each of its sections, checked to be
+        # the sections the pe includes, with no message
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = True
+        export_parser = export_parser_class()
+        export_parser.parse_misp_event(event['Event'])
+        self.parser = InternalSTIX2toMISPParser()
+        self.parser.load_stix_bundle(
+            self._indicator_only_bundle(export_parser.bundle)
+        )
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.warnings, {})
+        self.assertEqual(self.parser.errors, {})
+        objects = self.parser.misp_event.objects
+        pe = next(misp_object for misp_object in objects if misp_object.name == 'pe')
+        sections = [
+            misp_object for misp_object in objects
+            if misp_object.name == 'pe-section'
+        ]
+        self.assertEqual(
+            {reference.referenced_uuid for reference in pe.references},
+            {section.uuid for section in sections}
+        )
+        return (
+            {attribute.value
+             for attribute in pe.get_attributes_by_relation('imphash')},
+            sorted(
+                tuple(
+                    sorted(
+                        attribute.value for attribute
+                        in section.get_attributes_by_relation('name')
+                    )
+                )
+                for section in sections
+            )
+        )
+
     def _round_trip_object_attributes(
             self, export_parser, event: dict, to_ids: bool = False,
             pattern_path: bool = False, name=None) -> set:
@@ -3938,29 +4106,11 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         # every value its MISP object repeats it with, read from the record or
         # its observable, and from its pattern alone, nothing else of the
         # object moving and no message added
-        from .test_events import (
-            get_event_with_file_object, get_event_with_pe_objects,
-            get_event_with_registry_key_and_values_objects,
-            get_event_with_registry_key_object,
-            get_event_with_registry_key_value_object)
-        # Round trips that fail with no repeat, so cannot show one: a file
-        # read from its pattern alone raises, a pe with no file is not read at
-        # all, a registry key read from its pattern keeps the pattern escapes
-        failing = {
-            (get_event_with_file_object, True),
-            (get_event_with_pe_objects, False),
-            (get_event_with_pe_objects, True),
-            (get_event_with_registry_key_and_values_objects, True),
-            (get_event_with_registry_key_object, True),
-            (get_event_with_registry_key_value_object, True)
-        }
         modes = ((False, False), (True, False), (True, True))
         for fixture, name, relation, values in self._REPEATED_RELATIONS:
             if not isinstance(values, tuple):
                 values = (values,)
             for to_ids, pattern_path in modes:
-                if (fixture, pattern_path) in failing:
-                    continue
                 with self.subTest(name=name, relation=relation, to_ids=to_ids,
                                   pattern_path=pattern_path):
                     event = fixture()
