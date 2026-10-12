@@ -130,7 +130,9 @@ class MISPtoSTIXParser(AbstractParser):
 
     def _extract_object_attribute_tags_and_galaxies(
             self, misp_object: dict) -> tuple:
-        tags: set = set()
+        # The tag names in the order the attributes carry them, each once: a
+        # set would write them in the order of the run's hash seed
+        tag_names: dict = {}
         galaxies: dict = {}
         for attribute in misp_object['Attribute']:
             if attribute.get('Galaxy'):
@@ -143,8 +145,10 @@ class MISPtoSTIXParser(AbstractParser):
                     else:
                         galaxies[galaxy_type] = galaxy
             if attribute.get('Tag'):
-                tags.update(tag['name'] for tag in attribute['Tag'])
-        return tags, galaxies
+                tag_names.update(
+                    dict.fromkeys(tag['name'] for tag in attribute['Tag'])
+                )
+        return tuple(tag_names), galaxies
 
     def _handle_event_tags_and_galaxies(self) -> tuple:
         if self._misp_event.get('Galaxy'):
