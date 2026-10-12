@@ -719,6 +719,48 @@ class TestSTIX2Export(TestSTIX):
                     comparisons
                 )
 
+    # A stix2-pattern object goes out as an Indicator holding its pattern,
+    # its version as the pattern version and its comment as the description.
+    # A further version is carried under the relation's custom property. Not
+    # one of the repeated relations: the pattern is the object's own value,
+    # which a further version adds no comparison to
+
+    def _test_stix2_pattern_object(self, parser_class):
+        from .test_events import get_event_with_stix2_pattern_object
+        for further_versions, custom_properties in (
+                ((), {}),
+                (('stix 2.0',), {'x_misp_version': 'stix 2.0'})):
+            with self.subTest(further_versions=further_versions):
+                event = get_event_with_stix2_pattern_object()
+                misp_object = self._spell_object_relations(
+                    event, 'stix2-pattern', {},
+                    *(('text', 'version', value) for value in further_versions)
+                )
+                self.parser = self._export_event(parser_class, event)
+                self.assertEqual(self.parser.errors, {})
+                self.assertEqual(self.parser.warnings, {})
+                indicator, = (
+                    stix_object for stix_object in self.parser.stix_objects
+                    if stix_object.id == f"indicator--{misp_object['uuid']}"
+                )
+                self.assertEqual(
+                    indicator.pattern,
+                    "[network-traffic:dst_port = '443' AND "
+                    "network-traffic:dst_ref.value = '8.8.8.8']"
+                )
+                self.assertEqual(indicator.pattern_version, '2.1')
+                self.assertEqual(
+                    indicator.description,
+                    'HTTPS traffic to the Google public DNS'
+                )
+                self.assertEqual(
+                    {
+                        key: value for key, value in indicator.items()
+                        if key.startswith('x_misp_')
+                    },
+                    custom_properties
+                )
+
     def _export_event(self, parser_class, event):
         parser = parser_class()
         parser.parse_misp_event(self._parser_input(event))

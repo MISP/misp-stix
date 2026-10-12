@@ -6672,6 +6672,9 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_netflow_object_with_icmp_type(self):
         self._test_netflow_object_with_icmp_type(MISPtoSTIX21Parser)
 
+    def test_event_with_stix2_pattern_object(self):
+        self._test_stix2_pattern_object(MISPtoSTIX21Parser)
+
 
 class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
     def test_embedded_indicator_object_galaxy(self):
@@ -7273,6 +7276,9 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_netflow_object_with_icmp_type(self):
         self._test_netflow_object_with_icmp_type(MISPtoSTIX21Parser)
+
+    def test_event_with_stix2_pattern_object(self):
+        self._test_stix2_pattern_object(MISPtoSTIX21Parser)
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):

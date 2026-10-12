@@ -4173,6 +4173,34 @@ _TEST_SIGHTINGS = [
     }
 ]
 
+_TEST_STIX2_PATTERN_OBJECT = {
+    "name": "stix2-pattern",
+    "meta-category": "misc",
+    "description": "An object describing a STIX pattern.",
+    "uuid": "6d1e3c8a-2f4b-4a7e-9c5d-8b0f1e2a3c4d",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "7e2f4d9b-3a5c-4b8f-8d6e-9c1a2f3b4d5e",
+            "type": "stix2-pattern",
+            "object_relation": "stix2-pattern",
+            "value": "[network-traffic:dst_port = '443' AND network-traffic:dst_ref.value = '8.8.8.8']"
+        },
+        {
+            "uuid": "8f3a5e0c-4b6d-4c9a-9e7f-0d2b3a4c5e6f",
+            "type": "text",
+            "object_relation": "version",
+            "value": "stix 2.1"
+        },
+        {
+            "uuid": "9a4b6f1d-5c7e-4dab-8f8a-1e3c4b5d6f7a",
+            "type": "comment",
+            "object_relation": "comment",
+            "value": "HTTPS traffic to the Google public DNS"
+        }
+    ]
+}
+
 _TEST_URL_OBJECT = {
     "name": "url",
     "meta-category": "network",
@@ -6925,6 +6953,14 @@ def get_event_with_script_objects():
     event['Event']['Object'] = [
         dict(_populate_object(script_to_malware_object)),
         dict(_populate_object(script_to_tool_object))
+    ]
+    return event
+
+
+def get_event_with_stix2_pattern_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        dict(_populate_object(_TEST_STIX2_PATTERN_OBJECT))
     ]
     return event
 
