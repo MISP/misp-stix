@@ -10643,7 +10643,7 @@ class TestSTIX1Import(TestSTIX):
                         value = exported[attribute.uuid]
                         # pymisp parses the datetime a member carries
                         if isinstance(attribute.value, datetime):
-                            value = datetime.fromisoformat(value)
+                            value = self._datetime_from_str(value)
                         self.assertEqual(str(value), str(attribute.value))
 
     def _round_trip_object(self, event, name):
