@@ -14,6 +14,7 @@ from cybox.core import Observable, ObservableComposition, RelatedObject
 from cybox.common import Hash, HashList, ByteRun, ByteRuns
 from cybox.common.hashes import _set_hash_type
 from cybox.common.object_properties import CustomProperties,  Property
+from cybox.common.vocabs import ObjectRelationship, VocabString
 from cybox.objects.account_object import Authentication, StructuredAuthenticationMechanism
 from cybox.objects.address_object import Address
 from cybox.objects.artifact_object import Artifact, RawArtifact
@@ -47,9 +48,10 @@ from cybox.objects.win_user_account_object import WinGroup, WinGroupList, WinUse
 from cybox.objects.x509_certificate_object import X509Certificate, X509CertificateSignature, X509Cert, SubjectPublicKey, RSAPublicKey, Validity
 from datetime import datetime, timezone
 from io import BytesIO
+from math import isinf, isnan
 from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction
-from stix.common import InformationSource, Identity, ToolInformation
+from stix.common import InformationSource, Identity, StructuredText, ToolInformation
 from stix.common.confidence import Confidence
 from stix.common.related import RelatedCOA, RelatedIndicator, RelatedObservable, RelatedThreatActor, RelatedTTP
 from stix.common.vocabs import IncidentStatus
@@ -73,7 +75,7 @@ from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
-from typing import Optional, Tuple, Union
+from typing import Any, Iterable, Optional, Tuple, Union
 from uuid import uuid5, UUID
 
 _FILE_SINGLE_ATTRIBUTES = (
@@ -81,6 +83,25 @@ _FILE_SINGLE_ATTRIBUTES = (
     "sha1", "sha224", "sha256", "sha384", "sha512", "sha512/224", "sha512/256",
     "size-in-bytes", "ssdeep", "tlsh", "vhash"
 )
+# The spellings of a boolean a MISP value of a `boolean` relation takes
+_MISP_BOOLEAN_SPELLINGS = {
+    '1': True, 'true': True, 'True': True,
+    '0': False, 'false': False, 'False': False
+}
+# The templates whose CybOX type another template writes too: a `credential`
+# is a `UserAccount`, like a `user-account` with no unix or windows account
+# type. On an Indicator the Record Title names the template; an Observable
+# written without one carries that title itself, which every other object
+# Observable goes without
+_TITLED_OBSERVABLE_OBJECT_NAMES = ('credential',)
+# The CybOX ObjectRelationship terms, by the MISP relationship spelling each
+# one matches whatever its case and separators: taken from the vocabulary
+# rather than spelled by a rule, `Sub-domain_Of` mixing both separators
+_OBJECT_RELATIONSHIP_TERMS = {
+    term.lower().replace('_', '-'): term
+    for name, term in vars(ObjectRelationship).items()
+    if name.startswith('TERM_')
+}
 _NON_INDICATOR_OBJECT_TYPES = Union[Campaign, CourseOfAction, TTP]
 _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
@@ -113,6 +134,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _resolve_attribute(self, attribute: dict):
         attribute_type = attribute['type']
+        built = len(self._built_constructs)
         try:
             to_call = self._mapping.attribute_types_mapping(attribute_type)
             if to_call is not None:
@@ -121,6 +143,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._parse_custom_attribute(attribute)
                 self._attribute_not_mapped_warning(attribute_type)
         except Exception as exception:
+            self._roll_back_constructs(built)
             self._attribute_error(attribute, exception)
 
     def _handle_attribute_indicator(self, attribute: dict, observable: Observable) -> Indicator:
@@ -145,29 +168,26 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
 
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
-        if attribute.get('Galaxy'):
-            tag_names = []
-            for galaxy in attribute['Galaxy']:
-                galaxy_type = galaxy['type']
-                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if to_call is not None:
-                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
-            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
-        return tuple(tag['name'] for tag in attribute.get('Tag', []))
+        galaxies = attribute.get('Galaxy', [])
+        for galaxy in galaxies:
+            galaxy_type = galaxy['type']
+            to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+            if to_call is not None:
+                getattr(self, to_call.format('attribute'))(galaxy, indicator)
+            else:
+                self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
+        return self._with_galaxy_tags(
+            (tag['name'] for tag in attribute.get('Tag', [])), galaxies
+        )
 
     def _handle_exploit_target(self, attribute: dict, stix_object: Union[Vulnerability, Weakness], stix_type: str):
         attribute_uuid = attribute['uuid']
         ttp = self._create_ttp(attribute)
         timestamp = self._optional_timestamp(attribute)
-        exploit_target = ExploitTarget(timestamp=timestamp)
-        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{attribute_uuid}"
-        if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
-            exploit_target.description = attribute['comment']
+        exploit_target = self._create_exploit_target(
+            attribute, stix_object, stix_type
+        )
         exploit_target.title = f"{stix_type.capitalize()} {attribute['value']}"
-        getattr(exploit_target, f"add_{stix_type}")(stix_object)
         ttp.add_exploit_target(exploit_target)
         tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
         if tags:
@@ -176,20 +196,23 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if self.identifier != 'attributes collection':
             related_ttp = self._create_related_ttp(ttp.id_, attribute['type'], timestamp=timestamp)
             self._incident.add_leveraged_ttps(related_ttp)
+            # A reference from an object can name the attribute's TTP, in a
+            # Related_TTP or an Indicated_TTP, as it names an object's
+            self._contextualised_data.add(attribute_uuid)
+            self._written_ttps[attribute_uuid] = ttp
 
     def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: dict, ttp: TTP) -> tuple:
-        if attribute.get('Galaxy'):
-            tag_names = []
-            for galaxy in attribute['Galaxy']:
-                galaxy_type = galaxy['type']
-                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if galaxy_type not in self._mapping.ttp_names() or to_call is None:
-                    self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
-                    continue
-                getattr(self, to_call.format('object'))(galaxy, ttp)
-                tag_names.extend(self._quick_fetch_tag_names(galaxy))
-            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
-        return tuple(tag['name'] for tag in attribute.get('Tag', []))
+        galaxies = attribute.get('Galaxy', [])
+        for galaxy in galaxies:
+            galaxy_type = galaxy['type']
+            to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+            if galaxy_type not in self._mapping.ttp_names() or to_call is None:
+                self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
+                continue
+            getattr(self, to_call.format('object'))(galaxy, ttp)
+        return self._with_galaxy_tags(
+            (tag['name'] for tag in attribute.get('Tag', [])), galaxies
+        )
 
     def _parse_attachment(self, attribute: dict):
         if attribute.get('data'):
@@ -201,7 +224,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._parse_file_attribute(attribute)
 
     def _parse_autonomous_system_attribute(self, attribute: dict):
-        autonomous_system = self._create_autonomous_system_object(attribute['value'])
+        value = attribute['value']
+        if not self._is_as_handle(value):
+            if self._custom_attribute_unless_canonical(attribute, value):
+                return
+        autonomous_system = self._create_autonomous_system_object(value)
         observable = self._create_observable(autonomous_system, attribute['uuid'], 'AS')
         self._handle_attribute(attribute, observable)
 
@@ -210,8 +237,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         campaign = Campaign(timestamp=timestamp)
         campaign.id_ = f"{self._orgname_id}:Campaign-{attribute['uuid']}"
         campaign.title = f"{attribute.get('category', 'Other')}: {attribute['value']} (MISP Attribute)"
-        if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
-            campaign.description = attribute['comment']
+        self._add_record_comment(campaign, attribute)
         names = Names()
         names.name = attribute['value']
         campaign.names = names
@@ -226,14 +252,47 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             campaign.handling = self._create_handling(sorted_tags)
         self._stix_package.add_campaign(campaign)
 
+    def _custom_attribute_unless_canonical(
+            self, attribute: dict, value: Any, positive: bool = False) -> bool:
+        """Write an attribute whose number the native CybOX integer field
+        would rewrite or refuse as a custom attribute instead, whole, its
+        value under its type - and say whether it did: the caller writes the
+        native field only when it did not."""
+        record = self._attribute_record(attribute)
+        if self._canonical_integer(
+                value, attribute['type'], record, positive=positive):
+            return False
+        self._parse_custom_attribute(attribute)
+        return True
+
     def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
-        custom_object.custom_properties.append(
-            self._create_property(attribute['type'], attribute['value'])
+        self._append_property(
+            custom_object.custom_properties,
+            attribute['type'], attribute['value'],
+            self._attribute_record(attribute)
         )
         observable = self._create_observable(custom_object, attribute['uuid'], 'Custom')
         self._handle_attribute(attribute, observable)
+
+    def _write_custom_attribute(self, attribute: dict):
+        """The attribute error fallback: the attribute a route failed on goes
+        out as a `Custom` Observable.
+
+        :param attribute: the MISP attribute the export failed on
+        """
+        built = len(self._built_constructs)
+        try:
+            self._parse_custom_attribute(attribute)
+        except Exception:
+            # The Observable is written the way the failed route writes its
+            # own, from the same attribute fields: what failed there - a
+            # timestamp the Indicator cannot parse, a malformed tag or
+            # cluster - fails here again, with nothing left to catch it. The
+            # attribute is lost, and the error already says so. The galaxy
+            # constructs this second write built go with it
+            self._roll_back_constructs(built)
 
     def _parse_domain_attribute(self, attribute: dict):
         observable = self._create_domain_observable(attribute['value'], attribute['uuid'])
@@ -344,6 +403,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 hostname, port = attribute['value'].split(separator)
+                if self._custom_attribute_unless_canonical(
+                        attribute, port, positive=True):
+                    break
                 socket_address = self._create_socket_address_object(
                     hostname=hostname, port=port)
                 observable = self._create_observable(
@@ -379,6 +441,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 ip, port = attribute['value'].split(separator)
+                if self._custom_attribute_unless_canonical(
+                        attribute, port, positive=True):
+                    break
                 ip_type = attribute['type'].split('|')[0]
                 socket_address = self._create_socket_address_object(ip=(ip_type, ip), port=port)
                 observable = self._create_observable(
@@ -432,6 +497,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute(attribute, observable)
 
     def _parse_port_attribute(self, attribute: dict):
+        if self._custom_attribute_unless_canonical(
+                attribute, attribute['value'], positive=True):
+            return
         observable = self._create_port_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
 
@@ -461,6 +529,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_attribute(attribute, observable)
 
     def _parse_size_in_bytes_attribute(self, attribute: dict):
+        if self._custom_attribute_unless_canonical(attribute, attribute['value']):
+            return
         file_object = File()
         file_object.size_in_bytes = attribute['value']
         file_object.size_in_bytes.condition = 'Equals'
@@ -470,12 +540,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_snort_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             test_mechanism = SnortTestMechanism()
-            test_mechanism.rules = [
-                {
-                    "value": attribute['value'],
-                    "encoded": True
-                }
-            ]
+            # The rule text itself: python-stix wraps it in the CDATA the
+            # schema wants, and a dict here was written as its Python repr
+            test_mechanism.rules = [attribute['value']]
             self._handle_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(attribute)
@@ -519,9 +586,16 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_undefined_attribute(self, attribute: dict):
         if attribute.get('comment') and attribute['comment'] == 'Imported from STIX header description':
-            self._header_comment.append(attribute['value'])
+            self._header_description_attributes.append(attribute)
         else:
-            self._add_journal_entry(f"Attribute ({attribute.get('category', 'Other')} - {attribute['type']}): {attribute['value']}")
+            self._add_attribute_journal_entry(attribute)
+        # Text has no handling for a cluster tag
+        record = self._attribute_record(attribute)
+        for tag_name in self._with_galaxy_tags((), attribute.get('Galaxy', ())):
+            self._journal_entry_galaxy_warning(tag_name, record)
+
+    def _add_attribute_journal_entry(self, attribute: dict):
+        self._add_journal_entry(f"Attribute ({attribute.get('category', 'Other')} - {attribute['type']}): {attribute['value']}")
 
     def _parse_user_agent_attribute(self, attribute: dict):
         http_client_request = HTTPClientRequest()
@@ -585,10 +659,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_yara_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             test_mechanism = YaraTestMechanism()
-            test_mechanism.rule = {
-                "value": attribute['value'],
-                "encoded": True
-            }
+            # The rule text itself, as for a `snort` attribute
+            test_mechanism.rule = attribute['value']
             self._handle_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(attribute)
@@ -634,7 +706,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if cluster['uuid'] not in self._ids:
             course_of_action = self._create_course_of_action_from_galaxy(cluster)
             self._stix_package.add_course_of_action(course_of_action)
-            self._ids.add(cluster['uuid'])
+            self._record_construct(
+                cluster['uuid'], self._ids,
+                self._stix_package.courses_of_action, course_of_action
+            )
             return course_of_action.id_
         return f"{self._orgname_id}:CourseOfAction-{cluster['uuid']}"
 
@@ -675,9 +750,23 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if cluster['uuid'] not in self._ids:
             threat_actor = self._create_threat_actor_from_galaxy(cluster)
             self._stix_package.add_threat_actor(threat_actor)
-            self._ids.add(cluster['uuid'])
+            self._record_construct(
+                cluster['uuid'], self._ids,
+                self._stix_package.threat_actors, threat_actor
+            )
             return threat_actor.id_
         return f"{self._orgname_id}:ThreatActor-{cluster['uuid']}"
+
+    def _parse_threat_actor_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
+        # A STIX 1 Indicator has no threat actor slot: the actor lands where
+        # an event-level one does
+        self._parse_threat_actor_galaxy(galaxy)
+
+    def _parse_threat_actor_galaxy(self, galaxy: dict):
+        # The actors go on the package; the events parser also attributes
+        # them to its Incident
+        for cluster in galaxy['GalaxyCluster']:
+            self._parse_threat_actor(cluster)
 
     def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         galaxy_name = galaxy['name']
@@ -710,9 +799,55 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             ttp = self._create_ttp_from_galaxy(galaxy_name, cluster['uuid'])
             getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
             self._stix_package.add_ttp(ttp)
-            self._ids.add(cluster['uuid'])
+            self._record_construct(
+                cluster['uuid'], self._ids, self._stix_package.ttps.ttp, ttp
+            )
             return ttp.id_
         return f"{self._orgname_id}:TTP-{cluster['uuid']}"
+
+    def _record_construct(self, cluster_uuid: str, written: set,
+                          container: list, construct):
+        """Record a galaxy construct, or the reference to one, as written:
+        its cluster uuid in the set the next one is looked up in, the
+        construct in the list it was added to, for a failing record to roll
+        it back."""
+        written.add(cluster_uuid)
+        self._built_constructs.append(
+            (cluster_uuid, written, container, construct)
+        )
+
+    def _keep_constructs(self, built: int):
+        """Keep the constructs written since `built` from the rollback of
+        the record they are nested in: the record they belong to is
+        written."""
+        self._kept_constructs.update(range(built, len(self._built_constructs)))
+
+    def _roll_back_constructs(self, built: int):
+        """Undo what the galaxies of a failing record wrote, down to the
+        `built` constructs written before it.
+
+        A record's galaxies are written before the steps of its route that
+        can still fail, and its error fallback writes it with no reference
+        to them: left in place, they would be read back as clusters of the
+        event, tied to no record. One a record written before it holds is
+        kept, and one the fallback references again is written again. So is
+        one a record nested in the failing one wrote, its own fallback having
+        written it: a `pe` failing under its `file` is written standalone.
+
+        :param built: the number of constructs written before the record
+        """
+        while len(self._built_constructs) > built:
+            cluster_uuid, written, container, construct = self._built_constructs.pop()
+            if len(self._built_constructs) in self._kept_constructs:
+                self._kept_constructs.discard(len(self._built_constructs))
+                continue
+            del container[next(
+                index for index, item in enumerate(container) if item is construct
+            )]
+            written.discard(cluster_uuid)
+        ttps = self._stix_package.ttps
+        if ttps is not None and not ttps.ttp:
+            self._stix_package.ttps = None
 
     def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         galaxy_name = galaxy['name']
@@ -747,6 +882,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
+
+    def _append_property(self, custom_properties: CustomProperties,
+                         name: str, value: Any, record: Optional[str] = None):
+        prop = self._create_property(name, value, record)
+        if prop is not None:
+            custom_properties.append(prop)
 
     def _add_journal_entry(self, entryline: str):
         history_item = HistoryItem()
@@ -802,9 +943,14 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return observable
 
     @staticmethod
-    def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
+    def _is_as_handle(AS: Any) -> bool:
+        # An integer is the number itself, never an `AS`-prefixed handle
+        return isinstance(AS, str) and AS.startswith('AS')
+
+    def _create_autonomous_system_object(
+            self, AS: Union[int, str]) -> AutonomousSystem:
         autonomous_system = AutonomousSystem()
-        feature = 'handle' if AS.startswith('AS') else 'number'
+        feature = 'handle' if self._is_as_handle(AS) else 'number'
         setattr(autonomous_system, feature, AS)
         setattr(getattr(autonomous_system, feature), 'condition', 'Equals')
         return autonomous_system
@@ -835,6 +981,26 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         domain_object = self._create_domain_object(domain)
         observable = self._create_observable(domain_object, uuid, 'DomainName', alternative_uuid)
         return observable
+
+    def _create_exploit_target(
+            self, record: dict, stix_object: Union[Vulnerability, Weakness],
+            stix_type: str) -> ExploitTarget:
+        """The Exploit Target a `vulnerability` or `weakness` record, attribute
+        or object, is written in: its uuid, timestamp and comment, holding the
+        Vulnerability or Weakness built from it.
+
+        :param record: the MISP attribute or object
+        :param stix_object: the Vulnerability or Weakness built from it
+        :param stix_type: `vulnerability` or `weakness`
+        :return: the Exploit Target
+        """
+        exploit_target = ExploitTarget(
+            timestamp=self._optional_timestamp(record)
+        )
+        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{record['uuid']}"
+        self._add_record_comment(exploit_target, record)
+        getattr(exploit_target, f"add_{stix_type}")(stix_object)
+        return exploit_target
 
     @staticmethod
     def _create_file_object(filename: str) -> File:
@@ -904,6 +1070,20 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable.id_ = f"{self._orgname_id}:Observable-{alternative_uuid}"
         return observable
 
+    @staticmethod
+    def _add_record_comment(
+            stix_object: Union[Campaign, ExploitTarget, Observable, TTP],
+            record: dict):
+        # A record exported without `to_ids` has no Indicator to carry its
+        # comment, and a context record is a TTP or a Campaign with none
+        # either. The Observable's own description carries it, the Exploit
+        # Target's for a `vulnerability` or `weakness`, the Campaign's for a
+        # `campaign-name`, the TTP's own for an `attack-pattern` object, whose
+        # Attack Pattern descriptions all carry relations. Only when there is
+        # one: an uncommented record writes no description
+        if record.get('comment'):
+            stix_object.description = record['comment']
+
     def _create_observable_composition(self, observables: list, uuid: str,
                                        name: Optional[str] = None) -> Observable:
         object_type = 'ObservableComposition' if name is None else f'{name}_ObservableComposition'
@@ -912,6 +1092,71 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable = Observable(id_=f'{self._orgname_id}:{object_type}-{uuid}')
         observable.observable_composition = observable_composition
         return observable
+
+    def _create_custom_members(self, misp_object: dict,
+                                     written: tuple) -> list:
+        """Build a composition member for each relation of a MISP object the
+        composition has no member of its own for.
+
+        A composition has no property bag to put them in: each value is one
+        nameless `Custom` object holding one property named with the
+        relation, under the attribute's uuid as every other member is, so
+        that each member still carries one attribute.
+
+        :param misp_object: the MISP object the composition is written from
+        :param written: the relations the composition writes a member for
+        :return: the members, one per value a property can carry
+        """
+        record = self._object_record(misp_object)
+        observables = []
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            if relation in written:
+                continue
+            observable = self._create_custom_member(
+                relation, attribute['value'], attribute['uuid'], record
+            )
+            if observable is not None:
+                observables.append(observable)
+        return observables
+
+    def _create_custom_member(self, relation: str, value: Any, uuid: str,
+                              record: str) -> Optional[Observable]:
+        prop = self._create_property(relation, value, record)
+        if prop is None:
+            return None
+        custom_object = Custom()
+        custom_object.custom_properties = CustomProperties()
+        custom_object.custom_properties.append(prop)
+        return self._create_observable(custom_object, uuid, 'Custom')
+
+    def _create_port_members(self, misp_object: dict, relation: str,
+                             ports: list,
+                             feature: Optional[str] = None) -> list:
+        """Build the composition member of each port of a relation, as a
+        `Custom` one where the port is a number the CybOX field would
+        rewrite or refuse.
+
+        :param misp_object: the MISP object the composition is written from
+        :param relation: the relation the ports are values of
+        :param ports: the value and the uuid of each port attribute
+        :param feature: the side a port is on, where the relation names one
+        :return: the members, one per value a property can carry
+        """
+        record = self._object_record(misp_object)
+        observables = []
+        for port, uuid in ports:
+            if self._canonical_integer(port, relation, record, positive=True):
+                observables.append(
+                    self._create_port_observable(port, uuid, feature=feature)
+                )
+                continue
+            observable = self._create_custom_member(
+                relation, port, uuid, record
+            )
+            if observable is not None:
+                observables.append(observable)
+        return observables
 
     @staticmethod
     def _create_port_object(port: str) -> Port:
@@ -929,13 +1174,108 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         observable = self._create_observable(port_object, uuid, object_type)
         return observable
 
-    def _create_property(self, name: str, value: str) -> Property:
+    def _create_property(
+            self, name: str, value: Any,
+            record: Optional[str] = None) -> Optional[Property]:
+        """Build a CybOX custom property out of a MISP value.
+
+        A MISP object template names the type of the relation it declares, so
+        a boolean, an integer or a float goes out in the lexical form XSD has
+        for it, under the CybOX `datatype` saying which - values cybox
+        refuses outright today, so no document that has ever been written
+        changes. A value with no such form is skipped with a warning rather
+        than raising: the property is built from routes nothing above
+        catches.
+        """
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+        if isinstance(value, list):
+            # cybox validates a list element by element, so one value with no
+            # lexical form costs the property exactly as it would alone - an
+            # empty one carries nothing to write in the first place
+            forms = [self._lexical_form(item) for item in value]
+            if not forms or None in forms:
+                self._unstorable_property_warning(name, value, record)
+                return None
+            datatypes = {datatype for datatype, _ in forms}
+            # Values of one relation share a type; a list that mixes them has
+            # no one name, so it goes out as the strings it already is
+            datatype = datatypes.pop() if len(datatypes) == 1 else None
+            lexical_form = [form for _, form in forms]
+        else:
+            form = self._lexical_form(value)
+            if form is None:
+                self._unstorable_property_warning(name, value, record)
+                return None
+            datatype, lexical_form = form
         prop = Property()
         prop.name = name
-        if isinstance(value, datetime):
-            value = self._datetime_to_str(value)
-        prop.value = value
+        if datatype is not None:
+            prop.datatype = datatype
+        prop.value = lexical_form
         return prop
+
+    def _canonical_integer(self, value: Any, relation: str, record: str,
+                           signed: bool = False,
+                           positive: bool = False) -> bool:
+        """Whether a native CybOX integer field holds a MISP value unchanged.
+
+        cybox casts a string with `int(value, 0)` and checks no sign against
+        an unsigned type: `'0x1f'` goes out as `31`, `'-3'` as a value the
+        schema refuses. Only the decimal digits the field writes back are
+        canonical; any other value is warned of, for the property bag to
+        carry verbatim under its relation. A `positive` field, a port, takes
+        no zero either.
+        """
+        canonical = self._is_canonical_integer(value, signed=signed)
+        if canonical and positive:
+            canonical = int(value) > 0
+        if not canonical:
+            if positive:
+                kind = 'positive decimal integer'
+            elif signed:
+                kind = 'decimal integer'
+            else:
+                kind = 'unsigned decimal integer'
+            self._non_canonical_number_warning(relation, value, record, kind)
+        return canonical
+
+    def _canonical_float(self, value: Any, relation: str,
+                         record: str) -> bool:
+        """Whether a native CybOX float field holds a MISP value as the
+        number it spells: `float()` reads a `nan`, an `inf`, digits of any
+        script and underscores, and refuses a `0x1f` with the whole object.
+        Any value but a decimal literal of a finite number is warned of, for
+        the property bag to carry verbatim under its relation."""
+        canonical = self._is_canonical_float(value)
+        if not canonical:
+            self._non_canonical_number_warning(
+                relation, value, record, 'decimal number'
+            )
+        return canonical
+
+    def _native_boolean(self, attributes: dict, relation: str,
+                        misp_object: dict) -> Optional[bool]:
+        """Pop a relation a native CybOX boolean field holds, as the boolean
+        its value spells.
+
+        A value spelling no boolean stays in the attributes, for the custom
+        properties to carry verbatim: the field would drop it, and a reader
+        of the field would never see it.
+        """
+        if relation not in attributes:
+            return None
+        value = attributes[relation]
+        if isinstance(value, bool):
+            return attributes.pop(relation)
+        if isinstance(value, str) and value in _MISP_BOOLEAN_SPELLINGS:
+            return _MISP_BOOLEAN_SPELLINGS[attributes.pop(relation)]
+        # A value the bag cannot carry either is warned of there, once
+        if self._lexical_form(value) is not None:
+            self._unrecognised_boolean_warning(
+                relation, value, self._object_record(misp_object)
+            )
+        return None
 
     @staticmethod
     def _create_registry_key_object(regkey: str) -> WinRegistryKey:
@@ -1030,19 +1370,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     @staticmethod
     def _set_group_list(
-        account_object: Union[UnixUserAccount, WinUser], attributes: dict,
+        account_object: Union[UnixUserAccount, WinUser], groups: list,
         group_list_class: Union[UnixGroupList, WinGroupList],
         group_class: Union[UnixGroup, WinGroup], feature: str):
         group_list = group_list_class()
-        groups = attributes.pop('group')
-        try:
-            for grp in groups:
-                group = group_class()
-                setattr(group, feature, grp)
-                group_list.append(group)
-            account_object.group_list = group_list
-        except ValueError:
-            attributes['group'] = groups
+        for grp in groups:
+            group = group_class()
+            setattr(group, feature, grp)
+            group_list.append(group)
+        account_object.group_list = group_list
 
     def _set_handling(self, tags: list) -> Marking:
         sorted_tags = defaultdict(list)
@@ -1071,6 +1407,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         handling = Marking()
         marking_specification = MarkingSpecification()
         if 'tlp_tags' in sorted_tags:
+            # One colour per structure: the most restrictive tag wins
             tlp_marking = TLPMarkingStructure()
             tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
             marking_specification.marking_structures.append(tlp_marking)
@@ -1086,10 +1423,87 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _datetime_to_str(timestamp):
         return datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
 
+    @staticmethod
+    def _with_galaxy_tags(tag_names: Iterable[str], galaxies: Iterable[dict]) -> tuple:
+        """The tags a STIX 1 record carries: its own, then the tag of every
+        galaxy cluster attached to it the record does not already carry.
+
+        A STIX 1 construct names a cluster by its value alone, and a galaxy no
+        construct holds is written nowhere else: the tag is what brings the
+        cluster back, type included, mapped or not. MISP gives a record the tag
+        of every cluster it carries already, so the tags of a MISP event are
+        written as they are - a cluster's own tag name first, since a custom
+        galaxy's differs from the one its type and value would build.
+
+        :param tag_names: the tag names of the record, in their order
+        :param galaxies: the galaxies attached to the record
+        :return: the tag names, the cluster ones missing appended
+        """
+        tag_names = list(tag_names)
+        for galaxy in galaxies:
+            for cluster in galaxy['GalaxyCluster']:
+                tag_name = cluster.get('tag_name') or (
+                    f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
+                )
+                if tag_name not in tag_names:
+                    tag_names.append(tag_name)
+        return tuple(tag_names)
+
+    def _warn_plain_observable_galaxies(self, attributes: Iterable[dict],
+                                        record: str):
+        """Warn about every galaxy cluster on a record exported without
+        `to_ids`: the plain Observable it is written as has no handling for
+        the cluster tags to go on, and the clusters are written as no
+        construct either, so nothing in the document says they were there.
+
+        :param attributes: the attribute, or the attributes of the object
+        :param record: the record, as the warning names it
+        """
+        galaxies = (
+            galaxy for attribute in attributes
+            for galaxy in attribute.get('Galaxy', ())
+        )
+        for tag_name in self._with_galaxy_tags((), galaxies):
+            self._plain_observable_galaxy_warning(tag_name, record)
+
     def _is_tlp_tag(self, tag: str) -> bool:
         if not tag.startswith('tlp:'):
             return False
         return tag.startswith('tlp:') and self._mapping.TLP_order(':'.join(tag.split(':')[1:])) is not None
+
+    def _lexical_form(self, value: Any) -> Optional[tuple]:
+        """The form a MISP value takes on the wire and the CybOX `datatype`
+        naming it - `None` for that datatype where the form is a string XSD
+        needs no name for, and `None` for the pair where the value has no
+        form at all."""
+        if isinstance(value, str):
+            return None, value
+        if isinstance(value, datetime):
+            # No datatype: the documents this form ships in predate it
+            return None, self._datetime_to_str(value)
+        if isinstance(value, bool):
+            return 'boolean', 'true' if value else 'false'
+        if isinstance(value, int):
+            # `counter` and `port` included: CybOX names neither, and an
+            # integer type is what a consumer can act on
+            return self._integer_datatype(value), str(value)
+        if isinstance(value, float):
+            if isnan(value):
+                return 'float', 'NaN'
+            if isinf(value):
+                return 'float', 'INF' if value > 0 else '-INF'
+            return 'float', str(value)
+        return None
+
+    @staticmethod
+    def _integer_datatype(value: int) -> str:
+        # XSD bounds the names it gives: `int` is 32-bit and `long` 64-bit,
+        # so a value outside them would declare a type it does not satisfy
+        if -2 ** 31 <= value < 2 ** 31:
+            return 'int'
+        if -2 ** 63 <= value < 2 ** 63:
+            return 'long'
+        return 'integer'
 
     def _sort_tags(self, tags: list) -> Tuple[dict, dict]:
         sorted_tags = defaultdict(list)
@@ -1111,6 +1525,8 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         self._producer = self._create_information_source(orgname)
         self._set_identifier('attributes collection')
         self._ids = set()
+        self._built_constructs = []
+        self._kept_constructs = set()
 
     def _parse_json_content(self, attributes: dict | list):
         if isinstance(attributes, dict) and attributes.get('response') is not None:
@@ -1127,7 +1543,9 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
                     'Input does not look like a MISP attributes collection: '
                     f'item {index} is not a MISP attribute.'
                 )
-        self._stix_package = STIXPackage()
+        self._stix_package = _create_stix_package(
+            self._orgname, self._version
+        )
         for attribute in attributes:
             self._resolve_attribute(attribute)
 
@@ -1140,6 +1558,10 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
             indicator = self._handle_attribute_indicator(attribute, observable)
             self._stix_package.add_indicator(indicator)
         else:
+            self._add_record_comment(observable, attribute)
+            self._warn_plain_observable_galaxies(
+                (attribute,), self._attribute_record(attribute)
+            )
             self._stix_package.add_observable(observable)
 
     def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
@@ -1158,12 +1580,15 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         indicator.add_test_mechanism(test_mechanism)
         self._stix_package.add_indicator(indicator)
 
-    ################################################################################
-    #                          GALAXIES PARSING FUNCTIONS                          #
-    ################################################################################
-    def _parse_threat_actor_galaxy(self, galaxy: dict):
-        for cluster in galaxy['GalaxyCluster']:
-            self._parse_threat_actor(cluster)
+    def _parse_target_machine(self, attribute: dict):
+        # No Incident to hold an Affected_Asset: the machine falls back to the
+        # Custom observable, like every type with no native slot on this parser
+        self._parse_custom_attribute(attribute)
+
+    def _parse_undefined_attribute(self, attribute: dict):
+        # No Incident to hold a journal entry, no STIX Header to describe:
+        # the Custom observable keeps the value, uuid, comment and tags alike
+        self._parse_custom_attribute(attribute)
 
 
 class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
@@ -1199,11 +1624,19 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             raise InvalidMISPInputError('Input does not look like a MISP event.')
 
     def parse_misp_event(self, misp_event: dict):
-        self._header_comment = []
+        self._header_description_attributes = []
         self._objects_to_parse = defaultdict(dict)
         self._contextualised_data = set()
         self._ids = set()
+        self._built_constructs = []
+        self._kept_constructs = set()
         self._ttp_references = {}
+        self._written_cybox_objects = {}
+        self._folding_references = set()
+        self._course_of_action_slots = {}
+        self._written_indicators = {}
+        self._written_courses_of_action = {}
+        self._written_ttps = {}
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
@@ -1213,26 +1646,18 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._stix_package = self._create_stix_package()
         self._incident = self._create_incident()
         self._generate_stix_objects()
-        if self._stix_package.ttps is not None:
-            for ttp in self._stix_package.ttps.ttp:
-                uuid = '-'.join(ttp.id_.split('-')[-5:])
-                if uuid in self._ttp_references:
-                    for referenced_uuid, relationship in self._ttp_references[uuid]:
-                        if referenced_uuid in self._contextualised_data:
-                            referenced_id = f'{self._orgname_id}:TTP-{referenced_uuid}'
-                            timestamp = self._quick_fetch_ttp_timestamp(referenced_id)
-                            related_ttp = self._create_related_ttp(
-                                f'{self._orgname_id}:TTP-{referenced_uuid}',
-                                relationship,
-                                timestamp=timestamp
-                            )
-                            ttp.add_related_ttp(related_ttp)
+        self._write_object_references()
+        # The header holds one description: with more than one attribute
+        # meant for it, each goes to the journal like the others of its type
+        if len(self._header_description_attributes) > 1:
+            for attribute in self._header_description_attributes:
+                self._add_attribute_journal_entry(attribute)
         self._stix_package.add_incident(self._incident)
         stix_header = STIXHeader()
         stix_header.title = f"Export from {producer}'s MISP"
         stix_header.package_intents = "Threat Report"
-        if self._header_comment and len(self._header_comment) == 1:
-            stix_header.description = self._header_comment[0]
+        if len(self._header_description_attributes) == 1:
+            stix_header.description = self._header_description_attributes[0]['value']
         self._stix_package.stix_header = stix_header
 
     ################################################################################
@@ -1265,6 +1690,18 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         incident.information_source = self._create_information_source(source)
         incident.reporter = self._producer
         return incident
+
+    def _handle_event_tags_and_galaxies(self) -> tuple:
+        galaxies = self._misp_event.get('Galaxy', [])
+        for galaxy in galaxies:
+            to_call = self._mapping.galaxy_types_mapping(galaxy['type'])
+            if to_call is not None:
+                getattr(self, to_call.format('event'))(galaxy)
+            else:
+                self._handle_undefined_event_galaxy(galaxy)
+        return self._with_galaxy_tags(
+            (tag['name'] for tag in self._misp_event.get('Tag', [])), galaxies
+        )
 
     def _generate_stix_objects(self):
         tags = self._handle_event_tags_and_galaxies()
@@ -1300,11 +1737,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             )
             self._incident.related_indicators.append(related_indicator)
         else:
+            self._add_record_comment(observable, attribute)
+            self._warn_plain_observable_galaxies(
+                (attribute,), self._attribute_record(attribute)
+            )
             related_observable = RelatedObservable(
                 observable,
                 relationship=category
             )
             self._incident.related_observables.append(related_observable)
+        self._written_cybox_objects[attribute['uuid']] = observable.object_
 
     def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
         ciq_identity = self._create_ciq_identity_instance(attribute, identity_spec)
@@ -1325,6 +1767,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             object_name = misp_object['name']
             if self._check_object_name(misp_object):
                 continue
+            built = len(self._built_constructs)
             try:
                 to_call = self._mapping.non_indicator_names(object_name)
                 if to_call is not None:
@@ -1333,47 +1776,245 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     to_ids = self._fetch_ids_flag(misp_object['Attribute'])
                     to_call = self._mapping.objects_mapping(object_name) or '_parse_custom_object'
                     observable = getattr(self, to_call)(misp_object)
-                    if to_ids:
-                        self._handle_misp_object_with_context(misp_object, observable)
-                    else:
-                        self._handle_misp_object(observable, misp_object.get('meta-category'))
+                    # None where the parser refused the object and said why
+                    if observable is not None:
+                        self._handle_object_observable(
+                            misp_object, observable, to_ids
+                        )
             except Exception as exception:
+                self._roll_back_constructs(built)
                 self._object_error(misp_object, exception)
         if self._objects_to_parse:
             if self._objects_to_parse.get('file'):
                 for misp_object in self._objects_to_parse.pop('file').values():
+                    built = len(self._built_constructs)
                     try:
-                        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
-                        ids_list, observable = self._parse_file_with_pe_object(misp_object)
-                        if to_ids or True in ids_list:
-                            self._handle_misp_object_with_context(misp_object, observable)
-                        else:
-                            self._handle_misp_object(observable, misp_object.get('meta-category'))
+                        attributes, observable = self._parse_file_with_pe_object(misp_object)
+                        self._handle_object_observable(
+                            self._folded_record(misp_object, attributes),
+                            observable, self._fetch_ids_flag(attributes)
+                        )
                     except Exception as exception:
+                        self._roll_back_constructs(built)
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe'):
                 for misp_object in self._objects_to_parse.pop('pe').values():
+                    built = len(self._built_constructs)
                     try:
                         file_object = WinExecutableFile()
-                        ids_list = self._parse_pe_object(file_object, misp_object)
+                        attributes = self._parse_pe_object(file_object, misp_object)
                         observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
-                        if True in ids_list:
-                            self._handle_misp_object_with_context(misp_object, observable)
-                        else:
-                            self._handle_misp_object(observable, misp_object.get('meta-category'))
+                        self._handle_object_observable(
+                            self._folded_record(misp_object, attributes),
+                            observable, self._fetch_ids_flag(attributes)
+                        )
                     except Exception as exception:
+                        self._roll_back_constructs(built)
                         self._object_error(misp_object, exception)
             if self._objects_to_parse.get('pe-section'):
+                # No `pe` references these, or the `pe` failed: no executable
+                # to fold them into. The template is mapped under a `pe`, so
+                # the `Custom` Observable comes with no "not mapped" warning
                 for misp_object in self._objects_to_parse.pop('pe-section').values():
-                    self._parse_custom_object(misp_object)
+                    built = len(self._built_constructs)
+                    try:
+                        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
+                        observable = self._create_custom_observable(misp_object)
+                        self._handle_object_observable(misp_object, observable, to_ids)
+                    except Exception as exception:
+                        self._roll_back_constructs(built)
+                        self._object_error(misp_object, exception)
 
-    def _add_custom_property(self, stix_object: File, name: str, value: str):
-        prop = self._create_property(name, value)
+    @staticmethod
+    def _folded_record(misp_object: dict, attributes: list) -> dict:
+        """The record a `file` or a lone `pe` is written as, once the objects
+        it references are folded into its CybOX object: the object itself,
+        holding the attributes of every object folded in. Its `to_ids`, the
+        markings written for it and the warnings about those it cannot carry
+        are those of all of them, not of the `file` or the `pe` alone. A
+        section written standalone is not folded in and counts for none.
+
+        :param misp_object: the `file` or the lone `pe`
+        :param attributes: its attributes and those of the objects folded in
+        :return: the object, holding the attributes given
+        """
+        return {**misp_object, 'Attribute': attributes}
+
+    def _write_object_references(self):
+        """Write the references of the MISP objects, once every record is
+        written: a source may come before its target.
+
+        A reference from an object written as a TTP to another record written
+        as one is a Related_TTP. One from an object written as a single CybOX
+        Object to a record written as one too is a Related_Object on the
+        source's Object, pointing at the target's. One a Related_Object cannot
+        carry goes in the relationship slot of the source's own construct
+        naming the target's kind, where there is one. A `pe` folded into its
+        `file` and a section folded into its `pe` take their reference with
+        them. Every other reference has no slot of the source's own to go in,
+        or points at nothing the document holds: it is named in a Warning.
+        """
+        written = self._write_related_ttps()
+        for misp_object in self._misp_event.get('Object', []):
+            source = self._written_cybox_objects.get(misp_object['uuid'])
+            for reference in misp_object.get('ObjectReference', []):
+                pair = (misp_object['uuid'], reference['referenced_uuid'])
+                if pair in written or pair in self._folding_references:
+                    continue
+                target = self._written_cybox_objects.get(
+                    reference['referenced_uuid']
+                )
+                if source is None or target is None:
+                    if self._write_slot_reference(
+                            misp_object['uuid'], reference['referenced_uuid'],
+                            reference['relationship_type']):
+                        continue
+                    self._unwritten_object_reference_warning(
+                        self._object_record(misp_object),
+                        reference['relationship_type'],
+                        self._referenced_record(reference['referenced_uuid'])
+                    )
+                    continue
+                source.related_objects.append(
+                    RelatedObject(
+                        idref=target.id_,
+                        relationship=self._object_relationship(
+                            reference['relationship_type']
+                        )
+                    )
+                )
+
+    def _write_slot_reference(self, source_uuid: str, target_uuid: str,
+                              relationship: str) -> bool:
+        """Write a reference in the relationship slot of the source's own
+        construct naming the target's kind, the relationship verbatim: one to
+        a `course-of-action` object in the Potential_COAs of the Exploit
+        Target of a `vulnerability` or `weakness`, the Related_COAs of a
+        Course of Action or the Suggested_COAs of an Indicator; one from an
+        Indicator to an `attack-pattern`, `vulnerability` or `weakness` object,
+        or to a `vulnerability` or `weakness` attribute, in its Indicated_TTP.
+        The galaxy clusters fill the same slots.
+
+        :param source_uuid: the uuid of the object making the reference
+        :param target_uuid: the uuid of the record it references
+        :param relationship: the relationship of the reference
+        :return: whether the source's construct has a slot for the target
+        """
+        course_of_action = self._written_courses_of_action.get(target_uuid)
+        if course_of_action is not None:
+            slot = self._course_of_action_slots.get(source_uuid)
+            if slot is None:
+                return False
+            slot.append(
+                self._create_related_coa(
+                    course_of_action.id_, relationship,
+                    timestamp=course_of_action.timestamp
+                )
+            )
+            return True
+        ttp = self._written_ttps.get(target_uuid)
+        indicator = self._written_indicators.get(source_uuid)
+        if ttp is None or indicator is None:
+            return False
+        indicator.add_indicated_ttp(
+            self._create_related_ttp(
+                ttp.id_, relationship, timestamp=ttp.timestamp
+            )
+        )
+        return True
+
+    def _write_related_ttps(self) -> set:
+        """Add a Related_TTP to the TTP of an object written as one for each
+        reference it makes to another record written as a TTP.
+
+        :return: the source and target uuids of each reference written
+        """
+        written = set()
+        if self._stix_package.ttps is None:
+            return written
+        for ttp in self._stix_package.ttps.ttp:
+            uuid = '-'.join(ttp.id_.split('-')[-5:])
+            for referenced_uuid, relationship in self._ttp_references.get(uuid, ()):
+                if referenced_uuid in self._contextualised_data:
+                    referenced_id = f'{self._orgname_id}:TTP-{referenced_uuid}'
+                    related_ttp = self._create_related_ttp(
+                        referenced_id, relationship,
+                        timestamp=self._quick_fetch_ttp_timestamp(referenced_id)
+                    )
+                    ttp.add_related_ttp(related_ttp)
+                    written.add((uuid, referenced_uuid))
+        return written
+
+    def _referenced_record(self, uuid: str) -> str:
+        # How a Warning names the target of a reference: the record of the
+        # event holding the uuid, where there is one
+        for attribute in self._misp_event.get('Attribute', []):
+            if attribute['uuid'] == uuid:
+                return self._attribute_record(attribute)
+        for misp_object in self._misp_event.get('Object', []):
+            if misp_object['uuid'] == uuid:
+                return self._object_record(misp_object)
+        return f'record (uuid: {uuid})'
+
+    @staticmethod
+    def _object_relationship(relationship: str) -> Union[str, VocabString]:
+        # A relationship the CybOX vocabulary has a term for is written as
+        # the term, any other verbatim as free text
+        term = _OBJECT_RELATIONSHIP_TERMS.get(
+            relationship.lower().replace('_', '-')
+        )
+        return VocabString(relationship) if term is None else term
+
+    def _handle_object_observable(self, misp_object: dict,
+                                  observable: Observable, to_ids: bool):
+        """Add the Observable a MISP object was exported as to the package:
+        wrapped in an Indicator when an attribute of the object is `to_ids`,
+        related to the Incident as it is otherwise.
+
+        :param misp_object: the MISP object
+        :param observable: the Observable it was exported as
+        :param to_ids: whether any attribute of the object is `to_ids`
+        """
+        if to_ids:
+            self._handle_misp_object_with_context(misp_object, observable)
+        else:
+            if misp_object['name'] in _TITLED_OBSERVABLE_OBJECT_NAMES:
+                observable.title = self._object_record_title(misp_object)
+            self._handle_misp_object(misp_object, observable)
+
+    def _write_custom_object(self, misp_object: dict):
+        """The object error fallback: the object a mapped route failed on
+        goes out the way an unmapped one does, a `Custom` Observable carrying
+        its relations - with no warning its template is not mapped, the error
+        already says why the object is in this shape.
+
+        :param misp_object: the MISP object the export failed on
+        """
+        built = len(self._built_constructs)
         try:
-            stix_object.custom_properties.append(prop)
-        except AttributeError:
+            self._handle_object_observable(
+                misp_object, self._create_custom_observable(misp_object),
+                self._fetch_ids_flag(misp_object['Attribute'])
+            )
+        except Exception:
+            # The Observable is written the way the failed route writes its
+            # own, from the same object fields: what failed there - an object
+            # timestamp the Indicator cannot parse, a malformed tag or
+            # cluster - fails here again, with nothing left to catch it. The
+            # object is lost, and the error already says so. The galaxy
+            # constructs this second write built go with it
+            self._roll_back_constructs(built)
+        else:
+            self._keep_constructs(built)
+
+    def _add_custom_property(self, stix_object: File, name: str, value: Any,
+                             misp_object: dict):
+        if stix_object.custom_properties is None:
             stix_object.custom_properties = CustomProperties()
-            stix_object.custom_properties.append(prop)
+        self._append_property(
+            stix_object.custom_properties, name, value,
+            self._object_record(misp_object)
+        )
 
     def _check_object_name(self, misp_object: dict) -> bool:
         object_name = misp_object['name']
@@ -1389,45 +2030,181 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     return True
         return False
 
-    def _check_reference(self, reference: dict, object_name: str) -> bool:
+    def _check_reference(self, source_uuid: str, reference: dict,
+                         object_name: str) -> bool:
         if self._is_reference_included(reference, object_name):
             if reference['referenced_uuid'] not in self._objects_to_parse[object_name]:
                 self._referenced_object_name_warning(object_name, reference['referenced_uuid'])
+                # Warned about here: the reference is the folding's own
+                self._folding_references.add(
+                    (source_uuid, reference['referenced_uuid'])
+                )
                 return False
             return True
         return False
 
     @staticmethod
-    def _extract_file_attributes(attributes: list) -> dict:
+    def _extract_file_attributes(attributes: list) -> tuple:
+        """Extract the values of a `file` object by relation, a relation
+        whose native field holds one value taking its first value alone.
+
+        :param attributes: the attributes of the `file` object
+        :return: the values by relation, and the further values of each
+            relation holding one; a value carrying data is a tuple of the
+            value, the data and the attribute uuid
+        """
         attributes_dict = defaultdict(list)
+        repeated = defaultdict(list)
         for attribute in attributes:
             value = attribute['value']
             relation = attribute['object_relation']
-            if relation in _FILE_SINGLE_ATTRIBUTES:
-                if attribute.get('data'):
-                    value = (value, attribute['data'], attribute['uuid'])
-                attributes_dict[relation] = value
-            else:
+            if relation not in _FILE_SINGLE_ATTRIBUTES:
                 attributes_dict[relation].append(value)
-        return attributes_dict
+                continue
+            if attribute.get('data'):
+                value = (value, attribute['data'], attribute['uuid'])
+            if relation in attributes_dict:
+                repeated[relation].append(value)
+            else:
+                attributes_dict[relation] = value
+        return attributes_dict, repeated
 
-    def _handle_custom_properties(self, attributes: dict, multiple: Optional[bool] = True) -> CustomProperties:
-        custom_properties = CustomProperties()
-        if not multiple:
-            for object_relation, value in attributes.items():
-                custom_properties.append(self._create_property(object_relation, value))
-            return custom_properties
-        for object_relation, values in attributes.items():
+    def _extract_single_field_attributes(self, attributes: list,
+                                         force_single: tuple) -> tuple:
+        """Extract the values of a MISP object by relation, a relation whose
+        native field holds one value taking its first value alone.
+
+        :param attributes: the attributes of the MISP object
+        :param force_single: the relations a native field holds one value of
+        :return: the values by relation, and the further values of each
+            relation forced single, which the field has no room for
+        """
+        return self._split_single_field_values(
+            self._extract_multiple_object_attributes(attributes), force_single
+        )
+
+    def _add_repeated_values(self, stix_object: Any, repeated: dict,
+                             misp_object: dict):
+        """Write the values a native field holding one had no room for to
+        the property bag, under their relation.
+
+        :param stix_object: the CybOX object carrying the bag
+        :param repeated: the further values, by relation
+        :param misp_object: the MISP object they belong to
+        """
+        for relation, values in repeated.items():
             for value in values:
-                custom_properties.append(self._create_property(object_relation, value))
+                self._add_custom_property(
+                    stix_object, relation, value, misp_object
+                )
+
+    def _describe_repeated_values(self, construct: Any, repeated: dict,
+                                  description_relation: str,
+                                  misp_object: dict):
+        """Write the values a field holding one had no room for, on a
+        construct with no property bag: a further value of its free text
+        relation is one more description, any other is warned of.
+
+        :param construct: the STIX construct taking descriptions
+        :param repeated: the further values, by relation
+        :param description_relation: the relation its description holds
+        :param misp_object: the MISP object they belong to
+        """
+        for value in repeated.pop(description_relation, ()):
+            construct.add_description(value)
+        self._warn_repeated_values(repeated, misp_object)
+
+    def _warn_repeated_values(self, repeated: dict, misp_object: dict):
+        """Warn of each value a field holding one had no room for, on a
+        construct with no property bag.
+
+        :param repeated: the further values, by relation
+        :param misp_object: the MISP object they belong to
+        """
+        record = self._object_record(misp_object)
+        for relation, values in repeated.items():
+            for value in values:
+                self._single_value_field_warning(relation, value, record)
+
+    def _pop_canonical_integers(self, attributes: dict, relation: str,
+                                record: str, positive: bool = False) -> list:
+        """Take the values of a relation a native CybOX unsigned integer
+        field holds unchanged, leaving the others where the property bag
+        takes them.
+
+        :param attributes: the values of the object, by relation
+        :param relation: the relation the native field holds
+        :param record: the MISP object the values belong to, as warnings
+            name it
+        :param positive: whether the field takes no zero either
+        :return: the canonical values
+        """
+        canonical, others = [], []
+        for value in attributes.pop(relation, ()):
+            if self._canonical_integer(
+                    value, relation, record, positive=positive):
+                canonical.append(value)
+            else:
+                others.append(value)
+        if others:
+            attributes[relation] = others
+        return canonical
+
+    @staticmethod
+    def _pop_first_value(attributes: dict, relation: str) -> Any:
+        """Take the first value of a relation for a native field holding one,
+        leaving the others where the property bag takes them.
+
+        :param attributes: the values of the object, by relation
+        :param relation: the relation the native field holds
+        :return: the first value
+        """
+        first, *others = attributes.pop(relation)
+        if others:
+            attributes[relation] = others
+        return first
+
+    def _handle_custom_properties(self, attributes: dict,
+                                  misp_object: dict) -> CustomProperties:
+        custom_properties = CustomProperties()
+        record = self._object_record(misp_object)
+        for object_relation, values in attributes.items():
+            # A relation its parser forced single is a scalar here, not a
+            # list: iterating it spreads a string over one property per
+            # character, and a boolean is not iterable at all
+            if not isinstance(values, list):
+                values = [values]
+            for value in values:
+                self._append_property(
+                    custom_properties, object_relation, value, record
+                )
         return custom_properties
 
-    def _handle_misp_object(self, observable: Observable, category: str):
+    def _warn_unwritable_relations(self, misp_object: dict, written: tuple):
+        """Warn of each relation of a MISP object the STIX type it is written
+        as has no field for, and no property bag either.
+
+        :param misp_object: the MISP object
+        :param written: the relations the STIX type has room for
+        """
+        record = self._object_record(misp_object)
+        for attribute in misp_object['Attribute']:
+            if attribute['object_relation'] not in written:
+                self._unwritable_relation_warning(
+                    attribute['object_relation'], attribute['value'], record
+                )
+
+    def _handle_misp_object(self, misp_object: dict, observable: Observable):
+        self._add_record_comment(observable, misp_object)
+        self._warn_plain_observable_galaxies(
+            misp_object['Attribute'], self._object_record(misp_object)
+        )
         related_observable = RelatedObservable(
             observable,
-            relationship=category
+            relationship=misp_object.get('meta-category')
         )
         self._incident.related_observables.append(related_observable)
+        self._written_cybox_objects[misp_object['uuid']] = observable.object_
 
     def _handle_misp_object_with_context(self, misp_object: dict, observable: Observable):
         indicator = self._create_indicator_from_object(misp_object)
@@ -1437,23 +2214,22 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             relationship=misp_object.get('meta-category')
         )
         self._incident.related_indicators.append(related_indicator)
+        self._written_cybox_objects[misp_object['uuid']] = observable.object_
+        self._written_indicators[misp_object['uuid']] = indicator
+        self._course_of_action_slots[misp_object['uuid']] = indicator.suggested_coas
 
     def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES, galaxy_name: str) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
-        tag_names = set()
-        if galaxies:
-            for galaxy_type, galaxy in galaxies.items():
-                if galaxy_type in getattr(self._mapping, galaxy_name)():
-                    to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                    getattr(self, to_call.format('object'))(galaxy, stix_object)
-                    tag_names.update(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._object_galaxy_incompatible_warning(
-                        galaxy_type,
-                        misp_object['name']
-                    )
-            return tuple(tag for tag in tags if tag not in tag_names)
-        return tuple(tags)
+        for galaxy_type, galaxy in galaxies.items():
+            if galaxy_type in getattr(self._mapping, galaxy_name)():
+                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+                getattr(self, to_call.format('object'))(galaxy, stix_object)
+            else:
+                self._object_galaxy_incompatible_warning(
+                    galaxy_type,
+                    misp_object['name']
+                )
+        return self._with_galaxy_tags(tags, galaxies.values())
 
     def _handle_object_indicator_tags(self, misp_object: dict, indicator: Indicator, timestamp: datetime) -> Confidence:
         tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
@@ -1473,20 +2249,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _handle_object_tags_and_galaxies(self, misp_object: dict, indicator: Indicator) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
-        if galaxies:
-            tag_names = set()
-            for galaxy_type, galaxy in galaxies.items():
-                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if to_call is not None:
-                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                    tag_names.update(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._object_galaxy_not_mapped_warning(
-                        galaxy_type,
-                        misp_object['name']
-                    )
-            return tuple(tag for tag in tags if tag not in tag_names)
-        return tuple(tags)
+        for galaxy_type, galaxy in galaxies.items():
+            to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+            if to_call is not None:
+                getattr(self, to_call.format('attribute'))(galaxy, indicator)
+            else:
+                self._object_galaxy_not_mapped_warning(
+                    galaxy_type,
+                    misp_object['name']
+                )
+        return self._with_galaxy_tags(tags, galaxies.values())
 
     def _handle_ttp_from_object(self, misp_object: dict, ttp: TTP):
         tags = self._handle_non_indicator_object_tags_and_galaxies(misp_object, ttp, 'ttp_names')
@@ -1500,30 +2272,68 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._incident.add_leveraged_ttps(related_ttp)
         self._contextualised_data.add(misp_object['uuid'])
         self._stix_package.add_ttp(ttp)
+        self._written_ttps[misp_object['uuid']] = ttp
 
-    def _parse_asn_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.as_single_fields()
+    def _parse_asn_object(self, misp_object: dict) -> Optional[Observable]:
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.as_single_fields()
         )
-        as_object = self._create_autonomous_system_object(attributes.pop('asn'))
+        if 'asn' not in attributes:
+            # The template requires it, and the CybOX `AS` is its number: an
+            # object without one has nowhere to go
+            self._required_relation_missing_error(misp_object, 'asn')
+            return None
+        asn = attributes['asn']
+        if self._is_as_handle(asn) or self._canonical_integer(
+                asn, 'asn', self._object_record(misp_object)):
+            as_object = self._create_autonomous_system_object(
+                attributes.pop('asn')
+            )
+        else:
+            as_object = AutonomousSystem()
         if attributes.get('description'):
             as_object.name = attributes.pop('description')
         if attributes:
-            as_object.custom_properties = self._handle_custom_properties(attributes)
+            as_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(as_object, repeated, misp_object)
         observable = self._create_observable(as_object, misp_object['uuid'], 'AS')
         return observable
 
     def _parse_attack_pattern_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
+        self._add_record_comment(ttp, misp_object)
         attack_pattern = AttackPattern()
         attack_pattern.id_ = f"{self._orgname_id}:AttackPattern-{misp_object['uuid']}"
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in self._mapping.attack_pattern_object_mapping().items():
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'],
+            self._mapping.attack_pattern_single_fields()
+        )
+        mapping = self._mapping.attack_pattern_object_mapping()
+        for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(attack_pattern, feature, attributes.pop(key))
         if attack_pattern.capec_id and not attack_pattern.capec_id.startswith('CAPEC'):
             attack_pattern.capec_id = f'CAPEC-{attack_pattern.capec_id}'
+        # The summary is the one untagged description: every other free text
+        # relation is a description of its own, tagged with the relation, and
+        # a related weakness is the Exploit Target the TTP has room for
+        described = self._mapping.attack_pattern_description_relations()
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            if relation in described:
+                description = StructuredText(attribute['value'])
+                description.structuring_format = relation
+                attack_pattern.add_description(description)
+            elif relation == 'related-weakness':
+                ttp.add_exploit_target(
+                    self._create_related_weakness(attribute, misp_object)
+                )
+        self._warn_unwritable_relations(
+            misp_object, (*mapping, *described, 'related-weakness')
+        )
+        self._describe_repeated_values(
+            attack_pattern, repeated, 'summary', misp_object
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
@@ -1533,13 +2343,23 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._handle_ttp_from_object(misp_object, ttp)
 
     def _parse_course_of_action_object(self, misp_object: dict):
-        course_of_action = CourseOfAction()
+        course_of_action = CourseOfAction(
+            timestamp=self._optional_timestamp(misp_object)
+        )
         uuid = misp_object['uuid']
         course_of_action.id_ = f'{self._orgname_id}:CourseOfAction-{uuid}'
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in self._mapping.course_of_action_object_mapping().items():
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'],
+            self._mapping.course_of_action_single_fields()
+        )
+        mapping = self._mapping.course_of_action_object_mapping()
+        for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(course_of_action, feature, attributes.pop(key))
+        self._warn_unwritable_relations(misp_object, tuple(mapping))
+        self._describe_repeated_values(
+            course_of_action, repeated, 'description', misp_object
+        )
         tags = self._handle_non_indicator_object_tags_and_galaxies(
             misp_object,
             course_of_action,
@@ -1553,15 +2373,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         self._incident.add_coa_taken(coa_taken)
         self._stix_package.add_course_of_action(course_of_action)
+        self._written_courses_of_action[uuid] = course_of_action
+        self._course_of_action_slots[uuid] = course_of_action.related_coas
 
     def _parse_credential_authentication(self, attributes: dict) -> list:
         args = {}
         if attributes.get('format'):
             struct_auth_meca = StructuredAuthenticationMechanism()
-            struct_auth_meca.description = attributes.pop('format')[0]
+            struct_auth_meca.description = self._pop_first_value(attributes, 'format')
             args['auth_format'] = struct_auth_meca
         if attributes.get('type'):
-            args['auth_type'] = attributes.pop('type')[0]
+            args['auth_type'] = self._pop_first_value(attributes, 'type')
         authentication_list = []
         if attributes.get('password'):
             for password in attributes.pop('password'):
@@ -1573,9 +2395,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return []
 
     def _parse_credential_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=tuple(self._mapping.credential_object_mapping().keys())
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], tuple(self._mapping.credential_object_mapping().keys())
         )
         account_object = UserAccount()
         for feature, field in self._mapping.credential_object_mapping().items():
@@ -1585,29 +2406,29 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if authentication_list:
             account_object.authentication = authentication_list
         if attributes:
-            account_object.custom_properties = self._handle_custom_properties(attributes)
+            account_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(account_object, repeated, misp_object)
         observable = self._create_observable(account_object, misp_object['uuid'], 'UserAccount')
         return observable
 
     def _parse_custom_object(self, misp_object: dict) -> Observable:
+        observable = self._create_custom_observable(misp_object)
+        self._object_not_mapped_warning(misp_object['name'])
+        return observable
+
+    def _create_custom_observable(self, misp_object: dict) -> Observable:
         custom_object = Custom()
         custom_object.custom_name = misp_object['name']
         if misp_object.get('description'):
             custom_object.description = misp_object['description']
         custom_object.custom_properties = CustomProperties()
+        record = self._object_record(misp_object)
         for attribute in misp_object['Attribute']:
-            value = attribute['value']
-            if isinstance(value, datetime):
-                value = self._datetime_to_str(value)
-            custom_object.custom_properties.append(
-                self._create_property(
-                    attribute['object_relation'],
-                    value
-                )
+            self._append_property(
+                custom_object.custom_properties,
+                attribute['object_relation'], attribute['value'], record
             )
-        observable = self._create_observable(custom_object, misp_object['uuid'], 'Custom')
-        self._object_not_mapped_warning(misp_object['name'])
-        return observable
+        return self._create_observable(custom_object, misp_object['uuid'], 'Custom')
 
     def _parse_domain_ip_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
@@ -1619,8 +2440,19 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             for attribute in attributes['ip']:
                 observables.append(self._create_address_observable('ip-dst', *attribute))
         if attributes.get('port'):
-            for attribute in attributes['port']:
-                observables.append(self._create_port_observable(*attribute))
+            observables.extend(
+                self._create_port_members(
+                    misp_object, 'port', attributes['port']
+                )
+            )
+        if attributes.get('hostname'):
+            for attribute in attributes['hostname']:
+                observables.append(self._create_hostname_observable(*attribute))
+        observables.extend(
+            self._create_custom_members(
+                misp_object, ('domain', 'ip', 'port', 'hostname')
+            )
+        )
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
@@ -1643,7 +2475,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 setattr(email_header, feature, recipients)
         for feature, key in self._mapping.email_object_mapping().items():
             if attributes.get(feature):
-                setattr(email_header, key, attributes.pop(feature)[0])
+                setattr(email_header, key, self._pop_first_value(attributes, feature))
                 setattr(getattr(email_header, key), 'condition', 'Equals')
         email_object.header = email_header
         if attributes.get('attachment'):
@@ -1661,33 +2493,60 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 email_object.parent.related_objects.append(related_file)
                 email_object.attachments.append(related_file.id_)
         if attributes:
-            email_object.custom_properties = self._handle_custom_properties(attributes)
+            email_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(email_object, misp_object['uuid'], 'EmailMessage')
         return observable
 
-    def _parse_file_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
+    def _parse_file_attributes(self, attributes: dict, misp_object: dict,
+                               file_object: Union[File, WinExecutableFile]):
         if attributes.get('filename'):
             filename = self._select_single_feature(attributes, 'filename')
             file_object.file_name = filename
             file_object.file_name.condition = 'Equals'
+        record = self._object_record(misp_object)
+        numbers = {
+            'entropy': self._canonical_float,
+            'size-in-bytes': self._canonical_integer
+        }
         for feature, key in self._mapping.file_object_mapping().items():
-            if attributes.get(feature):
-                value = attributes[feature].pop(0) if isinstance(attributes[feature], list) else attributes.pop(feature)
-                setattr(file_object, key, value)
-                setattr(getattr(file_object, key), 'condition', 'Equals')
+            if not attributes.get(feature):
+                continue
+            canonical = numbers.get(feature)
+            if canonical is not None and not canonical(
+                    attributes[feature], feature, record):
+                # One value, the relation is single: a list for the bag loop
+                # below, which spreads a string over one property per
+                # character
+                attributes[feature] = [attributes[feature]]
+                continue
+            value = attributes[feature].pop(0) if isinstance(attributes[feature], list) else attributes.pop(feature)
+            setattr(file_object, key, value)
+            setattr(getattr(file_object, key), 'condition', 'Equals')
         if attributes:
             for object_relation, value in attributes.items():
                 if object_relation in self._mapping.hash_type_attributes('single'):
-                    file_object.add_hash(self._parse_hash_value(object_relation, value))
+                    # A hash relation the `file` template has not, such as
+                    # `pehash`, holds a list of values
+                    values = value if isinstance(value, list) else [value]
+                    for hash_value in values:
+                        file_object.add_hash(
+                            self._parse_hash_value(object_relation, hash_value)
+                        )
                 else:
                     for single_value in value:
-                        self._add_custom_property(file_object, object_relation, single_value)
+                        self._add_custom_property(
+                            file_object, object_relation, single_value,
+                            misp_object
+                        )
 
     def _parse_file_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_file_attributes(misp_object['Attribute'])
-        observables = self._parse_file_observables(attributes)
+        attributes, repeated = self._extract_file_attributes(
+            misp_object['Attribute']
+        )
+        observables = self._parse_file_observables(attributes, repeated)
         file_object = File()
-        self._parse_file_attributes(attributes, file_object)
+        self._parse_file_attributes(attributes, misp_object, file_object)
+        self._add_repeated_values(file_object, repeated, misp_object)
         file_observable = self._create_observable(file_object, misp_object['uuid'], 'File')
         if observables:
             observables.append(file_observable)
@@ -1699,39 +2558,67 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             return observable_composition
         return file_observable
 
-    def _parse_file_observables(self, attributes: dict) -> list:
+    def _parse_file_observables(self, attributes: dict,
+                                repeated: dict) -> list:
+        """Write every `malware-sample` and `attachment` value carrying
+        data as an Artifact of its own, the others staying where the
+        property bag takes them.
+
+        :param attributes: the values of the `file` object, by relation
+        :param repeated: the further values of its relations holding one
+        :return: the Artifact Observables, members of the file composition
+        """
         observables = []
-        if attributes.get('malware-sample'):
-            if isinstance(attributes['malware-sample'], tuple):
-                value, data, uuid = attributes.pop('malware-sample')
-                malware_observable = self._create_malware_sample_observable(value, data, uuid)
-                observables.append(malware_observable)
-            else:
-                attributes['malware-sample'] = [attributes['malware-sample']]
-        if attributes.get('attachment'):
-            if isinstance(attributes['attachment'], tuple):
-                filename, data, uuid = attributes.pop('attachment')
-                attachment_observable = self._create_attachment_observable(filename, data, uuid)
-                observables.append(attachment_observable)
-            else:
-                attributes['attachment'] = [attributes['attachment']]
+        for relation, create_observable in (
+                ('malware-sample', self._create_malware_sample_observable),
+                ('attachment', self._create_attachment_observable)):
+            if isinstance(attributes.get(relation), tuple):
+                observables.append(create_observable(*attributes.pop(relation)))
+            elif attributes.get(relation):
+                attributes[relation] = [attributes[relation]]
+            values = []
+            for value in repeated.pop(relation, ()):
+                if isinstance(value, tuple):
+                    observables.append(create_observable(*value))
+                else:
+                    values.append(value)
+            if values:
+                repeated[relation] = values
         return observables
 
-    def _parse_file_with_pe_object(self, misp_object: dict) -> Observable:
-        ids_list = [self._fetch_ids_flag(misp_object['Attribute'])]
-        attributes = self._extract_file_attributes(misp_object['Attribute'])
-        observables = self._parse_file_observables(attributes)
+    def _parse_file_with_pe_object(self, misp_object: dict) -> tuple:
+        folded = list(misp_object['Attribute'])
+        attributes, repeated = self._extract_file_attributes(
+            misp_object['Attribute']
+        )
+        observables = self._parse_file_observables(attributes, repeated)
         file_object = WinExecutableFile()
-        self._parse_file_attributes(attributes, file_object)
+        self._parse_file_attributes(attributes, misp_object, file_object)
+        self._add_repeated_values(file_object, repeated, misp_object)
+        pe_comment = None
         for reference in misp_object['ObjectReference']:
-            if self._check_reference(reference, 'pe'):
+            if self._check_reference(misp_object['uuid'], reference, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
                 try:
-                    ids_list.extend(self._parse_pe_object(file_object, misp_pe))
+                    # Parsed apart, and copied onto the file's object once
+                    # it succeeds: a `pe` failing partway leaves nothing on
+                    # the file, and the fallback writes it once
+                    pe_object = WinExecutableFile()
+                    pe_folded = self._parse_pe_object(pe_object, misp_pe)
+                    self._fold_pe_object(file_object, pe_object)
+                    folded.extend(pe_folded)
+                    self._folding_references.add(
+                        (misp_object['uuid'], misp_pe['uuid'])
+                    )
+                    pe_comment = misp_pe.get('comment')
                 except Exception as exception:
                     self._object_error(misp_pe, exception)
                 break
         file_observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
+        if pe_comment:
+            # The `file` comment is the Observable's or the Indicator's: the
+            # CybOX Object holding the executable carries the `pe` one
+            file_observable.object_.description = pe_comment
         if observables:
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
@@ -1739,8 +2626,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 misp_object['uuid'],
                 name=misp_object['name']
             )
-            return ids_list, observable_composition
-        return ids_list, file_observable
+            return folded, observable_composition
+        return folded, file_observable
 
     def _parse_ip_port_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
@@ -1754,17 +2641,25 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 observables.append(self._create_address_observable('ip-dst', *attribute))
         for feature in ('src-port', 'dst-port'):
             if attributes.get(feature):
-                for attribute in attributes[feature]:
-                    observables.append(self._create_port_observable(
-                        *attribute,
+                observables.extend(
+                    self._create_port_members(
+                        misp_object, feature, attributes[feature],
                         feature=feature.split('-')[0]
-                    ))
+                    )
+                )
         if attributes.get('domain'):
             for attribute in attributes['domain']:
                 observables.append(self._create_domain_observable(*attribute))
         if attributes.get('hostname'):
             for attribute in attributes['hostname']:
                 observables.append(self._create_hostname_observable(*attribute))
+        observables.extend(
+            self._create_custom_members(
+                misp_object,
+                ('ip-src', 'ip-dst', 'ip', 'src-port', 'dst-port', 'domain',
+                 'hostname')
+            )
+        )
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
@@ -1773,12 +2668,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable_composition
 
     def _parse_mutex_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.mutex_single_fields()
+        )
         mutex_object = Mutex()
         if attributes.get('name'):
             mutex_object.name = attributes.pop('name')
         if attributes:
-            mutex_object.custom_properties = self._handle_custom_properties(attributes, multiple=False)
+            mutex_object.custom_properties = self._handle_custom_properties(
+                attributes, misp_object
+            )
+        self._add_repeated_values(mutex_object, repeated, misp_object)
         observable = self._create_observable(
             mutex_object,
             misp_object['uuid'],
@@ -1787,12 +2687,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_network_connection_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'],
+            self._mapping.network_connection_single_fields()
+        )
         connection_object = NetworkConnection()
         self._parse_socket_addresses(
             connection_object,
             attributes,
-            ('source_socket', 'destination_socket')
+            ('source_socket', 'destination_socket'),
+            misp_object
         )
         for feature in ('layer3-protocol', 'layer4-protocol', 'layer7-protocol'):
             if attributes.get(feature):
@@ -1800,7 +2704,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 setattr(connection_object, field, attributes.pop(feature))
                 setattr(getattr(connection_object, field), 'condition', 'Equals')
         if attributes:
-            connection_object.custom_properties = self._handle_custom_properties(attributes)
+            connection_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(connection_object, repeated, misp_object)
         observable = self._create_observable(
             connection_object,
             misp_object['uuid'],
@@ -1809,12 +2714,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_network_socket_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.network_socket_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.network_socket_single_fields()
         )
         socket_object = NetworkSocket()
-        self._parse_socket_addresses(socket_object, attributes, ('local', 'remote'))
+        self._parse_socket_addresses(
+            socket_object, attributes, ('local', 'remote'), misp_object
+        )
         for key, feature in self._mapping.network_socket_mapping().items():
             if attributes.get(key):
                 setattr(socket_object, feature, attributes.pop(key))
@@ -1823,16 +2729,24 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             states = attributes.pop('state')
             socket_object.is_listening = True if 'listening' in states else False
             socket_object.is_blocking = True if 'blocking' in states else False
+            # CybOX names two states, as booleans: any other goes to the bag
+            others = [
+                state for state in states
+                if state not in ('listening', 'blocking')
+            ]
+            if others:
+                attributes['state'] = others
         if attributes:
-            socket_object.custom_properties = self._handle_custom_properties(attributes)
+            socket_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(socket_object, repeated, misp_object)
         observable = self._create_observable(socket_object, misp_object['uuid'], 'NetworkSocket')
         return observable
 
-    def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: dict):
-        ids_list = [self._fetch_ids_flag(misp_pe['Attribute'])]
-        attributes = self._extract_multiple_object_attributes(
-            misp_pe['Attribute'],
-            force_single=self._mapping.pe_single_fields()
+    def _parse_pe_object(self, file_object: WinExecutableFile,
+                         misp_pe: dict) -> list:
+        folded = list(misp_pe['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_pe['Attribute'], self._mapping.pe_single_fields()
         )
         if any(feature in attributes for feature in self._mapping.pe_resource_mapping()):
             resource = PEVersionInfoResource()
@@ -1843,6 +2757,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             resource_list = PEResourceList()
             resource_list.append(resource)
             file_object.resources = resource_list
+        # Out of the way of the headers, which have nothing to hold for it
+        bagged = None
+        if attributes.get('number-sections') and not self._canonical_integer(
+                attributes['number-sections'], 'number-sections',
+                self._object_record(misp_pe)):
+            bagged = attributes.pop('number-sections')
         headers_fields = ('entrypoint-address', 'impfuzzy', 'imphash', 'number-sections', 'pehash')
         if any(feature in attributes for feature in headers_fields):
             pe_headers = PEHeaders()
@@ -1860,6 +2780,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('type'):
             file_object.type_ = attributes.pop('type')
             file_object.type_.condition = 'Equals'
+        if bagged is not None:
+            # A list for the bag loop below, which spreads a string over one
+            # property per character
+            attributes['number-sections'] = [bagged]
         if attributes:
             hashes = []
             for object_relation, value in attributes.items():
@@ -1867,31 +2791,84 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     hashes.append(self._parse_hash_value(object_relation, value))
                 else:
                     for single_value in value:
-                        self._add_custom_property(file_object, object_relation, single_value)
+                        self._add_custom_property(
+                            file_object, object_relation, single_value, misp_pe
+                        )
             if hashes:
+                # The gate above creates the headers for five relations and
+                # the file header for one of them, so a `pe` carrying a header
+                # hash and no `number-sections` had nowhere to write the hash
+                # list to - no file header, and no headers at all for an
+                # `authentihash` or an `impfuzzy` alone. Created here, where
+                # the hashes are, the object no longer costs a document.
+                if file_object.headers is None:
+                    file_object.headers = PEHeaders()
+                if file_object.headers.file_header is None:
+                    file_object.headers.file_header = PEFileHeader()
                 hashlist = HashList()
                 hashlist.hashes = hashes
                 file_object.headers.file_header.hashes = hashlist
+        self._add_repeated_values(file_object, repeated, misp_pe)
         if misp_pe.get('ObjectReference'):
             for reference in misp_pe['ObjectReference']:
-                if self._check_reference(reference, 'pe-section'):
+                if self._check_reference(misp_pe['uuid'], reference, 'pe-section'):
                     misp_pe_section = self._objects_to_parse['pe-section'].pop(reference['referenced_uuid'])
                     try:
                         pe_section = self._parse_pe_section_object(misp_pe_section)
-                        try:
-                            file_object.sections.append(pe_section)
-                        except AttributeError:
-                            file_object.sections = PESectionList()
-                            file_object.sections.append(pe_section)
+                        if pe_section is None:
+                            # A section has no property bag: one with a value
+                            # its fields would rewrite goes out standalone, as
+                            # the object error fallback writes it
+                            self._write_custom_object(misp_pe_section)
+                        else:
+                            self._append_pe_section(file_object, pe_section)
+                            self._folding_references.add(
+                                (misp_pe['uuid'], misp_pe_section['uuid'])
+                            )
+                            # Only a folded section counts: one written
+                            # standalone carries its own markings and its
+                            # own `to_ids`
+                            folded.extend(misp_pe_section['Attribute'])
+                            if misp_pe_section.get('comment'):
+                                self._pe_section_comment_warning(
+                                    misp_pe_section
+                                )
                     except Exception as exception:
                         self._object_error(misp_pe_section, exception)
-                    ids_list.append(
-                        self._fetch_ids_flag(misp_pe_section['Attribute'])
-                    )
-        return ids_list
+        return folded
 
-    def _parse_pe_section_object(self, misp_pe_section: dict) -> PESection:
-        section_attributes = self._extract_object_attributes(misp_pe_section['Attribute'])
+    @staticmethod
+    def _fold_pe_object(file_object: WinExecutableFile,
+                        pe_object: WinExecutableFile):
+        # The file's object holds no `pe` field of its own: only its custom
+        # properties, the `pe` ones going after them
+        for field in ('resources', 'headers', 'type_', 'sections'):
+            setattr(file_object, field, getattr(pe_object, field))
+        if pe_object.custom_properties:
+            if file_object.custom_properties is None:
+                file_object.custom_properties = CustomProperties()
+            for prop in pe_object.custom_properties:
+                file_object.custom_properties.append(prop)
+
+    @staticmethod
+    def _append_pe_section(file_object: WinExecutableFile,
+                           pe_section: PESection):
+        try:
+            file_object.sections.append(pe_section)
+        except AttributeError:
+            file_object.sections = PESectionList()
+            file_object.sections.append(pe_section)
+
+    def _parse_pe_section_object(
+            self, misp_pe_section: dict) -> Optional[PESection]:
+        section_attributes, repeated = self._extract_single_field_attributes(
+            misp_pe_section['Attribute'],
+            self._mapping.pe_section_single_fields()
+        )
+        if section_attributes.get('entropy') and not self._canonical_float(
+                section_attributes['entropy'], 'entropy',
+                self._object_record(misp_pe_section)):
+            return None
         pe_section = PESection()
         if section_attributes.get('entropy'):
             pe_section.entropy = Entropy()
@@ -1904,32 +2881,52 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if section_attributes.get('size-in-bytes'):
                 pe_section.section_header.size_of_raw_data = section_attributes.pop('size-in-bytes')
                 pe_section.section_header.size_of_raw_data.condition = 'Equals'
+        # A section has no property bag, but its HashList takes every value
+        # of a hash
         hashlist = []
-        for key, value in section_attributes.items():
+        for key, values in section_attributes.items():
             if key in self._mapping.hash_type_attributes('single'):
-                hashlist.append(self._parse_hash_value(key, value))
+                hashlist.extend(
+                    self._parse_hash_value(key, value) for value in values
+                )
         if hashlist:
             pe_section.data_hashes = HashList()
             pe_section.data_hashes.hashes = hashlist
+        self._warn_unwritable_relations(
+            misp_pe_section,
+            ('entropy', 'name', 'size-in-bytes',
+             *self._mapping.hash_type_attributes('single'))
+        )
+        self._warn_repeated_values(repeated, misp_pe_section)
         return pe_section
 
     def _parse_process_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.process_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.process_single_fields()
         )
         process_object = Process()
+        record = self._object_record(misp_object)
         for key, feature in self._mapping.process_object_mapping().items():
-            if attributes.get(key):
-                setattr(process_object, feature, attributes.pop(key))
-                setattr(getattr(process_object, feature), 'condition', 'Equals')
-        if attributes.get('child-pid'):
+            if not attributes.get(key):
+                continue
+            # cybox takes a pid as an integer, the template as text: a value
+            # the field would not write back stays for the bag to carry
+            if key in ('pid', 'parent-pid') and not self._canonical_integer(
+                    attributes[key], key, record):
+                continue
+            setattr(process_object, feature, attributes.pop(key))
+            setattr(getattr(process_object, feature), 'condition', 'Equals')
+        children = self._pop_canonical_integers(attributes, 'child-pid', record)
+        if children:
             process_object.child_pid_list = ChildPIDList()
-            for child in attributes.pop('child-pid'):
+            for child in children:
                 process_object.child_pid_list.append(child)
-        if attributes.get('port'):
+        ports = self._pop_canonical_integers(
+            attributes, 'port', record, positive=True
+        )
+        if ports:
             process_object.port_list = PortList()
-            for port in attributes.pop('port'):
+            for port in ports:
                 port_object = self._create_port_object(port)
                 process_object.port_list.append(port_object)
         image_info_keys = ('image', 'command-line')
@@ -1939,20 +2936,27 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 if attributes.get(key):
                     setattr(process_object.image_info, feature, attributes.pop(key))
                     setattr(getattr(process_object.image_info, feature), 'condition', 'Equals')
-        if attributes.get('hidden'):
-            hidden = attributes.pop('hidden')
-            process_object.is_hidden = False if hidden in ('False', 'false') else bool(hidden)
+        hidden = self._native_boolean(attributes, 'hidden', misp_object)
+        if hidden is not None:
+            process_object.is_hidden = hidden
         if attributes:
-            process_object.custom_properties = self._handle_custom_properties(attributes)
+            process_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(process_object, repeated, misp_object)
         observable = self._create_observable(process_object, misp_object['uuid'], 'Process')
         return observable
 
     def _parse_registry_key_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.registry_key_single_fields()
+        )
         registry_object = self._create_registry_key_object(attributes.pop('key')) if attributes.get('key') else WinRegistryKey()
         if attributes.get('hive'):
-            hive = attributes.pop('hive').lstrip('\\').upper()
-            registry_object.hive = self._mapping.misp_reghive(hive) or hive
+            # A hive in the CybOX enumeration is spelled its way; any other -
+            # a file on disk, as the template has it - goes out verbatim
+            hive = attributes.pop('hive')
+            registry_object.hive = self._mapping.misp_reghive(
+                hive.lstrip('\\').upper()
+            ) or hive
             registry_object.hive.condition = 'Equals'
         if any(key in attributes for key in self._mapping.regkey_object_mapping().keys()):
             value_object = RegistryValue()
@@ -1966,9 +2970,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             registry_object.modified_time.condition = 'Equals'
         if attributes:
             registry_object.custom_properties = self._handle_custom_properties(
-                attributes,
-                multiple=False
+                attributes, misp_object
             )
+        self._add_repeated_values(registry_object, repeated, misp_object)
         observable = self._create_observable(
             registry_object,
             misp_object['uuid'],
@@ -1976,7 +2980,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         return observable
 
-    def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict, fields: tuple):
+    def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict,
+                                fields: tuple, misp_object: dict):
+        record = self._object_record(misp_object)
         for key, field in zip(('src', 'dst'), fields):
             args = {}
             if attributes.get(f'ip-{key}'):
@@ -1984,8 +2990,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 args['ip'] = (attribute_type, attributes.pop(attribute_type))
             if attributes.get(f'hostname-{key}'):
                 args['hostname'] = attributes.pop(f'hostname-{key}')
-            if attributes.get(f'{key}-port'):
-                args['port'] = attributes.pop(f'{key}-port')
+            relation = f'{key}-port'
+            # A port 0 is a value, for the check to warn of
+            if relation in attributes and self._canonical_integer(
+                    attributes[relation], relation, record, positive=True):
+                args['port'] = attributes.pop(relation)
             if args:
                 setattr(
                     stix_object,
@@ -1994,18 +3003,26 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 )
 
     def _parse_url_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_object_attributes_with_uuid(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
-        if attributes.get('url'):
-            observables.append(self._create_uri_observable(*attributes['url']))
-        if attributes.get('domain'):
-            observables.append(self._create_domain_observable(*attributes['domain']))
-        if attributes.get('host'):
-            observables.append(self._create_hostname_observable(*attributes['host']))
-        if attributes.get('ip'):
-            observables.append(self._create_address_observable('ip-dst', *attributes['ip']))
-        if attributes.get('port'):
-            observables.append(self._create_port_observable(*attributes['port']))
+        for attribute in attributes.get('url', ()):
+            observables.append(self._create_uri_observable(*attribute))
+        for attribute in attributes.get('domain', ()):
+            observables.append(self._create_domain_observable(*attribute))
+        for attribute in attributes.get('host', ()):
+            observables.append(self._create_hostname_observable(*attribute))
+        for attribute in attributes.get('ip', ()):
+            observables.append(self._create_address_observable('ip-dst', *attribute))
+        observables.extend(
+            self._create_port_members(
+                misp_object, 'port', attributes.get('port', ())
+            )
+        )
+        observables.extend(
+            self._create_custom_members(
+                misp_object, ('url', 'domain', 'host', 'ip', 'port')
+            )
+        )
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
@@ -2014,11 +3031,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable_composition
 
     def _parse_user_account_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.user_account_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.user_account_single_fields()
         )
-        account_object = self._create_user_account_object(attributes)
+        account_object = self._create_user_account_object(
+            attributes, misp_object
+        )
         if attributes.get('password'):
             account_object.authentication = self._create_authentication_object(
                 auth_type='password',
@@ -2028,8 +3046,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if attributes.get(key):
                 setattr(account_object, feature, attributes.pop(key))
                 setattr(getattr(account_object, feature), 'condition', 'Equals')
+        disabled = self._native_boolean(attributes, 'disabled', misp_object)
+        if disabled is not None:
+            account_object.disabled = disabled
         if attributes:
-            account_object.custom_properties = self._handle_custom_properties(attributes)
+            account_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(account_object, repeated, misp_object)
         observable = self._create_observable(
             account_object,
             misp_object['uuid'],
@@ -2040,13 +3062,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_vulnerability_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         vulnerability = Vulnerability()
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.vulnerability_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.vulnerability_single_fields()
         )
         if attributes.get('id'):
-            cve_id = self._select_single_feature(attributes, 'id')
-            vulnerability.cve_id = cve_id
+            vulnerability.cve_id = attributes.pop('id')
         if attributes.get('cvss-score'):
             cvss = CVSSVector()
             cvss.overall_score = attributes.pop('cvss-score')
@@ -2058,35 +3078,55 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('references'):
             for reference in attributes.pop('references'):
                 vulnerability.add_reference(reference)
+        self._warn_unwritable_relations(
+            misp_object,
+            ('id', 'cvss-score', 'references',
+             *self._mapping.vulnerability_object_mapping())
+        )
+        self._describe_repeated_values(
+            vulnerability, repeated, 'summary', misp_object
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
-        exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
-        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
-        exploit_target.add_vulnerability(vulnerability)
+        exploit_target = self._create_exploit_target(
+            misp_object, vulnerability, 'vulnerability'
+        )
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
+        self._course_of_action_slots[misp_object['uuid']] = (
+            exploit_target.potential_coas
+        )
 
     def _parse_weakness_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         weakness = Weakness()
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in self._mapping.weakness_object_mapping().items():
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.weakness_single_fields()
+        )
+        mapping = self._mapping.weakness_object_mapping()
+        for key, feature in mapping.items():
             if attributes.get(key):
                 setattr(weakness, feature, attributes.pop(key))
+        self._warn_unwritable_relations(misp_object, tuple(mapping))
+        self._describe_repeated_values(
+            weakness, repeated, 'description', misp_object
+        )
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
-        exploit_target = ExploitTarget(timestamp=self._optional_timestamp(misp_object))
-        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{misp_object['uuid']}"
-        exploit_target.add_weakness(weakness)
+        exploit_target = self._create_exploit_target(
+            misp_object, weakness, 'weakness'
+        )
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
+        self._course_of_action_slots[misp_object['uuid']] = (
+            exploit_target.potential_coas
+        )
 
     def _parse_whois_object(self, misp_object: dict) -> Observable:
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.whois_single_fields()
+        attributes, repeated = self._extract_single_field_attributes(
+            misp_object['Attribute'], self._mapping.whois_single_fields()
         )
         whois_object = WhoisEntry()
         if attributes.get('registrar'):
@@ -2125,17 +3165,27 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         elif attributes.get('text'):
             whois_object.remarks = attributes.pop('text')
         if attributes:
-            whois_object.custom_properties = self._handle_custom_properties(attributes)
+            whois_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
+        self._add_repeated_values(whois_object, repeated, misp_object)
         observable = self._create_observable(whois_object, misp_object['uuid'], 'Whois')
         return observable
 
     def _parse_x509_object(self, misp_object: dict) -> Observable:
         attributes = defaultdict(list)
         content = defaultdict(bool)
+        # The two integers are signed: a negative one is written natively
+        bagged = defaultdict(list)
+        record = self._object_record(misp_object)
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
             feature = self._mapping.x509_creation_mapping(relation)
             if feature is not None:
+                if relation in ('version', 'pubkey-info-exponent'):
+                    if not self._canonical_integer(
+                            attribute['value'], relation, record,
+                            signed=True):
+                        bagged[relation].append(attribute['value'])
+                        continue
                 attributes[relation] = attribute['value']
                 content[feature] = True
             else:
@@ -2195,8 +3245,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     signature.signature.condition = 'Equals'
                     signature_set = True
             x509_object.certificate_signature = signature
+        attributes.update(bagged)
         if attributes:
-            x509_object.custom_properties = self._handle_custom_properties(attributes)
+            x509_object.custom_properties = self._handle_custom_properties(attributes, misp_object)
         observable = self._create_observable(x509_object, misp_object['uuid'], 'X509Certificate')
         return observable
 
@@ -2208,7 +3259,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._event_galaxy_not_mapped_warning(galaxy['type'])
 
     def _handle_undefined_parent_galaxy(self, galaxy: dict):
-        self._parent_galaxy_not_mapped_warning(galaxy['type'])
+        self._parent_galaxy_not_mapping_warning(galaxy['type'])
 
     def _parse_attack_pattern_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
@@ -2236,6 +3287,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
 
+    def _parse_threat_actor_event_galaxy(self, galaxy: dict):
+        self._parse_threat_actor_galaxy(galaxy)
+
     def _parse_threat_actor_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
             threat_actor_id = self._parse_threat_actor(cluster)
@@ -2249,7 +3303,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 except AttributeError:
                     self._incident.attributed_threat_actors = AttributedThreatActors()
                     self._incident.attributed_threat_actors.append(related_threat_actor)
-                self._contextualised_data.add(cluster['uuid'])
+                self._record_construct(
+                    cluster['uuid'], self._contextualised_data,
+                    self._incident.attributed_threat_actors,
+                    related_threat_actor
+                )
 
     def _parse_tool_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
@@ -2298,13 +3356,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         indicator = Indicator(timestamp=timestamp)
         indicator.id_ = f"{self._orgname_id}:Indicator-{misp_object['uuid']}"
         indicator.producer = self._producer
-        indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
+        indicator.title = self._object_record_title(misp_object)
         if any(misp_object.get(feature) for feature in ('comment', 'description')):
             indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
         indicator.add_indicator_type(self._set_indicator_type(misp_object['name']))
         indicator.add_valid_time_position(ValidTime())
         indicator.confidence = self._handle_object_indicator_tags(misp_object, indicator, timestamp)
         return indicator
+
+    @staticmethod
+    def _object_record_title(misp_object: dict) -> str:
+        return f"{misp_object.get('meta-category', 'misc')}: {misp_object['name']} (MISP Object)"
 
     @staticmethod
     def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
@@ -2326,39 +3388,48 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         stix_package.version = self._version
         return stix_package
 
+    def _create_related_weakness(self, attribute: dict,
+                                 misp_object: dict) -> ExploitTarget:
+        exploit_target = ExploitTarget(
+            timestamp=self._optional_timestamp(misp_object)
+        )
+        exploit_target.id_ = f"{self._orgname_id}:ExploitTarget-{attribute['uuid']}"
+        weakness = Weakness()
+        weakness.cwe_id = attribute['value']
+        exploit_target.add_weakness(weakness)
+        return exploit_target
+
     def _create_ttp_from_object(self, misp_object: dict) -> TTP:
         ttp = TTP(timestamp=self._optional_timestamp(misp_object))
         ttp.id_ = f"{self._orgname_id}:TTP-{misp_object['uuid']}"
-        ttp.title = f"{misp_object.get('meta-category', 'misc')}: {misp_object['name']} (MISP Object)"
+        ttp.title = self._object_record_title(misp_object)
         return ttp
 
-    def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
+    def _create_unix_user_account_object(self, attributes: dict,
+                                         misp_object: dict) -> UnixUserAccount:
         account_object = UnixUserAccount()
-        if attributes.get('user-id'):
-            self._set_user_id(account_object, attributes, 'user_id')
-        if attributes.get('group-id'):
-            account_object.group_id = attributes.pop('group-id')[0]
-            account_object.group_id.condition = 'Equals'
-        if attributes.get('group'):
-            self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
-            group_list = UnixGroupList()
-            groups = attributes.pop('group')
-            try:
-                for group in groups:
-                    unix_group = UnixGroup()
-                    unix_group.group_id = group
-                    group_list.append(unix_group)
-                account_object.group_list = group_list
-            except ValueError:
-                attributes['group'] = groups
+        record = self._object_record(misp_object)
+        for relation, feature in (('user-id', 'user_id'), ('group-id', 'group_id')):
+            values = self._pop_canonical_integers(attributes, relation, record)
+            if values:
+                setattr(account_object, feature, values.pop(0))
+                setattr(getattr(account_object, feature), 'condition', 'Equals')
+            if values:
+                # One field: the further values go to the bag with the others
+                attributes[relation] = [*values, *attributes.get(relation, ())]
+        groups = self._pop_canonical_integers(attributes, 'group', record)
+        if groups:
+            self._set_group_list(account_object, groups, UnixGroupList, UnixGroup, 'group_id')
         return account_object
 
-    def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
+    def _create_user_account_object(self, attributes: dict, misp_object: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
         account_types = ('unix', 'windows-domain', 'windows-local')
         if 'account-type' in attributes and attributes['account-type'] in account_types:
             account_type = attributes.pop('account-type')
             if account_type == 'unix':
-                return self._create_unix_user_account_object(attributes)
+                return self._create_unix_user_account_object(
+                    attributes, misp_object
+                )
             attributes['account-type'] = [account_type]
             return self._create_windows_user_account_object(attributes)
         account_object = UserAccount()
@@ -2369,7 +3440,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes.get('user-id'):
             self._set_user_id(account_object, attributes, 'security_id')
         if attributes.get('group'):
-            self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
+            self._set_group_list(
+                account_object, attributes.pop('group'), WinGroupList, WinGroup, 'name'
+            )
         return account_object
 
     def _set_information_source(self) -> str:

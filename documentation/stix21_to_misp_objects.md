@@ -4677,7 +4677,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_KnownMalicious = 'hashlookup-known-malicious-source' AND file:x_misp_PackageName = 'coreutils' AND file:x_misp_PackageVersion = '8.32' AND file:x_misp_PackageRelease = '4.1ubuntu1' AND file:x_misp_PackageArch = 'amd64' AND file:x_misp_PackageDescription = 'GNU core utilities' AND file:x_misp_PackageMaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
+        "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_knownmalicious = 'hashlookup-known-malicious-source' AND file:x_misp_packagename = 'coreutils' AND file:x_misp_packageversion = '8.32' AND file:x_misp_packagerelease = '4.1ubuntu1' AND file:x_misp_packagearch = 'amd64' AND file:x_misp_packagedescription = 'GNU core utilities' AND file:x_misp_packagemaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -4878,13 +4878,13 @@ The list of currently supported MISP object templates is available [here](https:
             },
             "size": 35,
             "name": "oui",
-            "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
-            "x_misp_PackageArch": "amd64",
-            "x_misp_PackageDescription": "GNU core utilities",
-            "x_misp_PackageMaintainer": "Ubuntu Developers",
-            "x_misp_PackageName": "coreutils",
-            "x_misp_PackageRelease": "4.1ubuntu1",
-            "x_misp_PackageVersion": "8.32",
+            "x_misp_knownmalicious": "hashlookup-known-malicious-source",
+            "x_misp_packagearch": "amd64",
+            "x_misp_packagedescription": "GNU core utilities",
+            "x_misp_packagemaintainer": "Ubuntu Developers",
+            "x_misp_packagename": "coreutils",
+            "x_misp_packagerelease": "4.1ubuntu1",
+            "x_misp_packageversion": "8.32",
             "x_misp_source": "https://www.circl.lu/services/hashlookup"
         },
         {
@@ -5112,27 +5112,27 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "cfdb71ed-889f-4646-a388-43d936e1e3b9",
         "Attribute": [
             {
-                "uuid": "67584aa7-7f8c-5221-a583-b3d1494f83be",
+                "uuid": "6ace0bbd-0c81-55de-8d42-13d302b90772",
                 "object_relation": "ip-src",
-                "value": "8.8.8.8')",
+                "value": "8.8.8.8",
                 "type": "ip-src",
                 "category": "Network activity",
                 "disable_correlation": false,
                 "to_ids": true
             },
             {
-                "uuid": "abad100c-35cd-539c-98c5-31c7761ffcec",
+                "uuid": "b6d5e599-4210-580e-aca4-25d3a7f50f4e",
                 "object_relation": "ip-dst",
-                "value": "149.13.33.14')",
+                "value": "149.13.33.14",
                 "type": "ip-dst",
                 "category": "Network activity",
                 "disable_correlation": false,
                 "to_ids": true
             },
             {
-                "uuid": "682ebd1e-beb4-566e-9cd1-814ef158afde",
+                "uuid": "3b338f2f-548f-500b-874c-f77570bfbeb9",
                 "object_relation": "host",
-                "value": "circl.lu')",
+                "value": "circl.lu",
                 "type": "hostname",
                 "category": "Network activity",
                 "disable_correlation": false,
@@ -8644,9 +8644,9 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
         "Attribute": [
             {
-                "uuid": "14e53210-3f72-5b1c-b831-5a6793fa4feb",
+                "uuid": "f5bbe620-e63f-5ae0-991a-153975c2f3d4",
                 "object_relation": "key",
-                "value": "hkey_local_machine\\\\system\\\\bar\\\\foo",
+                "value": "hkey_local_machine\\system\\bar\\foo",
                 "type": "regkey",
                 "category": "Persistence mechanism",
                 "disable_correlation": false,
@@ -8662,9 +8662,9 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "bfb7a5b5-51e9-5756-a413-912f5c319385",
+                "uuid": "209d8353-d2f2-5eb0-9b29-7f068825d869",
                 "object_relation": "data",
-                "value": "\\\\%DATA\\\\%\\\\qwertyuiop",
+                "value": "%DATA%\\qwertyuiop",
                 "type": "text",
                 "category": "Persistence mechanism",
                 "disable_correlation": false,
@@ -8897,9 +8897,9 @@ The list of currently supported MISP object templates is available [here](https:
             ],
             "Attribute": [
                 {
-                    "uuid": "14e53210-3f72-5b1c-b831-5a6793fa4feb",
+                    "uuid": "f5bbe620-e63f-5ae0-991a-153975c2f3d4",
                     "object_relation": "key",
-                    "value": "hkey_local_machine\\\\system\\\\bar\\\\foo",
+                    "value": "hkey_local_machine\\system\\bar\\foo",
                     "type": "regkey",
                     "category": "Persistence mechanism",
                     "disable_correlation": false,
