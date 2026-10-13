@@ -530,9 +530,10 @@ class ExternalSTIX2ObservableConverter(
             )
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
-                yield self._handle_hash_attribute(
-                    indicator_ref, observable.type, hash_type, value, object_id
-                )
+                if (attribute := self._handle_hash_attribute(
+                        indicator_ref, observable.type, hash_type, value,
+                        object_id)) is not None:
+                    yield attribute
         for field, mapping in self._mapping.artifact_object_mapping().items():
             if hasattr(observable, field):
                 yield from self._handle_object_attributes_with_data(
@@ -639,9 +640,10 @@ class ExternalSTIX2ObservableConverter(
             object_id = observable.id
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
-                yield self._handle_hash_attribute(
-                    indicator_ref, observable.type, hash_type, value, object_id
-                )
+                if (attribute := self._handle_hash_attribute(
+                        indicator_ref, observable.type, hash_type, value,
+                        object_id)) is not None:
+                    yield attribute
         for field, mapping in self._mapping.file_object_mapping().items():
             if hasattr(observable, field):
                 yield from self._handle_object_attributes_with_data(
@@ -784,9 +786,10 @@ class ExternalSTIX2ObservableConverter(
                 )
         if hasattr(section, 'hashes'):
             for hash_type, hash_value in section.hashes.items():
-                yield self._handle_hash_attribute(
-                    indicator_ref, 'file', hash_type, hash_value, reference
-                )
+                if (attribute := self._handle_hash_attribute(
+                        indicator_ref, 'file', hash_type, hash_value,
+                        reference)) is not None:
+                    yield attribute
 
     def _parse_process_observable(
             self, observable: _PROCESS_TYPING, object_id: Optional[str] = None,
@@ -894,10 +897,10 @@ class ExternalSTIX2ObservableConverter(
             object_id = observable.id
         if hasattr(observable, 'hashes'):
             for hash_type, hash_value in observable.hashes.items():
-                yield self._handle_hash_attribute(
-                    indicator_ref, observable.type, hash_type, hash_value,
-                    object_id, 'x509'
-                )
+                if (attribute := self._handle_hash_attribute(
+                        indicator_ref, observable.type, hash_type,
+                        hash_value, object_id, 'x509')) is not None:
+                    yield attribute
         for field, mapping in self._mapping.x509_object_mapping().items():
             if hasattr(observable, field):
                 yield from self._handle_object_attributes(
@@ -1201,7 +1204,9 @@ class InternalSTIX2ObservableConverter(
             self, observable: _FILE_TYPING, object_id: str) -> Iterator[dict]:
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
-                yield self._handle_hash_attribute(hash_type, value, object_id)
+                if (attribute := self._handle_hash_attribute(
+                        hash_type, value, object_id)) is not None:
+                    yield attribute
         yield from self._parse_observable_fields_with_data(
             observable, 'file', object_id
         )
@@ -1238,9 +1243,9 @@ class InternalSTIX2ObservableConverter(
             )
         if hasattr(observable, 'hashes'):
             for hash_type, hash_value in observable.hashes.items():
-                yield self._handle_hash_attribute(
-                    hash_type, hash_value, object_id
-                )
+                if (attribute := self._handle_hash_attribute(
+                        hash_type, hash_value, object_id)) is not None:
+                    yield attribute
         yield from self._parse_observable_fields_with_data(
             observable, 'artifact', object_id
         )
@@ -1249,9 +1254,10 @@ class InternalSTIX2ObservableConverter(
             self, observable: _FILE_TYPING, object_id: str) -> Iterator[dict]:
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
-                yield self._handle_hash_attribute(
-                    hash_type, value, object_id, mapping='hashlookup'
-                )
+                if (attribute := self._handle_hash_attribute(
+                        hash_type, value, object_id,
+                        mapping='hashlookup')) is not None:
+                    yield attribute
         yield from self._parse_generic_observable(
             observable, 'hashlookup', object_id
         )
@@ -1360,7 +1366,9 @@ class InternalSTIX2ObservableConverter(
                               object_id: str) -> Iterator[dict]:
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
-                yield self._handle_hash_attribute(hash_type, value, object_id)
+                if (attribute := self._handle_hash_attribute(
+                        hash_type, value, object_id)) is not None:
+                    yield attribute
         yield from self._parse_observable_fields_with_data(
             observable, 'lnk', object_id
         )
@@ -1602,7 +1610,8 @@ class InternalSTIX2ObservableConverter(
                                object_id: str) -> Iterator[dict]:
         if hasattr(observable, 'hashes'):
             for hash_type, hash_value in observable.hashes.items():
-                yield self._handle_hash_attribute(
-                    hash_type, hash_value, object_id, 'x509'
-                )
+                if (attribute := self._handle_hash_attribute(
+                        hash_type, hash_value, object_id,
+                        'x509')) is not None:
+                    yield attribute
         yield from self._parse_generic_observable(observable, 'x509', object_id)
